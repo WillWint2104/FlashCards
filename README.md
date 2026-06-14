@@ -33,7 +33,7 @@ Without a backend, extended responses get an honest **demo grade** (structure + 
 
 1. Go to [workers.cloudflare.com](https://workers.cloudflare.com) (free tier) → Create Worker → paste `proxy/worker.js`.
 2. Worker → **Settings → Variables → Add secret** `ANTHROPIC_API_KEY` = your key from console.anthropic.com.
-3. Deploy, copy the worker URL, open the app → **Settings — AI essay grading** → paste → Save.
+3. Deploy, copy the worker URL, and paste it into the `TEACHER SETUP` block at the bottom of `index.html` (see the section above), then push. Students don't enter the URL themselves — the app's **Settings — AI essay grading** panel just shows them *AI marking: connected ✓*.
 
 The key lives only in the worker. The worker rate-limits to 20 grades / 10 min per IP, and uses Haiku (≈ a cent per essay; swap `MODEL` to Sonnet for sharper feedback). Set a monthly spend cap on your Anthropic account as a backstop.
 
@@ -54,12 +54,27 @@ The key lives only in the worker. The worker rate-limits to 20 grades / 10 min p
 
 ## Files
 
-```
-index.html        app shell + theme (no framework, no build)
+```text
+index.html        app shell + theme + TEACHER SETUP block (no framework, no build)
 app.js            session flow, 3-tier grading, Leitner scheduling, glossary
 content.js        the question bank — 35+ original questions across 6 areas
 proxy/worker.js   Cloudflare Worker that holds the API key for essay grading
+build.js          regenerates marginal-preview.html from the three sources above
 ```
+
+## Build (single-file preview)
+
+The app itself needs **no build** — GitHub Pages serves `index.html`, `app.js` and
+`content.js` directly. `build.js` only regenerates the optional single-file build:
+
+```bash
+node build.js
+```
+
+This inlines `content.js` and `app.js` into the `index.html` shell (TEACHER SETUP
+config and all) and writes `marginal-preview.html` — one self-contained file you can
+open locally or share without the separate scripts. `marginal-preview.html` is a
+**generated artifact**: never hand-edit it; edit the three sources and re-run `node build.js`.
 
 ## Adding or editing questions
 
