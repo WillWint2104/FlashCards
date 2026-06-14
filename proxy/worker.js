@@ -218,27 +218,53 @@ function exactly3(arr, fill) {
   while (a.length < 3) a.push(fill(a.length, a));
   return a;
 }
+const asArray = v => (Array.isArray(v) ? v : []);
+const asObject = v => (v && typeof v === "object" && !Array.isArray(v) ? v : {});
 
 // Guarantee the rendering contract the review UI assumes: every issue has a
 // three-rung ladder (Clear/Better/Band 6, levels fixed by position) and every
 // rung has three fading starters. The schema asks for this; this enforces it so
-// a stray model response cannot break downstream rendering.
+// a stray model response cannot break downstream rendering. Every nested node is
+// rebuilt through asArray/asObject, so a malformed payload (e.g. sentences:[null]
+// or issues:["bad"]) is normalized rather than throwing.
 function normalizeReview(r) {
-  (r.paragraphs || []).forEach(p => {
-    (p.sentences || []).forEach(s => {
-      s.issues = (s.issues || []).map(iss => {
+  r.paragraphs = asArray(r.paragraphs).map(rawP => {
+    const p = asObject(rawP);
+    p.reasons = asArray(p.reasons).map(rawR => {
+      const rs = asObject(rawR);
+      return { kind: rs.kind === "good" ? "good" : "weak", text: String(rs.text || "") };
+    });
+    p.sentences = asArray(p.sentences).map(rawS => {
+      const s = asObject(rawS);
+      s.issues = asArray(s.issues).map(rawIss => {
+        const iss = asObject(rawIss);
         iss.kind = iss.kind === "term" ? "term" : "fix";
         iss.severity = SEVS.includes(iss.severity) ? iss.severity : "should";
-        const fallback = (s.text || iss.head || "");
-        const rungs = exactly3(iss.ladder, (i, a) => a[a.length - 1] ? { ...a[a.length - 1] } : { text: fallback, starters: [] });
-        iss.ladder = rungs.map((rg, i) => ({
-          level: LEVELS[i],
-          text: String((rg && rg.text) || fallback),
-          starters: exactly3(rg && rg.starters, () => "____________").map(x => String(x)),
-        }));
+        iss.head = String(iss.head || "");
+        iss.why = String(iss.why || "");
+        const fallback = (typeof s.text === "string" && s.text) || iss.head || "";
+        const rungs = exactly3(iss.ladder, (i, a) => (a[a.length - 1] ? { ...a[a.length - 1] } : { text: fallback, starters: [] }));
+        iss.ladder = rungs.map((rawRg, i) => {
+          const rg = asObject(rawRg);
+          return {
+            level: LEVELS[i],
+            text: String(rg.text || fallback),
+            starters: exactly3(rg.starters, () => "____________").map(x => String(x)),
+          };
+        });
         return iss;
       });
+      return s;
     });
+    return p;
+  });
+  r.rubric = asArray(r.rubric).map(rawC => {
+    const c = asObject(rawC);
+    c.bands = asArray(c.bands).map(rawB => {
+      const b = asObject(rawB);
+      return { range: String(b.range || ""), text: String(b.text || ""), here: !!b.here };
+    });
+    return c;
   });
   return r;
 }
