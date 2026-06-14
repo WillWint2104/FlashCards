@@ -38,6 +38,8 @@ Register: use commas, colons and because, since or as clauses, and full stops. D
 
 const LADDER_SCHEMA = {
   type: "array",
+  minItems: 3,
+  maxItems: 3,
   description: "Exactly three creditworthy rungs in order: Clear, Better, Band 6.",
   items: {
     type: "object",
@@ -46,6 +48,8 @@ const LADDER_SCHEMA = {
       text: { type: "string", description: "The full model sentence at this level, writable register, no em-dashes." },
       starters: {
         type: "array",
+        minItems: 3,
+        maxItems: 3,
         description: "Exactly three fading starters derived from THIS rung's sentence: rep 1 most scaffolded, rep 3 nearly blank.",
         items: { type: "string" },
       },
@@ -113,6 +117,8 @@ const REVIEW_TOOL = {
       },
       rubric: {
         type: "array",
+        minItems: 4,
+        maxItems: 4,
         description: "Exactly four criteria: thesis and sustained judgement, use of evidence and data, economic terminology, cohesion.",
         items: {
           type: "object",
@@ -203,9 +209,44 @@ export default {
 
 function clamp(n, lo, hi) { n = Number(n) || 0; return Math.max(lo, Math.min(n, hi)); }
 
+const LEVELS = ["Clear", "Better", "Band 6"];
+const SEVS = ["critical", "should", "optional"];
+
+// Coerce an array to exactly three entries (slice extras, pad shortfalls).
+function exactly3(arr, fill) {
+  const a = Array.isArray(arr) ? arr.slice(0, 3) : [];
+  while (a.length < 3) a.push(fill(a.length, a));
+  return a;
+}
+
+// Guarantee the rendering contract the review UI assumes: every issue has a
+// three-rung ladder (Clear/Better/Band 6, levels fixed by position) and every
+// rung has three fading starters. The schema asks for this; this enforces it so
+// a stray model response cannot break downstream rendering.
+function normalizeReview(r) {
+  (r.paragraphs || []).forEach(p => {
+    (p.sentences || []).forEach(s => {
+      s.issues = (s.issues || []).map(iss => {
+        iss.kind = iss.kind === "term" ? "term" : "fix";
+        iss.severity = SEVS.includes(iss.severity) ? iss.severity : "should";
+        const fallback = (s.text || iss.head || "");
+        const rungs = exactly3(iss.ladder, (i, a) => a[a.length - 1] ? { ...a[a.length - 1] } : { text: fallback, starters: [] });
+        iss.ladder = rungs.map((rg, i) => ({
+          level: LEVELS[i],
+          text: String((rg && rg.text) || fallback),
+          starters: exactly3(rg && rg.starters, () => "____________").map(x => String(x)),
+        }));
+        return iss;
+      });
+    });
+  });
+  return r;
+}
+
 // Enforce the honest-marking invariants in code (never trust the model to add
 // up), and derive the legacy grade fields the current essay sheet still reads.
 function finalize(r, marks) {
+  normalizeReview(r);
   let total = 0;
   (r.paragraphs || []).forEach(p => {
     const pmax = Math.max(0, Number(p.max) || 0);

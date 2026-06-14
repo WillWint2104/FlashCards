@@ -14,7 +14,12 @@ built yet. The full implementation spec is `marginal-review-mode-implementation-
 
 ## 1. The review object
 
-The worker returns one object. Field names match `CONTENT.reviewSample` exactly.
+The worker returns one object: the **review fields** plus the derived **legacy
+fields** (§5). `CONTENT.reviewSample` carries this exact finalized shape, and
+additionally bundles the `question` context (§2) for development convenience. The
+worker itself does not return `question` (the app already has it from the essay
+card); everything else below is identical between the worker response and the
+fixture.
 
 ```json
 {
@@ -166,6 +171,11 @@ for a sentence span, the paragraph rail dot, and the score colour.
   foundational issues for a weaker response).
 - Every ladder rung must be creditworthy: `Clear` is the simplest sentence that
   still earns the mark, never a sub-pass strawman.
+- Fixed cardinality is enforced two ways: the tool schema sets `minItems`/
+  `maxItems` (ladder 3, starters 3, rubric 4), and `normalizeReview()` in
+  `finalize()` coerces every issue to a three-rung ladder (levels fixed by
+  position) with three starters per rung, so downstream rendering can rely on it
+  even if a model response strays.
 - Register: every model sentence, starter, reason, descriptor and explanation is
   writable Year 12 English with no em-dashes.
 

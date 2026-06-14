@@ -1509,3 +1509,25 @@ window.CONTENT.reviewSample = {
     }
   ]
 };
+
+// Attach the same legacy grade fields the worker's finalize() derives, so this
+// fixture is the faithful FINALIZED shape the worker returns (review fields +
+// legacy fields), and the current essay sheet renders from it if used as a stub.
+// Keep this in step with proxy/worker.js finalize() (see review-model.md §5).
+(function () {
+  const r = window.CONTENT.reviewSample, SEVRANK = { critical: 0, should: 1, optional: 2 };
+  r.score = r.total;
+  r.overall = { summary: r.summary || "" };
+  r.criteria = (r.rubric || []).map(c => ({
+    name: c.name,
+    status: c.max && c.score >= c.max ? "met" : c.score > 0 ? "partial" : "missing",
+    comment: c.descriptor || ""
+  }));
+  r.next_steps = (r.paragraphs || [])
+    .flatMap(p => (p.sentences || []).flatMap(s => s.issues || []))
+    .filter(i => i && i.severity !== "optional")
+    .sort((a, b) => (SEVRANK[a.severity] ?? 1) - (SEVRANK[b.severity] ?? 1))
+    .slice(0, 3)
+    .map(i => i.head);
+  r.missing_vocabulary = [];
+})();
