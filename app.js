@@ -277,10 +277,9 @@
       <div class="settings">
         <details>
           <summary>Settings — AI essay grading</summary>
-          <p>${state.endpoint ? "AI marking is <b>connected</b>." : "Paste your grading endpoint URL (see <code>proxy/</code> in the repo). Without one, essays get a demo structural grade only."}</p>
-          <input id="endpoint" type="url" placeholder="https://your-worker.workers.dev" value="${esc(state.endpoint)}">
-          <input id="classcode" type="text" placeholder="Class code (if your teacher set one)" value="${esc(state.code || "")}" style="max-width:240px">
-          <button class="btn sm" id="saveEndpoint">Save</button>
+          <p>${state.endpoint ? "AI marking: connected ✓" : "Extended answers get an instant demo grade — real AI marking switches on once your teacher connects it."}</p>
+          ${state.endpoint ? `<input id="classcode" type="text" placeholder="Class code (only if your teacher gave you one)" value="${esc(state.code || "")}" style="max-width:240px">
+          <button class="btn sm" id="saveEndpoint">Save</button>` : ""}
           <button class="btn sm ghost" id="resetAll">Reset my progress</button>
         </details>
         <details>
@@ -295,7 +294,8 @@
     wireNav();
     app.querySelectorAll(".topiccard:not(.locked)").forEach(b => b.onclick = () => areaMap(b.dataset.topic));
     app.querySelectorAll(".area").forEach(b => b.onclick = () => modePicker(b.dataset.area));
-    $("#saveEndpoint").onclick = () => { state.endpoint = $("#endpoint").value.trim(); state.code = $("#classcode").value.trim(); save(); toast("Saved"); };
+    const saveBtn = $("#saveEndpoint");
+    if (saveBtn) saveBtn.onclick = () => { state.code = $("#classcode").value.trim(); save(); toast("Saved"); };
     $("#resetAll").onclick = () => { if (confirm("Clear all progress on this device?")) { state.cards = {}; state.log = []; state.lessons = {}; save(); mainPage(); } };
     $("#backupAll").onclick = backupAll;
     $("#restoreFile").onchange = e => {
