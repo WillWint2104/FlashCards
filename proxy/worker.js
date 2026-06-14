@@ -30,12 +30,16 @@ Break each paragraph into its sentences in order. Keep a strong sentence with an
 
 Each issue has a severity: critical when it loses marks, should when it lifts the band, optional for an add-a-term suggestion. Give each issue a short head and a why of one to three sentences. Mark any key term inside why with {{term|definition|page}} so the app can make it tappable. Use 0 for page when you do not know it.
 
-Each issue carries a three-rung ladder: Clear, Better, Band 6. Every rung must be creditworthy. Clear is the simplest sentence that still earns the mark, never a failing strawman. Better is solid mid-band. Band 6 is exceptional. Each rung carries its own three fading starters for spaced practice, derived from that rung's own sentence: rep 1 is the rung sentence with one key word blanked, rep 2 blanks more, rep 3 is just the blank. Write each blank as the literal string ____________ and wrap the word the student must recall as <b>____________</b>.
+Each issue carries a three-rung ladder: Clear, Better, Band 6. Every rung must be creditworthy. Clear is the simplest sentence that still earns the mark, never a failing strawman. Better is solid mid-band. Band 6 is exceptional. Give only the sentence for each rung. Do not write practice starters: the app derives those from each rung's sentence.
 
 Return the four rubric criteria (thesis and sustained judgement, use of evidence and data, economic terminology, cohesion) with marks, a one-line descriptor, and band descriptors, setting here to true on the band the response sits in. Keep the rubric marks consistent with the paragraph marks.
 
 Register: use commas, colons and because, since or as clauses, and full stops. Do not use em-dashes anywhere in your output, because a student would not write them. Return the review only through the submit_review tool.`;
 
+// Rungs carry only the sentence. The app derives the three fading practice
+// starters from each rung's text (see review-model.md), which keeps the model
+// output small enough to finish within the worker timeout and makes the
+// rung/starter mismatch impossible by construction.
 const LADDER_SCHEMA = {
   type: "array",
   minItems: 3,
@@ -46,15 +50,8 @@ const LADDER_SCHEMA = {
     properties: {
       level: { type: "string", enum: ["Clear", "Better", "Band 6"] },
       text: { type: "string", description: "The full model sentence at this level, writable register, no em-dashes." },
-      starters: {
-        type: "array",
-        minItems: 3,
-        maxItems: 3,
-        description: "Exactly three fading starters derived from THIS rung's sentence: rep 1 most scaffolded, rep 3 nearly blank.",
-        items: { type: "string" },
-      },
     },
-    required: ["level", "text", "starters"],
+    required: ["level", "text"],
   },
 };
 
@@ -185,10 +182,11 @@ export default {
       },
       body: JSON.stringify({
         model: MODEL,
-        // A full honest review (paragraphs -> sentences -> issues, each with a
-        // 3-rung ladder and 3 starters per rung, plus the rubric) is large. Too
-        // small a budget truncates the tool call and the review never completes.
-        max_tokens: 16000,
+        // The review (paragraphs -> sentences -> issues, each with a 3-rung
+        // ladder, plus the rubric) must finish within Cloudflare's worker
+        // timeout. Starters are derived in the app, not generated here, which
+        // roughly halves the output and keeps generation comfortably in time.
+        max_tokens: 8000,
         system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
         tools: [REVIEW_TOOL],
         tool_choice: { type: "tool", name: "submit_review" },
@@ -226,11 +224,11 @@ const asArray = v => (Array.isArray(v) ? v : []);
 const asObject = v => (v && typeof v === "object" && !Array.isArray(v) ? v : {});
 
 // Guarantee the rendering contract the review UI assumes: every issue has a
-// three-rung ladder (Clear/Better/Band 6, levels fixed by position) and every
-// rung has three fading starters. The schema asks for this; this enforces it so
-// a stray model response cannot break downstream rendering. Every nested node is
-// rebuilt through asArray/asObject, so a malformed payload (e.g. sentences:[null]
-// or issues:["bad"]) is normalized rather than throwing.
+// three-rung ladder (Clear/Better/Band 6, levels fixed by position). The app
+// derives the practice starters from each rung's text, so they are not part of
+// this payload. Every nested node is rebuilt through asArray/asObject, so a
+// malformed payload (e.g. sentences:[null] or issues:["bad"]) is normalized
+// rather than throwing.
 function normalizeReview(r) {
   r.paragraphs = asArray(r.paragraphs).map(rawP => {
     const p = asObject(rawP);
@@ -247,14 +245,10 @@ function normalizeReview(r) {
         iss.head = String(iss.head || "");
         iss.why = String(iss.why || "");
         const fallback = (typeof s.text === "string" && s.text) || iss.head || "";
-        const rungs = exactly3(iss.ladder, (i, a) => (a[a.length - 1] ? { ...a[a.length - 1] } : { text: fallback, starters: [] }));
+        const rungs = exactly3(iss.ladder, (i, a) => (a[a.length - 1] ? { ...a[a.length - 1] } : { text: fallback }));
         iss.ladder = rungs.map((rawRg, i) => {
           const rg = asObject(rawRg);
-          return {
-            level: LEVELS[i],
-            text: String(rg.text || fallback),
-            starters: exactly3(rg.starters, () => "____________").map(x => String(x)),
-          };
+          return { level: LEVELS[i], text: String(rg.text || fallback) };
         });
         return iss;
       });
