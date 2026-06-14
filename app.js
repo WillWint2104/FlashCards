@@ -1105,6 +1105,15 @@
         if (card.type === "calc") g = gradeCalc(card, ans);
         else if (card.type === "essay") g = await gradeEssay(card, ans);
         else g = gradeLocal(card, ans);
+        // Gated review-mode entry: when the teacher enables it and the worker
+        // returned a structured review, open the focus-mode review instead of the
+        // flat result sheet. OFF by default, so the live student flow is unchanged.
+        if (card.type === "essay" && CONFIG.reviewMode === true && g.fb && Array.isArray(g.fb.paragraphs) && g.fb.paragraphs.length) {
+          applyResult(card, g.score, g.max);
+          session.results.push({ card, g });
+          openReview(g.fb, () => { session.idx++; renderCard(); });
+          return;
+        }
         finishCard(card, g);
       };
     }
@@ -1501,8 +1510,34 @@
   // response, or CONTENT.reviewSample for the demo entry). Student entry is gated
   // (off by default); the dev entry is ?reviewdemo=1.
   // ===========================================================================
-  const RVS = { review: null, active: 0, tab: "paragraphs", view: "paragraph", qpos: 0, resolved: {}, skipped: {} };
+  const RVS = { review: null, active: 0, tab: "paragraphs", view: "paragraph", qpos: 0, resolved: {}, skipped: {}, chosen: null, stage: "ladder", rep: 0, rebuiltOpen: false };
+  function rvResetIssue() { RVS.chosen = null; RVS.stage = "ladder"; RVS.rep = 0; }
   function rvDotClass(p) { const r = p.max ? p.score / p.max : 1; return r >= 0.8 ? "g" : r >= 0.6 ? "m" : "w"; }
+  // word-overlap soft check for practice (never blocks; just nudges)
+  function rvOverlap(a, b) {
+    const wa = new Set(norm(a).split(/\s+/).filter(w => w.length > 2));
+    const wb = norm(b).split(/\s+/).filter(w => w.length > 2);
+    if (!wb.length) return 1;
+    let hit = 0; wb.forEach(w => { if (wa.has(w)) hit++; });
+    return hit / wb.length;
+  }
+  // Derive three fading practice starters from a rung's sentence (see
+  // review-model.md). Blanks content words (key terms, data, meaningful verbs),
+  // never filler; the fade grows rep 1 -> rep 3. Single source for starters.
+  const RV_STOP = new Set("the a an of to and or but in on at for with as by from into onto that this these those it its is are was were be been being has have had do does did will would can could should may might which who whom whose than then so such more most less once each both between because since however yet not no nor their them they he she we you i his her our your my me if when while where what how why also very just only up out over under after before about per there here".split(" "));
+  function rvWordOf(t) { return t.replace(/[^A-Za-z0-9'’.\-]/g, ""); }
+  function rvIsContent(t) { const w = rvWordOf(t).toLowerCase().replace(/^[.\-']+|[.\-']+$/g, ""); return w.length > 0 && !RV_STOP.has(w); }
+  function rvScoreTok(t) { const w = rvWordOf(t); let s = 0; if (/\d/.test(t)) s += 3; if (/^[A-Z]/.test(w)) s += 2; if (w.length >= 8) s += 2; else if (w.length >= 5) s += 1; return s; }
+  function deriveStarters(text) {
+    text = String(text || "");
+    const toks = text.split(/\s+/).filter(Boolean);
+    const cIdx = toks.map((t, i) => (rvIsContent(t) ? i : -1)).filter(i => i >= 0);
+    const n = cIdx.length;
+    const ranked = cIdx.slice().sort((a, b) => (rvScoreTok(toks[b]) - rvScoreTok(toks[a])) || (b - a));
+    const blankTok = t => { const m = t.match(/^(.*?)([.,;:!?)]*)$/); return "<b>____________</b>" + (m ? esc(m[2]) : ""); };
+    const rep = k => { if (k >= n) return "____________"; const set = new Set(ranked.slice(0, k)); return toks.map((t, i) => (set.has(i) ? blankTok(t) : esc(t))).join(" "); };
+    return [rep(n >= 1 ? 1 : 0), rep(Math.max(2, Math.ceil(n * 0.5))), "____________"];
+  }
   // Strip {{term|def|page}} markup to the bare term. Step 6 replaces this with an
   // interactive popover; until then the term reads as plain text (no raw braces).
   function rvStripTerms(s) { return String(s == null ? "" : s).replace(/\{\{([^|]+)\|[^|]*\|[^}]*\}\}/g, "$1"); }
@@ -1529,9 +1564,9 @@
     const rs = (rv.rubric || []).reduce((a, c) => a + (Number(c.score) || 0), 0);
     if ((rv.rubric || []).length && rs !== rv.total) console.warn("[review] rubric sum", rs, "!= total", rv.total);
   }
-  function openReview(review) {
+  function openReview(review, onClose) {
     if (!review || !Array.isArray(review.paragraphs) || !review.paragraphs.length) return;
-    RVS.review = review; RVS.active = 0; RVS.tab = "paragraphs"; RVS.view = "paragraph"; RVS.qpos = 0; RVS.resolved = {}; RVS.skipped = {};
+    RVS.review = review; RVS.active = 0; RVS.tab = "paragraphs"; RVS.view = "paragraph"; RVS.qpos = 0; RVS.resolved = {}; RVS.skipped = {}; RVS.rebuiltOpen = false; RVS.onClose = onClose || null; rvResetIssue();
     rvCheckMarks(review);
     if (!document.getElementById("rvhost")) { const h = document.createElement("div"); h.id = "rvhost"; document.body.appendChild(h); }
     app.classList.add("rv-blur");
@@ -1541,6 +1576,7 @@
     const h = document.getElementById("rvhost"); if (h) h.remove();
     const c = document.getElementById("rvctxhost"); if (c) c.remove();
     app.classList.remove("rv-blur");
+    const cb = RVS.onClose; RVS.onClose = null; if (cb) cb();
   }
   function rvRender() {
     const rv = RVS.review, host = document.getElementById("rvhost"); if (!rv || !host) return;
@@ -1583,18 +1619,32 @@
     host.querySelectorAll("[data-rvpara]").forEach(b => b.onclick = () => { RVS.active = Number(b.dataset.rvpara); RVS.tab = "paragraphs"; RVS.view = "paragraph"; rvRender(); });
     host.querySelectorAll("[data-rvcrit]").forEach(b => b.onclick = () => { const el = $("#rvbands-" + b.dataset.rvcrit); if (el) el.classList.toggle("show"); });
     // targeted jumps: a span / missing chip / status row opens THAT specific issue (CHECK 4)
-    host.querySelectorAll("[data-rvgoto]").forEach(b => b.onclick = () => { RVS.qpos = Number(b.dataset.rvgoto); RVS.view = "walk"; rvRender(); });
-    const wb = $("#rvwalk"); if (wb) wb.onclick = () => { const q = rvQueue(RVS.review.paragraphs[RVS.active]); const firstOpen = q.findIndex(x => !rvAddressed(rvKey(RVS.active, x.si, x.ii))); RVS.qpos = firstOpen >= 0 ? firstOpen : 0; RVS.view = "walk"; rvRender(); };
+    host.querySelectorAll("[data-rvgoto]").forEach(b => b.onclick = () => { RVS.qpos = Number(b.dataset.rvgoto); RVS.view = "walk"; rvResetIssue(); rvRender(); });
+    const wb = $("#rvwalk"); if (wb) wb.onclick = () => { const q = rvQueue(RVS.review.paragraphs[RVS.active]); const firstOpen = q.findIndex(x => !rvAddressed(rvKey(RVS.active, x.si, x.ii))); RVS.qpos = firstOpen >= 0 ? firstOpen : 0; RVS.view = "walk"; rvResetIssue(); rvRender(); };
     // walkthrough navigation
     const back = $("#rvback"); if (back) back.onclick = () => { RVS.view = "paragraph"; rvRender(); };
-    host.querySelectorAll("[data-rvchip]").forEach(b => b.onclick = () => { RVS.qpos = Number(b.dataset.rvchip); rvRender(); });
+    host.querySelectorAll("[data-rvchip]").forEach(b => b.onclick = () => { RVS.qpos = Number(b.dataset.rvchip); rvResetIssue(); rvRender(); });
     const skip = $("#rvskip"); if (skip) skip.onclick = () => { const q = rvQueue(RVS.review.paragraphs[RVS.active]); const x = q[RVS.qpos]; RVS.skipped[rvKey(RVS.active, x.si, x.ii)] = true; rvAdvance(); };
     const next = $("#rvnext"); if (next) next.onclick = () => rvAdvance();
-    const prev = $("#rvprev"); if (prev) prev.onclick = () => { if (RVS.qpos > 0) { RVS.qpos--; rvRender(); } };
+    const prev = $("#rvprev"); if (prev) prev.onclick = () => { if (RVS.qpos > 0) { RVS.qpos--; rvResetIssue(); rvRender(); } };
+    // ladder + practice + fresh write
+    const p0 = RVS.review.paragraphs[RVS.active], q0 = rvQueue(p0), cur0 = q0[RVS.qpos];
+    const curIss = cur0 && cur0.iss, curKey = cur0 && rvKey(RVS.active, cur0.si, cur0.ii);
+    const curRung = curIss && RVS.chosen != null && curIss.ladder ? curIss.ladder[RVS.chosen] : null;
+    host.querySelectorAll("[data-rvrung]").forEach(b => b.onclick = () => { RVS.chosen = Number(b.dataset.rvrung); RVS.stage = "practice"; RVS.rep = 0; rvRender(); });
+    const po = $("#rvpickother"); if (po) po.onclick = () => { rvResetIssue(); rvRender(); };
+    const rt = $("#rvreptick"); if (rt) rt.onclick = () => { if (RVS.rep < 2) RVS.rep++; else RVS.stage = "fresh"; rvRender(); };
+    const sr = $("#rvskiprw"); if (sr) sr.onclick = () => { RVS.stage = "fresh"; rvRender(); };
+    const pr = $("#rvpractice"); if (pr && curRung) { const soft = $("#rvpracticesoft"); pr.oninput = () => { const v = pr.value.trim(); if (!v) { soft.textContent = ""; soft.className = "rv-soft"; } else if (rvOverlap(v, curRung.text) >= 0.5) { soft.textContent = "looks good"; soft.className = "rv-soft ok"; } else { soft.textContent = "close, try to match the sentence above more closely"; soft.className = "rv-soft warn"; } }; }
+    const fr = $("#rvfresh"); if (fr) { const add = $("#rvaddline"); const upd = () => { add.disabled = fr.value.trim().split(/\s+/).filter(Boolean).length < 4; }; upd(); fr.oninput = upd; }
+    const al = $("#rvaddline"); if (al && curKey) al.onclick = () => { const v = $("#rvfresh").value.trim(); if (v.split(/\s+/).filter(Boolean).length < 4) return; RVS.resolved[curKey] = v; delete RVS.skipped[curKey]; rvResetIssue(); rvAdvance(); };
+    const rbt = $("#rvrebuilttoggle"); if (rbt) rbt.onclick = () => { RVS.rebuiltOpen = !RVS.rebuiltOpen; rvRender(); };
+    const rg = $("#rvregrade"); if (rg) rg.onclick = () => { toast("Every issue addressed. Copy your rebuilt paragraph back into your answer and resubmit for a fresh grade."); };
     $("#rvscrim").onclick = e => { if (e.target.id === "rvscrim") closeReview(); };
   }
   function rvAdvance() {
     const q = rvQueue(RVS.review.paragraphs[RVS.active]);
+    rvResetIssue();
     if (RVS.qpos < q.length - 1) { RVS.qpos++; rvRender(); }
     else { RVS.view = "paragraph"; rvRender(); }
   }
@@ -1605,7 +1655,10 @@
       return `<button class="rv-pmark ${i === RVS.active ? "active" : ""}" data-rvpara="${i}" title="¶${i + 1} · ${esc(p.name || "")} · ${p.score}/${p.max}">${tick}<span class="rv-pn"><span class="rv-pp">¶</span>${i + 1}</span><span class="rv-pdot ${rvDotClass(p)}"></span></button>`;
     }).join("");
     const p = rv.paragraphs[RVS.active] || {};
-    const right = RVS.view === "walk" ? rvWalkPane(p, RVS.active) : rvDefaultPane(p, RVS.active);
+    const main = RVS.view === "walk" ? rvWalkPane(p, RVS.active) : rvDefaultPane(p, RVS.active);
+    // "your paragraph now" stays present in both views (collapsed by default,
+    // auto-opens when every issue is addressed so Re-grade is reachable).
+    const right = main + rvRebuildPanel(p, RVS.active);
     return `<div class="rv-pane show"><div class="rv-cols"><div class="rv-left"><p class="rv-railhint">paragraphs</p>${rail}</div><div class="rv-right">${right}</div></div></div>`;
   }
   // The calm, score-open default view: the paragraph with severity-coloured issue
@@ -1674,8 +1727,54 @@
       + orig
       + `<div class="rv-issuetitle">${esc(iss.head)}</div>`
       + `<div class="rv-issuewhy">${esc(rvStripTerms(iss.why))}</div>`
+      + rvLadderSection(iss, key)
       + `<div class="rv-issuebtns"><button class="rv-btn" id="rvprev" ${RVS.qpos === 0 ? "disabled" : ""}>← previous</button><button class="rv-btn rv-skipbtn" id="rvskip">Skip for now →</button><button class="rv-btn blue" id="rvnext">${RVS.qpos === q.length - 1 ? (addressed ? "Done" : "Next →") : "Next →"}</button></div>`
       + `</div>`;
+  }
+  // The rewrite ladder + practice + fresh write for the current issue.
+  function rvLadderSection(iss, key) {
+    const ladder = iss.ladder || [], LVL = ["a", "b", "c"];
+    if (RVS.chosen == null) {
+      const rungs = ladder.map((rg, i) => `<button class="rv-rung" data-rvrung="${i}"><span class="rv-rlvl ${LVL[i]}">${esc(rg.level)}</span><span class="rv-rt">${esc(rg.text)}</span></button>`).join("");
+      return `<div class="rv-ladder">${rungs}</div><p class="rv-laddertip">Pick the level you want to aim for. Every level earns marks: the climb is pass, then strong, then exceptional.</p>`;
+    }
+    const rg = ladder[RVS.chosen] || ladder[0];
+    const pinned = `<div class="rv-ladder"><button class="rv-rung chosen"><span class="rv-rlvl ${LVL[RVS.chosen]}">${esc(rg.level)}</span><span class="rv-rt">${esc(rg.text)}</span></button></div><button class="rv-pickother" id="rvpickother">← pick a different level</button>`;
+    if (RVS.stage === "fresh") {
+      const existing = (key in RVS.resolved) ? RVS.resolved[key] : "";
+      return pinned
+        + `<p class="rv-freshlabel">Now write it in your own words</p>`
+        + `<textarea class="rv-pinput" id="rvfresh" placeholder="Write your version of this line...">${esc(existing)}</textarea>`
+        + `<div class="rv-prow"><button class="rv-btn blue" id="rvaddline" disabled>Add this line to my rewrite</button></div>`;
+    }
+    const starters = deriveStarters(rg.text), rep = Math.min(RVS.rep, 2);
+    const dots = [0, 1, 2].map(i => `<span class="rv-repdot ${i <= rep ? "on" : ""}"></span>`).join("");
+    return pinned
+      + `<div class="rv-practice"><div class="rv-repdots">${dots}</div>`
+      + `<p class="rv-starter">Rep ${rep + 1} of 3: ${starters[rep]}</p>`
+      + `<textarea class="rv-pinput" id="rvpractice" placeholder="Type the ${esc(rg.level)} version above..."></textarea>`
+      + `<div class="rv-soft" id="rvpracticesoft"></div>`
+      + `<div class="rv-prow"><button class="rv-btn blue" id="rvreptick">${rep < 2 ? "Next rep →" : "Write it fresh →"}</button><button class="rv-btn rv-skipbtn" id="rvskiprw">Skip to my rewrite →</button></div></div>`;
+  }
+  // The live-assembling "your paragraph now" panel: kept lines verbatim, resolved
+  // lines in the student's words (green), pending lines in readable ink-2.
+  function rvRebuildPanel(p, pi) {
+    const q = rvQueue(p);
+    const addressed = q.filter(x => !rvAddressed(rvKey(pi, x.si, x.ii))).length === 0;
+    const open = RVS.rebuiltOpen || addressed;
+    const lines = (p.sentences || []).map((s, si) => {
+      if (s.text === null || s.link) { const k = rvKey(pi, si, 0); return (k in RVS.resolved) ? `<span class="rv-ln fixed">${esc(RVS.resolved[k])}</span>` : ""; }
+      if (!s.issues || !s.issues.length) return `<span class="rv-ln kept">${esc(s.text)}</span>`;
+      const keys = s.issues.map((iss, ii) => rvKey(pi, si, ii));
+      if (keys.some(k => !(k in RVS.resolved))) return `<span class="rv-ln pending">${esc(s.text)}</span>`;
+      let t = s.text, fixKey = null;
+      s.issues.forEach((iss, ii) => { if (iss.kind === "fix") fixKey = rvKey(pi, si, ii); });
+      if (fixKey && RVS.resolved[fixKey]) t = RVS.resolved[fixKey];
+      s.issues.forEach((iss, ii) => { const k = rvKey(pi, si, ii); if (iss.kind === "term" && RVS.resolved[k]) t += " " + RVS.resolved[k]; });
+      return `<span class="rv-ln fixed">${esc(t)}</span>`;
+    }).filter(Boolean).join("");
+    const regrade = addressed ? `<button class="rv-btn primary" id="rvregrade" style="margin-top:12px;width:100%">Re-grade this paragraph</button>` : "";
+    return `<div class="rv-rebuilt"><button class="rv-rebuilttoggle" id="rvrebuilttoggle"><span>your paragraph now</span><span class="rv-rbchev">${open ? "▾" : "▸"}</span></button>${open ? `<div class="rv-rwout">${lines || '<span class="rv-rwempty">your rewrite assembles here as you fix each issue</span>'}</div>${regrade}` : ""}</div>`;
   }
   function rvRubricPane(rv) {
     const crits = (rv.rubric || []).map((c, i) => {
