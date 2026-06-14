@@ -1367,3 +1367,145 @@ window.CONTENT = {
     }));
   }));
 })();
+
+// =============================================================================
+// reviewSample — the canonical example of the long-response review contract
+// (see review-model.md and proxy/worker.js submit_review). Ported verbatim from
+// the design prototype (the tax-transfer example) into the exact shape the
+// worker now returns. ILLUSTRATIVE ONLY: real reviews come from the worker. Used
+// by review mode as the dev/eyeball fixture and as the executable contract.
+// Only paragraph 2 is detailed (exactly as the prototype authored it); the other
+// paragraphs carry their rail metadata. The real worker details them all.
+// Marks are internally consistent: paragraph scores 3+3+2+5 = 13/20, and the
+// rubric 5+3+2+3 = 13/20 (the honest-marking invariant, see review-model.md §4).
+// =============================================================================
+window.CONTENT.reviewSample = {
+  question: { stem: "Evaluate the effectiveness of the tax-transfer system", command: "Evaluate", marks: 20 },
+  total: 13, max: 20,
+  summary: "A clear, sustained judgement backed by good income data, but the wealth side is thinly evidenced and a few lines overstate or slip into everyday wording.",
+  paragraphs: [
+    { name: "Introduction", score: 3, max: 3, reasons: [], sentences: [] },
+    {
+      name: "Income redistribution", score: 3, max: 6,
+      reasons: [
+        { kind: "good", text: "Clear point, backed by precise figures (0.436 to 0.324)." },
+        { kind: "weak", text: "The figures aren't named as gross vs disposable, so they float." },
+        { kind: "weak", text: "Overstated and vague wording (“proves”, “works”)." },
+        { kind: "weak", text: "No economic terminology, and a colloquial closing line." },
+        { kind: "weak", text: "Doesn't link forward to the wealth paragraph." }
+      ],
+      sentences: [
+        {
+          text: "The tax-transfer system reduces income inequality, the Gini falling from 0.436 to 0.324.",
+          issues: [
+            {
+              kind: "fix", severity: "critical", head: "Say which Ginis these are",
+              why: "The fall only counts as evidence if you name them as the {{gross income Gini|The Gini of income before tax and government transfers are applied.|247}} and {{disposable income Gini|The Gini of income after income tax and transfers, the measure of what households actually keep.|247}}, the before and after measures. Without that, the reader can't see what the numbers prove.",
+              ladder: [
+                { level: "Clear", text: "The disposable-income Gini falls from 0.436 to 0.324 once tax and transfers apply.", starters: ["The disposable-income Gini falls from 0.436 to 0.324 once <b>____________</b> apply.", "The disposable-income Gini falls from <b>____________</b> once tax and transfers apply.", "____________"] },
+                { level: "Better", text: "Comparing the gross Gini of 0.436 with the disposable Gini of 0.324 shows the system's redistributive effect.", starters: ["Comparing the gross Gini of 0.436 with the disposable Gini of 0.324 shows the system's <b>____________</b> effect.", "Comparing the gross Gini of 0.436 with the disposable Gini of <b>____________</b> shows the system's redistributive effect.", "____________"] },
+                { level: "Band 6", text: "The income Gini falls from 0.436 before tax and transfers to 0.324 after them, a direct measure of how much the system compresses the distribution.", starters: ["The income Gini falls from 0.436 before tax and transfers to 0.324 after them, a direct measure of how much the system <b>____________</b> the distribution.", "The income Gini falls from 0.436 before tax and transfers to 0.324 after them, a direct measure of <b>____________</b>.", "____________"] }
+              ]
+            }
+          ]
+        },
+        {
+          text: "This proves the system works.",
+          issues: [
+            {
+              kind: "fix", severity: "should", head: "“Proves” is too strong",
+              why: "One statistic supports a claim, it doesn't prove it. A measured verb reads at a higher band.",
+              ladder: [
+                { level: "Clear", text: "This shows the system substantially reduces income inequality.", starters: ["This shows the system substantially reduces <b>____________</b>.", "This shows the system substantially <b>____________</b> income inequality.", "____________"] },
+                { level: "Better", text: "This substantially compresses the income distribution, the system's central aim.", starters: ["This substantially compresses the income distribution, the system's central <b>____________</b>.", "This substantially <b>____________</b> the income distribution, the system's central aim.", "____________"] },
+                { level: "Band 6", text: "This demonstrates a substantial compression of the income distribution, the system's central redistributive aim.", starters: ["This demonstrates a substantial compression of the income distribution, the system's central <b>____________</b> aim.", "This demonstrates a substantial <b>____________</b> of the income distribution.", "____________"] }
+              ]
+            },
+            {
+              kind: "fix", severity: "should", head: "“Works” is vague",
+              why: "Works at what? Name the criterion, reducing income inequality, rather than giving a verdict with no measure.",
+              ladder: [
+                { level: "Clear", text: "It reduces the gap between high and low income earners.", starters: ["It reduces the gap between high and low income <b>____________</b>.", "It reduces the gap between <b>____________</b> income earners.", "____________"] },
+                { level: "Better", text: "It narrows the gap between the highest and lowest income quintiles each year.", starters: ["It narrows the gap between the highest and lowest income <b>____________</b> each year.", "It narrows the gap between the highest and lowest income quintiles <b>____________</b>.", "____________"] },
+                { level: "Band 6", text: "It narrows the gap between the top and bottom quintiles, the criterion on which redistributive effectiveness is judged.", starters: ["It narrows the gap between the top and bottom quintiles, the <b>____________</b> on which redistributive effectiveness is judged.", "It narrows the gap between the top and bottom quintiles, the criterion on which <b>____________</b> is judged.", "____________"] }
+              ]
+            }
+          ]
+        },
+        {
+          text: "Progressive tax and transfers do the work each year.",
+          issues: [
+            {
+              kind: "fix", severity: "should", head: "This line is filler",
+              why: "“Do the work” is colloquial, adds no new analysis and carries no data. Make it analytical, or cut it.",
+              ladder: [
+                { level: "Clear", text: "Progressive tax and means-tested transfers drive this reduction each year.", starters: ["Progressive tax and means-tested transfers drive this <b>____________</b> each year.", "Progressive tax and <b>____________</b> transfers drive this reduction each year.", "____________"] },
+                { level: "Better", text: "Progressive taxation and means-tested transfers are the two mechanisms driving this annual reduction.", starters: ["Progressive taxation and means-tested transfers are the two <b>____________</b> driving this annual reduction.", "Progressive taxation and means-tested transfers are the two mechanisms driving this annual <b>____________</b>.", "____________"] },
+                { level: "Band 6", text: "Progressive taxation and tightly means-tested transfers are the mechanisms behind this annual compression, redistributing roughly a third of revenue to lower earners.", starters: ["Progressive taxation and tightly means-tested transfers are the mechanisms behind this annual compression, redistributing roughly a third of <b>____________</b> to lower earners.", "Progressive taxation and tightly means-tested transfers are the mechanisms behind this annual <b>____________</b>.", "____________"] }
+              ]
+            },
+            {
+              kind: "term", severity: "optional", head: "Optional: add a key term",
+              why: "You can lift the band by naming a relevant {{economic term|Subject-specific vocabulary that markers reward, e.g. vertical equity.|250}} here. This is optional, you can skip it.",
+              ladder: [
+                { level: "Clear", text: "This reflects vertical equity, since higher earners contribute a higher proportion.", starters: ["This reflects <b>____________</b>, since higher earners contribute a higher proportion.", "This reflects vertical equity, since higher earners contribute a higher <b>____________</b>.", "____________"] },
+                { level: "Better", text: "This reflects vertical equity, as those who earn more contribute proportionally more.", starters: ["This reflects <b>____________</b>, as those who earn more contribute proportionally more.", "This reflects vertical equity, as those who earn more contribute <b>____________</b>.", "____________"] },
+                { level: "Band 6", text: "This embodies vertical equity, since proportionally higher contributions from high earners fund the transfers that compress the distribution.", starters: ["This embodies <b>____________</b>, since proportionally higher contributions from high earners fund the transfers that compress the distribution.", "This embodies vertical equity, since proportionally higher contributions from high earners fund the transfers that <b>____________</b>.", "____________"] }
+              ]
+            }
+          ]
+        },
+        {
+          text: null, link: true, missing_label: "a sentence linking to the next paragraph",
+          issues: [
+            {
+              kind: "fix", severity: "critical", head: "Add a sentence linking to ¶3",
+              why: "Your paragraph ends on income, then the next paragraph starts cold on wealth. Add a bridge that turns from income to wealth so the argument flows.",
+              ladder: [
+                { level: "Clear", text: "However, this success on income does not extend to wealth.", starters: ["However, this success on income does not extend to <b>____________</b>.", "However, this success on income does not <b>____________</b> to wealth.", "____________"] },
+                { level: "Better", text: "The same system that compresses income, however, leaves the far more unequal distribution of wealth largely untouched.", starters: ["The same system that compresses income, however, leaves the far more unequal distribution of <b>____________</b> largely untouched.", "The same system that compresses income, however, leaves the far more unequal distribution of wealth largely <b>____________</b>.", "____________"] },
+                { level: "Band 6", text: "Yet the very mechanisms that compress income, progressive tax and transfers, barely reach wealth, which is why the wealth distribution remains close to twice as unequal.", starters: ["Yet the very mechanisms that compress income, progressive tax and transfers, barely reach wealth, which is why the wealth distribution remains close to <b>____________</b> as unequal.", "Yet the very mechanisms that compress income, progressive tax and transfers, barely reach <b>____________</b>.", "____________"] }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    { name: "Wealth barely taxed", score: 2, max: 5, reasons: [], sentences: [] },
+    { name: "Judgement", score: 5, max: 6, reasons: [], sentences: [] }
+  ],
+  rubric: [
+    {
+      name: "Thesis & sustained judgement", score: 5, max: 6, descriptor: "A clear position, held and developed across the response.",
+      bands: [
+        { range: "1-2", text: "No clear position; describes rather than judges.", here: false },
+        { range: "3-4", text: "A position stated but not consistently developed.", here: false },
+        { range: "5-6", text: "Clear, sustained judgement. Yours holds from intro to conclusion.", here: true }
+      ]
+    },
+    {
+      name: "Use of evidence & data", score: 3, max: 6, descriptor: "Accurate, relevant statistics that support the argument.",
+      bands: [
+        { range: "1-2", text: "Little or no data; assertions unsupported.", here: false },
+        { range: "3-4", text: "Good data (the two Ginis), but one side, wealth, is thinly evidenced.", here: true },
+        { range: "5-6", text: "Precise data on both income and wealth, fully integrated.", here: false }
+      ]
+    },
+    {
+      name: "Economic terminology", score: 2, max: 4, descriptor: "Correct use of the subject's metalanguage.",
+      bands: [
+        { range: "1", text: "Everyday language only.", here: false },
+        { range: "2", text: "Some terms, but key ones (vertical equity, disposable income) missing.", here: true },
+        { range: "3-4", text: "Fluent, accurate metalanguage throughout.", here: false }
+      ]
+    },
+    {
+      name: "Cohesion", score: 3, max: 4, descriptor: "Paragraphs connect into one argument.",
+      bands: [
+        { range: "1-2", text: "Disconnected points.", here: false },
+        { range: "3", text: "Mostly linked; the income to wealth join is abrupt.", here: true },
+        { range: "4", text: "Seamless: every paragraph hands to the next.", here: false }
+      ]
+    }
+  ]
+};
