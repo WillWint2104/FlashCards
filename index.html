@@ -460,6 +460,61 @@
   .rv-issuebtns{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .rv-skipbtn{color:var(--ink-2)}
 
+  /* step 8: charting module (Lorenz + Gini), reused from the verified prototype */
+  .lzwrap{position:relative;background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:10px;margin-bottom:12px}
+  .lzcap{font-size:13px;font-weight:700;color:var(--ink);margin:2px 4px 8px}
+  .lzexpand{position:absolute;top:12px;right:12px;font-family:var(--disp);font-weight:600;font-size:12px;border:1.5px solid var(--line);background:#fff;border-radius:9px;padding:5px 10px;cursor:pointer;color:var(--ink-2)}
+  .lzexpand:hover{border-color:var(--blue);color:var(--blue-dk)}
+  .lzsvg{width:100%;height:auto;display:block}
+  .lzgrid{stroke:var(--line);stroke-width:1}
+  .lzaxis{stroke:var(--ink-3);stroke-width:1.5}
+  .lzaxlab{font-family:var(--body);font-weight:700;font-size:12px;fill:var(--ink-2)}
+  .lzaxnum{font-family:var(--body);font-weight:700;font-size:10.5px;fill:var(--ink-3)}
+  .lztitle{font-family:var(--disp);font-weight:600;font-size:15px;fill:var(--ink)}
+  .lzeq{stroke:var(--ink-3);stroke-width:2;stroke-dasharray:5 5;fill:none}
+  .lzgross{stroke:var(--coral);stroke-width:3;fill:none;stroke-linejoin:round}
+  .lzdisp{stroke:var(--green);stroke-width:3;fill:none;stroke-linejoin:round}
+  .lzwealth{stroke:var(--gold-dk);stroke-width:3;fill:none;stroke-linejoin:round}
+  .lzgap{fill:var(--green-soft);opacity:.55}
+  .lzleglab{font-family:var(--body);font-weight:700;font-size:11.5px;fill:var(--ink)}
+  .lzpoi{cursor:pointer}
+  .lzpoidot{fill:var(--blue)}
+  .lzpoiring{fill:none;stroke:var(--blue);stroke-width:2;opacity:.35}
+  .lzpoi:hover .lzpoiring{opacity:.9;stroke:var(--blue-dk)}
+  .lzexplain{margin-top:12px;background:var(--bg);border-radius:12px;padding:13px 15px;min-height:54px}
+  .lzhint{font-size:13px;color:var(--ink-2);font-weight:700}
+  .lzexp-t{font-family:var(--disp);font-weight:600;font-size:14.5px;color:var(--blue-dk);margin-bottom:4px}
+  .lzexp-b{font-size:13.5px;line-height:1.6;color:var(--ink)}
+  .lzbigscrim{position:fixed;inset:0;background:rgba(28,40,40,.6);display:none;align-items:center;justify-content:center;z-index:140;padding:24px}
+  .lzbigscrim.show{display:flex}
+  .lzbigcard{position:relative;background:#fff;border-radius:20px;max-width:1000px;width:100%;max-height:88vh;overflow:auto;padding:26px}
+  .lzbiggrid{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start}
+  @media(max-width:760px){.lzbiggrid{grid-template-columns:1fr}}
+  .lzbigside{background:var(--bg);border-radius:14px;padding:16px 18px}
+  /* income-source bar */
+  .srcbar{display:flex;flex-direction:column;gap:9px;margin-top:4px}
+  .srcrow{display:grid;grid-template-columns:150px 1fr 46px;align-items:center;gap:10px}
+  .srclab{font-size:13px;font-weight:700;color:var(--ink);text-align:right}
+  .srctrack{height:20px;background:var(--bg);border-radius:6px;overflow:hidden}
+  .srcfill{height:100%;border-radius:6px;background:var(--blue)}
+  .srcpct{font-family:var(--disp);font-weight:600;font-size:13px;color:var(--ink)}
+  /* Gini "how it's built" tool */
+  .giniA{fill:var(--coral);opacity:.32} .giniB{fill:var(--blue);opacity:.16}
+  .ginilbl{font-family:var(--disp);font-weight:600;font-size:20px} .ginilblA{fill:var(--coral-dk)} .ginilblB{fill:var(--blue-dk)}
+  .ginihead{font-family:var(--disp);font-weight:600;font-size:15px;color:var(--ink);margin-bottom:6px}
+  .giniframe{font-size:12.5px;line-height:1.55;color:var(--ink);background:var(--blue-soft);border-radius:10px;padding:9px 11px;margin:0 0 12px}
+  .giniframe b{color:var(--blue-dk);font-weight:800}
+  .ginicurvesel{display:flex;gap:6px;margin-bottom:10px}
+  .ginicurvesel button{flex:1;font-family:var(--disp);font-weight:600;font-size:13px;border:1.5px solid var(--line);border-radius:10px;padding:7px;background:#fff;cursor:pointer;color:var(--ink-2)}
+  .ginicurvesel button.on{border-color:var(--blue);background:var(--blue-soft);color:var(--blue-dk)}
+  .ginistepnote{font-size:13px;color:var(--ink);font-weight:500;margin:0 0 10px}
+  .ginistep{display:flex;align-items:flex-start;gap:9px;font-size:13.5px;line-height:1.5;color:var(--ink-2);padding:8px 0;border-top:1px solid var(--line)}
+  .ginistep.on{color:var(--ink)}
+  .ginistep .gn{flex:none;width:20px;height:20px;border-radius:50%;background:var(--ink-3);color:#fff;font-family:var(--disp);font-weight:600;font-size:11px;display:grid;place-items:center}
+  .ginistep.on .gn{background:var(--blue)}
+  .ginival{font-family:var(--disp);font-weight:600;color:var(--blue-dk)} .ginival.big{font-size:17px}
+  .ginidone{font-size:13px;line-height:1.55;color:var(--ink);background:var(--green-soft);border-radius:10px;padding:10px 12px;margin:8px 0 0}
+
   /* step 5: rewrite ladder + practice + live rebuild */
   .rv-ladder{margin:4px 0 2px}
   .rv-rung{display:flex;align-items:flex-start;gap:11px;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:8px;cursor:pointer;width:100%;text-align:left;font-family:var(--body)}
