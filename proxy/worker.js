@@ -185,7 +185,10 @@ export default {
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 8000,
+        // A full honest review (paragraphs -> sentences -> issues, each with a
+        // 3-rung ladder and 3 starters per rung, plus the rubric) is large. Too
+        // small a budget truncates the tool call and the review never completes.
+        max_tokens: 16000,
         system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
         tools: [REVIEW_TOOL],
         tool_choice: { type: "tool", name: "submit_review" },
@@ -201,7 +204,8 @@ export default {
     const block = (data.content || []).find(b => b.type === "tool_use");
     const r = block?.input;
     if (!r || !Array.isArray(r.paragraphs) || !r.paragraphs.length) {
-      return json({ error: "grader returned no review" }, 502, cors);
+      // stop_reason "max_tokens" here means the review truncated; raise max_tokens.
+      return json({ error: "grader returned no review", stop_reason: data.stop_reason || null }, 502, cors);
     }
     return json(finalize(r, Number(marks)), 200, cors);
   },
