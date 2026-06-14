@@ -6,7 +6,7 @@
 //   3. Copy the worker URL into the app's Settings panel.
 // The key never leaves the worker. Rate-limited to 20 grades / 10 min per IP.
 // =============================================================================
-const MODEL = "claude-haiku-4-5-20251001"; // cheap + plenty for short essays; swap to "claude-sonnet-4-6" for sharper essay feedback
+const MODEL = "claude-sonnet-4-6"; // sharper essay feedback; swap to "claude-haiku-4-5-20251001" for cheaper (~1c) grading
 const WINDOW_MS = 10 * 60 * 1000, MAX_PER_WINDOW = 20;
 const hits = new Map(); // in-memory per-isolate limiter (fine for a 12-student trial)
 
