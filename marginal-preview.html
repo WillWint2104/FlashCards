@@ -460,6 +460,61 @@
   .rv-issuebtns{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .rv-skipbtn{color:var(--ink-2)}
 
+  /* step 8: charting module (Lorenz + Gini), reused from the verified prototype */
+  .lzwrap{position:relative;background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:10px;margin-bottom:12px}
+  .lzcap{font-size:13px;font-weight:700;color:var(--ink);margin:2px 4px 8px}
+  .lzexpand{position:absolute;top:12px;right:12px;font-family:var(--disp);font-weight:600;font-size:12px;border:1.5px solid var(--line);background:#fff;border-radius:9px;padding:5px 10px;cursor:pointer;color:var(--ink-2)}
+  .lzexpand:hover{border-color:var(--blue);color:var(--blue-dk)}
+  .lzsvg{width:100%;height:auto;display:block}
+  .lzgrid{stroke:var(--line);stroke-width:1}
+  .lzaxis{stroke:var(--ink-3);stroke-width:1.5}
+  .lzaxlab{font-family:var(--body);font-weight:700;font-size:12px;fill:var(--ink-2)}
+  .lzaxnum{font-family:var(--body);font-weight:700;font-size:10.5px;fill:var(--ink-3)}
+  .lztitle{font-family:var(--disp);font-weight:600;font-size:15px;fill:var(--ink)}
+  .lzeq{stroke:var(--ink-3);stroke-width:2;stroke-dasharray:5 5;fill:none}
+  .lzgross{stroke:var(--coral);stroke-width:3;fill:none;stroke-linejoin:round}
+  .lzdisp{stroke:var(--green);stroke-width:3;fill:none;stroke-linejoin:round}
+  .lzwealth{stroke:var(--gold-dk);stroke-width:3;fill:none;stroke-linejoin:round}
+  .lzgap{fill:var(--green-soft);opacity:.55}
+  .lzleglab{font-family:var(--body);font-weight:700;font-size:11.5px;fill:var(--ink)}
+  .lzpoi{cursor:pointer}
+  .lzpoidot{fill:var(--blue)}
+  .lzpoiring{fill:none;stroke:var(--blue);stroke-width:2;opacity:.35}
+  .lzpoi:hover .lzpoiring{opacity:.9;stroke:var(--blue-dk)}
+  .lzexplain{margin-top:12px;background:var(--bg);border-radius:12px;padding:13px 15px;min-height:54px}
+  .lzhint{font-size:13px;color:var(--ink-2);font-weight:700}
+  .lzexp-t{font-family:var(--disp);font-weight:600;font-size:14.5px;color:var(--blue-dk);margin-bottom:4px}
+  .lzexp-b{font-size:13.5px;line-height:1.6;color:var(--ink)}
+  .lzbigscrim{position:fixed;inset:0;background:rgba(28,40,40,.6);display:none;align-items:center;justify-content:center;z-index:140;padding:24px}
+  .lzbigscrim.show{display:flex}
+  .lzbigcard{position:relative;background:#fff;border-radius:20px;max-width:1000px;width:100%;max-height:88vh;overflow:auto;padding:26px}
+  .lzbiggrid{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start}
+  @media(max-width:760px){.lzbiggrid{grid-template-columns:1fr}}
+  .lzbigside{background:var(--bg);border-radius:14px;padding:16px 18px}
+  /* income-source bar */
+  .srcbar{display:flex;flex-direction:column;gap:9px;margin-top:4px}
+  .srcrow{display:grid;grid-template-columns:150px 1fr 46px;align-items:center;gap:10px}
+  .srclab{font-size:13px;font-weight:700;color:var(--ink);text-align:right}
+  .srctrack{height:20px;background:var(--bg);border-radius:6px;overflow:hidden}
+  .srcfill{height:100%;border-radius:6px;background:var(--blue)}
+  .srcpct{font-family:var(--disp);font-weight:600;font-size:13px;color:var(--ink)}
+  /* Gini "how it's built" tool */
+  .giniA{fill:var(--coral);opacity:.32} .giniB{fill:var(--blue);opacity:.16}
+  .ginilbl{font-family:var(--disp);font-weight:600;font-size:20px} .ginilblA{fill:var(--coral-dk)} .ginilblB{fill:var(--blue-dk)}
+  .ginihead{font-family:var(--disp);font-weight:600;font-size:15px;color:var(--ink);margin-bottom:6px}
+  .giniframe{font-size:12.5px;line-height:1.55;color:var(--ink);background:var(--blue-soft);border-radius:10px;padding:9px 11px;margin:0 0 12px}
+  .giniframe b{color:var(--blue-dk);font-weight:800}
+  .ginicurvesel{display:flex;gap:6px;margin-bottom:10px}
+  .ginicurvesel button{flex:1;font-family:var(--disp);font-weight:600;font-size:13px;border:1.5px solid var(--line);border-radius:10px;padding:7px;background:#fff;cursor:pointer;color:var(--ink-2)}
+  .ginicurvesel button.on{border-color:var(--blue);background:var(--blue-soft);color:var(--blue-dk)}
+  .ginistepnote{font-size:13px;color:var(--ink);font-weight:500;margin:0 0 10px}
+  .ginistep{display:flex;align-items:flex-start;gap:9px;font-size:13.5px;line-height:1.5;color:var(--ink-2);padding:8px 0;border-top:1px solid var(--line)}
+  .ginistep.on{color:var(--ink)}
+  .ginistep .gn{flex:none;width:20px;height:20px;border-radius:50%;background:var(--ink-3);color:#fff;font-family:var(--disp);font-weight:600;font-size:11px;display:grid;place-items:center}
+  .ginistep.on .gn{background:var(--blue)}
+  .ginival{font-family:var(--disp);font-weight:600;color:var(--blue-dk)} .ginival.big{font-size:17px}
+  .ginidone{font-size:13px;line-height:1.55;color:var(--ink);background:var(--green-soft);border-radius:10px;padding:10px 12px;margin:8px 0 0}
+
   /* step 5: rewrite ladder + practice + live rebuild */
   .rv-ladder{margin:4px 0 2px}
   .rv-rung{display:flex;align-items:flex-start;gap:11px;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:8px;cursor:pointer;width:100%;text-align:left;font-family:var(--body)}
@@ -587,7 +642,7 @@ window.CONTENT = {
         { id:"lr1", type:"essay", marks:8, command:"Analyse",
           prompt:"Analyse what the Lorenz curve shows about the effect of the tax-transfer system on income inequality in Australia.",
           vocab:["Lorenz curve","line of perfect equality","gross income","disposable income","Gini coefficient","redistribution","progressive tax","transfer payments"],
-          stimulus:"Lorenz curve, two curves on the same axes: cumulative share of households (0 to 100%) against cumulative share of income (0 to 100%), with the diagonal line of perfect equality. The gross-income curve bows further from the diagonal; the disposable-income curve, after tax and transfers, sits closer to it. (Original rendered chart pending the charting module. Data, cumulative income share by quintile: gross about 7, 19, 36, 60, 100; disposable about 11, 26, 45, 68, 100.)",
+          stimulus:{ caption:"Lorenz curve: income distribution before and after tax and transfers, Australia 2019-20.", charts:[{ type:"lorenz", series:["gross","disposable"], gap:true, poi:"beforeAfter" }] },
           scaffold:[
             "Define the Lorenz curve: it plots the cumulative share of income against the cumulative share of people, and the further it bows from the line of perfect equality, the more unequal the distribution.",
             "Read the stimulus: the disposable-income curve sits closer to the equality line than the gross-income curve.",
@@ -939,7 +994,7 @@ window.CONTENT = {
         { id:"lr12", type:"essay", marks:20, command:"To what extent",
           prompt:"To what extent does the distribution of income and wealth in Australia reflect the trade-off between equity and efficiency? In your response, refer to the economic information provided.",
           vocab:["equity","efficiency","equity-efficiency trade-off","incentives","progressive taxation","transfer payments","allocative efficiency","government intervention"],
-          stimulus:"A comparison of the income and wealth distributions (rendering pending the charting module), for example quintile shares of income against quintile shares of wealth, showing wealth far more concentrated than income. Use it as evidence of where Australia sits on the trade-off.",
+          stimulus:{ caption:"Lorenz curves: the distribution of disposable income and of net worth, Australia 2019-20.", charts:[{ type:"lorenz", series:["disposable","networth"], gap:true, poi:"incomeWealth" }] },
           scaffold:[
             "Thesis: the distribution reflects the trade-off to a significant but not total extent, since policy choices balance the two.",
             "Explain the trade-off: market outcomes reward efficiency and incentives but produce inequality, while redistribution improves equity but may blunt incentives.",
@@ -1000,7 +1055,7 @@ window.CONTENT = {
         { id:"lr9", type:"essay", marks:20, command:"Discuss",
           prompt:"Discuss the consequences for Australia of an unequal distribution of income and wealth, and the policies that can be used to address this issue. In your response, refer to the economic information provided.",
           vocab:["progressive taxation","transfer payments","social wage","fiscal policy","minimum wage","education and training","equity-efficiency trade-off","social mobility"],
-          stimulus:"Two pieces of original data (rendering pending the charting module): a Lorenz curve showing the gross and disposable income distributions, and a breakdown of household income by source. Use both as evidence of the current distribution and its costs.",
+          stimulus:{ caption:"Lorenz curve: income distribution before and after tax and transfers, Australia 2019-20.", charts:[{ type:"lorenz", series:["gross","disposable"], gap:true, poi:"beforeAfter" }] },
           scaffold:[
             "Thesis: inequality has economic and social consequences, and government has a range of policies that reduce it, though each involves trade-offs.",
             "Consequences, drawing on the stimulus: use the Lorenz and income-source data as evidence of the current distribution and its economic and social costs.",
@@ -1024,7 +1079,7 @@ window.CONTENT = {
         { id:"lr10", type:"essay", marks:20, command:"Evaluate",
           prompt:"Evaluate the effectiveness of the tax-transfer system in reducing inequality in the distribution of income and wealth in Australia. In your response, refer to the economic information provided.",
           vocab:["progressive taxation","vertical equity","transfer payments","means-testing","disposable income","gross income","wealth taxation","equity-efficiency trade-off"],
-          stimulus:"A before and after Lorenz curve (rendering pending the charting module): the gross-income curve and the disposable-income curve after tax and transfers, the latter sitting closer to the line of perfect equality. Use it as evidence of the income effect.",
+          stimulus:{ caption:"Lorenz curve: income distribution before and after tax and transfers, Australia 2019-20.", charts:[{ type:"lorenz", series:["gross","disposable"], gap:true, poi:"beforeAfter", gini:true }] },
           scaffold:[
             "Thesis: the tax-transfer system substantially reduces income inequality but is far less effective on wealth inequality.",
             "Income evidence from the stimulus: the after-tax curve sits closer to equality than the before-tax curve, and describe the compression in words.",
@@ -2308,6 +2363,33 @@ window.CONTENT.reviewSample = {
     .map(i => i.head);
   r.missing_vocabulary = [];
 })();
+
+// =============================================================================
+// Stimulus chart data (real ABS 2019-20 figures, Tim Riley Ch.11 Tables 11.4 and
+// 11.1). Used verbatim by the charting module in app.js; see
+// marginal-stimulus-data-appendix.md. Cumulative shares of income/wealth by
+// quintile at cumulative population 0, 20, 40, 60, 80, 100.
+// =============================================================================
+window.CONTENT.charts = {
+  lorenz: {
+    pop: [0, 20, 40, 60, 80, 100],
+    series: {
+      gross: { label: "before tax & transfers (gross income)", points: [0, 4.1, 13.4, 28.8, 52.4, 100], gini: 0.436, cls: "lzgross" },
+      disposable: { label: "after tax & transfers (disposable income)", points: [0, 7.4, 20.0, 37.2, 60.2, 100], gini: 0.324, cls: "lzdisp" },
+      networth: { label: "net worth (wealth)", points: [0, 0.7, 5.5, 16.8, 37.3, 100], gini: 0.611, cls: "lzwealth" }
+    }
+  },
+  incomeSource: {
+    caption: "Gross household income by source, Australia 2024-25",
+    items: [
+      { label: "Wages and salaries", pct: 57.9 },
+      { label: "Profits", pct: 17.7 },
+      { label: "Property income", pct: 12.7 },
+      { label: "Social benefits", pct: 7.7 },
+      { label: "Other", pct: 3.9 }
+    ]
+  }
+};
 
 </script>
 <script>
@@ -4103,17 +4185,134 @@ window.CONTENT.reviewSample = {
     }).join("");
     return `<div class="rv-pane show"><p class="rv-tag">How this response was marked · ${rv.total} / ${rv.max}</p><p class="rv-psub">Four criteria. Tap any one to see the band descriptors and where your response sat.</p>${crits}</div>`;
   }
+  // ===== Charting module (Lorenz), reused from the verified prototype renderer =====
+  // Monotone cubic interpolation (Fritsch-Carlson): smooth AND guaranteed not to
+  // overshoot, so the Lorenz curve passes through the true quintile points without
+  // going angular or dipping past them.
+  function rvMonoTangents(xs, ys) {
+    const n = xs.length, dx = [], slope = [], t = new Array(n);
+    for (let i = 0; i < n - 1; i++) { dx[i] = xs[i + 1] - xs[i]; slope[i] = (ys[i + 1] - ys[i]) / dx[i]; }
+    t[0] = slope[0]; t[n - 1] = slope[n - 2];
+    for (let i = 1; i < n - 1; i++) t[i] = slope[i - 1] * slope[i] <= 0 ? 0 : (slope[i - 1] + slope[i]) / 2;
+    for (let i = 0; i < n - 1; i++) {
+      if (slope[i] === 0) { t[i] = 0; t[i + 1] = 0; }
+      else { const a = t[i] / slope[i], b = t[i + 1] / slope[i], s = a * a + b * b; if (s > 9) { const tau = 3 / Math.sqrt(s); t[i] = tau * a * slope[i]; t[i + 1] = tau * b * slope[i]; } }
+    }
+    return { dx, t };
+  }
+  function rvSampleCurve(xs, ys) {
+    const { dx, t } = rvMonoTangents(xs, ys), out = [];
+    for (let x = 0; x <= 100.0001; x += 2) {
+      let i = xs.length - 2; for (let k = 0; k < xs.length - 1; k++) { if (x <= xs[k + 1]) { i = k; break; } }
+      const h = dx[i], s = (x - xs[i]) / h;
+      const h00 = 2 * s ** 3 - 3 * s ** 2 + 1, h10 = s ** 3 - 2 * s ** 2 + s, h01 = -2 * s ** 3 + 3 * s ** 2, h11 = s ** 3 - s ** 2;
+      out.push([x, h00 * ys[i] + h10 * h * t[i] + h01 * ys[i + 1] + h11 * h * t[i + 1]]);
+    }
+    return out;
+  }
+  // Points of interest GUIDE READING (what a feature represents) but never state
+  // the conclusion the question marks. See marginal-stimulus-data-appendix.md.
+  const RV_POI = {
+    beforeAfter: [
+      { px: 20, key: "q1", title: "The poorest 20 percent", body: "This point is the cumulative income share held by the lowest 20 percent of people. Read it on each curve to compare their share before and after tax and transfers." },
+      { px: 80, key: "gap", title: "The gap between the curves", body: "Where the two curves are furthest apart, the distance between them is the redistributive effect of tax and transfers: income taxed from higher earners and directed to lower earners." },
+      { px: 60, key: "eq", title: "Line of perfect equality", body: "The straight diagonal is perfect equality, where each share of people holds the same share of income. The closer a curve sits to it, the more equal that distribution." }
+    ],
+    incomeWealth: [
+      { px: 20, key: "q1", title: "The poorest 20 percent", body: "This is the cumulative share held by the lowest 20 percent on each curve: disposable income and net worth. Read both to compare them." },
+      { px: 80, key: "gap", title: "The gap between the curves", body: "The distance between the income curve and the wealth curve shows how differently the two are spread across the population." },
+      { px: 60, key: "eq", title: "Line of perfect equality", body: "The diagonal is perfect equality. The further a curve bows away from it, the more concentrated that distribution." }
+    ]
+  };
+  function rvLorenzSVG(spec, big) {
+    const L = (C.charts && C.charts.lorenz) || { pop: [], series: {} };
+    const keys = (spec.series || []).filter(k => L.series[k]);
+    const W = big ? 620 : 460, H = big ? 500 : 380, padL = big ? 68 : 58, padB = big ? 60 : 50;
+    const x0 = padL, x1 = W - 20, y0 = H - padB, y1 = big ? 54 : 22;
+    const X = p => x0 + (p / 100) * (x1 - x0), Y = v => y0 - (v / 100) * (y0 - y1);
+    const samples = {}; keys.forEach(k => { samples[k] = rvSampleCurve(L.pop, L.series[k].points); });
+    const toPath = arr => arr.map((pt, i) => (i ? "L" : "M") + X(pt[0]).toFixed(1) + " " + Y(pt[1]).toFixed(1)).join(" ");
+    let grid = "", axn = "";
+    for (let g = 0; g <= 100; g += 20) {
+      if (g > 0) grid += `<line x1="${X(g)}" y1="${y1}" x2="${X(g)}" y2="${y0}" class="lzgrid"/><line x1="${x0}" y1="${Y(g)}" x2="${x1}" y2="${Y(g)}" class="lzgrid"/>`;
+      axn += `<text x="${X(g)}" y="${y0 + 16}" class="lzaxnum" text-anchor="middle">${g}</text><text x="${x0 - 8}" y="${Y(g) + 4}" class="lzaxnum" text-anchor="end">${g}</text>`;
+    }
+    let svg = `<svg viewBox="0 0 ${W} ${H}" class="lzsvg" role="img" aria-label="Lorenz curve stimulus">`;
+    svg += grid + axn;
+    svg += `<g id="${big ? "ginishadeBig" : "ginishade"}"></g>`;
+    // gap fill between the first two curves
+    if (spec.gap && keys.length >= 2) {
+      const back = samples[keys[1]].slice().reverse().map(pt => "L" + X(pt[0]).toFixed(1) + " " + Y(pt[1]).toFixed(1)).join(" ");
+      svg += `<path d="${toPath(samples[keys[0]])} ${back} Z" class="lzgap"/>`;
+    }
+    svg += `<line x1="${X(0)}" y1="${Y(0)}" x2="${X(100)}" y2="${Y(100)}" class="lzeq"/>`;
+    keys.forEach(k => { svg += `<path d="${toPath(samples[k])}" class="${L.series[k].cls}"/>`; });
+    svg += `<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y0}" class="lzaxis"/><line x1="${x0}" y1="${y0}" x2="${x0}" y2="${y1}" class="lzaxis"/>`;
+    svg += `<text x="${(x0 + x1) / 2}" y="${H - (big ? 16 : 12)}" class="lzaxlab" text-anchor="middle">cumulative % of people</text>`;
+    svg += `<text transform="translate(${big ? 18 : 14},${(y0 + y1) / 2}) rotate(-90)" class="lzaxlab" text-anchor="middle">cumulative % of income or wealth</text>`;
+    // points of interest
+    const poi = RV_POI[spec.poi] || [];
+    poi.forEach(p => {
+      let cy; if (p.key === "eq") cy = Y(p.px); else { const idx = L.pop.indexOf(p.px); cy = Y(L.series[keys[0]].points[idx]); }
+      svg += `<g class="lzpoi" data-rvpoi="${p.key}"><circle cx="${X(p.px)}" cy="${cy}" r="${big ? 9 : 7}" class="lzpoidot"/><circle cx="${X(p.px)}" cy="${cy}" r="${big ? 9 : 7}" class="lzpoiring"/></g>`;
+    });
+    // legend: equality + each series
+    const lx = x0 + 14; let ly = y1 + (big ? 6 : 8);
+    svg += `<g><line x1="${lx}" y1="${ly}" x2="${lx + 22}" y2="${ly}" class="lzeq"/><text x="${lx + 28}" y="${ly + 4}" class="lzleglab">perfect equality (Gini 0)</text>`;
+    keys.forEach(k => { ly += 19; svg += `<line x1="${lx}" y1="${ly}" x2="${lx + 22}" y2="${ly}" class="${L.series[k].cls}"/><text x="${lx + 28}" y="${ly + 4}" class="lzleglab">${esc(L.series[k].label)}</text>`; });
+    svg += `</g></svg>`;
+    return svg;
+  }
+  function rvWireLorenz(mountId, spec) {
+    const m = document.getElementById(mountId); if (!m) return;
+    m.querySelectorAll("[data-rvpoi]").forEach(g => g.onclick = () => {
+      const p = (RV_POI[spec.poi] || []).find(x => x.key === g.dataset.rvpoi); if (!p) return;
+      const side = document.getElementById(mountId + "-explain");
+      if (side) side.innerHTML = `<div class="lzexp-t">${esc(p.title)}</div><div class="lzexp-b">${esc(p.body)}</div>`;
+    });
+  }
+  function rvChartHTML(spec, idx) {
+    if (spec.type === "lorenz") {
+      return `<div class="lzwrap"><button class="lzexpand" data-rvexpand="${idx}">expand</button><div id="lzmount-${idx}">${rvLorenzSVG(spec, false)}</div>`
+        + `<div class="lzexplain" id="lzmount-${idx}-explain"><span class="lzhint">Tap a blue point on the curve to see what it represents.</span></div></div>`;
+    }
+    return "";
+  }
   function rvOpenContext(which) {
     const rv = RVS.review; if (!rv) return;
     if (!document.getElementById("rvctxhost")) { const h = document.createElement("div"); h.id = "rvctxhost"; document.body.appendChild(h); }
     const host = document.getElementById("rvctxhost"), q = rv.question || {};
-    const body = which === "stimulus"
-      ? `<p class="rv-ctxtag">Stimulus</p><div class="rv-ctxnote">${esc(q.stimulus || "No stimulus for this question.")}</div>`
-      : `<p class="rv-ctxtag">The question</p><div class="rv-ctxstem">${esc(q.stem || "")}</div><div class="rv-ctxmeta">${q.command ? `<span class="rv-ctxpill">${esc(q.command)}</span>` : ""}${q.marks ? `<span class="rv-ctxpill">${q.marks} marks</span>` : ""}</div>`;
+    let body;
+    if (which === "stimulus") {
+      const s = q.stimulus;
+      if (s && typeof s === "object" && Array.isArray(s.charts)) {
+        body = `<p class="rv-ctxtag">Stimulus</p>${s.caption ? `<p class="lzcap">${esc(s.caption)}</p>` : ""}${s.charts.map((c, i) => rvChartHTML(c, i)).join("")}`;
+      } else {
+        body = `<p class="rv-ctxtag">Stimulus</p><div class="rv-ctxnote">${esc(s || "No stimulus for this question.")}</div>`;
+      }
+    } else {
+      body = `<p class="rv-ctxtag">The question</p><div class="rv-ctxstem">${esc(q.stem || "")}</div><div class="rv-ctxmeta">${q.command ? `<span class="rv-ctxpill">${esc(q.command)}</span>` : ""}${q.marks ? `<span class="rv-ctxpill">${q.marks} marks</span>` : ""}</div>`;
+    }
     host.innerHTML = `<div class="rv-ctxscrim show" id="rvctxscrim"><div class="rv-ctxcard"><button class="rv-ctxx" id="rvctxx" aria-label="Close">✕</button>${body}</div></div>`;
     const close = () => host.remove();
     $("#rvctxx").onclick = close;
     $("#rvctxscrim").onclick = e => { if (e.target.id === "rvctxscrim") close(); };
+    // wire charts (POIs + expand) after insertion
+    if (which === "stimulus" && q.stimulus && typeof q.stimulus === "object" && Array.isArray(q.stimulus.charts)) {
+      q.stimulus.charts.forEach((c, i) => { if (c.type === "lorenz") rvWireLorenz("lzmount-" + i, c); });
+      host.querySelectorAll("[data-rvexpand]").forEach(b => b.onclick = () => rvExpandLorenz(q.stimulus.charts[Number(b.dataset.rvexpand)]));
+    }
+  }
+  function rvExpandLorenz(spec) {
+    if (!spec || spec.type !== "lorenz") return;
+    let d = document.getElementById("lzbig");
+    if (!d) { d = document.createElement("div"); d.id = "lzbig"; d.className = "lzbigscrim"; document.body.appendChild(d); }
+    d.className = "lzbigscrim show";
+    d.innerHTML = `<div class="lzbigcard"><button class="rv-ctxx" id="lzbigx" aria-label="Close">✕</button><div class="lzbiggrid"><div id="lzmountBig">${rvLorenzSVG(spec, true)}</div><div class="lzbigside" id="lzmountBig-explain"><div class="lzexp-t">Reading the chart</div><div class="lzexp-b">Tap a blue point on the curve to see what each feature represents. The interpretation is yours to write.</div></div></div></div>`;
+    rvWireLorenz("lzmountBig", spec);
+    const close = () => d.classList.remove("show");
+    $("#lzbigx").onclick = close;
+    d.onclick = e => { if (e.target === d) close(); };
   }
 
   // Dev entry for building and eyeballing the review without a live grade.

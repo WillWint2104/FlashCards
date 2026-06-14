@@ -71,7 +71,7 @@ window.CONTENT = {
         { id:"lr1", type:"essay", marks:8, command:"Analyse",
           prompt:"Analyse what the Lorenz curve shows about the effect of the tax-transfer system on income inequality in Australia.",
           vocab:["Lorenz curve","line of perfect equality","gross income","disposable income","Gini coefficient","redistribution","progressive tax","transfer payments"],
-          stimulus:"Lorenz curve, two curves on the same axes: cumulative share of households (0 to 100%) against cumulative share of income (0 to 100%), with the diagonal line of perfect equality. The gross-income curve bows further from the diagonal; the disposable-income curve, after tax and transfers, sits closer to it. (Original rendered chart pending the charting module. Data, cumulative income share by quintile: gross about 7, 19, 36, 60, 100; disposable about 11, 26, 45, 68, 100.)",
+          stimulus:{ caption:"Lorenz curve: income distribution before and after tax and transfers, Australia 2019-20.", charts:[{ type:"lorenz", series:["gross","disposable"], gap:true, poi:"beforeAfter" }] },
           scaffold:[
             "Define the Lorenz curve: it plots the cumulative share of income against the cumulative share of people, and the further it bows from the line of perfect equality, the more unequal the distribution.",
             "Read the stimulus: the disposable-income curve sits closer to the equality line than the gross-income curve.",
@@ -423,7 +423,7 @@ window.CONTENT = {
         { id:"lr12", type:"essay", marks:20, command:"To what extent",
           prompt:"To what extent does the distribution of income and wealth in Australia reflect the trade-off between equity and efficiency? In your response, refer to the economic information provided.",
           vocab:["equity","efficiency","equity-efficiency trade-off","incentives","progressive taxation","transfer payments","allocative efficiency","government intervention"],
-          stimulus:"A comparison of the income and wealth distributions (rendering pending the charting module), for example quintile shares of income against quintile shares of wealth, showing wealth far more concentrated than income. Use it as evidence of where Australia sits on the trade-off.",
+          stimulus:{ caption:"Lorenz curves: the distribution of disposable income and of net worth, Australia 2019-20.", charts:[{ type:"lorenz", series:["disposable","networth"], gap:true, poi:"incomeWealth" }] },
           scaffold:[
             "Thesis: the distribution reflects the trade-off to a significant but not total extent, since policy choices balance the two.",
             "Explain the trade-off: market outcomes reward efficiency and incentives but produce inequality, while redistribution improves equity but may blunt incentives.",
@@ -484,7 +484,7 @@ window.CONTENT = {
         { id:"lr9", type:"essay", marks:20, command:"Discuss",
           prompt:"Discuss the consequences for Australia of an unequal distribution of income and wealth, and the policies that can be used to address this issue. In your response, refer to the economic information provided.",
           vocab:["progressive taxation","transfer payments","social wage","fiscal policy","minimum wage","education and training","equity-efficiency trade-off","social mobility"],
-          stimulus:"Two pieces of original data (rendering pending the charting module): a Lorenz curve showing the gross and disposable income distributions, and a breakdown of household income by source. Use both as evidence of the current distribution and its costs.",
+          stimulus:{ caption:"Lorenz curve: income distribution before and after tax and transfers, Australia 2019-20.", charts:[{ type:"lorenz", series:["gross","disposable"], gap:true, poi:"beforeAfter" }] },
           scaffold:[
             "Thesis: inequality has economic and social consequences, and government has a range of policies that reduce it, though each involves trade-offs.",
             "Consequences, drawing on the stimulus: use the Lorenz and income-source data as evidence of the current distribution and its economic and social costs.",
@@ -508,7 +508,7 @@ window.CONTENT = {
         { id:"lr10", type:"essay", marks:20, command:"Evaluate",
           prompt:"Evaluate the effectiveness of the tax-transfer system in reducing inequality in the distribution of income and wealth in Australia. In your response, refer to the economic information provided.",
           vocab:["progressive taxation","vertical equity","transfer payments","means-testing","disposable income","gross income","wealth taxation","equity-efficiency trade-off"],
-          stimulus:"A before and after Lorenz curve (rendering pending the charting module): the gross-income curve and the disposable-income curve after tax and transfers, the latter sitting closer to the line of perfect equality. Use it as evidence of the income effect.",
+          stimulus:{ caption:"Lorenz curve: income distribution before and after tax and transfers, Australia 2019-20.", charts:[{ type:"lorenz", series:["gross","disposable"], gap:true, poi:"beforeAfter", gini:true }] },
           scaffold:[
             "Thesis: the tax-transfer system substantially reduces income inequality but is far less effective on wealth inequality.",
             "Income evidence from the stimulus: the after-tax curve sits closer to equality than the before-tax curve, and describe the compression in words.",
@@ -1792,3 +1792,30 @@ window.CONTENT.reviewSample = {
     .map(i => i.head);
   r.missing_vocabulary = [];
 })();
+
+// =============================================================================
+// Stimulus chart data (real ABS 2019-20 figures, Tim Riley Ch.11 Tables 11.4 and
+// 11.1). Used verbatim by the charting module in app.js; see
+// marginal-stimulus-data-appendix.md. Cumulative shares of income/wealth by
+// quintile at cumulative population 0, 20, 40, 60, 80, 100.
+// =============================================================================
+window.CONTENT.charts = {
+  lorenz: {
+    pop: [0, 20, 40, 60, 80, 100],
+    series: {
+      gross: { label: "before tax & transfers (gross income)", points: [0, 4.1, 13.4, 28.8, 52.4, 100], gini: 0.436, cls: "lzgross" },
+      disposable: { label: "after tax & transfers (disposable income)", points: [0, 7.4, 20.0, 37.2, 60.2, 100], gini: 0.324, cls: "lzdisp" },
+      networth: { label: "net worth (wealth)", points: [0, 0.7, 5.5, 16.8, 37.3, 100], gini: 0.611, cls: "lzwealth" }
+    }
+  },
+  incomeSource: {
+    caption: "Gross household income by source, Australia 2024-25",
+    items: [
+      { label: "Wages and salaries", pct: 57.9 },
+      { label: "Profits", pct: 17.7 },
+      { label: "Property income", pct: 12.7 },
+      { label: "Social benefits", pct: 7.7 },
+      { label: "Other", pct: 3.9 }
+    ]
+  }
+};

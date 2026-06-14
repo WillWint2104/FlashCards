@@ -1790,17 +1790,134 @@
     }).join("");
     return `<div class="rv-pane show"><p class="rv-tag">How this response was marked · ${rv.total} / ${rv.max}</p><p class="rv-psub">Four criteria. Tap any one to see the band descriptors and where your response sat.</p>${crits}</div>`;
   }
+  // ===== Charting module (Lorenz), reused from the verified prototype renderer =====
+  // Monotone cubic interpolation (Fritsch-Carlson): smooth AND guaranteed not to
+  // overshoot, so the Lorenz curve passes through the true quintile points without
+  // going angular or dipping past them.
+  function rvMonoTangents(xs, ys) {
+    const n = xs.length, dx = [], slope = [], t = new Array(n);
+    for (let i = 0; i < n - 1; i++) { dx[i] = xs[i + 1] - xs[i]; slope[i] = (ys[i + 1] - ys[i]) / dx[i]; }
+    t[0] = slope[0]; t[n - 1] = slope[n - 2];
+    for (let i = 1; i < n - 1; i++) t[i] = slope[i - 1] * slope[i] <= 0 ? 0 : (slope[i - 1] + slope[i]) / 2;
+    for (let i = 0; i < n - 1; i++) {
+      if (slope[i] === 0) { t[i] = 0; t[i + 1] = 0; }
+      else { const a = t[i] / slope[i], b = t[i + 1] / slope[i], s = a * a + b * b; if (s > 9) { const tau = 3 / Math.sqrt(s); t[i] = tau * a * slope[i]; t[i + 1] = tau * b * slope[i]; } }
+    }
+    return { dx, t };
+  }
+  function rvSampleCurve(xs, ys) {
+    const { dx, t } = rvMonoTangents(xs, ys), out = [];
+    for (let x = 0; x <= 100.0001; x += 2) {
+      let i = xs.length - 2; for (let k = 0; k < xs.length - 1; k++) { if (x <= xs[k + 1]) { i = k; break; } }
+      const h = dx[i], s = (x - xs[i]) / h;
+      const h00 = 2 * s ** 3 - 3 * s ** 2 + 1, h10 = s ** 3 - 2 * s ** 2 + s, h01 = -2 * s ** 3 + 3 * s ** 2, h11 = s ** 3 - s ** 2;
+      out.push([x, h00 * ys[i] + h10 * h * t[i] + h01 * ys[i + 1] + h11 * h * t[i + 1]]);
+    }
+    return out;
+  }
+  // Points of interest GUIDE READING (what a feature represents) but never state
+  // the conclusion the question marks. See marginal-stimulus-data-appendix.md.
+  const RV_POI = {
+    beforeAfter: [
+      { px: 20, key: "q1", title: "The poorest 20 percent", body: "This point is the cumulative income share held by the lowest 20 percent of people. Read it on each curve to compare their share before and after tax and transfers." },
+      { px: 80, key: "gap", title: "The gap between the curves", body: "Where the two curves are furthest apart, the distance between them is the redistributive effect of tax and transfers: income taxed from higher earners and directed to lower earners." },
+      { px: 60, key: "eq", title: "Line of perfect equality", body: "The straight diagonal is perfect equality, where each share of people holds the same share of income. The closer a curve sits to it, the more equal that distribution." }
+    ],
+    incomeWealth: [
+      { px: 20, key: "q1", title: "The poorest 20 percent", body: "This is the cumulative share held by the lowest 20 percent on each curve: disposable income and net worth. Read both to compare them." },
+      { px: 80, key: "gap", title: "The gap between the curves", body: "The distance between the income curve and the wealth curve shows how differently the two are spread across the population." },
+      { px: 60, key: "eq", title: "Line of perfect equality", body: "The diagonal is perfect equality. The further a curve bows away from it, the more concentrated that distribution." }
+    ]
+  };
+  function rvLorenzSVG(spec, big) {
+    const L = (C.charts && C.charts.lorenz) || { pop: [], series: {} };
+    const keys = (spec.series || []).filter(k => L.series[k]);
+    const W = big ? 620 : 460, H = big ? 500 : 380, padL = big ? 68 : 58, padB = big ? 60 : 50;
+    const x0 = padL, x1 = W - 20, y0 = H - padB, y1 = big ? 54 : 22;
+    const X = p => x0 + (p / 100) * (x1 - x0), Y = v => y0 - (v / 100) * (y0 - y1);
+    const samples = {}; keys.forEach(k => { samples[k] = rvSampleCurve(L.pop, L.series[k].points); });
+    const toPath = arr => arr.map((pt, i) => (i ? "L" : "M") + X(pt[0]).toFixed(1) + " " + Y(pt[1]).toFixed(1)).join(" ");
+    let grid = "", axn = "";
+    for (let g = 0; g <= 100; g += 20) {
+      if (g > 0) grid += `<line x1="${X(g)}" y1="${y1}" x2="${X(g)}" y2="${y0}" class="lzgrid"/><line x1="${x0}" y1="${Y(g)}" x2="${x1}" y2="${Y(g)}" class="lzgrid"/>`;
+      axn += `<text x="${X(g)}" y="${y0 + 16}" class="lzaxnum" text-anchor="middle">${g}</text><text x="${x0 - 8}" y="${Y(g) + 4}" class="lzaxnum" text-anchor="end">${g}</text>`;
+    }
+    let svg = `<svg viewBox="0 0 ${W} ${H}" class="lzsvg" role="img" aria-label="Lorenz curve stimulus">`;
+    svg += grid + axn;
+    svg += `<g id="${big ? "ginishadeBig" : "ginishade"}"></g>`;
+    // gap fill between the first two curves
+    if (spec.gap && keys.length >= 2) {
+      const back = samples[keys[1]].slice().reverse().map(pt => "L" + X(pt[0]).toFixed(1) + " " + Y(pt[1]).toFixed(1)).join(" ");
+      svg += `<path d="${toPath(samples[keys[0]])} ${back} Z" class="lzgap"/>`;
+    }
+    svg += `<line x1="${X(0)}" y1="${Y(0)}" x2="${X(100)}" y2="${Y(100)}" class="lzeq"/>`;
+    keys.forEach(k => { svg += `<path d="${toPath(samples[k])}" class="${L.series[k].cls}"/>`; });
+    svg += `<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y0}" class="lzaxis"/><line x1="${x0}" y1="${y0}" x2="${x0}" y2="${y1}" class="lzaxis"/>`;
+    svg += `<text x="${(x0 + x1) / 2}" y="${H - (big ? 16 : 12)}" class="lzaxlab" text-anchor="middle">cumulative % of people</text>`;
+    svg += `<text transform="translate(${big ? 18 : 14},${(y0 + y1) / 2}) rotate(-90)" class="lzaxlab" text-anchor="middle">cumulative % of income or wealth</text>`;
+    // points of interest
+    const poi = RV_POI[spec.poi] || [];
+    poi.forEach(p => {
+      let cy; if (p.key === "eq") cy = Y(p.px); else { const idx = L.pop.indexOf(p.px); cy = Y(L.series[keys[0]].points[idx]); }
+      svg += `<g class="lzpoi" data-rvpoi="${p.key}"><circle cx="${X(p.px)}" cy="${cy}" r="${big ? 9 : 7}" class="lzpoidot"/><circle cx="${X(p.px)}" cy="${cy}" r="${big ? 9 : 7}" class="lzpoiring"/></g>`;
+    });
+    // legend: equality + each series
+    const lx = x0 + 14; let ly = y1 + (big ? 6 : 8);
+    svg += `<g><line x1="${lx}" y1="${ly}" x2="${lx + 22}" y2="${ly}" class="lzeq"/><text x="${lx + 28}" y="${ly + 4}" class="lzleglab">perfect equality (Gini 0)</text>`;
+    keys.forEach(k => { ly += 19; svg += `<line x1="${lx}" y1="${ly}" x2="${lx + 22}" y2="${ly}" class="${L.series[k].cls}"/><text x="${lx + 28}" y="${ly + 4}" class="lzleglab">${esc(L.series[k].label)}</text>`; });
+    svg += `</g></svg>`;
+    return svg;
+  }
+  function rvWireLorenz(mountId, spec) {
+    const m = document.getElementById(mountId); if (!m) return;
+    m.querySelectorAll("[data-rvpoi]").forEach(g => g.onclick = () => {
+      const p = (RV_POI[spec.poi] || []).find(x => x.key === g.dataset.rvpoi); if (!p) return;
+      const side = document.getElementById(mountId + "-explain");
+      if (side) side.innerHTML = `<div class="lzexp-t">${esc(p.title)}</div><div class="lzexp-b">${esc(p.body)}</div>`;
+    });
+  }
+  function rvChartHTML(spec, idx) {
+    if (spec.type === "lorenz") {
+      return `<div class="lzwrap"><button class="lzexpand" data-rvexpand="${idx}">expand</button><div id="lzmount-${idx}">${rvLorenzSVG(spec, false)}</div>`
+        + `<div class="lzexplain" id="lzmount-${idx}-explain"><span class="lzhint">Tap a blue point on the curve to see what it represents.</span></div></div>`;
+    }
+    return "";
+  }
   function rvOpenContext(which) {
     const rv = RVS.review; if (!rv) return;
     if (!document.getElementById("rvctxhost")) { const h = document.createElement("div"); h.id = "rvctxhost"; document.body.appendChild(h); }
     const host = document.getElementById("rvctxhost"), q = rv.question || {};
-    const body = which === "stimulus"
-      ? `<p class="rv-ctxtag">Stimulus</p><div class="rv-ctxnote">${esc(q.stimulus || "No stimulus for this question.")}</div>`
-      : `<p class="rv-ctxtag">The question</p><div class="rv-ctxstem">${esc(q.stem || "")}</div><div class="rv-ctxmeta">${q.command ? `<span class="rv-ctxpill">${esc(q.command)}</span>` : ""}${q.marks ? `<span class="rv-ctxpill">${q.marks} marks</span>` : ""}</div>`;
+    let body;
+    if (which === "stimulus") {
+      const s = q.stimulus;
+      if (s && typeof s === "object" && Array.isArray(s.charts)) {
+        body = `<p class="rv-ctxtag">Stimulus</p>${s.caption ? `<p class="lzcap">${esc(s.caption)}</p>` : ""}${s.charts.map((c, i) => rvChartHTML(c, i)).join("")}`;
+      } else {
+        body = `<p class="rv-ctxtag">Stimulus</p><div class="rv-ctxnote">${esc(s || "No stimulus for this question.")}</div>`;
+      }
+    } else {
+      body = `<p class="rv-ctxtag">The question</p><div class="rv-ctxstem">${esc(q.stem || "")}</div><div class="rv-ctxmeta">${q.command ? `<span class="rv-ctxpill">${esc(q.command)}</span>` : ""}${q.marks ? `<span class="rv-ctxpill">${q.marks} marks</span>` : ""}</div>`;
+    }
     host.innerHTML = `<div class="rv-ctxscrim show" id="rvctxscrim"><div class="rv-ctxcard"><button class="rv-ctxx" id="rvctxx" aria-label="Close">✕</button>${body}</div></div>`;
     const close = () => host.remove();
     $("#rvctxx").onclick = close;
     $("#rvctxscrim").onclick = e => { if (e.target.id === "rvctxscrim") close(); };
+    // wire charts (POIs + expand) after insertion
+    if (which === "stimulus" && q.stimulus && typeof q.stimulus === "object" && Array.isArray(q.stimulus.charts)) {
+      q.stimulus.charts.forEach((c, i) => { if (c.type === "lorenz") rvWireLorenz("lzmount-" + i, c); });
+      host.querySelectorAll("[data-rvexpand]").forEach(b => b.onclick = () => rvExpandLorenz(q.stimulus.charts[Number(b.dataset.rvexpand)]));
+    }
+  }
+  function rvExpandLorenz(spec) {
+    if (!spec || spec.type !== "lorenz") return;
+    let d = document.getElementById("lzbig");
+    if (!d) { d = document.createElement("div"); d.id = "lzbig"; d.className = "lzbigscrim"; document.body.appendChild(d); }
+    d.className = "lzbigscrim show";
+    d.innerHTML = `<div class="lzbigcard"><button class="rv-ctxx" id="lzbigx" aria-label="Close">✕</button><div class="lzbiggrid"><div id="lzmountBig">${rvLorenzSVG(spec, true)}</div><div class="lzbigside" id="lzmountBig-explain"><div class="lzexp-t">Reading the chart</div><div class="lzexp-b">Tap a blue point on the curve to see what each feature represents. The interpretation is yours to write.</div></div></div></div>`;
+    rvWireLorenz("lzmountBig", spec);
+    const close = () => d.classList.remove("show");
+    $("#lzbigx").onclick = close;
+    d.onclick = e => { if (e.target === d) close(); };
   }
 
   // Dev entry for building and eyeballing the review without a live grade.
