@@ -1804,9 +1804,29 @@
   }
 
   // Dev entry for building and eyeballing the review without a live grade.
-  // Student entry (after a real grade) is gated behind CONFIG.reviewMode and is
-  // wired in a later step; it is off by default so this does not change the live UI.
-  try { if (/[?&]reviewdemo=1/.test(location.search) && C.reviewSample) openReview(C.reviewSample); } catch (e) { /* demo entry is best-effort */ }
+  // ?reviewdemo=1 opens CONTENT.reviewSample; ?reviewdemo=card:<id> opens a
+  // preview built from that question's marking-scheme faults (to eyeball the
+  // ladders and derived starters). Student entry (after a real grade) is gated
+  // behind CONFIG.reviewMode, off by default, so this does not change the live UI.
+  function rvFindCard(id) { let found = null; (C.areas || []).forEach(a => (a.cards || []).forEach(c => { if (c.id === id) found = c; })); return found; }
+  function rvPreviewFromCard(card) {
+    const faults = card.faults || [];
+    return {
+      question: { stem: card.prompt, command: card.command, marks: card.marks, stimulus: card.stimulus },
+      total: 0, max: card.marks,
+      summary: "Preview of this question's marking scheme. Real grades come from the worker against the student's own answer.",
+      paragraphs: [{ name: "Anticipated faults", score: 0, max: card.marks, reasons: [], sentences: faults.map(f => ({ text: "(an example line that triggers this fault)", issues: [f] })) }],
+      rubric: []
+    };
+  }
+  try {
+    const m = /[?&]reviewdemo=([^&]+)/.exec(location.search);
+    if (m) {
+      const v = decodeURIComponent(m[1]);
+      if (v === "1" && C.reviewSample) openReview(C.reviewSample);
+      else if (v.indexOf("card:") === 0) { const card = rvFindCard(v.slice(5)); if (card) openReview(rvPreviewFromCard(card)); }
+    }
+  } catch (e) { /* demo entry is best-effort */ }
 
   home();
 })();
