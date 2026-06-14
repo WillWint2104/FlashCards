@@ -1829,7 +1829,7 @@
       { px: 60, key: "eq", title: "Line of perfect equality", body: "The diagonal is perfect equality. The further a curve bows away from it, the more concentrated that distribution." }
     ]
   };
-  function rvLorenzSVG(spec, big) {
+  function rvLorenzSVG(spec, big, gShade) {
     const L = (C.charts && C.charts.lorenz) || { pop: [], series: {} };
     const keys = (spec.series || []).filter(k => L.series[k]);
     const W = big ? 620 : 460, H = big ? 500 : 380, padL = big ? 68 : 58, padB = big ? 60 : 50;
@@ -1845,26 +1845,42 @@
     let svg = `<svg viewBox="0 0 ${W} ${H}" class="lzsvg" role="img" aria-label="Lorenz curve stimulus">`;
     svg += grid + axn;
     svg += `<g id="${big ? "ginishadeBig" : "ginishade"}"></g>`;
-    // gap fill between the first two curves
-    if (spec.gap && keys.length >= 2) {
-      const back = samples[keys[1]].slice().reverse().map(pt => "L" + X(pt[0]).toFixed(1) + " " + Y(pt[1]).toFixed(1)).join(" ");
-      svg += `<path d="${toPath(samples[keys[0]])} ${back} Z" class="lzgap"/>`;
+    // Gini "how it's built" shading takes over the chart: one curve, shade A then B.
+    if (gShade) {
+      const cu = samples[gShade.curve] || samples[keys[0]];
+      const fwd = toPath(cu);
+      if (gShade.step >= 1) { // Area A: between the equality line and the curve
+        const eqBack = cu.slice().reverse().map(pt => "L" + X(pt[0]).toFixed(1) + " " + Y(pt[0]).toFixed(1)).join(" ");
+        svg += `<path d="${fwd} ${eqBack} Z" class="giniA"/><text x="${X(38)}" y="${Y(58)}" class="ginilbl ginilblA">A</text>`;
+      }
+      if (gShade.step >= 2) { // Area B: under the curve
+        svg += `<path d="${fwd} L${X(100).toFixed(1)} ${Y(0).toFixed(1)} L${X(0).toFixed(1)} ${Y(0).toFixed(1)} Z" class="giniB"/><text x="${X(72)}" y="${Y(22)}" class="ginilbl ginilblB">B</text>`;
+      }
+      svg += `<line x1="${X(0)}" y1="${Y(0)}" x2="${X(100)}" y2="${Y(100)}" class="lzeq"/>`;
+      svg += `<path d="${fwd}" class="${L.series[gShade.curve] ? L.series[gShade.curve].cls : "lzgross"}"/>`;
+    } else {
+      // gap fill between the first two curves
+      if (spec.gap && keys.length >= 2) {
+        const back = samples[keys[1]].slice().reverse().map(pt => "L" + X(pt[0]).toFixed(1) + " " + Y(pt[1]).toFixed(1)).join(" ");
+        svg += `<path d="${toPath(samples[keys[0]])} ${back} Z" class="lzgap"/>`;
+      }
+      svg += `<line x1="${X(0)}" y1="${Y(0)}" x2="${X(100)}" y2="${Y(100)}" class="lzeq"/>`;
+      keys.forEach(k => { svg += `<path d="${toPath(samples[k])}" class="${L.series[k].cls}"/>`; });
     }
-    svg += `<line x1="${X(0)}" y1="${Y(0)}" x2="${X(100)}" y2="${Y(100)}" class="lzeq"/>`;
-    keys.forEach(k => { svg += `<path d="${toPath(samples[k])}" class="${L.series[k].cls}"/>`; });
     svg += `<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y0}" class="lzaxis"/><line x1="${x0}" y1="${y0}" x2="${x0}" y2="${y1}" class="lzaxis"/>`;
     svg += `<text x="${(x0 + x1) / 2}" y="${H - (big ? 16 : 12)}" class="lzaxlab" text-anchor="middle">cumulative % of people</text>`;
     svg += `<text transform="translate(${big ? 18 : 14},${(y0 + y1) / 2}) rotate(-90)" class="lzaxlab" text-anchor="middle">cumulative % of income or wealth</text>`;
-    // points of interest
-    const poi = RV_POI[spec.poi] || [];
+    // points of interest (hidden while the Gini shading is active)
+    const poi = gShade ? [] : (RV_POI[spec.poi] || []);
     poi.forEach(p => {
       let cy; if (p.key === "eq") cy = Y(p.px); else { const idx = L.pop.indexOf(p.px); cy = Y(L.series[keys[0]].points[idx]); }
       svg += `<g class="lzpoi" data-rvpoi="${p.key}"><circle cx="${X(p.px)}" cy="${cy}" r="${big ? 9 : 7}" class="lzpoidot"/><circle cx="${X(p.px)}" cy="${cy}" r="${big ? 9 : 7}" class="lzpoiring"/></g>`;
     });
-    // legend: equality + each series
+    // legend: equality + each shown series (in Gini mode only the active curve)
+    const legendKeys = gShade ? [gShade.curve] : keys;
     const lx = x0 + 14; let ly = y1 + (big ? 6 : 8);
     svg += `<g><line x1="${lx}" y1="${ly}" x2="${lx + 22}" y2="${ly}" class="lzeq"/><text x="${lx + 28}" y="${ly + 4}" class="lzleglab">perfect equality (Gini 0)</text>`;
-    keys.forEach(k => { ly += 19; svg += `<line x1="${lx}" y1="${ly}" x2="${lx + 22}" y2="${ly}" class="${L.series[k].cls}"/><text x="${lx + 28}" y="${ly + 4}" class="lzleglab">${esc(L.series[k].label)}</text>`; });
+    legendKeys.forEach(k => { ly += 19; svg += `<line x1="${lx}" y1="${ly}" x2="${lx + 22}" y2="${ly}" class="${L.series[k].cls}"/><text x="${lx + 28}" y="${ly + 4}" class="lzleglab">${esc(L.series[k].label)}</text>`; });
     svg += `</g></svg>`;
     return svg;
   }
@@ -1876,11 +1892,18 @@
       if (side) side.innerHTML = `<div class="lzexp-t">${esc(p.title)}</div><div class="lzexp-b">${esc(p.body)}</div>`;
     });
   }
+  // Income-source horizontal bar (Table 11.1). Bar length is the actual share.
+  function rvIncomeSourceHTML() {
+    const src = (C.charts && C.charts.incomeSource) || { items: [] };
+    const rows = (src.items || []).map(i => `<div class="srcrow"><span class="srclab">${esc(i.label)}</span><span class="srctrack"><span class="srcfill" style="width:${(Number(i.pct) || 0).toFixed(1)}%"></span></span><span class="srcpct">${i.pct}%</span></div>`).join("");
+    return `<div class="lzwrap"><div class="srcbar" role="img" aria-label="Household income by source">${rows}</div></div>`;
+  }
   function rvChartHTML(spec, idx) {
     if (spec.type === "lorenz") {
       return `<div class="lzwrap"><button class="lzexpand" data-rvexpand="${idx}">expand</button><div id="lzmount-${idx}">${rvLorenzSVG(spec, false)}</div>`
         + `<div class="lzexplain" id="lzmount-${idx}-explain"><span class="lzhint">Tap a blue point on the curve to see what it represents.</span></div></div>`;
     }
+    if (spec.type === "incomeSource") return rvIncomeSourceHTML();
     return "";
   }
   function rvOpenContext(which) {
@@ -1908,13 +1931,47 @@
       host.querySelectorAll("[data-rvexpand]").forEach(b => b.onclick = () => rvExpandLorenz(q.stimulus.charts[Number(b.dataset.rvexpand)]));
     }
   }
+  // "How the Gini is built": framed as understanding, not calculation. Uses the
+  // SOURCE Gini values (see appendix), so the number shown is the real one;
+  // A = gini/2 and B = 0.5 - A keep the parts consistent with it.
+  const RVG = { active: false, curve: "gross", step: 0 };
+  function rvGiniNums(curve) { const g = ((C.charts.lorenz.series[curve]) || {}).gini || 0; return { gini: g, A: g / 2, B: 0.5 - g / 2 }; }
+  function rvRenderBig(spec) {
+    const mount = document.getElementById("lzmountBig"), side = document.getElementById("lzmountBig-explain");
+    if (!mount || !side) return;
+    mount.innerHTML = rvLorenzSVG(spec, true, RVG.active ? { curve: RVG.curve, step: RVG.step } : null);
+    if (RVG.active) {
+      const n = rvGiniNums(RVG.curve), which = RVG.curve === "gross" ? "before tax and transfers" : "after tax and transfers";
+      let h = `<div class="ginihead">How the Gini is built</div>`;
+      h += `<p class="giniframe">The HSC asks you to <b>interpret</b> Lorenz curves, not calculate the Gini. This shows how the number is built, so the interpretation makes sense.</p>`;
+      h += `<div class="ginicurvesel"><button class="${RVG.curve === "gross" ? "on" : ""}" data-rvgcurve="gross">before</button><button class="${RVG.curve === "disposable" ? "on" : ""}" data-rvgcurve="disposable">after</button></div>`;
+      h += `<p class="ginistepnote">Building it for the <b>${which}</b> curve.</p>`;
+      h += `<div class="ginistep ${RVG.step >= 1 ? "on" : ""}"><span class="gn">1</span> Area A, between the equality line and the curve${RVG.step >= 1 ? ` <span class="ginival">= ${n.A.toFixed(3)}</span>` : ""}</div>`;
+      h += `<div class="ginistep ${RVG.step >= 2 ? "on" : ""}"><span class="gn">2</span> Area B, under the curve${RVG.step >= 2 ? ` <span class="ginival">= ${n.B.toFixed(3)}</span>` : ""}</div>`;
+      h += `<div class="ginistep ${RVG.step >= 3 ? "on" : ""}"><span class="gn">3</span> Gini = A / (A + B)${RVG.step >= 3 ? ` <span class="ginival big">= ${n.gini.toFixed(3)}</span>` : ""}</div>`;
+      if (RVG.step < 3) h += `<button class="rv-btn blue" style="width:100%;margin-top:8px" id="rvgininext">${RVG.step === 0 ? "Show Area A" : RVG.step === 1 ? "Show Area B" : "Compute the Gini"}</button>`;
+      else h += `<p class="ginidone">A Gini of ${n.gini.toFixed(3)}. The closer to 0, the more equal. Switch curves to compare before and after.</p>`;
+      h += `<button class="rv-btn" style="width:100%;margin-top:8px" id="rvginistop">← back to points of interest</button>`;
+      side.innerHTML = h;
+      side.querySelectorAll("[data-rvgcurve]").forEach(b => b.onclick = () => { RVG.curve = b.dataset.rvgcurve; RVG.step = 0; rvRenderBig(spec); });
+      const nx = document.getElementById("rvgininext"); if (nx) nx.onclick = () => { if (RVG.step < 3) { RVG.step++; rvRenderBig(spec); } };
+      document.getElementById("rvginistop").onclick = () => { RVG.active = false; rvRenderBig(spec); };
+    } else {
+      let h = `<div class="lzexp-t">Reading the chart</div><div class="lzexp-b">Tap a blue point on the curve to see what each feature represents. The interpretation is yours to write.</div>`;
+      if (spec.gini) h += `<button class="rv-btn blue" style="width:100%;margin-top:12px" id="rvginistart">How the Gini is built</button>`;
+      side.innerHTML = h;
+      rvWireLorenz("lzmountBig", spec);
+      const st = document.getElementById("rvginistart"); if (st) st.onclick = () => { RVG.active = true; RVG.step = 0; RVG.curve = "gross"; rvRenderBig(spec); };
+    }
+  }
   function rvExpandLorenz(spec) {
     if (!spec || spec.type !== "lorenz") return;
+    RVG.active = false; RVG.step = 0; RVG.curve = "gross";
     let d = document.getElementById("lzbig");
     if (!d) { d = document.createElement("div"); d.id = "lzbig"; d.className = "lzbigscrim"; document.body.appendChild(d); }
     d.className = "lzbigscrim show";
-    d.innerHTML = `<div class="lzbigcard"><button class="rv-ctxx" id="lzbigx" aria-label="Close">✕</button><div class="lzbiggrid"><div id="lzmountBig">${rvLorenzSVG(spec, true)}</div><div class="lzbigside" id="lzmountBig-explain"><div class="lzexp-t">Reading the chart</div><div class="lzexp-b">Tap a blue point on the curve to see what each feature represents. The interpretation is yours to write.</div></div></div></div>`;
-    rvWireLorenz("lzmountBig", spec);
+    d.innerHTML = `<div class="lzbigcard"><button class="rv-ctxx" id="lzbigx" aria-label="Close">✕</button><div class="lzbiggrid"><div id="lzmountBig"></div><div class="lzbigside" id="lzmountBig-explain"></div></div></div>`;
+    rvRenderBig(spec);
     const close = () => d.classList.remove("show");
     $("#lzbigx").onclick = close;
     d.onclick = e => { if (e.target === d) close(); };

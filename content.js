@@ -175,7 +175,7 @@ window.CONTENT = {
         { id:"lr3", type:"essay", marks:10, command:"Analyse",
           prompt:"Analyse the main sources of household income in Australia and how they contribute to income inequality.",
           vocab:["wages and salaries","gross operating surplus","profits","rent","social assistance benefits","transfer payments","factor income","market income"],
-          stimulus:"Breakdown of household income by source (original chart from Table 11.1 data, rendering pending the charting module): wages and salaries the large majority, then gross operating surplus and mixed income from profits and small business, property income such as rent, dividends and interest, and social assistance benefits, the transfer payments.",
+          stimulus:{ caption:"Gross household income by source, Australia 2024-25.", charts:[{ type:"incomeSource" }] },
           scaffold:[
             "Identify the main sources from the stimulus: wages and salaries as the dominant source, with smaller shares from profits, rent and transfers.",
             "Explain that because wage income depends on employment, skills and hours, its uneven distribution is the main driver of inequality.",
@@ -484,7 +484,7 @@ window.CONTENT = {
         { id:"lr9", type:"essay", marks:20, command:"Discuss",
           prompt:"Discuss the consequences for Australia of an unequal distribution of income and wealth, and the policies that can be used to address this issue. In your response, refer to the economic information provided.",
           vocab:["progressive taxation","transfer payments","social wage","fiscal policy","minimum wage","education and training","equity-efficiency trade-off","social mobility"],
-          stimulus:{ caption:"Lorenz curve: income distribution before and after tax and transfers, Australia 2019-20.", charts:[{ type:"lorenz", series:["gross","disposable"], gap:true, poi:"beforeAfter" }] },
+          stimulus:{ caption:"Two pieces of information: the income Lorenz curve before and after tax and transfers, and the breakdown of household income by source.", charts:[{ type:"lorenz", series:["gross","disposable"], gap:true, poi:"beforeAfter" },{ type:"incomeSource" }] },
           scaffold:[
             "Thesis: inequality has economic and social consequences, and government has a range of policies that reduce it, though each involves trade-offs.",
             "Consequences, drawing on the stimulus: use the Lorenz and income-source data as evidence of the current distribution and its economic and social costs.",
