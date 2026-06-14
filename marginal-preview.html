@@ -2203,10 +2203,16 @@ window.CONTENT.reviewSample = {
       try {
         const res = await fetch(state.endpoint, {
           method: "POST", headers: { "content-type": "application/json" },
-          body: JSON.stringify({ prompt: card.prompt, marks: card.marks, model_answer: card.model, vocab: card.vocab, answer, code: state.code || undefined })
+          body: JSON.stringify({
+            prompt: card.prompt, marks: card.marks, model_answer: card.model, vocab: card.vocab, answer,
+            scaffold: card.scaffold, faults: card.faults, command: card.command,
+            code: state.code || undefined
+          })
         });
         if (!res.ok) throw new Error("proxy " + res.status);
         const g = await res.json();
+        // Carry the question context onto the review for the modal header / overlays.
+        if (g && Array.isArray(g.paragraphs)) g.question = { stem: card.prompt, command: card.command, marks: card.marks, stimulus: card.stimulus };
         return { score: Math.min(g.score ?? 0, card.marks), max: card.marks, kind: "llm", fb: g };
       } catch (e) {
         return demoEssay(card, answer, "Couldn't reach your grading endpoint (" + e.message + ") — showing a demo grade instead.");

@@ -164,7 +164,7 @@ export default {
 
     let body;
     try { body = await req.json(); } catch { return json({ error: "bad json" }, 400, cors); }
-    const { prompt, marks, model_answer, vocab = [], answer, code } = body || {};
+    const { prompt, marks, model_answer, vocab = [], answer, code, scaffold = [], faults = [], command } = body || {};
     // optional shared class code: set secret CLASS_CODE on the worker and only
     // requests carrying it are graded — stops strangers spending your credits.
     if (env.CLASS_CODE && code !== env.CLASS_CODE) return json({ error: "Class code missing or wrong — check Settings in the app." }, 403, cors);
@@ -172,6 +172,16 @@ export default {
     if (answer.length > 12000) return json({ error: "answer too long" }, 400, cors);
 
     const paras = String(answer).split(/\n\s*\n/).map((p, i) => `[${i + 1}] ${p.trim()}`).join("\n\n");
+
+    // Marking scheme for this question (the approved scaffold + anticipated
+    // faults). Grade against it: reward the scaffold and key terms, and when an
+    // anticipated fault appears, flag it at the given severity and base its
+    // ladder on the one provided, adapted to the student's actual wording.
+    const scaffoldText = (Array.isArray(scaffold) && scaffold.length)
+      ? scaffold.map((s, i) => `${i + 1}. ${s}`).join("\n") : "(none provided)";
+    const faultsText = (Array.isArray(faults) && faults.length)
+      ? faults.map(f => `- [${f.severity || "should"}] ${f.head || ""}: ${f.why || ""}\n    ladder -> ${(f.ladder || []).map(r => `${r.level}: ${r.text}`).join(" | ")}`).join("\n")
+      : "(none provided)";
 
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -192,7 +202,7 @@ export default {
         tool_choice: { type: "tool", name: "submit_review" },
         messages: [{
           role: "user",
-          content: `QUESTION (${marks} marks):\n${prompt}\n\nREFERENCE, WHAT A TOP ANSWER COVERS:\n${model_answer || "(none provided)"}\n\nREQUIRED METALANGUAGE: ${vocab.join(", ") || "(none provided)"}\n\nSTUDENT ANSWER (numbered paragraphs):\n${paras}`,
+          content: `QUESTION${command ? " (" + command + ")" : ""} (${marks} marks):\n${prompt}\n\nREFERENCE, WHAT A TOP ANSWER COVERS:\n${model_answer || "(none provided)"}\n\nREQUIRED METALANGUAGE: ${vocab.join(", ") || "(none provided)"}\n\nSCAFFOLD THE ANSWER SHOULD FOLLOW:\n${scaffoldText}\n\nANTICIPATED FAULTS (grade against the marking scheme; if one appears, flag it at the given severity and base its ladder on the one below, adapted to the student's wording):\n${faultsText}\n\nSTUDENT ANSWER (numbered paragraphs):\n${paras}`,
         }],
       }),
     });
