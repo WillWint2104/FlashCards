@@ -811,6 +811,52 @@ window.CONTENT = {
             {t:"Better targeting of social security support to low income earners", ok:true, why:"Stronger, better-targeted transfers lift the lowest quintiles' share, pulling the Gini down."},
             {t:"Faster growth in dividends and rent for high income households", ok:false, why:"Growth in unearned income at the top is associated with the periods where the Gini rose."},
             {t:"A rise in the share of income going to the top quintile", ok:false, why:"The top quintile's share actually fell about 1 percentage point over the period."}
+          ]},
+        { id:"lr5", type:"essay", marks:12, command:"Analyse",
+          prompt:"Analyse the main causes of inequality in the distribution of income in Australia.",
+          vocab:["labour market","education and skills","occupation","decentralised wage determination","capital ownership","age and life cycle","gender","family structure"],
+          scaffold:[
+            "Group the causes: labour-market factors, ownership of capital, and demographic dimensions.",
+            "Explain each causally rather than as a list: how skills, education, occupation and decentralised bargaining widen wage dispersion; how income from assets concentrates among the wealthy; how age, gender and family structure overlay the distribution.",
+            "Weight them: labour-market and capital-ownership factors as the structural drivers, demographic factors as overlays.",
+            "Conclude with a synthesised judgement about which causes matter most."],
+          model:"A strong response groups the causes into labour-market factors, ownership of capital and demographic dimensions, explains each with cause and effect rather than listing, weights labour-market and capital-ownership factors as the structural drivers with demographic factors as overlays, and concludes with a synthesised judgement about which causes matter most.",
+          faults:[
+            { kind:"fix", severity:"critical", head:"Explain each cause, do not list",
+              why:"Analyse means cause and effect. For each cause, state the mechanism that turns it into unequal income.",
+              ladder:[
+                { level:"Clear", text:"Differences in education and skills cause unequal wages, because higher skills command higher pay." },
+                { level:"Better", text:"Because wages reward skills and qualifications, gaps in education and training feed directly into income inequality." },
+                { level:"Band 6", text:"Skill and education differences widen wage dispersion, and decentralised bargaining lets that dispersion translate into a more unequal income distribution." }]},
+            { kind:"fix", severity:"should", head:"Weight the causes",
+              why:"A top response does not treat every cause as equal. Judge which are structural drivers and which are overlays.",
+              ladder:[
+                { level:"Clear", text:"Labour-market and capital factors are the main causes, with age and gender adding to them." },
+                { level:"Better", text:"Labour-market and capital-ownership factors are the structural drivers, while demographic factors overlay the pattern." },
+                { level:"Band 6", text:"The structural drivers are labour-market dispersion and concentrated capital ownership, while demographic factors such as age, gender and family structure shape who sits where without driving the overall level." }]}
+          ]},
+        { id:"lr8", type:"essay", marks:12, command:"Examine",
+          prompt:"Examine the recent trends in the distribution of income and wealth in Australia.",
+          vocab:["trend","quintile shares","Gini coefficient","wealth concentration","asset prices","housing"],
+          scaffold:[
+            "Examine income trends: relative stability or gradual change in the income Gini, with the top quintile holding a disproportionate share.",
+            "Examine wealth trends: greater and arguably widening concentration, driven heavily by asset and house prices.",
+            "Connect the trends to drivers: asset-price growth concentrating wealth gains, and labour-market changes affecting wage dispersion.",
+            "Note dimensional patterns such as age and gender, and conclude with a judgement on the direction and drivers."],
+          model:"A strong response examines income trends, with the income Gini relatively stable and the top quintile holding a disproportionate share, and wealth trends, where concentration is greater and arguably widening on the back of asset and house prices, links the trends to drivers such as asset-price growth and labour-market change, notes dimensional patterns, and concludes with a judgement. Trend figures are left general because specific statistics date quickly.",
+          faults:[
+            { kind:"fix", severity:"critical", head:"Give the driver behind each trend",
+              why:"Examine means inspect closely. For each trend, name what is driving it, not just the direction.",
+              ladder:[
+                { level:"Clear", text:"Wealth inequality has risen, driven mainly by rising house and asset prices." },
+                { level:"Better", text:"Wealth concentration has widened largely because asset and house prices have grown, lifting the holdings of those who already own assets." },
+                { level:"Band 6", text:"The widening of wealth concentration tracks asset-price growth, since gains accrue to existing owners, while income inequality has moved less because wages have been comparatively stable." }]},
+            { kind:"fix", severity:"should", head:"Separate the income and wealth trends",
+              why:"The two move differently: income inequality has been comparatively stable, while wealth concentration has widened more.",
+              ladder:[
+                { level:"Clear", text:"Income inequality has been fairly stable, but wealth inequality has grown faster." },
+                { level:"Better", text:"The income Gini has changed only gradually, whereas wealth concentration has widened more noticeably." },
+                { level:"Band 6", text:"Income and wealth trends diverge: the income distribution has been relatively stable while wealth has concentrated further, largely through asset prices." }]}
           ]}
       ]
     },
@@ -844,16 +890,52 @@ window.CONTENT = {
           prompt:"Outline ONE economic benefit and ONE social cost of inequality in the distribution of income.",
           vocab:["incentive","saving","social","poverty"],
           model:"Economic benefit (one of): the incentive effect on effort, skills and entrepreneurship; or higher national saving and investment from high earners, supporting capital accumulation and growth. Social cost (one of): social divisions and the alienation of marginalised groups; or relative poverty among low income groups such as single parents, the unemployed and Indigenous Australians."},
-        { id:"e-debate", type:"essay", marks:20,
-          prompt:"Analyse the economic and social benefits and costs of inequality in the distribution of income in Australia.",
-          vocab:["incentive effect","aggregate demand","saving","poverty","social divisions","quintile","Gini"],
+        { id:"lr6", type:"essay", marks:15, command:"Discuss",
+          prompt:"Discuss the economic and social consequences of an unequal distribution of income and wealth in Australia.",
+          vocab:["incentive to work","saving and investment","aggregate demand","poverty","social mobility","social cohesion","equity-efficiency trade-off"],
           scaffold:[
-            "Define income inequality and reference a measure (Gini ≈ 0.32 for income).",
-            "Economic benefits: incentive effect, saving & investment, labour mobility.",
-            "Economic costs: lower consumption (Keynes), higher welfare spending and fiscal cost.",
-            "Social benefits and costs: living standards at the top vs relative poverty, divisions, poverty traps.",
-            "Judgement: weigh efficiency against equity with recent Australian evidence."],
-          model:"A top-band response defines inequality and cites a measure, develops the incentive and saving/investment benefits, weighs them against deficient consumption, fiscal costs, relative poverty and social division, uses Australian data (quintile shares, Gini values), and reaches a clear judgement about the efficiency–equity trade-off."}
+            "Present both sides, since the command is Discuss: some inequality has economic benefits such as incentives to work, save, invest and take risks.",
+            "Set against this the economic costs (reduced consumption from concentrated income, underused human capital, the fiscal cost of support) and the social costs (poverty, reduced social mobility, weaker cohesion).",
+            "Introduce the equity-efficiency trade-off as the framing tension.",
+            "Reach a balanced judgement: some inequality is unavoidable and even useful, but high or entrenched inequality imposes net costs."],
+          model:"A strong response discusses both sides: the incentive and saving benefits of some inequality, set against the economic costs of weaker consumption, underused human capital and fiscal support, and the social costs of poverty, reduced mobility and weaker cohesion, frames the tension as the equity-efficiency trade-off, and reaches a balanced judgement that some inequality is useful but high or entrenched inequality is costly.",
+          faults:[
+            { kind:"fix", severity:"critical", head:"Discuss both sides",
+              why:"Discuss requires both sides. If you give only the costs, add the incentive and saving benefits of some inequality.",
+              ladder:[
+                { level:"Clear", text:"Some inequality has benefits, because the reward for skills and effort encourages people to work and invest." },
+                { level:"Better", text:"A degree of inequality can support growth, since differential rewards create incentives to work, save and take risks." },
+                { level:"Band 6", text:"Some inequality is economically useful, since differential rewards drive effort, skill formation and investment, which is why the issue is a trade-off rather than a simple harm." }]},
+            { kind:"fix", severity:"should", head:"Frame the trade-off",
+              why:"Name the equity-efficiency trade-off as the tension that organises the discussion.",
+              ladder:[
+                { level:"Clear", text:"There is a trade-off between equity and efficiency in how income is shared." },
+                { level:"Better", text:"The consequences sit within the equity-efficiency trade-off, since more redistribution can mean weaker incentives." },
+                { level:"Band 6", text:"The equity-efficiency trade-off frames the whole question, because reducing inequality improves equity but may blunt the incentives that support efficiency." }]}
+          ]},
+        { id:"lr7", type:"essay", marks:12, command:"Analyse",
+          prompt:"Analyse the economic and social costs of inequality in the distribution of income.",
+          vocab:["absolute poverty","relative poverty","poverty line","social mobility","human capital","social wage","welfare dependence"],
+          scaffold:[
+            "Distinguish economic costs (lost output from underused human capital, lower aggregate consumption, the fiscal cost of support) from social costs (poverty, reduced mobility, health and education gaps, weaker cohesion).",
+            "Use cause and effect to connect inequality to each cost.",
+            "Note that relative poverty and reduced social mobility are the most persistent harms.",
+            "Conclude with a judgement on the overall significance of the costs."],
+          model:"A strong response separates economic costs (underused human capital, weaker consumption, fiscal cost) from social costs (poverty, reduced mobility, health and education gaps, weaker cohesion), connects each to inequality causally, notes that relative poverty and low social mobility are the most persistent harms, and concludes with a judgement on the overall significance of the costs.",
+          faults:[
+            { kind:"fix", severity:"should", head:"Separate economic from social costs",
+              why:"Group the costs clearly: economic costs reduce output and efficiency, while social costs harm wellbeing and fairness.",
+              ladder:[
+                { level:"Clear", text:"An economic cost is lost output, while a social cost is the harm of poverty." },
+                { level:"Better", text:"Economic costs such as underused human capital reduce output, whereas social costs such as poverty and weaker mobility harm wellbeing." },
+                { level:"Band 6", text:"Inequality imposes economic costs by leaving human capital underused and consumption weak, and distinct social costs through poverty, poorer health and reduced mobility." }]},
+            { kind:"fix", severity:"should", head:"Distinguish absolute and relative poverty",
+              why:"Separate {{absolute poverty|Lacking the income for basic needs.|0}} from {{relative poverty|Income well below the community median, so a household cannot participate normally.|0}}, since relative poverty is the more relevant measure in Australia.",
+              ladder:[
+                { level:"Clear", text:"Relative poverty means living well below the typical income, not being unable to survive." },
+                { level:"Better", text:"Absolute poverty is lacking basic needs, while relative poverty is falling well below the community standard, the measure that matters most in Australia." },
+                { level:"Band 6", text:"In a high-income economy the binding harm is relative poverty, where households fall far below median income and cannot participate fully, rather than absolute poverty." }]}
+          ]}
       ]
     },
     {
@@ -949,7 +1031,6 @@ window.CONTENT = {
     d2: "As a welfare recipient earns more, benefits are withdrawn AND tax kicks in. The two together create high effective marginal tax rates (EMTRs) — in some ranges most of each extra dollar is lost — so working more barely pays. That disincentive is the poverty trap, and it can entrench welfare dependency.",
     d3: "Keynes's point: lower-income households spend a larger fraction of each dollar (higher marginal propensity to consume). Concentrating income at the top, where more is saved, drains consumption and aggregate demand — so high inequality can itself weaken growth.",
     d4: "The debate balances efficiency gains (incentives, saving, investment) against equity costs (lower consumption at the bottom, bigger welfare bills, social division, relative poverty). Strong essays argue both sides and land a judgement rather than listing points.",
-    "e-debate": "Frame the essay around the efficiency–equity trade-off: incentives and saving on one side; deficient demand, fiscal cost, poverty and social division on the other. Anchor claims in Australian data — quintile shares, Gini ≈ 0.32 income / 0.61 wealth — and finish with a clear judgement.",
     f1: "Progressive taxation means the average rate rises with income — the top marginal rate (45%) applies only above $190,000, while the first $18,200 is tax-free. The revenue funds transfers and services directed down the distribution: that's redistribution in one system.",
     f2: "Australia taxes income progressively but barely taxes wealth: no inheritance tax, no death duties, no general wealth tax. Capital gains tax and fringe benefits tax touch wealth indirectly, which is part of why wealth inequality stays roughly double income inequality.",
     f3: "The 2024 changes cut the 19% rate to 16% and the 32.5% rate to 30%, and lifted two thresholds. Rate cuts at the bottom brackets deliver the largest proportional benefit to low and middle earners — the equity rationale for their design.",
