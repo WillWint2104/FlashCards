@@ -337,8 +337,8 @@
   // endpoint: your Cloudflare Worker URL (see proxy/worker.js + README)
   // code:     the class code you set as the worker's CLASS_CODE secret
   window.MARGINAL_CONFIG = {
-    endpoint: "",     // your Cloudflare Worker URL for AI essay marking
-    code: "",         // the class code matching the worker's CLASS_CODE secret
+    endpoint: "https://marginal-grader.williamwinter2104.workers.dev/",  // Cloudflare Worker URL for AI essay marking
+    code: "12Ec126",  // class code — must match the worker's CLASS_CODE secret exactly (case-sensitive)
     textbookUrl: ""   // optional: deep link to your class's licensed textbook copy,
                       // e.g. "https://your-lms.school/riley-2026.pdf#page={page}" —
                       // the Source tab will open it at each level's exact page
