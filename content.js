@@ -67,7 +67,66 @@ window.CONTENT = {
           prompt:"In 2019–20 the highest income quintile received 39.8% of equivalised disposable income and the lowest quintile 7.4%. Calculate how many times larger the top quintile's share was (1 decimal place).",
           expected:5.4, tolerance:0.1,
           working:"39.8 ÷ 7.4 ≈ 5.4 times",
-          model:"About 5.4 times larger"}
+          model:"About 5.4 times larger"},
+        { id:"lr1", type:"essay", marks:8, command:"Analyse",
+          prompt:"Analyse what the Lorenz curve shows about the effect of the tax-transfer system on income inequality in Australia.",
+          vocab:["Lorenz curve","line of perfect equality","gross income","disposable income","Gini coefficient","redistribution","progressive tax","transfer payments"],
+          stimulus:"Lorenz curve, two curves on the same axes: cumulative share of households (0 to 100%) against cumulative share of income (0 to 100%), with the diagonal line of perfect equality. The gross-income curve bows further from the diagonal; the disposable-income curve, after tax and transfers, sits closer to it. (Original rendered chart pending the charting module. Data, cumulative income share by quintile: gross about 7, 19, 36, 60, 100; disposable about 11, 26, 45, 68, 100.)",
+          scaffold:[
+            "Define the Lorenz curve: it plots the cumulative share of income against the cumulative share of people, and the further it bows from the line of perfect equality, the more unequal the distribution.",
+            "Read the stimulus: the disposable-income curve sits closer to the equality line than the gross-income curve.",
+            "Explain the mechanism: progressive tax takes a higher proportion from high earners and means-tested transfers raise the share held by low earners.",
+            "Conclude with a measured judgement about the size of the effect."],
+          model:"A strong response defines the Lorenz curve and the line of perfect equality, reads the stimulus as a before and after comparison in which the disposable-income curve sits closer to equality than the gross-income curve, links this to progressive tax and means-tested transfers compressing the distribution, and concludes with a measured judgement that the effect on income is substantial.",
+          faults:[
+            { kind:"fix", severity:"critical", head:"Read it as before vs after, not over time",
+              why:"The two curves are gross and disposable income for the same population at one point in time, not two different years. Comparing them shows the system's effect, not a trend.",
+              ladder:[
+                { level:"Clear", text:"The two curves compare income before and after tax and transfers, not two different years." },
+                { level:"Better", text:"Comparing the gross-income curve with the disposable-income curve shows the effect of tax and transfers at one point in time." },
+                { level:"Band 6", text:"Read side by side, the gross and disposable curves isolate the redistributive effect of the tax-transfer system, since both describe the same population at the same time." }]},
+            { kind:"fix", severity:"critical", head:"Name the two curves",
+              why:"The comparison only counts as evidence if you name them as the {{gross income|Income before income tax and government transfers.|0}} curve and the {{disposable income|Income after income tax and transfers, what households actually keep.|0}} curve.",
+              ladder:[
+                { level:"Clear", text:"The outer curve is gross income and the inner curve is disposable income, after tax and transfers." },
+                { level:"Better", text:"Labelling the curves as gross and disposable income makes clear which one reflects the system's effect." },
+                { level:"Band 6", text:"The gross-income curve shows the market distribution and the disposable-income curve shows it after progressive tax and means-tested transfers, so the gap between them measures redistribution." }]},
+            { kind:"fix", severity:"should", head:"Measure the effect, do not overstate it",
+              why:"The curve shows the system reduces inequality, it does not prove the problem is solved. A measured verb reads at a higher band.",
+              ladder:[
+                { level:"Clear", text:"The disposable-income curve sits closer to the line of equality, so the system reduces income inequality." },
+                { level:"Better", text:"The shift toward the equality line shows the system substantially compresses the income distribution." },
+                { level:"Band 6", text:"The inward shift of the disposable curve shows a substantial reduction in income inequality, though the distribution remains well short of equality." }]}
+          ]},
+        { id:"lr2", type:"essay", marks:8, command:"Explain",
+          prompt:"Explain how the Gini coefficient and the Lorenz curve are used to measure the distribution of income.",
+          vocab:["Gini coefficient","Lorenz curve","line of perfect equality","perfect inequality","cumulative income share"],
+          scaffold:[
+            "Introduce the two tools: the Lorenz curve as the graphical measure and the Gini coefficient as the single-number summary derived from it.",
+            "Explain the Gini as the ratio of the area between the equality line and the curve to the total area under the line, ranging from 0 toward 1.",
+            "Explain that a rising Gini or a curve bowing further out both show rising inequality.",
+            "Give one limitation: the Gini is a single number that hides where in the distribution inequality sits."],
+          model:"A strong response explains the Lorenz curve as the graphical measure and the Gini coefficient as the single number derived from it, describes the Gini as the ratio of the area between the equality line and the curve to the whole area under the line from 0 toward 1, links a rising Gini and an outward-bowing curve to rising inequality, and gives a limitation such as the Gini hiding where in the distribution inequality sits.",
+          faults:[
+            { kind:"fix", severity:"critical", head:"Get the direction right",
+              why:"A lower Gini means more equality, not less. Reversing this inverts the whole answer.",
+              ladder:[
+                { level:"Clear", text:"A lower Gini coefficient means income is distributed more equally." },
+                { level:"Better", text:"As the Gini falls toward 0, the distribution moves closer to perfect equality." },
+                { level:"Band 6", text:"A fall in the Gini toward 0 signals a more equal distribution, matching a Lorenz curve that sits closer to the line of perfect equality." }]},
+            { kind:"fix", severity:"should", head:"Interpret the Gini, do not calculate it",
+              why:"The course asks you to interpret Lorenz curves and Gini values, not to calculate a Gini from areas. Describe what the number means rather than how to compute it.",
+              ladder:[
+                { level:"Clear", text:"A Gini closer to 0 means income is shared more equally, and closer to 1 means it is more concentrated." },
+                { level:"Better", text:"The Gini summarises the Lorenz curve in one number, so a higher Gini reflects a curve that bows further from equality." },
+                { level:"Band 6", text:"Because the Gini condenses the whole Lorenz curve into a single value from 0 to 1, it lets us compare distributions over time or between groups at a glance." }]},
+            { kind:"fix", severity:"should", head:"Add a limitation",
+              why:"A top response notes that the Gini is a single figure that hides where in the distribution the inequality sits.",
+              ladder:[
+                { level:"Clear", text:"One limitation is that the Gini is a single number and hides where inequality occurs." },
+                { level:"Better", text:"The Gini cannot show whether inequality comes mainly from the very top or the very bottom of the distribution." },
+                { level:"Band 6", text:"Two quite different distributions can share the same Gini, so it should be read alongside the Lorenz curve and quintile shares." }]}
+          ]}
       ]
     },
     {
@@ -112,6 +171,30 @@ window.CONTENT = {
             {t:"Government spending on services like health, education and housing that benefits low-income households", ok:true, why:"The social wage is the in-kind benefit of public services, lifting living standards beyond cash income."},
             {t:"Average weekly earnings across the economy", ok:false, why:"AWE is a measure of market wages, not government provision."},
             {t:"Superannuation paid by employers", ok:false, why:"Super is deferred employment income, not government service provision."}
+          ]},
+        { id:"lr3", type:"essay", marks:10, command:"Analyse",
+          prompt:"Analyse the main sources of household income in Australia and how they contribute to income inequality.",
+          vocab:["wages and salaries","gross operating surplus","profits","rent","social assistance benefits","transfer payments","factor income","market income"],
+          stimulus:"Breakdown of household income by source (original chart from Table 11.1 data, rendering pending the charting module): wages and salaries the large majority, then gross operating surplus and mixed income from profits and small business, property income such as rent, dividends and interest, and social assistance benefits, the transfer payments.",
+          scaffold:[
+            "Identify the main sources from the stimulus: wages and salaries as the dominant source, with smaller shares from profits, rent and transfers.",
+            "Explain that because wage income depends on employment, skills and hours, its uneven distribution is the main driver of inequality.",
+            "Explain that transfer payments work the other way, raising the income share of those with little or no market income.",
+            "Conclude that the composition of income helps explain both the level of inequality and how policy can address it."],
+          model:"A strong response identifies wages and salaries as the dominant source of household income with smaller shares from profits, rent and transfers, explains that uneven wage income is the main driver of inequality because it depends on employment, skills and hours, contrasts this with transfer payments that lift the income share of low earners, and concludes that the composition of income explains both the level of inequality and how policy addresses it.",
+          faults:[
+            { kind:"fix", severity:"critical", head:"Link each source to inequality",
+              why:"Analyse means show cause and effect. Name a source, then explain how its distribution adds to or offsets inequality, rather than listing sources.",
+              ladder:[
+                { level:"Clear", text:"Wages and salaries are the largest source, and because they are unevenly spread they widen income inequality." },
+                { level:"Better", text:"Wage income depends on skills, hours and employment, so its uneven distribution is the main driver of income inequality." },
+                { level:"Band 6", text:"Since wages and salaries dominate household income and depend on skills, hours and bargaining power, their dispersion is the primary force shaping the overall distribution." }]},
+            { kind:"fix", severity:"should", head:"Include transfers as an offset",
+              why:"A complete answer notes that transfer payments push the other way, raising the share held by low earners.",
+              ladder:[
+                { level:"Clear", text:"Transfer payments raise the income of households with little market income, reducing inequality." },
+                { level:"Better", text:"Means-tested transfers offset some wage inequality by lifting the income share of the lowest earners." },
+                { level:"Band 6", text:"Transfer payments partly counter the inequality created in the market by redirecting income toward households with low or no factor income." }]}
           ]}
       ]
     },
@@ -149,7 +232,30 @@ window.CONTENT = {
         { id:"w5", type:"define", marks:2,
           prompt:"Define net worth and identify the two broad categories of assets it includes.",
           vocab:["assets","liabilities","financial"],
-          model:"Net worth is the value of total assets minus total liabilities at a point in time. Assets fall into two broad categories: non-financial (real) assets such as property and household contents, and financial assets such as bank deposits, shares and superannuation."}
+          model:"Net worth is the value of total assets minus total liabilities at a point in time. Assets fall into two broad categories: non-financial (real) assets such as property and household contents, and financial assets such as bank deposits, shares and superannuation."},
+        { id:"lr4", type:"essay", marks:10, command:"Explain",
+          prompt:"Explain the difference between the distribution of income and the distribution of wealth in Australia, and why wealth is more unequally distributed than income.",
+          vocab:["income","wealth","flow","stock","net worth","assets","superannuation","property"],
+          scaffold:[
+            "Define income as a flow received over a period and wealth as a stock, the net value of assets held at a point in time.",
+            "State the contrast: wealth is far more unequally distributed than income, with the top quintile holding a much larger share of wealth than of income.",
+            "Explain why: wealth accumulates over time, generates further income and is passed on, while income is partly equalised by progressive tax and transfers and wealth is barely taxed.",
+            "Conclude that the two are linked but distinct, and that wealth inequality is the more entrenched."],
+          model:"A strong response defines income as a flow and wealth as a stock, states that wealth is far more unequally distributed than income, explains that wealth compounds over time, generates further income and is inherited while income is partly equalised by tax and transfers and wealth is lightly taxed, and concludes that the two are linked but distinct with wealth inequality the more entrenched.",
+          faults:[
+            { kind:"fix", severity:"critical", head:"Keep income and wealth distinct",
+              why:"Income is a {{flow|A quantity received over a period of time, such as weekly wages.|0}} and wealth is a {{stock|A quantity held at a point in time, such as net worth.|0}}. Using them interchangeably loses the central distinction.",
+              ladder:[
+                { level:"Clear", text:"Income is a flow earned over a period, while wealth is a stock of assets held at a point in time." },
+                { level:"Better", text:"Income is the flow a household receives over a year, whereas wealth is the net worth it holds at a given moment." },
+                { level:"Band 6", text:"Income is a flow measured over a period and wealth is a stock measured at a point in time, so a household can hold high wealth yet earn modest income, or the reverse." }]},
+            { kind:"fix", severity:"critical", head:"Explain why wealth is more concentrated",
+              why:"The question asks why. Give the mechanism: wealth compounds, accumulates over the life cycle, is inherited, and is barely taxed compared with income.",
+              ladder:[
+                { level:"Clear", text:"Wealth is more concentrated because it builds up over time and earns further returns." },
+                { level:"Better", text:"Wealth compounds as assets generate income that buys more assets, and it is passed on through inheritance, so advantage accumulates." },
+                { level:"Band 6", text:"Wealth is more concentrated because returns on assets fund further assets, holdings build across the life cycle and pass through inheritance, and unlike income it is barely touched by tax and transfers." }]}
+          ]}
       ]
     },
     {
