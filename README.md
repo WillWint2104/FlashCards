@@ -54,7 +54,7 @@ The key lives only in the worker. The worker rate-limits to 20 grades / 10 min p
 
 ## Files
 
-```
+```text
 index.html        app shell + theme + TEACHER SETUP block (no framework, no build)
 app.js            session flow, 3-tier grading, Leitner scheduling, glossary
 content.js        the question bank — 35+ original questions across 6 areas
@@ -67,7 +67,7 @@ build.js          regenerates marginal-preview.html from the three sources above
 The app itself needs **no build** — GitHub Pages serves `index.html`, `app.js` and
 `content.js` directly. `build.js` only regenerates the optional single-file build:
 
-```
+```bash
 node build.js
 ```
 

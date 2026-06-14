@@ -26,7 +26,10 @@
   }
   state.customSets = state.customSets || [];
   state.lessons = state.lessons || {};
-  if (!state.endpoint && CONFIG.endpoint) state.endpoint = CONFIG.endpoint;
+  // Teacher's TEACHER SETUP config is the source of truth for the endpoint —
+  // students have no field to edit it, so always sync from CONFIG (this also
+  // clears any endpoint a returning user has stale in localStorage).
+  state.endpoint = (CONFIG.endpoint || "").trim();
   if (!state.code && CONFIG.code) state.code = CONFIG.code;
   function mergeCustomGlossaries() {
     state.customSets.forEach(s => { if (s.glossary) Object.keys(s.glossary).forEach(k => { C.glossary[k.toLowerCase()] = s.glossary[k]; }); });

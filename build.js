@@ -24,11 +24,12 @@ const app = read("app.js");
 // the source (template literals etc.) is never interpreted as a replacement
 // pattern, and assert the tag exists exactly once.
 function inlineScript(html, srcTag, source) {
-  if (source.includes("</script")) {
+  if (/<\/script/i.test(source)) {
     throw new Error(`Source for ${srcTag} contains a literal </script — cannot inline.`);
   }
-  if (!html.includes(srcTag)) {
-    throw new Error(`Could not find ${srcTag} in index.html — shell changed?`);
+  const occurrences = html.split(srcTag).length - 1;
+  if (occurrences !== 1) {
+    throw new Error(`Expected exactly one ${srcTag} in index.html, found ${occurrences}.`);
   }
   return html.replace(srcTag, () => `<script>\n${source}\n</script>`);
 }
