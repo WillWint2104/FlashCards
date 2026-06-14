@@ -127,7 +127,7 @@ rung's sentence.
 (key terms, data figures, meaningful verbs), never filler:
 
 - rep 1: blank the single most important content word.
-- rep 2: blank roughly the latter half of the content words.
+- rep 2: blank roughly half the content words, the highest-ranked by importance.
 - rep 3: a single blank for the whole sentence.
 
 Importance favours numbers, capitalised terms, and longer words; function words
