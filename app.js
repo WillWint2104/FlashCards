@@ -1501,9 +1501,27 @@
   // response, or CONTENT.reviewSample for the demo entry). Student entry is gated
   // (off by default); the dev entry is ?reviewdemo=1.
   // ===========================================================================
-  const RVS = { review: null, active: 0, tab: "paragraphs" };
+  const RVS = { review: null, active: 0, tab: "paragraphs", view: "paragraph", qpos: 0, resolved: {}, skipped: {} };
   function rvDotClass(p) { const r = p.max ? p.score / p.max : 1; return r >= 0.8 ? "g" : r >= 0.6 ? "m" : "w"; }
-  function rvParaText(p) { return (p.sentences || []).filter(s => s && typeof s.text === "string").map(s => s.text).join(" "); }
+  // Strip {{term|def|page}} markup to the bare term. Step 6 replaces this with an
+  // interactive popover; until then the term reads as plain text (no raw braces).
+  function rvStripTerms(s) { return String(s == null ? "" : s).replace(/\{\{([^|]+)\|[^|]*\|[^}]*\}\}/g, "$1"); }
+  function rvSevRank(s) { return s === "critical" ? 0 : s === "should" ? 1 : 2; }
+  function rvKey(pi, si, ii) { return pi + "-" + si + "-" + ii; }
+  function rvAddressed(k) { return (k in RVS.resolved) || (k in RVS.skipped); }
+  // Issue queue for a paragraph: flatten its sentences' issues, critical-first,
+  // stable within a tier (CHECK 4: targeted jumps index into this, so order is fixed).
+  function rvQueue(p) {
+    const q = [];
+    (p.sentences || []).forEach((s, si) => (s.issues || []).forEach((iss, ii) => q.push({ si, ii, sev: iss.severity, iss })));
+    q.sort((a, b) => (rvSevRank(a.sev) - rvSevRank(b.sev)) || (a.si - b.si) || (a.ii - b.ii));
+    return q;
+  }
+  function rvWorstOpen(p, pi, si) {
+    let worst = null;
+    (p.sentences[si].issues || []).forEach((iss, ii) => { if (!(rvKey(pi, si, ii) in RVS.resolved)) { if (worst == null || rvSevRank(iss.severity) < rvSevRank(worst)) worst = iss.severity; } });
+    return worst;
+  }
   function rvCheckMarks(rv) {
     // CHECK 5 (BUILD-CHECKS): total must equal the sum of paragraph marks, and the rubric must sum to the total.
     const ps = (rv.paragraphs || []).reduce((a, p) => a + (Number(p.score) || 0), 0);
@@ -1513,7 +1531,7 @@
   }
   function openReview(review) {
     if (!review || !Array.isArray(review.paragraphs) || !review.paragraphs.length) return;
-    RVS.review = review; RVS.active = 0; RVS.tab = "paragraphs";
+    RVS.review = review; RVS.active = 0; RVS.tab = "paragraphs"; RVS.view = "paragraph"; RVS.qpos = 0; RVS.resolved = {}; RVS.skipped = {};
     rvCheckMarks(review);
     if (!document.getElementById("rvhost")) { const h = document.createElement("div"); h.id = "rvhost"; document.body.appendChild(h); }
     app.classList.add("rv-blur");
@@ -1562,17 +1580,102 @@
     $("#rvtab-rubric").onclick = () => { RVS.tab = "rubric"; rvRender(); };
     $("#rvctx-question").onclick = () => rvOpenContext("question");
     const sb = $("#rvctx-stimulus"); if (sb) sb.onclick = () => rvOpenContext("stimulus");
-    host.querySelectorAll("[data-rvpara]").forEach(b => b.onclick = () => { RVS.active = Number(b.dataset.rvpara); RVS.tab = "paragraphs"; rvRender(); });
+    host.querySelectorAll("[data-rvpara]").forEach(b => b.onclick = () => { RVS.active = Number(b.dataset.rvpara); RVS.tab = "paragraphs"; RVS.view = "paragraph"; rvRender(); });
     host.querySelectorAll("[data-rvcrit]").forEach(b => b.onclick = () => { const el = $("#rvbands-" + b.dataset.rvcrit); if (el) el.classList.toggle("show"); });
+    // targeted jumps: a span / missing chip / status row opens THAT specific issue (CHECK 4)
+    host.querySelectorAll("[data-rvgoto]").forEach(b => b.onclick = () => { RVS.qpos = Number(b.dataset.rvgoto); RVS.view = "walk"; rvRender(); });
+    const wb = $("#rvwalk"); if (wb) wb.onclick = () => { const q = rvQueue(RVS.review.paragraphs[RVS.active]); const firstOpen = q.findIndex(x => !rvAddressed(rvKey(RVS.active, x.si, x.ii))); RVS.qpos = firstOpen >= 0 ? firstOpen : 0; RVS.view = "walk"; rvRender(); };
+    // walkthrough navigation
+    const back = $("#rvback"); if (back) back.onclick = () => { RVS.view = "paragraph"; rvRender(); };
+    host.querySelectorAll("[data-rvchip]").forEach(b => b.onclick = () => { RVS.qpos = Number(b.dataset.rvchip); rvRender(); });
+    const skip = $("#rvskip"); if (skip) skip.onclick = () => { const q = rvQueue(RVS.review.paragraphs[RVS.active]); const x = q[RVS.qpos]; RVS.skipped[rvKey(RVS.active, x.si, x.ii)] = true; rvAdvance(); };
+    const next = $("#rvnext"); if (next) next.onclick = () => rvAdvance();
+    const prev = $("#rvprev"); if (prev) prev.onclick = () => { if (RVS.qpos > 0) { RVS.qpos--; rvRender(); } };
     $("#rvscrim").onclick = e => { if (e.target.id === "rvscrim") closeReview(); };
   }
+  function rvAdvance() {
+    const q = rvQueue(RVS.review.paragraphs[RVS.active]);
+    if (RVS.qpos < q.length - 1) { RVS.qpos++; rvRender(); }
+    else { RVS.view = "paragraph"; rvRender(); }
+  }
+  function rvParaResolved(p, pi) { const q = rvQueue(p); return q.length > 0 && q.every(x => rvKey(pi, x.si, x.ii) in RVS.resolved); }
   function rvParagraphsPane(rv) {
-    const rail = rv.paragraphs.map((p, i) => `<button class="rv-pmark ${i === RVS.active ? "active" : ""}" data-rvpara="${i}" title="¶${i + 1} · ${esc(p.name || "")} · ${p.score}/${p.max}"><span class="rv-pn"><span class="rv-pp">¶</span>${i + 1}</span><span class="rv-pdot ${rvDotClass(p)}"></span></button>`).join("");
+    const rail = rv.paragraphs.map((p, i) => {
+      const tick = rvParaResolved(p, i) ? `<span class="rv-ptick">✓</span>` : "";
+      return `<button class="rv-pmark ${i === RVS.active ? "active" : ""}" data-rvpara="${i}" title="¶${i + 1} · ${esc(p.name || "")} · ${p.score}/${p.max}">${tick}<span class="rv-pn"><span class="rv-pp">¶</span>${i + 1}</span><span class="rv-pdot ${rvDotClass(p)}"></span></button>`;
+    }).join("");
     const p = rv.paragraphs[RVS.active] || {};
-    const txt = rvParaText(p);
-    const right = `<div class="rv-pscore"><span class="rv-scbig ${rvDotClass(p)}">${p.score} / ${p.max}</span><span class="rv-scwhat">${esc(p.name || "this paragraph")}</span></div>`
-      + (txt ? `<p class="rv-ptext">${esc(txt)}</p>` : `<p class="rv-ptext" style="color:var(--ink-2)">This paragraph is summarised in the rail. The full per-sentence review opens here.</p>`);
+    const right = RVS.view === "walk" ? rvWalkPane(p, RVS.active) : rvDefaultPane(p, RVS.active);
     return `<div class="rv-pane show"><div class="rv-cols"><div class="rv-left"><p class="rv-railhint">paragraphs</p>${rail}</div><div class="rv-right">${right}</div></div></div>`;
+  }
+  // The calm, score-open default view: the paragraph with severity-coloured issue
+  // markers, then the score + a tappable issue status list, then "work through".
+  function rvDefaultPane(p, pi) {
+    const q = rvQueue(p);
+    let txt = "";
+    (p.sentences || []).forEach(s => {
+      const si = (p.sentences || []).indexOf(s);
+      if (s.text === null || s.link) {
+        const k = rvKey(pi, si, 0);
+        if (k in RVS.resolved) return;
+        const sev = (s.issues && s.issues[0] && s.issues[0].severity) || "should";
+        const qi = q.findIndex(x => x.si === si);
+        txt += ` <button class="rv-misschip ${sev === "critical" ? "crit" : ""}" data-rvgoto="${qi}"><span class="rv-missx">!</span> missing: ${esc(s.missing_label || "a sentence")}</button>`;
+        return;
+      }
+      if (!s.issues || !s.issues.length) { txt += " " + esc(s.text); return; }
+      const keys = s.issues.map((iss, ii) => rvKey(pi, si, ii));
+      const allResolved = keys.every(k => k in RVS.resolved);
+      const trulyOpen = keys.filter(k => !rvAddressed(k));
+      const anySkipped = keys.some(k => k in RVS.skipped);
+      let cls, dotted = "";
+      if (allResolved) cls = "good";
+      else { const worst = rvWorstOpen(p, pi, si) || "optional"; cls = worst === "critical" ? "crit" : worst === "optional" ? "opt" : "weak"; if (!trulyOpen.length && anySkipped) dotted = " skipped"; }
+      const qi = q.findIndex(x => x.si === si);
+      txt += ` <span class="rv-span ${cls}${dotted}" data-rvgoto="${qi}">${esc(s.text)}</span>`;
+    });
+    const open = q.filter(x => !rvAddressed(rvKey(pi, x.si, x.ii))).length;
+    const rows = q.map((x, k) => {
+      const key = rvKey(pi, x.si, x.ii), st = (key in RVS.resolved) ? "done" : (key in RVS.skipped) ? "skip" : "open";
+      const badge = st === "done" ? `<span class="rv-stbadge done">✓ fixed</span>` : st === "skip" ? `<span class="rv-stbadge skip">skipped</span>` : `<span class="rv-stbadge open ${x.sev}">${x.sev === "critical" ? "critical" : x.sev === "should" ? "should-fix" : "optional"}</span>`;
+      return `<button class="rv-statusrow ${st}" data-rvgoto="${k}"><span class="rv-strdot ${x.sev}"></span><span class="rv-strtext">${esc(x.iss.head)}</span>${badge}</button>`;
+    }).join("");
+    const btn = q.length ? `<button class="rv-btn blue" id="rvwalk" style="width:100%;margin-top:12px">${open === 0 ? "Review the issues again" : "Work through the issues (" + open + ") →"}</button>` : "";
+    const reasons = rows || `<p class="rv-critdesc" style="margin:0">No issues flagged in this paragraph.</p>`;
+    return `<p class="rv-ptext">${txt.trim() || esc(p.name || "")}</p>`
+      + `<div class="rv-scorecard"><div class="rv-pscore"><span class="rv-scbig ${rvDotClass(p)}">${p.score} / ${p.max}</span><span class="rv-scwhat">this paragraph</span></div><div class="rv-screasons">${reasons}</div>${btn}</div>`;
+  }
+  // The guided issue walkthrough. Step 3 builds the navigation skeleton (focused
+  // screen, chip-row navigator, skip-anywhere, multi-issue sub-stepping). The
+  // rewrite ladder + practice + live rebuild are added in step 5.
+  function rvWalkPane(p, pi) {
+    const q = rvQueue(p);
+    if (!q.length) { RVS.view = "paragraph"; return rvDefaultPane(p, pi); }
+    if (RVS.qpos >= q.length) RVS.qpos = 0;
+    const cur = q[RVS.qpos], iss = cur.iss, key = rvKey(pi, cur.si, cur.ii);
+    const s = p.sentences[cur.si];
+    // sub-step label when the sentence has multiple issues
+    const sentenceIssues = q.filter(x => x.si === cur.si);
+    const subIdx = sentenceIssues.findIndex(x => x.ii === cur.ii);
+    const subprog = sentenceIssues.length > 1 ? `<span class="rv-subprog">issue ${subIdx + 1} of ${sentenceIssues.length} in this sentence</span>` : "";
+    const chips = q.map((x, k) => {
+      const kk = rvKey(pi, x.si, x.ii), state = (kk in RVS.resolved) ? "done" : (kk in RVS.skipped) ? "skip" : "";
+      const label = (kk in RVS.resolved) ? "✓" : (kk in RVS.skipped) ? "↷" : (k + 1);
+      return `<button class="rv-ichip ${x.sev} ${state} ${k === RVS.qpos ? "cur" : ""}" data-rvchip="${k}">${label}</button>`;
+    }).join("");
+    const orig = (s.text === null || s.link)
+      ? `<div class="rv-origtag">where a sentence is missing</div><div class="rv-origline" style="color:var(--ink-2);font-style:italic">${esc(s.missing_label || "a sentence belongs here")}</div>`
+      : `<div class="rv-origtag">your line</div><div class="rv-origline">${esc(s.text)}</div>`;
+    const addressed = q.filter(x => !rvAddressed(rvKey(pi, x.si, x.ii))).length === 0;
+    return `<div class="rv-focusbar"><button class="rv-backbtn" id="rvback">← all issues</button><span class="rv-focusprog">Issue ${RVS.qpos + 1} of ${q.length}</span></div>`
+      + `<div class="rv-chiprow">${chips}</div>`
+      + `<div class="rv-issuecard sev-${iss.severity}">`
+      + `<div class="rv-issuehead"><span class="rv-sevtag ${iss.severity}">${iss.severity === "critical" ? "critical" : iss.severity === "should" ? "should fix" : "optional"}</span>${subprog}</div>`
+      + orig
+      + `<div class="rv-issuetitle">${esc(iss.head)}</div>`
+      + `<div class="rv-issuewhy">${esc(rvStripTerms(iss.why))}</div>`
+      + `<div class="rv-issuebtns"><button class="rv-btn" id="rvprev" ${RVS.qpos === 0 ? "disabled" : ""}>← previous</button><button class="rv-btn rv-skipbtn" id="rvskip">Skip for now →</button><button class="rv-btn blue" id="rvnext">${RVS.qpos === q.length - 1 ? (addressed ? "Done" : "Next →") : "Next →"}</button></div>`
+      + `</div>`;
   }
   function rvRubricPane(rv) {
     const crits = (rv.rubric || []).map((c, i) => {
