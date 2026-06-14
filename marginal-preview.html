@@ -935,6 +935,31 @@ window.CONTENT = {
                 { level:"Clear", text:"Relative poverty means living well below the typical income, not being unable to survive." },
                 { level:"Better", text:"Absolute poverty is lacking basic needs, while relative poverty is falling well below the community standard, the measure that matters most in Australia." },
                 { level:"Band 6", text:"In a high-income economy the binding harm is relative poverty, where households fall far below median income and cannot participate fully, rather than absolute poverty." }]}
+          ]},
+        { id:"lr12", type:"essay", marks:20, command:"To what extent",
+          prompt:"To what extent does the distribution of income and wealth in Australia reflect the trade-off between equity and efficiency? In your response, refer to the economic information provided.",
+          vocab:["equity","efficiency","equity-efficiency trade-off","incentives","progressive taxation","transfer payments","allocative efficiency","government intervention"],
+          stimulus:"A comparison of the income and wealth distributions (rendering pending the charting module), for example quintile shares of income against quintile shares of wealth, showing wealth far more concentrated than income. Use it as evidence of where Australia sits on the trade-off.",
+          scaffold:[
+            "Thesis: the distribution reflects the trade-off to a significant but not total extent, since policy choices balance the two.",
+            "Explain the trade-off: market outcomes reward efficiency and incentives but produce inequality, while redistribution improves equity but may blunt incentives.",
+            "Use the stimulus, income versus wealth, as evidence of where Australia currently sits.",
+            "Argue the extent: Australia accepts considerable inequality for efficiency and incentive reasons but tempers it with progressive tax, transfers and the social wage, so the distribution is a managed compromise rather than a pure market outcome.",
+            "Reach a sustained judgement on the degree."],
+          model:"A sustained response argues the distribution reflects the trade-off to a significant but not total extent, explains that market outcomes reward efficiency while redistribution improves equity at some cost to incentives, uses the income versus wealth stimulus as evidence of where Australia sits, argues that Australia accepts considerable inequality for efficiency reasons but tempers it through tax, transfers and the social wage, and reaches a sustained judgement on the degree.",
+          faults:[
+            { kind:"fix", severity:"critical", head:"Answer the degree, not yes or no",
+              why:"To what extent asks for a degree. Argue how much, with a qualifier such as significantly, partly or largely, rather than a simple yes or no.",
+              ladder:[
+                { level:"Clear", text:"The distribution reflects the trade-off to a significant extent, but not completely." },
+                { level:"Better", text:"Australia's distribution reflects the trade-off to a large but not total extent, since policy softens market outcomes." },
+                { level:"Band 6", text:"The distribution reflects the trade-off to a significant degree but not fully, because progressive tax and transfers deliberately temper the market outcome, making it a managed compromise." }]},
+            { kind:"fix", severity:"should", head:"Define equity and efficiency",
+              why:"Anchor the answer by defining both {{equity|Fairness in how income and wealth are distributed.|0}} and {{efficiency|Using resources so as to maximise output and welfare.|0}}.",
+              ladder:[
+                { level:"Clear", text:"Equity is fairness in the distribution, while efficiency is making the most of resources." },
+                { level:"Better", text:"Equity concerns fairness in how income and wealth are shared, and efficiency concerns using resources to maximise output." },
+                { level:"Band 6", text:"Equity is fairness in the distribution and efficiency is the productive use of resources, and the trade-off arises because improving one can come at the cost of the other." }]}
           ]}
       ]
     },
@@ -972,27 +997,78 @@ window.CONTENT = {
           prompt:"Outline the role of the National Minimum Wage and Modern Awards in reducing income inequality.",
           vocab:["minimum wage","safety net","bargaining","fair work"],
           model:"The National Minimum Wage and Modern Awards form a wage safety net for workers with low skills and weak bargaining power. Annual adjustments by the Fair Work Commission (e.g. the 3.5% rise to $948/week from July 2025) protect the real incomes of the low paid, compressing the bottom of the wage distribution and supporting minimum living standards alongside the welfare system."},
-        { id:"e-policy", type:"essay", marks:20,
-          prompt:"Assess the effectiveness of the Australian Government's tax-transfer system in reducing inequality in the distribution of income and wealth.",
-          vocab:["progressive taxation","transfer payments","means tested","social wage","poverty trap","Gini","bracket creep"],
+        { id:"lr9", type:"essay", marks:20, command:"Discuss",
+          prompt:"Discuss the consequences for Australia of an unequal distribution of income and wealth, and the policies that can be used to address this issue. In your response, refer to the economic information provided.",
+          vocab:["progressive taxation","transfer payments","social wage","fiscal policy","minimum wage","education and training","equity-efficiency trade-off","social mobility"],
+          stimulus:"Two pieces of original data (rendering pending the charting module): a Lorenz curve showing the gross and disposable income distributions, and a breakdown of household income by source. Use both as evidence of the current distribution and its costs.",
           scaffold:[
-            "Define the tax-transfer system: progressive taxation + targeted, means-tested transfers + the social wage.",
-            "Evidence it works: equivalised disposable income is far more equal than market income; Gini for disposable income (~0.32) vs gross (~0.44).",
-            "Mechanisms: tax-free threshold and rate cuts, pensions/JobSeeker, ~37% of revenue to welfare, social wage services.",
-            "Limits: wealth is barely taxed (no inheritance tax; wealth Gini ~0.61), poverty traps from high EMTRs, bracket creep between reforms.",
-            "Judgement: effective for income, much weaker for wealth."],
-          model:"A top-band response defines the tax-transfer system, demonstrates with data that disposable income is distributed far more equally than market income, develops the tax and transfer mechanisms including the social wage, then weighs the limits — minimal taxation of wealth, poverty traps from high effective marginal tax rates, bracket creep — and concludes the system is effective at compressing income inequality but leaves wealth inequality largely untouched."}
-        ,
-        { id:"e-wealthgap", type:"essay", marks:12,
-          prompt:"Explain why the distribution of wealth in Australia is more unequal than the distribution of income.",
-          vocab:["net worth","accumulate","life cycle","unearned income","home ownership","Gini"],
+            "Thesis: inequality has economic and social consequences, and government has a range of policies that reduce it, though each involves trade-offs.",
+            "Consequences, drawing on the stimulus: use the Lorenz and income-source data as evidence of the current distribution and its economic and social costs.",
+            "Policies: progressive tax and transfers as the direct redistributive tools, the social wage, wage determination and the minimum wage, and education and training to address the causes.",
+            "Evaluation: weigh each policy's effectiveness and its trade-off, and reach a sustained judgement."],
+          model:"A sustained response sets a thesis that inequality has economic and social consequences and that several policies reduce it with trade-offs, draws on the Lorenz and income-source stimulus as evidence of the distribution and its costs, develops the direct tools (progressive tax, transfers, the social wage) and the structural tools (wage determination, education and training), and evaluates each policy's effectiveness and trade-off to reach a sustained judgement.",
+          faults:[
+            { kind:"fix", severity:"critical", head:"Bridge from consequences to policy",
+              why:"The question has two parts. After the consequences, turn to the policies that address them.",
+              ladder:[
+                { level:"Clear", text:"These consequences can be reduced by government policies such as progressive tax and transfers." },
+                { level:"Better", text:"Because these costs stem from the market distribution, government uses progressive tax, transfers and the social wage to reduce them." },
+                { level:"Band 6", text:"Having shown the costs of the current distribution, the response turns to policy: progressive tax and transfers treat the symptoms each year, while education and training address the underlying causes." }]},
+            { kind:"fix", severity:"critical", head:"Use the stimulus as evidence",
+              why:"The question says to refer to the information provided. Describe the distribution it shows and build the argument on it.",
+              ladder:[
+                { level:"Clear", text:"The stimulus shows the disposable curve closer to equality than the gross curve, so the system already reduces income inequality." },
+                { level:"Better", text:"As the stimulus shows, the gap between the gross and disposable curves measures how far tax and transfers compress the distribution." },
+                { level:"Band 6", text:"The stimulus anchors the argument: the inward shift from the gross to the disposable curve quantifies the income effect, while the income-source data shows why wage dispersion drives the underlying inequality." }]}
+          ]},
+        { id:"lr10", type:"essay", marks:20, command:"Evaluate",
+          prompt:"Evaluate the effectiveness of the tax-transfer system in reducing inequality in the distribution of income and wealth in Australia. In your response, refer to the economic information provided.",
+          vocab:["progressive taxation","vertical equity","transfer payments","means-testing","disposable income","gross income","wealth taxation","equity-efficiency trade-off"],
+          stimulus:"A before and after Lorenz curve (rendering pending the charting module): the gross-income curve and the disposable-income curve after tax and transfers, the latter sitting closer to the line of perfect equality. Use it as evidence of the income effect.",
           scaffold:[
-            "Contrast the two with data: wealth Gini ≈ 0.61 vs income Gini ≈ 0.32; top quintile holds ~63% of net worth but ~40–48% of income.",
-            "Wealth compounds: assets generate returns that buy more assets.",
-            "Life cycle: wealth accumulates over decades, concentrating in older households.",
-            "Home ownership and inheritance concentrate wealth; income is partly equalised by the tax-transfer system while wealth is barely taxed.",
-            "Conclude by linking the income–wealth feedback loop."],
-          model:"A strong response quantifies the gap (wealth Gini around 0.61 versus about 0.32 for disposable income), then explains the mechanisms: wealth compounds through returns on assets, accumulates over the life cycle, and is concentrated by home ownership and inheritance, while the tax-transfer system equalises income each year but leaves wealth holdings largely untaxed."}
+            "Thesis: the tax-transfer system substantially reduces income inequality but is far less effective on wealth inequality.",
+            "Income evidence from the stimulus: the after-tax curve sits closer to equality than the before-tax curve, and describe the compression in words.",
+            "Mechanism: progressive tax through vertical equity, plus means-tested transfers, compress the income distribution each year.",
+            "The limit: wealth is lightly taxed, so the system barely touches the more unequal wealth distribution.",
+            "Evaluation: effective on income, weak on wealth, with the equity-efficiency trade-off as a constraint, and a sustained judgement."],
+          model:"A sustained response argues the system substantially reduces income inequality but is weak on wealth, uses the before and after Lorenz stimulus as evidence of the income effect, explains the mechanism of progressive tax and means-tested transfers, identifies the limit that wealth is lightly taxed, and evaluates the system as effective on income and weak on wealth within the equity-efficiency trade-off, reaching a sustained judgement.",
+          faults:[
+            { kind:"fix", severity:"critical", head:"Evaluate wealth, not only income",
+              why:"The question covers income and wealth. After the income effect, judge how little the system does for wealth inequality.",
+              ladder:[
+                { level:"Clear", text:"The system is far less effective on wealth, because wealth is barely taxed." },
+                { level:"Better", text:"While the system compresses income each year, it barely touches wealth, which is lightly taxed and far more concentrated." },
+                { level:"Band 6", text:"The system is effective on income but weak on wealth, since there is no broad wealth tax and assets are treated concessionally, leaving the more unequal wealth distribution largely intact." }]},
+            { kind:"fix", severity:"should", head:"Judge effectiveness, do not overstate",
+              why:"Evaluate means weigh effectiveness against limits. Avoid claiming the system proves or solves inequality.",
+              ladder:[
+                { level:"Clear", text:"The system substantially reduces income inequality, though it does not remove it." },
+                { level:"Better", text:"On income the system is effective, compressing the distribution, but it is constrained by the equity-efficiency trade-off." },
+                { level:"Band 6", text:"Weighing both sides, the system is effective on income and weak on wealth, a measured judgement rather than a claim that it solves inequality." }]}
+          ]},
+        { id:"lr11", type:"essay", marks:20, command:"Assess",
+          prompt:"Assess the role of government policy in achieving a more equitable distribution of income and wealth in Australia.",
+          vocab:["equity","horizontal equity","vertical equity","fiscal policy","progressive taxation","transfer payments","social wage","education","equity-efficiency trade-off"],
+          scaffold:[
+            "Thesis: government uses several policy levers to improve equity, with real but bounded effect.",
+            "Direct redistribution (tax and transfers) and the social wage as the primary tools, with their measurable effect on the income distribution.",
+            "Indirect and structural policies (education, training, labour-market settings) that address the causes of inequality over the longer term.",
+            "Assessment: weigh effectiveness against limits and trade-offs, such as incentive effects, fiscal cost and limited reach on wealth, and reach a judgement on the overall role."],
+          model:"A sustained response sets a thesis that government has several levers with real but bounded effect, develops the direct tools (tax, transfers, the social wage) and their effect on the income distribution, adds the structural tools (education, training, labour-market settings) that address the causes, and assesses effectiveness against limits and trade-offs to reach a judgement on the overall role.",
+          faults:[
+            { kind:"fix", severity:"critical", head:"Assess effectiveness, do not just describe",
+              why:"Assess means judge value. For each policy, weigh how well it works and its limits, not just what it does.",
+              ladder:[
+                { level:"Clear", text:"Progressive tax and transfers reduce income inequality, but their reach on wealth is limited." },
+                { level:"Better", text:"Tax and transfers measurably compress income, though their effect is bounded by incentive costs and the light taxation of wealth." },
+                { level:"Band 6", text:"Tax and transfers are effective on income but limited on wealth and constrained by incentive effects, so their role is significant yet bounded, which is the judgement an assessment requires." }]},
+            { kind:"fix", severity:"should", head:"Define equity",
+              why:"Anchor the answer by defining equity, and distinguish {{horizontal equity|Treating people in the same situation the same way.|0}} from {{vertical equity|Those who can afford more contribute more.|0}}.",
+              ladder:[
+                { level:"Clear", text:"Equity means fairness in how income and wealth are shared." },
+                { level:"Better", text:"Equity means fairness in the distribution, including vertical equity where higher earners contribute proportionally more." },
+                { level:"Band 6", text:"Equity combines vertical equity, where those with greater capacity contribute more, and horizontal equity, where like cases are treated alike, and policy is judged against both." }]}
+          ]}
       ]
     }
   ]
@@ -1036,8 +1112,6 @@ window.CONTENT = {
     f3: "The 2024 changes cut the 19% rate to 16% and the 32.5% rate to 30%, and lifted two thresholds. Rate cuts at the bottom brackets deliver the largest proportional benefit to low and middle earners — the equity rationale for their design.",
     f4: "Thresholds are set in dollars, so wage growth quietly pushes earners into higher brackets — bracket creep — raising average tax rates without any real income gain. Periodic threshold rises (2020, 2024) hand back that creep; between reforms, it accumulates again.",
     f5: "The minimum wage and award system is a wage floor under the whole distribution: the Fair Work Commission's annual review (e.g. +3.5% to $948/week from July 2025) protects the real income of workers with the least bargaining power, compressing the bottom of the wage spread.",
-    "e-policy": "Structure the assessment around mechanism → evidence → limits. The system demonstrably compresses income (disposable Gini ≈ 0.32 vs ≈ 0.44 gross) via progressive tax, means-tested transfers and the social wage — but wealth is barely taxed, EMTRs create poverty traps, and bracket creep erodes gains between reforms.",
-    "e-wealthgap": "The answer hinges on three mechanisms: wealth compounds (returns buy more assets), wealth accumulates over the life cycle, and the tax-transfer system equalises income annually while leaving wealth holdings essentially untaxed. Quantify with the two Ginis (≈0.61 vs ≈0.32)."
   };
   const hints = {
     m1: "Where does the bottom 20% of families end up on each axis if income is very unequal?",
