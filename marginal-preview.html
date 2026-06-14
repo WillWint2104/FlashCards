@@ -324,6 +324,89 @@
   }
   .concept{background:var(--blue-soft);border-left:4px solid var(--blue);border-radius:10px;padding:10px 14px;font-size:14.5px;font-weight:700;color:#2d5876;margin:2px 0 14px;line-height:1.55}
   .concept::before{content:"Concept · ";font-family:var(--disp);letter-spacing:.05em;text-transform:uppercase;font-size:10.5px;color:var(--blue-dk)}
+
+  /* ===== Long-response review mode (namespaced rv- to avoid collisions) ===== */
+  .rv-scrim{position:fixed;inset:0;background:rgba(28,40,40,.42);display:flex;align-items:flex-start;justify-content:center;padding:26px 16px;overflow:auto;z-index:100}
+  .rv-blur{filter:blur(3px)}
+  .rv-modal{width:100%;max-width:1040px;background:var(--card);border-radius:22px;box-shadow:0 24px 60px rgba(28,40,40,.28);overflow:hidden;animation:rvpop .25s cubic-bezier(.35,.65,.25,1)}
+  @keyframes rvpop{from{opacity:0;transform:translateY(12px) scale(.99)}to{opacity:1;transform:none}}
+  .rv-mhead{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1.5px solid var(--line)}
+  .rv-scorewrap{display:flex;align-items:center;gap:13px}
+  .rv-ring{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:var(--green-soft);color:var(--green-dk);font-family:var(--disp);font-weight:600;font-size:20px;border:none;cursor:pointer;flex:none}
+  .rv-ring:hover{background:var(--green);color:#fff}
+  .rv-ring.mid{background:var(--gold-soft);color:var(--gold-dk)} .rv-ring.mid:hover{background:var(--gold);color:#fff}
+  .rv-ring.low{background:var(--coral-soft);color:var(--coral-dk)} .rv-ring.low:hover{background:var(--coral);color:#fff}
+  .rv-h2{font-family:var(--disp);font-weight:600;font-size:18px;margin:0;color:var(--ink)}
+  .rv-q{font-size:13px;color:var(--ink-2);font-weight:700;margin-top:2px}
+  .rv-scorehint{font-size:11px;color:var(--ink-3);font-weight:700;margin-top:2px}
+  .rv-x{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--line);background:#fff;cursor:pointer;font-size:15px;color:var(--ink-2);flex:none}
+  .rv-x:hover{background:var(--bg)}
+  .rv-stages{display:flex;gap:7px;padding:13px 24px 0;align-items:center;flex-wrap:wrap}
+  .rv-stage{font-family:var(--disp);font-weight:600;font-size:12.5px;padding:6px 14px;border-radius:99px;color:var(--ink-2);background:transparent;border:none;cursor:pointer}
+  .rv-stage.on{background:var(--blue-soft);color:var(--blue-dk)}
+  .rv-ctxbtn{font-family:var(--disp);font-weight:600;font-size:12.5px;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+  .rv-ctxbtn:hover{border-color:var(--blue);color:var(--blue-dk)}
+
+  .rv-cols{display:grid;grid-template-columns:96px 1fr;gap:0}
+  .rv-left{border-right:1.5px solid var(--line);padding:16px 12px}
+  .rv-railhint{font-size:11px;color:var(--ink-3);font-weight:700;text-align:center;margin:0 0 10px;line-height:1.4}
+  .rv-pmark{width:100%;display:flex;flex-direction:column;align-items:center;gap:0;border:1.5px solid var(--line);border-radius:14px;padding:9px 6px 8px;margin-bottom:9px;background:#fff;cursor:pointer;position:relative}
+  .rv-pmark:hover{border-color:var(--ink-3)}
+  .rv-pmark.active{border:2px solid var(--blue);background:var(--blue-soft)}
+  .rv-pn{font-family:var(--disp);font-weight:600;font-size:17px;color:var(--ink);line-height:1.05;display:flex;align-items:baseline;gap:1px}
+  .rv-pn .rv-pp{font-size:13px;color:var(--ink-3);font-weight:500}
+  .rv-pmark.active .rv-pn{color:var(--blue-dk)} .rv-pmark.active .rv-pn .rv-pp{color:var(--blue)}
+  .rv-pdot{width:9px;height:9px;border-radius:50%;margin-top:6px}
+  .rv-pdot.g{background:var(--green)} .rv-pdot.m{background:var(--gold)} .rv-pdot.w{background:var(--coral)}
+  .rv-ptick{position:absolute;top:4px;right:6px;font-size:10px;font-weight:800;color:var(--green-dk)}
+  .rv-right{padding:30px 34px;min-width:0}
+  .rv-ptext{font-size:21px;line-height:1.95;margin:0 0 14px;font-weight:600;color:var(--ink)}
+  .rv-pscore{display:flex;align-items:baseline;gap:10px;margin:0 0 12px}
+  .rv-pscore .rv-scbig{font-family:var(--disp);font-weight:600;font-size:24px}
+  .rv-pscore .rv-scwhat{font-size:13px;color:var(--ink-2);font-weight:700}
+  .rv-scbig.g{color:var(--green-dk)} .rv-scbig.m{color:var(--gold-dk)} .rv-scbig.w{color:var(--coral-dk)}
+
+  .rv-mfoot{display:flex;gap:10px;padding:15px 24px;border-top:1.5px solid var(--line);align-items:center}
+  .rv-spacer{flex:1}
+  .rv-btn{font-family:var(--disp);font-weight:600;font-size:14px;border-radius:13px;padding:11px 18px;cursor:pointer;border:1.5px solid var(--line);background:#fff;color:var(--ink)}
+  .rv-btn:hover{background:var(--bg)}
+  .rv-btn.primary{background:var(--green);color:#fff;border-color:var(--green);box-shadow:0 3px 0 var(--green-dk)}
+  .rv-btn.primary:hover{background:var(--green-dk)}
+  .rv-btn.blue{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 3px 0 var(--blue-dk)}
+  .rv-btn.blue:hover{background:var(--blue-dk)}
+
+  /* rubric pane */
+  .rv-pane{padding:20px 24px;display:none}
+  .rv-pane.show{display:block}
+  .rv-tag{font-family:var(--disp);font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);margin:0 0 10px}
+  .rv-psub{font-size:14px;color:var(--ink);font-weight:500;margin:0 0 14px;line-height:1.5}
+  .rv-crit{border:1.5px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:8px;background:#fff;cursor:pointer}
+  .rv-crithead{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .rv-critname{font-family:var(--disp);font-weight:600;font-size:13.5px;color:var(--ink)}
+  .rv-critdesc{font-size:12.5px;color:var(--ink-2);margin-top:3px;line-height:1.5}
+  .rv-bands{margin-top:10px;display:none}
+  .rv-bands.show{display:block}
+  .rv-band{display:flex;gap:9px;font-size:12.5px;line-height:1.5;padding:7px 0;border-top:1px solid var(--line);color:var(--ink)}
+  .rv-bandno{flex:none;font-family:var(--disp);font-weight:600;font-size:11px;padding:2px 8px;border-radius:7px;height:fit-content;background:var(--bg);color:var(--ink-2)}
+  .rv-band.here{font-weight:700}
+  .rv-band.here .rv-bandno{background:var(--green);color:#fff}
+  .rv-band.here .rv-bt{color:var(--green-dk)}
+  .rv-pill{font-family:var(--disp);font-weight:600;font-size:12px;padding:3px 10px;border-radius:8px}
+  .rv-pill.g{background:var(--green-soft);color:var(--green-dk)}
+  .rv-pill.m{background:var(--gold-soft);color:var(--gold-dk)}
+  .rv-pill.w{background:var(--coral-soft);color:var(--coral-dk)}
+
+  /* context overlay (question / stimulus) */
+  .rv-ctxscrim{position:fixed;inset:0;background:rgba(28,40,40,.5);display:none;align-items:center;justify-content:center;z-index:120;padding:20px}
+  .rv-ctxscrim.show{display:flex}
+  .rv-ctxcard{position:relative;background:#fff;border-radius:20px;max-width:620px;width:100%;max-height:80vh;overflow:auto;padding:24px 26px;box-shadow:0 24px 60px rgba(28,40,40,.3)}
+  .rv-ctxx{position:absolute;top:14px;right:16px;border:1.5px solid var(--line);background:#fff;border-radius:50%;width:30px;height:30px;cursor:pointer;color:var(--ink-2)}
+  .rv-ctxtag{font-family:var(--disp);font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);margin:0 0 10px}
+  .rv-ctxstem{font-size:17px;line-height:1.7;color:var(--ink);font-weight:600;margin-bottom:14px}
+  .rv-ctxmeta{display:flex;gap:8px;flex-wrap:wrap}
+  .rv-ctxpill{font-family:var(--disp);font-weight:600;font-size:12.5px;background:var(--blue-soft);color:var(--blue-dk);padding:4px 12px;border-radius:9px}
+  .rv-ctxnote{font-size:13.5px;color:var(--ink);line-height:1.6;margin-top:12px}
+  @media(max-width:680px){.rv-cols{grid-template-columns:1fr}.rv-left{border-right:none;border-bottom:1.5px solid var(--line);display:flex;gap:8px;overflow-x:auto}.rv-right{padding:22px 18px}}
 </style>
 </head>
 <body>
@@ -3376,6 +3459,112 @@ window.CONTENT.reviewSample = {
 
   const brand = document.querySelector("header .brand");
   if (brand) { brand.style.cursor = "pointer"; brand.onclick = () => { view = "study"; mainPage(); }; }
+
+  // ===========================================================================
+  // Long-response review mode (see review-model.md). Step 2: focus-mode shell —
+  // modal, header (score ring, stem, tabs, context buttons), slim paragraph rail,
+  // rubric pane, question/stimulus overlays. Renders a review object (the worker
+  // response, or CONTENT.reviewSample for the demo entry). Student entry is gated
+  // (off by default); the dev entry is ?reviewdemo=1.
+  // ===========================================================================
+  const RVS = { review: null, active: 0, tab: "paragraphs" };
+  function rvDotClass(p) { const r = p.max ? p.score / p.max : 1; return r >= 0.8 ? "g" : r >= 0.6 ? "m" : "w"; }
+  function rvParaText(p) { return (p.sentences || []).filter(s => s && typeof s.text === "string").map(s => s.text).join(" "); }
+  function rvCheckMarks(rv) {
+    // CHECK 5 (BUILD-CHECKS): total must equal the sum of paragraph marks, and the rubric must sum to the total.
+    const ps = (rv.paragraphs || []).reduce((a, p) => a + (Number(p.score) || 0), 0);
+    if (ps !== rv.total) console.warn("[review] mark inconsistency: paragraph sum", ps, "!= total", rv.total);
+    const rs = (rv.rubric || []).reduce((a, c) => a + (Number(c.score) || 0), 0);
+    if ((rv.rubric || []).length && rs !== rv.total) console.warn("[review] rubric sum", rs, "!= total", rv.total);
+  }
+  function openReview(review) {
+    if (!review || !Array.isArray(review.paragraphs) || !review.paragraphs.length) return;
+    RVS.review = review; RVS.active = 0; RVS.tab = "paragraphs";
+    rvCheckMarks(review);
+    if (!document.getElementById("rvhost")) { const h = document.createElement("div"); h.id = "rvhost"; document.body.appendChild(h); }
+    app.classList.add("rv-blur");
+    rvRender();
+  }
+  function closeReview() {
+    const h = document.getElementById("rvhost"); if (h) h.remove();
+    const c = document.getElementById("rvctxhost"); if (c) c.remove();
+    app.classList.remove("rv-blur");
+  }
+  function rvRender() {
+    const rv = RVS.review, host = document.getElementById("rvhost"); if (!rv || !host) return;
+    const ratio = rv.max ? rv.total / rv.max : 1;
+    const ringCls = ratio >= 0.8 ? "" : ratio >= 0.6 ? "mid" : "low";
+    const q = (rv.question && rv.question.stem) || "";
+    const hasStim = !!(rv.question && (rv.question.stimulus || (rv.question.graphs && rv.question.graphs.length)));
+    host.innerHTML = `
+    <div class="rv-scrim" id="rvscrim">
+      <div class="rv-modal" role="dialog" aria-modal="true" aria-label="Answer review">
+        <div class="rv-mhead">
+          <div class="rv-scorewrap">
+            <button class="rv-ring ${ringCls}" id="rvring" title="See how this was marked">${rv.total}</button>
+            <div>
+              <h2 class="rv-h2">${rv.total} / ${rv.max}</h2>
+              <div class="rv-q">${esc(q)}</div>
+              <div class="rv-scorehint">tap the score to see the marking rubric</div>
+            </div>
+          </div>
+          <button class="rv-x" id="rvclose" aria-label="Close review">✕</button>
+        </div>
+        <div class="rv-stages">
+          <button class="rv-stage ${RVS.tab === "paragraphs" ? "on" : ""}" id="rvtab-paragraphs">1 · Paragraphs</button>
+          <button class="rv-stage ${RVS.tab === "rubric" ? "on" : ""}" id="rvtab-rubric">Rubric</button>
+          <span class="rv-spacer"></span>
+          <button class="rv-ctxbtn" id="rvctx-question">▢ The question</button>
+          ${hasStim ? `<button class="rv-ctxbtn" id="rvctx-stimulus">▦ Stimulus</button>` : ""}
+        </div>
+        ${RVS.tab === "paragraphs" ? rvParagraphsPane(rv) : rvRubricPane(rv)}
+        <div class="rv-mfoot"><span class="rv-spacer"></span><button class="rv-btn primary" id="rvdone">Done</button></div>
+      </div>
+    </div>`;
+    $("#rvclose").onclick = closeReview;
+    $("#rvdone").onclick = closeReview;
+    $("#rvring").onclick = () => { RVS.tab = "rubric"; rvRender(); };
+    $("#rvtab-paragraphs").onclick = () => { RVS.tab = "paragraphs"; rvRender(); };
+    $("#rvtab-rubric").onclick = () => { RVS.tab = "rubric"; rvRender(); };
+    $("#rvctx-question").onclick = () => rvOpenContext("question");
+    const sb = $("#rvctx-stimulus"); if (sb) sb.onclick = () => rvOpenContext("stimulus");
+    host.querySelectorAll("[data-rvpara]").forEach(b => b.onclick = () => { RVS.active = Number(b.dataset.rvpara); RVS.tab = "paragraphs"; rvRender(); });
+    host.querySelectorAll("[data-rvcrit]").forEach(b => b.onclick = () => { const el = $("#rvbands-" + b.dataset.rvcrit); if (el) el.classList.toggle("show"); });
+    $("#rvscrim").onclick = e => { if (e.target.id === "rvscrim") closeReview(); };
+  }
+  function rvParagraphsPane(rv) {
+    const rail = rv.paragraphs.map((p, i) => `<button class="rv-pmark ${i === RVS.active ? "active" : ""}" data-rvpara="${i}" title="¶${i + 1} · ${esc(p.name || "")} · ${p.score}/${p.max}"><span class="rv-pn"><span class="rv-pp">¶</span>${i + 1}</span><span class="rv-pdot ${rvDotClass(p)}"></span></button>`).join("");
+    const p = rv.paragraphs[RVS.active] || {};
+    const txt = rvParaText(p);
+    const right = `<div class="rv-pscore"><span class="rv-scbig ${rvDotClass(p)}">${p.score} / ${p.max}</span><span class="rv-scwhat">${esc(p.name || "this paragraph")}</span></div>`
+      + (txt ? `<p class="rv-ptext">${esc(txt)}</p>` : `<p class="rv-ptext" style="color:var(--ink-2)">This paragraph is summarised in the rail. The full per-sentence review opens here.</p>`);
+    return `<div class="rv-pane show"><div class="rv-cols"><div class="rv-left"><p class="rv-railhint">paragraphs</p>${rail}</div><div class="rv-right">${right}</div></div></div>`;
+  }
+  function rvRubricPane(rv) {
+    const crits = (rv.rubric || []).map((c, i) => {
+      const r = c.max ? c.score / c.max : 1, cls = r >= 0.8 ? "g" : r >= 0.6 ? "m" : "w";
+      const bands = (c.bands || []).map(b => `<div class="rv-band ${b.here ? "here" : ""}"><span class="rv-bandno">${esc(b.range || "")}</span><span class="rv-bt">${esc(b.text || "")}${b.here ? " ← you" : ""}</span></div>`).join("");
+      return `<div class="rv-crit" data-rvcrit="${i}"><div class="rv-crithead"><span class="rv-critname">${esc(c.name || "")}</span><span class="rv-pill ${cls}">${c.score}/${c.max}</span></div><div class="rv-critdesc">${esc(c.descriptor || "")}</div><div class="rv-bands" id="rvbands-${i}">${bands}</div></div>`;
+    }).join("");
+    return `<div class="rv-pane show"><p class="rv-tag">How this response was marked · ${rv.total} / ${rv.max}</p><p class="rv-psub">Four criteria. Tap any one to see the band descriptors and where your response sat.</p>${crits}</div>`;
+  }
+  function rvOpenContext(which) {
+    const rv = RVS.review; if (!rv) return;
+    if (!document.getElementById("rvctxhost")) { const h = document.createElement("div"); h.id = "rvctxhost"; document.body.appendChild(h); }
+    const host = document.getElementById("rvctxhost"), q = rv.question || {};
+    const body = which === "stimulus"
+      ? `<p class="rv-ctxtag">Stimulus</p><div class="rv-ctxnote">${esc(q.stimulus || "No stimulus for this question.")}</div>`
+      : `<p class="rv-ctxtag">The question</p><div class="rv-ctxstem">${esc(q.stem || "")}</div><div class="rv-ctxmeta">${q.command ? `<span class="rv-ctxpill">${esc(q.command)}</span>` : ""}${q.marks ? `<span class="rv-ctxpill">${q.marks} marks</span>` : ""}</div>`;
+    host.innerHTML = `<div class="rv-ctxscrim show" id="rvctxscrim"><div class="rv-ctxcard"><button class="rv-ctxx" id="rvctxx" aria-label="Close">✕</button>${body}</div></div>`;
+    const close = () => host.remove();
+    $("#rvctxx").onclick = close;
+    $("#rvctxscrim").onclick = e => { if (e.target.id === "rvctxscrim") close(); };
+  }
+
+  // Dev entry for building and eyeballing the review without a live grade.
+  // Student entry (after a real grade) is gated behind CONFIG.reviewMode and is
+  // wired in a later step; it is off by default so this does not change the live UI.
+  try { if (/[?&]reviewdemo=1/.test(location.search) && C.reviewSample) openReview(C.reviewSample); } catch (e) { /* demo entry is best-effort */ }
 
   home();
 })();
