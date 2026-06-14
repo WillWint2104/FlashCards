@@ -1494,5 +1494,111 @@
   const brand = document.querySelector("header .brand");
   if (brand) { brand.style.cursor = "pointer"; brand.onclick = () => { view = "study"; mainPage(); }; }
 
+  // ===========================================================================
+  // Long-response review mode (see review-model.md). Step 2: focus-mode shell —
+  // modal, header (score ring, stem, tabs, context buttons), slim paragraph rail,
+  // rubric pane, question/stimulus overlays. Renders a review object (the worker
+  // response, or CONTENT.reviewSample for the demo entry). Student entry is gated
+  // (off by default); the dev entry is ?reviewdemo=1.
+  // ===========================================================================
+  const RVS = { review: null, active: 0, tab: "paragraphs" };
+  function rvDotClass(p) { const r = p.max ? p.score / p.max : 1; return r >= 0.8 ? "g" : r >= 0.6 ? "m" : "w"; }
+  function rvParaText(p) { return (p.sentences || []).filter(s => s && typeof s.text === "string").map(s => s.text).join(" "); }
+  function rvCheckMarks(rv) {
+    // CHECK 5 (BUILD-CHECKS): total must equal the sum of paragraph marks, and the rubric must sum to the total.
+    const ps = (rv.paragraphs || []).reduce((a, p) => a + (Number(p.score) || 0), 0);
+    if (ps !== rv.total) console.warn("[review] mark inconsistency: paragraph sum", ps, "!= total", rv.total);
+    const rs = (rv.rubric || []).reduce((a, c) => a + (Number(c.score) || 0), 0);
+    if ((rv.rubric || []).length && rs !== rv.total) console.warn("[review] rubric sum", rs, "!= total", rv.total);
+  }
+  function openReview(review) {
+    if (!review || !Array.isArray(review.paragraphs) || !review.paragraphs.length) return;
+    RVS.review = review; RVS.active = 0; RVS.tab = "paragraphs";
+    rvCheckMarks(review);
+    if (!document.getElementById("rvhost")) { const h = document.createElement("div"); h.id = "rvhost"; document.body.appendChild(h); }
+    app.classList.add("rv-blur");
+    rvRender();
+  }
+  function closeReview() {
+    const h = document.getElementById("rvhost"); if (h) h.remove();
+    const c = document.getElementById("rvctxhost"); if (c) c.remove();
+    app.classList.remove("rv-blur");
+  }
+  function rvRender() {
+    const rv = RVS.review, host = document.getElementById("rvhost"); if (!rv || !host) return;
+    const ratio = rv.max ? rv.total / rv.max : 1;
+    const ringCls = ratio >= 0.8 ? "" : ratio >= 0.6 ? "mid" : "low";
+    const q = (rv.question && rv.question.stem) || "";
+    const hasStim = !!(rv.question && (rv.question.stimulus || (rv.question.graphs && rv.question.graphs.length)));
+    host.innerHTML = `
+    <div class="rv-scrim" id="rvscrim">
+      <div class="rv-modal" role="dialog" aria-modal="true" aria-label="Answer review">
+        <div class="rv-mhead">
+          <div class="rv-scorewrap">
+            <button class="rv-ring ${ringCls}" id="rvring" title="See how this was marked">${rv.total}</button>
+            <div>
+              <h2 class="rv-h2">${rv.total} / ${rv.max}</h2>
+              <div class="rv-q">${esc(q)}</div>
+              <div class="rv-scorehint">tap the score to see the marking rubric</div>
+            </div>
+          </div>
+          <button class="rv-x" id="rvclose" aria-label="Close review">✕</button>
+        </div>
+        <div class="rv-stages">
+          <button class="rv-stage ${RVS.tab === "paragraphs" ? "on" : ""}" id="rvtab-paragraphs">1 · Paragraphs</button>
+          <button class="rv-stage ${RVS.tab === "rubric" ? "on" : ""}" id="rvtab-rubric">Rubric</button>
+          <span class="rv-spacer"></span>
+          <button class="rv-ctxbtn" id="rvctx-question">▢ The question</button>
+          ${hasStim ? `<button class="rv-ctxbtn" id="rvctx-stimulus">▦ Stimulus</button>` : ""}
+        </div>
+        ${RVS.tab === "paragraphs" ? rvParagraphsPane(rv) : rvRubricPane(rv)}
+        <div class="rv-mfoot"><span class="rv-spacer"></span><button class="rv-btn primary" id="rvdone">Done</button></div>
+      </div>
+    </div>`;
+    $("#rvclose").onclick = closeReview;
+    $("#rvdone").onclick = closeReview;
+    $("#rvring").onclick = () => { RVS.tab = "rubric"; rvRender(); };
+    $("#rvtab-paragraphs").onclick = () => { RVS.tab = "paragraphs"; rvRender(); };
+    $("#rvtab-rubric").onclick = () => { RVS.tab = "rubric"; rvRender(); };
+    $("#rvctx-question").onclick = () => rvOpenContext("question");
+    const sb = $("#rvctx-stimulus"); if (sb) sb.onclick = () => rvOpenContext("stimulus");
+    host.querySelectorAll("[data-rvpara]").forEach(b => b.onclick = () => { RVS.active = Number(b.dataset.rvpara); RVS.tab = "paragraphs"; rvRender(); });
+    host.querySelectorAll("[data-rvcrit]").forEach(b => b.onclick = () => { const el = $("#rvbands-" + b.dataset.rvcrit); if (el) el.classList.toggle("show"); });
+    $("#rvscrim").onclick = e => { if (e.target.id === "rvscrim") closeReview(); };
+  }
+  function rvParagraphsPane(rv) {
+    const rail = rv.paragraphs.map((p, i) => `<button class="rv-pmark ${i === RVS.active ? "active" : ""}" data-rvpara="${i}" title="¶${i + 1} · ${esc(p.name || "")} · ${p.score}/${p.max}"><span class="rv-pn"><span class="rv-pp">¶</span>${i + 1}</span><span class="rv-pdot ${rvDotClass(p)}"></span></button>`).join("");
+    const p = rv.paragraphs[RVS.active] || {};
+    const txt = rvParaText(p);
+    const right = `<div class="rv-pscore"><span class="rv-scbig ${rvDotClass(p)}">${p.score} / ${p.max}</span><span class="rv-scwhat">${esc(p.name || "this paragraph")}</span></div>`
+      + (txt ? `<p class="rv-ptext">${esc(txt)}</p>` : `<p class="rv-ptext" style="color:var(--ink-2)">This paragraph is summarised in the rail. The full per-sentence review opens here.</p>`);
+    return `<div class="rv-pane show"><div class="rv-cols"><div class="rv-left"><p class="rv-railhint">paragraphs</p>${rail}</div><div class="rv-right">${right}</div></div></div>`;
+  }
+  function rvRubricPane(rv) {
+    const crits = (rv.rubric || []).map((c, i) => {
+      const r = c.max ? c.score / c.max : 1, cls = r >= 0.8 ? "g" : r >= 0.6 ? "m" : "w";
+      const bands = (c.bands || []).map(b => `<div class="rv-band ${b.here ? "here" : ""}"><span class="rv-bandno">${esc(b.range || "")}</span><span class="rv-bt">${esc(b.text || "")}${b.here ? " ← you" : ""}</span></div>`).join("");
+      return `<div class="rv-crit" data-rvcrit="${i}"><div class="rv-crithead"><span class="rv-critname">${esc(c.name || "")}</span><span class="rv-pill ${cls}">${c.score}/${c.max}</span></div><div class="rv-critdesc">${esc(c.descriptor || "")}</div><div class="rv-bands" id="rvbands-${i}">${bands}</div></div>`;
+    }).join("");
+    return `<div class="rv-pane show"><p class="rv-tag">How this response was marked · ${rv.total} / ${rv.max}</p><p class="rv-psub">Four criteria. Tap any one to see the band descriptors and where your response sat.</p>${crits}</div>`;
+  }
+  function rvOpenContext(which) {
+    const rv = RVS.review; if (!rv) return;
+    if (!document.getElementById("rvctxhost")) { const h = document.createElement("div"); h.id = "rvctxhost"; document.body.appendChild(h); }
+    const host = document.getElementById("rvctxhost"), q = rv.question || {};
+    const body = which === "stimulus"
+      ? `<p class="rv-ctxtag">Stimulus</p><div class="rv-ctxnote">${esc(q.stimulus || "No stimulus for this question.")}</div>`
+      : `<p class="rv-ctxtag">The question</p><div class="rv-ctxstem">${esc(q.stem || "")}</div><div class="rv-ctxmeta">${q.command ? `<span class="rv-ctxpill">${esc(q.command)}</span>` : ""}${q.marks ? `<span class="rv-ctxpill">${q.marks} marks</span>` : ""}</div>`;
+    host.innerHTML = `<div class="rv-ctxscrim show" id="rvctxscrim"><div class="rv-ctxcard"><button class="rv-ctxx" id="rvctxx" aria-label="Close">✕</button>${body}</div></div>`;
+    const close = () => host.remove();
+    $("#rvctxx").onclick = close;
+    $("#rvctxscrim").onclick = e => { if (e.target.id === "rvctxscrim") close(); };
+  }
+
+  // Dev entry for building and eyeballing the review without a live grade.
+  // Student entry (after a real grade) is gated behind CONFIG.reviewMode and is
+  // wired in a later step; it is off by default so this does not change the live UI.
+  try { if (/[?&]reviewdemo=1/.test(location.search) && C.reviewSample) openReview(C.reviewSample); } catch (e) { /* demo entry is best-effort */ }
+
   home();
 })();
