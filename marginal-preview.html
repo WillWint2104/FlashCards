@@ -154,6 +154,43 @@
   .setrow small{color:var(--ink-3)}
   .btn.danger{color:var(--coral-dk)}
 
+  /* ---- auth (sign in / set password) ---- */
+  .authcard{max-width:420px;margin:8px auto 0;background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:22px}
+  .authcard h2{font-family:var(--disp);font-size:20px;margin:0 0 4px}
+  .authcard .bhint{margin:2px 0 14px}
+  .authfield{margin-bottom:12px}
+  .authfield label{display:block;font-size:13px;font-weight:700;color:var(--ink-2);margin-bottom:4px}
+  .authfield input{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:12px;font-size:15px;font-family:inherit}
+  .authfield input:focus{outline:none;border-color:var(--green)}
+  .authmsg{font-size:13.5px;font-weight:600;margin-top:10px;min-height:18px}
+  .authmsg.err{color:var(--coral-dk)}
+  .authmsg.ok{color:var(--green-dk)}
+  .authlink{background:none;border:none;color:var(--green-dk);font-weight:700;font-size:13.5px;cursor:pointer;padding:0;text-decoration:underline}
+  .whoami{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;color:var(--ink-2)}
+
+  /* ---- sets manager (compact list) ---- */
+  .setsmgr{margin-top:24px}
+  .setshead{font-family:var(--disp);font-weight:600;font-size:16px;margin-bottom:2px}
+  .setshead small{color:var(--ink-3);font-weight:600}
+  .smbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0 10px}
+  .sminput{flex:1;min-width:160px;padding:9px 12px;border:1.5px solid var(--line);border-radius:12px;font-size:14px;font-family:inherit}
+  .sminput:focus{outline:none;border-color:var(--green)}
+  .smsort{padding:9px 12px;border:1.5px solid var(--line);border-radius:12px;font-size:13.5px;font-family:inherit;font-weight:600;background:var(--card)}
+  .smtags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .tagchip{font-size:12px;font-weight:700;color:var(--ink-2);background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:4px 11px;cursor:pointer}
+  .tagchip.on{background:var(--green-soft);border-color:var(--green);color:var(--green-dk)}
+  .smscroll{max-height:430px;overflow-y:auto;border:1.5px solid var(--line);border-radius:14px;background:var(--card)}
+  .smrow{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:11px 14px;border-top:1px solid var(--line)}
+  .smrow:first-child{border-top:none}
+  .smname{font-family:var(--disp);font-weight:600;font-size:15px;cursor:pointer;min-width:0}
+  .smname:hover{color:var(--green-dk)}
+  .smmeta{font-size:12px;color:var(--ink-3);font-weight:600;margin-top:2px}
+  .smsettags{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+  .smsettag{font-size:11px;font-weight:700;color:var(--ink-2);background:var(--green-soft);border-radius:99px;padding:2px 8px}
+  .smcount{font-size:12.5px;font-weight:700;color:var(--ink-2);white-space:nowrap}
+  .smacts{display:flex;gap:6px;flex-none}
+  .smempty{padding:26px 14px;text-align:center;color:var(--ink-3);font-weight:600;font-size:14px}
+
   .modes{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:6px}
   .mode{display:flex;flex-direction:column;gap:3px;text-align:left;background:var(--card);border:2px solid var(--line);border-radius:16px;padding:16px;transition:transform .12s,border-color .12s}
   .mode:hover:not(:disabled){transform:translateY(-2px);border-color:var(--green)}
@@ -599,9 +636,17 @@
     endpoint: "https://marginal-grader.williamwinter2104.workers.dev/",  // Cloudflare Worker URL for AI essay marking
     code: "12Ec126",  // class code — must match the worker's CLASS_CODE secret exactly (case-sensitive)
     reviewMode: false,  // PROMOTION SWITCH for guided review mode. false = students get the simple result sheet. Set true to give every student the paragraph-by-paragraph review after marking. Add ?review=1 to the URL to try it without enabling it for everyone.
-    textbookUrl: ""   // optional: deep link to your class's licensed textbook copy,
+    textbookUrl: "",  // optional: deep link to your class's licensed textbook copy,
                       // e.g. "https://your-lms.school/riley-2026.pdf#page={page}" —
                       // the Source tab will open it at each level's exact page
+
+    // ===== OPTIONAL: Supabase (student logins + durable custom sets) =====
+    // Leave both BLANK to keep custom sets in this browser only (default).
+    // When set, students can sign in and their sets sync across devices.
+    // Both values are PUBLIC-safe (the anon key is protected by Row Level
+    // Security). See SUPABASE-SETUP.md for the full provisioning steps.
+    supabaseUrl: "",       // e.g. "https://abcd1234.supabase.co"
+    supabaseAnonKey: ""    // the project's "anon public" key
   };
 </script>
 <script>
@@ -2428,6 +2473,7 @@ window.CONTENT.charts = {
 };
 
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // =============================================================================
 // Marginal trial — app logic (single-file preview build)
@@ -2467,6 +2513,139 @@ window.CONTENT.charts = {
   }
   mergeCustomGlossaries();
   function save() { store.setItem(LS_KEY, JSON.stringify(state)); }
+
+  // =====================================================================
+  // Cloud (Supabase) — OPTIONAL backend for student logins + durable custom
+  // sets. Stays fully dormant unless CONFIG.supabaseUrl + supabaseAnonKey are
+  // set AND the supabase-js CDN loaded. Touches ONLY auth + custom sets —
+  // never grades, SRS, lessons, or built-in modules (those stay local).
+  // =====================================================================
+  const Cloud = (function () {
+    let client = null, sess = null, prof = null, sets = [];
+
+    // MUST match the Edge Function's emailFor() exactly.
+    function emailFor(classCode, num) {
+      const cls = String(classCode || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const n = String(num || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      return (cls && n) ? `s${n}@${cls}.marginal.local` : null;
+    }
+
+    function init() {
+      if (!CONFIG.supabaseUrl || !CONFIG.supabaseAnonKey) return false;
+      if (!window.supabase || !window.supabase.createClient) return false;
+      try { client = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey); return true; }
+      catch (e) { client = null; return false; }
+    }
+
+    async function loadProfile() {
+      if (!client || !sess) { prof = null; return; }
+      try {
+        const { data } = await client.from("profiles").select("class_code, student_number").eq("user_id", sess.user.id).maybeSingle();
+        prof = data || null;
+      } catch (e) { prof = null; }
+    }
+    async function loadSets() {
+      if (!client || !sess) { sets = []; return sets; }
+      try {
+        const { data, error } = await client.from("sets").select("*").order("created_at", { ascending: true });
+        if (error) throw error;
+        sets = data || [];
+      } catch (e) { sets = []; }
+      return sets;
+    }
+    async function restore() {
+      if (!client) return;
+      try {
+        const { data } = await client.auth.getSession();
+        sess = (data && data.session) || null;
+        if (sess) { await loadProfile(); await loadSets(); }
+      } catch (e) { sess = null; }
+    }
+
+    async function signIn(classCode, num, password) {
+      if (!client) return { ok: false, error: "Sign-in isn't configured." };
+      const email = emailFor(classCode, num);
+      if (!email) return { ok: false, error: "Enter your class code and student number." };
+      if (!password) return { ok: false, error: "Enter your password." };
+      // 1) try a normal sign-in
+      let r = await client.auth.signInWithPassword({ email, password });
+      if (!r.error) { sess = r.data.session; await loadProfile(); await loadSets(); return { ok: true }; }
+      // 2) maybe the password isn't set yet (first login, or after a teacher reset)
+      let res;
+      try { res = await client.functions.invoke("marginal-admin", { body: { action: "set-password", class_code: classCode, student_number: num, password } }); }
+      catch (e) { return { ok: false, error: "Couldn't reach the server. Try again." }; }
+      const out = res && res.data;
+      if (!out) return { ok: false, error: "Couldn't reach the server. Try again." };
+      if (out.status === "created" || out.status === "set") {
+        r = await client.auth.signInWithPassword({ email, password });
+        if (!r.error) { sess = r.data.session; await loadProfile(); await loadSets(); return { ok: true, firstSet: true }; }
+        return { ok: false, error: "Password set, but sign-in failed — try again." };
+      }
+      if (out.status === "already_set") return { ok: false, error: "Wrong password. Forgotten it? Request a reset below." };
+      return { ok: false, error: out.error || "Sign-in failed." };
+    }
+    async function signOut() {
+      try { if (client) await client.auth.signOut(); } catch (e) { /* ignore */ }
+      sess = null; prof = null; sets = [];
+    }
+    async function requestReset(classCode, num) {
+      if (!client) return { ok: false, error: "Not configured." };
+      if (!classCode || !num) return { ok: false, error: "Enter your class code and student number." };
+      try {
+        const { error } = await client.from("pending_resets").insert({ class_code: String(classCode), student_number: String(num) });
+        if (error) {
+          if (/duplicate|unique/i.test(error.message || "")) return { ok: true, already: true };
+          return { ok: false, error: error.message };
+        }
+        return { ok: true };
+      } catch (e) { return { ok: false, error: "Couldn't send the request." }; }
+    }
+
+    async function createSet(name, cards, tags) {
+      if (!client || !sess) return null;
+      const { data, error } = await client.from("sets")
+        .insert({ owner: sess.user.id, name: name || "Untitled set", cards: cards || [], tags: tags || [] })
+        .select().single();
+      if (error) throw error;
+      sets.push(data); return data;
+    }
+    async function renameSet(id, name) {
+      if (!client) return;
+      const { data, error } = await client.from("sets").update({ name, updated_at: new Date().toISOString() }).eq("id", id).select().single();
+      if (error) throw error;
+      const i = sets.findIndex(s => s.id === id); if (i >= 0) sets[i] = data;
+    }
+    async function setTags(id, tags) {
+      if (!client) return;
+      const { data, error } = await client.from("sets").update({ tags, updated_at: new Date().toISOString() }).eq("id", id).select().single();
+      if (error) throw error;
+      const i = sets.findIndex(s => s.id === id); if (i >= 0) sets[i] = data;
+    }
+    async function deleteSet(id) {
+      if (!client) return;
+      const { error } = await client.from("sets").delete().eq("id", id);
+      if (error) throw error;
+      sets = sets.filter(s => s.id !== id);
+    }
+    async function touchStudied(id) {
+      if (!client) return;
+      try {
+        const { data } = await client.from("sets").update({ last_studied_at: new Date().toISOString() }).eq("id", id).select().single();
+        const i = sets.findIndex(s => s.id === id); if (i >= 0 && data) sets[i] = data;
+      } catch (e) { /* best effort */ }
+    }
+
+    return {
+      init, restore, signIn, signOut, requestReset,
+      createSet, renameSet, setTags, deleteSet, touchStudied,
+      enabled: () => !!client, session: () => sess, who: () => prof, sets: () => sets,
+    };
+  })();
+
+  // When logged into the cloud, custom sets come from the account; otherwise
+  // they come from this browser's localStorage (today's behaviour, untouched).
+  function cloudActive() { return Cloud.enabled() && !!Cloud.session(); }
+  function getCustomSets() { return cloudActive() ? Cloud.sets() : state.customSets; }
   const BACKUP_FORMAT = "marginal-backup@1";
   function download(filename, text, mime) {
     const blob = new Blob([text], { type: mime || "application/json" });
@@ -2533,7 +2712,7 @@ window.CONTENT.charts = {
   }
   function findArea(id) {
     for (const t of C.topics) { const a = (t.areas || []).find(x => x.id === id); if (a) return a; }
-    const s = state.customSets.find(x => x.id === id);
+    const s = getCustomSets().find(x => x.id === id);
     return s ? customAsArea(s) : null;
   }
   function getLesson(id) {
@@ -2697,9 +2876,9 @@ window.CONTENT.charts = {
 
   function mainPage() {
     view = "study"; session = null; currentTopic = null;
-    const sets = state.customSets;
     app.innerHTML = `
       ${nav()}
+      ${cloudBarHTML()}
       <div class="hi">What are we studying?</div>
       <div class="hi-s">${C.subject} · pick a topic${persistent ? "" : " · preview mode: progress resets when this page closes"}</div>
       <div class="topics">
@@ -2721,13 +2900,7 @@ window.CONTENT.charts = {
           </button>`;
         }).join("")}
       </div>
-      ${sets.length ? `<div style="margin-top:24px;font-family:var(--disp);font-weight:600;font-size:16px">Your sets</div>
-      <div class="areas" style="margin-top:10px">${sets.map(s => { const a = customAsArea(s); const st = areaStats(a);
-        return `<div class="setwrap"><button class="area" data-area="${a.id}"><span class="aicon">🧩</span>
-          <span class="ainfo"><span class="aname">${esc(a.name)}</span><span class="ablurb">${esc(a.blurb)}</span>
-          <span class="abar"><i style="width:${st.pct}%"></i></span>
-          <span class="ameta">${st.mastered}/${st.total} mastered</span></span></button>
-          <button class="btn sm ghost danger setrm" data-rmset="${a.id}" aria-label="Remove the set ${esc(a.name)}">Remove</button></div>`; }).join("")}</div>` : ""}
+      <div id="setsmgrwrap">${setsManagerHTML()}</div>
       <div class="settings">
         <details>
           <summary>Settings — AI essay grading</summary>
@@ -2747,16 +2920,8 @@ window.CONTENT.charts = {
       </div>`;
     wireNav();
     app.querySelectorAll(".topiccard:not(.locked)").forEach(b => b.onclick = () => areaMap(b.dataset.topic));
-    app.querySelectorAll(".area").forEach(b => b.onclick = () => modePicker(b.dataset.area));
-    app.querySelectorAll("[data-rmset]").forEach(b => b.onclick = e => {
-      e.stopPropagation();
-      const set = state.customSets.find(s => s.id === b.dataset.rmset);
-      if (!set) return;
-      if (!confirm(`Remove "${set.name}"? This deletes the set and its progress from this device. Your built-in topics are not affected.`)) return;
-      removeCustomSet(set.id);
-      toast("Set removed.");
-      mainPage();
-    });
+    wireCloudBar();
+    wireSetsManager();
     const saveBtn = $("#saveEndpoint");
     if (saveBtn) saveBtn.onclick = () => { state.code = $("#classcode").value.trim(); save(); toast("Saved"); };
     $("#resetAll").onclick = () => { if (confirm("Clear all progress on this device?")) { state.cards = {}; state.log = []; state.lessons = {}; save(); mainPage(); } };
@@ -2767,6 +2932,171 @@ window.CONTENT.charts = {
       r.onload = () => { const res = restoreAll(String(r.result)); $("#restoreMsg").textContent = res.msg; if (res.ok) setTimeout(mainPage, 700); };
       r.readAsText(f);
     };
+  }
+
+  // ---------- cloud sign-in bar (only when Supabase is configured) ----------
+  function cloudBarHTML() {
+    if (!Cloud.enabled()) return "";
+    if (cloudActive()) {
+      const w = Cloud.who();
+      const label = w ? `${esc(w.class_code)} · #${esc(w.student_number)}` : "Signed in";
+      return `<div class="whoami" style="justify-content:flex-end;margin:-4px 0 8px">Signed in: <b>${label}</b> <button class="btn sm ghost" id="signout">Sign out</button></div>`;
+    }
+    return `<div class="whoami" style="justify-content:flex-end;margin:-4px 0 8px">Your sets sync across devices when you <button class="authlink" id="signin">sign in</button></div>`;
+  }
+  function wireCloudBar() {
+    const si = $("#signin"); if (si) si.onclick = authScreen;
+    const so = $("#signout"); if (so) so.onclick = async () => { await Cloud.signOut(); toast("Signed out."); mainPage(); };
+  }
+
+  // ---------- auth screen (class code + student number + password) ----------
+  function authScreen() {
+    view = "study"; session = null; currentTopic = null;
+    app.innerHTML = `${nav()}
+      <div class="authcard">
+        <h2>Sign in</h2>
+        <p class="bhint">Your custom sets save to your account and follow you across devices. Built-in study works without signing in. First time? Enter a password to set it.</p>
+        <div class="authfield"><label>Class code</label><input id="acode" value="${esc(CONFIG.code || "")}" autocomplete="off"></div>
+        <div class="authfield"><label>Student number</label><input id="anum" inputmode="numeric" autocomplete="off"></div>
+        <div class="authfield"><label>Password</label><input id="apass" type="password" autocomplete="current-password"></div>
+        <button class="btn" id="ado" style="width:100%">Sign in / set password</button>
+        <div class="authmsg" id="amsg"></div>
+        <div style="margin-top:10px;text-align:center"><button class="authlink" id="aforgot">Forgotten your password? Request a reset</button></div>
+        <div style="margin-top:16px;text-align:center"><button class="btn sm ghost" id="aback">← Back to study</button></div>
+      </div>`;
+    wireNav();
+    const msg = $("#amsg");
+    const setMsg = (t, cls) => { msg.textContent = t; msg.className = "authmsg" + (cls ? " " + cls : ""); };
+    $("#aback").onclick = home;
+    $("#ado").onclick = async () => {
+      const code = $("#acode").value.trim(), num = $("#anum").value.trim(), pass = $("#apass").value;
+      setMsg("Signing in…");
+      const r = await Cloud.signIn(code, num, pass);
+      if (r.ok) { toast(r.firstSet ? "Password set — you're signed in." : "Signed in."); mainPage(); }
+      else setMsg(r.error || "Sign-in failed.", "err");
+    };
+    $("#apass").onkeydown = e => { if (e.key === "Enter") $("#ado").click(); };
+    $("#aforgot").onclick = async () => {
+      const code = $("#acode").value.trim(), num = $("#anum").value.trim();
+      if (!code || !num) return setMsg("Enter your class code and student number first.", "err");
+      setMsg("Sending request…");
+      const r = await Cloud.requestReset(code, num);
+      if (r.ok) setMsg(r.already ? "A reset request is already pending — ask your teacher to approve it." : "Reset requested. Once your teacher approves it, sign in and enter a new password.", "ok");
+      else setMsg(r.error || "Couldn't send the request.", "err");
+    };
+    $("#acode").focus();
+  }
+
+  // ---------- sets manager (compact list: search / sort / tags / scroll) ----------
+  const smState = { q: "", sort: "recent", tag: null };
+  function localTs(id) { const m = /custom-(\d+)/.exec(id || ""); return m ? +m[1] : 0; }
+  function fmtWhen(ts) {
+    if (!ts) return "never";
+    const diff = Date.now() - ts, day = 86400000;
+    if (diff < day) return "today";
+    if (diff < 2 * day) return "yesterday";
+    if (diff < 7 * day) return Math.floor(diff / day) + " days ago";
+    return new Date(ts).toLocaleDateString();
+  }
+  function setRows() {
+    const cloud = cloudActive();
+    return getCustomSets().map(s => ({
+      id: s.id,
+      name: s.name || "Untitled set",
+      count: (s.cards || []).length,
+      tags: Array.isArray(s.tags) ? s.tags : [],
+      created: cloud ? (Date.parse(s.created_at || "") || 0) : localTs(s.id),
+      studied: cloud ? (s.last_studied_at ? Date.parse(s.last_studied_at) : 0) : (s.last_studied || 0),
+    }));
+  }
+  function smFiltered() {
+    let rows = setRows();
+    const q = smState.q.trim().toLowerCase();
+    if (q) rows = rows.filter(r => r.name.toLowerCase().includes(q));
+    if (smState.tag) rows = rows.filter(r => r.tags.includes(smState.tag));
+    const by = smState.sort;
+    rows.sort((a, b) => by === "name" ? a.name.localeCompare(b.name) : by === "created" ? b.created - a.created : b.studied - a.studied);
+    return rows;
+  }
+  function setsManagerHTML() {
+    const rows = setRows();
+    const cloud = cloudActive();
+    const head = `<div class="setshead">Your sets${rows.length ? ` <small>(${rows.length})</small>` : ""}</div>`;
+    if (!rows.length) {
+      const why = Cloud.enabled() && !cloud
+        ? "Sign in to load your saved sets, or build/import one in the Create tab."
+        : "Build or import a set in the Create tab — it'll show up here.";
+      return `<div class="setsmgr">${head}<div class="smscroll"><div class="smempty">${why}</div></div></div>`;
+    }
+    const tags = [...new Set(rows.flatMap(r => r.tags))].sort();
+    const shown = smFiltered();
+    return `<div class="setsmgr">${head}
+      <div class="smbar">
+        <input class="sminput" id="smsearch" type="search" placeholder="Search sets by name…" value="${esc(smState.q)}">
+        <select class="smsort" id="smsort">
+          <option value="recent"${smState.sort === "recent" ? " selected" : ""}>Recently studied</option>
+          <option value="created"${smState.sort === "created" ? " selected" : ""}>Date created</option>
+          <option value="name"${smState.sort === "name" ? " selected" : ""}>Name (A–Z)</option>
+        </select>
+      </div>
+      ${tags.length ? `<div class="smtags"><button class="tagchip ${!smState.tag ? "on" : ""}" data-tag="">All</button>${tags.map(t => `<button class="tagchip ${smState.tag === t ? "on" : ""}" data-tag="${esc(t)}">${esc(t)}</button>`).join("")}</div>` : ""}
+      <div class="smscroll">${shown.length ? shown.map(r => `
+        <div class="smrow">
+          <div style="min-width:0">
+            <div class="smname" data-open="${esc(r.id)}" title="Study this set">${esc(r.name)}</div>
+            <div class="smmeta">last studied ${fmtWhen(r.studied)}</div>
+            ${r.tags.length ? `<div class="smsettags">${r.tags.map(t => `<span class="smsettag">${esc(t)}</span>`).join("")}</div>` : ""}
+          </div>
+          <div class="smcount">${r.count} card${r.count === 1 ? "" : "s"}</div>
+          <div class="smacts">
+            <button class="btn sm ghost" data-tagedit="${esc(r.id)}" title="Edit tags">Tags</button>
+            <button class="btn sm ghost" data-rename="${esc(r.id)}">Rename</button>
+            <button class="btn sm ghost danger" data-del2="${esc(r.id)}">Delete</button>
+          </div>
+        </div>`).join("") : `<div class="smempty">No sets match your search.</div>`}</div>
+    </div>`;
+  }
+  function rerenderSets() {
+    const wrap = $("#setsmgrwrap"); if (!wrap) return;
+    const hadFocus = document.activeElement && document.activeElement.id === "smsearch";
+    wrap.innerHTML = setsManagerHTML();
+    wireSetsManager();
+    if (hadFocus) { const s = $("#smsearch"); if (s) { s.focus(); s.setSelectionRange(s.value.length, s.value.length); } }
+  }
+  function wireSetsManager() {
+    const ss = $("#smsearch"); if (ss) ss.oninput = e => { smState.q = e.target.value; rerenderSets(); };
+    const so = $("#smsort"); if (so) so.onchange = e => { smState.sort = e.target.value; rerenderSets(); };
+    app.querySelectorAll("[data-tag]").forEach(b => b.onclick = () => { smState.tag = b.dataset.tag || null; rerenderSets(); });
+    app.querySelectorAll("[data-open]").forEach(b => b.onclick = () => modePicker(b.dataset.open));
+    app.querySelectorAll("[data-rename]").forEach(b => b.onclick = () => renameSetUI(b.dataset.rename));
+    app.querySelectorAll("[data-del2]").forEach(b => b.onclick = () => deleteSetUI(b.dataset.del2));
+    app.querySelectorAll("[data-tagedit]").forEach(b => b.onclick = () => tagEditUI(b.dataset.tagedit));
+  }
+  async function renameSetUI(id) {
+    const cur = setRows().find(r => r.id === id);
+    const name = prompt("Rename set:", cur ? cur.name : "");
+    if (name == null) return;
+    const nm = name.trim(); if (!nm) return;
+    if (cloudActive()) { try { await Cloud.renameSet(id, nm); } catch (e) { return toast("Couldn't rename: " + e.message); } }
+    else { const s = state.customSets.find(x => x.id === id); if (s) { s.name = nm; save(); } }
+    rerenderSets();
+  }
+  async function deleteSetUI(id) {
+    const cur = setRows().find(r => r.id === id);
+    if (!confirm(`Delete "${cur ? cur.name : "this set"}"? This removes the set${cloudActive() ? " from your account" : " from this device"}. Built-in topics are not affected.`)) return;
+    if (cloudActive()) { try { await Cloud.deleteSet(id); } catch (e) { return toast("Couldn't delete: " + e.message); } }
+    else { removeCustomSet(id); }
+    toast("Set deleted.");
+    rerenderSets();
+  }
+  async function tagEditUI(id) {
+    const cur = setRows().find(r => r.id === id);
+    const input = prompt("Tags (comma-separated):", cur ? cur.tags.join(", ") : "");
+    if (input == null) return;
+    const tags = input.split(",").map(t => t.trim()).filter(Boolean).filter((t, i, a) => a.indexOf(t) === i);
+    if (cloudActive()) { try { await Cloud.setTags(id, tags); } catch (e) { return toast("Couldn't save tags: " + e.message); } }
+    else { const s = state.customSets.find(x => x.id === id); if (s) { s.tags = tags; save(); } }
+    rerenderSets();
   }
 
   function areaMap(topicId) {
@@ -3457,6 +3787,11 @@ window.CONTENT.charts = {
     const shuffle = !!opts.shuffle;
     if (shuffle) shuffleArr(queue);
     session = { area, mode, queue, idx: 0, results: [], pool: pool.slice(), shuffle };
+    // Record "last studied" for custom sets (cloud row or local object).
+    if (area.custom) {
+      if (cloudActive()) Cloud.touchStudied(area.id);
+      else { const s = state.customSets.find(x => x.id === area.id); if (s) { s.last_studied = Date.now(); save(); } }
+    }
     renderCard();
   }
 
@@ -3797,8 +4132,8 @@ window.CONTENT.charts = {
     $("#ctype").onchange = renderTypeFields;
     $("#setname").oninput = e => { draft.name = e.target.value; };
     $("#addcard").onclick = addCard;
-    $("#studyset").onclick = () => {
-      const id = saveDraftAsSet();
+    $("#studyset").onclick = async () => {
+      const id = await saveDraftAsSet();
       if (id) { maybeNudgeBackup(); modePicker(id); }
     };
     $("#exportset").onclick = exportDraft;
@@ -3923,9 +4258,13 @@ window.CONTENT.charts = {
     backupNudged = true;
     toast("Set saved to this browser. Tip: Settings → Backup & restore to download a copy you can keep or move to another device.", 6000);
   }
-  function saveDraftAsSet() {
+  async function saveDraftAsSet() {
     if (!draft.cards.length) { toast("Add some cards first."); return null; }
     const name = (draft.name || "My set").trim();
+    if (cloudActive()) {
+      try { const row = await Cloud.createSet(name, draft.cards, []); return row ? row.id : null; }
+      catch (e) { toast("Couldn't save to your account: " + e.message); return null; }
+    }
     let set = state.customSets.find(s => s.name === name);
     if (set) { set.cards = draft.cards; set.glossary = draft.glossary || {}; }
     else { set = { id: "custom-" + Date.now(), name, cards: draft.cards, glossary: draft.glossary || {} }; state.customSets.push(set); }
@@ -3937,7 +4276,7 @@ window.CONTENT.charts = {
   function exportDraft() {
     const name = (draft.name || "My set").trim();
     const payload = JSON.stringify({ format: SET_FORMAT, name, exported: new Date().toISOString(), glossary: draft.glossary || {}, cards: draft.cards }, null, 2);
-    saveDraftAsSet();
+    if (!cloudActive()) saveDraftAsSet();  // local convenience save; cloud users save explicitly via "Study this set"
     const z = $("#exportzone");
     z.innerHTML = `<label class="blabel">Set JSON — download it, or copy and share</label>
       <textarea class="binput mono" id="exptext" rows="6" readonly></textarea>
@@ -3996,7 +4335,17 @@ window.CONTENT.charts = {
     data = normalizeImport(data);
     const errs = validateSet(data);
     if (errs.length) return msg.textContent = errs[0];
-    const set = { id: "custom-" + Date.now(), name: data.name || "Imported set", cards: data.cards, glossary: data.glossary || {} };
+    const name = data.name || "Imported set";
+    if (cloudActive()) {
+      // Saved to the student's account; appears in the Study sets manager.
+      data.cards.forEach((c, i) => { c.id = "c" + i; });
+      msg.textContent = "Importing…";
+      Cloud.createSet(name, data.cards, data.tags || [])
+        .then(() => { msg.textContent = "Imported ✓ — saved to your account."; builder(); })
+        .catch(e => { msg.textContent = "Import failed: " + (e.message || e); });
+      return;
+    }
+    const set = { id: "custom-" + Date.now(), name, cards: data.cards, glossary: data.glossary || {}, tags: data.tags || [] };
     // re-id cards to avoid clashing progress
     set.cards.forEach((c, i) => { c.id = set.id + "-" + i; });
     state.customSets.push(set);
@@ -4595,7 +4944,11 @@ window.CONTENT.charts = {
     }
   } catch (e) { /* demo entry is best-effort */ }
 
+  // Boot: render immediately (logged-out / offline), then recover any cloud
+  // session in the background and refresh the home view if one is found.
+  Cloud.init();
   home();
+  Cloud.restore().then(() => { if (!session && Cloud.session()) mainPage(); }).catch(() => { /* offline is fine */ });
 })();
 
 </script>
