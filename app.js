@@ -1001,7 +1001,7 @@
         <span class="sbar"><i style="width:${Math.round(100 * idx / queue.length)}%"></i></span>
       </div>
       <div class="tags"><span class="tag blue">${esc(area.custom ? "Custom set" : C.unit)}</span><span class="tag gold">${tag}</span><span class="tag gray">${card.marks} mark${card.marks > 1 ? "s" : ""}</span></div>
-      ${card.stimulus ? `<div class="stimulus"><div class="stimlabel">Source</div><pre>${esc(card.stimulus)}</pre></div>` : ""}
+      ${stimulusHTML(card.stimulus)}
       ${flash ? "" : `<div class="prompt">${linkGlossary(card.prompt)}</div>`}
       ${!flash && card.type === "essay" && card.scaffold && card.scaffold.length ? `<details class="scaffold"><summary>Need a scaffold?</summary><ol>${card.scaffold.map(s => "<li>" + esc(s) + "</li>").join("")}</ol></details>` : ""}
       <div class="enter">
@@ -1012,7 +1012,24 @@
     $("#quit").onclick = home;
     $("#hintbtn").onclick = () => { $("#hintbox").hidden = false; $("#hintbtn").hidden = true; };
     if (flash) wireFlash(card); else wireAnswer(card);
+    wireStimulus(card.stimulus);
     wireGlossary();
+  }
+
+  // Render a card's stimulus on ANY screen: a chart object renders via the
+  // charting module; a string renders as text (short-answer cards). Keeps the
+  // question page and the review overlay on the same render path.
+  function stimulusHTML(stim) {
+    if (!stim) return "";
+    if (typeof stim === "object" && Array.isArray(stim.charts)) {
+      return `<div class="stimulus"><div class="stimlabel">Source</div>${stim.caption ? `<p class="lzcap">${esc(stim.caption)}</p>` : ""}${stim.charts.map((c, i) => rvChartHTML(c, i)).join("")}</div>`;
+    }
+    return `<div class="stimulus"><div class="stimlabel">Source</div><pre>${esc(stim)}</pre></div>`;
+  }
+  function wireStimulus(stim) {
+    if (!stim || typeof stim !== "object" || !Array.isArray(stim.charts)) return;
+    stim.charts.forEach((c, i) => { if (c.type === "lorenz") rvWireLorenz("lzmount-" + i, c); });
+    app.querySelectorAll("[data-rvexpand]").forEach(b => b.onclick = () => rvExpandLorenz(stim.charts[Number(b.dataset.rvexpand)]));
   }
 
   function flashUI(card) {
