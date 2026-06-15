@@ -998,26 +998,34 @@
     $("#overview").onclick = () => lessonHome(areaId, lessonId);
   }
 
-  function startSession(areaId, mode) {
+  // Fisher-Yates in place — used to shuffle a whole-set flashcard run.
+  function shuffleArr(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+
+  function startSession(areaId, mode, opts) {
     mode = mode || "mix";
+    opts = opts || {};
     const area = findArea(areaId);
     if (!area || !area.cards.length) return toast("This set has no cards yet.");
     const pool = area.cards.filter(MODES[mode].match);
     if (!pool.length) return toast("No cards of that type in this area.");
     const sub = { cards: pool };
+    // Whole-set study (no SRS rationing) for two cases:
+    //  • Long answer — extended-response essays are deliberate exam practice.
+    //  • Imported "Your sets" — a custom set is studied as a whole set, not as
+    //    an SRS-scheduled recall batch, so every card shows every session.
+    // Built-in module recall modes keep SRS scheduling (the else branch).
+    // Ratings are still recorded via applyResult; they never drop a card here.
+    const wholeSet = mode === "long" || area.custom;
     let queue;
-    if (mode === "long") {
-      // Extended-response essays are deliberate exam-skill practice, not spaced
-      // recall — always present every essay in the module regardless of due dates,
-      // so a recently-practised essay never disappears from the list. Grading
-      // still records card state (history/progress is kept), it just never hides
-      // an essay here. SRS continues to gate the recall modes below.
-      queue = pool;
+    if (wholeSet) {
+      queue = pool.slice();
     } else {
       queue = dueCards(sub).slice(0, 6);
       if (!queue.length) queue = [...pool].sort((a, b) => cardState(a.id).box - cardState(b.id).box).slice(0, 6);
     }
-    session = { area, mode, queue, idx: 0, results: [] };
+    const shuffle = !!opts.shuffle;
+    if (shuffle) shuffleArr(queue);
+    session = { area, mode, queue, idx: 0, results: [], pool: pool.slice(), shuffle };
     renderCard();
   }
 
@@ -1028,14 +1036,24 @@
     const flash = session.mode === "flash";
     const tag = flash ? "Flashcard" : { mc: "Multiple choice", calc: "Calculate", define: "Define", short: "Short answer", essay: "Extended response" }[card.type];
     if (flash) {
+      // Imported sets get an order toggle: study in import order or shuffled
+      // (shuffle re-randomises the whole set and restarts the run).
+      const orderCtl = area.custom ? `<button class="ordtoggle" id="ordtoggle" title="Switch between import order and shuffle">${session.shuffle ? "🔀 Shuffle" : "↕ In order"}</button>` : "";
       app.innerHTML = `
-        <div class="sessionbar"><button class="x" id="quit" title="Back to areas">←</button><span class="lbl">${esc(area.name)} · ${idx + 1} of ${queue.length}</span><span class="sbar"><i style="width:${Math.round(100 * idx / queue.length)}%"></i></span></div>
+        <div class="sessionbar"><button class="x" id="quit" title="Back to areas">←</button><span class="lbl">${esc(area.name)} · ${idx + 1} of ${queue.length}</span>${orderCtl}<span class="sbar"><i style="width:${Math.round(100 * idx / queue.length)}%"></i></span></div>
         ${stimulusHTML(card.stimulus)}
         <div class="enter">
         <div class="hintrow"><button class="hintbtn" id="hintbtn">💡 Need a hint?</button><div class="hintbox" id="hintbox" hidden>${esc(hintFor(card))}</div></div>
         <div id="answerzone">${flashUI(card)}</div><div id="sheet"></div></div>`;
       $("#quit").onclick = home;
       const hb = $("#hintbtn"); if (hb) hb.onclick = () => { $("#hintbox").hidden = false; hb.hidden = true; };
+      const ot = $("#ordtoggle");
+      if (ot) ot.onclick = () => {
+        session.shuffle = !session.shuffle;
+        session.queue = session.shuffle ? shuffleArr(session.pool.slice()) : session.pool.slice();
+        session.idx = 0;
+        renderCard();
+      };
       wireFlash(card); wireStimulus(card.stimulus); wireGlossary();
       return;
     }
@@ -1273,7 +1291,7 @@
           <button class="btn ghost" id="back">All areas</button>
         </div>
       </div>`;
-    $("#again").onclick = () => startSession(area.id);
+    $("#again").onclick = () => startSession(area.id, session.mode, { shuffle: session.shuffle });
     $("#back").onclick = home;
   }
 
