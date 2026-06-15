@@ -515,16 +515,35 @@
   .ginistep.on .gn{background:var(--blue)}
   .ginival{font-family:var(--disp);font-weight:600;color:var(--blue-dk)} .ginival.big{font-size:17px}
   .ginidone{font-size:13px;line-height:1.55;color:var(--ink);background:var(--green-soft);border-radius:10px;padding:10px 12px;margin:8px 0 0}
-  /* question page: source behind a button, opening a side panel (desktop) */
-  .srcinstr{font-family:var(--disp);font-weight:600;font-size:13.5px;color:var(--blue-dk);background:var(--blue-soft);border-radius:10px;padding:8px 13px;margin:0 0 14px;display:inline-block}
-  .qwork{display:grid;grid-template-columns:1fr;gap:20px;align-items:start}
-  .qwork.with-source{grid-template-columns:minmax(0,1fr) minmax(0,520px)}
-  .qmain{min-width:0}
-  .sourcepanel{background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:14px 16px;position:sticky;top:16px}
-  .sourcepanelhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-family:var(--disp);font-weight:600;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
-  .srcclosebtn{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--line);background:#fff;cursor:pointer;font-size:13px;color:var(--ink-2)}
-  .srcclosebtn:hover{background:var(--bg)}
-  .srcpre{font-family:ui-monospace,Menlo,monospace;font-size:13px;line-height:1.55;white-space:pre-wrap;color:var(--ink);margin:0}
+  /* ===== long-answer question page (toned-down: white/grey, green submit only) ===== */
+  .qmeta{font-family:var(--disp);font-weight:500;font-size:12.5px;color:var(--ink-3);margin:0 0 8px}
+  .qcard{background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:20px 22px;margin-bottom:16px}
+  .qprompt{font-family:var(--disp);font-weight:500;font-size:20px;line-height:1.45;color:var(--ink)}
+  .qtoggles{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+  .qtoggle{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:9px 16px;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+  .qtoggle:hover{border-color:var(--ink-3)}
+  .qtoggle .ti{color:var(--ink-3);font-style:normal}
+  .qtoggle.on-source{border-color:var(--blue);color:var(--blue-dk)} .qtoggle.on-source .ti{color:var(--blue)}
+  .qtoggle.on-help{border-color:var(--gold-dk);color:var(--gold-dk)} .qtoggle.on-help .ti{color:var(--gold-dk)}
+  /* help panel: scaffold + hint under one roof */
+  .helppanel{background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:18px}
+  .helpsec{margin-bottom:14px} .helpsec:last-child{margin-bottom:0}
+  .helph{font-family:var(--disp);font-weight:600;font-size:13.5px;color:var(--ink-2);margin-bottom:8px}
+  .helpol{margin:0 0 0 18px;padding:0} .helpol li{font-size:14.5px;line-height:1.6;color:var(--ink);margin-bottom:5px;font-weight:600}
+  /* work area: answer left, source right, equal height when shown */
+  .qwork{display:grid;grid-template-columns:1fr;gap:18px;align-items:stretch}
+  .qwork.with-source{grid-template-columns:1fr 1fr;height:480px}
+  .qmain{min-width:0;display:flex;flex-direction:column}
+  .qwork.with-source .qmain,.qwork.with-source #answerzone,.qwork.with-source .answerbox{height:100%}
+  #answerzone{flex:1;min-height:0}
+  .sourcepanel{background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;min-height:0}
+  .sourcepanel[hidden]{display:none}
+  .sphead{font-family:var(--disp);font-weight:600;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:8px;flex:none}
+  .spbody{flex:1;overflow-y:auto;min-height:0}
+  .spbody .lzsvg{max-width:340px}
+  .lzfoot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px}
+  .lzfoot .lzexplain{flex:1;margin:0;background:none;padding:0;min-height:0}
+  .submitrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:18px}
 
   /* step 5: rewrite ladder + practice + live rebuild */
   .rv-ladder{margin:4px 0 2px}
