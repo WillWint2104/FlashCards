@@ -3911,11 +3911,41 @@ window.CONTENT.charts = {
     };
   }
 
+  // Accept the simple flashcard shapes people actually paste and map them onto the
+  // app's card model before validation. Tolerated input:
+  //   • a bare array of cards:            [ {front, back}, ... ]
+  //   • a wrapped set:                    { name, cards: [ ... ] }
+  // and per card, these front/back aliases (first non-empty wins):
+  //   front  ← front | q | question | term | prompt
+  //   back   ← back  | a | answer   | def  | definition | model
+  // A plain front/back card becomes a {type:"define", marks:1} card, which is what
+  // Flashcards mode flips (prompt on the front, model on the back). Explicit fields
+  // already in the app's shape (type, marks, choices, vocab, …) are left untouched.
+  function pickField(c, names) { for (const n of names) { const v = c[n]; if (v != null && String(v).trim() !== "") return v; } return undefined; }
+  function normalizeCard(c) {
+    if (!c || typeof c !== "object") return c;
+    const out = Object.assign({}, c);
+    const front = pickField(out, ["prompt", "front", "q", "question", "term"]);
+    const back = pickField(out, ["model", "back", "a", "answer", "def", "definition"]);
+    if (out.prompt == null && front != null) out.prompt = front;
+    if (out.model == null && back != null) out.model = back;
+    if (!out.type) out.type = "define";
+    if (!out.marks || out.marks < 1) out.marks = 1;
+    ["front", "q", "question", "term", "back", "a", "answer", "def", "definition"].forEach(k => { if (k !== "prompt" && k !== "model") delete out[k]; });
+    return out;
+  }
+  function normalizeImport(data) {
+    if (Array.isArray(data)) data = { cards: data };
+    if (data && typeof data === "object" && Array.isArray(data.cards)) data.cards = data.cards.map(normalizeCard);
+    return data;
+  }
+
   function importSet() {
     const msg = $("#importmsg");
     let data;
     try { data = JSON.parse($("#importjson").value); }
     catch { return msg.textContent = "That isn't valid JSON."; }
+    data = normalizeImport(data);
     const errs = validateSet(data);
     if (errs.length) return msg.textContent = errs[0];
     const set = { id: "custom-" + Date.now(), name: data.name || "Imported set", cards: data.cards, glossary: data.glossary || {} };
