@@ -40,6 +40,9 @@
 
   .areas{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
   .area{display:flex;gap:14px;align-items:center;text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:16px;transition:transform .12s,box-shadow .12s}
+  .setwrap{display:flex;align-items:stretch;gap:8px}
+  .setwrap .area{flex:1;min-width:0}
+  .setwrap .setrm{flex:none;align-self:stretch}
   .area:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(60,74,74,.1)}
   .area:focus-visible{outline:3px solid var(--green)}
   .aicon{font-size:28px;flex:none;width:52px;height:52px;display:grid;place-items:center;background:var(--green-soft);border-radius:14px}
