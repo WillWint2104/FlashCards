@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Marginal — password reset queue (teacher)</title>
+<style>
+  :root{--ink:#28332f;--ink-2:#5d6b65;--ink-3:#8a958f;--line:#dfe6e2;--card:#fff;--bg:#f4f7f5;--green:#27c08a;--green-dk:#179c6d;--coral-dk:#d8533f}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink);padding:24px}
+  .wrap{max-width:640px;margin:0 auto}
+  h1{font-size:21px;margin:0 0 4px}
+  p.sub{color:var(--ink-2);font-size:14px;margin:0 0 18px}
+  .card{background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px}
+  label{display:block;font-size:13px;font-weight:700;color:var(--ink-2);margin-bottom:5px}
+  input{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:11px;font-size:15px;font-family:inherit}
+  input:focus{outline:none;border-color:var(--green)}
+  .btn{border:none;border-radius:11px;background:var(--green);color:#fff;font-weight:700;font-size:14px;padding:10px 16px;cursor:pointer}
+  .btn.ghost{background:var(--card);color:var(--ink);box-shadow:0 0 0 1.5px var(--line) inset}
+  .btn.danger{background:var(--card);color:var(--coral-dk);box-shadow:0 0 0 1.5px var(--line) inset}
+  .btn.sm{padding:7px 12px;font-size:13px}
+  .msg{font-size:13.5px;font-weight:600;margin-top:10px;min-height:18px}
+  .msg.err{color:var(--coral-dk)} .msg.ok{color:var(--green-dk)}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .req{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+  .req:first-child{border-top:none}
+  .who{font-weight:700;font-size:15px}
+  .when{font-size:12.5px;color:var(--ink-3);font-weight:600}
+  .empty{color:var(--ink-3);font-weight:600;font-size:14px;padding:14px 0}
+  .warn{background:#fff6f4;border:1.5px solid #f4c9bf;border-radius:11px;padding:11px 13px;font-size:13px;color:#9a3b2b;font-weight:600;margin-bottom:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Password reset queue</h1>
+  <p class="sub">Approving a request clears that student's password — they set a new one on next login. Their saved sets are kept. A pending request alone changes nothing.</p>
+
+  <div class="card">
+    <label for="secret">Teacher secret</label>
+    <div class="row">
+      <input id="secret" type="password" placeholder="Your teacher secret (held only here, in memory)" style="flex:1;min-width:200px">
+      <button class="btn" id="load">Load requests</button>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="card" id="listcard" hidden>
+    <div class="warn" id="cfgwarn" hidden></div>
+    <div id="list"></div>
+    <div class="row" style="margin-top:12px"><button class="btn ghost sm" id="refresh">Refresh</button></div>
+  </div>
+</div>
+
+<script>
+  // Reuse the SAME public Supabase config the student app uses. Both values are
+  // public-safe; the teacher secret is NEVER stored here — it's typed each time
+  // and verified server-side inside the Edge Function.
+  // EDIT these two if you host teacher.html separately from index.html:
+  var SUPABASE_URL = "";       // e.g. "https://abcd1234.supabase.co"
+  var SUPABASE_ANON_KEY = "";  // the project's "anon public" key
+
+  var $ = function (s) { return document.querySelector(s); };
+  var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (m) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[m]; }); };
+  var secret = "";
+
+  function fnUrl() { return SUPABASE_URL.replace(/\/$/, "") + "/functions/v1/marginal-admin"; }
+
+  async function call(action, extra) {
+    var body = Object.assign({ action: action, teacher_secret: secret }, extra || {});
+    var res = await fetch(fnUrl(), {
+      method: "POST",
+      headers: { "content-type": "application/json", "apikey": SUPABASE_ANON_KEY, "authorization": "Bearer " + SUPABASE_ANON_KEY },
+      body: JSON.stringify(body)
+    });
+    var data = null;
+    try { data = await res.json(); } catch (e) {}
+    return { ok: res.ok, status: res.status, data: data };
+  }
+
+  function setMsg(t, cls) { var m = $("#msg"); m.textContent = t; m.className = "msg" + (cls ? " " + cls : ""); }
+
+  function fmt(ts) { try { return new Date(ts).toLocaleString(); } catch (e) { return ts; } }
+
+  function renderList(rows) {
+    $("#listcard").hidden = false;
+    var el = $("#list");
+    if (!rows || !rows.length) { el.innerHTML = '<div class="empty">No pending reset requests.</div>'; return; }
+    el.innerHTML = rows.map(function (r) {
+      return '<div class="req" data-id="' + esc(r.id) + '">'
+        + '<div><div class="who">' + esc(r.class_code) + ' · #' + esc(r.student_number) + '</div>'
+        + '<div class="when">requested ' + esc(fmt(r.created_at)) + '</div></div>'
+        + '<div class="row"><button class="btn sm" data-approve="' + esc(r.id) + '">Approve reset</button>'
+        + '<button class="btn danger sm" data-dismiss="' + esc(r.id) + '">Dismiss</button></div></div>';
+    }).join("");
+    el.querySelectorAll("[data-approve]").forEach(function (b) {
+      b.onclick = async function () {
+        if (!confirm("Approve reset for this student? Their password will be cleared (sets kept).")) return;
+        b.disabled = true;
+        var r = await call("reset-approve", { id: b.getAttribute("data-approve") });
+        if (r.ok) { setMsg("Reset approved — student can set a new password on next login.", "ok"); load(); }
+        else { setMsg((r.data && r.data.error) || "Approve failed.", "err"); b.disabled = false; }
+      };
+    });
+    el.querySelectorAll("[data-dismiss]").forEach(function (b) {
+      b.onclick = async function () {
+        b.disabled = true;
+        var r = await call("reset-dismiss", { id: b.getAttribute("data-dismiss") });
+        if (r.ok) { setMsg("Request dismissed — nothing changed for the student.", "ok"); load(); }
+        else { setMsg((r.data && r.data.error) || "Dismiss failed.", "err"); b.disabled = false; }
+      };
+    });
+  }
+
+  async function load() {
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      $("#listcard").hidden = false; $("#cfgwarn").hidden = false;
+      $("#cfgwarn").textContent = "Set SUPABASE_URL and SUPABASE_ANON_KEY at the top of teacher.html (same values as index.html).";
+      return;
+    }
+    secret = $("#secret").value.trim();
+    if (!secret) return setMsg("Enter your teacher secret.", "err");
+    setMsg("Loading…");
+    var r = await call("reset-list");
+    if (r.status === 401) return setMsg("Wrong teacher secret.", "err");
+    if (!r.ok) return setMsg((r.data && r.data.error) || "Couldn't load requests.", "err");
+    setMsg("");
+    renderList(r.data && r.data.requests);
+  }
+
+  $("#load").onclick = load;
+  $("#refresh").onclick = load;
+  $("#secret").addEventListener("keydown", function (e) { if (e.key === "Enter") load(); });
+</script>
+</body>
+</html>

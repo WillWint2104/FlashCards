@@ -154,6 +154,43 @@
   .setrow small{color:var(--ink-3)}
   .btn.danger{color:var(--coral-dk)}
 
+  /* ---- auth (sign in / set password) ---- */
+  .authcard{max-width:420px;margin:8px auto 0;background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:22px}
+  .authcard h2{font-family:var(--disp);font-size:20px;margin:0 0 4px}
+  .authcard .bhint{margin:2px 0 14px}
+  .authfield{margin-bottom:12px}
+  .authfield label{display:block;font-size:13px;font-weight:700;color:var(--ink-2);margin-bottom:4px}
+  .authfield input{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:12px;font-size:15px;font-family:inherit}
+  .authfield input:focus{outline:none;border-color:var(--green)}
+  .authmsg{font-size:13.5px;font-weight:600;margin-top:10px;min-height:18px}
+  .authmsg.err{color:var(--coral-dk)}
+  .authmsg.ok{color:var(--green-dk)}
+  .authlink{background:none;border:none;color:var(--green-dk);font-weight:700;font-size:13.5px;cursor:pointer;padding:0;text-decoration:underline}
+  .whoami{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;color:var(--ink-2)}
+
+  /* ---- sets manager (compact list) ---- */
+  .setsmgr{margin-top:24px}
+  .setshead{font-family:var(--disp);font-weight:600;font-size:16px;margin-bottom:2px}
+  .setshead small{color:var(--ink-3);font-weight:600}
+  .smbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0 10px}
+  .sminput{flex:1;min-width:160px;padding:9px 12px;border:1.5px solid var(--line);border-radius:12px;font-size:14px;font-family:inherit}
+  .sminput:focus{outline:none;border-color:var(--green)}
+  .smsort{padding:9px 12px;border:1.5px solid var(--line);border-radius:12px;font-size:13.5px;font-family:inherit;font-weight:600;background:var(--card)}
+  .smtags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .tagchip{font-size:12px;font-weight:700;color:var(--ink-2);background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:4px 11px;cursor:pointer}
+  .tagchip.on{background:var(--green-soft);border-color:var(--green);color:var(--green-dk)}
+  .smscroll{max-height:430px;overflow-y:auto;border:1.5px solid var(--line);border-radius:14px;background:var(--card)}
+  .smrow{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:11px 14px;border-top:1px solid var(--line)}
+  .smrow:first-child{border-top:none}
+  .smname{font-family:var(--disp);font-weight:600;font-size:15px;cursor:pointer;min-width:0}
+  .smname:hover{color:var(--green-dk)}
+  .smmeta{font-size:12px;color:var(--ink-3);font-weight:600;margin-top:2px}
+  .smsettags{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+  .smsettag{font-size:11px;font-weight:700;color:var(--ink-2);background:var(--green-soft);border-radius:99px;padding:2px 8px}
+  .smcount{font-size:12.5px;font-weight:700;color:var(--ink-2);white-space:nowrap}
+  .smacts{display:flex;gap:6px;flex-none}
+  .smempty{padding:26px 14px;text-align:center;color:var(--ink-3);font-weight:600;font-size:14px}
+
   .modes{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:6px}
   .mode{display:flex;flex-direction:column;gap:3px;text-align:left;background:var(--card);border:2px solid var(--line);border-radius:16px;padding:16px;transition:transform .12s,border-color .12s}
   .mode:hover:not(:disabled){transform:translateY(-2px);border-color:var(--green)}
@@ -599,12 +636,21 @@
     endpoint: "https://marginal-grader.williamwinter2104.workers.dev/",  // Cloudflare Worker URL for AI essay marking
     code: "12Ec126",  // class code — must match the worker's CLASS_CODE secret exactly (case-sensitive)
     reviewMode: false,  // PROMOTION SWITCH for guided review mode. false = students get the simple result sheet. Set true to give every student the paragraph-by-paragraph review after marking. Add ?review=1 to the URL to try it without enabling it for everyone.
-    textbookUrl: ""   // optional: deep link to your class's licensed textbook copy,
+    textbookUrl: "",  // optional: deep link to your class's licensed textbook copy,
                       // e.g. "https://your-lms.school/riley-2026.pdf#page={page}" —
                       // the Source tab will open it at each level's exact page
+
+    // ===== OPTIONAL: Supabase (student logins + durable custom sets) =====
+    // Leave both BLANK to keep custom sets in this browser only (default).
+    // When set, students can sign in and their sets sync across devices.
+    // Both values are PUBLIC-safe (the anon key is protected by Row Level
+    // Security). See SUPABASE-SETUP.md for the full provisioning steps.
+    supabaseUrl: "",       // e.g. "https://abcd1234.supabase.co"
+    supabaseAnonKey: ""    // the project's "anon public" key
   };
 </script>
 <script src="content.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 </body>
 </html>
