@@ -57,8 +57,8 @@
   // public-safe; the teacher secret is NEVER stored here — it's typed each time
   // and verified server-side inside the Edge Function.
   // EDIT these two if you host teacher.html separately from index.html:
-  var SUPABASE_URL = "";       // e.g. "https://abcd1234.supabase.co"
-  var SUPABASE_ANON_KEY = "";  // the project's "anon public" key
+  var SUPABASE_URL = "https://ktarxuoktlyqbxklrwnk.supabase.co";       // e.g. "https://abcd1234.supabase.co"
+  var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0YXJ4dW9rdGx5cWJ4a2xyd25rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MDI5MjQsImV4cCI6MjA5NzA3ODkyNH0.mDGc5YDsq6IGdIwiit1jlwaWVNYL2WRCsdAKlTwVi6I";  // the project's "anon public" key
 
   var $ = function (s) { return document.querySelector(s); };
   var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (m) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[m]; }); };
