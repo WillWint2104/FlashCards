@@ -593,6 +593,7 @@
   window.MARGINAL_CONFIG = {
     endpoint: "https://marginal-grader.williamwinter2104.workers.dev/",  // Cloudflare Worker URL for AI essay marking
     code: "12Ec126",  // class code — must match the worker's CLASS_CODE secret exactly (case-sensitive)
+    reviewMode: false,  // PROMOTION SWITCH for guided review mode. false = students get the simple result sheet. Set true to give every student the paragraph-by-paragraph review after marking. Add ?review=1 to the URL to try it without enabling it for everyone.
     textbookUrl: ""   // optional: deep link to your class's licensed textbook copy,
                       // e.g. "https://your-lms.school/riley-2026.pdf#page={page}" —
                       // the Source tab will open it at each level's exact page
@@ -3596,10 +3597,10 @@ window.CONTENT.charts = {
         if (card.type === "calc") g = gradeCalc(card, ans);
         else if (card.type === "essay") g = await gradeEssay(card, ans);
         else g = gradeLocal(card, ans);
-        // Gated review-mode entry: when the teacher enables it and the worker
-        // returned a structured review, open the focus-mode review instead of the
-        // flat result sheet. OFF by default, so the live student flow is unchanged.
-        if (card.type === "essay" && CONFIG.reviewMode === true && g.fb && Array.isArray(g.fb.paragraphs) && g.fb.paragraphs.length) {
+        // Review-mode entry: when enabled and the worker returned a structured
+        // review, open the focus-mode guided review instead of the flat result
+        // sheet. Closing the review advances to the next question.
+        if (card.type === "essay" && reviewEnabled() && g.fb && Array.isArray(g.fb.paragraphs) && g.fb.paragraphs.length) {
           applyResult(card, g.score, g.max);
           session.results.push({ card, g });
           openReview(g.fb, () => { session.idx++; renderCard(); });
@@ -4001,6 +4002,15 @@ window.CONTENT.charts = {
   // response, or CONTENT.reviewSample for the demo entry). Student entry is gated
   // (off by default); the dev entry is ?reviewdemo=1.
   // ===========================================================================
+  // Review mode is the promotion switch CONFIG.reviewMode (teacher sets it true to
+  // give every student the guided review). ?review=1 (or localStorage) turns it on
+  // for one person to try the real flow without enabling it for everyone.
+  function reviewEnabled() {
+    if (CONFIG.reviewMode === true) return true;
+    if (/[?&]review=1/.test(location.search)) return true;
+    try { if (localStorage.getItem("marginal.review") === "1") return true; } catch (e) { /* sandboxed */ }
+    return false;
+  }
   const RVS = { review: null, active: 0, tab: "paragraphs", view: "paragraph", qpos: 0, resolved: {}, skipped: {}, chosen: null, stage: "ladder", rep: 0, rebuiltOpen: false };
   function rvResetIssue() { RVS.chosen = null; RVS.stage = "ladder"; RVS.rep = 0; }
   function rvDotClass(p) { const r = p.max ? p.score / p.max : 1; return r >= 0.8 ? "g" : r >= 0.6 ? "m" : "w"; }
