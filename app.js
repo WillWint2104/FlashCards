@@ -171,7 +171,11 @@
   // HARD GATE: when cloud auth is configured, the student must be signed in to
   // reach ANY part of the app. (When Supabase is unconfigured there is no auth
   // to gate on, so the app behaves normally — preserves forks/offline.)
-  function gated() { return Cloud.enabled() && !Cloud.session(); }
+  // Gate on CONFIG presence, not Cloud.enabled(): if the supabase-js CDN fails
+  // to load while keys are set, Cloud.enabled() would be false and silently
+  // bypass the gate — so fail CLOSED (show the gate) whenever auth is configured.
+  function cloudConfigured() { return !!(CONFIG.supabaseUrl && CONFIG.supabaseAnonKey); }
+  function gated() { return cloudConfigured() && !Cloud.session(); }
   function getCustomSets() { return cloudActive() ? Cloud.sets() : state.customSets; }
   const BACKUP_FORMAT = "marginal-backup@1";
   function download(filename, text, mime) {
@@ -486,9 +490,9 @@
         <div class="authbrand">Marginal</div>
         <h2>Sign in to start studying</h2>
         <p class="bhint">Enter your class code and student number, then your password. <b>First time? Pick a password you'll remember</b> — you'll use it to sign in from any device.</p>
-        <div class="authfield"><label>Class code</label><input id="acode" value="${esc(CONFIG.code || "")}" autocomplete="off"></div>
-        <div class="authfield"><label>Student number</label><input id="anum" inputmode="numeric" autocomplete="off"></div>
-        <div class="authfield"><label>Password</label><input id="apass" type="password" autocomplete="current-password" placeholder="First time? Choose one you'll remember"></div>
+        <div class="authfield"><label for="acode">Class code</label><input id="acode" value="${esc(CONFIG.code || "")}" autocomplete="off"></div>
+        <div class="authfield"><label for="anum">Student number</label><input id="anum" inputmode="numeric" autocomplete="off"></div>
+        <div class="authfield"><label for="apass">Password</label><input id="apass" type="password" autocomplete="current-password" placeholder="First time? Choose one you'll remember"></div>
         <button class="btn" id="ado" style="width:100%">Sign in</button>
         <div class="authmsg" id="amsg"></div>
         <div style="margin-top:12px;text-align:center"><button class="authlink" id="aforgot">Forgotten your password? Request a reset</button></div>
@@ -2465,25 +2469,31 @@
       rubric: []
     };
   }
-  try {
-    const m = /[?&]reviewdemo=([^&]+)/.exec(location.search);
-    if (m) {
-      const v = decodeURIComponent(m[1]);
-      if (v === "1" && C.reviewSample) openReview(C.reviewSample);
-      else if (v.indexOf("card:") === 0) { const card = rvFindCard(v.slice(5)); if (card) openReview(rvPreviewFromCard(card)); }
-    }
-  } catch (e) { /* demo entry is best-effort */ }
+  // The ?reviewdemo entry must respect the gate — only open it once we know the
+  // student is allowed in (signed in, or cloud unconfigured).
+  function maybeOpenReviewDemo() {
+    if (gated()) return;
+    try {
+      const m = /[?&]reviewdemo=([^&]+)/.exec(location.search);
+      if (m) {
+        const v = decodeURIComponent(m[1]);
+        if (v === "1" && C.reviewSample) openReview(C.reviewSample);
+        else if (v.indexOf("card:") === 0) { const card = rvFindCard(v.slice(5)); if (card) openReview(rvPreviewFromCard(card)); }
+      }
+    } catch (e) { /* demo entry is best-effort */ }
+  }
 
   // Boot. When cloud auth is configured, the app is gated: recover any persisted
   // session first (no flash), then either land in the app (returning student) or
   // show the sign-in gate. When unconfigured, the app opens normally.
   Cloud.init();
-  if (Cloud.enabled()) {
+  if (cloudConfigured()) {
     app.innerHTML = `<div class="authgate"><div class="authcard"><div class="authbrand">Marginal</div><p class="bhint">Loading…</p></div></div>`;
     Cloud.restore()
-      .then(() => { Cloud.session() ? home() : authScreen(); })
+      .then(() => { if (Cloud.session()) { home(); maybeOpenReviewDemo(); } else authScreen(); })
       .catch(() => authScreen());
   } else {
     home();
+    maybeOpenReviewDemo();
   }
 })();
