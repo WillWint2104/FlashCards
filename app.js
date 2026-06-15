@@ -1001,17 +1001,32 @@
         <span class="sbar"><i style="width:${Math.round(100 * idx / queue.length)}%"></i></span>
       </div>
       <div class="tags"><span class="tag blue">${esc(area.custom ? "Custom set" : C.unit)}</span><span class="tag gold">${tag}</span><span class="tag gray">${card.marks} mark${card.marks > 1 ? "s" : ""}</span></div>
-      ${stimulusHTML(card.stimulus)}
-      ${flash ? "" : `<div class="prompt">${linkGlossary(card.prompt)}</div>`}
+      ${flash ? stimulusHTML(card.stimulus) : `<div class="prompt">${linkGlossary(card.prompt)}</div>`}
+      ${!flash && card.stimulus ? `<p class="srcinstr">Use the source to support your answer.</p>` : ""}
       ${!flash && card.type === "essay" && card.scaffold && card.scaffold.length ? `<details class="scaffold"><summary>Need a scaffold?</summary><ol>${card.scaffold.map(s => "<li>" + esc(s) + "</li>").join("")}</ol></details>` : ""}
       <div class="enter">
       <div class="hintrow"><button class="hintbtn" id="hintbtn">💡 Need a hint?</button><div class="hintbox" id="hintbox" hidden>${esc(hintFor(card))}</div></div>
-      <div id="answerzone">${flash ? flashUI(card) : answerUI(card)}</div>
-      <div id="sheet"></div>
+      ${flash ? `<div id="answerzone">${flashUI(card)}</div><div id="sheet"></div>` : `
+      <div class="qwork" id="qwork">
+        <div class="qmain">
+          ${card.stimulus ? `<button class="btn ghost sm" id="viewsource" style="margin-bottom:14px">📊 View the source</button>` : ""}
+          <div id="answerzone">${answerUI(card)}</div>
+          <div id="sheet"></div>
+        </div>
+        ${card.stimulus ? `<aside class="sourcepanel" id="sourcepanel" hidden><div class="sourcepanelhead"><span>Source</span><button class="srcclosebtn" id="srcclose" aria-label="Hide the source">✕</button></div>${stimulusInnerHTML(card.stimulus)}</aside>` : ""}
+      </div>`}
       </div>`;
     $("#quit").onclick = home;
     $("#hintbtn").onclick = () => { $("#hintbox").hidden = false; $("#hintbtn").hidden = true; };
     if (flash) wireFlash(card); else wireAnswer(card);
+    const vs = $("#viewsource");
+    if (vs) {
+      const panel = $("#sourcepanel"), qw = $("#qwork");
+      const showSrc = () => { panel.hidden = false; qw.classList.add("with-source"); vs.textContent = "📊 Hide the source"; };
+      const hideSrc = () => { panel.hidden = true; qw.classList.remove("with-source"); vs.textContent = "📊 View the source"; };
+      vs.onclick = () => (panel.hidden ? showSrc() : hideSrc());
+      const sc = $("#srcclose"); if (sc) sc.onclick = hideSrc;
+    }
     wireStimulus(card.stimulus);
     wireGlossary();
   }
@@ -1025,6 +1040,14 @@
       return `<div class="stimulus"><div class="stimlabel">Source</div>${stim.caption ? `<p class="lzcap">${esc(stim.caption)}</p>` : ""}${stim.charts.map((c, i) => rvChartHTML(c, i)).join("")}</div>`;
     }
     return `<div class="stimulus"><div class="stimlabel">Source</div><pre>${esc(stim)}</pre></div>`;
+  }
+  // The source content for the side panel (no outer Source frame; the panel adds it).
+  function stimulusInnerHTML(stim) {
+    if (!stim) return "";
+    if (typeof stim === "object" && Array.isArray(stim.charts)) {
+      return `${stim.caption ? `<p class="lzcap">${esc(stim.caption)}</p>` : ""}${stim.charts.map((c, i) => rvChartHTML(c, i)).join("")}`;
+    }
+    return `<pre class="srcpre">${esc(stim)}</pre>`;
   }
   function wireStimulus(stim) {
     if (!stim || typeof stim !== "object" || !Array.isArray(stim.charts)) return;

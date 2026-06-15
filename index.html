@@ -515,6 +515,16 @@
   .ginistep.on .gn{background:var(--blue)}
   .ginival{font-family:var(--disp);font-weight:600;color:var(--blue-dk)} .ginival.big{font-size:17px}
   .ginidone{font-size:13px;line-height:1.55;color:var(--ink);background:var(--green-soft);border-radius:10px;padding:10px 12px;margin:8px 0 0}
+  /* question page: source behind a button, opening a side panel (desktop) */
+  .srcinstr{font-family:var(--disp);font-weight:600;font-size:13.5px;color:var(--blue-dk);background:var(--blue-soft);border-radius:10px;padding:8px 13px;margin:0 0 14px;display:inline-block}
+  .qwork{display:grid;grid-template-columns:1fr;gap:20px;align-items:start}
+  .qwork.with-source{grid-template-columns:minmax(0,1fr) minmax(0,520px)}
+  .qmain{min-width:0}
+  .sourcepanel{background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:14px 16px;position:sticky;top:16px}
+  .sourcepanelhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-family:var(--disp);font-weight:600;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+  .srcclosebtn{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--line);background:#fff;cursor:pointer;font-size:13px;color:var(--ink-2)}
+  .srcclosebtn:hover{background:var(--bg)}
+  .srcpre{font-family:ui-monospace,Menlo,monospace;font-size:13px;line-height:1.55;white-space:pre-wrap;color:var(--ink);margin:0}
 
   /* step 5: rewrite ladder + practice + live rebuild */
   .rv-ladder{margin:4px 0 2px}
