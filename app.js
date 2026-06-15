@@ -1171,24 +1171,24 @@
         if (card.type === "calc") g = gradeCalc(card, ans);
         else if (card.type === "essay") g = await gradeEssay(card, ans);
         else g = gradeLocal(card, ans);
-        // Review-mode entry: when enabled and the worker returned a structured
-        // review, open the focus-mode guided review instead of the flat result
-        // sheet. Closing the review advances to the next question.
-        if (card.type === "essay" && reviewEnabled() && g.fb && Array.isArray(g.fb.paragraphs) && g.fb.paragraphs.length) {
-          applyResult(card, g.score, g.max);
-          session.results.push({ card, g });
-          openReview(g.fb, () => { session.idx++; renderCard(); });
-          return;
-        }
         finishCard(card, g);
       };
     }
+  }
+
+  // A graded essay can offer guided review when enabled and the worker returned
+  // a structured (paragraphs) review. Review is OFFERED on the grade screen via a
+  // button — never auto-launched — so the student keeps agency to just take the grade.
+  function canReview(card, g) {
+    return card.type === "essay" && reviewEnabled() && g.fb && Array.isArray(g.fb.paragraphs) && g.fb.paragraphs.length > 0;
   }
 
   function finishCard(card, g) {
     applyResult(card, g.score, g.max);
     session.results.push({ card, g });
     $("#sheet").innerHTML = sheetHTML(card, g);
+    const rb = $("#reviewbtn");
+    if (rb) rb.onclick = () => openReview(g.fb, () => { session.idx++; renderCard(); });
     const cont = $("#continue");
     cont.onclick = () => { session.idx++; renderCard(); };
     cont.focus();
@@ -1216,9 +1216,12 @@
         <details><summary>What a top answer covers</summary><p>${linkGlossary(card.model)}</p></details>`;
     }
     const ctx = card.context ? `<details class="ctx"><summary>Why — the concept</summary><p>${linkGlossary(card.context)}</p></details>` : "";
+    const n = canReview(card, g) ? rvIssueCount(g.fb) : 0;
+    const reviewBtn = n ? `<button class="btn" id="reviewbtn">Work through the issues (${n}) →</button>` : "";
+    const contCls = n ? "btn ghost" : "btn";
     return `<div class="sheet ${mood[0]}">
       <div class="head"><div class="score">${g.score}<small>/${g.max}</small></div><h3>${mood[1]}</h3></div>
-      <div class="bd">${body}${ctx}<div class="actions"><button class="btn" id="continue">Continue</button></div></div>
+      <div class="bd">${body}${ctx}<div class="actions">${reviewBtn}<button class="${contCls}" id="continue">Continue</button></div></div>
     </div>`;
   }
 
@@ -1626,6 +1629,11 @@
     (p.sentences || []).forEach((s, si) => (s.issues || []).forEach((iss, ii) => q.push({ si, ii, sev: iss.severity, iss })));
     q.sort((a, b) => (rvSevRank(a.sev) - rvSevRank(b.sev)) || (a.si - b.si) || (a.ii - b.ii));
     return q;
+  }
+  // Total outstanding issues across every paragraph — the N on the "Work through the issues" button.
+  function rvIssueCount(review) {
+    if (!review || !Array.isArray(review.paragraphs)) return 0;
+    return review.paragraphs.reduce((n, p) => n + rvQueue(p).length, 0);
   }
   function rvWorstOpen(p, pi, si) {
     let worst = null;
