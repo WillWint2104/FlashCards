@@ -994,38 +994,51 @@
     const card = queue[idx];
     const flash = session.mode === "flash";
     const tag = flash ? "Flashcard" : { mc: "Multiple choice", calc: "Calculate", define: "Define", short: "Short answer", essay: "Extended response" }[card.type];
+    if (flash) {
+      app.innerHTML = `
+        <div class="sessionbar"><button class="x" id="quit" title="Back to areas">←</button><span class="lbl">${esc(area.name)} · ${idx + 1} of ${queue.length}</span><span class="sbar"><i style="width:${Math.round(100 * idx / queue.length)}%"></i></span></div>
+        ${stimulusHTML(card.stimulus)}
+        <div class="enter">
+        <div class="hintrow"><button class="hintbtn" id="hintbtn">💡 Need a hint?</button><div class="hintbox" id="hintbox" hidden>${esc(hintFor(card))}</div></div>
+        <div id="answerzone">${flashUI(card)}</div><div id="sheet"></div></div>`;
+      $("#quit").onclick = home;
+      const hb = $("#hintbtn"); if (hb) hb.onclick = () => { $("#hintbox").hidden = false; hb.hidden = true; };
+      wireFlash(card); wireStimulus(card.stimulus); wireGlossary();
+      return;
+    }
+    // Long-answer / question page: question is the hero; source and help behind toggles.
+    const scaf = (card.type === "essay" && card.scaffold && card.scaffold.length) ? card.scaffold : null;
+    const ph = card.hint || (card.vocab && card.vocab.length ? "Try to work in: " + card.vocab.join(", ") + "." : hintFor(card));
+    const hasHelp = !!(scaf || ph);
     app.innerHTML = `
-      <div class="sessionbar">
-        <button class="x" id="quit" title="Back to areas">←</button>
-        <span class="lbl">${esc(area.name)} · ${idx + 1} of ${queue.length}</span>
-        <span class="sbar"><i style="width:${Math.round(100 * idx / queue.length)}%"></i></span>
+      <div class="sessionbar"><button class="x" id="quit" title="Back to areas">←</button><span class="lbl">${esc(area.name)} · ${idx + 1} of ${queue.length}</span><span class="sbar"><i style="width:${Math.round(100 * idx / queue.length)}%"></i></span></div>
+      <div class="qmeta">${esc(area.custom ? "Custom set" : C.unit)} · ${tag} · ${card.marks} mark${card.marks > 1 ? "s" : ""}</div>
+      <div class="qcard"><div class="qprompt">${linkGlossary(card.prompt)}</div></div>
+      <div class="qtoggles">
+        ${card.stimulus ? `<button class="qtoggle" id="viewsource"><span class="ti">▦</span> Show source</button>` : ""}
+        ${hasHelp ? `<button class="qtoggle" id="needhelp"><span class="ti">?</span> Need help?</button>` : ""}
       </div>
-      <div class="tags"><span class="tag blue">${esc(area.custom ? "Custom set" : C.unit)}</span><span class="tag gold">${tag}</span><span class="tag gray">${card.marks} mark${card.marks > 1 ? "s" : ""}</span></div>
-      ${flash ? stimulusHTML(card.stimulus) : `<div class="prompt">${linkGlossary(card.prompt)}</div>`}
-      ${!flash && card.stimulus ? `<p class="srcinstr">Use the source to support your answer.</p>` : ""}
-      ${!flash && card.type === "essay" && card.scaffold && card.scaffold.length ? `<details class="scaffold"><summary>Need a scaffold?</summary><ol>${card.scaffold.map(s => "<li>" + esc(s) + "</li>").join("")}</ol></details>` : ""}
+      ${hasHelp ? `<div class="helppanel" id="helppanel" hidden>${scaf ? `<div class="helpsec"><div class="helph">How to structure it</div><ol class="helpol">${scaf.map(s => "<li>" + esc(s) + "</li>").join("")}</ol></div>` : ""}${ph ? `<div class="helpsec"><div class="helph">Hint</div><button class="btn ghost sm" id="showhint">Show a hint</button><div class="hintbox" id="hintbox" hidden style="margin-top:8px">${esc(ph)}</div></div>` : ""}</div>` : ""}
       <div class="enter">
-      <div class="hintrow"><button class="hintbtn" id="hintbtn">💡 Need a hint?</button><div class="hintbox" id="hintbox" hidden>${esc(hintFor(card))}</div></div>
-      ${flash ? `<div id="answerzone">${flashUI(card)}</div><div id="sheet"></div>` : `
-      <div class="qwork" id="qwork">
-        <div class="qmain">
-          ${card.stimulus ? `<button class="btn ghost sm" id="viewsource" style="margin-bottom:14px">📊 View the source</button>` : ""}
-          <div id="answerzone">${answerUI(card)}</div>
-          <div id="sheet"></div>
+        <div class="qwork" id="qwork">
+          <div class="qmain"><div id="answerzone">${answerInput(card)}</div></div>
+          ${card.stimulus ? `<aside class="sourcepanel" id="sourcepanel" hidden><div class="sphead">Source</div><div class="spbody">${stimulusInnerHTML(card.stimulus)}</div></aside>` : ""}
         </div>
-        ${card.stimulus ? `<aside class="sourcepanel" id="sourcepanel" hidden><div class="sourcepanelhead"><span>Source</span><button class="srcclosebtn" id="srcclose" aria-label="Hide the source">✕</button></div>${stimulusInnerHTML(card.stimulus)}</aside>` : ""}
-      </div>`}
+        ${submitRow(card)}
+        <div id="sheet"></div>
       </div>`;
     $("#quit").onclick = home;
-    $("#hintbtn").onclick = () => { $("#hintbox").hidden = false; $("#hintbtn").hidden = true; };
-    if (flash) wireFlash(card); else wireAnswer(card);
+    wireAnswer(card);
     const vs = $("#viewsource");
     if (vs) {
       const panel = $("#sourcepanel"), qw = $("#qwork");
-      const showSrc = () => { panel.hidden = false; qw.classList.add("with-source"); vs.textContent = "📊 Hide the source"; };
-      const hideSrc = () => { panel.hidden = true; qw.classList.remove("with-source"); vs.textContent = "📊 View the source"; };
-      vs.onclick = () => (panel.hidden ? showSrc() : hideSrc());
-      const sc = $("#srcclose"); if (sc) sc.onclick = hideSrc;
+      vs.onclick = () => { const show = panel.hidden; panel.hidden = !show; qw.classList.toggle("with-source", show); vs.classList.toggle("on-source", show); vs.innerHTML = `<span class="ti">▦</span> ${show ? "Hide source" : "Show source"}`; };
+    }
+    const nh = $("#needhelp");
+    if (nh) {
+      const hp = $("#helppanel");
+      nh.onclick = () => { const show = hp.hidden; hp.hidden = !show; nh.classList.toggle("on-help", show); };
+      const sh = $("#showhint"); if (sh) sh.onclick = () => { $("#hintbox").hidden = false; sh.hidden = true; };
     }
     wireStimulus(card.stimulus);
     wireGlossary();
@@ -1118,15 +1131,22 @@
     else go();
   }
 
-  function answerUI(card) {
+  // The answer input only (no submit). The submit lives in its own full-width row.
+  function answerInput(card) {
     if (card.type === "mc")
       return `<div class="choices">${card.choices.map((c, i) => `<button class="choice" data-i="${i}"><kbd class="ckbd">${i + 1}</kbd>${esc(c.t)}</button>`).join("")}</div>`;
     if (card.type === "calc")
-      return `<input class="calcin" id="ans" inputmode="decimal" placeholder="Your answer (number)" autocomplete="off">
-              <div class="row"><button class="btn" id="check">Check answer</button></div>`;
+      return `<input class="calcin" id="ans" inputmode="decimal" placeholder="Your answer (number)" autocomplete="off">`;
     const big = card.type === "essay";
-    return `<textarea id="ans" class="answerbox" rows="${big ? 14 : 5}" placeholder="${big ? "Write your full response here — use blank lines between paragraphs." : "Type your answer in full sentences."}"></textarea>
-            <div class="row"><button class="btn" id="check">${big ? "Submit for marking" : "Check answer"}</button><span class="hint">${big ? "Marked against the criteria — takes a few seconds." : "Graded on key terms and content — write it properly."}</span></div>`;
+    return `<textarea id="ans" class="answerbox" rows="${big ? 14 : 5}" placeholder="${big ? "Write your full response here — use blank lines between paragraphs." : "Type your answer in full sentences."}"></textarea>`;
+  }
+  // The submit row, full width below both columns. Multiple choice grades on click.
+  function submitRow(card) {
+    if (card.type === "mc") return "";
+    if (card.type === "calc")
+      return `<div class="submitrow"><button class="btn" id="check">Check answer</button><span class="hint">Numeric answer, checked with a small tolerance.</span></div>`;
+    const big = card.type === "essay";
+    return `<div class="submitrow"><button class="btn" id="check">${big ? "Submit for marking" : "Check answer"}</button><span class="hint">${big ? "Marked against the criteria — takes a few seconds." : "Graded on key terms and content — write it properly."}</span></div>`;
   }
 
   function wireAnswer(card) {
@@ -1940,8 +1960,10 @@
   }
   function rvChartHTML(spec, idx) {
     if (spec.type === "lorenz") {
-      return `<div class="lzwrap"><button class="lzexpand" data-rvexpand="${idx}">expand</button><div id="lzmount-${idx}">${rvLorenzSVG(spec, false)}</div>`
-        + `<div class="lzexplain" id="lzmount-${idx}-explain"><span class="lzhint">Tap a blue point on the curve to see what it represents.</span></div></div>`;
+      // chart, then a bottom row: guide-not-conclude note (left, doubles as the
+      // POI explainer) and the expand button (right) — not in the corner.
+      return `<div class="lzwrap"><div id="lzmount-${idx}">${rvLorenzSVG(spec, false)}</div>`
+        + `<div class="lzfoot"><span class="lzexplain" id="lzmount-${idx}-explain"><span class="lzhint">Tap a point to see what it represents. The conclusion is yours to write.</span></span><button class="btn ghost sm" data-rvexpand="${idx}">expand</button></div></div>`;
     }
     if (spec.type === "incomeSource") return rvIncomeSourceHTML();
     return "";
