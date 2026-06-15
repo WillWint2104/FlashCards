@@ -1859,7 +1859,7 @@
       if (g > 0) grid += `<line x1="${X(g)}" y1="${y1}" x2="${X(g)}" y2="${y0}" class="lzgrid"/><line x1="${x0}" y1="${Y(g)}" x2="${x1}" y2="${Y(g)}" class="lzgrid"/>`;
       axn += `<text x="${X(g)}" y="${y0 + 16}" class="lzaxnum" text-anchor="middle">${g}</text><text x="${x0 - 8}" y="${Y(g) + 4}" class="lzaxnum" text-anchor="end">${g}</text>`;
     }
-    let svg = `<svg viewBox="0 0 ${W} ${H}" class="lzsvg" role="img" aria-label="Lorenz curve stimulus">`;
+    let svg = `<svg viewBox="0 0 ${W} ${H}" class="lzsvg${big ? " lzsvg-big" : ""}" role="img" aria-label="Lorenz curve stimulus">`;
     svg += grid + axn;
     svg += `<g id="${big ? "ginishadeBig" : "ginishade"}"></g>`;
     // Gini "how it's built" shading takes over the chart: one curve, shade A then B.
