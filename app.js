@@ -87,6 +87,19 @@
       blurb: "Your set · " + s.cards.length + " card" + (s.cards.length === 1 ? "" : "s"),
       cards: s.cards };
   }
+  // Remove an imported/custom set cleanly: drop the set AND purge the per-card
+  // SRS state and history for its cards, so nothing is left orphaned in storage.
+  // Built-in modules use different card ids, so they are never touched.
+  function removeCustomSet(id) {
+    const set = state.customSets.find(s => s.id === id);
+    if (!set) return false;
+    const ids = new Set((set.cards || []).map(c => c.id));
+    ids.forEach(cid => { delete state.cards[cid]; });
+    state.log = (state.log || []).filter(e => !ids.has(e.id));
+    state.customSets = state.customSets.filter(s => s.id !== id);
+    save();
+    return true;
+  }
   function findArea(id) {
     for (const t of C.topics) { const a = (t.areas || []).find(x => x.id === id); if (a) return a; }
     const s = state.customSets.find(x => x.id === id);
@@ -279,10 +292,11 @@
       </div>
       ${sets.length ? `<div style="margin-top:24px;font-family:var(--disp);font-weight:600;font-size:16px">Your sets</div>
       <div class="areas" style="margin-top:10px">${sets.map(s => { const a = customAsArea(s); const st = areaStats(a);
-        return `<button class="area" data-area="${a.id}"><span class="aicon">🧩</span>
+        return `<div class="setwrap"><button class="area" data-area="${a.id}"><span class="aicon">🧩</span>
           <span class="ainfo"><span class="aname">${esc(a.name)}</span><span class="ablurb">${esc(a.blurb)}</span>
           <span class="abar"><i style="width:${st.pct}%"></i></span>
-          <span class="ameta">${st.mastered}/${st.total} mastered</span></span></button>`; }).join("")}</div>` : ""}
+          <span class="ameta">${st.mastered}/${st.total} mastered</span></span></button>
+          <button class="btn sm ghost danger setrm" data-rmset="${a.id}" aria-label="Remove the set ${esc(a.name)}">Remove</button></div>`; }).join("")}</div>` : ""}
       <div class="settings">
         <details>
           <summary>Settings — AI essay grading</summary>
@@ -303,6 +317,15 @@
     wireNav();
     app.querySelectorAll(".topiccard:not(.locked)").forEach(b => b.onclick = () => areaMap(b.dataset.topic));
     app.querySelectorAll(".area").forEach(b => b.onclick = () => modePicker(b.dataset.area));
+    app.querySelectorAll("[data-rmset]").forEach(b => b.onclick = e => {
+      e.stopPropagation();
+      const set = state.customSets.find(s => s.id === b.dataset.rmset);
+      if (!set) return;
+      if (!confirm(`Remove "${set.name}"? This deletes the set and its progress from this device. Your built-in topics are not affected.`)) return;
+      removeCustomSet(set.id);
+      toast("Set removed.");
+      mainPage();
+    });
     const saveBtn = $("#saveEndpoint");
     if (saveBtn) saveBtn.onclick = () => { state.code = $("#classcode").value.trim(); save(); toast("Saved"); };
     $("#resetAll").onclick = () => { if (confirm("Clear all progress on this device?")) { state.cards = {}; state.log = []; state.lessons = {}; save(); mainPage(); } };
@@ -1342,7 +1365,9 @@
     };
     wireGlossDelete();
     app.querySelectorAll("[data-del]").forEach(b => b.onclick = () => {
-      state.customSets = state.customSets.filter(s => s.id !== b.dataset.del); save(); builder(); });
+      const set = state.customSets.find(s => s.id === b.dataset.del);
+      if (set && !confirm(`Delete "${set.name}"? This removes the set and its progress from this device.`)) return;
+      removeCustomSet(b.dataset.del); builder(); });
     app.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => {
       const s = state.customSets.find(x => x.id === b.dataset.edit);
       if (s) { draft = { name: s.name, cards: JSON.parse(JSON.stringify(s.cards)), glossary: JSON.parse(JSON.stringify(s.glossary || {})) }; builder(); } });
