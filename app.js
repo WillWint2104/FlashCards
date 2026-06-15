@@ -168,6 +168,10 @@
   // When logged into the cloud, custom sets come from the account; otherwise
   // they come from this browser's localStorage (today's behaviour, untouched).
   function cloudActive() { return Cloud.enabled() && !!Cloud.session(); }
+  // HARD GATE: when cloud auth is configured, the student must be signed in to
+  // reach ANY part of the app. (When Supabase is unconfigured there is no auth
+  // to gate on, so the app behaves normally — preserves forks/offline.)
+  function gated() { return Cloud.enabled() && !Cloud.session(); }
   function getCustomSets() { return cloudActive() ? Cloud.sets() : state.customSets; }
   const BACKUP_FORMAT = "marginal-backup@1";
   function download(filename, text, mime) {
@@ -395,9 +399,10 @@
   }
 
   // ===================== STUDY =====================
-  function home() { session = null; currentTopic ? areaMap(currentTopic) : mainPage(); }
+  function home() { if (gated()) return authScreen(); session = null; currentTopic ? areaMap(currentTopic) : mainPage(); }
 
   function mainPage() {
+    if (gated()) return authScreen();
     view = "study"; session = null; currentTopic = null;
     app.innerHTML = `
       ${nav()}
@@ -459,38 +464,38 @@
 
   // ---------- cloud sign-in bar (only when Supabase is configured) ----------
   function cloudBarHTML() {
-    if (!Cloud.enabled()) return "";
-    if (cloudActive()) {
-      const w = Cloud.who();
-      const label = w ? `${esc(w.class_code)} · #${esc(w.student_number)}` : "Signed in";
-      return `<div class="whoami" style="justify-content:flex-end;margin:-4px 0 8px">Signed in: <b>${label}</b> <button class="btn sm ghost" id="signout">Sign out</button></div>`;
-    }
-    return `<div class="whoami" style="justify-content:flex-end;margin:-4px 0 8px">Your sets sync across devices when you <button class="authlink" id="signin">sign in</button></div>`;
+    // The app is only reachable when signed in (hard gate), so this bar always
+    // shows the signed-in identity + sign-out. (Empty when Supabase is off.)
+    if (!cloudActive()) return "";
+    const w = Cloud.who();
+    const label = w ? `${esc(w.class_code)} · #${esc(w.student_number)}` : "Signed in";
+    return `<div class="whoami" style="justify-content:flex-end;margin:-4px 0 8px">Signed in: <b>${label}</b> <button class="btn sm ghost" id="signout">Sign out</button></div>`;
   }
   function wireCloudBar() {
-    const si = $("#signin"); if (si) si.onclick = authScreen;
-    const so = $("#signout"); if (so) so.onclick = async () => { await Cloud.signOut(); toast("Signed out."); mainPage(); };
+    const so = $("#signout"); if (so) so.onclick = async () => { await Cloud.signOut(); toast("Signed out."); authScreen(); };
   }
 
   // ---------- auth screen (class code + student number + password) ----------
   function authScreen() {
     view = "study"; session = null; currentTopic = null;
-    app.innerHTML = `${nav()}
+    // The hard gate — the entry point when not signed in. No nav, no way past
+    // it until sign-in succeeds.
+    app.innerHTML = `
+      <div class="authgate">
       <div class="authcard">
-        <h2>Sign in</h2>
-        <p class="bhint">Your custom sets save to your account and follow you across devices. Built-in study works without signing in. First time? Enter a password to set it.</p>
+        <div class="authbrand">Marginal</div>
+        <h2>Sign in to start studying</h2>
+        <p class="bhint">Enter your class code and student number, then your password. <b>First time? Pick a password you'll remember</b> — you'll use it to sign in from any device.</p>
         <div class="authfield"><label>Class code</label><input id="acode" value="${esc(CONFIG.code || "")}" autocomplete="off"></div>
         <div class="authfield"><label>Student number</label><input id="anum" inputmode="numeric" autocomplete="off"></div>
-        <div class="authfield"><label>Password</label><input id="apass" type="password" autocomplete="current-password"></div>
-        <button class="btn" id="ado" style="width:100%">Sign in / set password</button>
+        <div class="authfield"><label>Password</label><input id="apass" type="password" autocomplete="current-password" placeholder="First time? Choose one you'll remember"></div>
+        <button class="btn" id="ado" style="width:100%">Sign in</button>
         <div class="authmsg" id="amsg"></div>
-        <div style="margin-top:10px;text-align:center"><button class="authlink" id="aforgot">Forgotten your password? Request a reset</button></div>
-        <div style="margin-top:16px;text-align:center"><button class="btn sm ghost" id="aback">← Back to study</button></div>
+        <div style="margin-top:12px;text-align:center"><button class="authlink" id="aforgot">Forgotten your password? Request a reset</button></div>
+      </div>
       </div>`;
-    wireNav();
     const msg = $("#amsg");
     const setMsg = (t, cls) => { msg.textContent = t; msg.className = "authmsg" + (cls ? " " + cls : ""); };
-    $("#aback").onclick = home;
     $("#ado").onclick = async () => {
       const code = $("#acode").value.trim(), num = $("#anum").value.trim(), pass = $("#apass").value;
       setMsg("Signing in…");
@@ -623,6 +628,7 @@
   }
 
   function areaMap(topicId) {
+    if (gated()) return authScreen();
     view = "study"; session = null; currentTopic = topicId;
     const topic = C.topics.find(t => t.id === topicId);
     if (!topic) return mainPage();
@@ -1588,6 +1594,7 @@
   let draft = null; // { name, cards: [] }
 
   function builder() {
+    if (gated()) return authScreen();
     view = "create";
     if (!draft) draft = { name: "", cards: [] };
     app.innerHTML = `
@@ -2467,9 +2474,16 @@
     }
   } catch (e) { /* demo entry is best-effort */ }
 
-  // Boot: render immediately (logged-out / offline), then recover any cloud
-  // session in the background and refresh the home view if one is found.
+  // Boot. When cloud auth is configured, the app is gated: recover any persisted
+  // session first (no flash), then either land in the app (returning student) or
+  // show the sign-in gate. When unconfigured, the app opens normally.
   Cloud.init();
-  home();
-  Cloud.restore().then(() => { if (!session && Cloud.session()) mainPage(); }).catch(() => { /* offline is fine */ });
+  if (Cloud.enabled()) {
+    app.innerHTML = `<div class="authgate"><div class="authcard"><div class="authbrand">Marginal</div><p class="bhint">Loading…</p></div></div>`;
+    Cloud.restore()
+      .then(() => { Cloud.session() ? home() : authScreen(); })
+      .catch(() => authScreen());
+  } else {
+    home();
+  }
 })();
