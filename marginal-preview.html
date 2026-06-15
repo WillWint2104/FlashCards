@@ -3408,8 +3408,18 @@ window.CONTENT.charts = {
     const pool = area.cards.filter(MODES[mode].match);
     if (!pool.length) return toast("No cards of that type in this area.");
     const sub = { cards: pool };
-    let queue = dueCards(sub).slice(0, 6);
-    if (!queue.length) queue = [...pool].sort((a, b) => cardState(a.id).box - cardState(b.id).box).slice(0, 6);
+    let queue;
+    if (mode === "long") {
+      // Extended-response essays are deliberate exam-skill practice, not spaced
+      // recall — always present every essay in the module regardless of due dates,
+      // so a recently-practised essay never disappears from the list. Grading
+      // still records card state (history/progress is kept), it just never hides
+      // an essay here. SRS continues to gate the recall modes below.
+      queue = pool;
+    } else {
+      queue = dueCards(sub).slice(0, 6);
+      if (!queue.length) queue = [...pool].sort((a, b) => cardState(a.id).box - cardState(b.id).box).slice(0, 6);
+    }
     session = { area, mode, queue, idx: 0, results: [] };
     renderCard();
   }
