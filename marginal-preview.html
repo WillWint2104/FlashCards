@@ -3954,11 +3954,15 @@ window.CONTENT.charts = {
   function rateFlash(card, r) {
     if (advancing) return;
     advancing = true;
-    applyResult(card, Math.round(r * card.marks), card.marks);
+    // Drive SRS off the raw self-rating r (not Math.round(r*marks)/marks): on a
+    // 1-mark card "Almost" (0.5) would round up to a full mark and falsely count
+    // as mastered. Passing r*marks makes applyResult's ratio === r, so SRS and
+    // the "Got it"-only progress bar use one consistent correctness threshold.
+    const gotit = r >= 0.7;
+    applyResult(card, r * card.marks, card.marks);
     session.results.push({ card, g: { score: Math.round(r * card.marks), max: card.marks, kind: "flash" } });
     // The progress bar tracks "Got it" cards only — it advances on a correct
     // self-rating, not on "Almost" or "Not yet".
-    const gotit = r >= 0.7;
     if (gotit) { session.correct = (session.correct || 0) + 1; toast(GOTIT_CHEERS[gotitTick++ % GOTIT_CHEERS.length], 1100); }
     const flip = $("#flip");
     const go = () => { advancing = false; session.idx++; renderCard(); };
