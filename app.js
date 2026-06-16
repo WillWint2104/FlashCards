@@ -1319,7 +1319,7 @@
     }
     const shuffle = !!opts.shuffle;
     if (shuffle) shuffleArr(queue);
-    session = { area, mode, queue, idx: 0, results: [], pool: pool.slice(), shuffle };
+    session = { area, mode, queue, idx: 0, results: [], pool: pool.slice(), shuffle, correct: 0 };
     // Record "last studied" for custom sets (cloud row or local object).
     if (area.custom) {
       if (cloudActive()) Cloud.touchStudied(area.id);
@@ -1339,7 +1339,7 @@
       // (shuffle re-randomises the whole set and restarts the run).
       const orderCtl = area.custom ? `<button class="ordtoggle" id="ordtoggle" title="Switch between import order and shuffle">${session.shuffle ? "🔀 Shuffle" : "↕ In order"}</button>` : "";
       app.innerHTML = `
-        <div class="sessionbar"><button class="x" id="quit" title="Back to areas">←</button><span class="lbl">${esc(area.name)} · ${idx + 1} of ${queue.length}</span>${orderCtl}<span class="sbar"><i style="width:${Math.round(100 * idx / queue.length)}%"></i></span></div>
+        <div class="sessionbar"><button class="x" id="quit" title="Back to areas">←</button><span class="lbl">${esc(area.name)} · ${idx + 1} of ${queue.length}</span>${orderCtl}<span class="sbar" title="Cards you've marked “Got it”"><i style="width:${Math.round(100 * (session.correct || 0) / queue.length)}%"></i></span></div>
         ${stimulusHTML(card.stimulus)}
         <div class="enter">
         <div class="hintrow"><button class="hintbtn" id="hintbtn">💡 Need a hint?</button><div class="hintbox" id="hintbox" hidden>${esc(hintFor(card))}</div></div>
@@ -1469,15 +1469,20 @@
     });
     wireGlossary();
   }
-  let advancing = false;
+  const GOTIT_CHEERS = ["Got it! 🎉", "Nice — locked in ✓", "Yes! 🎯", "Nailed it 🌟"];
+  let advancing = false, gotitTick = 0;
   function rateFlash(card, r) {
     if (advancing) return;
     advancing = true;
     applyResult(card, Math.round(r * card.marks), card.marks);
     session.results.push({ card, g: { score: Math.round(r * card.marks), max: card.marks, kind: "flash" } });
+    // The progress bar tracks "Got it" cards only — it advances on a correct
+    // self-rating, not on "Almost" or "Not yet".
+    const gotit = r >= 0.7;
+    if (gotit) { session.correct = (session.correct || 0) + 1; toast(GOTIT_CHEERS[gotitTick++ % GOTIT_CHEERS.length], 1100); }
     const flip = $("#flip");
     const go = () => { advancing = false; session.idx++; renderCard(); };
-    if (flip) { flip.classList.add(r >= 0.7 ? "flyright" : r <= 0.3 ? "flyleft" : "flydown"); setTimeout(go, 240); }
+    if (flip) { flip.classList.add(gotit ? "flyright" : r <= 0.3 ? "flyleft" : "flydown"); setTimeout(go, 240); }
     else go();
   }
 
