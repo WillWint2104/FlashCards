@@ -217,9 +217,9 @@
   .ctx summary{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--blue-dk);cursor:pointer}
   .ctx p{margin-top:8px;font-size:14.5px;color:#2d5876}
 
-  .flipwrap{perspective:850px;perspective-origin:center}
-  .flipcard{position:relative;min-height:250px;transform-style:preserve-3d;-webkit-transform-style:preserve-3d;transition:transform .85s cubic-bezier(.35,.65,.25,1);will-change:transform}
-  .flipcard.flipped{transform:rotateY(180deg)}
+  .flipwrap{perspective:850px;-webkit-perspective:850px;perspective-origin:center;-webkit-perspective-origin:center}
+  .flipcard{position:relative;min-height:250px;transform-style:preserve-3d;-webkit-transform-style:preserve-3d;transition:-webkit-transform .85s cubic-bezier(.35,.65,.25,1);transition:transform .85s cubic-bezier(.35,.65,.25,1);will-change:transform;-webkit-transform:translateZ(0);transform:translateZ(0)}
+  .flipcard.flipped{-webkit-transform:rotateY(180deg);transform:rotateY(180deg)}
   .flipwrap.lifting{animation:cardlift .85s cubic-bezier(.35,.65,.25,1)}
   @keyframes cardlift{0%{transform:scale(1)}45%{transform:scale(1.045) translateY(-8px);filter:drop-shadow(0 22px 26px rgba(60,74,74,.22))}100%{transform:scale(1)}}
   .face{backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:18px;background:var(--card)}
@@ -227,16 +227,43 @@
   .face.back{z-index:1}
   .flipcta{display:inline-flex;align-items:center;gap:9px;font-size:16px;padding:13px 28px}
   .flipcta svg{flex:none}
-  .face.front{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;border:2px dashed var(--line);padding:26px;text-align:center;cursor:pointer}
+  .face.front{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:safe center;gap:16px;border:2px dashed var(--line);padding:26px;text-align:center;cursor:pointer;overflow-y:auto;-webkit-overflow-scrolling:touch}
   .face.front:hover{border-color:var(--green)}
   .face.front:focus-visible{outline:3px solid var(--green)}
-  .fprompt{font-family:var(--disp);font-weight:500;font-size:20px;line-height:1.4}
+  .fprompt{font-family:var(--disp);font-weight:500;font-size:calc(18px * var(--card-scale));line-height:1.4}
   .fliphint{font-size:13px;color:var(--ink-3);font-weight:800}
-  .face.back{transform:rotateY(180deg);border:2px solid var(--green);padding:18px 20px;min-height:240px}
+  .face.back{-webkit-transform:rotateY(180deg);transform:rotateY(180deg);border:2px solid var(--green);padding:18px 20px;min-height:240px;max-height:78vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
   .backtop{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
   .flipback{font-family:var(--disp);font-weight:600;font-size:12.5px;color:var(--ink-2);background:var(--bg);border:none;border-radius:99px;padding:6px 12px}
-  .fans{font-size:18px;line-height:1.6;margin-bottom:8px}
+  .fans{font-size:calc(16px * var(--card-scale));line-height:1.6;margin-bottom:8px}
   @media(prefers-reduced-motion:reduce){.flipcard{transition:none}.flipwrap.lifting{animation:none}}
+
+  /* Single source of truth for card text size (Small/Medium/Large/XL). Only
+     .fprompt + .fans read --card-scale, so app chrome never rescales. Default
+     = Medium = a comfortable, slightly enlarged size. */
+  :root{--card-scale:1.15}
+  .cardsize{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+  .cslabel{font-family:var(--disp);font-weight:600;font-size:12.5px;color:var(--ink-2)}
+  .csbtn{font-family:var(--disp);font-weight:700;color:var(--ink-2);background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:10px 14px;min-height:44px;min-width:44px;cursor:pointer;line-height:1}
+  .csbtn:hover{border-color:var(--green)}
+  .csbtn.on{background:var(--green-soft);border-color:var(--green);color:var(--green-dk)}
+  .csbtn[data-scale="s"]{font-size:13px}
+  .csbtn[data-scale="m"]{font-size:15px}
+  .csbtn[data-scale="l"]{font-size:17px}
+  .csbtn[data-scale="xl"]{font-size:19px}
+
+  /* Smartboard / embedded-WebKit fallback: when 3D transforms aren't supported,
+     the rotateY flip would snap. Crossfade the front out to reveal the back so
+     the card still VISIBLY animates. Back stays in flow so the card still grows. */
+  @supports not ((transform-style:preserve-3d) or (-webkit-transform-style:preserve-3d)){
+    .flipcard{transition:none}
+    .flipcard.flipped{-webkit-transform:none;transform:none}
+    .face.back{-webkit-transform:none;transform:none}
+    .face.front{transition:opacity .4s ease}
+    .flipcard.flipped .face.front{opacity:0;pointer-events:none}
+    .flipcard.flyright,.flipcard.flyleft,.flipcard.flydown{animation:fade2d .24s ease-in forwards}
+    @keyframes fade2d{to{opacity:0}}
+  }
 
   .stimulus{background:#FFFDF6;border:1.5px solid var(--gold);border-radius:14px;padding:12px 16px;margin-bottom:14px}
   .stimlabel{font-family:var(--disp);font-weight:600;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold-dk);margin-bottom:6px}

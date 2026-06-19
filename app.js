@@ -11,6 +11,15 @@
   const BOX_DAYS = { 1: 0, 2: 1, 3: 3, 4: 7, 5: 14 };
   const SET_FORMAT = "marginal-set@1";
 
+  // Student-selectable card text size. Single source of truth: the --card-scale
+  // CSS custom property (only .fprompt + .fans read it, so app chrome is unscaled).
+  // Default = Medium = a comfortable, slightly enlarged size. Device-local.
+  const CARD_SCALE_KEY = "marginal:cardFontScale";
+  const CARD_SCALES = { s: 1, m: 1.15, l: 1.4, xl: 1.7 };
+  function cardScaleStep() { try { const v = localStorage.getItem(CARD_SCALE_KEY); return CARD_SCALES[v] ? v : "m"; } catch (e) { return "m"; } }
+  function applyCardScale(step) { try { document.documentElement.style.setProperty("--card-scale", CARD_SCALES[step] || CARD_SCALES.m); } catch (e) { /* ignore */ } }
+  applyCardScale(cardScaleStep()); // apply BEFORE any render so there's no flash of the wrong size
+
   // ---------- storage: localStorage where allowed, in-memory otherwise ----------
   const store = (() => {
     try { localStorage.setItem("__t", "1"); localStorage.removeItem("__t"); return localStorage; }
@@ -1338,8 +1347,11 @@
       // Imported sets get an order toggle: study in import order or shuffled
       // (shuffle re-randomises the whole set and restarts the run).
       const orderCtl = area.custom ? `<button class="ordtoggle" id="ordtoggle" title="Switch between import order and shuffle">${session.shuffle ? "🔀 Shuffle" : "↕ In order"}</button>` : "";
+      const cs = cardScaleStep();
+      const csBtn = (s, label) => `<button class="csbtn ${cs === s ? "on" : ""}" data-scale="${s}" aria-pressed="${cs === s}">${label}</button>`;
       app.innerHTML = `
         <div class="sessionbar"><button class="x" id="quit" title="Back to areas">←</button><span class="lbl">${esc(area.name)} · ${idx + 1} of ${queue.length}</span>${orderCtl}<span class="sbar" title="Cards you've marked “Got it”"><i style="width:${Math.round(100 * (session.correct || 0) / queue.length)}%"></i></span></div>
+        <div class="cardsize" role="group" aria-label="Card text size"><span class="cslabel">Text size</span>${csBtn("s", "Small")}${csBtn("m", "Medium")}${csBtn("l", "Large")}${csBtn("xl", "Extra Large")}</div>
         ${stimulusHTML(card.stimulus)}
         <div class="enter">
         <div class="hintrow"><button class="hintbtn" id="hintbtn">💡 Need a hint?</button><div class="hintbox" id="hintbox" hidden>${esc(hintFor(card))}</div></div>
@@ -1353,6 +1365,12 @@
         session.idx = 0;
         renderCard();
       };
+      app.querySelectorAll(".csbtn").forEach(b => b.onclick = () => {
+        const step = b.dataset.scale;
+        applyCardScale(step);                                   // live: updates --card-scale, no re-render (keeps flip state)
+        try { localStorage.setItem(CARD_SCALE_KEY, step); } catch (e) { /* ignore */ }
+        app.querySelectorAll(".csbtn").forEach(x => { const on = x === b; x.classList.toggle("on", on); x.setAttribute("aria-pressed", on); });
+      });
       wireFlash(card); wireStimulus(card.stimulus); wireGlossary();
       return;
     }
