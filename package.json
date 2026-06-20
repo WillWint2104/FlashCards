@@ -1,0 +1,12 @@
+{
+  "name": "marginal",
+  "private": true,
+  "description": "Marginal — HSC Economics study app (dev tooling only; the app itself is dependency-free static files).",
+  "scripts": {
+    "lint:css": "stylelint index.html"
+  },
+  "devDependencies": {
+    "postcss-html": "^1.7.0",
+    "stylelint": "^16.10.0"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "customSyntax": "postcss-html",
+  "rules": {
+    "declaration-block-no-duplicate-properties": true,
+    "declaration-block-no-shorthand-property-overrides": true
+  }
+}
