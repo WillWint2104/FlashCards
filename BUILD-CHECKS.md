@@ -25,6 +25,14 @@ silence as approval.
    instances: an all-black chart fill, an angular Lorenz curve, label
    collisions, grey-on-grey text, a FileReader reading `r.target.result` instead
    of `r.result` and failing silently.
+   - **If the screenshot tool is unavailable** (it has timed out for whole
+     sessions), do NOT claim a visual eyeball you didn't do. Verify via DOM
+     instead — `getComputedStyle` for sizes/colours, `scrollHeight > clientHeight`
+     for clipping/overflow, class/attribute state for behaviour — and say plainly
+     in the PR that verification was DOM-measurement only, no image captured.
+   - **Device-class bugs (e.g. smartboard 3D-transform snap) can't be reproduced
+     in the headless preview.** Verify the code/CSS is correct and the fallback
+     fires by feature query, and flag that real confirmation is on the device.
 
 3. **PER-RUNG STARTER MATCH.** Any practice scaffold must derive from the CHOSEN
    rung's OWN text. Starters are computed by `deriveStarters(rung.text)` at the
@@ -46,6 +54,36 @@ silence as approval.
    prompt output. Grep before each PR: a student would not write them, so a
    model that contains them fails as a model. (Number ranges like 1-2 and your
    own dev comments are exempt.)
+
+7. **CSS: no duplicate property as "prefix fallback" (recurred, PR #32).** Writing
+   `transition:-webkit-transform .85s; transition:transform .85s;` does NOT keep
+   both — the second declaration wins and the prefixed one is dead. Put prefixed
+   + unprefixed in ONE declaration as a comma list:
+   `transition:-webkit-transform .85s ease, transform .85s ease;`. Same trap for
+   any property where you add a `-webkit-`/unprefixed pair on the SAME selector.
+   (Separate-property prefixes like `transform:` and `-webkit-transform:` on their
+   own lines are fine — this is only about the SAME property declared twice.)
+
+8. **CSS: an override must come AFTER what it overrides (recurred, PR #32).**
+   `@supports`, fallback, and "reset" rules do NOT add specificity, so a later
+   same-specificity rule wins. A fallback block placed ABOVE the rules it negates
+   is dead code. After writing any fallback/override, confirm it sits later in the
+   source than its target (or it genuinely out-specifies it).
+
+9. **One source of truth for a value used on two paths (recurred, PR #30/#31).**
+   If two code paths classify or size the same thing, derive both from ONE
+   expression — never hardcode the value twice. Examples seen: SRS "mastered" vs
+   the progress bar's "Got it" must use the same threshold off the same `r` (watch
+   rounding: `Math.round(0.5*1)=1` silently flipped a half-rating to a full mark);
+   card question + answer font size both read one `--card-scale` var, not two
+   hardcoded sizes.
+
+10. **Fail CLOSED on security gates (recurred, PR #29).** Gate on the DECLARED
+    intent (config present), not on a runtime success flag that can be false when
+    a dependency fails. The auth gate must key off `CONFIG.supabaseUrl` being set,
+    not `Cloud.enabled()` (false if the supabase-js CDN fails to load) — otherwise
+    a CDN hiccup silently disables the gate. Also: make EVERY entry point respect
+    the gate (e.g. `?reviewdemo`, deep links), and add `for`/`id` to form labels.
 
 ## Mechanical gate (every PR)
 
