@@ -18,6 +18,7 @@ const read = (f) => fs.readFileSync(path.join(root, f), "utf8");
 
 const shell = read("index.html");
 const content = read("content.js");
+const essay = read("essay-content.js");
 const app = read("app.js");
 
 // Inline a source file as a <script> block. Use a replacer FUNCTION so `$` in
@@ -36,6 +37,7 @@ function inlineScript(html, srcTag, source) {
 
 let out = shell;
 out = inlineScript(out, '<script src="content.js"></script>', content);
+out = inlineScript(out, '<script src="essay-content.js"></script>', essay);
 out = inlineScript(out, '<script src="app.js"></script>', app);
 
 fs.writeFileSync(path.join(root, "marginal-preview.html"), out);

@@ -651,6 +651,105 @@
   .rv-rwout .rv-ln.pending{color:var(--ink-2)}
   .rv-rwout .rv-rwempty{color:var(--ink-3);font-style:italic}
   .rv-miniok{font-size:12.5px;color:var(--green-dk);font-weight:800;margin-top:8px}
+
+  /* ===== Essay practice mode (behind essayMode / ?essaydemo). White surfaces,
+     strong ink, the single green accent, sentence case, no em-dashes. ===== */
+  body.es-lock{overflow:hidden}
+  .es-scrim{position:fixed;inset:0;background:rgba(28,40,40,.42);display:flex;align-items:flex-start;justify-content:center;padding:24px 16px;overflow:auto;z-index:120}
+  .es-shell{width:100%;max-width:760px}
+  .es-wrap{background:var(--card);border-radius:22px;box-shadow:0 24px 60px rgba(28,40,40,.28);padding:22px clamp(18px,3vw,30px) 28px;animation:rvpop .22s cubic-bezier(.35,.65,.25,1)}
+  .es-shell:has(.es-wide){max-width:1040px}
+  .es-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+  .es-brand{font-family:var(--disp);font-weight:600;font-size:15px;color:var(--ink);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .es-subj{font-size:12.5px;font-weight:700;color:var(--ink-2)}
+  .es-demobadge{font-family:var(--disp);font-weight:600;font-size:11px;color:var(--green-dk);background:var(--green-soft);border-radius:99px;padding:2px 10px}
+  .es-topbtns{display:flex;align-items:center;gap:10px;flex:none}
+  .es-x{background:none;border:none;font-family:var(--disp);font-weight:600;font-size:13px;color:var(--ink-2);padding:6px 12px;border-radius:10px;cursor:pointer}
+  .es-x:hover{background:var(--green-soft);color:var(--green-dk)}
+  .es-h1{font-family:var(--disp);font-weight:600;font-size:24px;color:var(--ink);margin-bottom:6px}
+  .es-lead{font-size:14px;color:var(--ink-2);font-weight:600;margin-bottom:18px;line-height:1.55}
+  .es-empty{text-align:center;padding:30px 10px 18px}
+  .es-field{margin-bottom:18px}
+  .es-label{display:block;font-family:var(--disp);font-weight:600;font-size:13.5px;color:var(--ink);margin-bottom:7px}
+  .es-req{font-size:11px;font-weight:700;color:var(--green-dk);background:var(--green-soft);border-radius:99px;padding:2px 9px;margin-left:6px}
+  .es-opt{font-size:11px;font-weight:700;color:var(--ink-3);margin-left:6px}
+  .es-input{width:100%;font:inherit;font-weight:600;font-size:15px;line-height:1.6;color:var(--ink);background:var(--card);border:2px solid var(--line);border-radius:14px;padding:11px 14px}
+  .es-input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
+  .es-ta{resize:vertical;min-height:64px}
+  .es-select{font-family:var(--body);cursor:pointer}
+  .es-help{font-size:12.5px;color:var(--ink-2);font-weight:600;line-height:1.5;margin:9px 0 7px}
+  .es-qchips{display:flex;flex-direction:column;gap:8px}
+  .es-qchip{text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:13px;padding:10px 13px;font:inherit;font-weight:600;font-size:13.5px;color:var(--ink);line-height:1.45;cursor:pointer;transition:border-color .12s}
+  .es-qchip:hover{border-color:var(--green)}
+  .es-qcmd{font-family:var(--disp);font-weight:600;color:var(--green-dk);font-size:12.5px;margin-right:4px}
+  .es-linkbtn{background:none;border:none;font-family:var(--disp);font-weight:600;font-size:13px;color:var(--green-dk);cursor:pointer;padding:6px 0;text-decoration:underline;text-underline-offset:3px}
+  .es-linkbtn:hover{color:var(--green)}
+  .es-bands{margin-top:10px;border:1.5px solid var(--line);border-radius:13px;overflow:hidden}
+  .es-band{display:flex;gap:12px;padding:10px 13px;border-top:1px solid var(--line)}
+  .es-band:first-child{border-top:none}
+  .es-bandr{font-family:var(--disp);font-weight:600;font-size:12.5px;color:var(--green-dk);flex:none;width:96px}
+  .es-bandt{font-size:12.5px;color:var(--ink-2);font-weight:600;line-height:1.5}
+  .es-resume{margin-bottom:20px}
+  .es-resrow{display:flex;gap:10px;flex-wrap:wrap}
+  .es-rescard{display:flex;flex-direction:column;gap:6px;align-items:flex-start;text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:13px;padding:11px 13px;cursor:pointer;max-width:280px;transition:border-color .12s}
+  .es-rescard:hover{border-color:var(--green)}
+  .es-restag{font-family:var(--disp);font-weight:600;font-size:11.5px;color:var(--green-dk);background:var(--green-soft);border-radius:99px;padding:3px 11px}
+  .es-restag.muted{color:var(--ink-3);background:#F2F6F6}
+  .es-resq{font-size:13px;color:var(--ink);font-weight:600;line-height:1.4}
+  .es-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:8px}
+  .es-btn{font-family:var(--disp);font-weight:600;font-size:15px;color:#fff;background:var(--green);border:none;border-radius:14px;padding:12px 24px;box-shadow:0 4px 0 var(--green-dk);cursor:pointer;transition:transform .08s}
+  .es-btn:active{transform:translateY(2px);box-shadow:0 2px 0 var(--green-dk)}
+  .es-btn.ghost{background:var(--card);color:var(--ink);box-shadow:0 0 0 2px var(--line) inset}
+  .es-btn.ghost:hover:not(:disabled){box-shadow:0 0 0 2px var(--green) inset}
+  .es-btn:disabled{opacity:.5;cursor:default;box-shadow:0 0 0 2px var(--line) inset}
+  .es-foothint{font-size:12.5px;color:var(--ink-3);font-weight:600}
+  .es-qbar{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;background:var(--card);border:1.5px solid var(--line);border-left:4px solid var(--green);border-radius:14px;padding:12px 16px;margin-bottom:16px}
+  .es-qbar-mode{font-family:var(--disp);font-weight:600;font-size:11.5px;color:var(--green-dk);text-transform:lowercase;margin-bottom:3px}
+  .es-qbar-q{font-size:14.5px;color:var(--ink);font-weight:700;line-height:1.45}
+  .es-stepper{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px}
+  .es-steps{display:flex;gap:8px;flex-wrap:wrap}
+  .es-step{display:flex;align-items:center;gap:7px;background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:5px 12px 5px 6px;color:var(--ink-3)}
+  .es-step.on{border-color:var(--green);color:var(--ink);background:var(--green-soft)}
+  .es-step.done .es-stepn{background:var(--green);color:#fff}
+  .es-stepn{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-family:var(--disp);font-weight:600;font-size:12px;background:#EEF3F3;color:var(--ink-2)}
+  .es-step.on .es-stepn{background:var(--green);color:#fff}
+  .es-steplbl{font-family:var(--disp);font-weight:600;font-size:12px}
+  .es-ring{flex:none;width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:var(--green-soft);color:var(--green-dk);font-family:var(--disp);font-weight:600;font-size:15px;border:2px solid var(--green)}
+  .es-coachcols{display:flex;gap:20px;align-items:flex-start}
+  .es-coachmain{flex:1 1 auto;min-width:0}
+  .es-margin{flex:0 0 320px;max-width:320px}
+  .es-pointpin{margin-bottom:12px}
+  .es-pinlabel{display:block;font-family:var(--disp);font-weight:600;font-size:12px;color:var(--ink-3);margin-bottom:5px}
+  .es-pointin{width:100%;font:inherit;font-weight:600;font-size:13.5px;color:var(--ink-2);background:#FAFCFC;border:1.5px dashed var(--line);border-radius:11px;padding:8px 12px}
+  .es-pointin:focus{outline:none;border-color:var(--green);border-style:solid;color:var(--ink);box-shadow:0 0 0 3px var(--green-soft)}
+  .es-pararole{font-family:var(--disp);font-weight:600;font-size:13px;color:var(--green-dk);margin-bottom:7px}
+  .es-parabox{min-height:240px;resize:vertical}
+  .es-navrow{display:flex;align-items:center;gap:10px;margin-top:14px}
+  .es-navrow .es-btn{padding:10px 20px;font-size:14px}
+  .es-cooldown{font-size:12.5px;color:var(--ink-2);font-weight:600;line-height:1.5;margin-top:10px;background:#FAFCFC;border-left:3px solid var(--green);border-radius:6px;padding:9px 12px}
+  .es-margin{position:sticky;top:8px}
+  .es-mempty{font-size:13px;color:var(--ink-2);font-weight:600;line-height:1.55;background:#FAFCFC;border:1.5px solid var(--line);border-radius:14px;padding:14px 16px}
+  .es-demonote{font-size:12px;color:var(--green-dk);font-weight:700;background:var(--card);border:1.5px solid var(--green);border-radius:11px;padding:8px 12px;margin-bottom:12px;line-height:1.45}
+  .es-mnote{font-size:13.5px;color:var(--ink);font-weight:700;line-height:1.55;margin-bottom:14px}
+  .es-mblock{margin-bottom:14px}
+  .es-mh{font-family:var(--disp);font-weight:600;font-size:11.5px;color:var(--ink-3);text-transform:lowercase;margin-bottom:7px}
+  .es-nudge{font-size:13px;color:var(--ink);font-weight:600;line-height:1.5;padding:9px 12px;border-left:3px solid var(--green);background:#FAFCFC;border-radius:6px;margin-bottom:8px}
+  .es-chipline{margin-bottom:10px}
+  .es-chipfrom{display:block;font-size:12px;color:var(--ink-2);font-weight:600;margin-bottom:5px}
+  .es-chipopts{display:flex;gap:7px;flex-wrap:wrap}
+  .es-chip{font:inherit;font-weight:700;font-size:12.5px;color:var(--green-dk);background:var(--card);border:1.5px solid var(--green);border-radius:99px;padding:5px 13px;cursor:pointer;transition:background .12s,color .12s}
+  .es-chip:hover{background:var(--green);color:#fff}
+  .es-check{font-size:12px;color:var(--ink-2);font-weight:600;font-style:italic;line-height:1.5;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+  .es-standing{font-size:13px;color:var(--ink-2);font-weight:600;line-height:1.5;margin-bottom:12px}
+  .es-inlinelink{background:none;border:none;font:inherit;font-weight:700;color:var(--green-dk);cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:0}
+  .es-inlinelink:hover{color:var(--green)}
+  .es-fullbox{min-height:380px;resize:vertical;line-height:1.75}
+  .es-coachstrip{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;padding:12px 0}
+  .es-completion{margin-top:14px;border:1.5px solid var(--green);background:var(--card);border-radius:16px;padding:14px 18px}
+  .es-completemsg{font-size:13.5px;color:var(--ink);font-weight:700;line-height:1.5;margin-bottom:12px}
+  .es-completion .es-actions{margin-top:0}
+  .es-submittedh{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--green-dk);margin-bottom:6px}
+  @media(max-width:760px){.es-coachcols{flex-direction:column}.es-margin{flex:1 1 auto;max-width:none;position:static}}
 </style>
 </head>
 <body>
@@ -667,6 +766,7 @@
     endpoint: "https://marginal-grader.williamwinter2104.workers.dev/",  // Cloudflare Worker URL for AI essay marking
     code: "12Ec126",  // class code — must match the worker's CLASS_CODE secret exactly (case-sensitive)
     reviewMode: false,  // PROMOTION SWITCH for guided review mode. false = students get the simple result sheet. Set true to give every student the paragraph-by-paragraph review after marking. Add ?review=1 to the URL to try it without enabling it for everyone.
+    essayMode: false,  // PROMOTION SWITCH for essay practice mode (coached writing + full attempt). false = students never see it. Set true to switch it on for everyone whose class code maps to a known subject. Add ?essay=1 to try it without enabling it for everyone, or ?essaydemo=1 to walk all three screens on an Ancient History context with the labelled demo coaching fallback.
     textbookUrl: "",  // optional: deep link to your class's licensed textbook copy,
                       // e.g. "https://your-lms.school/riley-2026.pdf#page={page}" —
                       // the Source tab will open it at each level's exact page
@@ -2500,6 +2600,106 @@ window.CONTENT.charts = {
       { label: "Social benefits", pct: 7.7 },
       { label: "Other", pct: 3.9 }
     ]
+  }
+};
+
+</script>
+<script>
+// =============================================================================
+// Marginal — essay practice content (HSC Ancient History, Year 11).
+//
+// ORIGINAL questions and scaffolding written for this app in the HSC genre.
+// Nothing here is reproduced from NESA papers, marking guidelines or any
+// textbook: published material informed the genre and topic spread only, it is
+// never copied or lightly reworded into app content. Statistics or claims are
+// avoided on purpose; this file carries questions and structure, not facts the
+// app would have to vouch for. Coaching never supplies the argument or content.
+//
+// Loaded as window.ESSAY before app.js. Economics (window.CONTENT) is untouched.
+// =============================================================================
+window.ESSAY = {
+  // Subjects keyed by the value the client subject map resolves a class code to.
+  // Only ancient_history ships today; the shape is ready for more.
+  subjects: {
+    ancient_history: {
+      key: "ancient_history",
+      label: "Ancient History",
+      stage: "Year 11",
+      // Original practice questions in the HSC extended-response genre. Each is a
+      // single, self-contained prompt a student picks from (or they paste their
+      // own in setup). "command" is the HSC directive verb, surfaced as a chip.
+      questions: [
+        { id: "ah-sources",
+          command: "Assess",
+          text: "Assess the extent to which written and archaeological sources together shape our understanding of one ancient society you have studied.",
+          topic: "Investigating ancient history: sources and evidence" },
+        { id: "ah-religion",
+          command: "Explain",
+          text: "Explain how religious beliefs shaped everyday life in one ancient society you have studied.",
+          topic: "Features of ancient societies: religion and belief" },
+        { id: "ah-geography",
+          command: "To what extent",
+          text: "To what extent did geography shape the development of one ancient society you have studied?",
+          topic: "Features of ancient societies: environment and economy" },
+        { id: "ah-women",
+          command: "Evaluate",
+          text: "Evaluate the usefulness of the available sources for reconstructing the role of women in one ancient society you have studied.",
+          topic: "Investigating ancient history: reliability and usefulness" },
+        { id: "ah-power",
+          command: "Discuss",
+          text: "Discuss the relationship between political power and religious authority in one ancient society you have studied.",
+          topic: "Features of ancient societies: power and authority" },
+        { id: "ah-site",
+          command: "Account for",
+          text: "Account for the significance of one major site or monument to the society that built it.",
+          topic: "Features of ancient societies: significant sites" }
+      ]
+    }
+  },
+
+  // Structure presets for the setup selector. The default is the five-paragraph
+  // shape; a student can change it in setup and re-pick it later. "roles" drives
+  // both the stepper labels and how many paragraph slots the draft holds.
+  structures: [
+    { key: "five",  label: "5 paragraphs (intro, 3 body, conclusion)",
+      roles: ["Introduction", "Body 1", "Body 2", "Body 3", "Conclusion"] },
+    { key: "four",  label: "4 paragraphs (intro, 2 body, conclusion)",
+      roles: ["Introduction", "Body 1", "Body 2", "Conclusion"] },
+    { key: "six",   label: "6 paragraphs (intro, 4 body, conclusion)",
+      roles: ["Introduction", "Body 1", "Body 2", "Body 3", "Body 4", "Conclusion"] }
+  ],
+  defaultStructure: "five",
+
+  // Generic HSC band expectations, in writable register, no em-dashes. Shown as
+  // light reference in setup when a student has not pasted their own rubric. The
+  // coaching model is told these same expectations server-side; this copy is for
+  // the student to read, never asserted as the only right answer.
+  bands: [
+    { range: "Bands 5 to 6", text: "Sustained, well reasoned judgement. Analysis runs ahead of description, evidence is integrated and specific, and the writing signposts clearly." },
+    { range: "Bands 3 to 4", text: "A clear line of argument with some analysis, but parts slip into retelling and the evidence is uneven or loosely linked." },
+    { range: "Bands 1 to 2", text: "Mostly description or general comment, with little argument and evidence that is thin, vague or unconnected to the question." }
+  ],
+
+  // ---------------------------------------------------------------------------
+  // coachSample — the labelled DEMO FALLBACK for coaching, mirroring the marking
+  // demo fallback (demoEssay). Lets all three screens be walked end to end before
+  // the worker is re-pasted. SUGGEST, NEVER SUBSTITUTE: nudges are questions, not
+  // answers; chips are word-level alternatives the student picks and applies.
+  // Never a rewritten sentence or a paste-ready paragraph.
+  // ---------------------------------------------------------------------------
+  coachSample: {
+    note: "There is a clear point here, but it leans on description. The marker is looking for analysis that answers the question, not a retelling.",
+    nudges: [
+      "Your first sentence states what happened. What does it let you argue about the question?",
+      "You mention a source here. What makes it useful or limited for this point, and how would you signal that to the marker?",
+      "How does this paragraph connect back to your thesis? A short signpost would make the link explicit."
+    ],
+    chips: [
+      { from: "shows", options: ["suggests", "indicates", "reveals"] },
+      { from: "big", options: ["significant", "substantial", "far-reaching"] },
+      { from: "a lot of", options: ["considerable", "extensive"] }
+    ],
+    check: "If you have stated a date or figure, check it against your own notes before you rely on it."
   }
 };
 
@@ -5018,6 +5218,492 @@ window.CONTENT.charts = {
     } catch (e) { /* demo entry is best-effort */ }
   }
 
+  // ===========================================================================
+  // Essay practice mode — coached writing + full attempt (HSC Ancient History).
+  // Whole feature is behind CONFIG.essayMode (promotion switch) with ?essay=1 /
+  // localStorage one-person overrides and a ?essaydemo=1 dev entry, mirroring the
+  // reviewMode / ?reviewdemo convention exactly. Live students see nothing until
+  // the flag flips. Three screens (setup, coached practice, full attempt) share a
+  // SINGLE draft: there is never a second draft to reconcile. The draft persists
+  // in localStorage for now; an essay_drafts table with owner = auth.uid() RLS is
+  // the later go-live step. Reuses the worker-call shape and the labelled demo
+  // fallback pattern (see gradeEssay / demoEssay), never the substitution ladder.
+  // ===========================================================================
+  function essayEnabled() {
+    if (CONFIG.essayMode === true) return true;
+    if (/[?&]essay=1/.test(location.search)) return true;
+    try { if (localStorage.getItem("marginal.essay") === "1") return true; } catch (e) { /* sandboxed */ }
+    return false;
+  }
+  // Client-side subject routing. KNOWN codes only: anything unmatched resolves to
+  // null ("subject not set"), never silently to Economics, so a future code can
+  // never be misrouted into the wrong content. 12Ec* stays Economics, untouched.
+  const SUBJECT_RULES = [
+    { re: /^11Anc/i, subject: "ancient_history" },
+    { re: /^12Ec/i, subject: "economics" },
+  ];
+  function subjectForCode(code) {
+    const c = String(code || "").trim();
+    for (let i = 0; i < SUBJECT_RULES.length; i++) if (SUBJECT_RULES[i].re.test(c)) return SUBJECT_RULES[i].subject;
+    return null; // unknown -> subject not set
+  }
+  function currentClassCode() {
+    try { const w = Cloud.who && Cloud.who(); if (w && w.class_code) return w.class_code; } catch (e) { /* ignore */ }
+    return state.code || CONFIG.code || "";
+  }
+  function esSubjectContent(subject) {
+    return (window.ESSAY && window.ESSAY.subjects && window.ESSAY.subjects[subject]) || null;
+  }
+  function esStructureDef(key) {
+    const S = (window.ESSAY && window.ESSAY.structures) || [];
+    return S.find(s => s.key === key) || S.find(s => s.key === (window.ESSAY && window.ESSAY.defaultStructure)) || S[0] || { key: "five", label: "5 paragraphs", roles: ["Introduction", "Body 1", "Body 2", "Body 3", "Conclusion"] };
+  }
+  function esStructureLabel(key) { return esStructureDef(key).label; }
+
+  const ES = { subject: null, code: "", demo: false, screen: "setup", draft: null, list: [], form: null, pending: false };
+  const ES_KEY = "marginal.essay.v1";
+  function esBagKey() { return ES.subject + "|" + ES.code; }
+  function esReadStore() { try { return JSON.parse(store.getItem(ES_KEY) || "{}") || {}; } catch (e) { return {}; } }
+  function esLoadList() {
+    const all = esReadStore(); const bag = all[esBagKey()];
+    ES.list = (bag && Array.isArray(bag.drafts)) ? bag.drafts : [];
+  }
+  function esSaveDraft() {
+    if (!ES.draft) return;
+    const all = esReadStore();
+    const bag = all[esBagKey()] || { drafts: [] };
+    const i = bag.drafts.findIndex(d => d.id === ES.draft.id);
+    if (i >= 0) bag.drafts[i] = ES.draft; else bag.drafts.push(ES.draft);
+    all[esBagKey()] = bag; ES.list = bag.drafts;
+    try { store.setItem(ES_KEY, JSON.stringify(all)); } catch (e) { /* in-memory fallback */ }
+  }
+  // Build the paragraph slots for a structure, preserving any text/point/feedback
+  // from a previous structure by index (so changing the structure later never
+  // silently drops a student's writing).
+  function esBuildParas(structureKey, prev) {
+    const st = esStructureDef(structureKey);
+    return st.roles.map((role, i) => {
+      const old = prev && prev[i];
+      return { role, point: old ? old.point : "", text: old ? old.text : "", feedback: old ? old.feedback || null : null, gradedText: old ? old.gradedText || null : null };
+    });
+  }
+  function esId() { return "e" + (ES.list.length + 1) + "-" + (ES.draft ? "" : "") + Math.abs((esBagKey() + ES.list.length).split("").reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 7)).toString(36); }
+
+  // ---- the suggest-never-substitute guard, enforced in code, not just prompt ----
+  // Applied to EVERY text field, not only chips: nudges must read as questions and
+  // stay short, and note/check are dropped if long enough to be a paste-ready
+  // sentence or paragraph. Chips are WORD-LEVEL only. So the coach can never return
+  // a substitution through any channel, however the model misbehaves.
+  function esShortPhrase(s, maxWords) { return String(s || "").trim().split(/\s+/).filter(Boolean).length <= maxWords; }
+  function esNormalizeCoach(raw, demoNote) {
+    raw = raw || {};
+    const nudges = (Array.isArray(raw.nudges) ? raw.nudges : [])
+      .map(s => String(s || "").trim())
+      .filter(s => s && s.includes("?") && esShortPhrase(s, 40)) // questions only, never a paste-ready paragraph
+      .slice(0, 4);
+    const chips = (Array.isArray(raw.chips) ? raw.chips : [])
+      .map(c => ({
+        from: String((c && c.from) || "").trim(),
+        options: (Array.isArray(c && c.options) ? c.options : []).map(o => String(o || "").trim()).filter(Boolean).slice(0, 4)
+      }))
+      .filter(c => c.from && esShortPhrase(c.from, 4) && c.options.length && c.options.every(o => esShortPhrase(o, 6)))
+      .slice(0, 6);
+    const note = String(raw.note || "").trim();
+    const check = String(raw.check || "").trim();
+    return {
+      note: esShortPhrase(note, 60) ? note : "",       // a band comment, never a rewrite
+      nudges, chips,
+      check: (check && esShortPhrase(check, 30)) ? check : "",
+      demoNote: demoNote || ""
+    };
+  }
+
+  function esOpen(opts) {
+    opts = opts || {};
+    ES.demo = !!opts.demo;
+    ES.subject = opts.subject || subjectForCode(currentClassCode());
+    ES.code = opts.code || currentClassCode() || (ES.demo ? "11Anc1" : "");
+    ES.form = null; ES.draft = null; ES.screen = "setup"; ES.pending = false;
+    esLoadList();
+    if (!document.getElementById("eshost")) { const h = document.createElement("div"); h.id = "eshost"; document.body.appendChild(h); }
+    document.body.classList.add("es-lock");
+    esRender();
+  }
+  function esClose() {
+    const h = document.getElementById("eshost"); if (h) h.remove();
+    document.body.classList.remove("es-lock");
+  }
+
+  function esRender() {
+    const host = document.getElementById("eshost"); if (!host) return;
+    const sc = esSubjectContent(ES.subject);
+    if (!ES.subject || !sc) return esRenderUnavailable(host);
+    if (ES.screen === "coached" && ES.draft) return esRenderCoached(host, sc);
+    if (ES.screen === "full" && ES.draft) return esRenderFull(host, sc);
+    return esRenderSetup(host, sc);
+  }
+
+  // Graceful "subject not set" / unsupported-subject screen. An unknown code (or a
+  // known code with no essay content yet, e.g. Economics) lands here, not in the
+  // wrong subject's content.
+  function esRenderUnavailable(host) {
+    const known = !!ES.subject;
+    const msg = known
+      ? "Essay practice is not set up for your subject yet. Nothing to worry about, this just is not switched on for you."
+      : "We could not match your class code to a subject, so essay practice is not set up for you yet. Check with your teacher.";
+    host.innerHTML = `
+    <div class="es-scrim"><div class="es-shell"><div class="es-wrap">
+      <div class="es-top"><div class="es-brand">Marginal · essay practice</div><button class="es-x" id="esx" aria-label="Close">close</button></div>
+      <div class="es-empty"><h2 class="es-h1">Subject not set</h2><p class="es-lead">${esc(msg)}</p></div>
+    </div></div></div>`;
+    const x = $("#esx"); if (x) x.onclick = esClose;
+  }
+
+  // The question text already opens with its command verb, so show the command as
+  // a styled chip label and strip it from the body to avoid "Assess Assess ...".
+  function esQuestionPreview(q) {
+    const command = String((q && q.command) || "").trim();
+    const text = String((q && q.text) || "").trim();
+    return command && text.toLowerCase().startsWith(command.toLowerCase())
+      ? text.slice(command.length).replace(/^[:\s-]+/, "")
+      : text;
+  }
+  // ---------------------------------- SETUP ----------------------------------
+  function esRenderSetup(host, sc) {
+    if (!ES.form) ES.form = { question: "", topic: "", rubric: "", structure: (window.ESSAY && window.ESSAY.defaultStructure) || "five", rubricOpen: false };
+    const f = ES.form;
+    const qChips = sc.questions.map(q =>
+      `<button class="es-qchip" data-esq="${esc(q.id)}"><span class="es-qcmd">${esc(q.command)}</span> ${esc(esQuestionPreview(q))}</button>`).join("");
+    const resume = ES.list.length ? `
+      <div class="es-resume">
+        <p class="es-label">Your essays</p>
+        <div class="es-resrow">${ES.list.map(d =>
+          `<button class="es-rescard" data-esresume="${esc(d.id)}">
+             ${d.topic ? `<span class="es-restag">${esc(d.topic)}</span>` : `<span class="es-restag muted">no topic tag</span>`}
+             <span class="es-resq">${esc((d.question || "").slice(0, 90))}${(d.question || "").length > 90 ? "…" : ""}</span>
+           </button>`).join("")}</div>
+      </div>` : "";
+    const structOpts = (window.ESSAY.structures || []).map(s =>
+      `<option value="${esc(s.key)}" ${s.key === f.structure ? "selected" : ""}>${esc(s.label)}</option>`).join("");
+    const bandsRef = (window.ESSAY.bands || []).map(b =>
+      `<div class="es-band"><span class="es-bandr">${esc(b.range)}</span><span class="es-bandt">${esc(b.text)}</span></div>`).join("");
+    host.innerHTML = `
+    <div class="es-scrim"><div class="es-shell"><div class="es-wrap">
+      <div class="es-top">
+        <div class="es-brand">Marginal · essay practice <span class="es-subj">${esc(sc.label)} · ${esc(sc.stage)}</span>${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}</div>
+        <button class="es-x" id="esx" aria-label="Close">close</button>
+      </div>
+      <h1 class="es-h1">Set up your essay</h1>
+      <p class="es-lead">Only the question is needed. Everything else is optional and you can change all of it later.</p>
+      ${resume}
+      <div class="es-field">
+        <label class="es-label" for="esq">Essay question <span class="es-req">needed</span></label>
+        <textarea id="esq" class="es-input es-ta" rows="3" placeholder="Paste or type the question you are practising.">${esc(f.question)}</textarea>
+        <p class="es-help">Or start from one of these practice questions:</p>
+        <div class="es-qchips">${qChips}</div>
+      </div>
+      <div class="es-field">
+        <label class="es-label" for="estopic">Chosen topic or option <span class="es-opt">optional</span></label>
+        <input id="estopic" class="es-input" value="${esc(f.topic)}" placeholder="e.g. Old Kingdom Egypt. This just tags the draft so you can tell your essays apart.">
+      </div>
+      <div class="es-field">
+        <label class="es-label" for="esrubric">Marking rubric <span class="es-opt">optional</span></label>
+        <p class="es-help">Paste a rubric or marking guide and the coach will aim its feedback at it. Skip it and the coach uses general HSC band expectations. Skipping costs you nothing.</p>
+        <textarea id="esrubric" class="es-input es-ta" rows="3" placeholder="Paste your rubric or marking bands here, or leave blank.">${esc(f.rubric)}</textarea>
+        <button class="es-linkbtn" id="esbandsref">${f.rubricOpen ? "Hide" : "Show"} the general band expectations the coach falls back to</button>
+        ${f.rubricOpen ? `<div class="es-bands">${bandsRef}</div>` : ""}
+      </div>
+      <div class="es-field">
+        <label class="es-label" for="esstruct">Structure</label>
+        <select id="esstruct" class="es-input es-select">${structOpts}</select>
+      </div>
+      <div class="es-actions">
+        <button class="es-btn primary" id="esstart">Start practising</button>
+        <span class="es-foothint">You will write one paragraph at a time with a coach, or you can switch to a full timed attempt.</span>
+      </div>
+    </div></div></div>`;
+    $("#esx").onclick = esClose;
+    const q = $("#esq"); q.oninput = () => { f.question = q.value; };
+    const tp = $("#estopic"); tp.oninput = () => { f.topic = tp.value; };
+    const rb = $("#esrubric"); rb.oninput = () => { f.rubric = rb.value; };
+    const stt = $("#esstruct"); stt.onchange = () => { f.structure = stt.value; };
+    $("#esbandsref").onclick = () => { f.rubricOpen = !f.rubricOpen; esRender(); };
+    host.querySelectorAll("[data-esq]").forEach(b => b.onclick = () => {
+      const qq = sc.questions.find(x => x.id === b.dataset.esq);
+      if (qq) { f.question = qq.text; if (!f.topic) f.topic = qq.topic || ""; esRender(); $("#esq").focus(); }
+    });
+    host.querySelectorAll("[data-esresume]").forEach(b => b.onclick = () => {
+      const d = ES.list.find(x => x.id === b.dataset.esresume);
+      if (d) { ES.draft = d; ES.screen = d.mode === "full" ? "full" : "coached"; esRender(); }
+    });
+    $("#esstart").onclick = () => {
+      const question = (f.question || "").trim();
+      if (!question) { toast("Add your essay question to start."); const el = $("#esq"); if (el) el.focus(); return; }
+      ES.draft = {
+        id: esId(), subject: ES.subject, code: ES.code,
+        question, topic: (f.topic || "").trim(), rubric: (f.rubric || "").trim(),
+        structure: f.structure, paras: esBuildParas(f.structure, null),
+        mode: "coached", pos: 0, createdAt: new Date().toISOString()
+      };
+      esSaveDraft();
+      ES.screen = "coached"; ES.form = null; esRender();
+    };
+  }
+
+  // ---- shared header for the two writing screens (question + topic + switch) ----
+  function esWritingHead(sc, modeLabel, switchLabel, switchTo) {
+    return `
+      <div class="es-top">
+        <div class="es-brand">Marginal · essay practice <span class="es-subj">${esc(sc.label)}</span>${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}</div>
+        <div class="es-topbtns">
+          <button class="es-linkbtn" id="esmodeswitch">${esc(switchLabel)}</button>
+          <button class="es-x" id="esx" aria-label="Back to setup">setup</button>
+        </div>
+      </div>
+      <div class="es-qbar">
+        <div>
+          <div class="es-qbar-mode">${esc(modeLabel)}</div>
+          <div class="es-qbar-q">${esc(ES.draft.question)}</div>
+        </div>
+        ${ES.draft.topic ? `<span class="es-restag">${esc(ES.draft.topic)}</span>` : ""}
+      </div>`;
+  }
+
+  // ------------------------------ COACHED PRACTICE ------------------------------
+  // One element at a time. Only the current paragraph renders: its planned point
+  // pinned (muted) above, an editable box, and that paragraph's feedback in the
+  // right margin. The stepper is a POSITION INDICATOR only (not clickable jumps);
+  // Back / Next move one paragraph at a time, tracked by the progress ring.
+  function esRenderCoached(host, sc) {
+    const d = ES.draft;
+    if (d.pos < 0) d.pos = 0; if (d.pos > d.paras.length - 1) d.pos = d.paras.length - 1;
+    const p = d.paras[d.pos];
+    const total = d.paras.length, n = d.pos + 1;
+    const steps = d.paras.map((pp, i) =>
+      `<span class="es-step ${i === d.pos ? "on" : ""} ${pp.feedback ? "done" : ""}" title="${esc(pp.role)}"><span class="es-stepn">${i + 1}</span><span class="es-steplbl">${esc(pp.role)}</span></span>`).join("");
+    const canAsk = !p.feedback || ((p.text || "").trim() !== (p.gradedText || "").trim());
+    const askLabel = ES.pending ? "Asking the coach…" : "Get feedback";
+    const margin = esCoachMargin(p, canAsk);
+    host.innerHTML = `
+    <div class="es-scrim"><div class="es-shell"><div class="es-wrap es-wide">
+      ${esWritingHead(sc, "Coached practice", "Write a full attempt instead", "full")}
+      <div class="es-stepper">
+        <div class="es-steps">${steps}</div>
+        <div class="es-ring" title="paragraph ${n} of ${total}"><span>${n}/${total}</span></div>
+      </div>
+      <div class="es-coachcols">
+        <div class="es-coachmain">
+          <div class="es-pointpin">
+            <label class="es-pinlabel" for="espoint">your point for this paragraph <span class="es-opt">optional</span></label>
+            <input id="espoint" class="es-pointin" value="${esc(p.point)}" placeholder="In one line, what does this ${esc(p.role.toLowerCase())} argue?">
+          </div>
+          <div class="es-pararole">${esc(p.role)}</div>
+          <textarea id="espara" class="es-input es-parabox" rows="11" placeholder="Write only this paragraph here. The coach will respond in the margin.">${esc(p.text)}</textarea>
+          <div class="es-navrow">
+            <button class="es-btn ghost" id="esprev" ${d.pos === 0 ? "disabled" : ""}>Back</button>
+            <button class="es-btn ${canAsk ? "primary" : "ghost"}" id="esask" ${(!canAsk || ES.pending) ? "disabled" : ""}>${askLabel}</button>
+            <button class="es-btn ghost" id="esnext" ${d.pos === total - 1 ? "disabled" : ""}>Next</button>
+          </div>
+          ${(!canAsk) ? `<p class="es-cooldown">Revise this paragraph, then ask again. The pause is for thinking between drafts, not button grinding.</p>` : ""}
+        </div>
+        <aside class="es-margin">${margin}</aside>
+      </div>
+    </div></div></div>`;
+    esBindWritingHead();
+    const pt = $("#espoint"); pt.oninput = () => { p.point = pt.value; esSaveDraft(); };
+    const ta = $("#espara"); ta.oninput = () => { p.text = ta.value; esSaveDraft(); esRefreshAskButton(p); };
+    $("#esprev").onclick = () => { d.pos = Math.max(0, d.pos - 1); esSaveDraft(); esRender(); };
+    $("#esnext").onclick = () => { d.pos = Math.min(total - 1, d.pos + 1); esSaveDraft(); esRender(); };
+    const ask = $("#esask"); if (ask) ask.onclick = () => esGetFeedback(d.pos);
+    host.querySelectorAll("[data-eschip]").forEach(b => b.onclick = () => esApplyChip(d.pos, b.dataset.eschipfrom, b.dataset.eschipopt));
+  }
+  // Toggle the ask button live as the student types (cooldown releases the moment
+  // the paragraph differs from what was last sent), without a full re-render.
+  function esRefreshAskButton(p) {
+    const ask = $("#esask"); if (!ask) return;
+    const canAsk = !p.feedback || ((p.text || "").trim() !== (p.gradedText || "").trim());
+    ask.disabled = !canAsk || ES.pending;
+    ask.classList.toggle("primary", canAsk); ask.classList.toggle("ghost", !canAsk);
+    const cd = document.querySelector(".es-cooldown"); if (cd) cd.style.display = canAsk ? "none" : "";
+  }
+  function esCoachMargin(p, canAsk) {
+    if (ES.pending) return `<div class="es-mempty">Asking the coach for suggestions on this paragraph…</div>`;
+    const fb = p.feedback;
+    if (!fb) return `<div class="es-mempty">Write your paragraph, then press <b>Get feedback</b>. Suggestions appear here. The coach never rewrites your paragraph for you, it nudges and offers word choices you apply yourself.</div>`;
+    const demo = fb.demoNote ? `<div class="es-demonote">${esc(fb.demoNote)}</div>` : "";
+    const note = fb.note ? `<div class="es-mnote">${esc(fb.note)}</div>` : "";
+    const nudges = fb.nudges.length ? `<div class="es-mblock"><div class="es-mh">questions to push your thinking</div>${fb.nudges.map(t => `<div class="es-nudge">${esc(t)}</div>`).join("")}</div>` : "";
+    const chips = fb.chips.length ? `<div class="es-mblock"><div class="es-mh">word choices you can pick</div>${fb.chips.map(c =>
+      `<div class="es-chipline"><span class="es-chipfrom">instead of “${esc(c.from)}”</span><span class="es-chipopts">${c.options.map(o =>
+        `<button class="es-chip" data-eschip="1" data-eschipfrom="${esc(c.from)}" data-eschipopt="${esc(o)}">${esc(o)}</button>`).join("")}</span></div>`).join("")}</div>` : "";
+    const check = fb.check ? `<div class="es-check">${esc(fb.check)}</div>` : "";
+    return demo + note + nudges + chips + check;
+  }
+
+  // -------------------------------- FULL ATTEMPT --------------------------------
+  // The other mode: write cold, like an exam. One continuous surface, NO feedback
+  // margin. Three escape hatches so practice is never silently skipped, all into
+  // the SAME draft (no fork): a standing switch line, a per-paragraph coach link,
+  // and a gentle declinable completion check above Submit.
+  function esRenderFull(host, sc) {
+    const d = ES.draft;
+    const text = d.paras.map(pp => pp.text || "").join("\n\n").replace(/\n{3,}/g, "\n\n").replace(/^\n+/, "").replace(/\n+$/, "");
+    // Links index off the canonical paragraph SLOTS (not a filtered chunk list),
+    // so "Coach paragraph n" always carries that exact slot's text into the same
+    // draft. esGoCoached uses the same slot index: no fork, no off-by-one.
+    const filled = d.paras.map((pp, i) => ({ i, has: !!(pp.text || "").trim() })).filter(x => x.has);
+    const coachLinks = filled.length ? filled.map(x =>
+      `<button class="es-linkbtn" data-escoachpara="${x.i}">Coach ${esc(d.paras[x.i].role.toLowerCase())}</button>`).join("") : `<span class="es-help">Start writing, then you can take any paragraph into practice.</span>`;
+    host.innerHTML = `
+    <div class="es-scrim"><div class="es-shell"><div class="es-wrap es-wide">
+      ${esWritingHead(sc, "Full attempt", "Switch to coached practice", "coached")}
+      <p class="es-standing">Writing cold to build exam stamina. Prefer guidance on a paragraph? <button class="es-inlinelink" id="esstanding">switch to practice</button>.</p>
+      <textarea id="esfull" class="es-input es-fullbox" rows="18" placeholder="Write your whole essay here, in one go. Separate paragraphs with a blank line.">${esc(text)}</textarea>
+      <div class="es-coachstrip"><span class="es-help">Take a paragraph into practice without losing it from here:</span> ${coachLinks}</div>
+      <div class="es-completion">
+        <p class="es-completemsg">You wrote this without feedback. Take any paragraph into practice first? You can decline.</p>
+        <div class="es-actions">
+          <button class="es-btn ghost" id="estopractice">Take a paragraph into practice</button>
+          <button class="es-btn primary" id="essubmit">Submit anyway</button>
+        </div>
+      </div>
+    </div></div></div>`;
+    esBindWritingHead();
+    const firstFilled = () => { const k = d.paras.findIndex(pp => (pp.text || "").trim()); return k < 0 ? 0 : k; };
+    const ta = $("#esfull"); ta.oninput = () => { esFullSync(ta.value); };
+    $("#esstanding").onclick = () => { esFullSync($("#esfull").value); esGoCoached(firstFilled()); };
+    $("#estopractice").onclick = () => { esFullSync($("#esfull").value); esGoCoached(firstFilled()); };
+    $("#essubmit").onclick = () => esSubmitFull();
+    host.querySelectorAll("[data-escoachpara]").forEach(b => b.onclick = () => { esFullSync($("#esfull").value); esGoCoached(Number(b.dataset.escoachpara)); });
+  }
+  function esSplitParas(text) { return String(text || "").split(/\n\s*\n/).map(s => s.trim()).filter(s => s.length); }
+  // Sync the one continuous surface back into the single draft. Aligns chunks to
+  // paragraph slots by index, preserves each slot's planned point, and clears stale
+  // feedback when a slot's text changed. Structure slots are kept even when empty,
+  // so the coached stepper stays intact; extra chunks append as Body slots.
+  function esFullSync(value) {
+    const d = ES.draft, chunks = String(value).split(/\n\s*\n/).map(s => s.replace(/\s+$/,""));
+    const trimmed = chunks.map(c => c.trim());
+    // Never shrink below the structure's own paragraph count (keep the scaffold),
+    // but DO drop extra slots the student deleted so empty Body N steps don't
+    // linger in coached mode. The textarea compacts internal blanks, so trimmed
+    // is already a compact list and truncating is safe.
+    const baseLen = esStructureDef(d.structure).roles.length;
+    const keep = Math.max(baseLen, trimmed.filter(Boolean).length);
+    for (let i = 0; i < keep; i++) {
+      const incoming = trimmed[i] != null ? trimmed[i] : "";
+      if (!d.paras[i]) d.paras[i] = { role: "Body " + (i + 1), point: "", text: "", feedback: null, gradedText: null };
+      if ((d.paras[i].text || "") !== incoming) {
+        d.paras[i].text = incoming;
+        if (d.paras[i].feedback && (d.paras[i].gradedText || "") !== incoming) { d.paras[i].feedback = null; d.paras[i].gradedText = null; }
+      }
+    }
+    if (d.paras.length > keep) d.paras.length = keep;
+    // Keep the conclusion as the LAST paragraph: when a student exceeds the
+    // scaffold, the extra paragraphs become bodies inserted before the conclusion,
+    // never after it, so the final paragraph is never mislabelled as a body.
+    const roles = esStructureDef(d.structure).roles, concl = roles[roles.length - 1];
+    d.paras.forEach((pp, i) => {
+      pp.role = (i < roles.length - 1) ? roles[i]
+              : (i === d.paras.length - 1) ? concl
+              : "Body " + i;
+    });
+    esSaveDraft();
+  }
+  function esGoCoached(pos) {
+    ES.draft.mode = "coached"; ES.draft.pos = Math.max(0, Math.min(pos, ES.draft.paras.length - 1));
+    ES.screen = "coached"; esSaveDraft(); esRender();
+  }
+  function esSubmitFull() {
+    const d = ES.draft;
+    const words = d.paras.map(p => p.text || "").join(" ").trim().split(/\s+/).filter(Boolean).length;
+    if (!words) { toast("Write your essay before submitting."); return; }
+    const host = document.getElementById("eshost");
+    host.querySelector(".es-completion").innerHTML = `
+      <div class="es-submitted">
+        <div class="es-submittedh">Saved. Your full attempt is kept as one draft.</div>
+        <p class="es-help">When marking is connected for ${esc(esSubjectContent(ES.subject).label)}, Submit will send this for a grade. Coaching and marking stay separate, so connecting one never changes the other.</p>
+        <button class="es-linkbtn" id="esbacksetup">Back to setup</button>
+      </div>`;
+    const b = $("#esbacksetup"); if (b) b.onclick = () => { ES.screen = "setup"; esRender(); };
+  }
+
+  function esBindWritingHead() {
+    const x = $("#esx"); if (x) x.onclick = () => { ES.screen = "setup"; esRender(); };
+    const sw = $("#esmodeswitch"); if (sw) sw.onclick = () => {
+      ES.draft.mode = ES.draft.mode === "full" ? "coached" : "full";
+      ES.screen = ES.draft.mode; esSaveDraft(); esRender();
+    };
+  }
+
+  // The coaching call. Real Haiku feedback when the worker is connected; otherwise
+  // the labelled demo fallback (coachSample), mirroring demoEssay. The rubric rides
+  // along only when present: an empty rubric is simply not sent, and the worker
+  // falls back to generic HSC band expectations.
+  async function esGetFeedback(idx) {
+    const d = ES.draft, p = d.paras[idx];
+    if (!p || !(p.text || "").trim()) { toast("Write something in this paragraph first."); return; }
+    // Snapshot the paragraph as submitted: the textarea stays editable while the
+    // request is in flight, so feedback (and the cooldown anchor) must tie to the
+    // version actually reviewed, not whatever the student typed meanwhile.
+    const submittedText = p.text;
+    ES.pending = true; esRender();
+    let fb;
+    const useWorker = state.endpoint && !ES.demo;
+    if (useWorker) {
+      try {
+        const payload = {
+          action: "coach",
+          paragraph_text: submittedText, paragraph_role: p.role, planned_point: p.point || "",
+          question: d.question, topic: d.topic || "",
+          structure: esStructureLabel(d.structure), subject: ES.subject,
+          code: state.code || undefined
+        };
+        if ((d.rubric || "").trim()) payload.rubric = d.rubric.trim(); // omit when skipped -> generic bands
+        const res = await fetch(state.endpoint, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
+        if (!res.ok) throw new Error("coach " + res.status);
+        fb = esNormalizeCoach(await res.json(), "");
+      } catch (e) {
+        fb = esNormalizeCoach(window.ESSAY.coachSample, "Could not reach coaching (" + e.message + "). Showing demo suggestions instead.");
+      }
+    } else {
+      fb = esNormalizeCoach(window.ESSAY.coachSample, ES.demo
+        ? "Demo coaching. Real Haiku feedback switches on once the worker is re-pasted."
+        : "Demo coaching. Real feedback switches on once your teacher connects coaching.");
+    }
+    p.feedback = fb; p.gradedText = submittedText; // cooldown anchor: must revise before re-asking
+    ES.pending = false; esSaveDraft(); esRender();
+  }
+  // Apply a word-level chip: the STUDENT picks it, the app swaps the word in their
+  // own text. The coach never substitutes the paragraph. Changing the text also
+  // releases the cooldown (a revision happened), so they can ask again.
+  function esApplyChip(idx, from, option) {
+    const p = ES.draft.paras[idx];
+    const re = new RegExp("\\b" + String(from).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b", "i");
+    if (!re.test(p.text || "")) { toast("That word is not in your paragraph now."); return; }
+    // Function replacer so $&, $1, $' etc. in a chip option are inserted literally,
+    // not interpreted as replacement tokens.
+    p.text = p.text.replace(re, () => option);
+    esSaveDraft(); esRender();
+    const ta = $("#espara"); if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+  }
+
+  // ?essaydemo=1 dev entry. Respects the gate exactly like ?reviewdemo: only opens
+  // once we know the student is allowed in. Forces an 11Anc1 Ancient History
+  // context so all three screens are walkable on the real student page.
+  function maybeOpenEssayDemo() {
+    if (gated()) return;
+    try {
+      if (/[?&]essaydemo=1/.test(location.search)) { esOpen({ demo: true, subject: "ancient_history", code: "11Anc1" }); return; }
+      // A per-browser opt-in (the ?essay=1 URL flag OR localStorage marginal.essay)
+      // opens essay mode for one tester. The global CONFIG.essayMode flag does NOT
+      // auto-open it, so flipping the promotion switch never forces a full-screen
+      // takeover on every student; its in-app entry point is the go-live step.
+      let ls = false; try { ls = localStorage.getItem("marginal.essay") === "1"; } catch (e) { /* sandboxed */ }
+      if (/[?&]essay=1/.test(location.search) || ls) esOpen({});
+    } catch (e) { /* demo entry is best-effort */ }
+  }
+
   // Boot. When cloud auth is configured, the app is gated: recover any persisted
   // session first (no flash), then either land in the app (returning student) or
   // show the sign-in gate. When unconfigured, the app opens normally.
@@ -5025,11 +5711,12 @@ window.CONTENT.charts = {
   if (cloudConfigured()) {
     app.innerHTML = `<div class="authgate"><div class="authcard"><div class="authbrand">Marginal</div><p class="bhint">Loading…</p></div></div>`;
     Cloud.restore()
-      .then(() => { if (Cloud.session()) { home(); maybeOpenReviewDemo(); } else authScreen(); })
+      .then(() => { if (Cloud.session()) { home(); maybeOpenReviewDemo(); maybeOpenEssayDemo(); } else authScreen(); })
       .catch(() => authScreen());
   } else {
     home();
     maybeOpenReviewDemo();
+    maybeOpenEssayDemo();
   }
 })();
 
