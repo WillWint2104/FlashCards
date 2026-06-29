@@ -2572,18 +2572,31 @@
   function slotDef(role, key) { return slotsForRole(role).find(s => s.key === key) || null; }
   function slotTemplates(key) { return (window.ESSAY && window.ESSAY.slots && window.ESSAY.slots.templates && window.ESSAY.slots.templates[key]) || null; }
   function esBagKey() { return ES.subject + "|" + ES.code; }
+  const ES_DRAFT_CAP = 24; // keep a manageable set of saved essays; drop the oldest beyond this
   function esReadStore() { try { return JSON.parse(store.getItem(ES_KEY) || "{}") || {}; } catch (e) { return {}; } }
+  function esRecent(list) { return (list || []).slice().sort((a, b) => String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || ""))); }
   function esLoadList() {
     const all = esReadStore(); const bag = all[esBagKey()];
-    ES.list = (bag && Array.isArray(bag.drafts)) ? bag.drafts : [];
+    ES.list = esRecent(bag && Array.isArray(bag.drafts) ? bag.drafts : []);
   }
   function esSaveDraft() {
     if (!ES.draft) return;
+    ES.draft.updatedAt = new Date().toISOString(); // most-recent-first ordering
     const all = esReadStore();
     const bag = all[esBagKey()] || { drafts: [] };
     const i = bag.drafts.findIndex(d => d.id === ES.draft.id);
     if (i >= 0) bag.drafts[i] = ES.draft; else bag.drafts.push(ES.draft);
+    bag.drafts = esRecent(bag.drafts).slice(0, ES_DRAFT_CAP); // cap; oldest fall off
     all[esBagKey()] = bag; ES.list = bag.drafts;
+    try { store.setItem(ES_KEY, JSON.stringify(all)); } catch (e) { /* in-memory fallback */ }
+  }
+  // Remove one saved essay from localStorage and the in-memory list. The caller
+  // removes just that row from the DOM, so the list updates with no rebuild/flash.
+  function esDeleteDraft(id) {
+    const all = esReadStore();
+    const bag = all[esBagKey()] || { drafts: [] };
+    bag.drafts = (bag.drafts || []).filter(d => d.id !== id);
+    all[esBagKey()] = bag; ES.list = esRecent(bag.drafts);
     try { store.setItem(ES_KEY, JSON.stringify(all)); } catch (e) { /* in-memory fallback */ }
   }
   // Build the paragraph slots for a structure, preserving any text/point/feedback
@@ -2702,18 +2715,24 @@
     const f = ES.form;
     const qChips = sc.questions.map(q =>
       `<button class="es-qchip" data-esq="${esc(q.id)}"><span class="es-qcmd">${esc(q.command)}</span> ${esc(esQuestionPreview(q))}</button>`).join("");
-    const resume = ES.list.length ? `
-      <div class="es-resume">
+    // Discrete, most-recent-first list (not one combined pill); each row deletes.
+    const saved = esRecent(ES.list).slice(0, 12);
+    const resume = saved.length ? `
+      <div class="es-resume" data-resume>
         <p class="es-label">Your saved essays</p>
-        <div class="es-resrow">${ES.list.map(d => {
+        <div class="es-reslist">${saved.map(d => {
           const mastered = (d.paras || []).filter(x => x.mastered).length, np = (d.paras || []).length;
-          return `<div class="es-rescard">
-             ${d.topic ? `<span class="es-restag">${esc(d.topic)}</span>` : `<span class="es-restag muted">no topic tag</span>`}
-             <span class="es-resq">${esc((d.question || "").slice(0, 90))}${(d.question || "").length > 90 ? "…" : ""}</span>
-             <span class="es-resmeta">${np ? mastered + "/" + np + " mastered" : "draft"}</span>
+          const q = (d.question || "").trim();
+          return `<div class="es-resitem" data-resrow="${esc(d.id)}">
+             <div class="es-resmain">
+               ${d.topic ? `<span class="es-restoplabel">${esc(d.topic)}</span>` : ""}
+               <span class="es-resq">${esc(q.slice(0, 110))}${q.length > 110 ? "…" : ""}</span>
+               <span class="es-resmeta">${np ? mastered + "/" + np + " mastered" : "draft"}</span>
+             </div>
              <div class="es-resactions">
                <button class="es-misstier" data-esresume="${esc(d.id)}">Resume</button>
                <button class="es-misstier ghost" data-estemplate="${esc(d.id)}">Use as template</button>
+               <button class="es-resdel" data-esdelete="${esc(d.id)}" aria-label="Delete this saved essay" title="Delete this saved essay">remove</button>
              </div>
            </div>`;
         }).join("")}</div>
@@ -2780,6 +2799,14 @@
     host.querySelectorAll("[data-estemplate]").forEach(b => b.onclick = () => {
       const d = ES.list.find(x => x.id === b.dataset.estemplate);
       if (d) { ES.form = { question: d.question || "", topic: d.topic || "", rubric: d.rubric || "", structure: d.structure || ((window.ESSAY && window.ESSAY.defaultStructure) || "five"), rubricOpen: false }; esRender(); const el = $("#esq"); if (el) el.focus(); }
+    });
+    // Delete a saved essay: remove from localStorage + list, then drop just this
+    // row from the DOM (no full re-render, no flash). Section goes if it empties.
+    host.querySelectorAll("[data-esdelete]").forEach(b => b.onclick = () => {
+      const id = b.dataset.esdelete;
+      esDeleteDraft(id);
+      const row = host.querySelector('[data-resrow="' + id + '"]'); if (row) row.remove();
+      if (!ES.list.length) { const sec = host.querySelector("[data-resume]"); if (sec) sec.remove(); }
     });
     $("#esstart").onclick = () => {
       const question = (f.question || "").trim();

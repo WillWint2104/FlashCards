@@ -690,13 +690,17 @@
   .es-bandr{font-family:var(--disp);font-weight:600;font-size:12.5px;color:var(--green-dk);flex:none;width:96px}
   .es-bandt{font-size:12.5px;color:var(--ink-2);font-weight:600;line-height:1.5}
   .es-resume{margin-bottom:20px}
-  .es-resrow{display:flex;gap:10px;flex-wrap:wrap}
-  .es-rescard{display:flex;flex-direction:column;gap:6px;align-items:flex-start;text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:13px;padding:11px 13px;max-width:280px}
+  .es-reslist{display:flex;flex-direction:column;gap:8px}
+  .es-resitem{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;background:var(--card);border:1.5px solid var(--line);border-radius:13px;padding:10px 13px}
+  .es-resmain{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1 1 auto}
+  .es-restoplabel{font-family:var(--disp);font-weight:600;font-size:11.5px;color:var(--green-dk);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .es-resq{font-size:13px;color:var(--ink);font-weight:600;line-height:1.4}
   .es-resmeta{font-size:11.5px;color:var(--ink-3);font-weight:700}
-  .es-resactions{display:flex;gap:7px;flex-wrap:wrap;margin-top:4px}
+  .es-resactions{display:flex;gap:7px;flex-wrap:wrap;align-items:center;flex:none}
+  .es-resdel{font:inherit;font-weight:700;font-size:12px;color:var(--ink-2);background:none;border:none;cursor:pointer;padding:4px 6px;text-decoration:underline;text-underline-offset:2px}
+  .es-resdel:hover{color:var(--coral-dk)}
   .es-restag{font-family:var(--disp);font-weight:600;font-size:11.5px;color:var(--green-dk);background:var(--green-soft);border-radius:99px;padding:3px 11px}
   .es-restag.muted{color:var(--ink-3);background:#F2F6F6}
-  .es-resq{font-size:13px;color:var(--ink);font-weight:600;line-height:1.4}
   .es-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:8px}
   .es-btn{font-family:var(--disp);font-weight:600;font-size:15px;color:#fff;background:var(--green);border:none;border-radius:14px;padding:12px 24px;box-shadow:0 4px 0 var(--green-dk);cursor:pointer;transition:transform .08s}
   .es-btn:active{transform:translateY(2px);box-shadow:0 2px 0 var(--green-dk)}
