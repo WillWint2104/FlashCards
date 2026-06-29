@@ -116,8 +116,9 @@ To switch on real Haiku coaching:
    worker is live, the demo banner disappears and feedback comes from Haiku.
 
 Notes:
-- Coaching runs on `claude-haiku-4-5` with a short output cap. Marking is left on
-  its current model on purpose.
+- Coaching runs on `claude-haiku-4-5-20251001` (the dated pin; the bare
+  `claude-haiku-4-5` alias is rejected on this account) with a short output cap.
+  Marking is left on its current model on purpose.
 - The coaching system prompt is prompt-cached (it repeats every call).
 - The rubric is sent only when the student pasted one; otherwise the worker falls
   back to generic HSC band expectations (no empty rubric field is sent).
