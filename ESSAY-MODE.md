@@ -99,3 +99,70 @@ Essay drafts persist in the browser via the existing safe-storage wrapper, so th
 demo is fully walkable immediately. The go-live step is an `essay_drafts` table
 with `owner = auth.uid()` Row Level Security, mirroring the `sets` table pattern.
 That SQL is not run yet and is the next step when you decide to go live.
+
+---
+
+# Batch 2: mastery mode, missing-element feedback, and flow sequencing
+
+All still behind `essayMode` / `?essaydemo=1`, demo-walkable before the worker is
+re-pasted.
+
+## The shared slot model (one definition)
+
+`window.ESSAY.slots` in `essay-content.js` is the single source. A body paragraph
+has four slots (point, analysis, evidence, link); the intro and conclusion get
+light sets (thesis + approach; restatement + judgement). Both the missing-element
+feedback and the quiz read it. The Cloudflare worker only DETECTS and names which
+slot is absent (by key); it never sends a frame or any content. All frames and the
+quiz logic are client-side.
+
+## Walkthrough checklist (run on `?essaydemo=1`)
+
+Open a Body paragraph (press Next from the intro), type a sentence or two, and
+press Get feedback. Then tick:
+
+**Missing-element feedback (Task 2)**
+- [ ] One or more "a/an X sentence is missing" cards appear in the margin, each
+      naming the element, its job, and where it goes.
+- [ ] "Show scaffold" reveals a simple blank frame as a ghost under your paragraph,
+      dashed and labelled "type over the blanks". It is clearly not your text.
+- [ ] "More guidance" offers a few frame TYPES (e.g. significance, appearance and
+      reality, cause and effect); picking one swaps the ghost frame.
+- [ ] Every frame is blank connective tissue. No real history, names, dates or
+      model analysis anywhere.
+- [ ] Toggle a card closed: the ghost disappears and your paragraph text is exactly
+      as you left it. Nothing was ever written into the draft.
+
+**Categorised feedback (Task 4)**
+- [ ] On-target (substance) questions and the missing-element cards show by default.
+- [ ] Word choices and expression/signposting polish are tucked behind a quiet
+      "polish the wording (N)" reveal, hidden until you open it.
+
+**Mastery / quiz (Task 3)**
+- [ ] "memorise this paragraph" opens the quiz. The cue is your point/topic sentence.
+- [ ] Reveal shows your own saved paragraph as a crutch.
+- [ ] Checking after revealing does NOT count as mastery (it says so).
+- [ ] A weak recall says "close"; a clean recall with no reveal marks the paragraph
+      mastered (stepper shows a tick).
+- [ ] Edit the paragraph later and the quiz targets the new text (one draft, no fork).
+
+**Soft sequencing (Task 4)**
+- [ ] After a paragraph is complete with no missing elements: a quiet "ready to
+      memorise?" nudge.
+- [ ] After it is mastered: a "polish the wording?" nudge.
+- [ ] After every paragraph is mastered: a "try a full attempt?" nudge.
+- [ ] All three modes stay openable at any time; the nudges never lock anything.
+
+## Worker re-paste (your step) — REQUIRED this batch
+
+The coach system prompt and tool schema CHANGED (it now reports absent slots and
+categorises nudges). Until you re-paste, coaching shows the labelled demo fallback,
+which already carries the new categorised shape so every screen above is walkable.
+
+To switch on real categorised + missing-element coaching:
+1. Cloudflare -> Workers -> `marginal-grader` -> Edit code.
+2. Replace the whole script with the current `proxy/worker.js` and Deploy.
+3. No new secrets. Quiz mode adds zero API cost; it never calls the worker.
+
+Keep `window.ESSAY.slots` keys in `essay-content.js` in sync with `COACH_SLOT_KEYS`
+in `proxy/worker.js` if you ever change the slot set.
