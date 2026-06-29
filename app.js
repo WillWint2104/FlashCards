@@ -2893,7 +2893,7 @@
             <button class="es-linkbtn" id="esquizlink">memorise this paragraph</button>
           </div>
           ${(!canAsk) ? `<p class="es-cooldown">Revise this paragraph, then ask again. The pause is for thinking between drafts, not button grinding.</p>` : ""}
-          ${esSeqNudge(p)}
+          <div class="es-seqhost">${esSeqNudge(p)}</div>
         </div>
         <aside class="es-margin">${margin}</aside>
       </div>
@@ -3298,7 +3298,20 @@
     }
     p.feedback = fb; p.gradedText = submittedText; // cooldown anchor: must revise before re-asking
     esResetCoachUI(); // fresh feedback: missing-element cards start collapsed (Tier 0), polish tucked
-    ES.pending = false; esSaveDraft(); esRender();
+    ES.pending = false; esSaveDraft();
+    // Update ONLY the parts that changed, in place: the margin gets the new result,
+    // the ask button returns to its cooldown state, the stepper marks this paragraph
+    // done, and the sequencing nudge refreshes. No full esRender, so nothing flashes.
+    if (ES.screen === "coached" && ES.draft && ES.draft.pos === idx) {
+      const host = document.getElementById("eshost");
+      const m = host && host.querySelector(".es-margin");
+      if (m) { m.innerHTML = esCoachMargin(p); host.querySelectorAll("button:not([type])").forEach(b => b.type = "button"); esBindCoachMargin(p); }
+      esRefreshAskButton(p);
+      const step = host && host.querySelectorAll(".es-step")[idx]; if (step) step.classList.add("done");
+      const seqHost = host && host.querySelector(".es-seqhost"); if (seqHost) { seqHost.innerHTML = esSeqNudge(p); esBindSeqNudge(p); }
+    } else {
+      esRender(); // not on this paragraph any more (rare) -> safe full render
+    }
   }
   // Apply a word-level chip: the STUDENT picks it, the app swaps the word in their
   // own text. The coach never substitutes the paragraph. Changing the text also
