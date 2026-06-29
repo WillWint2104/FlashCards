@@ -5290,14 +5290,17 @@ window.ESSAY = {
   function esId() { return "e" + (ES.list.length + 1) + "-" + (ES.draft ? "" : "") + Math.abs((esBagKey() + ES.list.length).split("").reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 7)).toString(36); }
 
   // ---- the suggest-never-substitute guard, enforced in code, not just prompt ----
-  // Nudges are kept as written (questions, not answers). Chips are WORD-LEVEL only:
-  // any "from" or option longer than a short phrase is dropped, so the coach can
-  // never return a paste-ready sentence or paragraph through this channel.
+  // Applied to EVERY text field, not only chips: nudges must read as questions and
+  // stay short, and note/check are dropped if long enough to be a paste-ready
+  // sentence or paragraph. Chips are WORD-LEVEL only. So the coach can never return
+  // a substitution through any channel, however the model misbehaves.
   function esShortPhrase(s, maxWords) { return String(s || "").trim().split(/\s+/).filter(Boolean).length <= maxWords; }
   function esNormalizeCoach(raw, demoNote) {
     raw = raw || {};
     const nudges = (Array.isArray(raw.nudges) ? raw.nudges : [])
-      .map(s => String(s || "").trim()).filter(Boolean).slice(0, 4);
+      .map(s => String(s || "").trim())
+      .filter(s => s && s.includes("?") && esShortPhrase(s, 40)) // questions only, never a paste-ready paragraph
+      .slice(0, 4);
     const chips = (Array.isArray(raw.chips) ? raw.chips : [])
       .map(c => ({
         from: String((c && c.from) || "").trim(),
@@ -5305,7 +5308,14 @@ window.ESSAY = {
       }))
       .filter(c => c.from && esShortPhrase(c.from, 4) && c.options.length && c.options.every(o => esShortPhrase(o, 6)))
       .slice(0, 6);
-    return { note: String(raw.note || "").trim(), nudges, chips, check: String(raw.check || "").trim(), demoNote: demoNote || "" };
+    const note = String(raw.note || "").trim();
+    const check = String(raw.check || "").trim();
+    return {
+      note: esShortPhrase(note, 60) ? note : "",       // a band comment, never a rewrite
+      nudges, chips,
+      check: (check && esShortPhrase(check, 30)) ? check : "",
+      demoNote: demoNote || ""
+    };
   }
 
   function esOpen(opts) {
@@ -5589,6 +5599,15 @@ window.ESSAY = {
       }
     }
     if (d.paras.length > keep) d.paras.length = keep;
+    // Keep the conclusion as the LAST paragraph: when a student exceeds the
+    // scaffold, the extra paragraphs become bodies inserted before the conclusion,
+    // never after it, so the final paragraph is never mislabelled as a body.
+    const roles = esStructureDef(d.structure).roles, concl = roles[roles.length - 1];
+    d.paras.forEach((pp, i) => {
+      pp.role = (i < roles.length - 1) ? roles[i]
+              : (i === d.paras.length - 1) ? concl
+              : "Body " + i;
+    });
     esSaveDraft();
   }
   function esGoCoached(pos) {
@@ -5662,7 +5681,9 @@ window.ESSAY = {
     const p = ES.draft.paras[idx];
     const re = new RegExp("\\b" + String(from).replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b", "i");
     if (!re.test(p.text || "")) { toast("That word is not in your paragraph now."); return; }
-    p.text = p.text.replace(re, option);
+    // Function replacer so $&, $1, $' etc. in a chip option are inserted literally,
+    // not interpreted as replacement tokens.
+    p.text = p.text.replace(re, () => option);
     esSaveDraft(); esRender();
     const ta = $("#espara"); if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
   }
@@ -5673,8 +5694,13 @@ window.ESSAY = {
   function maybeOpenEssayDemo() {
     if (gated()) return;
     try {
-      if (/[?&]essaydemo=1/.test(location.search)) esOpen({ demo: true, subject: "ancient_history", code: "11Anc1" });
-      else if (essayEnabled() && /[?&]essay=1/.test(location.search)) esOpen({});
+      if (/[?&]essaydemo=1/.test(location.search)) { esOpen({ demo: true, subject: "ancient_history", code: "11Anc1" }); return; }
+      // A per-browser opt-in (the ?essay=1 URL flag OR localStorage marginal.essay)
+      // opens essay mode for one tester. The global CONFIG.essayMode flag does NOT
+      // auto-open it, so flipping the promotion switch never forces a full-screen
+      // takeover on every student; its in-app entry point is the go-live step.
+      let ls = false; try { ls = localStorage.getItem("marginal.essay") === "1"; } catch (e) { /* sandboxed */ }
+      if (/[?&]essay=1/.test(location.search) || ls) esOpen({});
     } catch (e) { /* demo entry is best-effort */ }
   }
 

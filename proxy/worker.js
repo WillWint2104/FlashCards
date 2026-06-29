@@ -203,11 +203,17 @@ const COACH_TOOL = {
   },
 };
 
-// Belt-and-braces server-side enforcement of rule 1 and 3: drop any chip whose
-// alternative is long enough to be a sentence rather than a word-level swap.
+// Belt-and-braces server-side enforcement of the suggest-never-substitute rule on
+// EVERY field, not just chips: nudges must read as questions and stay short, note
+// and check are dropped when long enough to be a paste-ready sentence/paragraph,
+// and chips stay word-level. So a misbehaving model can never return a
+// substitution through any field. (The client enforces the same limits.)
 function shortPhrase(s, maxWords) { return String(s || "").trim().split(/\s+/).filter(Boolean).length <= maxWords; }
 function normalizeCoaching(c) {
-  const nudges = (Array.isArray(c.nudges) ? c.nudges : []).map(s => String(s || "").trim()).filter(Boolean).slice(0, 4);
+  const nudges = (Array.isArray(c.nudges) ? c.nudges : [])
+    .map(s => String(s || "").trim())
+    .filter(s => s && s.includes("?") && shortPhrase(s, 40))
+    .slice(0, 4);
   const chips = (Array.isArray(c.chips) ? c.chips : [])
     .map(x => ({
       from: String((x && x.from) || "").trim(),
@@ -215,7 +221,13 @@ function normalizeCoaching(c) {
     }))
     .filter(x => x.from && shortPhrase(x.from, 4) && x.options.length && x.options.every(o => shortPhrase(o, 6)))
     .slice(0, 6);
-  return { note: String(c.note || "").trim(), nudges, chips, check: String(c.check || "").trim() };
+  const note = String(c.note || "").trim();
+  const check = String(c.check || "").trim();
+  return {
+    note: shortPhrase(note, 60) ? note : "",
+    nudges, chips,
+    check: (check && shortPhrase(check, 30)) ? check : "",
+  };
 }
 
 async function handleCoach(body, env, cors) {
@@ -249,24 +261,32 @@ ${paragraph_text}
 
 Coach this paragraph now. Remember: suggest, never substitute. Nudges are questions. Chips are word-level only.`;
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": env.ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: COACH_MODEL,
-      max_tokens: COACH_MAX_TOKENS,
-      system: [{ type: "text", text: COACH_SYSTEM, cache_control: { type: "ephemeral" } }],
-      tools: [COACH_TOOL],
-      tool_choice: { type: "tool", name: "submit_coaching" },
-      messages: [{ role: "user", content: userMsg }],
-    }),
-  });
-  if (!res.ok) return json({ error: "upstream " + res.status }, 502, cors);
-  const data = await res.json();
+  // Wrap the upstream call and parse so a transport or JSON failure still resolves
+  // through the shaped 502 (json + cors), not a bare worker exception the browser
+  // would see as a generic failure.
+  let data;
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": env.ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: COACH_MODEL,
+        max_tokens: COACH_MAX_TOKENS,
+        system: [{ type: "text", text: COACH_SYSTEM, cache_control: { type: "ephemeral" } }],
+        tools: [COACH_TOOL],
+        tool_choice: { type: "tool", name: "submit_coaching" },
+        messages: [{ role: "user", content: userMsg }],
+      }),
+    });
+    if (!res.ok) return json({ error: "upstream " + res.status }, 502, cors);
+    data = await res.json();
+  } catch (e) {
+    return json({ error: "coach upstream failed" }, 502, cors);
+  }
   const block = (data.content || []).find(b => b.type === "tool_use");
   if (!block || !block.input) return json({ error: "coach returned nothing", stop_reason: data.stop_reason || null }, 502, cors);
   return json(normalizeCoaching(block.input), 200, cors);
