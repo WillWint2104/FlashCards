@@ -794,6 +794,7 @@
   /* inline frame + worked example inside a missing-element card */
   .es-miss .es-ghost{margin-top:8px}
   .es-miss .es-misstier.ghost{color:var(--ink-2);border-color:var(--line)}
+  .es-scrim [hidden]{display:none!important} /* reveals toggle this; must beat flex/block display rules */
   .es-asking{font-size:12.5px;color:var(--green-dk);font-weight:700;margin-bottom:10px}
   .es-example{margin-top:8px;border:1.5px solid var(--ink-3);border-radius:11px;padding:9px 12px;background:#FBFBFB}
   .es-exh{font-family:var(--disp);font-weight:600;font-size:11.5px;color:var(--ink);letter-spacing:.2px}
@@ -5520,17 +5521,6 @@ window.ESSAY = {
     // Defensive: no essay button should ever act as a form submit.
     host.querySelectorAll("button:not([type])").forEach(b => b.type = "button");
   }
-  // Targeted in-place refresh of just the coaching margin (missing cards, frames,
-  // polish, worked examples). Leaves the textarea, stepper, scroll and focus alone,
-  // so toggles never re-run the whole render or jump the page.
-  function esRefreshCoach() {
-    const host = document.getElementById("eshost"); if (!host) return;
-    const p = ES.draft && ES.draft.paras[ES.draft.pos]; if (!p) return;
-    const m = host.querySelector(".es-margin"); if (m) m.innerHTML = esCoachMargin(p);
-    host.querySelectorAll("button:not([type])").forEach(b => b.type = "button");
-    esBindCoachMargin(p);
-  }
-
   // Graceful "subject not set" / unsupported-subject screen. An unknown code (or a
   // known code with no essay content yet, e.g. Economics) lands here, not in the
   // wrong subject's content.
@@ -5606,7 +5596,7 @@ window.ESSAY = {
         <p class="es-help">Paste a rubric or marking guide and the coach will aim its feedback at it. Skip it and the coach uses general HSC band expectations. Skipping costs you nothing.</p>
         <textarea id="esrubric" class="es-input es-ta" rows="3" placeholder="Paste your rubric or marking bands here, or leave blank.">${esc(f.rubric)}</textarea>
         <button class="es-linkbtn" id="esbandsref">${f.rubricOpen ? "Hide" : "Show"} the general band expectations the coach falls back to</button>
-        ${f.rubricOpen ? `<div class="es-bands">${bandsRef}</div>` : ""}
+        <div class="es-bands" data-bands${f.rubricOpen ? "" : " hidden"}>${bandsRef}</div>
       </div>
       <div class="es-field">
         <label class="es-label" for="esstruct">Structure</label>
@@ -5622,7 +5612,11 @@ window.ESSAY = {
     const tp = $("#estopic"); tp.oninput = () => { f.topic = tp.value; };
     const rb = $("#esrubric"); rb.oninput = () => { f.rubric = rb.value; };
     const stt = $("#esstruct"); stt.onchange = () => { f.structure = stt.value; };
-    $("#esbandsref").onclick = () => { f.rubricOpen = !f.rubricOpen; esRender(); };
+    $("#esbandsref").onclick = () => {
+      f.rubricOpen = !f.rubricOpen;
+      const bands = document.querySelector("[data-bands]"); if (bands) bands.hidden = !f.rubricOpen;
+      $("#esbandsref").textContent = (f.rubricOpen ? "Hide" : "Show") + " the general band expectations the coach falls back to";
+    };
     host.querySelectorAll("[data-esq]").forEach(b => b.onclick = () => {
       const qq = sc.questions.find(x => x.id === b.dataset.esq);
       if (qq) { f.question = qq.text; if (!f.topic) f.topic = qq.topic || ""; esRender(); $("#esq").focus(); }
@@ -5766,12 +5760,13 @@ window.ESSAY = {
     const polishCount = polish.length + fb.chips.length;
     let polishBlock = "";
     if (polishCount) {
-      const inner = ES.ui.polishOpen ? `<div class="es-polishbody">${
-        polish.map(n => `<div class="es-nudge ${n.category === "expression" ? "expr" : "sign"}">${esc(n.text)}</div>`).join("")
-      }${fb.chips.length ? `<div class="es-chipwrap">${fb.chips.map(c =>
-        `<div class="es-chipline"><span class="es-chipfrom">instead of “${esc(c.from)}”</span><span class="es-chipopts">${c.options.map(o =>
-          `<button class="es-chip" data-eschip="1" data-eschipfrom="${esc(c.from)}" data-eschipopt="${esc(o)}">${esc(o)}</button>`).join("")}</span></div>`).join("")}</div>` : ""}</div>` : "";
-      polishBlock = `<div class="es-polish"><button class="es-polishtoggle" id="espolish">${ES.ui.polishOpen ? "▾" : "▸"} polish the wording (${polishCount})</button>${inner}</div>`;
+      // The body is rendered once and shown/hidden via the hidden attribute, so the
+      // reveal flips visibility on existing DOM rather than regenerating it.
+      const bodyInner = polish.map(n => `<div class="es-nudge ${n.category === "expression" ? "expr" : "sign"}">${esc(n.text)}</div>`).join("") +
+        (fb.chips.length ? `<div class="es-chipwrap">${fb.chips.map(c =>
+          `<div class="es-chipline"><span class="es-chipfrom">instead of “${esc(c.from)}”</span><span class="es-chipopts">${c.options.map(o =>
+            `<button class="es-chip" data-eschip="1" data-eschipfrom="${esc(c.from)}" data-eschipopt="${esc(o)}">${esc(o)}</button>`).join("")}</span></div>`).join("")}</div>` : "");
+      polishBlock = `<div class="es-polish"><button class="es-polishtoggle" id="espolish"><span class="es-polishchev">${ES.ui.polishOpen ? "▾" : "▸"}</span> polish the wording (${polishCount})</button><div class="es-polishbody" data-polishbody${ES.ui.polishOpen ? "" : " hidden"}>${bodyInner}</div></div>`;
     }
     return demo + note + miss + onT + check + polishBlock;
   }
@@ -5796,46 +5791,77 @@ window.ESSAY = {
   // and its job, carries its tiered blank frame INLINE (so several are visible at
   // once, never overwriting), and offers an optional different-topic worked example
   // in a clearly separate reference panel.
+  // A missing-element card renders ALL of its states ONCE (every tier frame, the
+  // type chips, the worked-example panel) and shows/hides them with the hidden
+  // attribute. Toggles never regenerate HTML, so there is no blank-and-redraw.
   function esMissCard(p, slot) {
     const def = slotDef(p.role, slot); if (!def) return "";
     const m = ES.ui.miss[slot] || { open: false, tier: 1, type: 0, example: false };
     const t = slotTemplates(slot) || {};
+    const tier2 = t.tier2 || [];
     const where = ES_WHERE[slot] || "";
-    let controls;
-    if (!m.open) {
-      controls = `<button class="es-misstier" data-esmiss-show="${esc(slot)}">Show scaffold</button>`;
-    } else {
-      const more = (t.tier2 && t.tier2.length && m.tier === 1) ? `<button class="es-misstier" data-esmiss-more="${esc(slot)}">More guidance</button>` : "";
-      const types = (m.tier === 2 && t.tier2) ? `<div class="es-typewrap">${t.tier2.map((tt, i) =>
-        `<button class="es-typechip ${i === (m.type || 0) ? "on" : ""}" data-esmiss-type="${esc(slot)}" data-esmiss-idx="${i}">${esc(tt.type)}</button>`).join("")}</div>` : "";
-      controls = `<button class="es-misstier" data-esmiss-hide="${esc(slot)}">Hide</button>${more}${types}`;
-    }
-    // inline blank frame (a ghost the student types over; never saved into the draft)
-    const fr = esActiveFrame(slot);
-    const ghost = fr ? `<div class="es-ghost"><div class="es-ghosth">type over the blanks${fr.kind && fr.kind !== "scaffold" ? " · " + esc(fr.kind) : ""}</div><div class="es-ghostframe">${esc(fr.frame).replace(/_{2,}/g, '<span class="es-blank">____</span>')}</div></div>` : "";
-    // optional worked example, different topic, separate panel, study-not-copy
-    const ex = esWorkedExample(slot);
-    let exBlock = "";
-    if (ex) {
-      exBlock = m.example
-        ? `<div class="es-example"><div class="es-exh">model to study, not to copy</div><div class="es-exsub">a different topic on purpose: ${esc(ex.label)}</div><div class="es-extext">${esc(ex.text)}</div><button class="es-linkbtn" data-esmiss-ex="${esc(slot)}">hide example</button></div>`
-        : `<button class="es-linkbtn" data-esmiss-ex="${esc(slot)}">see a worked example</button>`;
-    }
     const article = /^[aeiou]/i.test(def.label) ? "an" : "a";
-    return `<div class="es-miss"><div class="es-missh">${article} ${esc(def.label)} sentence is missing</div><div class="es-missjob">Its job: ${esc(def.job)}${where ? ", " + esc(where) : ""}.</div><div class="es-misstiers">${controls}</div>${ghost}${exBlock}</div>`;
+    const blanks = s => esc(s).replace(/_{2,}/g, '<span class="es-blank">____</span>');
+    const hide = cond => cond ? "" : " hidden";
+    // every frame pre-rendered; only the active one is shown
+    let frames = "";
+    if (t.tier1) frames += `<div class="es-ghost" data-frame="t1"${hide(m.open && m.tier === 1)}><div class="es-ghosth">type over the blanks</div><div class="es-ghostframe">${blanks(t.tier1)}</div></div>`;
+    tier2.forEach((tt, i) => frames += `<div class="es-ghost" data-frame="t2-${i}"${hide(m.open && m.tier === 2 && (m.type || 0) === i)}><div class="es-ghosth">type over the blanks · ${esc(tt.type)}</div><div class="es-ghostframe">${blanks(tt.frame)}</div></div>`);
+    const typeChips = tier2.length ? `<div class="es-typewrap" data-typewrap${hide(m.open && m.tier === 2)}>${tier2.map((tt, i) =>
+      `<button class="es-typechip ${(m.type || 0) === i ? "on" : ""}" data-esmiss-type="${esc(slot)}" data-esmiss-idx="${i}">${esc(tt.type)}</button>`).join("")}</div>` : "";
+    const ex = esWorkedExample(slot);
+    const exBlock = ex ? `<button class="es-linkbtn" data-esmiss-ex="${esc(slot)}"${hide(!m.example)}>see a worked example</button>` +
+      `<div class="es-example" data-example${hide(m.example)}><div class="es-exh">model to study, not to copy</div><div class="es-exsub">a different topic on purpose: ${esc(ex.label)}</div><div class="es-extext">${esc(ex.text)}</div><button class="es-linkbtn" data-esmiss-ex="${esc(slot)}">hide example</button></div>` : "";
+    return `<div class="es-miss" data-slot="${esc(slot)}">
+      <div class="es-missh">${article} ${esc(def.label)} sentence is missing</div>
+      <div class="es-missjob">Its job: ${esc(def.job)}${where ? ", " + esc(where) : ""}.</div>
+      <div class="es-misstiers">
+        <button class="es-misstier" data-esmiss-show="${esc(slot)}"${hide(!m.open)}>Show scaffold</button>
+        <button class="es-misstier" data-esmiss-hide="${esc(slot)}"${hide(m.open)}>Hide</button>
+        <button class="es-misstier" data-esmiss-more="${esc(slot)}"${hide(m.open && m.tier === 1 && tier2.length)}>More guidance</button>
+        ${typeChips}
+      </div>${frames}${exBlock}</div>`;
   }
-  // Margin handlers use the TARGETED esRefreshCoach (no full re-render, no scroll
-  // jump). Tier/example toggles preserve the rest of the slot's UI state.
+  // Reflect a slot's current ui state onto its EXISTING card DOM by flipping hidden
+  // attributes and classes only. No innerHTML is regenerated, so nothing flashes.
+  function esApplyMissDom(slot) {
+    const card = document.querySelector('.es-miss[data-slot="' + slot + '"]'); if (!card) return;
+    const m = ES.ui.miss[slot] || { open: false, tier: 1, type: 0, example: false };
+    const t = slotTemplates(slot) || {}; const has2 = (t.tier2 || []).length;
+    const set = (sel, vis) => { const el = card.querySelector(sel); if (el) el.hidden = !vis; };
+    set('[data-esmiss-show]', !m.open);
+    set('[data-esmiss-hide]', m.open);
+    set('[data-esmiss-more]', m.open && m.tier === 1 && has2);
+    set('[data-typewrap]', m.open && m.tier === 2);
+    card.querySelectorAll('[data-frame]').forEach(f => {
+      const id = f.getAttribute('data-frame');
+      const vis = m.open && (m.tier === 1 ? id === 't1' : id === 't2-' + (m.type || 0));
+      f.hidden = !vis;
+    });
+    card.querySelectorAll('[data-esmiss-type]').forEach(c => c.classList.toggle('on', Number(c.dataset.esmissIdx) === (m.type || 0)));
+    const exShow = card.querySelector('[data-esmiss-ex]:not([data-example] *)'); // the first (show) button
+    const exPanel = card.querySelector('[data-example]');
+    if (exShow) exShow.hidden = !!m.example;
+    if (exPanel) exPanel.hidden = !m.example;
+  }
+  // Margin handlers flip visibility on the existing DOM (esApplyMissDom / hidden),
+  // never rebuild the margin. State is also stored on ES.ui so a later full render
+  // (e.g. paragraph nav) reproduces the same open/closed state.
   function esBindCoachMargin(p) {
     const host = document.getElementById("eshost"); if (!host) return;
     const setMiss = (slot, patch) => { ES.ui.miss[slot] = Object.assign({ open: false, tier: 1, type: 0, example: false }, ES.ui.miss[slot], patch); };
-    const pol = $("#espolish"); if (pol) pol.onclick = () => { ES.ui.polishOpen = !ES.ui.polishOpen; esRefreshCoach(); };
+    const pol = $("#espolish");
+    if (pol) pol.onclick = () => {
+      ES.ui.polishOpen = !ES.ui.polishOpen;
+      const body = host.querySelector("[data-polishbody]"); if (body) body.hidden = !ES.ui.polishOpen;
+      const chev = pol.querySelector(".es-polishchev"); if (chev) chev.textContent = ES.ui.polishOpen ? "▾" : "▸";
+    };
     host.querySelectorAll("[data-eschip]").forEach(b => b.onclick = () => esApplyChip(ES.draft.pos, b.dataset.eschipfrom, b.dataset.eschipopt));
-    host.querySelectorAll("[data-esmiss-show]").forEach(b => b.onclick = () => { setMiss(b.dataset.esmissShow, { open: true, tier: 1, type: 0 }); esRefreshCoach(); });
-    host.querySelectorAll("[data-esmiss-hide]").forEach(b => b.onclick = () => { setMiss(b.dataset.esmissHide, { open: false }); esRefreshCoach(); });
-    host.querySelectorAll("[data-esmiss-more]").forEach(b => b.onclick = () => { setMiss(b.dataset.esmissMore, { open: true, tier: 2, type: 0 }); esRefreshCoach(); });
-    host.querySelectorAll("[data-esmiss-type]").forEach(b => b.onclick = () => { setMiss(b.dataset.esmissType, { open: true, tier: 2, type: Number(b.dataset.esmissIdx) }); esRefreshCoach(); });
-    host.querySelectorAll("[data-esmiss-ex]").forEach(b => b.onclick = () => { const s = b.dataset.esmissEx; setMiss(s, { example: !(ES.ui.miss[s] && ES.ui.miss[s].example) }); esRefreshCoach(); });
+    host.querySelectorAll("[data-esmiss-show]").forEach(b => b.onclick = () => { setMiss(b.dataset.esmissShow, { open: true, tier: 1, type: 0 }); esApplyMissDom(b.dataset.esmissShow); });
+    host.querySelectorAll("[data-esmiss-hide]").forEach(b => b.onclick = () => { setMiss(b.dataset.esmissHide, { open: false }); esApplyMissDom(b.dataset.esmissHide); });
+    host.querySelectorAll("[data-esmiss-more]").forEach(b => b.onclick = () => { setMiss(b.dataset.esmissMore, { open: true, tier: 2, type: 0 }); esApplyMissDom(b.dataset.esmissMore); });
+    host.querySelectorAll("[data-esmiss-type]").forEach(b => b.onclick = () => { setMiss(b.dataset.esmissType, { open: true, tier: 2, type: Number(b.dataset.esmissIdx) }); esApplyMissDom(b.dataset.esmissType); });
+    host.querySelectorAll("[data-esmiss-ex]").forEach(b => b.onclick = () => { const s = b.dataset.esmissEx; setMiss(s, { example: !(ES.ui.miss[s] && ES.ui.miss[s].example) }); esApplyMissDom(s); });
   }
   // Soft boundary nudges (never hard locks). Order: complete -> memorise; mastered
   // -> polish wording; all mastered -> full attempt. All modes stay openable.
@@ -5892,7 +5918,7 @@ window.ESSAY = {
     const q = ES.quiz;
     const res = q.result;
     const resultBlock = res ? `<div class="es-qres ${res.state}">${esc(res.msg)}</div>` : "";
-    const answer = q.revealed ? `<div class="es-quizanswer"><div class="es-mh">your saved paragraph</div><div class="es-quizanswertext">${esc(p.text)}</div></div>` : "";
+    const answer = `<div class="es-quizanswer" data-quizanswer${q.revealed ? "" : " hidden"}><div class="es-mh">your saved paragraph</div><div class="es-quizanswertext">${esc(p.text)}</div></div>`;
     const seq = p.mastered
       ? (d.paras.every(x => x.mastered)
           ? `<div class="es-seq">Every paragraph is mastered. <button class="es-inlinelink" id="esquizfull">try a full attempt</button>.</div>`
@@ -5923,7 +5949,12 @@ window.ESSAY = {
     esBindWritingHead();
     $("#esquizcoach").onclick = () => { ES.screen = "coached"; esResetCoachUI(); esRender(); };
     const ta = $("#esquizinput"); ta.oninput = () => { q.attempt = ta.value; };
-    $("#esquizreveal").onclick = () => { if (!q.revealed) q.peeked = true; q.revealed = !q.revealed; esRender(); };
+    $("#esquizreveal").onclick = () => {
+      if (!q.revealed) q.peeked = true;            // peeking ever this attempt disqualifies mastery
+      q.revealed = !q.revealed;
+      const ans = document.querySelector("[data-quizanswer]"); if (ans) ans.hidden = !q.revealed;
+      $("#esquizreveal").textContent = q.revealed ? "Hide answer" : "Reveal answer";
+    };
     $("#esquizcheck").onclick = () => esQuizCheck(p);
     $("#esquizagain").onclick = () => { esResetQuiz(); esRender(); };
     $("#esquiznext").onclick = () => { d.pos = Math.min(total - 1, d.pos + 1); esResetQuiz(); esResetCoachUI(); esSaveDraft(); esRender(); };
