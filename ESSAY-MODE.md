@@ -9,32 +9,61 @@ on. Economics is untouched.
 Same convention as review mode:
 
 - `MARGINAL_CONFIG.essayMode` in `index.html` (default `false`) is the promotion
-  switch. `true` gives essay practice to every student whose class code maps to a
-  known subject.
+  switch. `true` shows the "Essay practice" entry point (a third tab next to
+  Study and Create) to EVERY login, regardless of subject.
 - `?essay=1` (or `localStorage["marginal.essay"]="1"`) turns it on for one person.
-- `?essaydemo=1` opens all three screens on an Ancient History (`11Anc1`) context
-  with the labelled demo coaching fallback, so you can walk the whole flow before
-  the worker is updated.
+- `?essaydemo=1` opens the flow on an Ancient History (`11Anc1`) context with the
+  labelled demo coaching fallback, so you can walk it before the worker is updated.
 
 Nothing about live students changes until you set `essayMode: true`.
 
+## Why it is safe for every subject (custom-question core)
+
+Essay practice is a CUSTOM-QUESTION feature: the student supplies their own essay
+question (the one required setup field). The whole engine, the slot model, missing
+element detection, coaching, the quiz and the full attempt, runs on that question,
+so it is subject-agnostic and works for any login. There is no "subject not set"
+dead end any more.
+
+Only two add-ons are subject-specific, and both degrade gracefully:
+
+- **Suggested questions** (pre-written quick-pick chips): shown ONLY when the
+  student's subject ships its own set. Today that is Ancient History. An Economics
+  or unmatched login simply does not see the chips and types its own question. We
+  never show Ancient History suggested questions to an Economics student.
+- **Worked examples** (fixed, pre-written, deliberately DIFFERENT-topic models):
+  a subject with no examples of its own borrows the existing set as a clearly
+  labelled placeholder ("a model from another subject, until your subject's own
+  worked examples are added"). Because they are different-topic by design, the
+  analytical shape still transfers. Examples are ALWAYS fixed and pre-written,
+  never generated, so no invented history can leak in.
+
 ## Subjects and class codes
 
-- Class codes are still free-form. `11Anc1` works as a login today with no
-  Supabase or Edge Function change.
-- Routing is a client-side map of KNOWN codes only:
-  - `11Anc...` -> Ancient History
-  - `12Ec...` -> Economics (unchanged)
-  - anything else -> an explicit "subject not set" screen. An unknown code is
-    never assumed to be Economics, so a future code can never be misrouted.
-- Economics resolves to a subject that has no essay content yet, so an Economics
-  student who somehow reaches essay mode sees the graceful "not set up for your
-  subject" screen, never Ancient History content.
+- Class codes are still free-form; `11Anc1` works as a login with no backend change.
+- Routing is a client-side map used ONLY to choose the optional add-ons:
+  - `11Anc...` -> Ancient History (its own suggested questions + worked examples)
+  - `12Ec...` -> Economics (no own content yet: no suggested questions, placeholder
+    worked examples, brand reads "Economics")
+  - anything else -> no subject add-ons; the custom-question core still works.
+- Adding a subject's suggested questions or worked examples later is a content-only
+  change: add a namespace keyed to the subject in `essay-content.js`
+  (`subjects.<key>.questions` and `subjects.<key>.examples`). No engine change, and
+  the matching login serves them automatically with the placeholder note gone.
 
 ## Walkthrough checklist (run on `?essaydemo=1`)
 
 Sign in first if Supabase auth is configured (any account), then add
 `?essaydemo=1` to the URL. Tick each:
+
+**Entry point and subject add-ons (with `essayMode: true` or `?essay=1`)**
+- [ ] An "Essay practice" tab sits next to Study and Create for any login. With the
+      flag off and no `?essay=1`, it is absent.
+- [ ] An Ancient History login (`11Anc...`) sees the six suggested-question chips
+      and worked examples with NO placeholder note.
+- [ ] An Economics login (`12Ec...`) sees NO suggested-question chips (it types its
+      own question) and worked examples carry the "model from another subject"
+      placeholder note. The header reads "Economics", never Ancient History content.
 
 **Setup (intake)**
 - [ ] Only the essay question is marked "needed". Topic, rubric and structure are

@@ -140,6 +140,12 @@ window.ESSAY = {
     // panel labelled "model to study, not to copy". Two topics are provided so the
     // app can pick the one that does NOT match the student's chosen topic. Original
     // wording, general and uncontroversial, never reproduced from any source.
+    //
+    // This list is the SUBJECT-AGNOSTIC FALLBACK (authored for Ancient History). Any
+    // other subject borrows it as a clearly-labelled placeholder. To give a subject
+    // its OWN worked examples later, add `examples: [ ... ]` (same shape) under that
+    // subject in `subjects.<key>` above; the app prefers a subject's own set and
+    // drops the placeholder note automatically. No engine change is needed.
     examples: [
       { topic: "sparta", label: "Spartan society", slots: {
         point: "Spartan upbringing was designed above all to produce obedient soldiers.",

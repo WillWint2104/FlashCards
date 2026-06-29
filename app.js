@@ -405,10 +405,18 @@
     return `<div class="nav">
       <button class="navtab ${view === "study" ? "on" : ""}" data-v="study">Study</button>
       <button class="navtab ${view === "create" ? "on" : ""}" data-v="create">Create</button>
+      ${essayEnabled() ? `<button class="navtab" data-v="essay">Essay practice</button>` : ""}
     </div>`;
   }
   function wireNav() {
-    app.querySelectorAll(".navtab").forEach(b => b.onclick = () => { view = b.dataset.v; view === "study" ? home() : builder(); });
+    app.querySelectorAll(".navtab").forEach(b => b.onclick = () => {
+      const v = b.dataset.v;
+      // Essay practice is a full-screen overlay (not a study/create view), and it runs
+      // on the student's own question, so it is available to any login while the flag
+      // is on. It never changes the underlying Study/Create view.
+      if (v === "essay") { esOpen({}); return; }
+      view = v; view === "study" ? home() : builder();
+    });
   }
 
   // ===================== STUDY =====================
@@ -2527,9 +2535,11 @@
     try { if (localStorage.getItem("marginal.essay") === "1") return true; } catch (e) { /* sandboxed */ }
     return false;
   }
-  // Client-side subject routing. KNOWN codes only: anything unmatched resolves to
-  // null ("subject not set"), never silently to Economics, so a future code can
-  // never be misrouted into the wrong content. 12Ec* stays Economics, untouched.
+  // Client-side subject routing. The essay CORE is subject-agnostic (it runs on the
+  // student's OWN question), so the subject here only chooses the optional add-ons:
+  // pre-written suggested questions and worked examples. An unmatched code resolves
+  // to null, which is fine: the student types their own question and the add-ons hide
+  // or fall back. 12Ec* stays Economics, untouched.
   const SUBJECT_RULES = [
     { re: /^11Anc/i, subject: "ancient_history" },
     { re: /^12Ec/i, subject: "economics" },
@@ -2537,7 +2547,7 @@
   function subjectForCode(code) {
     const c = String(code || "").trim();
     for (let i = 0; i < SUBJECT_RULES.length; i++) if (SUBJECT_RULES[i].re.test(c)) return SUBJECT_RULES[i].subject;
-    return null; // unknown -> subject not set
+    return null; // unknown -> no subject-specific add-ons; the core still works
   }
   function currentClassCode() {
     try { const w = Cloud.who && Cloud.who(); if (w && w.class_code) return w.class_code; } catch (e) { /* ignore */ }
@@ -2545,6 +2555,35 @@
   }
   function esSubjectContent(subject) {
     return (window.ESSAY && window.ESSAY.subjects && window.ESSAY.subjects[subject]) || null;
+  }
+  // The worked-example fallback set (window.ESSAY.slots.examples) is authored for this
+  // subject. Any OTHER subject borrows it as a clearly-labelled placeholder until its
+  // own examples are authored; same subject sees it as its own (no placeholder note).
+  const ESSAY_FALLBACK_EXAMPLE_SUBJECT = "ancient_history";
+  // A subject's display label. Falls back to a humanised key (e.g. "economics" ->
+  // "Economics") when the subject has no content yet, and to "" for an unknown code.
+  function esSubjectLabel() {
+    const sc = esSubjectContent(ES.subject);
+    if (sc && sc.label) return sc.label;
+    if (ES.subject) return String(ES.subject).replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+    return "";
+  }
+  // The normalised view the screens render from. Always non-null: the core works for
+  // every login. Only `questions` (suggested-question chips) is subject-specific, and
+  // it is empty unless THIS subject ships its own pre-written set.
+  function esView() {
+    const sc = esSubjectContent(ES.subject);
+    const questions = (sc && Array.isArray(sc.questions)) ? sc.questions : [];
+    return { label: esSubjectLabel(), stage: (sc && sc.stage) || "", questions, hasQuestions: questions.length > 0 };
+  }
+  // The worked-example set for the current subject, with the fallback flagged as a
+  // placeholder. Examples are ALWAYS fixed and pre-written (never generated), whether
+  // a subject's own or the borrowed fallback.
+  function esWorkedExampleSet() {
+    const sc = esSubjectContent(ES.subject);
+    if (sc && Array.isArray(sc.examples) && sc.examples.length) return { list: sc.examples, placeholder: false };
+    const g = (window.ESSAY && window.ESSAY.slots && window.ESSAY.slots.examples) || [];
+    return { list: g, placeholder: ES.subject !== ESSAY_FALLBACK_EXAMPLE_SUBJECT };
   }
   function esStructureDef(key) {
     const S = (window.ESSAY && window.ESSAY.structures) || [];
@@ -2674,8 +2713,8 @@
     // (Frequent toggles use targeted updates instead and never reach here.)
     const prevScrim = host.querySelector(".es-scrim");
     const sy = prevScrim ? prevScrim.scrollTop : 0;
-    const sc = esSubjectContent(ES.subject);
-    if (!ES.subject || !sc) esRenderUnavailable(host);
+    const sc = esView(); // always available: the core runs on the student's own question
+    if (!window.ESSAY || !window.ESSAY.slots) esRenderUnavailable(host);
     else if (ES.screen === "coached" && ES.draft) esRenderCoached(host, sc);
     else if (ES.screen === "quiz" && ES.draft) esRenderQuiz(host, sc);
     else if (ES.screen === "full" && ES.draft) esRenderFull(host, sc);
@@ -2684,18 +2723,14 @@
     // Defensive: no essay button should ever act as a form submit.
     host.querySelectorAll("button:not([type])").forEach(b => b.type = "button");
   }
-  // Graceful "subject not set" / unsupported-subject screen. An unknown code (or a
-  // known code with no essay content yet, e.g. Economics) lands here, not in the
-  // wrong subject's content.
+  // Defensive only: the essay content file failed to load, so there is no slot model
+  // or fallback content to run on. The core is otherwise subject-agnostic and always
+  // available, so this is not a subject gate.
   function esRenderUnavailable(host) {
-    const known = !!ES.subject;
-    const msg = known
-      ? "Essay practice is not set up for your subject yet. Nothing to worry about, this just is not switched on for you."
-      : "We could not match your class code to a subject, so essay practice is not set up for you yet. Check with your teacher.";
     host.innerHTML = `
     <div class="es-scrim"><div class="es-shell"><div class="es-wrap">
       <div class="es-top"><div class="es-brand">Marginal · essay practice</div><button class="es-x" id="esx" aria-label="Close">close</button></div>
-      <div class="es-empty"><h2 class="es-h1">Subject not set</h2><p class="es-lead">${esc(msg)}</p></div>
+      <div class="es-empty"><h2 class="es-h1">Not available right now</h2><p class="es-lead">Essay practice could not load. Please refresh, or check back shortly.</p></div>
     </div></div></div>`;
     const x = $("#esx"); if (x) x.onclick = esClose;
   }
@@ -2713,8 +2748,10 @@
   function esRenderSetup(host, sc) {
     if (!ES.form) ES.form = { question: "", topic: "", rubric: "", structure: (window.ESSAY && window.ESSAY.defaultStructure) || "five", rubricOpen: false };
     const f = ES.form;
-    const qChips = sc.questions.map(q =>
-      `<button class="es-qchip" data-esq="${esc(q.id)}"><span class="es-qcmd">${esc(q.command)}</span> ${esc(esQuestionPreview(q))}</button>`).join("");
+    // Suggested questions are subject-specific: show them ONLY when THIS subject ships
+    // its own set. Otherwise hide the block cleanly (the student types their own).
+    const qChips = sc.hasQuestions ? sc.questions.map(q =>
+      `<button class="es-qchip" data-esq="${esc(q.id)}"><span class="es-qcmd">${esc(q.command)}</span> ${esc(esQuestionPreview(q))}</button>`).join("") : "";
     // Discrete, most-recent-first list (not one combined pill); each row deletes.
     const saved = esRecent(ES.list).slice(0, 12);
     const resume = saved.length ? `
@@ -2744,7 +2781,7 @@
     host.innerHTML = `
     <div class="es-scrim"><div class="es-shell"><div class="es-wrap">
       <div class="es-top">
-        <div class="es-brand">Marginal · essay practice <span class="es-subj">${esc(sc.label)} · ${esc(sc.stage)}</span>${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}</div>
+        <div class="es-brand">Marginal · essay practice ${sc.label ? `<span class="es-subj">${esc(sc.label)}${sc.stage ? " · " + esc(sc.stage) : ""}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}</div>
         <button class="es-x" id="esx" aria-label="Close">close</button>
       </div>
       <h1 class="es-h1">Set up your essay</h1>
@@ -2753,8 +2790,8 @@
       <div class="es-field">
         <label class="es-label" for="esq">Essay question <span class="es-req">needed</span></label>
         <textarea id="esq" class="es-input es-ta" rows="3" placeholder="Paste or type the question you are practising.">${esc(f.question)}</textarea>
-        <p class="es-help">Or start from one of these practice questions:</p>
-        <div class="es-qchips">${qChips}</div>
+        ${sc.hasQuestions ? `<p class="es-help">Or start from one of these practice questions:</p>
+        <div class="es-qchips">${qChips}</div>` : ""}
       </div>
       <div class="es-field">
         <label class="es-label" for="estopic">Chosen topic or option <span class="es-opt">optional</span></label>
@@ -2826,7 +2863,7 @@
   function esWritingHead(sc, modeLabel, switchLabel, switchTo) {
     return `
       <div class="es-top">
-        <div class="es-brand">Marginal · essay practice <span class="es-subj">${esc(sc.label)}</span>${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}</div>
+        <div class="es-brand">Marginal · essay practice ${sc.label ? `<span class="es-subj">${esc(sc.label)}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}</div>
         <div class="es-topbtns">
           <button class="es-linkbtn" id="esmodeswitch">${esc(switchLabel)}</button>
           <button class="es-x" id="esx" aria-label="Back to setup">setup</button>
@@ -2943,7 +2980,7 @@
   // (so the shape transfers but nothing is liftable). FIXED, pre-written. Picks the
   // topic that does not appear in the student's own topic/question.
   function esWorkedExample(slot) {
-    const ex = (window.ESSAY && window.ESSAY.slots && window.ESSAY.slots.examples) || [];
+    const set = esWorkedExampleSet(); const ex = set.list;
     if (!ex.length) return null;
     const mine = ((ES.draft && (ES.draft.topic + " " + ES.draft.question)) || "").toLowerCase();
     // Never show an example whose topic OR label appears in the student's own
@@ -2951,7 +2988,7 @@
     // show no example rather than risk one the student could lift.
     const sameTopic = e => [e.topic, e.label].some(t => t && mine.indexOf(String(t).toLowerCase()) >= 0);
     const pick = ex.find(e => e.slots && e.slots[slot] && !sameTopic(e));
-    return pick ? { label: pick.label, text: pick.slots[slot] } : null;
+    return pick ? { label: pick.label, text: pick.slots[slot], placeholder: set.placeholder } : null;
   }
   // Each missing element is its OWN stacked card in the margin: it names the element,
   // its job and where it belongs, and offers an optional different-topic worked
@@ -2966,7 +3003,7 @@
     const hide = cond => cond ? "" : " hidden";
     const ex = esWorkedExample(slot);
     const exBlock = ex ? `<button type="button" class="es-linkbtn" data-esmiss-ex="${esc(slot)}"${hide(!m.example)}>see a worked example</button>` +
-      `<div class="es-example" data-example${hide(m.example)}><div class="es-exh">model to study, not to copy</div><div class="es-exsub">a different topic on purpose: ${esc(ex.label)}</div><div class="es-extext">${esc(ex.text)}</div><button type="button" class="es-linkbtn" data-esmiss-ex="${esc(slot)}">hide example</button></div>` : "";
+      `<div class="es-example" data-example${hide(m.example)}><div class="es-exh">model to study, not to copy</div><div class="es-exsub">a different topic on purpose: ${esc(ex.label)}</div>${ex.placeholder ? `<div class="es-exph">Placeholder: a model from another subject, until your subject's own worked examples are added. The analytical shape still transfers.</div>` : ""}<div class="es-extext">${esc(ex.text)}</div><button type="button" class="es-linkbtn" data-esmiss-ex="${esc(slot)}">hide example</button></div>` : "";
     return `<div class="es-miss" data-slot="${esc(slot)}">
       <div class="es-missh">${article} ${esc(def.label)} sentence is missing</div>
       <div class="es-missjob">Its job: ${esc(def.job)}${where ? ", " + esc(where) : ""}.</div>
@@ -3094,7 +3131,7 @@
     const total = d.paras.length, n = d.pos + 1;
     const head = `
       <div class="es-top">
-        <div class="es-brand">Marginal · essay practice <span class="es-subj">${esc(sc.label)}</span>${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}</div>
+        <div class="es-brand">Marginal · essay practice ${sc.label ? `<span class="es-subj">${esc(sc.label)}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}</div>
         <div class="es-topbtns">
           <button class="es-linkbtn" id="esquizcoach">back to coaching</button>
           <button class="es-x" id="esx" aria-label="Back to setup">setup</button>
@@ -3299,7 +3336,7 @@
           action: "coach",
           paragraph_text: submittedText, paragraph_role: p.role, planned_point: p.point || "",
           question: d.question, topic: d.topic || "",
-          structure: esStructureLabel(d.structure), subject: ES.subject,
+          structure: esStructureLabel(d.structure), subject: ES.subject || undefined,
           code: state.code || undefined
         };
         if ((d.rubric || "").trim()) payload.rubric = d.rubric.trim(); // omit when skipped -> generic bands
