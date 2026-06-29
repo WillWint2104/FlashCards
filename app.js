@@ -2554,10 +2554,12 @@
 
   const ES = { subject: null, code: "", demo: false, screen: "setup", draft: null, list: [], form: null, pending: false,
     ui: { polishOpen: false, miss: {} },          // transient coached-view state, reset on paragraph change
-    quiz: { revealed: false, attempt: "", result: null } };
+    quiz: { revealed: false, peeked: false, attempt: "", result: null } };
   const ES_KEY = "marginal.essay.v1";
   function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {} }; }
-  function esResetQuiz() { ES.quiz = { revealed: false, attempt: "", result: null }; }
+  // peeked persists for the whole attempt: revealing once disqualifies mastery even
+  // if the answer is hidden again before checking. Cleared only on a new attempt.
+  function esResetQuiz() { ES.quiz = { revealed: false, peeked: false, attempt: "", result: null }; }
   // Map a paragraph's role to its slot set in the ONE shared model (window.ESSAY.slots).
   // Intro/Conclusion get their light sets; everything else is a body paragraph.
   function slotsForRole(role) {
@@ -2855,7 +2857,10 @@
     </div></div></div>`;
     esBindWritingHead();
     const pt = $("#espoint"); pt.oninput = () => { p.point = pt.value; esSaveDraft(); };
-    const ta = $("#espara"); ta.oninput = () => { p.text = ta.value; esSaveDraft(); esRefreshAskButton(p); };
+    const ta = $("#espara"); ta.oninput = () => {
+      if (ta.value !== p.text) { p.text = ta.value; p.mastered = false; esResetQuiz(); } // editing the target unmasters it
+      esSaveDraft(); esRefreshAskButton(p);
+    };
     $("#esprev").onclick = () => { d.pos = Math.max(0, d.pos - 1); esResetCoachUI(); esSaveDraft(); esRender(); };
     $("#esnext").onclick = () => { d.pos = Math.min(total - 1, d.pos + 1); esResetCoachUI(); esSaveDraft(); esRender(); };
     const ask = $("#esask"); if (ask) ask.onclick = () => esGetFeedback(d.pos);
@@ -2932,7 +2937,10 @@
   function esSeqNudge(p) {
     const d = ES.draft;
     const allMastered = d.paras.every(x => x.mastered);
-    const complete = (p.text || "").trim() && p.feedback && p.feedback.missing.length === 0;
+    // "complete" must reflect the CURRENT text, not a stale submission: the feedback
+    // is only trustworthy while the paragraph still matches what was reviewed.
+    const cur = (p.text || "").trim();
+    const complete = cur && cur === (p.gradedText || "").trim() && p.feedback && p.feedback.missing.length === 0;
     if (allMastered) return `<div class="es-seq">Every paragraph is mastered. <button class="es-inlinelink" id="esseqfull">try a full attempt</button>.</div>`;
     if (p.mastered) return `<div class="es-seq">Mastered. Want to polish the wording now? <button class="es-inlinelink" id="esseqpolish">polish the wording</button>.</div>`;
     if (complete) return `<div class="es-seq">This paragraph looks complete. Ready to memorise it? <button class="es-inlinelink" id="esseqquiz">quiz this paragraph</button>.</div>`;
@@ -3008,14 +3016,14 @@
       </div>
     </div></div></div>`;
     esBindWritingHead();
-    $("#esquizcoach").onclick = () => { ES.screen = "coached"; esRender(); };
+    $("#esquizcoach").onclick = () => { ES.screen = "coached"; esResetCoachUI(); esRender(); };
     const ta = $("#esquizinput"); ta.oninput = () => { q.attempt = ta.value; };
-    $("#esquizreveal").onclick = () => { q.revealed = !q.revealed; esRender(); };
+    $("#esquizreveal").onclick = () => { if (!q.revealed) q.peeked = true; q.revealed = !q.revealed; esRender(); };
     $("#esquizcheck").onclick = () => esQuizCheck(p);
     $("#esquizagain").onclick = () => { esResetQuiz(); esRender(); };
-    $("#esquiznext").onclick = () => { d.pos = Math.min(total - 1, d.pos + 1); esResetQuiz(); esSaveDraft(); esRender(); };
+    $("#esquiznext").onclick = () => { d.pos = Math.min(total - 1, d.pos + 1); esResetQuiz(); esResetCoachUI(); esSaveDraft(); esRender(); };
     const pf = $("#esquizfull"); if (pf) pf.onclick = () => { ES.draft.mode = "full"; ES.screen = "full"; esSaveDraft(); esRender(); };
-    const pp = $("#esquizpolish"); if (pp) pp.onclick = () => { ES.screen = "coached"; ES.ui.polishOpen = true; esRender(); };
+    const pp = $("#esquizpolish"); if (pp) pp.onclick = () => { ES.screen = "coached"; esResetCoachUI(); ES.ui.polishOpen = true; esRender(); };
   }
   function esQuizCheck(p) {
     const q = ES.quiz;
@@ -3023,7 +3031,7 @@
     if (!attempt) { toast("Write the paragraph from memory first."); return; }
     const score = rvOverlap(attempt, p.text); // fraction of the student's OWN paragraph recalled
     const pct = Math.round(score * 100);
-    if (q.revealed) {
+    if (q.peeked) {
       q.result = { state: "revealed", msg: "Revealing is fine for practice, but it does not count toward mastery. Try again without peeking." };
     } else if (score >= ES_MASTERY_THRESHOLD) {
       p.mastered = true; esSaveDraft();
