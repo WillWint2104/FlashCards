@@ -5839,7 +5839,8 @@ window.ESSAY = {
       f.hidden = !vis;
     });
     card.querySelectorAll('[data-esmiss-type]').forEach(c => c.classList.toggle('on', Number(c.dataset.esmissIdx) === (m.type || 0)));
-    const exShow = card.querySelector('[data-esmiss-ex]:not([data-example] *)'); // the first (show) button
+    // the "see a worked example" button is the one NOT inside the example panel
+    const exShow = Array.from(card.querySelectorAll('[data-esmiss-ex]')).find(el => !el.closest('[data-example]'));
     const exPanel = card.querySelector('[data-example]');
     if (exShow) exShow.hidden = !!m.example;
     if (exPanel) exPanel.hidden = !m.example;
