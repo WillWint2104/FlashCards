@@ -691,8 +691,9 @@
   .es-bandt{font-size:12.5px;color:var(--ink-2);font-weight:600;line-height:1.5}
   .es-resume{margin-bottom:20px}
   .es-resrow{display:flex;gap:10px;flex-wrap:wrap}
-  .es-rescard{display:flex;flex-direction:column;gap:6px;align-items:flex-start;text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:13px;padding:11px 13px;cursor:pointer;max-width:280px;transition:border-color .12s}
-  .es-rescard:hover{border-color:var(--green)}
+  .es-rescard{display:flex;flex-direction:column;gap:6px;align-items:flex-start;text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:13px;padding:11px 13px;max-width:280px}
+  .es-resmeta{font-size:11.5px;color:var(--ink-3);font-weight:700}
+  .es-resactions{display:flex;gap:7px;flex-wrap:wrap;margin-top:4px}
   .es-restag{font-family:var(--disp);font-weight:600;font-size:11.5px;color:var(--green-dk);background:var(--green-soft);border-radius:99px;padding:3px 11px}
   .es-restag.muted{color:var(--ink-3);background:#F2F6F6}
   .es-resq{font-size:13px;color:var(--ink);font-weight:600;line-height:1.4}
@@ -790,6 +791,13 @@
   .es-qres.mastered{background:var(--card);color:var(--green-dk);border:1.5px solid var(--green)}
   .es-qres.close{background:#FAFCFC;color:var(--ink);border:1.5px solid var(--line)}
   .es-qres.revealed{background:#FAFCFC;color:var(--ink-2);border:1.5px solid var(--line)}
+  /* inline frame + worked example inside a missing-element card */
+  .es-miss .es-ghost{margin-top:8px}
+  .es-miss .es-misstier.ghost{color:var(--ink-2);border-color:var(--line)}
+  .es-example{margin-top:8px;border:1.5px solid var(--ink-3);border-radius:11px;padding:9px 12px;background:#FBFBFB}
+  .es-exh{font-family:var(--disp);font-weight:600;font-size:11.5px;color:var(--ink);letter-spacing:.2px}
+  .es-exsub{font-size:11px;color:var(--ink-3);font-weight:700;margin:1px 0 6px}
+  .es-extext{font-size:13px;color:var(--ink);font-weight:600;line-height:1.6}
   @media(max-width:760px){.es-coachcols{flex-direction:column}.es-margin{flex:1 1 auto;max-width:none;position:static}}
 </style>
 </head>

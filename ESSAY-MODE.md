@@ -166,3 +166,21 @@ To switch on real categorised + missing-element coaching:
 
 Keep `window.ESSAY.slots` keys in `essay-content.js` in sync with `COACH_SLOT_KEYS`
 in `proxy/worker.js` if you ever change the slot set.
+
+## Batch 2 fixes + worked examples
+
+- Toggles (show/hide scaffold, more guidance, polish, worked example, get feedback)
+  update only the affected panel in place and preserve scroll, so the page no
+  longer jumps to the top. No essay button is a form submit.
+- Setup has a "your saved essays" picker reading localStorage drafts: Resume
+  reopens a draft as-is; Use as template copies its question, structure and rubric
+  into a new essay.
+- Each missing element is its own stacked card with its blank frame inline, so
+  several show at once.
+- Each missing element offers an optional "see a worked example". These are the
+  ONE place a content example is allowed, because they are deliberately on a
+  DIFFERENT topic from the student's (Spartan society or Old Kingdom Egypt, picked
+  to avoid the student's own topic). They are FIXED and pre-written in
+  `window.ESSAY.slots.examples` (never generated, so no invented history), shown in
+  a separate panel labelled "model to study, not to copy", never beside the
+  student's own paragraph. No worker or API change; quiz mode is still free.

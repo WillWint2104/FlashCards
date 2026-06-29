@@ -132,7 +132,36 @@ window.ESSAY = {
                    tier2: [ { type: "draw together", frame: "Taken together, ____ and ____ reveal ____." } ] },
       judgement: { tier1: "On balance, ____ was ____ because ____.",
                    tier2: [ { type: "weighed judgement", frame: "Although ____, on balance ____ because ____." } ] }
-    }
+    },
+    // Worked examples for the optional "see a worked example" reference. These are
+    // FIXED, pre-written (never generated, so no invented history), and ALWAYS on a
+    // DIFFERENT topic from the student's, so the analytical SHAPE transfers but no
+    // content is liftable into their own essay. Shown only in a separate reference
+    // panel labelled "model to study, not to copy". Two topics are provided so the
+    // app can pick the one that does NOT match the student's chosen topic. Original
+    // wording, general and uncontroversial, never reproduced from any source.
+    examples: [
+      { topic: "sparta", label: "Spartan society", slots: {
+        point: "Spartan upbringing was designed above all to produce obedient soldiers.",
+        analysis: "This mattered because the agoge took boys from their families young, which shows the state placed loyalty to Sparta above loyalty to kin.",
+        evidence: "This is supported by descriptions of the agoge as harsh communal training from about the age of seven, which suggests how early the conditioning began.",
+        link: "This addresses the question because it shows control was built through upbringing, not through force alone.",
+        thesis: "Spartan society can be assessed by weighing its military strength against the rigidity that strength demanded.",
+        methods: "This will be examined through Spartan education, the role of the helots, and the place of women.",
+        restate: "Overall, Spartan strength and Spartan rigidity were two sides of one system.",
+        judgement: "On balance, the system was effective for war but slow to adapt, which limited Sparta over time."
+      } },
+      { topic: "egypt", label: "Old Kingdom Egypt", slots: {
+        point: "In the Old Kingdom, the pharaoh's authority rested on his presentation as a divine ruler.",
+        analysis: "This mattered because commanding the resources to build the pyramids displayed that power, which shows religion and royal authority reinforced each other.",
+        evidence: "This is supported by the scale of the pyramid complexes at Giza, which suggests the level of organisation the state could reach.",
+        link: "This addresses the question because it shows authority was expressed through monuments as much as through administration.",
+        thesis: "Old Kingdom Egypt can be assessed by weighing the power of the pharaoh against the burden such projects placed on the state.",
+        methods: "This will be examined through kingship, religion, and the organisation of labour.",
+        restate: "Overall, royal power and religious belief in the Old Kingdom were deeply intertwined.",
+        judgement: "On balance, this concentration of power enabled great works but left the state vulnerable when central authority weakened."
+      } }
+    ]
   },
 
   // coachSample — the labelled DEMO FALLBACK, in the categorised shape the worker
