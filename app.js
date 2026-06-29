@@ -3205,10 +3205,16 @@
     // request is in flight, so feedback (and the cooldown anchor) must tie to the
     // version actually reviewed, not whatever the student typed meanwhile.
     const submittedText = p.text;
-    // Show the pending state with a TARGETED update (margin + ask button) rather than
-    // a full re-render: a full render here shrinks the page to "Asking..." and clamps
-    // the scroll, which then jumps when feedback arrives.
-    ES.pending = true; esRefreshCoach(); esRefreshAskButton(p);
+    // Show the pending state WITHOUT collapsing the margin: replacing the margin with
+    // a short "Asking..." shrinks the page and clamps the scroll, which then reads as
+    // a jump. Instead, just disable/relabel the ask button and drop a small banner at
+    // the top of the existing margin, so height (and scroll) stay put. Feedback then
+    // arrives via one scroll-preserving esRender.
+    ES.pending = true;
+    const askBtn = $("#esask");
+    if (askBtn) { askBtn.disabled = true; askBtn.textContent = "Asking the coach…"; askBtn.classList.remove("primary"); askBtn.classList.add("ghost"); }
+    const marginEl = document.querySelector(".es-margin");
+    if (marginEl && !marginEl.querySelector(".es-asking")) marginEl.insertAdjacentHTML("afterbegin", '<div class="es-asking">asking the coach…</div>');
     let fb;
     const useWorker = state.endpoint && !ES.demo;
     if (useWorker) {
@@ -3249,7 +3255,9 @@
     p.mastered = false; esResetQuiz(); // the student's text changed: unmaster, like an edit
     // Update the textarea in place (no full re-render, no scroll jump); the cooldown
     // releases because the text now differs from what was last reviewed.
-    const ta = $("#espara"); if (ta) { ta.value = p.text; ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+    // Update the textarea in place. Do NOT focus or move the caret: that scrolls the
+    // textarea into view and jumps the page away from the chip the student just used.
+    const ta = $("#espara"); if (ta) ta.value = p.text;
     esSaveDraft(); esRefreshAskButton(p);
   }
 
