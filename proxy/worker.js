@@ -222,6 +222,14 @@ async function handleCoach(body, env, cors) {
   const { paragraph_text, paragraph_role = "", planned_point = "", question = "", topic = "", rubric = "", structure = "", subject = "" } = body || {};
   if (!paragraph_text || !String(paragraph_text).trim()) return json({ error: "paragraph_text is required" }, 400, cors);
   if (String(paragraph_text).length > 6000) return json({ error: "paragraph too long" }, 400, cors);
+  // Bound the other free-text fields too, not just the paragraph: with CLASS_CODE
+  // unset, an unbounded rubric or question could inflate token usage and spend.
+  if (String(rubric).length > 6000) return json({ error: "rubric too long" }, 400, cors);
+  if (String(question).length > 4000) return json({ error: "question too long" }, 400, cors);
+  if (String(planned_point).length > 2000) return json({ error: "planned point too long" }, 400, cors);
+  if (String(topic).length > 500 || String(structure).length > 200 || String(subject).length > 100 || String(paragraph_role).length > 100) {
+    return json({ error: "a field is too long" }, 400, cors);
+  }
 
   const rubricBlock = String(rubric || "").trim()
     ? `RUBRIC OR MARKING GUIDE (target your feedback at this):\n${rubric}`

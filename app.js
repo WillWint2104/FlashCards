@@ -2641,12 +2641,21 @@
     const x = $("#esx"); if (x) x.onclick = esClose;
   }
 
+  // The question text already opens with its command verb, so show the command as
+  // a styled chip label and strip it from the body to avoid "Assess Assess ...".
+  function esQuestionPreview(q) {
+    const command = String((q && q.command) || "").trim();
+    const text = String((q && q.text) || "").trim();
+    return command && text.toLowerCase().startsWith(command.toLowerCase())
+      ? text.slice(command.length).replace(/^[:\s-]+/, "")
+      : text;
+  }
   // ---------------------------------- SETUP ----------------------------------
   function esRenderSetup(host, sc) {
     if (!ES.form) ES.form = { question: "", topic: "", rubric: "", structure: (window.ESSAY && window.ESSAY.defaultStructure) || "five", rubricOpen: false };
     const f = ES.form;
     const qChips = sc.questions.map(q =>
-      `<button class="es-qchip" data-esq="${esc(q.id)}"><span class="es-qcmd">${esc(q.command)}</span> ${esc(q.text)}</button>`).join("");
+      `<button class="es-qchip" data-esq="${esc(q.id)}"><span class="es-qcmd">${esc(q.command)}</span> ${esc(esQuestionPreview(q))}</button>`).join("");
     const resume = ES.list.length ? `
       <div class="es-resume">
         <p class="es-label">Your essays</p>
@@ -2857,7 +2866,12 @@
   function esFullSync(value) {
     const d = ES.draft, chunks = String(value).split(/\n\s*\n/).map(s => s.replace(/\s+$/,""));
     const trimmed = chunks.map(c => c.trim());
-    const keep = Math.max(d.paras.length, trimmed.filter(Boolean).length);
+    // Never shrink below the structure's own paragraph count (keep the scaffold),
+    // but DO drop extra slots the student deleted so empty Body N steps don't
+    // linger in coached mode. The textarea compacts internal blanks, so trimmed
+    // is already a compact list and truncating is safe.
+    const baseLen = esStructureDef(d.structure).roles.length;
+    const keep = Math.max(baseLen, trimmed.filter(Boolean).length);
     for (let i = 0; i < keep; i++) {
       const incoming = trimmed[i] != null ? trimmed[i] : "";
       if (!d.paras[i]) d.paras[i] = { role: "Body " + (i + 1), point: "", text: "", feedback: null, gradedText: null };
@@ -2866,6 +2880,7 @@
         if (d.paras[i].feedback && (d.paras[i].gradedText || "") !== incoming) { d.paras[i].feedback = null; d.paras[i].gradedText = null; }
       }
     }
+    if (d.paras.length > keep) d.paras.length = keep;
     esSaveDraft();
   }
   function esGoCoached(pos) {
@@ -2901,6 +2916,10 @@
   async function esGetFeedback(idx) {
     const d = ES.draft, p = d.paras[idx];
     if (!p || !(p.text || "").trim()) { toast("Write something in this paragraph first."); return; }
+    // Snapshot the paragraph as submitted: the textarea stays editable while the
+    // request is in flight, so feedback (and the cooldown anchor) must tie to the
+    // version actually reviewed, not whatever the student typed meanwhile.
+    const submittedText = p.text;
     ES.pending = true; esRender();
     let fb;
     const useWorker = state.endpoint && !ES.demo;
@@ -2908,7 +2927,7 @@
       try {
         const payload = {
           action: "coach",
-          paragraph_text: p.text, paragraph_role: p.role, planned_point: p.point || "",
+          paragraph_text: submittedText, paragraph_role: p.role, planned_point: p.point || "",
           question: d.question, topic: d.topic || "",
           structure: esStructureLabel(d.structure), subject: ES.subject,
           code: state.code || undefined
@@ -2925,7 +2944,7 @@
         ? "Demo coaching. Real Haiku feedback switches on once the worker is re-pasted."
         : "Demo coaching. Real feedback switches on once your teacher connects coaching.");
     }
-    p.feedback = fb; p.gradedText = p.text; // cooldown anchor: must revise before re-asking
+    p.feedback = fb; p.gradedText = submittedText; // cooldown anchor: must revise before re-asking
     ES.pending = false; esSaveDraft(); esRender();
   }
   // Apply a word-level chip: the STUDENT picks it, the app swaps the word in their
