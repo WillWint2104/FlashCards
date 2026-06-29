@@ -833,7 +833,7 @@
     endpoint: "https://marginal-grader.williamwinter2104.workers.dev/",  // Cloudflare Worker URL for AI essay marking
     code: "12Ec126",  // class code — must match the worker's CLASS_CODE secret exactly (case-sensitive)
     reviewMode: false,  // PROMOTION SWITCH for guided review mode. false = students get the simple result sheet. Set true to give every student the paragraph-by-paragraph review after marking. Add ?review=1 to the URL to try it without enabling it for everyone.
-    essayMode: false,  // PROMOTION SWITCH for essay practice mode (coached writing + full attempt). false = students never see it. Set true to switch it on for everyone whose class code maps to a known subject. Add ?essay=1 to try it without enabling it for everyone, or ?essaydemo=1 to walk all three screens on an Ancient History context with the labelled demo coaching fallback.
+    essayMode: true,  // PROMOTION SWITCH for essay practice mode (coached writing + full attempt). false = students never see it. Set true to switch it on for everyone whose class code maps to a known subject. Add ?essay=1 to try it without enabling it for everyone, or ?essaydemo=1 to walk all three screens on an Ancient History context with the labelled demo coaching fallback.
     textbookUrl: "",  // optional: deep link to your class's licensed textbook copy,
                       // e.g. "https://your-lms.school/riley-2026.pdf#page={page}" —
                       // the Source tab will open it at each level's exact page
