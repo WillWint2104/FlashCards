@@ -5467,7 +5467,7 @@ window.ESSAY = {
     // nudges are {text, category}; keep only short questions, default category on_target.
     const nudges = (Array.isArray(raw.nudges) ? raw.nudges : [])
       .map(n => (typeof n === "string" ? { text: n, category: "on_target" } : { text: String((n && n.text) || "").trim(), category: String((n && n.category) || "").trim() }))
-      .filter(n => n.text && n.text.includes("?") && esShortPhrase(n.text, 40)) // questions only, never paste-ready
+      .filter(n => n.text && /\?\s*$/.test(n.text) && esShortPhrase(n.text, 40)) // must END as a question: no trailing answer
       .map(n => ({ text: n.text, category: ES_CATS.includes(n.category) ? n.category : "on_target" }))
       .slice(0, 4);
     const chips = (Array.isArray(raw.chips) ? raw.chips : [])
@@ -5634,7 +5634,7 @@ window.ESSAY = {
     // (not the written text), prefilling setup so Start practising makes a fresh draft.
     host.querySelectorAll("[data-estemplate]").forEach(b => b.onclick = () => {
       const d = ES.list.find(x => x.id === b.dataset.estemplate);
-      if (d) { ES.form = { question: d.question || "", topic: "", rubric: d.rubric || "", structure: d.structure || ((window.ESSAY && window.ESSAY.defaultStructure) || "five"), rubricOpen: false }; esRender(); const el = $("#esq"); if (el) el.focus(); }
+      if (d) { ES.form = { question: d.question || "", topic: d.topic || "", rubric: d.rubric || "", structure: d.structure || ((window.ESSAY && window.ESSAY.defaultStructure) || "five"), rubricOpen: false }; esRender(); const el = $("#esq"); if (el) el.focus(); }
     });
     $("#esstart").onclick = () => {
       const question = (f.question || "").trim();
@@ -5784,7 +5784,11 @@ window.ESSAY = {
     const ex = (window.ESSAY && window.ESSAY.slots && window.ESSAY.slots.examples) || [];
     if (!ex.length) return null;
     const mine = ((ES.draft && (ES.draft.topic + " " + ES.draft.question)) || "").toLowerCase();
-    const pick = ex.find(e => e.slots && e.slots[slot] && mine.indexOf(e.topic) < 0) || ex.find(e => e.slots && e.slots[slot]);
+    // Never show an example whose topic OR label appears in the student's own
+    // topic/question. No same-topic fallback: if nothing is genuinely different,
+    // show no example rather than risk one the student could lift.
+    const sameTopic = e => [e.topic, e.label].some(t => t && mine.indexOf(String(t).toLowerCase()) >= 0);
+    const pick = ex.find(e => e.slots && e.slots[slot] && !sameTopic(e));
     return pick ? { label: pick.label, text: pick.slots[slot] } : null;
   }
   // Each missing element is its OWN stacked card in the margin: it names the element

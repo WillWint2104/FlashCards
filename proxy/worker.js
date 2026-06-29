@@ -254,7 +254,7 @@ function normalizeCoaching(c) {
   const CATS = ["on_target", "signposting", "expression"];
   const nudges = (Array.isArray(c.nudges) ? c.nudges : [])
     .map(n => (typeof n === "string" ? { text: n, category: "on_target" } : { text: String((n && n.text) || "").trim(), category: String((n && n.category) || "").trim() }))
-    .filter(n => n.text && n.text.includes("?") && shortPhrase(n.text, 40))
+    .filter(n => n.text && /\?\s*$/.test(n.text) && shortPhrase(n.text, 40)) // must END as a question
     .map(n => ({ text: n.text, category: CATS.includes(n.category) ? n.category : "on_target" }))
     .slice(0, 4);
   const chips = (Array.isArray(c.chips) ? c.chips : [])
