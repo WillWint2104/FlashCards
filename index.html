@@ -761,19 +761,31 @@
   /* missing-element cards (margin) */
   .es-miss{border:1.5px solid var(--line);border-left:4px solid var(--green);border-radius:12px;padding:10px 12px;margin-bottom:9px;background:var(--card)}
   .es-missh{font-family:var(--disp);font-weight:600;font-size:13px;color:var(--green-dk);margin-bottom:3px}
-  .es-missjob{font-size:12.5px;color:var(--ink);font-weight:600;line-height:1.5;margin-bottom:8px}
-  .es-misstiers{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+  .es-missjob{font-size:12.5px;color:var(--ink);font-weight:600;line-height:1.5}
+  /* pill button reused by the saved-essays list (Resume / Use as template) */
   .es-misstier{font:inherit;font-weight:700;font-size:12px;color:var(--green-dk);background:var(--card);border:1.5px solid var(--green);border-radius:99px;padding:4px 11px;cursor:pointer}
   .es-misstier:hover{background:var(--green);color:#fff}
-  .es-typewrap{display:flex;gap:6px;flex-wrap:wrap;width:100%;margin-top:6px}
-  .es-typechip{font:inherit;font-weight:700;font-size:11.5px;color:var(--ink-2);background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:4px 10px;cursor:pointer}
-  .es-typechip.on{color:var(--green-dk);border-color:var(--green);background:var(--green-soft)}
-  .es-typechip:hover{border-color:var(--green)}
-  /* ghost frame zone (main column, under the textarea) */
-  .es-ghostzone{margin-top:10px;display:flex;flex-direction:column;gap:8px}
-  .es-ghost{border:1.5px dashed var(--green);border-radius:12px;padding:9px 12px;background:#FAFCFC}
-  .es-ghosth{font-family:var(--disp);font-weight:600;font-size:11px;color:var(--ink-3);text-transform:lowercase;margin-bottom:5px}
-  .es-ghostframe{font-size:14px;color:var(--ink-2);font-style:italic;line-height:1.7}
+  /* single scaffold toggle (margin) reveals the whole ordered skeleton at once */
+  .es-scafftoggle{font:inherit;font-weight:700;font-size:12.5px;color:var(--green-dk);background:var(--card);border:1.5px solid var(--green);border-radius:99px;padding:5px 14px;cursor:pointer;margin-top:4px}
+  .es-scafftoggle:hover{background:var(--green);color:#fff}
+  .es-scaffhint{font-size:11.5px;color:var(--ink-3);font-weight:600;margin-top:6px;line-height:1.4}
+  /* ordered skeleton (writing column): solid = present, dashed = missing gap */
+  .es-skelhost:empty{display:none}
+  .es-skel{margin-top:12px;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--card)}
+  .es-skelh{font-family:var(--disp);font-weight:600;font-size:12px;color:var(--ink-2);line-height:1.55;margin-bottom:11px}
+  .es-skelrow{border-radius:10px;padding:9px 12px;margin-bottom:8px}
+  .es-skelrow:last-child{margin-bottom:0}
+  .es-skelrow.have{border:1.5px solid var(--line);background:#FBFBFB;display:flex;align-items:baseline;gap:9px}
+  .es-skellabel{font-family:var(--disp);font-weight:700;font-size:12.5px;color:var(--green-dk)}
+  .es-skellabel::before{content:"\2713 ";color:var(--green)}
+  .es-skelhave{font-size:12.5px;color:var(--ink-3);font-weight:600}
+  .es-skelrow.gap{border:1.5px dashed var(--green);background:#FAFCFC}
+  .es-skelgaplabel{font-family:var(--disp);font-weight:600;font-size:11px;color:var(--ink-3);text-transform:lowercase;margin-bottom:6px}
+  .es-skelframe{font-size:14px;color:var(--ink-2);font-style:italic;line-height:1.7}
+  .es-skelchips{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+  .es-skelchip{font:inherit;font-weight:700;font-size:11.5px;color:var(--ink-2);background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:3px 10px;cursor:pointer}
+  .es-skelchip.on{color:var(--green-dk);border-color:var(--green);background:var(--green-soft)}
+  .es-skelchip:hover{border-color:var(--green)}
   .es-blank{font-style:normal;font-weight:800;color:var(--green-dk);letter-spacing:1px}
   /* polish reveal */
   .es-polish{margin-top:6px;border-top:1px solid var(--line);padding-top:10px}
@@ -795,9 +807,8 @@
   .es-qres.mastered{background:var(--card);color:var(--green-dk);border:1.5px solid var(--green)}
   .es-qres.close{background:#FAFCFC;color:var(--ink);border:1.5px solid var(--line)}
   .es-qres.revealed{background:#FAFCFC;color:var(--ink-2);border:1.5px solid var(--line)}
-  /* inline frame + worked example inside a missing-element card */
-  .es-miss .es-ghost{margin-top:8px}
-  .es-miss .es-misstier.ghost{color:var(--ink-2);border-color:var(--line)}
+  /* worked example inside a missing-element card */
+  .es-miss .es-linkbtn{margin-top:8px}
   .es-scrim [hidden]{display:none!important} /* reveals toggle this; must beat flex/block display rules */
   .es-asking{font-size:12.5px;color:var(--green-dk);font-weight:700;margin-bottom:10px}
   .es-example{margin-top:8px;border:1.5px solid var(--ink-3);border-radius:11px;padding:9px 12px;background:#FBFBFB}

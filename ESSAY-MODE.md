@@ -123,15 +123,22 @@ press Get feedback. Then tick:
 
 **Missing-element feedback (Task 2)**
 - [ ] One or more "a/an X sentence is missing" cards appear in the margin, each
-      naming the element, its job, and where it goes.
-- [ ] "Show scaffold" reveals a simple blank frame as a ghost under your paragraph,
-      dashed and labelled "type over the blanks". It is clearly not your text.
-- [ ] "More guidance" offers a few frame TYPES (e.g. significance, appearance and
-      reality, cause and effect); picking one swaps the ghost frame.
+      naming the element, its job, and where it goes. By default there are NO frames
+      in the writing area yet.
+- [ ] ONE "Show scaffold" toggle (under the cards) reveals the whole paragraph as an
+      ordered skeleton beneath your text: every slot in order (point, analysis,
+      evidence, link), with the sentences you already have shown as solid "your
+      sentence sits here" rows and the missing pieces shown as dashed, tinted gap
+      frames in their correct position. All gaps appear at once, never one at a time.
+- [ ] The dashed gap frames are labelled "type over the blanks" and are clearly not
+      your text. Each gap offers a small row of frame TYPES (e.g. significance,
+      appearance and reality, cause and effect); picking one swaps THAT gap's frame
+      wording in place, without revealing or hiding any gap.
 - [ ] Every frame is blank connective tissue. No real history, names, dates or
       model analysis anywhere.
-- [ ] Toggle a card closed: the ghost disappears and your paragraph text is exactly
-      as you left it. Nothing was ever written into the draft.
+- [ ] "Hide scaffold" clears the whole skeleton in one move (all gaps together, no
+      orphans) and your paragraph text is exactly as you left it. Nothing was ever
+      written into the draft.
 
 **Categorised feedback (Task 4)**
 - [ ] On-target (substance) questions and the missing-element cards show by default.
@@ -175,8 +182,14 @@ in `proxy/worker.js` if you ever change the slot set.
 - Setup has a "your saved essays" picker reading localStorage drafts: Resume
   reopens a draft as-is; Use as template copies its question, structure and rubric
   into a new essay.
-- Each missing element is its own stacked card with its blank frame inline, so
-  several show at once.
+- Each missing element is its own stacked card in the margin (name, job, where it
+  goes). The blank frames no longer live in the cards: ONE "Show scaffold" toggle
+  reveals an ordered skeleton beneath the paragraph instead, with present slots as
+  solid markers and missing slots as dashed gap frames in their true slot position,
+  so the placement and order are the lesson. All gaps reveal and clear together; per
+  gap, frame TYPE chips swap that gap's wording in place. Frames are never written
+  into the draft and the toggle flips visibility on existing DOM (no rebuild, no
+  flash).
 - Each missing element offers an optional "see a worked example". These are the
   ONE place a content example is allowed, because they are deliberately on a
   DIFFERENT topic from the student's (Spartan society or Old Kingdom Egypt, picked

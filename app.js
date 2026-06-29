@@ -2553,10 +2553,10 @@
   function esStructureLabel(key) { return esStructureDef(key).label; }
 
   const ES = { subject: null, code: "", demo: false, screen: "setup", draft: null, list: [], form: null, pending: false,
-    ui: { polishOpen: false, miss: {} },          // transient coached-view state, reset on paragraph change
+    ui: { polishOpen: false, scaffoldOpen: false, miss: {}, frame: {} },  // transient coached-view state, reset on paragraph change
     quiz: { revealed: false, peeked: false, attempt: "", result: null } };
   const ES_KEY = "marginal.essay.v1";
-  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {} }; }
+  function esResetCoachUI() { ES.ui = { polishOpen: false, scaffoldOpen: false, miss: {}, frame: {} }; }
   // peeked persists for the whole attempt: revealing once disqualifies mastery even
   // if the answer is hidden again before checking. Cleared only on a new attempt.
   function esResetQuiz() { ES.quiz = { revealed: false, peeked: false, attempt: "", result: null }; }
@@ -2847,20 +2847,6 @@
   // margin, and any toggled-open missing-element frames as ghosts beneath the box.
   // The stepper is a POSITION INDICATOR only; Back / Next move one paragraph.
   const ES_WHERE = { point: "as the opening sentence", analysis: "right after your point", evidence: "to back the point up", link: "at the end, tying back to the question", thesis: "as your opening line", methods: "right after your thesis", restate: "to open the conclusion", judgement: "as your final line" };
-  // The frame a missing-element card currently has toggled open (or null). tier1 is
-  // the simple frame; tier2 is the picked frame TYPE. Content-free, blanks only.
-  function esActiveFrame(slot) {
-    const m = ES.ui.miss[slot], t = slotTemplates(slot);
-    if (!m || !m.open || !t) return null;
-    if (m.tier === 2) { const arr = t.tier2 || []; const pick = arr[m.type || 0]; return pick ? { slot, kind: pick.type, frame: pick.frame } : null; }
-    return { slot, kind: "scaffold", frame: t.tier1 };
-  }
-  // The ghost zone: frames render here, in the writing area, clearly NOT the
-  // student's text and never saved into the draft. Toggling a card closed removes
-  // its frame and nothing was ever committed.
-  function esGhostFrames(p) {
-    return ""; // frames now render inside each missing-element card (see esMissCard)
-  }
   function esRenderCoached(host, sc) {
     const d = ES.draft;
     if (d.pos < 0) d.pos = 0; if (d.pos > d.paras.length - 1) d.pos = d.paras.length - 1;
@@ -2893,6 +2879,7 @@
             <button class="es-linkbtn" id="esquizlink">memorise this paragraph</button>
           </div>
           ${(!canAsk) ? `<p class="es-cooldown">Revise this paragraph, then ask again. The pause is for thinking between drafts, not button grinding.</p>` : ""}
+          <div class="es-skelhost" data-skelhost>${esSkeletonBlock(p)}</div>
           <div class="es-seqhost">${esSeqNudge(p)}</div>
         </div>
         <aside class="es-margin">${margin}</aside>
@@ -2909,6 +2896,7 @@
     const ask = $("#esask"); if (ask) ask.onclick = () => esGetFeedback(d.pos);
     $("#esquizlink").onclick = () => { ES.screen = "quiz"; esResetQuiz(); esRender(); };
     esBindCoachMargin(p);
+    esBindSkeleton(p);
     esBindSeqNudge(p);
   }
   // Toggle the ask button live as the student types (cooldown releases the moment
@@ -2929,7 +2917,8 @@
     if (!fb) return `<div class="es-mempty">Write your paragraph, then press <b>Get feedback</b>. Suggestions appear here. The coach never rewrites your paragraph for you, it nudges and offers word choices you apply yourself.</div>`;
     const demo = fb.demoNote ? `<div class="es-demonote">${esc(fb.demoNote)}</div>` : "";
     const note = fb.note ? `<div class="es-mnote">${esc(fb.note)}</div>` : "";
-    const miss = fb.missing.length ? `<div class="es-mblock"><div class="es-mh">missing elements</div>${fb.missing.map(slot => esMissCard(p, slot)).join("")}</div>` : "";
+    const scaff = fb.missing.length ? `<button type="button" class="es-scafftoggle" data-esscaffold>${ES.ui.scaffoldOpen ? "Hide scaffold" : "Show scaffold"}</button><div class="es-scaffhint">${ES.ui.scaffoldOpen ? "the dashed gaps below your paragraph show where each missing piece goes, in order." : "see every gap in order, framed under your paragraph where it belongs."}</div>` : "";
+    const miss = fb.missing.length ? `<div class="es-mblock"><div class="es-mh">missing elements</div>${fb.missing.map(slot => esMissCard(p, slot)).join("")}${scaff}</div>` : "";
     const onTarget = fb.nudges.filter(n => n.category === "on_target");
     const polish = fb.nudges.filter(n => n.category !== "on_target");
     const onT = onTarget.length ? `<div class="es-mblock"><div class="es-mh">questions to push your thinking</div>${onTarget.map(n => `<div class="es-nudge">${esc(n.text)}</div>`).join("")}</div>` : "";
@@ -2964,70 +2953,75 @@
     const pick = ex.find(e => e.slots && e.slots[slot] && !sameTopic(e));
     return pick ? { label: pick.label, text: pick.slots[slot] } : null;
   }
-  // Each missing element is its OWN stacked card in the margin: it names the element
-  // and its job, carries its tiered blank frame INLINE (so several are visible at
-  // once, never overwriting), and offers an optional different-topic worked example
-  // in a clearly separate reference panel.
-  // A missing-element card renders ALL of its states ONCE (every tier frame, the
-  // type chips, the worked-example panel) and shows/hides them with the hidden
-  // attribute. Toggles never regenerate HTML, so there is no blank-and-redraw.
+  // Each missing element is its OWN stacked card in the margin: it names the element,
+  // its job and where it belongs, and offers an optional different-topic worked
+  // example in a clearly separate reference panel. The card no longer carries a
+  // frame: ALL frames live in the ordered skeleton beneath the paragraph (one global
+  // "Show scaffold" toggle reveals them together, each in its true slot position).
   function esMissCard(p, slot) {
     const def = slotDef(p.role, slot); if (!def) return "";
-    const m = ES.ui.miss[slot] || { open: false, tier: 1, type: 0, example: false };
-    const t = slotTemplates(slot) || {};
-    const tier2 = t.tier2 || [];
+    const m = ES.ui.miss[slot] || { example: false };
     const where = ES_WHERE[slot] || "";
     const article = /^[aeiou]/i.test(def.label) ? "an" : "a";
-    const blanks = s => esc(s).replace(/_{2,}/g, '<span class="es-blank">____</span>');
     const hide = cond => cond ? "" : " hidden";
-    // every frame pre-rendered; only the active one is shown
-    let frames = "";
-    if (t.tier1) frames += `<div class="es-ghost" data-frame="t1"${hide(m.open && m.tier === 1)}><div class="es-ghosth">type over the blanks</div><div class="es-ghostframe">${blanks(t.tier1)}</div></div>`;
-    tier2.forEach((tt, i) => frames += `<div class="es-ghost" data-frame="t2-${i}"${hide(m.open && m.tier === 2 && (m.type || 0) === i)}><div class="es-ghosth">type over the blanks · ${esc(tt.type)}</div><div class="es-ghostframe">${blanks(tt.frame)}</div></div>`);
-    const typeChips = tier2.length ? `<div class="es-typewrap" data-typewrap${hide(m.open && m.tier === 2)}>${tier2.map((tt, i) =>
-      `<button class="es-typechip ${(m.type || 0) === i ? "on" : ""}" data-esmiss-type="${esc(slot)}" data-esmiss-idx="${i}">${esc(tt.type)}</button>`).join("")}</div>` : "";
     const ex = esWorkedExample(slot);
-    const exBlock = ex ? `<button class="es-linkbtn" data-esmiss-ex="${esc(slot)}"${hide(!m.example)}>see a worked example</button>` +
-      `<div class="es-example" data-example${hide(m.example)}><div class="es-exh">model to study, not to copy</div><div class="es-exsub">a different topic on purpose: ${esc(ex.label)}</div><div class="es-extext">${esc(ex.text)}</div><button class="es-linkbtn" data-esmiss-ex="${esc(slot)}">hide example</button></div>` : "";
+    const exBlock = ex ? `<button type="button" class="es-linkbtn" data-esmiss-ex="${esc(slot)}"${hide(!m.example)}>see a worked example</button>` +
+      `<div class="es-example" data-example${hide(m.example)}><div class="es-exh">model to study, not to copy</div><div class="es-exsub">a different topic on purpose: ${esc(ex.label)}</div><div class="es-extext">${esc(ex.text)}</div><button type="button" class="es-linkbtn" data-esmiss-ex="${esc(slot)}">hide example</button></div>` : "";
     return `<div class="es-miss" data-slot="${esc(slot)}">
       <div class="es-missh">${article} ${esc(def.label)} sentence is missing</div>
       <div class="es-missjob">Its job: ${esc(def.job)}${where ? ", " + esc(where) : ""}.</div>
-      <div class="es-misstiers">
-        <button class="es-misstier" data-esmiss-show="${esc(slot)}"${hide(!m.open)}>Show scaffold</button>
-        <button class="es-misstier" data-esmiss-hide="${esc(slot)}"${hide(m.open)}>Hide</button>
-        <button class="es-misstier" data-esmiss-more="${esc(slot)}"${hide(m.open && m.tier === 1 && tier2.length)}>More guidance</button>
-        ${typeChips}
-      </div>${frames}${exBlock}</div>`;
+      ${exBlock}</div>`;
   }
-  // Reflect a slot's current ui state onto its EXISTING card DOM by flipping hidden
-  // attributes and classes only. No innerHTML is regenerated, so nothing flashes.
-  function esApplyMissDom(slot) {
+  // The ORDERED skeleton, rendered once beneath the paragraph. It walks the slot
+  // model in order (body: point, analysis, evidence, link); present slots show as
+  // solid "in place" markers and missing slots show as dashed, tinted gap frames so
+  // the PLACEMENT and ORDER are the lesson. One "Show/Hide scaffold" toggle flips the
+  // whole block via the hidden attribute (all gaps appear or clear together, never
+  // one at a time). Frames are content-free blanks, pre-rendered, never written to
+  // the draft. Per-gap chips swap that gap's frame wording in place (the old "more
+  // guidance" frame types), without revealing or hiding any gap.
+  function esSkeletonBlock(p) {
+    const fb = p.feedback; if (!fb || !fb.missing.length) return "";
+    const slots = slotsForRole(p.role); if (!slots.length) return "";
+    const missingSet = {}; fb.missing.forEach(s => missingSet[s] = true);
+    const blanks = s => esc(s).replace(/_{2,}/g, '<span class="es-blank">____</span>');
+    const rows = slots.map(sdef => {
+      if (!missingSet[sdef.key]) {
+        return `<div class="es-skelrow have"><span class="es-skellabel">${esc(sdef.label)}</span><span class="es-skelhave">your sentence sits here</span></div>`;
+      }
+      const t = slotTemplates(sdef.key) || {};
+      const tier2 = t.tier2 || [];
+      const choice = ES.ui.frame[sdef.key] || 0; // 0 = simple (tier1); 1.. = tier2 type
+      let frames = "";
+      if (t.tier1) frames += `<div class="es-skelframe" data-skf="${esc(sdef.key)}:0"${choice === 0 ? "" : " hidden"}>${blanks(t.tier1)}</div>`;
+      tier2.forEach((tt, i) => { frames += `<div class="es-skelframe" data-skf="${esc(sdef.key)}:${i + 1}"${choice === i + 1 ? "" : " hidden"}>${blanks(tt.frame)}</div>`; });
+      const chips = (t.tier1 || tier2.length) ? `<div class="es-skelchips">` +
+        (t.tier1 ? `<button type="button" class="es-skelchip ${choice === 0 ? "on" : ""}" data-esframe="${esc(sdef.key)}" data-esframeidx="0">simple</button>` : "") +
+        tier2.map((tt, i) => `<button type="button" class="es-skelchip ${choice === i + 1 ? "on" : ""}" data-esframe="${esc(sdef.key)}" data-esframeidx="${i + 1}">${esc(tt.type)}</button>`).join("") +
+        `</div>` : "";
+      return `<div class="es-skelrow gap"><div class="es-skelgaplabel">type over the blanks · ${esc(sdef.label)}</div>${frames}${chips}</div>`;
+    }).join("");
+    return `<div class="es-skel" data-skel${ES.ui.scaffoldOpen ? "" : " hidden"}>
+      <div class="es-skelh">Your paragraph in order: solid rows are sentences you already have, dashed rows are the gaps. Type over the blanks. Nothing here is written into your draft.</div>
+      ${rows}</div>`;
+  }
+  // Reflect a slot's worked-example state onto its EXISTING card DOM by flipping the
+  // hidden attribute only. No innerHTML is regenerated, so nothing flashes.
+  function esApplyExampleDom(slot) {
     const card = document.querySelector('.es-miss[data-slot="' + slot + '"]'); if (!card) return;
-    const m = ES.ui.miss[slot] || { open: false, tier: 1, type: 0, example: false };
-    const t = slotTemplates(slot) || {}; const has2 = (t.tier2 || []).length;
-    const set = (sel, vis) => { const el = card.querySelector(sel); if (el) el.hidden = !vis; };
-    set('[data-esmiss-show]', !m.open);
-    set('[data-esmiss-hide]', m.open);
-    set('[data-esmiss-more]', m.open && m.tier === 1 && has2);
-    set('[data-typewrap]', m.open && m.tier === 2);
-    card.querySelectorAll('[data-frame]').forEach(f => {
-      const id = f.getAttribute('data-frame');
-      const vis = m.open && (m.tier === 1 ? id === 't1' : id === 't2-' + (m.type || 0));
-      f.hidden = !vis;
-    });
-    card.querySelectorAll('[data-esmiss-type]').forEach(c => c.classList.toggle('on', Number(c.dataset.esmissIdx) === (m.type || 0)));
+    const open = !!(ES.ui.miss[slot] && ES.ui.miss[slot].example);
     // the "see a worked example" button is the one NOT inside the example panel
     const exShow = Array.from(card.querySelectorAll('[data-esmiss-ex]')).find(el => !el.closest('[data-example]'));
     const exPanel = card.querySelector('[data-example]');
-    if (exShow) exShow.hidden = !!m.example;
-    if (exPanel) exPanel.hidden = !m.example;
+    if (exShow) exShow.hidden = open;
+    if (exPanel) exPanel.hidden = !open;
   }
-  // Margin handlers flip visibility on the existing DOM (esApplyMissDom / hidden),
-  // never rebuild the margin. State is also stored on ES.ui so a later full render
-  // (e.g. paragraph nav) reproduces the same open/closed state.
+  // Margin handlers flip visibility on the existing DOM (hidden attribute), never
+  // rebuild the margin. State is stored on ES.ui so a later full render (e.g.
+  // paragraph nav) reproduces the same open/closed state. The single scaffold toggle
+  // lives here in the margin but flips the skeleton block in the writing column.
   function esBindCoachMargin(p) {
     const host = document.getElementById("eshost"); if (!host) return;
-    const setMiss = (slot, patch) => { ES.ui.miss[slot] = Object.assign({ open: false, tier: 1, type: 0, example: false }, ES.ui.miss[slot], patch); };
     const pol = $("#espolish");
     if (pol) pol.onclick = () => {
       ES.ui.polishOpen = !ES.ui.polishOpen;
@@ -3035,11 +3029,35 @@
       const chev = pol.querySelector(".es-polishchev"); if (chev) chev.textContent = ES.ui.polishOpen ? "▾" : "▸";
     };
     host.querySelectorAll("[data-eschip]").forEach(b => b.onclick = () => esApplyChip(ES.draft.pos, b.dataset.eschipfrom, b.dataset.eschipopt));
-    host.querySelectorAll("[data-esmiss-show]").forEach(b => b.onclick = () => { setMiss(b.dataset.esmissShow, { open: true, tier: 1, type: 0 }); esApplyMissDom(b.dataset.esmissShow); });
-    host.querySelectorAll("[data-esmiss-hide]").forEach(b => b.onclick = () => { setMiss(b.dataset.esmissHide, { open: false }); esApplyMissDom(b.dataset.esmissHide); });
-    host.querySelectorAll("[data-esmiss-more]").forEach(b => b.onclick = () => { setMiss(b.dataset.esmissMore, { open: true, tier: 2, type: 0 }); esApplyMissDom(b.dataset.esmissMore); });
-    host.querySelectorAll("[data-esmiss-type]").forEach(b => b.onclick = () => { setMiss(b.dataset.esmissType, { open: true, tier: 2, type: Number(b.dataset.esmissIdx) }); esApplyMissDom(b.dataset.esmissType); });
-    host.querySelectorAll("[data-esmiss-ex]").forEach(b => b.onclick = () => { const s = b.dataset.esmissEx; setMiss(s, { example: !(ES.ui.miss[s] && ES.ui.miss[s].example) }); esApplyMissDom(s); });
+    // ONE toggle reveals/clears ALL gap frames together; never one at a time.
+    const scaff = host.querySelector("[data-esscaffold]");
+    if (scaff) scaff.onclick = () => {
+      ES.ui.scaffoldOpen = !ES.ui.scaffoldOpen;
+      const skel = host.querySelector("[data-skel]"); if (skel) skel.hidden = !ES.ui.scaffoldOpen;
+      scaff.textContent = ES.ui.scaffoldOpen ? "Hide scaffold" : "Show scaffold";
+      const hint = host.querySelector(".es-scaffhint");
+      if (hint) hint.textContent = ES.ui.scaffoldOpen ? "the dashed gaps below your paragraph show where each missing piece goes, in order." : "see every gap in order, framed under your paragraph where it belongs.";
+    };
+    host.querySelectorAll("[data-esmiss-ex]").forEach(b => b.onclick = () => {
+      const s = b.dataset.esmissEx;
+      ES.ui.miss[s] = Object.assign({ example: false }, ES.ui.miss[s]);
+      ES.ui.miss[s].example = !ES.ui.miss[s].example;
+      esApplyExampleDom(s);
+    });
+  }
+  // Skeleton handlers (writing column): per-gap chips swap that gap's frame wording
+  // in place by flipping hidden among the pre-rendered frames. No gap is revealed or
+  // hidden here, so the all-at-once skeleton stays intact.
+  function esBindSkeleton(p) {
+    const host = document.getElementById("eshost"); if (!host) return;
+    const skel = host.querySelector("[data-skel]"); if (!skel) return;
+    skel.querySelectorAll("[data-esframe]").forEach(b => b.onclick = () => {
+      const slot = b.dataset.esframe, idx = Number(b.dataset.esframeidx);
+      ES.ui.frame[slot] = idx;
+      const row = b.closest(".es-skelrow"); if (!row) return;
+      row.querySelectorAll(".es-skelframe").forEach(f => { f.hidden = f.getAttribute("data-skf") !== slot + ":" + idx; });
+      row.querySelectorAll("[data-esframe]").forEach(c => c.classList.toggle("on", Number(c.dataset.esframeidx) === idx));
+    });
   }
   // Soft boundary nudges (never hard locks). Order: complete -> memorise; mastered
   // -> polish wording; all mastered -> full attempt. All modes stay openable.
@@ -3306,6 +3324,10 @@
       const host = document.getElementById("eshost");
       const m = host && host.querySelector(".es-margin");
       if (m) { m.innerHTML = esCoachMargin(p); host.querySelectorAll("button:not([type])").forEach(b => b.type = "button"); esBindCoachMargin(p); }
+      // the missing set changed, so rebuild the ordered skeleton (starts hidden, since
+      // esResetCoachUI cleared scaffoldOpen) and rebind its per-gap chips.
+      const sk = host && host.querySelector("[data-skelhost]");
+      if (sk) { sk.innerHTML = esSkeletonBlock(p); host.querySelectorAll("button:not([type])").forEach(b => b.type = "button"); esBindSkeleton(p); }
       esRefreshAskButton(p);
       const step = host && host.querySelectorAll(".es-step")[idx]; if (step) step.classList.add("done");
       const seqHost = host && host.querySelector(".es-seqhost"); if (seqHost) { seqHost.innerHTML = esSeqNudge(p); esBindSeqNudge(p); }
