@@ -13,6 +13,10 @@
 // worker: re-paste and redeploy it in Cloudflare for changes to take effect.
 // =============================================================================
 const MODEL = "claude-sonnet-4-6"; // sharper essay feedback; swap to "claude-haiku-4-5-20251001" for cheaper grading
+// COACHING (essay practice) runs on the cheaper, faster Haiku. Marking above is
+// left on its current model on purpose. Output is capped short (suggestions only).
+const COACH_MODEL = "claude-haiku-4-5"; // dated pin if needed: claude-haiku-4-5-20251001
+const COACH_MAX_TOKENS = 700;
 const WINDOW_MS = 10 * 60 * 1000, MAX_PER_WINDOW = 20;
 const hits = new Map(); // in-memory per-isolate limiter (fine for a small trial)
 const SEVRANK = { critical: 0, should: 1, optional: 2 };
@@ -145,6 +149,121 @@ const REVIEW_TOOL = {
   },
 };
 
+// =============================================================================
+// COACHING — essay practice mode (separate from marking above).
+// HARD RULE, enforced here AND in the app UX: SUGGEST, NEVER SUBSTITUTE. The
+// coach never rewrites the paragraph and never returns a paste-ready sentence.
+// Paragraph-level help is NUDGES PHRASED AS QUESTIONS. Word-level help is a few
+// pickable alternatives the student applies themselves. Meaning, argument and
+// structure stay the student's. The coach never supplies the argument or the
+// content, and never asserts a factual correction (it says check your notes),
+// the same hallucination guard as charts-from-real-data-only.
+// The system prompt is prompt-cached because it repeats on every call.
+// =============================================================================
+const COACH_SYSTEM = `You are an HSC essay-writing coach working with one student on one paragraph at a time. You coach the craft of writing; you never write for the student.
+
+Absolute rules, in order of importance:
+1. Suggest, never substitute. Never rewrite the paragraph. Never return a model sentence, a paste-ready line, or a full replacement the student could copy. If you are tempted to write the better sentence, turn it into a question instead.
+2. Paragraph-level and argument-level feedback is given only as short questions that make the student think, for example asking what a piece of evidence lets them claim, or how this paragraph links to their thesis. Questions, not answers.
+3. Word-level help may offer a few alternative words or very short phrases the student can pick from, for a word they already used. Each alternative is at most a few words. Never a clause, never a sentence.
+4. Never supply the argument, the evidence or the content. If the student seems to have a factual point that may be wrong, do not correct it and do not assert the right fact. Say that they should check it against their own notes.
+5. Coach to HSC marking bands: analysis over description, cohesion and signposting, integrating evidence, register, and syntax. Be honest and specific, never flattering.
+
+If a rubric or marking guide is provided, target your feedback at that rubric and its bands. If none is provided, use general HSC band expectations: top bands sustain a reasoned judgement with integrated, specific evidence and clear signposting; middle bands have a line of argument but slip into description; lower bands are mostly description with thin evidence.
+
+Keep everything short. Writable register, no em-dashes anywhere, sentence case. Return your feedback only through the submit_coaching tool.`;
+
+const COACH_TOOL = {
+  name: "submit_coaching",
+  description: "Return short coaching for one paragraph: a note, question-nudges, and word-level alternatives. Never a rewritten paragraph or sentence.",
+  input_schema: {
+    type: "object",
+    properties: {
+      note: { type: "string", description: "One or two honest sentences on where this paragraph sits against the bands. Not a rewrite." },
+      nudges: {
+        type: "array",
+        description: "Up to four short QUESTIONS that push the student's thinking. Questions only, never answers, never model sentences.",
+        items: { type: "string" },
+      },
+      chips: {
+        type: "array",
+        description: "Up to six word-level swaps for words the student already used. Each option is at most a few words. Never a clause or sentence.",
+        items: {
+          type: "object",
+          properties: {
+            from: { type: "string", description: "A word or very short phrase the student used." },
+            options: { type: "array", items: { type: "string" }, description: "A few stronger alternatives, each at most a few words." },
+          },
+          required: ["from", "options"],
+        },
+      },
+      check: { type: "string", description: "Optional. If a factual point looks shaky, tell the student to check it against their notes. Never assert the correct fact." },
+    },
+    required: ["note", "nudges"],
+  },
+};
+
+// Belt-and-braces server-side enforcement of rule 1 and 3: drop any chip whose
+// alternative is long enough to be a sentence rather than a word-level swap.
+function shortPhrase(s, maxWords) { return String(s || "").trim().split(/\s+/).filter(Boolean).length <= maxWords; }
+function normalizeCoaching(c) {
+  const nudges = (Array.isArray(c.nudges) ? c.nudges : []).map(s => String(s || "").trim()).filter(Boolean).slice(0, 4);
+  const chips = (Array.isArray(c.chips) ? c.chips : [])
+    .map(x => ({
+      from: String((x && x.from) || "").trim(),
+      options: (Array.isArray(x && x.options) ? x.options : []).map(o => String(o || "").trim()).filter(Boolean).slice(0, 4),
+    }))
+    .filter(x => x.from && shortPhrase(x.from, 4) && x.options.length && x.options.every(o => shortPhrase(o, 6)))
+    .slice(0, 6);
+  return { note: String(c.note || "").trim(), nudges, chips, check: String(c.check || "").trim() };
+}
+
+async function handleCoach(body, env, cors) {
+  const { paragraph_text, paragraph_role = "", planned_point = "", question = "", topic = "", rubric = "", structure = "", subject = "" } = body || {};
+  if (!paragraph_text || !String(paragraph_text).trim()) return json({ error: "paragraph_text is required" }, 400, cors);
+  if (String(paragraph_text).length > 6000) return json({ error: "paragraph too long" }, 400, cors);
+
+  const rubricBlock = String(rubric || "").trim()
+    ? `RUBRIC OR MARKING GUIDE (target your feedback at this):\n${rubric}`
+    : `RUBRIC: (none provided, use general HSC band expectations)`;
+
+  const userMsg = `SUBJECT: ${subject || "(unspecified)"}
+ESSAY QUESTION:
+${question || "(not given)"}
+${topic ? "CHOSEN TOPIC OR OPTION: " + topic + "\n" : ""}PLANNED STRUCTURE: ${structure || "(not given)"}
+THIS PARAGRAPH'S ROLE: ${paragraph_role || "(unspecified)"}
+THE STUDENT'S PLANNED POINT FOR THIS PARAGRAPH: ${planned_point || "(none written)"}
+
+${rubricBlock}
+
+THE STUDENT'S CURRENT PARAGRAPH:
+${paragraph_text}
+
+Coach this paragraph now. Remember: suggest, never substitute. Nudges are questions. Chips are word-level only.`;
+
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-api-key": env.ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: COACH_MODEL,
+      max_tokens: COACH_MAX_TOKENS,
+      system: [{ type: "text", text: COACH_SYSTEM, cache_control: { type: "ephemeral" } }],
+      tools: [COACH_TOOL],
+      tool_choice: { type: "tool", name: "submit_coaching" },
+      messages: [{ role: "user", content: userMsg }],
+    }),
+  });
+  if (!res.ok) return json({ error: "upstream " + res.status }, 502, cors);
+  const data = await res.json();
+  const block = (data.content || []).find(b => b.type === "tool_use");
+  if (!block || !block.input) return json({ error: "coach returned nothing", stop_reason: data.stop_reason || null }, 502, cors);
+  return json(normalizeCoaching(block.input), 200, cors);
+}
+
 export default {
   async fetch(req, env) {
     const cors = {
@@ -168,6 +287,9 @@ export default {
     // optional shared class code: set secret CLASS_CODE on the worker and only
     // requests carrying it are graded — stops strangers spending your credits.
     if (env.CLASS_CODE && code !== env.CLASS_CODE) return json({ error: "Class code missing or wrong — check Settings in the app." }, 403, cors);
+    // Essay-practice coaching is a separate, Haiku-backed path with its own short
+    // output. It shares the rate limit and class-code gate above, then returns.
+    if (body && body.action === "coach") return await handleCoach(body, env, cors);
     if (!prompt || !answer || !marks) return json({ error: "prompt, marks and answer are required" }, 400, cors);
     if (answer.length > 12000) return json({ error: "answer too long" }, 400, cors);
 
