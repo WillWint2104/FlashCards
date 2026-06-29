@@ -80,12 +80,109 @@ window.ESSAY = {
   // answers; chips are word-level alternatives the student picks and applies.
   // Never a rewritten sentence or a paste-ready paragraph.
   // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // slots — the ONE shared paragraph model. Both the missing-element checker (the
+  // coach names which slot is ABSENT) and the quiz "complete enough" check read
+  // this. A body paragraph has four slots; intro and conclusion get light sets.
+  // The "job" text is what the app shows on a missing-element card, so the coach
+  // worker never has to write that text (it returns only the slot key).
+  //
+  // templates are the TIERED, CONTENT-FREE frames a student can toggle on a
+  // missing-element card. HARD RULE: blank connective tissue only, NEVER a worked
+  // example with real history, names, dates or model analysis. tier1 is one simple
+  // frame; tier2 offers a few frame TYPES that scaffold the KIND of analysis.
+  // Keep the slot KEYS here in sync with proxy/worker.js COACH_SYSTEM.
+  // ---------------------------------------------------------------------------
+  slots: {
+    roleSets: {
+      body: [
+        { key: "point",    label: "point",     job: "state the argument this paragraph makes" },
+        { key: "analysis", label: "analysis",  job: "explain the effect or why it matters" },
+        { key: "evidence", label: "evidence",  job: "ground the point in a specific source or detail" },
+        { key: "link",     label: "link",      job: "connect the point back to the question" }
+      ],
+      introduction: [
+        { key: "thesis",  label: "thesis",   job: "state your overall line of argument" },
+        { key: "methods", label: "approach", job: "signpost how the essay will get there" }
+      ],
+      conclusion: [
+        { key: "restate",   label: "restatement", job: "draw the argument together without simply repeating" },
+        { key: "judgement", label: "judgement",   job: "land a clear, weighed judgement" }
+      ]
+    },
+    templates: {
+      point:     { tier1: "____ was a key way that ____.",
+                   tier2: [ { type: "claim", frame: "One way ____ can be seen is through ____." },
+                            { type: "contrast", frame: "While ____, this paragraph argues that ____." } ] },
+      analysis:  { tier1: "This demonstrates that ____ because ____.",
+                   tier2: [ { type: "significance", frame: "This was significant because it allowed ____ to ____, which shows ____." },
+                            { type: "appearance and reality", frame: "This created the impression of ____ while in reality ____, revealing ____." },
+                            { type: "cause and effect", frame: "By doing this, ____ led to ____." } ] },
+      evidence:  { tier1: "This is supported by ____, which shows ____.",
+                   tier2: [ { type: "named source", frame: "According to ____, ____, which suggests ____." },
+                            { type: "specific detail", frame: "The detail that ____ shows ____." } ] },
+      link:      { tier1: "Therefore, ____ was a key method because ____.",
+                   tier2: [ { type: "answer the question", frame: "This shows that ____, which directly addresses ____." },
+                            { type: "weigh it", frame: "This mattered more than ____ because ____." } ] },
+      thesis:    { tier1: "____ can be assessed by weighing ____ against ____.",
+                   tier2: [ { type: "line of argument", frame: "While ____, ultimately ____ because ____." } ] },
+      methods:   { tier1: "This will be shown through ____ and ____.",
+                   tier2: [ { type: "signpost", frame: "By examining ____ and ____, this essay will argue ____." } ] },
+      restate:   { tier1: "Overall, ____ shows that ____.",
+                   tier2: [ { type: "draw together", frame: "Taken together, ____ and ____ reveal ____." } ] },
+      judgement: { tier1: "On balance, ____ was ____ because ____.",
+                   tier2: [ { type: "weighed judgement", frame: "Although ____, on balance ____ because ____." } ] }
+    },
+    // Worked examples for the optional "see a worked example" reference. These are
+    // FIXED, pre-written (never generated, so no invented history), and ALWAYS on a
+    // DIFFERENT topic from the student's, so the analytical SHAPE transfers but no
+    // content is liftable into their own essay. Shown only in a separate reference
+    // panel labelled "model to study, not to copy". Two topics are provided so the
+    // app can pick the one that does NOT match the student's chosen topic. Original
+    // wording, general and uncontroversial, never reproduced from any source.
+    //
+    // This list is the SUBJECT-AGNOSTIC FALLBACK (authored for Ancient History). Any
+    // other subject borrows it as a clearly-labelled placeholder. To give a subject
+    // its OWN worked examples later, add `examples: [ ... ]` (same shape) under that
+    // subject in `subjects.<key>` above; the app prefers a subject's own set and
+    // drops the placeholder note automatically. No engine change is needed.
+    examples: [
+      { topic: "sparta", label: "Spartan society", slots: {
+        point: "Spartan upbringing was designed above all to produce obedient soldiers.",
+        analysis: "This mattered because the agoge took boys from their families young, which shows the state placed loyalty to Sparta above loyalty to kin.",
+        evidence: "This is supported by descriptions of the agoge as harsh communal training from about the age of seven, which suggests how early the conditioning began.",
+        link: "This addresses the question because it shows control was built through upbringing, not through force alone.",
+        thesis: "Spartan society can be assessed by weighing its military strength against the rigidity that strength demanded.",
+        methods: "This will be examined through Spartan education, the role of the helots, and the place of women.",
+        restate: "Overall, Spartan strength and Spartan rigidity were two sides of one system.",
+        judgement: "On balance, the system was effective for war but slow to adapt, which limited Sparta over time."
+      } },
+      { topic: "egypt", label: "Old Kingdom Egypt", slots: {
+        point: "In the Old Kingdom, the pharaoh's authority rested on his presentation as a divine ruler.",
+        analysis: "This mattered because commanding the resources to build the pyramids displayed that power, which shows religion and royal authority reinforced each other.",
+        evidence: "This is supported by the scale of the pyramid complexes at Giza, which suggests the level of organisation the state could reach.",
+        link: "This addresses the question because it shows authority was expressed through monuments as much as through administration.",
+        thesis: "Old Kingdom Egypt can be assessed by weighing the power of the pharaoh against the burden such projects placed on the state.",
+        methods: "This will be examined through kingship, religion, and the organisation of labour.",
+        restate: "Overall, royal power and religious belief in the Old Kingdom were deeply intertwined.",
+        judgement: "On balance, this concentration of power enabled great works but left the state vulnerable when central authority weakened."
+      } }
+    ]
+  },
+
+  // coachSample — the labelled DEMO FALLBACK, in the categorised shape the worker
+  // now returns: a substance note, ABSENT slots (each renders a missing-element
+  // card with the tiered frames above), and nudges tagged so on-target substance
+  // shows by default while expression and signposting polish tuck away. Chips stay
+  // word-level. Nothing here contains real history: it is all content-free.
   coachSample: {
-    note: "There is a clear point here, but it leans on description. The marker is looking for analysis that answers the question, not a retelling.",
+    note: "There is a clear point and a source here, but the paragraph leans on description. The marker wants analysis that answers the question.",
+    missing: [ { slot: "analysis" }, { slot: "link" } ],
     nudges: [
-      "Your first sentence states what happened. What does it let you argue about the question?",
-      "You mention a source here. What makes it useful or limited for this point, and how would you signal that to the marker?",
-      "How does this paragraph connect back to your thesis? A short signpost would make the link explicit."
+      { text: "Your source is named, but what does it let you argue about the question?", category: "on_target" },
+      { text: "What is the effect of this for your overall line of argument?", category: "on_target" },
+      { text: "Could a clearer signpost open this paragraph so the marker sees the point first?", category: "signposting" },
+      { text: "Is there a more precise word than this one for what you mean here?", category: "expression" }
     ],
     chips: [
       { from: "shows", options: ["suggests", "indicates", "reveals"] },

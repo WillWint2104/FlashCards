@@ -15,7 +15,7 @@
 const MODEL = "claude-sonnet-4-6"; // sharper essay feedback; swap to "claude-haiku-4-5-20251001" for cheaper grading
 // COACHING (essay practice) runs on the cheaper, faster Haiku. Marking above is
 // left on its current model on purpose. Output is capped short (suggestions only).
-const COACH_MODEL = "claude-haiku-4-5"; // dated pin if needed: claude-haiku-4-5-20251001
+const COACH_MODEL = "claude-haiku-4-5-20251001"; // dated pin: the alias claude-haiku-4-5 is rejected on this account
 const COACH_MAX_TOKENS = 700;
 const WINDOW_MS = 10 * 60 * 1000, MAX_PER_WINDOW = 20;
 const hits = new Map(); // in-memory per-isolate limiter (fine for a small trial)
@@ -160,14 +160,30 @@ const REVIEW_TOOL = {
 // the same hallucination guard as charts-from-real-data-only.
 // The system prompt is prompt-cached because it repeats on every call.
 // =============================================================================
+// The shared paragraph slot model. Keep these KEYS in sync with window.ESSAY.slots
+// in essay-content.js. The coach reports which slots are ABSENT by key only; the
+// app supplies the human-facing label, job text and any frames. So the coach never
+// emits a frame, a worked example, or any real content for a missing element.
+const COACH_SLOT_KEYS = ["point", "analysis", "evidence", "link", "thesis", "methods", "restate", "judgement"];
+
 const COACH_SYSTEM = `You are an HSC essay-writing coach working with one student on one paragraph at a time. You coach the craft of writing; you never write for the student.
 
 Absolute rules, in order of importance:
 1. Suggest, never substitute. Never rewrite the paragraph. Never return a model sentence, a paste-ready line, or a full replacement the student could copy. If you are tempted to write the better sentence, turn it into a question instead.
-2. Paragraph-level and argument-level feedback is given only as short questions that make the student think, for example asking what a piece of evidence lets them claim, or how this paragraph links to their thesis. Questions, not answers.
-3. Word-level help may offer a few alternative words or very short phrases the student can pick from, for a word they already used. Each alternative is at most a few words. Never a clause, never a sentence.
-4. Never supply the argument, the evidence or the content. If the student seems to have a factual point that may be wrong, do not correct it and do not assert the right fact. Say that they should check it against their own notes.
-5. Coach to HSC marking bands: analysis over description, cohesion and signposting, integrating evidence, register, and syntax. Be honest and specific, never flattering.
+2. Never supply content. Never write a frame, template, example sentence, or any real history, names, dates or model analysis, not even to illustrate a missing element. For a missing element you report only which element is missing; the app shows the student a blank frame, not you.
+3. Paragraph-level and argument-level feedback is given only as short questions that make the student think. Questions, not answers.
+4. Word-level help may offer a few alternative words or very short phrases the student can pick from, for a word they already used. Each alternative is at most a few words. Never a clause, never a sentence.
+5. If the student seems to have a factual point that may be wrong, do not correct it and do not assert the right fact. Say that they should check it against their own notes.
+6. Coach to HSC marking bands: analysis over description, cohesion and signposting, integrating evidence, register, and syntax. Be honest and specific, never flattering.
+
+The paragraph slot model. A body paragraph should contain four elements: point (the argument of the paragraph), analysis (the effect or why it matters), evidence (a specific source or detail), and link (connecting back to the question). An introduction should contain a thesis and a signposted approach (methods). A conclusion should contain a restatement and a weighed judgement.
+
+Detect a GENUINELY ABSENT element, which is different from one that is present but weak. Report an absent element in "missing" using only its key from this list: ${COACH_SLOT_KEYS.join(", ")}. Do not list an element that is present but thin; for those, raise a question in "nudges" instead. Only report elements that belong to this paragraph's role.
+
+Categorise each nudge so the app can surface substance first and tuck wording polish away:
+- on_target: substance and analysis, the heart of answering the question.
+- signposting: cohesion, ordering, and clear topic sentences.
+- expression: register, word choice and syntax.
 
 If a rubric or marking guide is provided, target your feedback at that rubric and its bands. If none is provided, use general HSC band expectations: top bands sustain a reasoned judgement with integrated, specific evidence and clear signposting; middle bands have a line of argument but slip into description; lower bands are mostly description with thin evidence.
 
@@ -175,15 +191,33 @@ Keep everything short. Writable register, no em-dashes anywhere, sentence case. 
 
 const COACH_TOOL = {
   name: "submit_coaching",
-  description: "Return short coaching for one paragraph: a note, question-nudges, and word-level alternatives. Never a rewritten paragraph or sentence.",
+  description: "Return short coaching for one paragraph: a note, the absent elements (by key only), categorised question-nudges, and word-level alternatives. Never a rewritten paragraph, sentence, frame, or any content.",
   input_schema: {
     type: "object",
     properties: {
       note: { type: "string", description: "One or two honest sentences on where this paragraph sits against the bands. Not a rewrite." },
+      missing: {
+        type: "array",
+        description: "Elements that are GENUINELY ABSENT from this paragraph (not merely weak). Report the KEY only; the app writes the guidance and shows a blank frame.",
+        items: {
+          type: "object",
+          properties: {
+            slot: { type: "string", enum: COACH_SLOT_KEYS, description: "Which element is missing." },
+          },
+          required: ["slot"],
+        },
+      },
       nudges: {
         type: "array",
         description: "Up to four short QUESTIONS that push the student's thinking. Questions only, never answers, never model sentences.",
-        items: { type: "string" },
+        items: {
+          type: "object",
+          properties: {
+            text: { type: "string", description: "A short question. Never an answer or a model sentence." },
+            category: { type: "string", enum: ["on_target", "signposting", "expression"], description: "on_target for substance, signposting for cohesion, expression for wording." },
+          },
+          required: ["text", "category"],
+        },
       },
       chips: {
         type: "array",
@@ -210,9 +244,18 @@ const COACH_TOOL = {
 // substitution through any field. (The client enforces the same limits.)
 function shortPhrase(s, maxWords) { return String(s || "").trim().split(/\s+/).filter(Boolean).length <= maxWords; }
 function normalizeCoaching(c) {
+  // missing: keep only known slot keys (by key alone, no model-written text), deduped.
+  const seen = new Set();
+  const missing = (Array.isArray(c.missing) ? c.missing : [])
+    .map(m => ({ slot: String((m && m.slot) || "").trim() }))
+    .filter(m => COACH_SLOT_KEYS.includes(m.slot) && !seen.has(m.slot) && seen.add(m.slot))
+    .slice(0, 6);
+  // nudges are objects {text, category}; keep only short questions, default category on_target.
+  const CATS = ["on_target", "signposting", "expression"];
   const nudges = (Array.isArray(c.nudges) ? c.nudges : [])
-    .map(s => String(s || "").trim())
-    .filter(s => s && s.includes("?") && shortPhrase(s, 40))
+    .map(n => (typeof n === "string" ? { text: n, category: "on_target" } : { text: String((n && n.text) || "").trim(), category: String((n && n.category) || "").trim() }))
+    .filter(n => n.text && /\?\s*$/.test(n.text) && shortPhrase(n.text, 40)) // must END as a question
+    .map(n => ({ text: n.text, category: CATS.includes(n.category) ? n.category : "on_target" }))
     .slice(0, 4);
   const chips = (Array.isArray(c.chips) ? c.chips : [])
     .map(x => ({
@@ -225,7 +268,7 @@ function normalizeCoaching(c) {
   const check = String(c.check || "").trim();
   return {
     note: shortPhrase(note, 60) ? note : "",
-    nudges, chips,
+    missing, nudges, chips,
     check: (check && shortPhrase(check, 30)) ? check : "",
   };
 }

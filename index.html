@@ -690,12 +690,17 @@
   .es-bandr{font-family:var(--disp);font-weight:600;font-size:12.5px;color:var(--green-dk);flex:none;width:96px}
   .es-bandt{font-size:12.5px;color:var(--ink-2);font-weight:600;line-height:1.5}
   .es-resume{margin-bottom:20px}
-  .es-resrow{display:flex;gap:10px;flex-wrap:wrap}
-  .es-rescard{display:flex;flex-direction:column;gap:6px;align-items:flex-start;text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:13px;padding:11px 13px;cursor:pointer;max-width:280px;transition:border-color .12s}
-  .es-rescard:hover{border-color:var(--green)}
+  .es-reslist{display:flex;flex-direction:column;gap:8px}
+  .es-resitem{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;background:var(--card);border:1.5px solid var(--line);border-radius:13px;padding:10px 13px}
+  .es-resmain{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1 1 auto}
+  .es-restoplabel{font-family:var(--disp);font-weight:600;font-size:11.5px;color:var(--green-dk);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .es-resq{font-size:13px;color:var(--ink);font-weight:600;line-height:1.4}
+  .es-resmeta{font-size:11.5px;color:var(--ink-3);font-weight:700}
+  .es-resactions{display:flex;gap:7px;flex-wrap:wrap;align-items:center;flex:none}
+  .es-resdel{font:inherit;font-weight:700;font-size:12px;color:var(--ink-2);background:none;border:none;cursor:pointer;padding:4px 6px;text-decoration:underline;text-underline-offset:2px}
+  .es-resdel:hover{color:var(--coral-dk)}
   .es-restag{font-family:var(--disp);font-weight:600;font-size:11.5px;color:var(--green-dk);background:var(--green-soft);border-radius:99px;padding:3px 11px}
   .es-restag.muted{color:var(--ink-3);background:#F2F6F6}
-  .es-resq{font-size:13px;color:var(--ink);font-weight:600;line-height:1.4}
   .es-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:8px}
   .es-btn{font-family:var(--disp);font-weight:600;font-size:15px;color:#fff;background:var(--green);border:none;border-radius:14px;padding:12px 24px;box-shadow:0 4px 0 var(--green-dk);cursor:pointer;transition:transform .08s}
   .es-btn:active{transform:translateY(2px);box-shadow:0 2px 0 var(--green-dk)}
@@ -749,6 +754,68 @@
   .es-completemsg{font-size:13.5px;color:var(--ink);font-weight:700;line-height:1.5;margin-bottom:12px}
   .es-completion .es-actions{margin-top:0}
   .es-submittedh{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--green-dk);margin-bottom:6px}
+
+  /* ===== Batch 2: missing-element cards, ghost frames, polish reveal, quiz ===== */
+  .es-step.mastered{border-color:var(--green);background:var(--green-soft)}
+  .es-step.mastered .es-stepn{background:var(--green);color:#fff}
+  /* missing-element cards (margin) */
+  .es-miss{border:1.5px solid var(--line);border-left:4px solid var(--green);border-radius:12px;padding:10px 12px;margin-bottom:9px;background:var(--card)}
+  .es-missh{font-family:var(--disp);font-weight:600;font-size:13px;color:var(--green-dk);margin-bottom:3px}
+  .es-missjob{font-size:12.5px;color:var(--ink);font-weight:600;line-height:1.5}
+  /* pill button reused by the saved-essays list (Resume / Use as template) */
+  .es-misstier{font:inherit;font-weight:700;font-size:12px;color:var(--green-dk);background:var(--card);border:1.5px solid var(--green);border-radius:99px;padding:4px 11px;cursor:pointer}
+  .es-misstier:hover{background:var(--green);color:#fff}
+  /* single scaffold toggle (margin) reveals the whole ordered skeleton at once */
+  .es-scafftoggle{font:inherit;font-weight:700;font-size:12.5px;color:var(--green-dk);background:var(--card);border:1.5px solid var(--green);border-radius:99px;padding:5px 14px;cursor:pointer;margin-top:4px}
+  .es-scafftoggle:hover{background:var(--green);color:#fff}
+  .es-scaffhint{font-size:11.5px;color:var(--ink-3);font-weight:600;margin-top:6px;line-height:1.4}
+  /* ordered skeleton (writing column): solid = present, dashed = missing gap */
+  .es-skelhost:empty{display:none}
+  .es-skel{margin-top:12px;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--card)}
+  .es-skelh{font-family:var(--disp);font-weight:600;font-size:12px;color:var(--ink-2);line-height:1.55;margin-bottom:11px}
+  .es-skelrow{border-radius:10px;padding:9px 12px;margin-bottom:8px}
+  .es-skelrow:last-child{margin-bottom:0}
+  .es-skelrow.have{border:1.5px solid var(--line);background:#FBFBFB;display:flex;align-items:baseline;gap:9px}
+  .es-skellabel{font-family:var(--disp);font-weight:700;font-size:12.5px;color:var(--green-dk)}
+  .es-skellabel::before{content:"\2713 ";color:var(--green)}
+  .es-skelhave{font-size:12.5px;color:var(--ink-3);font-weight:600}
+  .es-skelrow.gap{border:1.5px dashed var(--green);background:#FAFCFC}
+  .es-skelgaplabel{font-family:var(--disp);font-weight:600;font-size:11px;color:var(--ink-3);text-transform:lowercase;margin-bottom:6px}
+  .es-skelframe{font-size:14px;color:var(--ink-2);font-style:italic;line-height:1.7}
+  .es-skelchips{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+  .es-skelchip{font:inherit;font-weight:700;font-size:11.5px;color:var(--ink-2);background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:3px 10px;cursor:pointer}
+  .es-skelchip.on{color:var(--green-dk);border-color:var(--green);background:var(--green-soft)}
+  .es-skelchip:hover{border-color:var(--green)}
+  .es-blank{font-style:normal;font-weight:800;color:var(--green-dk);letter-spacing:1px}
+  /* polish reveal */
+  .es-polish{margin-top:6px;border-top:1px solid var(--line);padding-top:10px}
+  .es-polishtoggle{background:none;border:none;font-family:var(--disp);font-weight:600;font-size:12.5px;color:var(--ink-2);cursor:pointer;padding:2px 0}
+  .es-polishtoggle:hover{color:var(--green-dk)}
+  .es-polishbody{margin-top:8px}
+  .es-nudge.expr{border-left-color:var(--ink-3)} .es-nudge.sign{border-left-color:var(--ink-3)}
+  .es-chipwrap{margin-top:6px}
+  /* soft sequencing nudge */
+  .es-seq{margin-top:12px;font-size:13px;color:var(--ink-2);font-weight:600;line-height:1.5;background:#FAFCFC;border:1.5px solid var(--line);border-left:4px solid var(--green);border-radius:10px;padding:9px 13px}
+  /* quiz / mastery */
+  .es-quizwrap{margin-top:4px}
+  .es-quizcue{border:1.5px solid var(--line);border-left:4px solid var(--green);border-radius:14px;padding:12px 16px;margin-bottom:12px;background:var(--card)}
+  .es-quizcuetext{font-size:15.5px;color:var(--ink);font-weight:700;line-height:1.5}
+  .es-masteredtag{color:var(--green-dk);font-weight:800}
+  .es-quizanswer{margin-top:12px;border:1.5px solid var(--line);border-radius:13px;padding:12px 14px;background:#FAFCFC}
+  .es-quizanswertext{font-size:14.5px;color:var(--ink);font-weight:600;line-height:1.75;margin-top:6px}
+  .es-qres{margin-top:12px;border-radius:11px;padding:10px 13px;font-size:13.5px;font-weight:700;line-height:1.5}
+  .es-qres.mastered{background:var(--card);color:var(--green-dk);border:1.5px solid var(--green)}
+  .es-qres.close{background:#FAFCFC;color:var(--ink);border:1.5px solid var(--line)}
+  .es-qres.revealed{background:#FAFCFC;color:var(--ink-2);border:1.5px solid var(--line)}
+  /* worked example inside a missing-element card */
+  .es-miss .es-linkbtn{margin-top:8px}
+  .es-scrim [hidden]{display:none!important} /* reveals toggle this; must beat flex/block display rules */
+  .es-asking{font-size:12.5px;color:var(--green-dk);font-weight:700;margin-bottom:10px}
+  .es-example{margin-top:8px;border:1.5px solid var(--ink-3);border-radius:11px;padding:9px 12px;background:#FBFBFB}
+  .es-exh{font-family:var(--disp);font-weight:600;font-size:11.5px;color:var(--ink);letter-spacing:.2px}
+  .es-exsub{font-size:11px;color:var(--ink-3);font-weight:700;margin:1px 0 6px}
+  .es-exph{font-size:11px;color:var(--ink-2);font-weight:600;line-height:1.45;background:#FBFBFB;border:1px dashed var(--line);border-radius:8px;padding:5px 8px;margin:0 0 7px}
+  .es-extext{font-size:13px;color:var(--ink);font-weight:600;line-height:1.6}
   @media(max-width:760px){.es-coachcols{flex-direction:column}.es-margin{flex:1 1 auto;max-width:none;position:static}}
 </style>
 </head>
