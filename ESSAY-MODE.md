@@ -227,3 +227,72 @@ in `proxy/worker.js` if you ever change the slot set.
   `window.ESSAY.slots.examples` (never generated, so no invented history), shown in
   a separate panel labelled "model to study, not to copy", never beside the
   student's own paragraph. No worker or API change; quiz mode is still free.
+
+---
+
+# Batch 3: Business Studies subject + selectable TEEEC/TDECC paragraph model
+
+Stage 1 of the Business Studies build. Adds a Business Studies subject to essay
+practice with its own question bank and a student-selectable paragraph structure.
+Still behind `essayMode`; demo-walkable before the worker is re-pasted.
+
+## What is new
+
+- **Business Studies subject** (`essay-content.js` -> `subjects.business_studies`):
+  twelve HSC extended-response questions, three per topic (Operations, Marketing,
+  Finance, Human Resources). Each carries a `qtype` (A relationship, B judgement,
+  C multi-element), a topic tag, an exemplar paragraph `plan` (four syllabus
+  relationships) and the core `argument`. FIN-01 and FIN-02 mirror the 2024/2025
+  HSC finance questions and are flagged with a `note`. No case-study content is
+  asserted; the student supplies the business evidence.
+- **Selectable paragraph model (TEEEC / TDECC).** The paragraph scaffold is now
+  PER SUBJECT. Business Studies ships two body slot sets and the student picks one
+  in setup:
+  - TEEEC = topic, explain, example, effect, concluding link.
+  - TDECC = topic, define, example, comment, concluding link.
+  Ancient History keeps its own body slots (point, analysis, evidence, link);
+  intro and conclusion reuse the shared light sets for every subject. Confirm the
+  exact letter expansions suit your school: they are just slot labels/jobs in
+  `subjects.business_studies.scaffolds` and are trivial to change.
+- **Subject picker in setup.** Any login can choose the subject to load its
+  question bank and scaffold; it defaults to the subject routed from the class
+  code. This surfaces Business Studies without needing a BS class-code rule.
+- **Business worked examples** (`subjects.business_studies.examples`): fixed,
+  pre-written model paragraphs (cash flow to liquidity; quality management), on a
+  generic firm ("a business"), different from most questions so the shape
+  transfers without being liftable.
+
+## Walkthrough checklist
+
+- [ ] Setup shows a Subject selector; choosing Business Studies loads twelve
+      questions, a Paragraph structure selector (TEEEC / TDECC), and defaults the
+      structure to six paragraphs (intro, four body, conclusion). Header reads
+      "Business Studies · Year 12".
+- [ ] Pick a question, pick TEEEC, start: a body paragraph's ordered skeleton reads
+      topic, explanation, example, effect, concluding link.
+- [ ] A new essay with TDECC reads topic, definition, example, comment, concluding
+      link.
+- [ ] Ancient History is unchanged: point, analysis, evidence, link.
+
+## Worker re-paste (your step) for real Business Studies coaching
+
+The coach now adapts to ANY paragraph model because the CLIENT sends the expected
+slots for each paragraph (key, label, job) in the request. The worker was made
+slot-spec-aware and backward compatible (an old worker ignores the field and uses
+its built-in keys). Until you re-paste `proxy/worker.js`, Business Studies coaching
+shows the labelled demo fallback, which now derives its missing-element demo from
+the student's actual TEEEC/TDECC slots, so every screen still walks.
+
+To switch on real TEEEC/TDECC missing-element detection: Cloudflare -> Workers ->
+`marginal-grader` -> Edit code -> paste the current `proxy/worker.js` -> Deploy. No
+new secrets. This is a one-time contract change; no future per-subject worker edit
+is needed.
+
+## Still to come (later stages, agreed)
+
+- Stage 2: the syllabus relationship-map planner (command -> Term 1 + subterms ->
+  Term 2 + subterms -> build the connections -> lock the paragraph plan -> thesis
+  -> case-study evidence) that gates the writing interface.
+- Stage 3: the structured paragraph builder + evaluator (Concept -> Explanation ->
+  Relationship -> Evidence -> Judgement), Type-C mandatory paragraph targets, and
+  exemplar model paragraphs.

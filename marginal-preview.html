@@ -2721,6 +2721,150 @@ window.ESSAY = {
           text: "Account for the significance of one major site or monument to the society that built it.",
           topic: "Features of ancient societies: significant sites" }
       ]
+    },
+
+    // -------------------------------------------------------------------------
+    // Business Studies (Year 12). Extended-response practice built around the
+    // syllabus RELATIONSHIP the question tests (Term 1 affects Term 2), not just
+    // the command verb. Each question carries: qtype (A relationship, B judgement,
+    // C multi-element with mandatory targets), a topic tag, an exemplar paragraph
+    // PLAN (four syllabus relationships, not "four paragraphs"), and the core
+    // argument. Questions are original wording; FIN-01/FIN-02 mirror the 2024/2025
+    // HSC finance relationships and are flagged as such. No case-study content is
+    // asserted here: the student supplies the business evidence.
+    // -------------------------------------------------------------------------
+    business_studies: {
+      key: "business_studies",
+      label: "Business Studies",
+      stage: "Year 12",
+      defaultStructure: "six",           // intro + four body + conclusion (four relationships)
+      paraModels: ["teeec", "tdecc"],    // student-selectable paragraph structure (see scaffolds)
+      questions: [
+        { id: "ops-01", command: "How can", qtype: "A", qtypeLabel: "relationship",
+          text: "How can operations strategies contribute to the achievement of performance objectives?",
+          topic: "Operations", term1: "Operations strategies", term2: "Performance objectives",
+          plan: ["Technology to speed and cost", "Inventory management to dependability and cost", "Quality management to quality", "Supply chain management to speed and dependability"],
+          argument: "Operations strategies influence business performance by changing the quality, speed, dependability, flexibility, customisation and cost of outputs." },
+        { id: "ops-02", command: "Assess", qtype: "B", qtypeLabel: "judgement",
+          text: "Assess the impact of globalisation on operations management.",
+          topic: "Operations", term1: "Globalisation", term2: "Operations management",
+          plan: ["Global sourcing to costs and supply", "Economies of scale to cost leadership", "Scanning and learning to innovation", "Research and development to differentiation"],
+          argument: "Globalisation can substantially improve cost competitiveness and innovation but exposes businesses to greater supply-chain and global risk." },
+        { id: "ops-03", command: "How can", qtype: "A", qtypeLabel: "relationship",
+          text: "How can operations strategies affect corporate social responsibility?",
+          topic: "Operations", term1: "Operations strategies", term2: "Corporate social responsibility",
+          plan: ["Supply chain and global sourcing to social responsibility", "Outsourcing to employee and community responsibilities", "Inventory and waste management to environmental sustainability", "Technology and design to environmental and social consequences"],
+          argument: "Operations strategies shape a business's social and environmental responsibilities as much as its efficiency." },
+        { id: "mkt-01", command: "Explain", qtype: "C", qtypeLabel: "multi-element",
+          text: "Explain how target markets influence the development of marketing strategies.",
+          topic: "Marketing", term1: "Target markets", term2: "Marketing strategies",
+          plan: ["Target market to product", "Target market to price", "Target market to promotion and e-marketing", "Target market to place, people, processes and physical evidence"],
+          argument: "The chosen target market shapes every element of the marketing mix so that strategy fits the customer." },
+        { id: "mkt-02", command: "Assess", qtype: "B", qtypeLabel: "judgement",
+          text: "Assess the effectiveness of marketing strategies in achieving marketing objectives.",
+          topic: "Marketing", term1: "Marketing strategies", term2: "Marketing objectives",
+          plan: ["Product differentiation to market share", "Pricing to sales and profitability", "Promotion to awareness and sales", "Distribution and e-marketing to market expansion"],
+          argument: "Marketing strategies can be effective in achieving objectives, though their success depends on fit with the market and on competitors' responses." },
+        { id: "mkt-03", command: "To what extent", qtype: "B", qtypeLabel: "judgement",
+          text: "To what extent do influences on marketing determine business success?",
+          topic: "Marketing", term1: "Influences on marketing", term2: "Business success",
+          plan: ["Psychological influences", "Sociocultural influences", "Economic influences", "Government, legal and ethical influences"],
+          argument: "Influences significantly shape customer behaviour and constrain decisions, though management's response ultimately determines their effect on success." },
+        { id: "fin-01", command: "How can", qtype: "A", qtypeLabel: "relationship",
+          text: "How can financial strategies affect the objectives of financial management?",
+          topic: "Finance", term1: "Financial management strategies", term2: "Objectives of financial management",
+          note: "2024 HSC Section IV question.",
+          plan: ["Cash flow management to liquidity", "Working capital management to liquidity and efficiency", "Profitability management to profitability and growth", "Global financial management to profitability and solvency"],
+          argument: "Financial strategies substantially help businesses achieve financial objectives by controlling cash, working capital, costs, revenues and financial risk, though achieving one objective can involve a trade-off with another." },
+        { id: "fin-02", command: "Explain", qtype: "C", qtypeLabel: "multi-element",
+          text: "Explain how financial strategies can achieve liquidity and profitability objectives.",
+          topic: "Finance", term1: "Financial management strategies", term2: "Liquidity and profitability",
+          note: "2025 HSC finance question. Constrained selection: liquidity and profitability are mandatory targets.",
+          plan: ["Distribution of payments to liquidity", "Factoring and early-payment discounts to liquidity", "Working capital controls to liquidity", "Cost and revenue controls to profitability"],
+          argument: "Financial strategies can achieve both liquidity and profitability, but the same strategy can help one objective while costing the other." },
+        { id: "fin-03", command: "Assess", qtype: "B", qtypeLabel: "judgement",
+          text: "Assess the impact of influences on the financial management of a business.",
+          topic: "Finance", term1: "Influences on financial management", term2: "Financial management and performance",
+          plan: ["Sources of finance", "Financial institutions", "Government", "Global market influences"],
+          argument: "The significance of each influence depends on the business's financial position and activities, though global market conditions can be particularly significant for large and international businesses." },
+        { id: "hr-01", command: "Evaluate", qtype: "B", qtypeLabel: "judgement",
+          text: "Evaluate the effectiveness of human resource strategies in improving business performance.",
+          topic: "Human Resources", term1: "Human resource strategies", term2: "Business performance",
+          plan: ["Leadership style to satisfaction and culture", "Training and development to productivity and skills", "Performance management and rewards to turnover and performance", "Dispute resolution to disputation and satisfaction"],
+          argument: "Human resource strategies can be effective in improving performance, measured against indicators such as turnover, absenteeism, disputation and worker satisfaction." },
+        { id: "hr-02", command: "Analyse", qtype: "A", qtypeLabel: "relationship",
+          text: "Analyse how key influences affect human resource management.",
+          topic: "Human Resources", term1: "Key influences", term2: "Human resource management",
+          plan: ["Stakeholders", "Legal influences", "Economic influences", "Technological, social and ethical influences"],
+          argument: "Key influences shape human resource decisions by changing the expectations, constraints and conditions managers must respond to." },
+        { id: "hr-03", command: "To what extent", qtype: "B", qtypeLabel: "judgement",
+          text: "To what extent can human resource processes contribute to effective human resource management?",
+          topic: "Human Resources", term1: "Human resource processes", term2: "Effective human resource management",
+          plan: ["Acquisition to an appropriate workforce", "Development to skills and productivity", "Maintenance to retention and satisfaction", "Separation to restructuring, costs and culture"],
+          argument: "Human resource processes contribute substantially to effective management, though their effect depends on how well each stage is carried out." }
+      ],
+      // Two selectable paragraph structures. Each overrides the BODY slot set only;
+      // intro and conclusion reuse the shared light sets. Slot keys are stable and
+      // are the contract with the coach worker. Content-free frames only.
+      scaffolds: {
+        teeec: {
+          label: "TEEEC", expansion: "Topic, Explain, Example, Effect, Concluding link",
+          body: [
+            { key: "topic",   label: "topic",           job: "state the relationship this paragraph argues, a strategy affecting an objective" },
+            { key: "explain", label: "explanation",     job: "explain how the strategy works, using business terminology" },
+            { key: "example", label: "example",         job: "apply a real case study or business example" },
+            { key: "effect",  label: "effect",          job: "explain the effect on the objective and why it matters to the business" },
+            { key: "link",    label: "concluding link", job: "link back to the question with a clear judgement" }
+          ],
+          templates: {
+            topic:   { tier1: "____ can affect ____ because ____.",
+                       tier2: [ { type: "cause and effect", frame: "____ influences ____ by ____." } ] },
+            explain: { tier1: "This works because ____ leads to ____.",
+                       tier2: [ { type: "mechanism", frame: "By ____, the business is able to ____, which changes ____." } ] },
+            example: { tier1: "For example, a business could ____, which shows ____." },
+            effect:  { tier1: "As a result, ____ improves ____, which matters because ____.",
+                       tier2: [ { type: "trade-off", frame: "This improves ____, although it can reduce ____." } ] },
+            link:    { tier1: "Therefore, ____ affects ____, which addresses the question because ____." }
+          }
+        },
+        tdecc: {
+          label: "TDECC", expansion: "Topic, Define, Example, Comment, Concluding link",
+          body: [
+            { key: "topic",   label: "topic",           job: "state the relationship this paragraph argues, a strategy affecting an objective" },
+            { key: "define",  label: "definition",      job: "define the key strategy or term precisely, using business terminology" },
+            { key: "example", label: "example",         job: "apply a real case study or business example" },
+            { key: "comment", label: "comment",         job: "analyse the consequence: how it affects the objective, including any trade-off" },
+            { key: "link",    label: "concluding link", job: "link back to the question with a clear judgement" }
+          ],
+          templates: {
+            topic:   { tier1: "____ can affect ____ because ____." },
+            define:  { tier1: "____ refers to ____.",
+                       tier2: [ { type: "define then apply", frame: "____ is ____, which allows a business to ____." } ] },
+            example: { tier1: "For example, a business could ____, which shows ____." },
+            comment: { tier1: "This matters because ____ leads to ____, although ____.",
+                       tier2: [ { type: "weigh it", frame: "This affects ____ more than ____ because ____." } ] },
+            link:    { tier1: "Therefore, ____ affects ____, which addresses the question because ____." }
+          }
+        }
+      },
+      // Fixed, pre-written worked examples in the business genre, deliberately on a
+      // DIFFERENT relationship from most questions so the analytical shape transfers
+      // without being liftable. Generic firm ("a business"): no real company named.
+      // Slots use the TEEEC keys; TDECC-only slots simply show no example.
+      examples: [
+        { topic: "finance-liquidity", label: "Cash flow management and liquidity", slots: {
+          topic: "Cash flow management can significantly improve a business's liquidity because it changes the timing and availability of cash.",
+          explain: "Strategies such as the distribution of payments, discounts for early payment and factoring alter when cash flows in and out, so more cash is available to meet short-term commitments.",
+          example: "For example, a business could use factoring to sell its accounts receivable for immediate cash rather than waiting for customers to pay.",
+          effect: "This increases the funds available to pay suppliers and wages, improving liquidity, although factoring carries a cost that can reduce profitability.",
+          link: "Therefore, cash flow management can be highly effective in achieving liquidity, provided managers weigh the trade-off with profitability." } },
+        { topic: "operations-quality", label: "Quality management and the quality objective", slots: {
+          topic: "Quality management can strengthen the performance objective of quality because it builds consistency into outputs.",
+          explain: "Approaches such as quality control, quality assurance and continuous improvement reduce defects and variation in the production process.",
+          example: "For example, a business could introduce standardised checks at each stage of production to catch faults before goods reach customers.",
+          effect: "This raises the reliability of outputs and customer satisfaction, which matters because it protects reputation and repeat sales.",
+          link: "Therefore, quality management directly supports the quality objective and, through it, wider business performance." } }
+      ]
     }
   },
 
@@ -5446,7 +5590,28 @@ window.ESSAY = {
   function esView() {
     const sc = esSubjectContent(ES.subject);
     const questions = (sc && Array.isArray(sc.questions)) ? sc.questions : [];
-    return { label: esSubjectLabel(), stage: (sc && sc.stage) || "", questions, hasQuestions: questions.length > 0 };
+    const models = (sc && sc.scaffolds) ? (sc.paraModels || Object.keys(sc.scaffolds)) : [];
+    return {
+      label: esSubjectLabel(), stage: (sc && sc.stage) || "",
+      questions, hasQuestions: questions.length > 0,
+      paraModels: models, hasParaModels: models.length > 0,
+      defaultStructure: (sc && sc.defaultStructure) || (window.ESSAY && window.ESSAY.defaultStructure) || "five"
+    };
+  }
+  // Subjects a student can pick in setup: any that ship their own questions or a
+  // paragraph scaffold. Lets any login load a subject's bank without a class-code
+  // rule (the routed subject is just the default selection).
+  function esSubjectsList() {
+    const subs = (window.ESSAY && window.ESSAY.subjects) || {};
+    return Object.keys(subs)
+      .filter(k => { const s = subs[k]; return s && ((Array.isArray(s.questions) && s.questions.length) || s.scaffolds); })
+      .map(k => ({ key: k, label: subs[k].label || k }));
+  }
+  // A model's short label (e.g. "teeec" -> "TEEEC") from the subject's scaffolds.
+  function esParaModelLabel(model) {
+    const sc = esSubjectContent(ES.subject);
+    const m = sc && sc.scaffolds && sc.scaffolds[model];
+    return (m && m.label) || String(model || "").toUpperCase();
   }
   // The worked-example set for the current subject, with the fallback flagged as a
   // placeholder. Examples are ALWAYS fixed and pre-written (never generated), whether
@@ -5471,17 +5636,36 @@ window.ESSAY = {
   // peeked persists for the whole attempt: revealing once disqualifies mastery even
   // if the answer is hidden again before checking. Cleared only on a new attempt.
   function esResetQuiz() { ES.quiz = { revealed: false, peeked: false, attempt: "", result: null }; }
-  // Map a paragraph's role to its slot set in the ONE shared model (window.ESSAY.slots).
-  // Intro/Conclusion get their light sets; everything else is a body paragraph.
+  // The active per-subject paragraph scaffold (e.g. Business Studies TEEEC/TDECC),
+  // chosen from the draft (or the setup form before a draft exists). Returns null
+  // when the subject ships no scaffolds, so the shared slot model is used instead.
+  function esActiveScaffold() {
+    const sc = esSubjectContent(ES.subject);
+    const models = sc && sc.scaffolds;
+    if (!models) return null;
+    const chosen = (ES.draft && ES.draft.paraModel) || (ES.form && ES.form.paraModel) ||
+                   (Array.isArray(sc.paraModels) && sc.paraModels[0]) || Object.keys(models)[0];
+    return (chosen && models[chosen]) || null;
+  }
+  // Map a paragraph's role to its slot set. Intro/Conclusion use the shared light
+  // sets; the BODY set is the subject scaffold's when present (TEEEC/TDECC),
+  // otherwise the shared body slots (window.ESSAY.slots).
   function slotsForRole(role) {
     const sets = (window.ESSAY && window.ESSAY.slots && window.ESSAY.slots.roleSets) || {};
     const r = String(role || "").toLowerCase();
     if (r.indexOf("introduction") === 0 || r === "intro") return sets.introduction || [];
     if (r.indexOf("conclusion") === 0) return sets.conclusion || [];
-    return sets.body || [];
+    const scaf = esActiveScaffold();
+    return (scaf && scaf.body) || sets.body || [];
   }
   function slotDef(role, key) { return slotsForRole(role).find(s => s.key === key) || null; }
-  function slotTemplates(key) { return (window.ESSAY && window.ESSAY.slots && window.ESSAY.slots.templates && window.ESSAY.slots.templates[key]) || null; }
+  // Frame templates for a slot: the active scaffold's when it defines the key,
+  // otherwise the shared templates.
+  function slotTemplates(key) {
+    const scaf = esActiveScaffold();
+    if (scaf && scaf.templates && scaf.templates[key]) return scaf.templates[key];
+    return (window.ESSAY && window.ESSAY.slots && window.ESSAY.slots.templates && window.ESSAY.slots.templates[key]) || null;
+  }
   function esBagKey() { return ES.subject + "|" + ES.code; }
   const ES_DRAFT_CAP = 24; // keep a manageable set of saved essays; drop the oldest beyond this
   function esReadStore() { try { return JSON.parse(store.getItem(ES_KEY) || "{}") || {}; } catch (e) { return {}; } }
@@ -5562,6 +5746,16 @@ window.ESSAY = {
       demoNote: demoNote || ""
     };
   }
+  // The labelled demo fallback, made subject/model-aware: the "missing" slots are
+  // derived from THIS paragraph's actual slot set (two middle slots) so the ordered
+  // skeleton demo works for any scaffold, including Business Studies TEEEC/TDECC.
+  // Note and chips come from the shared demo sample (generic, clearly labelled).
+  function esDemoRaw(role) {
+    const base = (window.ESSAY && window.ESSAY.coachSample) || {};
+    const slots = slotsForRole(role);
+    const mid = slots.slice(1, 3).map(s => ({ slot: s.key }));
+    return Object.assign({}, base, { missing: mid.length ? mid : (base.missing || []) });
+  }
 
   function esOpen(opts) {
     opts = opts || {};
@@ -5618,8 +5812,27 @@ window.ESSAY = {
   }
   // ---------------------------------- SETUP ----------------------------------
   function esRenderSetup(host, sc) {
-    if (!ES.form) ES.form = { question: "", topic: "", rubric: "", structure: (window.ESSAY && window.ESSAY.defaultStructure) || "five", rubricOpen: false };
+    if (!ES.form) ES.form = { question: "", topic: "", rubric: "", structure: sc.defaultStructure, paraModel: (sc.paraModels[0] || null), rubricOpen: false };
     const f = ES.form;
+    // Optional subject picker: any login can load a subject's question bank and
+    // paragraph scaffold, defaulting to the subject routed from their class code.
+    const subjectList = esSubjectsList();
+    const subjectPicker = subjectList.length > 1 ? `
+      <div class="es-field">
+        <label class="es-label" for="essubject">Subject</label>
+        <select id="essubject" class="es-input es-select">${subjectList.map(s =>
+          `<option value="${esc(s.key)}" ${s.key === ES.subject ? "selected" : ""}>${esc(s.label)}</option>`).join("")}</select>
+      </div>` : "";
+    // Paragraph-structure picker (e.g. Business Studies TEEEC vs TDECC), only when
+    // the subject ships selectable scaffolds.
+    const scObj = esSubjectContent(ES.subject);
+    const modelPicker = sc.hasParaModels ? `
+      <div class="es-field">
+        <label class="es-label" for="esparamodel">Paragraph structure</label>
+        <select id="esparamodel" class="es-input es-select">${sc.paraModels.map(m =>
+          `<option value="${esc(m)}" ${m === f.paraModel ? "selected" : ""}>${esc(esParaModelLabel(m))}${(scObj.scaffolds[m] && scObj.scaffolds[m].expansion) ? " — " + esc(scObj.scaffolds[m].expansion) : ""}</option>`).join("")}</select>
+        <p class="es-help">Each body paragraph will be scaffolded to this structure.</p>
+      </div>` : "";
     // Suggested questions are subject-specific: show them ONLY when THIS subject ships
     // its own set. Otherwise hide the block cleanly (the student types their own).
     const qChips = sc.hasQuestions ? sc.questions.map(q =>
@@ -5658,6 +5871,7 @@ window.ESSAY = {
       </div>
       <h1 class="es-h1">Set up your essay</h1>
       <p class="es-lead">Only the question is needed. Everything else is optional and you can change all of it later.</p>
+      ${subjectPicker}
       ${resume}
       <div class="es-field">
         <label class="es-label" for="esq">Essay question <span class="es-req">needed</span></label>
@@ -5680,6 +5894,7 @@ window.ESSAY = {
         <label class="es-label" for="esstruct">Structure</label>
         <select id="esstruct" class="es-input es-select">${structOpts}</select>
       </div>
+      ${modelPicker}
       <div class="es-actions">
         <button class="es-btn primary" id="esstart">Start practising</button>
         <span class="es-foothint">You will write one paragraph at a time with a coach, or you can switch to a full timed attempt.</span>
@@ -5690,6 +5905,17 @@ window.ESSAY = {
     const tp = $("#estopic"); tp.oninput = () => { f.topic = tp.value; };
     const rb = $("#esrubric"); rb.oninput = () => { f.rubric = rb.value; };
     const stt = $("#esstruct"); stt.onchange = () => { f.structure = stt.value; };
+    const subjSel = $("#essubject");
+    if (subjSel) subjSel.onchange = () => {
+      ES.subject = subjSel.value;
+      const nv = esView();                       // new subject defaults
+      f.structure = nv.defaultStructure;
+      f.paraModel = nv.paraModels[0] || null;
+      esLoadList();                              // saved essays are per subject
+      esRender();
+    };
+    const pmSel = $("#esparamodel");
+    if (pmSel) pmSel.onchange = () => { f.paraModel = pmSel.value; };
     $("#esbandsref").onclick = () => {
       f.rubricOpen = !f.rubricOpen;
       const bands = document.querySelector("[data-bands]"); if (bands) bands.hidden = !f.rubricOpen;
@@ -5707,7 +5933,7 @@ window.ESSAY = {
     // (not the written text), prefilling setup so Start practising makes a fresh draft.
     host.querySelectorAll("[data-estemplate]").forEach(b => b.onclick = () => {
       const d = ES.list.find(x => x.id === b.dataset.estemplate);
-      if (d) { ES.form = { question: d.question || "", topic: d.topic || "", rubric: d.rubric || "", structure: d.structure || ((window.ESSAY && window.ESSAY.defaultStructure) || "five"), rubricOpen: false }; esRender(); const el = $("#esq"); if (el) el.focus(); }
+      if (d) { ES.form = { question: d.question || "", topic: d.topic || "", rubric: d.rubric || "", structure: d.structure || sc.defaultStructure, paraModel: d.paraModel || (sc.paraModels[0] || null), rubricOpen: false }; esRender(); const el = $("#esq"); if (el) el.focus(); }
     });
     // Delete a saved essay: remove from localStorage + list, then drop just this
     // row from the DOM (no full re-render, no flash). Section goes if it empties.
@@ -5723,7 +5949,8 @@ window.ESSAY = {
       ES.draft = {
         id: esId(), subject: ES.subject, code: ES.code,
         question, topic: (f.topic || "").trim(), rubric: (f.rubric || "").trim(),
-        structure: f.structure, paras: esBuildParas(f.structure, null),
+        structure: f.structure, paraModel: f.paraModel || undefined,
+        paras: esBuildParas(f.structure, null),
         mode: "coached", pos: 0, createdAt: new Date().toISOString()
       };
       esSaveDraft();
@@ -6165,7 +6392,7 @@ window.ESSAY = {
     host.querySelector(".es-completion").innerHTML = `
       <div class="es-submitted">
         <div class="es-submittedh">Saved. Your full attempt is kept as one draft.</div>
-        <p class="es-help">When marking is connected for ${esc(esSubjectContent(ES.subject).label)}, Submit will send this for a grade. Coaching and marking stay separate, so connecting one never changes the other.</p>
+        <p class="es-help">When marking is connected for ${esc(esSubjectLabel() || "your subject")}, Submit will send this for a grade. Coaching and marking stay separate, so connecting one never changes the other.</p>
         <button class="es-linkbtn" id="esbacksetup">Back to setup</button>
       </div>`;
     const b = $("#esbacksetup"); if (b) b.onclick = () => { ES.screen = "setup"; esRender(); };
@@ -6209,6 +6436,12 @@ window.ESSAY = {
           paragraph_text: submittedText, paragraph_role: p.role, planned_point: p.point || "",
           question: d.question, topic: d.topic || "",
           structure: esStructureLabel(d.structure), subject: ES.subject || undefined,
+          paragraph_model: d.paraModel || undefined,
+          // Tell the coach the exact slots expected for THIS paragraph (key + label +
+          // job). Lets the worker detect absent elements for any scaffold (TEEEC/
+          // TDECC included) without a per-subject worker change. Backward compatible:
+          // an older worker ignores it and falls back to its built-in slot keys.
+          slots: slotsForRole(p.role).map(s => ({ key: s.key, label: s.label, job: s.job })),
           code: state.code || undefined
         };
         if ((d.rubric || "").trim()) payload.rubric = d.rubric.trim(); // omit when skipped -> generic bands
@@ -6216,10 +6449,10 @@ window.ESSAY = {
         if (!res.ok) throw new Error("coach " + res.status);
         fb = esNormalizeCoach(await res.json(), "", p.role);
       } catch (e) {
-        fb = esNormalizeCoach(window.ESSAY.coachSample, "Could not reach coaching (" + e.message + "). Showing demo suggestions instead.", p.role);
+        fb = esNormalizeCoach(esDemoRaw(p.role), "Could not reach coaching (" + e.message + "). Showing demo suggestions instead.", p.role);
       }
     } else {
-      fb = esNormalizeCoach(window.ESSAY.coachSample, ES.demo
+      fb = esNormalizeCoach(esDemoRaw(p.role), ES.demo
         ? "Demo coaching. Real Haiku feedback switches on once the worker is re-pasted."
         : "Demo coaching. Real feedback switches on once your teacher connects coaching.", p.role);
     }
