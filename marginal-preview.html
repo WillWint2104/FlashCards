@@ -817,6 +817,69 @@
   .es-exph{font-size:11px;color:var(--ink-2);font-weight:600;line-height:1.45;background:#FBFBFB;border:1px dashed var(--line);border-radius:8px;padding:5px 8px;margin:0 0 7px}
   .es-extext{font-size:13px;color:var(--ink);font-weight:600;line-height:1.6}
   @media(max-width:760px){.es-coachcols{flex-direction:column}.es-margin{flex:1 1 auto;max-width:none;position:static}}
+  /* ---- Practice exam (past paper) mode ---- */
+  .exam-list{margin:18px 0 6px}
+  .exam-listh{font-family:var(--disp);font-weight:700;font-size:14px;color:var(--ink-2);margin:0 0 8px}
+  .exam-hint{margin:14px 0 0;font-size:13px;color:var(--ink-2);font-weight:600}
+  .exam-empty{margin:18px 0;border:1.5px dashed var(--line);border-radius:14px;padding:22px;background:#FAFCFC;text-align:center}
+  .exam-empty p{color:var(--ink-2);line-height:1.6;margin:0 auto 12px;max-width:52ch}
+  .exam-emptyh{font-family:var(--disp);font-weight:700;font-size:16px;color:var(--ink)}
+  .exam-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border:1.5px solid var(--line);border-left:4px solid var(--green);border-radius:12px;padding:11px 14px;margin-bottom:9px;background:#fff}
+  .exam-rowmain{display:flex;flex-direction:column;gap:2px;min-width:180px}
+  .exam-rowname{font-weight:700;color:var(--ink)}
+  .exam-rowmeta{font-size:12.5px;color:var(--ink-3);font-weight:600}
+  .exam-rowacts{display:flex;gap:8px}
+  .exam-bar{display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid var(--line);margin-bottom:14px}
+  .exam-bar .x{background:none;border:none;font-size:20px;cursor:pointer;color:var(--ink-2);line-height:1}
+  .exam-bar .lbl{font-weight:700;color:var(--ink)}
+  .exam-progress{margin-left:auto;font-size:12.5px;color:var(--ink-3);font-weight:700}
+  .exam-wrap{max-width:760px;margin:0 auto}
+  .exam-sectionintro{border:1.5px solid var(--line);border-radius:16px;padding:22px;background:#fff;text-align:center}
+  .exam-sec{font-family:var(--disp);font-weight:800;font-size:18px;color:var(--green-dk);margin-bottom:6px}
+  .exam-sec.small{font-size:12.5px;color:var(--ink-3);text-align:left;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px}
+  .exam-instr{color:var(--ink-2);font-weight:600;line-height:1.5;margin:0 0 6px}
+  .exam-meta{font-size:12.5px;color:var(--ink-3);font-weight:700;margin:0 0 14px}
+  .exam-q{border:1.5px solid var(--line);border-radius:16px;padding:20px;background:#fff}
+  .exam-qhead{font-family:var(--disp);font-weight:700;font-size:12.5px;color:var(--ink-3);margin-bottom:10px}
+  .exam-prompt{font-size:17px;font-weight:600;color:var(--ink);line-height:1.5;margin-bottom:14px}
+  .exam-source{border:1.5px solid var(--line);border-radius:12px;background:#FAFCFC;padding:12px 14px;margin-bottom:14px}
+  .exam-srclbl{font-family:var(--disp);font-weight:700;font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+  .exam-srcbody{font-size:14px;color:var(--ink);line-height:1.6}
+  .exam-srccap{font-weight:700;margin:0 0 6px}
+  .exam-srcimg{max-width:100%;border-radius:8px;margin-top:6px}
+  .exam-srcimg{cursor:zoom-in}
+  .exam-lightbox{position:fixed;inset:0;z-index:9999;background:rgba(20,28,28,.92);display:flex;align-items:center;justify-content:center;padding:24px;cursor:zoom-out}
+  .exam-lightbox img{max-width:100%;max-height:100%;background:#fff;border-radius:8px;padding:10px}
+  .exam-lbclose{position:absolute;top:16px;right:18px;font:inherit;font-weight:700;font-size:13px;color:#fff;background:rgba(255,255,255,.16);border:1.5px solid rgba(255,255,255,.5);border-radius:99px;padding:6px 14px;cursor:pointer}
+  .exam-choices{display:flex;flex-direction:column;gap:10px;margin-top:6px;text-align:left}
+  .exam-choice{display:flex;flex-direction:column;gap:4px;font:inherit;text-align:left;border:1.5px solid var(--line);border-left:4px solid var(--green);border-radius:12px;padding:12px 14px;background:#fff;cursor:pointer}
+  .exam-choice:hover{border-color:var(--green);background:#FAFCFC}
+  .exam-choicelbl{font-family:var(--disp);font-weight:800;font-size:12.5px;color:var(--green-dk);text-transform:uppercase;letter-spacing:.4px}
+  .exam-choicetext{font-size:14.5px;color:var(--ink);font-weight:600;line-height:1.5}
+  .exam-picks{display:flex;flex-direction:column;gap:8px;margin:6px 0 14px}
+  .exam-pick{display:flex;gap:11px;align-items:flex-start;border:1.5px solid var(--line);border-radius:11px;padding:11px 13px;background:#fff;cursor:pointer}
+  .exam-pick:hover{border-color:var(--green)}
+  .exam-pick input{margin-top:3px;width:17px;height:17px;accent-color:var(--green);cursor:pointer;flex:none}
+  .exam-pick:has(input:checked){border-color:var(--green);background:#FAFCFC}
+  .exam-pickmain{display:flex;flex-direction:column;gap:2px}
+  .exam-pickname{font-weight:700;color:var(--ink);font-size:14px}
+  .exam-pickmeta{font-size:12.5px;color:var(--ink-3);font-weight:600}
+  .exam-pickrow{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px}
+  .exam-pickbtns{display:flex;gap:8px;flex-wrap:wrap}
+  .exam-acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .exam-points{display:flex;flex-direction:column;gap:8px;margin:4px 0 10px}
+  .exam-pt{display:flex;gap:9px;align-items:flex-start;font-size:14px;line-height:1.5}
+  .exam-pt .exam-ptmark{font-weight:800;flex:none;width:18px;text-align:center}
+  .exam-pt.hit .exam-ptmark{color:var(--green)}
+  .exam-pt.miss .exam-ptmark{color:var(--coral,#d1495b)}
+  .exam-pt.hit .exam-ptbody{color:var(--ink-2)}
+  .exam-pt.miss .exam-ptbody{color:var(--ink);font-weight:600}
+  .exam-pthint{display:block;font-size:12.5px;color:var(--ink-3);font-weight:500;margin-top:2px}
+  .exam-results{margin:14px 0;text-align:left}
+  .exam-ressec{border:1.5px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:10px;background:#fff}
+  .exam-ressech{font-family:var(--disp);font-weight:700;color:var(--green-dk);display:flex;justify-content:space-between;margin-bottom:6px}
+  .exam-resq{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--ink-2);padding:3px 0}
+  .exam-resm{font-weight:800;color:var(--ink);white-space:nowrap}
 </style>
 </head>
 <body>
@@ -3319,10 +3382,11 @@ window.ESSAY = {
   const state = load();
   function load() {
     try { return JSON.parse(store.getItem(LS_KEY)) || blank(); } catch { return blank(); }
-    function blank() { return { cards: {}, endpoint: "", code: "", log: [], customSets: [], lessons: {} }; }
+    function blank() { return { cards: {}, endpoint: "", code: "", log: [], customSets: [], lessons: {}, exams: [] }; }
   }
   state.customSets = state.customSets || [];
   state.lessons = state.lessons || {};
+  state.exams = state.exams || [];  // imported practice-exam papers (marginal-exam@1)
   // Teacher's TEACHER SETUP config is the source of truth for the endpoint —
   // students have no field to edit it, so always sync from CONFIG (this also
   // clears any endpoint a returning user has stale in localStorage).
@@ -3486,7 +3550,7 @@ window.ESSAY = {
     const payload = {
       format: BACKUP_FORMAT, exported: new Date().toISOString(),
       subject: C.subject || "",
-      data: { cards: state.cards, lessons: state.lessons, log: state.log, customSets: state.customSets }
+      data: { cards: state.cards, lessons: state.lessons, log: state.log, customSets: state.customSets, exams: state.exams }
     };
     const stamp = new Date().toISOString().slice(0, 10);
     download("marginal-backup-" + stamp + ".json", JSON.stringify(payload, null, 2));
@@ -3510,6 +3574,10 @@ window.ESSAY = {
       let added = 0;
       d.customSets.forEach(s => { if (!names.has(s.name)) { state.customSets.push(s); added++; } });
       mergeCustomGlossaries();
+    }
+    if (Array.isArray(d.exams)) {
+      const ids = new Set((state.exams || []).map(x => x.id));
+      d.exams.forEach(p => { if (!ids.has(p.id)) state.exams.push(p); });
     }
     if (Array.isArray(d.log)) state.log = state.log.concat(d.log);
     save();
@@ -3716,6 +3784,7 @@ window.ESSAY = {
     return `<div class="nav">
       <button class="navtab ${view === "study" ? "on" : ""}" data-v="study">Study</button>
       <button class="navtab ${view === "create" ? "on" : ""}" data-v="create">Create</button>
+      <button class="navtab ${view === "test" ? "on" : ""}" data-v="test">Test mode</button>
       ${essayEnabled() ? `<button class="navtab" data-v="essay">Essay practice</button>` : ""}
     </div>`;
   }
@@ -3726,6 +3795,9 @@ window.ESSAY = {
       // on the student's own question, so it is available to any login while the flag
       // is on. It never changes the underlying Study/Create view.
       if (v === "essay") { esOpen({}); return; }
+      // Test mode is a real view (full screen), not an overlay: it lists the
+      // practice exams a teacher has imported and is where a paper is sat.
+      if (v === "test") { view = "test"; examHome(); return; }
       view = v; view === "study" ? home() : builder();
     });
   }
@@ -3760,6 +3832,7 @@ window.ESSAY = {
           </button>`;
         }).join("")}
       </div>
+      ${examList().length ? `<p class="exam-hint">You have ${examList().length} practice exam${examList().length === 1 ? "" : "s"} ready. Open <b>Test mode</b> to sit one.</p>` : ""}
       <div id="setsmgrwrap">${setsManagerHTML()}</div>
       <div class="settings">
         <details>
@@ -4940,6 +5013,383 @@ window.ESSAY = {
     $("#back").onclick = home;
   }
 
+  // ============================ PRACTICE EXAM (past paper) ============================
+  // A whole paper imported as marginal-exam@1: ordered SECTIONS of mixed-type
+  // questions (multiple choice, calculation, short/interpret-the-source, extended
+  // response). The student sits it end to end in GUIDED mode: each question is
+  // graded on submit, with feedback and a "try again" before continuing. Reuses the
+  // existing graders (gradeMC/gradeCalc/gradeLocal/gradeEssay), answer inputs and the
+  // essay review overlay. Short answers get line-by-line marking-POINTS feedback
+  // (which of the mark-worthy points were addressed), plus an optional deeper AI
+  // sentence review when marking is connected.
+  const EXAM_FORMAT = "marginal-exam@1";
+  const EXAM = { paper: null, sit: null, seq: [], pos: 0, results: {}, answers: {}, choice: {} };
+  // A section with `choose: 1` is an either/or (e.g. HSC Section IV: attempt
+  // Question 26 OR Question 27). The student picks at the section intro; only the
+  // chosen question is sequenced, counted in the totals and shown in the results.
+  function examChooseCount(sec) { const n = Number(sec && sec.choose) || 0; return n > 0 ? n : 0; }
+  function examIsActive(si, qi) {
+    const sec = EXAM.paper.sections[si];
+    if (!examChooseCount(sec)) return true;
+    const c = EXAM.choice[si];
+    return c === undefined ? false : c === qi;
+  }
+
+  function examList() { return state.exams || []; }
+  function examCounts(p) {
+    // An either/or section contributes only the questions a student will actually
+    // attempt, so the listed totals match the paper's real marks.
+    let qs = 0, mk = 0;
+    (p.sections || []).forEach(s => {
+      const list = s.questions || [];
+      const pick = Number(s.choose) || 0;
+      const counted = pick > 0 ? list.slice(0, pick) : list;
+      qs += counted.length;
+      mk += counted.reduce((m, q) => m + (q.marks || 0), 0);
+    });
+    return { qs, mk };
+  }
+  // Test mode: the front-page entry to practice exams. Lists every imported paper
+  // and is where a paper is sat. Empty until a paper is imported, with a clear
+  // pointer to the Create tab (papers are teacher-imported, not built in).
+  function examHome() {
+    if (gated()) return authScreen();
+    view = "test"; session = null; currentTopic = null;
+    const papers = examList();
+    app.innerHTML = `
+      ${nav()}
+      ${cloudBarHTML()}
+      <div class="hi">Test mode</div>
+      <div class="hi-s">Sit a full practice exam, guided. You get feedback after every question and a mark breakdown at the end.</div>
+      ${papers.length ? `<div class="exam-list">
+        ${papers.map(p => {
+          const c = examCounts(p);
+          return `<div class="exam-row">
+            <div class="exam-rowmain"><span class="exam-rowname">📝 ${esc(p.name)}</span>
+              <span class="exam-rowmeta">${esc(p.subject || "")}${p.subject ? " · " : ""}${c.qs} question${c.qs === 1 ? "" : "s"} · ${c.mk} mark${c.mk === 1 ? "" : "s"}${p.time ? " · " + esc(p.time) : ""}</span></div>
+            <div class="exam-rowacts"><button class="btn sm" data-examsit="${esc(p.id)}">Sit this paper</button>
+              <button class="btn sm ghost danger" data-examdel="${esc(p.id)}">Delete</button></div>
+          </div>`;
+        }).join("")}
+      </div>` : `<div class="exam-empty">
+        <p class="exam-emptyh">No practice exams yet</p>
+        <p>Practice exams are imported, not built in. Paste a paper's JSON in the Create tab and it will appear here, ready to sit.</p>
+        <button class="btn sm" id="examgocreate">Go to Create to import one</button>
+      </div>`}`;
+    wireNav();
+    wireCloudBar();
+    app.querySelectorAll("[data-examsit]").forEach(b => b.onclick = () => examStartById(b.dataset.examsit));
+    app.querySelectorAll("[data-examdel]").forEach(b => b.onclick = () => {
+      if (!confirm("Delete this practice exam?")) return;
+      state.exams = (state.exams || []).filter(x => x.id !== b.dataset.examdel); save(); examHome();
+    });
+    const gc = $("#examgocreate"); if (gc) gc.onclick = () => { view = "create"; builder(); };
+  }
+
+  function validateExam(d) {
+    const e = [];
+    if (!d || typeof d !== "object") return ["Not an exam object."];
+    if (!Array.isArray(d.sections) || !d.sections.length) return ["The exam has no sections array."];
+    let qn = 0;
+    d.sections.forEach((s, si) => {
+      if (!Array.isArray(s.questions) || !s.questions.length) { e.push("Section " + (si + 1) + " has no questions."); return; }
+      s.questions.forEach((q, qi) => {
+        const at = "S" + (si + 1) + "Q" + (qi + 1) + ": "; qn++;
+        if (!q.prompt) e.push(at + "missing prompt.");
+        if (!q.marks || q.marks < 1) e.push(at + "missing marks.");
+        if (!["mc", "calc", "short", "define", "essay"].includes(q.type)) e.push(at + "unknown type '" + q.type + "'.");
+        if (q.type === "mc") {
+          if (!Array.isArray(q.choices) || q.choices.length < 2) e.push(at + "MC needs 2+ choices.");
+          else if (q.choices.filter(c => c.ok).length !== 1) e.push(at + "MC needs exactly one correct choice.");
+        }
+        if (q.type === "calc" && typeof q.expected !== "number") e.push(at + "calc needs a numeric 'expected'.");
+        if (["short", "define", "essay"].includes(q.type) && !q.model && !(Array.isArray(q.points) && q.points.length))
+          e.push(at + "needs a model answer or a points rubric.");
+      });
+    });
+    if (!qn) e.push("The exam has no questions.");
+    return e;
+  }
+  function importExamFromBox(data, msg) {
+    const errs = validateExam(data);
+    if (errs.length) return msg.textContent = errs[0];
+    const paper = { id: "exam-" + Date.now(), name: data.name || "Practice exam", subject: data.subject || "",
+      time: data.time || "", instructions: data.instructions || "", sections: data.sections };
+    state.exams.push(paper); save();
+    msg.textContent = "Imported ✓ — open Test mode to sit it.";
+    builder();
+  }
+  function examStartById(id) { const p = examList().find(x => x.id === id); if (p) examPick(p); }
+  // Sit the whole paper, or just the sections chosen on the picker. `picks` is an
+  // array of section indexes; omitting it sits everything.
+  function examStart(paper, picks) {
+    const all = (paper.sections || []).map((_, i) => i);
+    const sit = (Array.isArray(picks) && picks.length) ? all.filter(i => picks.indexOf(i) >= 0) : all;
+    const seq = [];
+    (paper.sections || []).forEach((sec, si) => {
+      if (sit.indexOf(si) < 0) return;                 // not sitting this section
+      seq.push({ kind: "section", si, sec });
+      (sec.questions || []).forEach((q, qi) => seq.push({ kind: "q", si, qi, sec, q }));
+    });
+    seq.push({ kind: "end" });
+    EXAM.paper = paper; EXAM.sit = sit; EXAM.seq = seq; EXAM.pos = 0; EXAM.results = {}; EXAM.answers = {}; EXAM.choice = {};
+    examRender();
+  }
+  // The picker: sit the whole paper or any combination of its sections, so a student
+  // can drill just multiple choice, just short answer, or just the extended response.
+  function examPick(paper) {
+    const secs = paper.sections || [];
+    const counts = secs.map(sec => {
+      const pick = examChooseCount(sec), list = sec.questions || [];
+      const counted = pick > 0 ? list.slice(0, pick) : list;
+      return { qs: counted.length, mk: counted.reduce((n, q) => n + (q.marks || 0), 0) };
+    });
+    const tot = counts.reduce((a, c) => ({ qs: a.qs + c.qs, mk: a.mk + c.mk }), { qs: 0, mk: 0 });
+    app.innerHTML = `
+      <div class="exam-bar"><button class="x" id="exampickquit" title="Back">←</button>
+        <span class="lbl">${esc(paper.name)}</span></div>
+      <div class="exam-wrap"><div class="exam-sectionintro" style="text-align:left">
+        <div class="exam-sec">What do you want to sit?</div>
+        <p class="exam-instr">Sit the whole paper, or tick just the sections you want to practise.</p>
+        <div class="exam-picks">
+          ${secs.map((sec, i) => `<label class="exam-pick"><input type="checkbox" data-exampick="${i}" checked>
+            <span class="exam-pickmain"><span class="exam-pickname">${esc(sec.name || ("Section " + (i + 1)))}</span>
+            <span class="exam-pickmeta">${counts[i].qs} question${counts[i].qs === 1 ? "" : "s"} · ${counts[i].mk} mark${counts[i].mk === 1 ? "" : "s"}</span></span></label>`).join("")}
+        </div>
+        <div class="exam-pickrow">
+          <span class="es-help" id="exampicksum">${tot.qs} questions · ${tot.mk} marks</span>
+          <span class="exam-pickbtns">
+            <button class="btn ghost sm" id="exampickall">Select all</button>
+            <button class="btn ghost sm" id="exampicknone">Clear</button>
+            <button class="btn" id="exampickgo">Start</button>
+          </span>
+        </div>
+      </div></div>`;
+    const boxes = () => Array.from(app.querySelectorAll("[data-exampick]"));
+    const chosen = () => boxes().filter(b => b.checked).map(b => Number(b.dataset.exampick));
+    const sync = () => {
+      const c = chosen();
+      const qs = c.reduce((n, i) => n + counts[i].qs, 0), mk = c.reduce((n, i) => n + counts[i].mk, 0);
+      $("#exampicksum").textContent = c.length ? `${qs} question${qs === 1 ? "" : "s"} · ${mk} mark${mk === 1 ? "" : "s"}` : "nothing selected";
+      $("#exampickgo").disabled = !c.length;
+    };
+    boxes().forEach(b => b.onchange = sync);
+    $("#exampickall").onclick = () => { boxes().forEach(b => b.checked = true); sync(); };
+    $("#exampicknone").onclick = () => { boxes().forEach(b => b.checked = false); sync(); };
+    $("#exampickquit").onclick = examHome;
+    $("#exampickgo").onclick = () => examStart(paper, chosen());
+    sync();
+  }
+  function examTotals() {
+    // Count only ACTIVE questions. In an either/or section that is the chosen
+    // question; before the choice is made, count the first option as representative
+    // so the paper's mark total is right from the start.
+    const qs = EXAM.seq.filter(x => {
+      if (x.kind !== "q") return false;
+      const sec = EXAM.paper.sections[x.si];
+      if (!examChooseCount(sec)) return true;
+      const c = EXAM.choice[x.si];
+      return c === undefined ? x.qi < examChooseCount(sec) : c === x.qi;
+    });
+    const total = qs.length;
+    const maxMarks = qs.reduce((n, x) => n + (x.q.marks || 0), 0);
+    const done = Object.keys(EXAM.results).length;
+    const got = Object.values(EXAM.results).reduce((n, g) => n + g.score, 0);
+    return { total, maxMarks, done, got };
+  }
+  function examBar() {
+    const t = examTotals();
+    return `<div class="exam-bar"><button class="x" id="examquit" title="Leave this paper">←</button>
+      <span class="lbl">${esc(EXAM.paper.name)}</span>
+      <span class="exam-progress">${t.done}/${t.total} answered · ${t.got}/${t.maxMarks} marks</span></div>`;
+  }
+  function examQuit() { if (confirm("Leave this paper? Your progress on this attempt is not saved.")) examHome(); }
+  // Render a source/stimulus block (shared section source or per-question stimulus).
+  // Accepts a plain string, or an object with caption/text/img/charts.
+  function examSourceHTML(src, label) {
+    if (!src) return "";
+    let inner = "";
+    if (typeof src === "string") inner = `<p>${esc(src)}</p>`;
+    else {
+      if (src.caption) inner += `<p class="exam-srccap">${esc(src.caption)}</p>`;
+      if (src.text) inner += `<p>${esc(src.text)}</p>`;
+      if (src.img) inner += `<img class="exam-srcimg" src="${esc(src.img)}" alt="${esc(src.caption || "source")}" title="Tap to enlarge">`;
+      if (Array.isArray(src.charts)) inner += src.charts.map((c, i) => rvChartHTML(c, i)).join("");
+    }
+    return `<div class="exam-source"><div class="exam-srclbl">${esc(label)}</div><div class="exam-srcbody">${inner}</div></div>`;
+  }
+  // Data displays (graphs, tables, Gantt charts) are rendered as images and scale to
+  // the column, which can make small print hard to read. Tapping one opens it full
+  // screen so a student can actually read the figures they are answering on.
+  function examWireLightbox() {
+    app.querySelectorAll(".exam-srcimg").forEach(img => img.onclick = () => {
+      const box = document.createElement("div");
+      box.className = "exam-lightbox";
+      box.innerHTML = `<img src="${img.getAttribute("src")}" alt="${esc(img.getAttribute("alt") || "source")}"><button class="exam-lbclose" aria-label="Close">close</button>`;
+      const shut = () => box.remove();
+      box.onclick = shut;
+      document.body.appendChild(box);
+      document.addEventListener("keydown", function esc2(e) { if (e.key === "Escape") { shut(); document.removeEventListener("keydown", esc2); } });
+    });
+  }
+  function examRender() {
+    const item = EXAM.seq[EXAM.pos];
+    if (!item || item.kind === "end") return examResults();
+    // Skip the questions a student did not choose in an either/or section.
+    if (item.kind === "q" && !examIsActive(item.si, item.qi)) { EXAM.pos++; return examRender(); }
+    if (item.kind === "section") return examRenderSection(item);
+    return examRenderQuestion(item);
+  }
+  function examRenderSection(item) {
+    const sec = item.sec;
+    const pick = examChooseCount(sec);
+    const qs = sec.questions || [];
+    const qn = qs.length;
+    const mk = pick ? (qs[0] ? qs[0].marks || 0 : 0) : qs.reduce((n, q) => n + (q.marks || 0), 0);
+    // Either/or: the student picks which question to attempt before starting.
+    const body = pick
+      ? `<p class="exam-meta">${mk} mark${mk === 1 ? "" : "s"} · choose ${pick} of ${qn}</p>
+         ${sec.source ? examSourceHTML(sec.source, "Source material") : ""}
+         <div class="exam-choices">${qs.map((q, qi) =>
+           `<button class="exam-choice" data-examchoose="${qi}"><span class="exam-choicelbl">${esc(q.label || ("Question " + (qi + 1)))}</span><span class="exam-choicetext">${esc(q.prompt)}</span></button>`).join("")}</div>`
+      : `<p class="exam-meta">${qn} question${qn === 1 ? "" : "s"} · ${mk} mark${mk === 1 ? "" : "s"}</p>
+         ${sec.source ? examSourceHTML(sec.source, "Source material") : ""}
+         <button class="btn" id="exambegin">Begin ${esc(sec.name || "section")}</button>`;
+    app.innerHTML = `${examBar()}
+      <div class="exam-wrap"><div class="exam-sectionintro">
+        <div class="exam-sec">${esc(sec.name || "Section")}</div>
+        ${sec.instructions ? `<p class="exam-instr">${esc(sec.instructions)}</p>` : ""}
+        ${body}
+      </div></div>`;
+    $("#examquit").onclick = examQuit;
+    const bg = $("#exambegin"); if (bg) bg.onclick = () => { EXAM.pos++; examRender(); };
+    app.querySelectorAll("[data-examchoose]").forEach(b => b.onclick = () => {
+      EXAM.choice[item.si] = Number(b.dataset.examchoose); EXAM.pos++; examRender();
+    });
+    wireStimulus(sec.source); wireGlossary(); examWireLightbox();
+  }
+  function examRenderQuestion(item) {
+    const { q, sec, si, qi } = item;
+    const key = si + "-" + qi;
+    const t = examTotals();
+    const num = EXAM.seq.slice(0, EXAM.pos + 1).filter(x => x.kind === "q").length;
+    app.innerHTML = `${examBar()}
+      <div class="exam-wrap"><div class="exam-q">
+        <div class="exam-sec small">${esc(sec.name || "")}</div>
+        ${sec.source ? examSourceHTML(sec.source, "Source material") : ""}
+        <div class="exam-qhead">Question ${num} of ${t.total} · ${q.marks} mark${q.marks === 1 ? "" : "s"}</div>
+        ${q.stimulus ? examSourceHTML(q.stimulus, "Source") : ""}
+        <div class="exam-prompt">${linkGlossary(q.prompt)}</div>
+        <div id="answerzone">${answerInput(q)}</div>
+        ${submitRow(q)}
+        <div id="sheet"></div>
+      </div></div>`;
+    const prev = EXAM.answers[key];
+    if (prev && $("#ans")) $("#ans").value = prev;
+    $("#examquit").onclick = examQuit;
+    examWireAnswer(item, key);
+    wireStimulus(sec.source); wireStimulus(q.stimulus); wireGlossary(); examWireLightbox();
+  }
+  function examWireAnswer(item, key) {
+    const q = item.q;
+    if (q.type === "mc") {
+      app.querySelectorAll(".choice").forEach(b => b.onclick = () => {
+        app.querySelectorAll(".choice").forEach(x => x.onclick = null);
+        const g = gradeMC(q, +b.dataset.i);
+        b.classList.add(g.correct ? "right" : "wrong");
+        EXAM.answers[key] = q.choices[+b.dataset.i].t; EXAM.results[key] = g;
+        examSheet(item, key, g);
+      });
+      return;
+    }
+    const ch = $("#check");
+    if (ch) ch.onclick = async () => {
+      const ans = ($("#ans") && $("#ans").value || "").trim();
+      if (!ans) { toast("Write your answer first."); return; }
+      EXAM.answers[key] = ans; ch.disabled = true; ch.textContent = "Checking…";
+      let g;
+      if (q.type === "calc") g = gradeCalc(q, ans);
+      else if (q.type === "essay") g = await gradeEssay(q, ans);
+      else g = (Array.isArray(q.points) && q.points.length) ? gradePoints(q, ans) : gradeLocal(q, ans);
+      EXAM.results[key] = g;
+      examSheet(item, key, g);
+    };
+  }
+  // Marking-POINTS grading for short answers: one mark per point addressed. A point
+  // is "hit" when the answer contains any of its accepted phrasings (need[]), else
+  // the point's own text. Deterministic, offline, and shows exactly what was missed.
+  function gradePoints(q, answer) {
+    const a = norm(answer);
+    const pts = (q.points || []).map(pt => {
+      const need = (Array.isArray(pt.need) && pt.need.length) ? pt.need : [pt.text];
+      const hit = need.some(al => a.includes(norm(al)));
+      return { text: pt.text, hit, hint: pt.hint || "", marks: pt.marks || 1 };
+    });
+    const raw = pts.filter(p => p.hit).reduce((n, p) => n + p.marks, 0);
+    return { score: Math.min(raw, q.marks), max: q.marks, kind: "points", points: pts, model: q.model || "" };
+  }
+  function examSheetHTML(q, g) {
+    const ratio = g.max ? g.score / g.max : 0;
+    const mood = ratio >= 0.95 ? ["great", "Full marks"] : ratio >= 0.6 ? ["good", "Most of it"] : ratio >= 0.3 ? ["mid", "Partly there"] : ["low", "Not yet"];
+    let body = "";
+    if (g.kind === "mc") body = `<p><b>${g.correct ? "Correct." : "Not this one."}</b> ${esc(g.why)}</p>${g.correct ? "" : `<p>Answer: <b>${esc(g.answerText)}</b></p>`}`;
+    else if (g.kind === "calc") body = `<p>${g.correct ? "Correct." : "Expected <b>" + esc(g.model) + "</b>."}</p>${g.working ? `<p class="working"><b>Working:</b> ${esc(g.working)}</p>` : ""}`;
+    else if (g.kind === "points") body = `<div class="exam-points">${g.points.map(pt =>
+        `<div class="exam-pt ${pt.hit ? "hit" : "miss"}"><span class="exam-ptmark">${pt.hit ? "✓" : "✗"}</span><span class="exam-ptbody">${esc(pt.text)}${(!pt.hit && pt.hint) ? `<span class="exam-pthint">${esc(pt.hint)}</span>` : ""}</span></div>`).join("")}</div>${g.model ? `<details ${ratio < 0.7 ? "open" : ""}><summary>Model answer</summary><p>${linkGlossary(g.model)}</p></details>` : ""}`;
+    else if (g.kind === "local") body = `${(g.matched.length || g.missing.length) ? `<div class="chips">${g.matched.map(t => `<span class="chip">${esc(t)} ✓</span>`).join("")}${g.missing.map(t => `<span class="chip todo" data-term="${esc(t)}">${esc(t)}</span>`).join("")}</div>` : ""}<details ${ratio < 0.7 ? "open" : ""}><summary>Model answer</summary><p>${linkGlossary(g.model)}</p></details>`;
+    else { const fb = g.fb || {}; body = `${fb.overall ? `<p>${esc(fb.overall.summary || "")}</p>` : ""}${(fb.criteria || []).map(c => `<div class="crit ${c.status}"><span class="dot"></span><b>${esc(c.name)}:</b> ${esc(c.comment || c.status)}</div>`).join("")}${(fb.missing_vocabulary || []).length ? `<div class="chips">${fb.missing_vocabulary.map(t => `<span class="chip todo">${esc(t)}</span>`).join("")}</div>` : ""}${q.model ? `<details><summary>What a top answer covers</summary><p>${linkGlossary(q.model)}</p></details>` : ""}`; }
+    return `<div class="sheet ${mood[0]}"><div class="head"><div class="score">${g.score}<small>/${g.max}</small></div><h3>${mood[1]}</h3></div><div class="bd">${body}</div></div>`;
+  }
+  function examSheet(item, key, g) {
+    const last = !EXAM.seq.slice(EXAM.pos + 1).some(x => x.kind === "q");
+    const hasEssayReview = g.fb && Array.isArray(g.fb.paragraphs) && g.fb.paragraphs.length > 0;
+    const deepable = !hasEssayReview && ["points", "local"].includes(g.kind) && !!state.endpoint;
+    const reviewBtn = hasEssayReview ? `<button class="btn" id="examreview">Work through the issues (${rvIssueCount(g.fb)}) →</button>`
+      : deepable ? `<button class="btn ghost" id="examreview">Deeper AI review →</button>` : "";
+    $("#sheet").innerHTML = examSheetHTML(item.q, g) +
+      `<div class="exam-acts"><button class="btn ghost" id="examretry">Try again</button>${reviewBtn}<button class="btn" id="examnext">${last ? "Finish paper" : "Continue"}</button></div>`;
+    $("#examretry").onclick = () => examRender();
+    $("#examnext").onclick = () => { EXAM.pos++; examRender(); };
+    const rb = $("#examreview");
+    if (rb) rb.onclick = () => { if (hasEssayReview) openReview(g.fb, () => examRender()); else examDeepReview(item, key); };
+    const sh = $("#sheet"); if (sh && sh.scrollIntoView) sh.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    wireGlossary();
+  }
+  async function examDeepReview(item, key) {
+    const ans = EXAM.answers[key] || "";
+    toast("Asking for a sentence-level review…");
+    const g = await gradeEssay(item.q, ans);
+    if (g.fb && Array.isArray(g.fb.paragraphs) && g.fb.paragraphs.length) {
+      EXAM.results[key] = Object.assign({}, EXAM.results[key], { fb: g.fb });
+      openReview(g.fb, () => examRender());
+    } else toast("Sentence-level review needs AI marking connected.");
+  }
+  function examResults() {
+    let got = 0, max = 0;
+    const sit = EXAM.sit || (EXAM.paper.sections || []).map((_, i) => i);
+    const rows = (EXAM.paper.sections || []).map((sec, si) => {
+      if (sit.indexOf(si) < 0) return "";               // not sat this time
+      let sg = 0, sm = 0;
+      const qs = (sec.questions || []).map((q, qi) => {
+        if (!examIsActive(si, qi)) return "";           // not chosen in an either/or section
+        const g = EXAM.results[si + "-" + qi]; const s = g ? g.score : 0; sg += s; sm += q.marks || 0;
+        return `<div class="exam-resq"><span>${esc(q.prompt.slice(0, 70))}${q.prompt.length > 70 ? "…" : ""}</span><span class="exam-resm">${s}/${q.marks || 0}</span></div>`;
+      }).join("");
+      got += sg; max += sm;
+      return `<div class="exam-ressec"><div class="exam-ressech">${esc(sec.name || "Section")} <span class="exam-resm">${sg}/${sm}</span></div>${qs}</div>`;
+    }).join("");
+    app.innerHTML = `${examBar()}<div class="exam-wrap"><div class="summary">
+      <div class="bigscore">${got}<small>/${max}</small></div>
+      <h2>${esc(EXAM.paper.name)}</h2>
+      <p>Paper complete. Your marks by section are below.</p>
+      <div class="exam-results">${rows}</div>
+      <div class="row center"><button class="btn" id="examretake">Retake paper</button><button class="btn ghost" id="exambackhome">Back to Test mode</button></div>
+    </div></div>`;
+    $("#examquit").onclick = examHome;
+    $("#examretake").onclick = () => examStart(EXAM.paper, EXAM.sit);
+    $("#exambackhome").onclick = examHome;
+  }
+
   // ===================== CREATE (set builder + JSON import/export) =====================
   let draft = null; // { name, cards: [] }
 
@@ -4998,8 +5448,8 @@ window.ESSAY = {
       </div>
 
       <div class="bcard">
-        <h3 class="bh">Import a set</h3>
-        <p class="bhint">Paste a set's JSON below (or the contents of an exported file) and load it as a studyable area.</p>
+        <h3 class="bh">Import a set or a practice exam</h3>
+        <p class="bhint">Paste a set's JSON to load it as a studyable area, or a whole practice exam (<code>marginal-exam@1</code>) to sit as a guided past paper on your Study map.</p>
         <textarea id="importjson" class="binput mono" rows="4" placeholder='{"format":"${SET_FORMAT}","name":"…","cards":[…]}'></textarea>
         <div class="row"><button class="btn sm" id="doimport">Import set</button><span class="hint" id="importmsg"></span></div>
         ${state.customSets.length ? `<div class="setlist">${state.customSets.map(s =>
@@ -5212,6 +5662,7 @@ window.ESSAY = {
     let data;
     try { data = JSON.parse($("#importjson").value); }
     catch { return msg.textContent = "That isn't valid JSON."; }
+    if (data && data.format === EXAM_FORMAT) return importExamFromBox(data, msg); // a whole paper, not a flat set
     data = normalizeImport(data);
     const errs = validateSet(data);
     if (errs.length) return msg.textContent = errs[0];
