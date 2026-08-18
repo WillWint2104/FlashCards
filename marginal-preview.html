@@ -849,6 +849,23 @@
   .es-hintevf{font-size:12.5px;color:var(--ink);line-height:1.55;margin:0 0 5px}
   .es-hintevu{font-size:12px;color:var(--ink-2);line-height:1.5;margin:0}
   @media(max-width:760px){.es-hintpanel{right:12px;left:12px;width:auto;bottom:66px}.es-hintfab{right:12px;bottom:12px}}
+  /* ---- line-by-line guidance under the typing box ---- */
+  .es-linehost:empty{display:none}
+  .es-lines{margin-top:12px;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--card)}
+  .es-linesh{font-family:var(--disp);font-weight:600;font-size:11.5px;color:var(--ink-3);text-transform:lowercase;margin-bottom:9px}
+  .es-line{border-left:4px solid var(--line);border-radius:8px;padding:8px 11px;margin-bottom:9px;background:#FAFCFC}
+  .es-line:last-child{margin-bottom:0}
+  .es-line.critical{border-left-color:var(--coral,#d1495b)}
+  .es-line.should{border-left-color:var(--green)}
+  .es-line.optional{border-left-color:var(--ink-3)}
+  .es-line.on{background:var(--green-soft);border-left-color:var(--green)}
+  .es-linetop{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+  .es-linesev{font-family:var(--disp);font-weight:700;font-size:10.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.4px}
+  .es-linefind{font:inherit;font-weight:700;font-size:11.5px;color:var(--green-dk);background:none;border:none;padding:0;cursor:pointer;text-decoration:underline}
+  .es-linequote{font-size:12.5px;color:var(--ink-3);font-style:italic;line-height:1.5;margin-bottom:5px}
+  .es-lineissue{font-size:13.5px;color:var(--ink);font-weight:600;line-height:1.55;margin-bottom:6px}
+  .es-linefix{font-size:14px;color:var(--ink-2);font-style:italic;line-height:1.7}
+  .es-linefixh{display:block;font-family:var(--disp);font-style:normal;font-weight:600;font-size:10.5px;color:var(--ink-3);text-transform:lowercase;margin-bottom:2px}
   @media(max-width:760px){.es-coachcols{flex-direction:column}.es-margin{flex:1 1 auto;max-width:none;position:static}}
   /* ---- Practice exam (past paper) mode ---- */
   .exam-list{margin:18px 0 6px}
@@ -3375,7 +3392,16 @@ window.ESSAY = {
       { from: "big", options: ["significant", "substantial", "far-reaching"] },
       { from: "a lot of", options: ["considerable", "extensive"] }
     ],
-    check: "If you have stated a date or figure, check it against your own notes before you rely on it."
+    check: "If you have stated a date or figure, check it against your own notes before you rely on it.",
+    // Line-by-line demo: the coach names the fault in a specific sentence directly,
+    // then hands over a blank frame. Never the improved sentence. The client matches
+    // "quote" against the student's own text, so these are generic openers that will
+    // usually miss in the demo; the app falls back to the paragraph's first sentences.
+    lines: [
+      { quote: "", issue: "This sentence describes what happened instead of explaining why it matters.", fix: "This shows ____ because ____.", severity: "critical" },
+      { quote: "", issue: "There is a claim here with no evidence attached to it.", fix: "This is supported by ____, which shows ____.", severity: "should" },
+      { quote: "", issue: "This sentence never links back to the question.", fix: "Therefore ____, which addresses ____.", severity: "should" }
+    ]
   }
 };
 
@@ -8180,6 +8206,20 @@ window.BUSCONTENT = {
   // sentence or paragraph. Chips are WORD-LEVEL only. So the coach can never return
   // a substitution through any channel, however the model misbehaves.
   function esShortPhrase(s, maxWords) { return String(s || "").trim().split(/\s+/).filter(Boolean).length <= maxWords; }
+  // A frame is connective tissue: blanks joined by structural words only. Keep this
+  // list in sync with FRAME_WORDS in proxy/worker.js.
+  const ES_FRAME_WORDS = new Set(("a an and as at because been be but by can could for from had has have how however " +
+    "if in into is it its led leads mean means more most of on one only or over shows show shown since so such than " +
+    "that the their then there therefore these this those through to was were what when which while who why will with " +
+    "addresses affect affects allowed allows applies argues assess balance change changed compare demonstrates effect " +
+    "evidence example explains front further gives helps illustrates impact improves increases indicates influence " +
+    "instead judgement key later link linked makes matters method overall point produces reason reduces reveals " +
+    "result results significant significance shows source suggests supported supports term therefore thus way ways " +
+    "whereas whether although despite consider considered addressing meaning matter compared contrast").split(/\s+/));
+  function esIsFrame(fix) {
+    const w = String(fix || "").replace(/_{2,}/g, " ").toLowerCase().replace(/[^a-z ]/g, " ").split(/\s+/).filter(Boolean);
+    return w.every(x => ES_FRAME_WORDS.has(x));
+  }
   const ES_CATS = ["on_target", "signposting", "expression"];
   function esNormalizeCoach(raw, demoNote, role) {
     raw = raw || {};
@@ -8205,11 +8245,27 @@ window.BUSCONTENT = {
       }))
       .filter(c => c.from && esShortPhrase(c.from, 4) && c.options.length && c.options.every(o => esShortPhrase(o, 6)))
       .slice(0, 6);
+    // lines: DIRECT per-sentence diagnosis + a CONTENT-FREE frame. Enforced client
+    // side as well as in the worker, so an older or misbehaving worker can never put
+    // a paste-ready sentence in front of the student. A frame must carry blanks and
+    // its non-blank words must all be structural, never subject content.
+    const lines = (Array.isArray(raw.lines) ? raw.lines : [])
+      .map(l => ({
+        quote: String((l && l.quote) || "").trim(),
+        issue: String((l && l.issue) || "").trim(),
+        fix: String((l && l.fix) || "").trim(),
+        severity: String((l && l.severity) || "should").trim()
+      }))
+      .filter(l => l.issue && l.fix)                       // quote is only a locator hint
+      .filter(l => esShortPhrase(l.quote, 14) && esShortPhrase(l.issue, 34) && esShortPhrase(l.fix, 26))
+      .filter(l => /_{2,}/.test(l.fix) && esIsFrame(l.fix))
+      .map(l => ({ ...l, severity: ["critical", "should", "optional"].includes(l.severity) ? l.severity : "should" }))
+      .slice(0, 5);
     const note = String(raw.note || "").trim();
     const check = String(raw.check || "").trim();
     return {
       note: esShortPhrase(note, 60) ? note : "",       // a band comment, never a rewrite
-      missing, nudges, chips,
+      missing, nudges, chips, lines,
       check: (check && esShortPhrase(check, 30)) ? check : "",
       demoNote: demoNote || ""
     };
@@ -8483,6 +8539,7 @@ window.BUSCONTENT = {
             <button class="es-linkbtn" id="esquizlink">memorise this paragraph</button>
           </div>
           ${(!canAsk) ? `<p class="es-cooldown">Revise this paragraph, then ask again. The pause is for thinking between drafts, not button grinding.</p>` : ""}
+          <div class="es-linehost" data-linehost>${esLinesBlock(p)}</div>
           <div class="es-skelhost" data-skelhost>${esSkeletonBlock(p)}</div>
           <div class="es-seqhost">${esSeqNudge(p)}</div>
         </div>
@@ -8501,6 +8558,7 @@ window.BUSCONTENT = {
     const ask = $("#esask"); if (ask) ask.onclick = () => esGetFeedback(d.pos);
     $("#esquizlink").onclick = () => { ES.screen = "quiz"; esResetQuiz(); esRender(); };
     esBindCoachMargin(p);
+    esBindLines();
     esBindSkeleton(p);
     esBindSeqNudge(p);
     esBindHint();
@@ -8798,6 +8856,59 @@ window.BUSCONTENT = {
     if (unlock) unlock.onclick = () => { esPlan().locked = false; esSaveDraft(); esHintRefresh(); };
   }
 
+  // ---- line-by-line guidance, docked under the typing box ----
+  // You cannot render markers INSIDE a textarea, so the guidance sits directly under
+  // it as a list of the student's own sentences. Clicking a row SELECTS that exact
+  // sentence in the textarea, so the box itself shows which line is meant. The coach
+  // gives a direct diagnosis plus a blank frame; it never writes the sentence.
+  function esSplitSentences(text) {
+    const out = []; const re = /[^.!?]+[.!?]*/g; let m;
+    while ((m = re.exec(text || "")) !== null) {
+      const raw = m[0]; const t = raw.trim();
+      if (t) out.push({ text: t, start: m.index + (raw.length - raw.replace(/^\s+/, "").length), end: m.index + raw.length });
+    }
+    return out;
+  }
+  // Locate the sentence a line refers to: match the coach's verbatim quote against
+  // the student's current text, then fall back to position so demo data still lands.
+  function esLocateLine(text, line, i) {
+    const sents = esSplitSentences(text);
+    const q = (line.quote || "").trim().toLowerCase();
+    if (q) {
+      const hit = sents.find(sn => sn.text.toLowerCase().indexOf(q.slice(0, 40)) >= 0)
+               || sents.find(sn => q.indexOf(sn.text.toLowerCase().slice(0, 30)) >= 0);
+      if (hit) return hit;
+    }
+    return sents[i] || sents[0] || null;
+  }
+  function esLinesBlock(p) {
+    const fb = p.feedback; if (!fb || !(fb.lines || []).length) return "";
+    const text = p.text || "";
+    const rows = fb.lines.map((l, i) => {
+      const loc = esLocateLine(text, l, i);
+      const blanks = x => esc(x).replace(/_{2,}/g, '<span class="es-blank">____</span>');
+      return `<div class="es-line ${esc(l.severity)}" data-esline="${i}"${loc ? ` data-lstart="${loc.start}" data-lend="${loc.end}"` : ""}>
+        <div class="es-linetop"><span class="es-linesev">${l.severity === "critical" ? "loses marks" : l.severity === "should" ? "lifts the band" : "polish"}</span>
+          ${loc ? `<button type="button" class="es-linefind" data-esline="${i}">show me this line</button>` : ""}</div>
+        ${loc ? `<div class="es-linequote">${esc(loc.text.slice(0, 120))}${loc.text.length > 120 ? "…" : ""}</div>` : ""}
+        <div class="es-lineissue">${esc(l.issue)}</div>
+        <div class="es-linefix"><span class="es-linefixh">type over the blanks</span> ${blanks(l.fix)}</div>
+      </div>`;
+    }).join("");
+    return `<div class="es-lines"><div class="es-linesh">line by line</div>${rows}</div>`;
+  }
+  function esBindLines() {
+    const host = document.getElementById("eshost"); if (!host) return;
+    const ta = document.getElementById("espara"); if (!ta) return;
+    host.querySelectorAll("[data-esline]").forEach(el => el.onclick = () => {
+      const row = el.closest(".es-line") || el;
+      const a = Number(row.getAttribute("data-lstart")), b = Number(row.getAttribute("data-lend"));
+      if (!Number.isFinite(a) || !Number.isFinite(b)) return;
+      ta.focus(); ta.setSelectionRange(a, b);
+      host.querySelectorAll(".es-line").forEach(x => x.classList.toggle("on", x === row));
+    });
+  }
+
   function esBindSkeleton(p) {
     const host = document.getElementById("eshost"); if (!host) return;
     const skel = host.querySelector("[data-skel]"); if (!skel) return;
@@ -9084,6 +9195,8 @@ window.BUSCONTENT = {
       if (m) { m.innerHTML = esCoachMargin(p); host.querySelectorAll("button:not([type])").forEach(b => b.type = "button"); esBindCoachMargin(p); }
       // the missing set changed, so rebuild the ordered skeleton (starts hidden, since
       // esResetCoachUI cleared scaffoldOpen) and rebind its per-gap chips.
+      const lh = host && host.querySelector("[data-linehost]");
+      if (lh) { lh.innerHTML = esLinesBlock(p); host.querySelectorAll("button:not([type])").forEach(b => b.type = "button"); esBindLines(); }
       const sk = host && host.querySelector("[data-skelhost]");
       if (sk) { sk.innerHTML = esSkeletonBlock(p); host.querySelectorAll("button:not([type])").forEach(b => b.type = "button"); esBindSkeleton(p); }
       esRefreshAskButton(p);
