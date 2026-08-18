@@ -856,6 +856,16 @@
   .exam-choice:hover{border-color:var(--green);background:#FAFCFC}
   .exam-choicelbl{font-family:var(--disp);font-weight:800;font-size:12.5px;color:var(--green-dk);text-transform:uppercase;letter-spacing:.4px}
   .exam-choicetext{font-size:14.5px;color:var(--ink);font-weight:600;line-height:1.5}
+  .exam-picks{display:flex;flex-direction:column;gap:8px;margin:6px 0 14px}
+  .exam-pick{display:flex;gap:11px;align-items:flex-start;border:1.5px solid var(--line);border-radius:11px;padding:11px 13px;background:#fff;cursor:pointer}
+  .exam-pick:hover{border-color:var(--green)}
+  .exam-pick input{margin-top:3px;width:17px;height:17px;accent-color:var(--green);cursor:pointer;flex:none}
+  .exam-pick:has(input:checked){border-color:var(--green);background:#FAFCFC}
+  .exam-pickmain{display:flex;flex-direction:column;gap:2px}
+  .exam-pickname{font-weight:700;color:var(--ink);font-size:14px}
+  .exam-pickmeta{font-size:12.5px;color:var(--ink-3);font-weight:600}
+  .exam-pickrow{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px}
+  .exam-pickbtns{display:flex;gap:8px;flex-wrap:wrap}
   .exam-acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
   .exam-points{display:flex;flex-direction:column;gap:8px;margin:4px 0 10px}
   .exam-pt{display:flex;gap:9px;align-items:flex-start;font-size:14px;line-height:1.5}
@@ -4970,7 +4980,7 @@ window.ESSAY = {
   // (which of the mark-worthy points were addressed), plus an optional deeper AI
   // sentence review when marking is connected.
   const EXAM_FORMAT = "marginal-exam@1";
-  const EXAM = { paper: null, seq: [], pos: 0, results: {}, answers: {}, choice: {} };
+  const EXAM = { paper: null, sit: null, seq: [], pos: 0, results: {}, answers: {}, choice: {} };
   // A section with `choose: 1` is an either/or (e.g. HSC Section IV: attempt
   // Question 26 OR Question 27). The student picks at the section intro; only the
   // chosen question is sequenced, counted in the totals and shown in the results.
@@ -5066,16 +5076,66 @@ window.ESSAY = {
     msg.textContent = "Imported ✓ — open Test mode to sit it.";
     builder();
   }
-  function examStartById(id) { const p = examList().find(x => x.id === id); if (p) examStart(p); }
-  function examStart(paper) {
+  function examStartById(id) { const p = examList().find(x => x.id === id); if (p) examPick(p); }
+  // Sit the whole paper, or just the sections chosen on the picker. `picks` is an
+  // array of section indexes; omitting it sits everything.
+  function examStart(paper, picks) {
+    const all = (paper.sections || []).map((_, i) => i);
+    const sit = (Array.isArray(picks) && picks.length) ? all.filter(i => picks.indexOf(i) >= 0) : all;
     const seq = [];
     (paper.sections || []).forEach((sec, si) => {
+      if (sit.indexOf(si) < 0) return;                 // not sitting this section
       seq.push({ kind: "section", si, sec });
       (sec.questions || []).forEach((q, qi) => seq.push({ kind: "q", si, qi, sec, q }));
     });
     seq.push({ kind: "end" });
-    EXAM.paper = paper; EXAM.seq = seq; EXAM.pos = 0; EXAM.results = {}; EXAM.answers = {}; EXAM.choice = {};
+    EXAM.paper = paper; EXAM.sit = sit; EXAM.seq = seq; EXAM.pos = 0; EXAM.results = {}; EXAM.answers = {}; EXAM.choice = {};
     examRender();
+  }
+  // The picker: sit the whole paper or any combination of its sections, so a student
+  // can drill just multiple choice, just short answer, or just the extended response.
+  function examPick(paper) {
+    const secs = paper.sections || [];
+    const counts = secs.map(sec => {
+      const pick = examChooseCount(sec), list = sec.questions || [];
+      const counted = pick > 0 ? list.slice(0, pick) : list;
+      return { qs: counted.length, mk: counted.reduce((n, q) => n + (q.marks || 0), 0) };
+    });
+    const tot = counts.reduce((a, c) => ({ qs: a.qs + c.qs, mk: a.mk + c.mk }), { qs: 0, mk: 0 });
+    app.innerHTML = `
+      <div class="exam-bar"><button class="x" id="exampickquit" title="Back">←</button>
+        <span class="lbl">${esc(paper.name)}</span></div>
+      <div class="exam-wrap"><div class="exam-sectionintro" style="text-align:left">
+        <div class="exam-sec">What do you want to sit?</div>
+        <p class="exam-instr">Sit the whole paper, or tick just the sections you want to practise.</p>
+        <div class="exam-picks">
+          ${secs.map((sec, i) => `<label class="exam-pick"><input type="checkbox" data-exampick="${i}" checked>
+            <span class="exam-pickmain"><span class="exam-pickname">${esc(sec.name || ("Section " + (i + 1)))}</span>
+            <span class="exam-pickmeta">${counts[i].qs} question${counts[i].qs === 1 ? "" : "s"} · ${counts[i].mk} mark${counts[i].mk === 1 ? "" : "s"}</span></span></label>`).join("")}
+        </div>
+        <div class="exam-pickrow">
+          <span class="es-help" id="exampicksum">${tot.qs} questions · ${tot.mk} marks</span>
+          <span class="exam-pickbtns">
+            <button class="btn ghost sm" id="exampickall">Select all</button>
+            <button class="btn ghost sm" id="exampicknone">Clear</button>
+            <button class="btn" id="exampickgo">Start</button>
+          </span>
+        </div>
+      </div></div>`;
+    const boxes = () => Array.from(app.querySelectorAll("[data-exampick]"));
+    const chosen = () => boxes().filter(b => b.checked).map(b => Number(b.dataset.exampick));
+    const sync = () => {
+      const c = chosen();
+      const qs = c.reduce((n, i) => n + counts[i].qs, 0), mk = c.reduce((n, i) => n + counts[i].mk, 0);
+      $("#exampicksum").textContent = c.length ? `${qs} question${qs === 1 ? "" : "s"} · ${mk} mark${mk === 1 ? "" : "s"}` : "nothing selected";
+      $("#exampickgo").disabled = !c.length;
+    };
+    boxes().forEach(b => b.onchange = sync);
+    $("#exampickall").onclick = () => { boxes().forEach(b => b.checked = true); sync(); };
+    $("#exampicknone").onclick = () => { boxes().forEach(b => b.checked = false); sync(); };
+    $("#exampickquit").onclick = examHome;
+    $("#exampickgo").onclick = () => examStart(paper, chosen());
+    sync();
   }
   function examTotals() {
     // Count only ACTIVE questions. In an either/or section that is the chosen
@@ -5263,7 +5323,9 @@ window.ESSAY = {
   }
   function examResults() {
     let got = 0, max = 0;
+    const sit = EXAM.sit || (EXAM.paper.sections || []).map((_, i) => i);
     const rows = (EXAM.paper.sections || []).map((sec, si) => {
+      if (sit.indexOf(si) < 0) return "";               // not sat this time
       let sg = 0, sm = 0;
       const qs = (sec.questions || []).map((q, qi) => {
         if (!examIsActive(si, qi)) return "";           // not chosen in an either/or section
@@ -5281,7 +5343,7 @@ window.ESSAY = {
       <div class="row center"><button class="btn" id="examretake">Retake paper</button><button class="btn ghost" id="exambackhome">Back to Test mode</button></div>
     </div></div>`;
     $("#examquit").onclick = examHome;
-    $("#examretake").onclick = () => examStart(EXAM.paper);
+    $("#examretake").onclick = () => examStart(EXAM.paper, EXAM.sit);
     $("#exambackhome").onclick = examHome;
   }
 

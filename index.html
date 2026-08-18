@@ -856,6 +856,16 @@
   .exam-choice:hover{border-color:var(--green);background:#FAFCFC}
   .exam-choicelbl{font-family:var(--disp);font-weight:800;font-size:12.5px;color:var(--green-dk);text-transform:uppercase;letter-spacing:.4px}
   .exam-choicetext{font-size:14.5px;color:var(--ink);font-weight:600;line-height:1.5}
+  .exam-picks{display:flex;flex-direction:column;gap:8px;margin:6px 0 14px}
+  .exam-pick{display:flex;gap:11px;align-items:flex-start;border:1.5px solid var(--line);border-radius:11px;padding:11px 13px;background:#fff;cursor:pointer}
+  .exam-pick:hover{border-color:var(--green)}
+  .exam-pick input{margin-top:3px;width:17px;height:17px;accent-color:var(--green);cursor:pointer;flex:none}
+  .exam-pick:has(input:checked){border-color:var(--green);background:#FAFCFC}
+  .exam-pickmain{display:flex;flex-direction:column;gap:2px}
+  .exam-pickname{font-weight:700;color:var(--ink);font-size:14px}
+  .exam-pickmeta{font-size:12.5px;color:var(--ink-3);font-weight:600}
+  .exam-pickrow{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px}
+  .exam-pickbtns{display:flex;gap:8px;flex-wrap:wrap}
   .exam-acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
   .exam-points{display:flex;flex-direction:column;gap:8px;margin:4px 0 10px}
   .exam-pt{display:flex;gap:9px;align-items:flex-start;font-size:14px;line-height:1.5}
