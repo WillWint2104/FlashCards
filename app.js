@@ -2618,6 +2618,7 @@
 
   const ES = { subject: null, code: "", demo: false, screen: "setup", draft: null, list: [], form: null, pending: false,
     ui: { polishOpen: false, scaffoldOpen: false, miss: {}, frame: {} },  // transient coached-view state, reset on paragraph change
+    hint: { open: false, tab: "know" },          // study hints: persists across paragraphs on purpose
     quiz: { revealed: false, peeked: false, attempt: "", result: null } };
   const ES_KEY = "marginal.essay.v1";
   function esResetCoachUI() { ES.ui = { polishOpen: false, scaffoldOpen: false, miss: {}, frame: {} }; }
@@ -3008,6 +3009,7 @@
         </div>
         <aside class="es-margin">${margin}</aside>
       </div>
+      <div data-hinthost>${esHintHTML()}</div>
     </div></div></div>`;
     esBindWritingHead();
     const pt = $("#espoint"); pt.oninput = () => { p.point = pt.value; esSaveDraft(); };
@@ -3022,6 +3024,7 @@
     esBindCoachMargin(p);
     esBindSkeleton(p);
     esBindSeqNudge(p);
+    esBindHint();
   }
   // Toggle the ask button live as the student types (cooldown releases the moment
   // the paragraph differs from what was last sent), without a full re-render.
@@ -3172,6 +3175,150 @@
   // Skeleton handlers (writing column): per-gap chips swap that gap's frame wording
   // in place by flipping hidden among the pre-rendered frames. No gap is revealed or
   // hidden here, so the all-at-once skeleton stays intact.
+  // ============================ STUDY HINTS (essay) ============================
+  // A floating hint widget for the writing screens. Three tabs, all rendered once
+  // and flipped with the hidden attribute so opening one never rebuilds the panel:
+  //   Know      core syllabus content for this topic, so a student who does not yet
+  //             know the material can learn it here instead of guessing.
+  //   Plan      the essay's relationship and its paragraph angles. The student LOCKS
+  //             their picks once, and every later paragraph shows the same locked
+  //             plan, which is what keeps a long response consistent.
+  //   Evidence  their case study bank (McDonald's), with how to deploy each item.
+  // Content comes from window.BUSCONTENT; the widget hides itself when none is loaded.
+  function busContent() { return window.BUSCONTENT || null; }
+  function busTopics() { const b = busContent(); return (b && b.topics) || {}; }
+  // Resolve which syllabus topic this essay sits in: the student's locked choice
+  // first, then the tag on a picked question bank item, then a keyword match on the
+  // question itself, then null (the widget asks them to choose).
+  function busTopicKey() {
+    const d = ES.draft; if (!d) return null;
+    if (d.plan && d.plan.topic && busTopics()[d.plan.topic]) return d.plan.topic;
+    const hay = ((d.topic || "") + " " + (d.question || "")).toLowerCase();
+    const tags = { operations: ["operation", "production", "supply chain", "quality", "logistic", "inventory"],
+                   marketing: ["marketing", "target market", "promotion", "e-marketing", "consumer"],
+                   finance: ["financial", "finance", "liquidity", "profitab", "cash flow", "solvency", "ratio"],
+                   human_resources: ["human resource", "employee", "staff", "industrial", "union", "workforce"] };
+    for (const k of Object.keys(tags)) if (busTopics()[k] && tags[k].some(w => hay.indexOf(w) >= 0)) return k;
+    return null;
+  }
+  function busTopicLabel(k) { const t = busTopics()[k]; return (t && t.label) || ""; }
+  // The plan a student locks. Kept on the DRAFT, so it persists with the essay and
+  // every paragraph is written against the same agreed line of argument.
+  function esPlan() {
+    const d = ES.draft;
+    if (!d.plan) d.plan = { topic: null, picks: [], locked: false };
+    if (!Array.isArray(d.plan.picks)) d.plan.picks = [];
+    return d.plan;
+  }
+  // Candidate paragraph angles: the exemplar plan on a question bank item when the
+  // student picked one, otherwise the syllabus sections for the resolved topic.
+  function esPlanOptions() {
+    const d = ES.draft, sc = esSubjectContent(ES.subject);
+    const qs = (sc && sc.questions) || [];
+    const q = qs.find(x => x.text && d.question && x.text.trim() === d.question.trim());
+    if (q && Array.isArray(q.plan) && q.plan.length) return q.plan.slice();
+    const t = busTopics()[busTopicKey()];
+    if (t) return (t.sections || []).flatMap(sec => (sec.points || []).map(pt => pt.point)).slice(0, 12);
+    return [];
+  }
+  function esHintHTML() {
+    if (!busContent()) return "";
+    const d = ES.draft, plan = esPlan(), tab = ES.hint.tab, key = busTopicKey();
+    const topic = busTopics()[key];
+    const on = t => tab === t ? " on" : "";
+    const hide = t => tab === t ? "" : " hidden";
+    // --- Know: core content for the topic ---
+    let know;
+    if (!topic) {
+      know = `<p class="es-hintlead">Pick the syllabus topic this essay sits in and the core content will load here.</p>
+        <div class="es-hintpicks">${Object.keys(busTopics()).map(k =>
+          `<button class="es-hintpick" data-eshinttopic="${esc(k)}">${esc(busTopicLabel(k))}</button>`).join("")}</div>`;
+    } else {
+      know = `<p class="es-hintlead">${esc(topic.label)} core content. Read the piece you are unsure of, then keep writing.</p>` +
+        (topic.sections || []).map(sec => `<details class="es-hintsec"><summary>${esc(sec.name)}</summary>` +
+          (sec.points || []).map(pt => `<div class="es-hintpt">
+              <div class="es-hintpth">${esc(pt.point)}</div>
+              <p class="es-hintwhat">${esc(pt.what)}</p>
+              <p class="es-hintwhy"><b>Why it matters:</b> ${esc(pt.why)}</p>
+              ${(pt.terms || []).length ? `<div class="es-hintterms">${pt.terms.map(x => `<span class="es-hintterm">${esc(x)}</span>`).join("")}</div>` : ""}
+              ${pt.exam ? `<p class="es-hintexam"><b>In the exam:</b> ${esc(pt.exam)}</p>` : ""}
+            </div>`).join("") + `</details>`).join("");
+    }
+    // --- Plan: pick the angles, then lock them ---
+    const opts = esPlanOptions();
+    const plan_ = plan.locked
+      ? `<p class="es-hintlead">Your plan is locked, so every paragraph argues the same line.</p>
+         <ol class="es-hintlocked">${plan.picks.map(x => `<li>${esc(x)}</li>`).join("")}</ol>
+         <button class="es-linkbtn" id="eshintunlock">Unlock and change the plan</button>`
+      : `<p class="es-hintlead">Choose the angles this essay will argue, then lock them in. Locking keeps every paragraph consistent as you move through the sections.</p>
+         <div class="es-hintopts">${opts.map((o, i) =>
+            `<button class="es-hintopt${plan.picks.indexOf(o) >= 0 ? " on" : ""}" data-eshintpick="${i}">${esc(o)}</button>`).join("")}</div>
+         ${opts.length ? "" : `<p class="es-help">Pick a topic on the Know tab first.</p>`}
+         <div class="es-hintlockrow"><span class="es-help" id="eshintcount">${plan.picks.length} chosen</span>
+           <button class="es-btn primary" id="eshintlock" ${plan.picks.length ? "" : "disabled"}>Lock in this plan</button></div>`;
+    // --- Evidence: the case study bank ---
+    const ev = (busContent().evidence || {})[key] || [];
+    const evidence = !key
+      ? `<p class="es-hintlead">Pick a topic on the Know tab and your case study evidence loads here.</p>`
+      : ev.length
+        ? `<p class="es-hintlead">McDonald's evidence for ${esc(busTopicLabel(key))}. Markers reward evidence that is applied, so use the "how to use it" line.</p>` +
+          ev.map(e => `<div class="es-hintev">
+              <div class="es-hintevh">${esc(e.label)}${e.verify ? `<span class="es-hintcheck">check a current figure yourself</span>` : ""}</div>
+              <p class="es-hintevf">${esc(e.fact)}</p>
+              <p class="es-hintevu"><b>How to use it:</b> ${esc(e.use)}</p>
+            </div>`).join("")
+        : `<p class="es-hintlead">No evidence yet for this topic.</p>`;
+    return `
+      <button class="es-hintfab" id="eshintfab" aria-expanded="${ES.hint.open}" title="Study hints">${ES.hint.open ? "close hints" : "hints"}</button>
+      <aside class="es-hintpanel" data-hintpanel${ES.hint.open ? "" : " hidden"} aria-label="Study hints">
+        <div class="es-hinttabs">
+          <button class="es-hinttab${on("know")}" data-eshinttab="know">Know</button>
+          <button class="es-hinttab${on("plan")}" data-eshinttab="plan">Plan</button>
+          <button class="es-hinttab${on("evidence")}" data-eshinttab="evidence">Evidence</button>
+        </div>
+        <div class="es-hintbody" data-hintpane="know"${hide("know")}>${know}</div>
+        <div class="es-hintbody" data-hintpane="plan"${hide("plan")}>${plan_}</div>
+        <div class="es-hintbody" data-hintpane="evidence"${hide("evidence")}>${evidence}</div>
+      </aside>`;
+  }
+  // Re-render just the panel in place (used after a pick, lock or topic choice, all
+  // of which change what the panel should show).
+  function esHintRefresh() {
+    const host = document.getElementById("eshost"); if (!host) return;
+    const wrap = host.querySelector("[data-hinthost]"); if (!wrap) return;
+    wrap.innerHTML = esHintHTML();
+    host.querySelectorAll("button:not([type])").forEach(b => b.type = "button");
+    esBindHint();
+  }
+  function esBindHint() {
+    const host = document.getElementById("eshost"); if (!host) return;
+    const fab = host.querySelector("#eshintfab");
+    if (fab) fab.onclick = () => {
+      ES.hint.open = !ES.hint.open;
+      const panel = host.querySelector("[data-hintpanel]"); if (panel) panel.hidden = !ES.hint.open;
+      fab.textContent = ES.hint.open ? "close hints" : "hints";
+      fab.setAttribute("aria-expanded", String(ES.hint.open));
+    };
+    host.querySelectorAll("[data-eshinttab]").forEach(b => b.onclick = () => {
+      ES.hint.tab = b.dataset.eshinttab;
+      host.querySelectorAll("[data-hintpane]").forEach(x => x.hidden = x.dataset.hintpane !== ES.hint.tab);
+      host.querySelectorAll("[data-eshinttab]").forEach(x => x.classList.toggle("on", x.dataset.eshinttab === ES.hint.tab));
+    });
+    host.querySelectorAll("[data-eshinttopic]").forEach(b => b.onclick = () => {
+      esPlan().topic = b.dataset.eshinttopic; esSaveDraft(); esHintRefresh();
+    });
+    host.querySelectorAll("[data-eshintpick]").forEach(b => b.onclick = () => {
+      const opts = esPlanOptions(), v = opts[Number(b.dataset.eshintpick)];
+      const plan = esPlan(), i = plan.picks.indexOf(v);
+      if (i >= 0) plan.picks.splice(i, 1); else plan.picks.push(v);
+      esSaveDraft(); esHintRefresh();
+    });
+    const lock = host.querySelector("#eshintlock");
+    if (lock) lock.onclick = () => { esPlan().locked = true; esSaveDraft(); esHintRefresh(); toast("Plan locked. Every paragraph now argues this line."); };
+    const unlock = host.querySelector("#eshintunlock");
+    if (unlock) unlock.onclick = () => { esPlan().locked = false; esSaveDraft(); esHintRefresh(); };
+  }
+
   function esBindSkeleton(p) {
     const host = document.getElementById("eshost"); if (!host) return;
     const skel = host.querySelector("[data-skel]"); if (!skel) return;
@@ -3325,8 +3472,10 @@
           <button class="es-btn primary" id="essubmit">Submit anyway</button>
         </div>
       </div>
+      <div data-hinthost>${esHintHTML()}</div>
     </div></div></div>`;
     esBindWritingHead();
+    esBindHint();
     const firstFilled = () => { const k = d.paras.findIndex(pp => (pp.text || "").trim()); return k < 0 ? 0 : k; };
     const ta = $("#esfull"); ta.oninput = () => { esFullSync(ta.value); };
     $("#esstanding").onclick = () => { esFullSync($("#esfull").value); esGoCoached(firstFilled()); };

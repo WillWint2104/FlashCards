@@ -816,6 +816,39 @@
   .es-exsub{font-size:11px;color:var(--ink-3);font-weight:700;margin:1px 0 6px}
   .es-exph{font-size:11px;color:var(--ink-2);font-weight:600;line-height:1.45;background:#FBFBFB;border:1px dashed var(--line);border-radius:8px;padding:5px 8px;margin:0 0 7px}
   .es-extext{font-size:13px;color:var(--ink);font-weight:600;line-height:1.6}
+  /* ---- study hints widget (essay writing screens) ---- */
+  .es-hintfab{position:fixed;right:22px;bottom:22px;z-index:60;font:inherit;font-weight:800;font-size:13px;letter-spacing:.2px;color:#fff;background:var(--green);border:none;border-radius:99px;padding:12px 20px;cursor:pointer;box-shadow:0 6px 18px rgba(20,60,50,.28)}
+  .es-hintfab:hover{filter:brightness(1.06)}
+  .es-hintpanel{position:fixed;right:22px;bottom:74px;z-index:60;width:min(430px,calc(100vw - 44px));max-height:min(70vh,620px);overflow:auto;background:#fff;border:1.5px solid var(--line);border-radius:16px;box-shadow:0 14px 40px rgba(20,40,40,.22)}
+  .es-hinttabs{display:flex;gap:4px;position:sticky;top:0;background:#fff;border-bottom:1.5px solid var(--line);padding:10px 12px 0}
+  .es-hinttab{font:inherit;font-weight:700;font-size:12.5px;color:var(--ink-3);background:none;border:none;border-bottom:2.5px solid transparent;padding:6px 12px 8px;cursor:pointer}
+  .es-hinttab.on{color:var(--green-dk);border-bottom-color:var(--green)}
+  .es-hinttab:hover{color:var(--ink)}
+  .es-hintbody{padding:14px 16px 18px}
+  .es-hintlead{font-size:13px;color:var(--ink-2);font-weight:600;line-height:1.55;margin:0 0 12px}
+  .es-hintsec{border:1.5px solid var(--line);border-radius:11px;margin-bottom:8px;background:#FAFCFC}
+  .es-hintsec>summary{cursor:pointer;padding:9px 12px;font-family:var(--disp);font-weight:700;font-size:13px;color:var(--green-dk)}
+  .es-hintpt{border-top:1px solid var(--line);padding:10px 12px}
+  .es-hintpth{font-weight:800;font-size:12.5px;color:var(--ink);margin-bottom:5px;line-height:1.4}
+  .es-hintwhat{font-size:13px;color:var(--ink);line-height:1.6;margin:0 0 6px}
+  .es-hintwhy{font-size:12.5px;color:var(--ink-2);line-height:1.55;margin:0 0 6px}
+  .es-hintexam{font-size:12px;color:var(--ink-3);line-height:1.5;margin:6px 0 0}
+  .es-hintterms{display:flex;gap:5px;flex-wrap:wrap;margin:6px 0}
+  .es-hintterm{font-size:11px;font-weight:700;color:var(--green-dk);background:var(--green-soft);border-radius:99px;padding:3px 9px}
+  .es-hintpicks,.es-hintopts{display:flex;flex-direction:column;gap:7px;margin-bottom:12px}
+  .es-hintpick,.es-hintopt{font:inherit;font-weight:600;font-size:13px;text-align:left;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;cursor:pointer;line-height:1.45}
+  .es-hintpick:hover,.es-hintopt:hover{border-color:var(--green)}
+  .es-hintopt.on{border-color:var(--green);background:var(--green-soft);color:var(--green-dk);font-weight:700}
+  .es-hintopt.on::before{content:"\2713  ";font-weight:800}
+  .es-hintlockrow{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:10px}
+  .es-hintlocked{margin:0 0 10px;padding-left:20px}
+  .es-hintlocked li{font-size:13px;color:var(--ink);font-weight:600;line-height:1.5;margin-bottom:5px}
+  .es-hintev{border:1.5px solid var(--line);border-left:4px solid var(--green);border-radius:11px;padding:10px 12px;margin-bottom:9px;background:#fff}
+  .es-hintevh{font-family:var(--disp);font-weight:700;font-size:12.5px;color:var(--green-dk);margin-bottom:5px;display:flex;gap:7px;align-items:baseline;flex-wrap:wrap}
+  .es-hintcheck{font-family:var(--ui,inherit);font-size:10.5px;font-weight:700;color:var(--ink-3);background:#FAFCFC;border:1px dashed var(--line);border-radius:99px;padding:2px 7px}
+  .es-hintevf{font-size:12.5px;color:var(--ink);line-height:1.55;margin:0 0 5px}
+  .es-hintevu{font-size:12px;color:var(--ink-2);line-height:1.5;margin:0}
+  @media(max-width:760px){.es-hintpanel{right:12px;left:12px;width:auto;bottom:66px}.es-hintfab{right:12px;bottom:12px}}
   @media(max-width:760px){.es-coachcols{flex-direction:column}.es-margin{flex:1 1 auto;max-width:none;position:static}}
 </style>
 </head>
@@ -849,6 +882,7 @@
 </script>
 <script src="content.js"></script>
 <script src="essay-content.js"></script>
+<script src="business-content.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 </body>
