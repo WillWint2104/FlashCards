@@ -1819,3 +1819,251 @@ window.CONTENT.charts = {
     ]
   }
 };
+
+// =============================================================================
+// Trial HSC Revision — a standalone topic of teaching lessons + typed practice.
+//
+// Self-contained on purpose: this block runs AFTER all of the lesson-processing
+// passes and after window.CONTENT.topics is built, and it is kept OUT of
+// window.CONTENT.areas, so it never touches the Distribution of Income & Wealth
+// topic. Each area carries ONE chunk-based teaching lesson ({h, body, check})
+// plus typed short-answer practice cards, so every area is "learn it, then
+// practise it". Original wording in the HSC genre, based on a trial revision
+// worksheet, never reproduced from a textbook. No em-dashes in student text.
+// getLesson() in app.js is topic-aware, so these lessons resolve and their
+// mastery persists exactly like the built-in Distribution lessons.
+// =============================================================================
+(function () {
+  // Glossary additions (LOWERCASE keys). Merge without clobbering: an existing
+  // definition always wins, so this only fills gaps.
+  const gAdd = {
+    "marginal private benefit": "The additional benefit received directly by the consumer from consuming one more unit of a good or service.",
+    "marginal social benefit": "The additional benefit to the whole of society from one more unit: the private benefit plus any external benefits to third parties (MSB = MPB + MEB).",
+    "marginal private cost": "The additional cost incurred directly by the producer from producing one more unit.",
+    "marginal social cost": "The additional cost to the whole of society from one more unit: the private cost plus any external costs imposed on third parties (MSC = MPC + MEC).",
+    "externality": "A cost or benefit from production or consumption that falls on third parties and is not reflected in the market price.",
+    "market failure": "A situation where the free operation of the market allocates resources inefficiently.",
+    "economic growth": "An increase in the volume of goods and services an economy produces over time, measured by real output and productive capacity.",
+    "economic development": "Broad improvement in material and non-material living standards, including income, health, education and the environment.",
+    "advanced economy": "An economy with high income levels, developed infrastructure, diversified production and high living standards.",
+    "emerging economy": "A developing economy undergoing rapid industrialisation and structural change, integrating quickly into the global economy.",
+    "current account": "The record of a country's external transactions in goods, services, and net primary and secondary income over a period.",
+    "net foreign debt": "The amount a country owes to the rest of the world after subtracting the foreign debt owed to it.",
+    "terms of trade": "The ratio of a country's export price index to its import price index.",
+    "tariff": "A tax placed on imported goods and services to raise their price relative to domestic production.",
+    "external stability": "A sustainable external position, where a country can meet its foreign financial obligations over time without major disruption.",
+    "monetary policy": "The Reserve Bank's use of the cash rate to influence interest rates, economic activity and inflation.",
+    "fiscal policy": "The government's use of taxation, expenditure and the budget to influence economic activity.",
+    "automatic stabilisers": "Features of the budget, such as progressive tax and welfare payments, that moderate the economic cycle without new policy decisions.",
+    "nairu": "The non-accelerating inflation rate of unemployment: the lowest unemployment rate that can be sustained without causing inflation to accelerate.",
+    "ecologically sustainable development": "Development that meets present needs without compromising the ability of future generations to meet their own needs."
+  };
+  Object.keys(gAdd).forEach(function (k) { if (!window.CONTENT.glossary[k]) window.CONTENT.glossary[k] = gAdd[k]; });
+
+  // Quick-check helper: q = the question, opts = [{ t, ok, why }] with exactly one ok.
+  function chk(q, opts) { return { q: q, opts: opts }; }
+  function D(id, prompt, model, vocab) { return { id: id, type: "define", marks: 1, prompt: "Name the economic term: " + prompt, model: model, vocab: vocab }; }
+  function S(id, prompt, model, vocab, marks) { return { id: id, type: "short", marks: marks || 3, prompt: prompt, model: model, vocab: vocab }; }
+  function R(id, x, y, model, vocab) { return { id: id, type: "short", marks: 2, prompt: "Explain the relationship in one sentence: " + x + " to " + y + ".", model: model, vocab: vocab }; }
+
+  const areas = [
+    // ---------------------------------------------------------------- 1
+    { id: "rev-market-failure", name: "Market failure and externalities", icon: "⚠️",
+      blurb: "MPB, MSB, MPC, MSC, and why externalities stop the market allocating resources well.",
+      lessons: [{ id: "les-rev-market-failure", title: "Market failure and externalities", chunks: [
+        { h: "Private and social: the four marginal ideas",
+          body: "Every extra unit produced or consumed carries a benefit and a cost. The private ones fall on the person acting. Marginal private benefit is the benefit to the consumer of one more unit; marginal private cost is the cost to the producer of one more unit. The social ones are wider: marginal social benefit is the benefit to everyone, and marginal social cost is the cost to everyone. When an action spills over onto other people, the social figure includes that spillover, so MSB equals MPB plus any marginal external benefit, and MSC equals MPC plus any marginal external cost. A factory shows the idea: its marginal private cost is what it pays for labour and materials, while its marginal social cost also counts the pollution borne by the neighbourhood.",
+          check: chk("A factory pays for its inputs but its smoke harms nearby residents. This means:", [
+            { t: "Marginal social cost is greater than marginal private cost", ok: true, why: "The pollution is an external cost added on top of the firm's own costs, so MSC = MPC + external cost and MSC exceeds MPC." },
+            { t: "Marginal private cost is greater than marginal social cost", ok: false, why: "The spillover adds to society's cost, it cannot make the social cost smaller than the private cost." },
+            { t: "The two are always equal", ok: false, why: "They are only equal when there is no externality; here there is one." }]) },
+        { h: "How externalities cause market failure",
+          body: "An externality is a cost or benefit that lands on third parties and is not built into the price. When production creates a negative externality, marginal social cost sits above marginal private cost, the market price understates the true cost, and the good is over-produced. When consumption creates a positive externality, marginal social benefit sits above marginal private benefit and the good is under-produced. Either way the price signal is wrong, so resources are allocated inefficiently. That inefficient allocation is what economists call market failure. Pollution from burning fossil fuels is the classic case: the price of the electricity leaves out the health and environmental damage, so more is produced than is good for society.",
+          check: chk("A negative externality in production leads the market to:", [
+            { t: "Over-produce the good", ok: true, why: "Because the price ignores the external cost, the good looks cheaper than it truly is and too much is produced." },
+            { t: "Under-produce the good", ok: false, why: "Under-production is the result of a positive externality, not a negative one." },
+            { t: "Produce the socially optimal amount", ok: false, why: "The whole point of the externality is that the market misses the optimum." }]) },
+        { h: "Spotting it and correcting it",
+          body: "To recognise market failure, look for a gap between private and social values. Negative externalities such as pollution or congestion mean society bears costs the producer ignores, so the market over-produces. Positive externalities such as education or vaccination mean society gains benefits the individual ignores, so the market under-produces. Governments respond by trying to close the gap: a tax on a polluter makes the private cost reflect the social cost, a subsidy on education makes the private benefit reflect the social benefit, and regulation can cap the harmful activity directly. The aim in each case is to steer output back towards the level where marginal social benefit equals marginal social cost.",
+          check: chk("Why might a government tax a firm that pollutes?", [
+            { t: "To make its private cost reflect the true social cost", ok: true, why: "The tax internalises the externality, raising private cost towards social cost so output falls towards the efficient level." },
+            { t: "To increase the quantity produced", ok: false, why: "The tax is meant to reduce over-production, not raise it." },
+            { t: "Because pollution has no cost to society", ok: false, why: "Pollution is precisely the external cost the tax is trying to capture." }]) }
+      ] }],
+      cards: [
+        D("rv-mf-a1", "The benefit received directly by a consumer from consuming one additional unit of a good or service.", "Marginal private benefit (MPB): the additional benefit received directly by the consumer from consuming one more unit.", ["marginal private benefit"]),
+        D("rv-mf-a2", "The cost to society of producing one additional unit, including external costs.", "Marginal social cost (MSC): the total additional cost to society of one more unit, including private and external costs.", ["marginal social cost"]),
+        D("rv-mf-a3", "A situation where the free operation of markets results in an inefficient allocation of resources.", "Market failure: the market mechanism does not allocate resources efficiently.", ["market failure"]),
+        D("rv-mf-a19", "The cost incurred directly by a producer when producing one additional unit.", "Marginal private cost (MPC): the additional cost incurred by the producer from producing one more unit.", ["marginal private cost"]),
+        S("rv-mf-b21", "Distinguish between marginal private benefit and marginal social benefit. Why might they differ?", "Marginal private benefit is the extra benefit received directly by the consumer from one more unit. Marginal social benefit adds any external benefits to third parties, so MSB = MPB + marginal external benefit. They differ when consumption creates positive externalities, such as education or vaccination.", ["marginal private benefit", "marginal social benefit", "external benefit"]),
+        S("rv-mf-b22", "Explain why a divergence between marginal private cost and marginal social cost can result in market failure.", "Marginal social cost adds external costs to the producer's private cost, so MSC = MPC + marginal external cost. If a producer pollutes but does not pay the full cost, MSC exceeds MPC, the price understates the true cost, too much is produced and resources are allocated inefficiently, which is market failure.", ["marginal social cost", "external cost", "market failure"]),
+        S("rv-mf-b23", "Identify an example of market failure and explain why it represents an inefficient allocation of resources.", "Example: pollution from electricity generation using fossil fuels. Producers pay their private costs but not the full health and environmental costs, so these negative externalities mean MSC exceeds MPC. Because the price does not reflect the full social cost, the market produces more than the socially efficient quantity, which is market failure.", ["externalities", "market failure", "pollution"]),
+        R("rv-mf-c1", "MPB", "MSB", "Marginal social benefit equals marginal private benefit plus any marginal external benefits received by third parties (MSB = MPB + MEB).", ["marginal external benefit", "msb"]),
+        R("rv-mf-c2", "MPC", "MSC", "Marginal social cost equals marginal private cost plus any marginal external costs imposed on third parties (MSC = MPC + MEC).", ["marginal external cost", "msc"])
+      ] },
+
+    // ---------------------------------------------------------------- 2
+    { id: "rev-growth-development", name: "Growth and development", icon: "📈",
+      blurb: "Why economic growth is not the same as economic development, and how economies are classified.",
+      lessons: [{ id: "les-rev-growth-development", title: "Economic growth versus economic development", chunks: [
+        { h: "Growth is not the same as development",
+          body: "Economic growth means producing more: a rise in real output and in the economy's productive capacity over time. Economic development is broader, covering improvements in living standards such as income, health, education and the state of the environment. The two usually move together, but not always by the same amount. A resource boom can lift measured output sharply while doing little for health or schooling, and growth can even reduce wellbeing if its gains go to a narrow group, leave poverty untouched, or damage the environment. So growth is a means, and development is the wider end it is meant to serve.",
+          check: chk("Rapid economic growth may fail to lift economic development when:", [
+            { t: "Its benefits are distributed unevenly or it harms the environment", ok: true, why: "Development is about broad living standards, so uneven gains, persistent poverty or environmental damage can hold it back even as output rises." },
+            { t: "Real output rises", ok: false, why: "Rising real output is growth itself, not a reason development would stall." },
+            { t: "Life expectancy improves", ok: false, why: "Better health is part of development improving, not failing." }]) },
+        { h: "Classifying economies",
+          body: "Economies are often grouped by their income and structure. An advanced or developed economy has high incomes, developed infrastructure, diversified production and high living standards. A developing economy has lower incomes and living standards, less developed infrastructure and greater reliance on primary production. An emerging economy sits between the two: it is a developing economy undergoing rapid industrialisation, rising incomes and structural change, and integrating quickly into the global economy. The labels describe a spectrum rather than fixed boxes, and countries can move along it over time.",
+          check: chk("What best describes an emerging economy?", [
+            { t: "A developing economy industrialising rapidly and integrating into the global economy", ok: true, why: "That rapid industrialisation, structural change and integration is exactly what sets an emerging economy apart." },
+            { t: "An economy with the highest incomes and most diversified production", ok: false, why: "That describes an advanced economy." },
+            { t: "An economy with no industry and falling incomes", ok: false, why: "Emerging economies are characterised by rising incomes and growing industry, not decline." }]) }
+      ] }],
+      cards: [
+        D("rv-gd-a16", "An economy with high income levels, advanced infrastructure, diversified production and high living standards.", "Advanced economy: high incomes, developed infrastructure, diversified production and relatively high living standards.", ["advanced economy"]),
+        D("rv-gd-a17", "An economy undergoing rapid industrialisation and structural change, with features of both developing and advanced economies.", "Emerging economy: a developing economy with rapid industrialisation, structural change and growing integration into the global economy.", ["emerging economy"]),
+        D("rv-gd-a20", "Improvements in the economic and social wellbeing of a population, including health, education and living standards.", "Economic development: improvements in material and non-material living standards, including income, health and education.", ["economic development"]),
+        S("rv-gd-b24", "Explain why economic growth does not necessarily result in an equivalent increase in economic development.", "Economic growth is a rise in real output and productive capacity, while development is broader improvement in living standards. Growth may not lift development equally if the gains are shared unevenly, poverty stays high, or it damages the environment; development also depends on health, education and life expectancy.", ["economic growth", "economic development", "living standards"]),
+        S("rv-gd-b25", "Distinguish between a developing economy and an emerging economy.", "A developing economy generally has low incomes, lower living standards, less developed infrastructure and greater reliance on primary production. An emerging economy is a developing economy experiencing rapid industrialisation, rising incomes, structural change and greater integration into the global economy.", ["developing economy", "emerging economy", "industrialisation"]),
+        R("rv-gd-c3", "economic growth", "economic development", "Economic growth can support development by raising incomes and government revenue for health, education and infrastructure, but it does not guarantee improved living standards.", ["economic development", "living standards"])
+      ] },
+
+    // ---------------------------------------------------------------- 3
+    { id: "rev-distribution", name: "Distribution of income and wealth", icon: "⚖️",
+      blurb: "Income versus wealth, the Lorenz curve, and the costs and benefits of inequality.",
+      lessons: [{ id: "les-rev-distribution", title: "Distribution of income and wealth", chunks: [
+        { h: "Income and wealth are different things",
+          body: "Income is a flow: money received over a period, such as wages, interest, rent and dividends. Wealth is a stock: the value of assets held at a point in time, such as property, shares, savings and superannuation. The two are linked, because wealth generates income and income can be saved into wealth, but they are not the same and are not distributed the same way. Wealth is usually far more concentrated than income, since assets accumulate and pass between generations. Keeping the flow and the stock distinct is the first step in analysing how resources are shared.",
+          check: chk("Which pair correctly matches the concept to its type?", [
+            { t: "Income is a flow; wealth is a stock", ok: true, why: "Income is received over a period (a flow) and wealth is held at a point in time (a stock)." },
+            { t: "Income is a stock; wealth is a flow", ok: false, why: "It is the other way around: income flows, wealth is a stock." },
+            { t: "Both are stocks", ok: false, why: "Only wealth is a stock; income is a flow." }]) },
+        { h: "Measuring it with the Lorenz curve",
+          body: "The Lorenz curve is a graph of the cumulative share of income or wealth against the cumulative share of the population. A perfectly equal distribution would trace the straight diagonal line of perfect equality. The further the Lorenz curve bows away from that line, the more unequal the distribution; the closer it sits to the line, the more equal it is. Comparing two curves shows the effect of policy: in Australia the curve for income after tax and transfers sits closer to the line of equality than the curve for income before them, showing that the tax and transfer system reduces inequality.",
+          check: chk("Greater inequality on a Lorenz diagram is shown by:", [
+            { t: "The curve bowing further from the line of perfect equality", ok: true, why: "The bigger the gap between the curve and the equality line, the more unequal the distribution." },
+            { t: "The curve moving closer to the line of perfect equality", ok: false, why: "Moving towards the line shows less inequality, not more." },
+            { t: "A steeper line of perfect equality", ok: false, why: "The equality line is a fixed reference and does not change." }]) },
+        { h: "The inequality debate",
+          body: "Some inequality can bring an economic benefit: differences in income create incentives to work, gain skills, save, invest and take entrepreneurial risks, which can lift productivity and growth. But inequality also carries economic costs. Excessive inequality can deepen poverty and cut access to education and opportunity, limiting the development of human capital and entrenching disadvantage. The policy task is to weigh the incentive gains against these costs, rather than treating any single level of inequality as automatically right or wrong.",
+          check: chk("One economic cost of high income inequality is that it can:", [
+            { t: "Limit access to education and reduce human capital development", ok: true, why: "When opportunity narrows, skills and human capital go undeveloped, which is a genuine economic cost." },
+            { t: "Strengthen incentives to work and invest", ok: false, why: "That is usually cited as a benefit of some inequality, not a cost." },
+            { t: "Guarantee faster economic growth", ok: false, why: "Inequality does not guarantee growth; excessive inequality can hold it back." }]) }
+      ] }],
+      cards: [
+        D("rv-di-a8", "The curve used to illustrate the distribution of income or wealth within an economy.", "Lorenz curve: a graphical representation of the distribution of income or wealth.", ["lorenz curve"]),
+        D("rv-di-a9", "The value of assets owned by individuals or households, including property, shares and savings.", "Wealth: the stock of assets owned by an individual or household.", ["wealth"]),
+        S("rv-di-b26", "Give two examples of sources of income and two examples of sources of wealth.", "Sources of income: wages and salaries; investment income such as interest, rent or dividends. Sources of wealth: property; financial assets such as shares, savings or superannuation.", ["wages", "investment income", "property", "superannuation"], 2),
+        S("rv-di-b27", "Explain how the Lorenz curve can be used to measure the distribution of income or wealth.", "The Lorenz curve plots the cumulative percentage of households against the cumulative percentage of income or wealth they receive. The further the curve lies from the line of perfect equality, the greater the inequality; a curve closer to the line indicates a more equal distribution.", ["lorenz curve", "line of perfect equality", "inequality"]),
+        S("rv-di-b28", "Explain one economic benefit and one economic cost of income inequality.", "One benefit is that income differences create incentives to work, gain skills, invest and take entrepreneurial risks. One cost is that excessive inequality raises poverty and reduces access to education and opportunity, limiting human capital and causing social and economic disadvantage.", ["incentive", "poverty", "human capital"]),
+        R("rv-di-c4", "economic growth", "income distribution", "Economic growth increases total income, but whether inequality rises or falls depends on how the gains are distributed between households.", ["inequality", "income"])
+      ] },
+
+    // ---------------------------------------------------------------- 4
+    { id: "rev-external", name: "External stability", icon: "🌏",
+      blurb: "The current account, net foreign debt, the terms of trade and trade barriers.",
+      lessons: [{ id: "les-rev-external", title: "External stability", chunks: [
+        { h: "The current account and external balance",
+          body: "The current account records a country's external transactions over a period: the balance on trade in goods and services, plus net primary income (such as interest and dividends) and net secondary income (transfers). External stability, also called external balance, means this position and the country's foreign liabilities are sustainable over time, so it can meet its international obligations without major disruption. It matters because a position that is not sustainable leaves an economy exposed to shifts in global interest rates, exchange rates and investor confidence.",
+          check: chk("External stability is best described as:", [
+            { t: "A sustainable external position that can be serviced over time", ok: true, why: "External stability is about the external accounts and foreign liabilities remaining manageable into the future." },
+            { t: "A permanent current account surplus", ok: false, why: "Stability is about sustainability, not about running a constant surplus." },
+            { t: "Having no trade with other countries", ok: false, why: "Countries can be externally stable while trading heavily; it is the sustainability that matters." }]) },
+        { h: "From deficits to debt",
+          body: "A current account deficit means payments to the rest of the world exceed receipts. That deficit has to be financed, usually by a surplus on the financial account, which can involve borrowing from overseas or selling assets to foreigners. If deficits are financed by borrowing year after year, the stock of net foreign debt rises: the amount owed to foreigners after subtracting what they owe the country. Current account surpluses work the other way, reducing the need for new foreign borrowing. So the flow of the current account and the stock of net foreign debt are directly linked.",
+          check: chk("Persistent current account deficits financed by overseas borrowing tend to:", [
+            { t: "Increase net foreign debt over time", ok: true, why: "Repeated borrowing to cover the deficits adds to the stock owed to foreigners, raising net foreign debt." },
+            { t: "Reduce net foreign debt", ok: false, why: "Borrowing to fund deficits raises debt; it is surpluses that ease it." },
+            { t: "Have no effect on foreign liabilities", ok: false, why: "Financing deficits by borrowing directly changes foreign liabilities." }]) },
+        { h: "Terms of trade and trade barriers",
+          body: "The terms of trade measure the ratio of a country's export price index to its import price index. When export prices rise relative to import prices, the terms of trade improve, and a given volume of exports buys more imports, lifting export income and national income. A tariff is a different lever: a tax placed on imported goods and services that raises their price relative to domestic production, making local goods relatively cheaper. The terms of trade shape how much the country earns from trade, while tariffs change the relative prices consumers and producers face.",
+          check: chk("An improvement in the terms of trade means:", [
+            { t: "Export prices have risen relative to import prices", ok: true, why: "The terms of trade are export prices over import prices, so a rise in that ratio is an improvement." },
+            { t: "A tax has been placed on imports", ok: false, why: "That describes a tariff, not the terms of trade." },
+            { t: "Import prices have risen relative to export prices", ok: false, why: "That would be a deterioration in the terms of trade." }]) }
+      ] }],
+      cards: [
+        D("rv-ex-a10", "The amount a country owes to foreigners after taking into account its foreign assets.", "Net foreign debt: gross foreign debt liabilities minus foreign debt assets.", ["net foreign debt"]),
+        D("rv-ex-a11", "The balance of a country's exports and imports of goods and services, together with net primary and secondary income flows.", "Current account balance: the balance of trade in goods and services plus net primary and secondary income.", ["current account"]),
+        D("rv-ex-a12", "The situation where a country's external transactions and international liabilities are sustainable over time.", "External stability (external balance): external transactions and foreign liabilities remain sustainable over time.", ["external stability"]),
+        D("rv-ex-a13", "The ratio of a country's export prices to its import prices.", "Terms of trade: the ratio of the export price index to the import price index.", ["terms of trade"]),
+        D("rv-ex-a14", "A tax placed on imported goods and services to make them relatively more expensive than domestic goods.", "Tariff: a tax imposed on imported goods and services.", ["tariff"]),
+        S("rv-ex-b29", "Explain the relationship between Australia's current account balance and net foreign debt.", "A current account deficit means current payments exceed receipts and must be financed by a financial account surplus, which can involve borrowing from overseas. If deficits are repeatedly financed by foreign borrowing, net foreign debt rises; current account surpluses reduce the need for further borrowing.", ["current account deficit", "financial account", "net foreign debt"]),
+        S("rv-ex-b30", "Explain what is meant by external balance and why it is an important economic objective for Australia.", "External balance exists when the current account position and foreign liabilities are sustainable over the long term and the country can meet its international obligations without major disruption. It matters because excessive foreign debt and debt-servicing costs raise vulnerability to changes in global interest rates, exchange rates and investor confidence.", ["external stability", "foreign liabilities", "sustainable"]),
+        R("rv-ex-c5", "current account deficit", "net foreign debt", "Persistent current account deficits can increase net foreign debt when they are financed by additional borrowing from overseas.", ["net foreign debt", "borrowing"]),
+        R("rv-ex-c6", "terms of trade", "economic growth", "An improvement in the terms of trade raises export income and national income, supporting consumption, investment and economic growth.", ["terms of trade", "national income"])
+      ] },
+
+    // ---------------------------------------------------------------- 5
+    { id: "rev-macro", name: "Macroeconomic management", icon: "🏦",
+      blurb: "Monetary and fiscal policy, automatic stabilisers, and the NAIRU.",
+      lessons: [{ id: "les-rev-macro", title: "Macroeconomic management", chunks: [
+        { h: "The macroeconomic toolkit",
+          body: "Macroeconomic policy works on the level of aggregate demand to pursue goals such as economic growth, full employment and price stability. It has two main arms. Monetary policy is the Reserve Bank's use of the cash rate to influence interest rates and, through them, borrowing, spending and inflation. Fiscal policy is the government's use of taxation, expenditure and the budget. Each can be expansionary, lifting demand when activity is weak, or contractionary, restraining demand when inflation is high. Together they are the levers used to steer the economy through the cycle.",
+          check: chk("Which statement correctly matches a policy to its operator?", [
+            { t: "Monetary policy is run by the Reserve Bank; fiscal policy by the government", ok: true, why: "The RBA sets the cash rate (monetary policy) while the government uses tax and spending (fiscal policy)." },
+            { t: "Monetary policy is run by the government using taxation", ok: false, why: "Taxation is fiscal policy, and it is run by the government, not the RBA." },
+            { t: "Fiscal policy is set by the Reserve Bank", ok: false, why: "Fiscal policy is the government's budget tool, not the RBA's." }]) },
+        { h: "Automatic stabilisers",
+          body: "Some of fiscal policy works without any new decision. Automatic stabilisers are features of the budget, chiefly progressive taxation and welfare payments, that moderate the cycle on their own. In a downturn, incomes and profits fall so tax revenue automatically drops, while rising unemployment automatically increases welfare spending; both cushion disposable income and aggregate demand. In a boom the process runs in reverse, with rising tax and falling welfare restraining demand. Because they act immediately and without legislation, automatic stabilisers smooth the cycle before discretionary policy is even considered.",
+          check: chk("During a recession, automatic stabilisers work by:", [
+            { t: "Tax revenue falling and welfare spending rising, supporting demand", ok: true, why: "Lower incomes cut tax automatically while unemployment lifts welfare, both propping up disposable income and demand." },
+            { t: "Requiring new legislation before they act", ok: false, why: "The point of automatic stabilisers is that they act without new decisions." },
+            { t: "Raising taxes to slow the economy further", ok: false, why: "In a recession they ease the burden, they do not deepen the downturn." }]) },
+        { h: "The NAIRU: unemployment and inflation",
+          body: "The NAIRU is the non-accelerating inflation rate of unemployment: the lowest unemployment rate that can be sustained without causing inflation to accelerate. It links the labour market to prices. If unemployment falls below the NAIRU, labour becomes scarce, wage growth and production costs pick up, and inflation tends to accelerate. If unemployment sits above the NAIRU, there is spare capacity in the labour market and inflationary pressure is weaker. Policymakers watch the NAIRU because it marks roughly how far unemployment can fall before price pressures build.",
+          check: chk("If unemployment falls below the NAIRU, we would expect:", [
+            { t: "Inflationary pressure to rise as wage growth accelerates", ok: true, why: "Below the NAIRU, labour shortages push up wages and costs, so inflation tends to accelerate." },
+            { t: "Inflation to fall steadily", ok: false, why: "Falling below the NAIRU adds to inflation pressure rather than easing it." },
+            { t: "No change in inflation at all", ok: false, why: "The NAIRU is defined by the point where going below it starts to accelerate inflation." }]) }
+      ] }],
+      cards: [
+        D("rv-ma-a4", "The lowest rate of unemployment that can be sustained without creating accelerating inflation.", "Non-accelerating inflation rate of unemployment (NAIRU): the lowest unemployment rate consistent with stable inflation.", ["nairu"]),
+        D("rv-ma-a5", "Government policies designed to influence economic activity, including monetary and fiscal policy.", "Macroeconomic policy: policies, mainly monetary and fiscal policy, used to influence aggregate economic activity.", ["macroeconomic policy"]),
+        D("rv-ma-a6", "The use of interest rates by the Reserve Bank of Australia to influence economic activity and inflation.", "Monetary policy: the RBA's use of the cash rate to influence economic activity and inflation.", ["monetary policy"]),
+        D("rv-ma-a7", "The use of government taxation and expenditure to influence economic activity.", "Fiscal policy: the government's use of taxation, expenditure and the budget to influence economic activity.", ["fiscal policy"]),
+        D("rv-ma-a18", "Automatic changes in taxation and government spending that moderate the economic cycle without deliberate policy changes.", "Automatic stabilisers: features of the budget, such as progressive tax and welfare payments, that automatically moderate the cycle.", ["automatic stabilisers"]),
+        S("rv-ma-b31", "Explain how Australia's taxation and welfare systems can act as automatic stabilisers during a downturn.", "In a downturn incomes and profits fall, so tax revenue automatically decreases, while rising unemployment automatically increases welfare spending. Lower taxes and higher transfer payments support disposable income and aggregate demand, moderating the downturn without new discretionary policy.", ["automatic stabilisers", "transfer payments", "aggregate demand"]),
+        S("rv-ma-b32", "Explain how an expansionary monetary policy can increase economic growth and employment.", "The RBA lowers the cash rate, reducing borrowing costs and encouraging consumption and investment, and possibly depreciating the dollar to raise net exports. Higher aggregate demand lifts production and growth, so firms demand more labour and cyclical unemployment falls.", ["cash rate", "aggregate demand", "unemployment"]),
+        S("rv-ma-b33", "Explain how the government could use expansionary fiscal policy to respond to a recession.", "The government can increase expenditure, reduce taxation and raise transfer payments. These lift aggregate demand and, through the multiplier effect, raise production, growth and employment, though they are likely to increase the budget deficit in the short term.", ["government expenditure", "multiplier", "aggregate demand"]),
+        S("rv-ma-b34", "Explain the relationship between the NAIRU, unemployment and inflation.", "The NAIRU is the lowest unemployment rate sustainable without accelerating inflation. If unemployment falls below the NAIRU, labour shortages raise wage growth and costs, so inflation accelerates; if unemployment is above the NAIRU, spare capacity means inflation pressures are weaker.", ["nairu", "unemployment", "inflation"]),
+        S("rv-ma-b35", "Explain how macroeconomic policies can be used to influence economic activity.", "Macroeconomic policies influence aggregate demand to pursue growth, full employment and price stability. In weak activity the RBA can cut interest rates and the government can raise spending or cut taxes; in excessive demand and inflation, contractionary monetary and fiscal policy reduce aggregate demand.", ["aggregate demand", "monetary policy", "fiscal policy"]),
+        R("rv-ma-c7", "expansionary monetary policy", "aggregate demand", "Lower interest rates encourage consumption and investment and can raise net exports, increasing aggregate demand.", ["interest rates", "aggregate demand"]),
+        R("rv-ma-c8", "expansionary fiscal policy", "unemployment", "Higher government spending or lower taxation raises aggregate demand, output and demand for labour, reducing cyclical unemployment.", ["aggregate demand", "unemployment"]),
+        R("rv-ma-c9", "NAIRU", "inflation", "When unemployment falls below the NAIRU, rising wage and capacity pressures are likely to cause inflation to accelerate.", ["nairu", "inflation"])
+      ] },
+
+    // ---------------------------------------------------------------- 6
+    { id: "rev-sustainability", name: "Ecologically sustainable development", icon: "🌱",
+      blurb: "What sustainable development means, and how growth can create environmental market failure.",
+      lessons: [{ id: "les-rev-sustainability", title: "Ecologically sustainable development", chunks: [
+        { h: "What ecologically sustainable development means",
+          body: "Ecologically sustainable development is development that meets the needs of the present without compromising the ability of future generations to meet their own needs. It tries to pursue rising living standards while preserving environmental resources and ecosystems. This matters for a country's long-term economic performance because environmental damage can shrink productive capacity, create health and clean-up costs, and harm industries that depend on the environment, such as agriculture and tourism. Using resources sustainably helps make sure that growth and improvements in living standards can continue, rather than being bought at the expense of the future.",
+          check: chk("Ecologically sustainable development is mainly concerned with:", [
+            { t: "Meeting present needs without compromising future generations", ok: true, why: "That balance between present development and the needs of the future is the core of the definition." },
+            { t: "Maximising output this year whatever the cost", ok: false, why: "That ignores the future, which is exactly what sustainable development guards against." },
+            { t: "Stopping all economic growth", ok: false, why: "Sustainable development seeks development that lasts, not the end of growth." }]) },
+        { h: "Growth, externalities and the environment",
+          body: "Economic growth usually means more production, more consumption and greater use of natural resources, which can raise pollution, emissions and environmental degradation. Firms typically weigh their marginal private cost, but production can impose external costs on others, so marginal social cost equals marginal private cost plus the marginal external cost, and social cost exceeds private cost. Because the market price leaves out the full social cost, the market produces more than the socially optimal amount, over-allocating resources to the activity. This is why unchecked growth can create environmental market failure, and why sustainability and sound resource pricing matter for the long run.",
+          check: chk("Why can economic growth create environmental market failure?", [
+            { t: "Production imposes external costs, so MSC exceeds MPC and output is too high", ok: true, why: "The unpriced external cost lifts social cost above private cost, so the market over-produces the polluting activity." },
+            { t: "Because growth always lowers marginal social cost", ok: false, why: "Growth that pollutes raises social cost above private cost, it does not lower it." },
+            { t: "Because externalities are always positive", ok: false, why: "The environmental problem here is a negative externality, not a positive one." }]) }
+      ] }],
+      cards: [
+        D("rv-su-a15", "Development that meets the needs of the present without compromising the ability of future generations to meet their own needs.", "Ecologically sustainable development: development that meets present needs without reducing the ability of future generations to meet theirs.", ["sustainable development"]),
+        S("rv-su-b36", "Explain the importance of ecologically sustainable development to Australia's long-term economic performance.", "Ecologically sustainable development pursues development while preserving environmental resources for future generations. It matters because environmental degradation can reduce productive capacity, create health and clean-up costs, damage industries such as agriculture and tourism, and deplete resources; sustainable resource use lets growth and living standards continue rather than come at the expense of the future.", ["ecologically sustainable development", "productive capacity", "future generations"], 4),
+        S("rv-su-b37", "Explain how economic growth can contribute to environmental problems and create market failure. Refer to marginal social cost and externalities.", "Economic growth raises production, consumption and resource use, increasing pollution, emissions and degradation. Firms consider marginal private cost but production imposes external costs, so MSC = MPC + marginal external cost and MSC exceeds MPC. Because the price ignores the full social cost, the market over-produces, over-allocating resources and creating market failure.", ["marginal social cost", "marginal private cost", "externalities", "market failure"], 4),
+        R("rv-su-c10", "economic growth", "environmental sustainability", "Economic growth can reduce environmental sustainability when increased production and consumption create resource depletion, pollution and other negative externalities faster than they can be managed.", ["externalities", "pollution"])
+      ] }
+  ];
+
+  window.CONTENT.topics.push({
+    id: "trial-revision",
+    name: "Trial HSC Revision",
+    icon: "📝",
+    blurb: "Exam-style revision across the course: learn each concept, then practise it in short answer.",
+    areas: areas
+  });
+})();

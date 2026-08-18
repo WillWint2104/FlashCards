@@ -256,6 +256,10 @@
     return s ? customAsArea(s) : null;
   }
   function getLesson(id) {
+    // Search every topic's areas first (topic-scoped areas, e.g. the Trial HSC
+    // Revision topic, are not in C.areas), then fall back to C.areas. Mirrors
+    // findArea so a lesson in any topic is reachable and its mastery persists.
+    for (const t of (C.topics || [])) { for (const a of (t.areas || [])) { const l = (a.lessons || []).find(x => x.id === id); if (l) return l; } }
     for (const a of C.areas) { const l = (a.lessons || []).find(x => x.id === id); if (l) return l; }
     return null;
   }
