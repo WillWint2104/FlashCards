@@ -47,6 +47,150 @@ window.ESSAY = {
           text: "Account for the significance of one major site or monument to the society that built it.",
           topic: "Features of ancient societies: significant sites" }
       ]
+    },
+
+    // -------------------------------------------------------------------------
+    // Business Studies (Year 12). Extended-response practice built around the
+    // syllabus RELATIONSHIP the question tests (Term 1 affects Term 2), not just
+    // the command verb. Each question carries: qtype (A relationship, B judgement,
+    // C multi-element with mandatory targets), a topic tag, an exemplar paragraph
+    // PLAN (four syllabus relationships, not "four paragraphs"), and the core
+    // argument. Questions are original wording; FIN-01/FIN-02 mirror the 2024/2025
+    // HSC finance relationships and are flagged as such. No case-study content is
+    // asserted here: the student supplies the business evidence.
+    // -------------------------------------------------------------------------
+    business_studies: {
+      key: "business_studies",
+      label: "Business Studies",
+      stage: "Year 12",
+      defaultStructure: "six",           // intro + four body + conclusion (four relationships)
+      paraModels: ["teeec", "tdecc"],    // student-selectable paragraph structure (see scaffolds)
+      questions: [
+        { id: "ops-01", command: "How can", qtype: "A", qtypeLabel: "relationship",
+          text: "How can operations strategies contribute to the achievement of performance objectives?",
+          topic: "Operations", term1: "Operations strategies", term2: "Performance objectives",
+          plan: ["Technology to speed and cost", "Inventory management to dependability and cost", "Quality management to quality", "Supply chain management to speed and dependability"],
+          argument: "Operations strategies influence business performance by changing the quality, speed, dependability, flexibility, customisation and cost of outputs." },
+        { id: "ops-02", command: "Assess", qtype: "B", qtypeLabel: "judgement",
+          text: "Assess the impact of globalisation on operations management.",
+          topic: "Operations", term1: "Globalisation", term2: "Operations management",
+          plan: ["Global sourcing to costs and supply", "Economies of scale to cost leadership", "Scanning and learning to innovation", "Research and development to differentiation"],
+          argument: "Globalisation can substantially improve cost competitiveness and innovation but exposes businesses to greater supply-chain and global risk." },
+        { id: "ops-03", command: "How can", qtype: "A", qtypeLabel: "relationship",
+          text: "How can operations strategies affect corporate social responsibility?",
+          topic: "Operations", term1: "Operations strategies", term2: "Corporate social responsibility",
+          plan: ["Supply chain and global sourcing to social responsibility", "Outsourcing to employee and community responsibilities", "Inventory and waste management to environmental sustainability", "Technology and design to environmental and social consequences"],
+          argument: "Operations strategies shape a business's social and environmental responsibilities as much as its efficiency." },
+        { id: "mkt-01", command: "Explain", qtype: "C", qtypeLabel: "multi-element",
+          text: "Explain how target markets influence the development of marketing strategies.",
+          topic: "Marketing", term1: "Target markets", term2: "Marketing strategies",
+          plan: ["Target market to product", "Target market to price", "Target market to promotion and e-marketing", "Target market to place, people, processes and physical evidence"],
+          argument: "The chosen target market shapes every element of the marketing mix so that strategy fits the customer." },
+        { id: "mkt-02", command: "Assess", qtype: "B", qtypeLabel: "judgement",
+          text: "Assess the effectiveness of marketing strategies in achieving marketing objectives.",
+          topic: "Marketing", term1: "Marketing strategies", term2: "Marketing objectives",
+          plan: ["Product differentiation to market share", "Pricing to sales and profitability", "Promotion to awareness and sales", "Distribution and e-marketing to market expansion"],
+          argument: "Marketing strategies can be effective in achieving objectives, though their success depends on fit with the market and on competitors' responses." },
+        { id: "mkt-03", command: "To what extent", qtype: "B", qtypeLabel: "judgement",
+          text: "To what extent do influences on marketing determine business success?",
+          topic: "Marketing", term1: "Influences on marketing", term2: "Business success",
+          plan: ["Psychological influences", "Sociocultural influences", "Economic influences", "Government, legal and ethical influences"],
+          argument: "Influences significantly shape customer behaviour and constrain decisions, though management's response ultimately determines their effect on success." },
+        { id: "fin-01", command: "How can", qtype: "A", qtypeLabel: "relationship",
+          text: "How can financial strategies affect the objectives of financial management?",
+          topic: "Finance", term1: "Financial management strategies", term2: "Objectives of financial management",
+          note: "2024 HSC Section IV question.",
+          plan: ["Cash flow management to liquidity", "Working capital management to liquidity and efficiency", "Profitability management to profitability and growth", "Global financial management to profitability and solvency"],
+          argument: "Financial strategies substantially help businesses achieve financial objectives by controlling cash, working capital, costs, revenues and financial risk, though achieving one objective can involve a trade-off with another." },
+        { id: "fin-02", command: "Explain", qtype: "C", qtypeLabel: "multi-element",
+          text: "Explain how financial strategies can achieve liquidity and profitability objectives.",
+          topic: "Finance", term1: "Financial management strategies", term2: "Liquidity and profitability",
+          note: "2025 HSC finance question. Constrained selection: liquidity and profitability are mandatory targets.",
+          plan: ["Distribution of payments to liquidity", "Factoring and early-payment discounts to liquidity", "Working capital controls to liquidity", "Cost and revenue controls to profitability"],
+          argument: "Financial strategies can achieve both liquidity and profitability, but the same strategy can help one objective while costing the other." },
+        { id: "fin-03", command: "Assess", qtype: "B", qtypeLabel: "judgement",
+          text: "Assess the impact of influences on the financial management of a business.",
+          topic: "Finance", term1: "Influences on financial management", term2: "Financial management and performance",
+          plan: ["Sources of finance", "Financial institutions", "Government", "Global market influences"],
+          argument: "The significance of each influence depends on the business's financial position and activities, though global market conditions can be particularly significant for large and international businesses." },
+        { id: "hr-01", command: "Evaluate", qtype: "B", qtypeLabel: "judgement",
+          text: "Evaluate the effectiveness of human resource strategies in improving business performance.",
+          topic: "Human Resources", term1: "Human resource strategies", term2: "Business performance",
+          plan: ["Leadership style to satisfaction and culture", "Training and development to productivity and skills", "Performance management and rewards to turnover and performance", "Dispute resolution to disputation and satisfaction"],
+          argument: "Human resource strategies can be effective in improving performance, measured against indicators such as turnover, absenteeism, disputation and worker satisfaction." },
+        { id: "hr-02", command: "Analyse", qtype: "A", qtypeLabel: "relationship",
+          text: "Analyse how key influences affect human resource management.",
+          topic: "Human Resources", term1: "Key influences", term2: "Human resource management",
+          plan: ["Stakeholders", "Legal influences", "Economic influences", "Technological, social and ethical influences"],
+          argument: "Key influences shape human resource decisions by changing the expectations, constraints and conditions managers must respond to." },
+        { id: "hr-03", command: "To what extent", qtype: "B", qtypeLabel: "judgement",
+          text: "To what extent can human resource processes contribute to effective human resource management?",
+          topic: "Human Resources", term1: "Human resource processes", term2: "Effective human resource management",
+          plan: ["Acquisition to an appropriate workforce", "Development to skills and productivity", "Maintenance to retention and satisfaction", "Separation to restructuring, costs and culture"],
+          argument: "Human resource processes contribute substantially to effective management, though their effect depends on how well each stage is carried out." }
+      ],
+      // Two selectable paragraph structures. Each overrides the BODY slot set only;
+      // intro and conclusion reuse the shared light sets. Slot keys are stable and
+      // are the contract with the coach worker. Content-free frames only.
+      scaffolds: {
+        teeec: {
+          label: "TEEEC", expansion: "Topic, Explain, Example, Effect, Concluding link",
+          body: [
+            { key: "topic",   label: "topic",           job: "state the relationship this paragraph argues, a strategy affecting an objective" },
+            { key: "explain", label: "explanation",     job: "explain how the strategy works, using business terminology" },
+            { key: "example", label: "example",         job: "apply a real case study or business example" },
+            { key: "effect",  label: "effect",          job: "explain the effect on the objective and why it matters to the business" },
+            { key: "link",    label: "concluding link", job: "link back to the question with a clear judgement" }
+          ],
+          templates: {
+            topic:   { tier1: "____ can affect ____ because ____.",
+                       tier2: [ { type: "cause and effect", frame: "____ influences ____ by ____." } ] },
+            explain: { tier1: "This works because ____ leads to ____.",
+                       tier2: [ { type: "mechanism", frame: "By ____, the business is able to ____, which changes ____." } ] },
+            example: { tier1: "For example, a business could ____, which shows ____." },
+            effect:  { tier1: "As a result, ____ improves ____, which matters because ____.",
+                       tier2: [ { type: "trade-off", frame: "This improves ____, although it can reduce ____." } ] },
+            link:    { tier1: "Therefore, ____ affects ____, which addresses the question because ____." }
+          }
+        },
+        tdecc: {
+          label: "TDECC", expansion: "Topic, Define, Example, Comment, Concluding link",
+          body: [
+            { key: "topic",   label: "topic",           job: "state the relationship this paragraph argues, a strategy affecting an objective" },
+            { key: "define",  label: "definition",      job: "define the key strategy or term precisely, using business terminology" },
+            { key: "example", label: "example",         job: "apply a real case study or business example" },
+            { key: "comment", label: "comment",         job: "analyse the consequence: how it affects the objective, including any trade-off" },
+            { key: "link",    label: "concluding link", job: "link back to the question with a clear judgement" }
+          ],
+          templates: {
+            topic:   { tier1: "____ can affect ____ because ____." },
+            define:  { tier1: "____ refers to ____.",
+                       tier2: [ { type: "define then apply", frame: "____ is ____, which allows a business to ____." } ] },
+            example: { tier1: "For example, a business could ____, which shows ____." },
+            comment: { tier1: "This matters because ____ leads to ____, although ____.",
+                       tier2: [ { type: "weigh it", frame: "This affects ____ more than ____ because ____." } ] },
+            link:    { tier1: "Therefore, ____ affects ____, which addresses the question because ____." }
+          }
+        }
+      },
+      // Fixed, pre-written worked examples in the business genre, deliberately on a
+      // DIFFERENT relationship from most questions so the analytical shape transfers
+      // without being liftable. Generic firm ("a business"): no real company named.
+      // Slots use the TEEEC keys; TDECC-only slots simply show no example.
+      examples: [
+        { topic: "finance-liquidity", label: "Cash flow management and liquidity", slots: {
+          topic: "Cash flow management can significantly improve a business's liquidity because it changes the timing and availability of cash.",
+          explain: "Strategies such as the distribution of payments, discounts for early payment and factoring alter when cash flows in and out, so more cash is available to meet short-term commitments.",
+          example: "For example, a business could use factoring to sell its accounts receivable for immediate cash rather than waiting for customers to pay.",
+          effect: "This increases the funds available to pay suppliers and wages, improving liquidity, although factoring carries a cost that can reduce profitability.",
+          link: "Therefore, cash flow management can be highly effective in achieving liquidity, provided managers weigh the trade-off with profitability." } },
+        { topic: "operations-quality", label: "Quality management and the quality objective", slots: {
+          topic: "Quality management can strengthen the performance objective of quality because it builds consistency into outputs.",
+          explain: "Approaches such as quality control, quality assurance and continuous improvement reduce defects and variation in the production process.",
+          example: "For example, a business could introduce standardised checks at each stage of production to catch faults before goods reach customers.",
+          effect: "This raises the reliability of outputs and customer satisfaction, which matters because it protects reputation and repeat sales.",
+          link: "Therefore, quality management directly supports the quality objective and, through it, wider business performance." } }
+      ]
     }
   },
 

@@ -160,11 +160,40 @@ const REVIEW_TOOL = {
 // the same hallucination guard as charts-from-real-data-only.
 // The system prompt is prompt-cached because it repeats on every call.
 // =============================================================================
-// The shared paragraph slot model. Keep these KEYS in sync with window.ESSAY.slots
-// in essay-content.js. The coach reports which slots are ABSENT by key only; the
-// app supplies the human-facing label, job text and any frames. So the coach never
-// emits a frame, a worked example, or any real content for a missing element.
-const COACH_SLOT_KEYS = ["point", "analysis", "evidence", "link", "thesis", "methods", "restate", "judgement"];
+// The paragraph slot model. The CLIENT now sends the exact slots expected for the
+// paragraph in each request (key + label + job), so the coach adapts to any subject
+// and paragraph structure (e.g. Business Studies TEEEC/TDECC) with no per-subject
+// worker change. DEFAULT_SLOTS is the backward-compatible fallback used only when an
+// older client sends no slots. The coach reports which slots are ABSENT by key only;
+// the app supplies all human-facing label/job/frame text, so the coach never emits a
+// frame, a worked example, or any real content for a missing element.
+const DEFAULT_SLOTS = [
+  { key: "point",     label: "point",       job: "state the argument this paragraph makes" },
+  { key: "analysis",  label: "analysis",    job: "explain the effect or why it matters" },
+  { key: "evidence",  label: "evidence",    job: "ground the point in a specific source or detail" },
+  { key: "link",      label: "link",        job: "connect the point back to the question" },
+  { key: "thesis",    label: "thesis",      job: "state the overall line of argument" },
+  { key: "methods",   label: "approach",    job: "signpost how the essay will get there" },
+  { key: "restate",   label: "restatement", job: "draw the argument together without simply repeating" },
+  { key: "judgement", label: "judgement",   job: "land a clear, weighed judgement" }
+];
+const COACH_SLOT_KEYS = DEFAULT_SLOTS.map(s => s.key);
+// Sanitise a client-sent slots spec: array of {key,label,job} with bounded lengths
+// and a sane cap. Returns null when nothing usable is provided (caller falls back).
+function sanitizeSlots(raw) {
+  if (!Array.isArray(raw)) return null;
+  const out = [];
+  const seen = new Set();
+  for (const s of raw) {
+    const key = String((s && s.key) || "").trim().slice(0, 40);
+    if (!key || seen.has(key)) continue;
+    if (!/^[a-z0-9_]+$/i.test(key)) continue; // keys are simple identifiers
+    seen.add(key);
+    out.push({ key, label: String((s && s.label) || key).trim().slice(0, 60), job: String((s && s.job) || "").trim().slice(0, 200) });
+    if (out.length >= 8) break;
+  }
+  return out.length ? out : null;
+}
 
 const COACH_SYSTEM = `You are an HSC essay-writing coach working with one student on one paragraph at a time. You coach the craft of writing; you never write for the student.
 
@@ -176,9 +205,9 @@ Absolute rules, in order of importance:
 5. If the student seems to have a factual point that may be wrong, do not correct it and do not assert the right fact. Say that they should check it against their own notes.
 6. Coach to HSC marking bands: analysis over description, cohesion and signposting, integrating evidence, register, and syntax. Be honest and specific, never flattering.
 
-The paragraph slot model. A body paragraph should contain four elements: point (the argument of the paragraph), analysis (the effect or why it matters), evidence (a specific source or detail), and link (connecting back to the question). An introduction should contain a thesis and a signposted approach (methods). A conclusion should contain a restatement and a weighed judgement.
+The paragraph slot model. The elements this paragraph should contain are listed in the user message under EXPECTED ELEMENTS, each with a key, a label and its job. Different subjects and paragraph structures use different elements (for example a Business Studies TEEEC or TDECC body paragraph), so always work from the elements given for THIS paragraph, not a fixed list.
 
-Detect a GENUINELY ABSENT element, which is different from one that is present but weak. Report an absent element in "missing" using only its key from this list: ${COACH_SLOT_KEYS.join(", ")}. Do not list an element that is present but thin; for those, raise a question in "nudges" instead. Only report elements that belong to this paragraph's role.
+Detect a GENUINELY ABSENT element, which is different from one that is present but weak. Report an absent element in "missing" using only its key from the EXPECTED ELEMENTS given for this paragraph. Do not list an element that is present but thin; for those, raise a question in "nudges" instead. Only report elements that belong to this paragraph.
 
 Categorise each nudge so the app can surface substance first and tuck wording polish away:
 - on_target: substance and analysis, the heart of answering the question.
@@ -189,7 +218,10 @@ If a rubric or marking guide is provided, target your feedback at that rubric an
 
 Keep everything short. Writable register, no em-dashes anywhere, sentence case. Return your feedback only through the submit_coaching tool.`;
 
-const COACH_TOOL = {
+// The tool schema, with the "missing" slot enum locked to THIS paragraph's keys so
+// the model can only report an absent element that actually belongs to the paragraph.
+function coachTool(slotKeys) {
+  return {
   name: "submit_coaching",
   description: "Return short coaching for one paragraph: a note, the absent elements (by key only), categorised question-nudges, and word-level alternatives. Never a rewritten paragraph, sentence, frame, or any content.",
   input_schema: {
@@ -202,7 +234,7 @@ const COACH_TOOL = {
         items: {
           type: "object",
           properties: {
-            slot: { type: "string", enum: COACH_SLOT_KEYS, description: "Which element is missing." },
+            slot: { type: "string", enum: slotKeys, description: "Which element is missing." },
           },
           required: ["slot"],
         },
@@ -235,7 +267,8 @@ const COACH_TOOL = {
     },
     required: ["note", "nudges"],
   },
-};
+  };
+}
 
 // Belt-and-braces server-side enforcement of the suggest-never-substitute rule on
 // EVERY field, not just chips: nudges must read as questions and stay short, note
@@ -243,12 +276,14 @@ const COACH_TOOL = {
 // and chips stay word-level. So a misbehaving model can never return a
 // substitution through any field. (The client enforces the same limits.)
 function shortPhrase(s, maxWords) { return String(s || "").trim().split(/\s+/).filter(Boolean).length <= maxWords; }
-function normalizeCoaching(c) {
-  // missing: keep only known slot keys (by key alone, no model-written text), deduped.
+function normalizeCoaching(c, slotKeys) {
+  // missing: keep only keys valid FOR THIS PARAGRAPH (by key alone, no model-written
+  // text), deduped. Falls back to the default keys when none were provided.
+  const valid = new Set(Array.isArray(slotKeys) && slotKeys.length ? slotKeys : COACH_SLOT_KEYS);
   const seen = new Set();
   const missing = (Array.isArray(c.missing) ? c.missing : [])
     .map(m => ({ slot: String((m && m.slot) || "").trim() }))
-    .filter(m => COACH_SLOT_KEYS.includes(m.slot) && !seen.has(m.slot) && seen.add(m.slot))
+    .filter(m => valid.has(m.slot) && !seen.has(m.slot) && seen.add(m.slot))
     .slice(0, 6);
   // nudges are objects {text, category}; keep only short questions, default category on_target.
   const CATS = ["on_target", "signposting", "expression"];
@@ -286,6 +321,14 @@ async function handleCoach(body, env, cors) {
     return json({ error: "a field is too long" }, 400, cors);
   }
 
+  // The expected elements for THIS paragraph, from the client (adapts to TEEEC/TDECC
+  // etc.), or the default slot model for an older client.
+  const paragraph_model = String((body && body.paragraph_model) || "").trim().slice(0, 40);
+  const slots = sanitizeSlots(body && body.slots) || DEFAULT_SLOTS;
+  const slotKeys = slots.map(s => s.key);
+  const slotBlock = "EXPECTED ELEMENTS FOR THIS PARAGRAPH (report any that are genuinely absent, by key):\n" +
+    slots.map(s => `- ${s.key} (${s.label})${s.job ? ": " + s.job : ""}`).join("\n");
+
   const rubricBlock = String(rubric || "").trim()
     ? `RUBRIC OR MARKING GUIDE (target your feedback at this):\n${rubric}`
     : `RUBRIC: (none provided, use general HSC band expectations)`;
@@ -293,9 +336,11 @@ async function handleCoach(body, env, cors) {
   const userMsg = `SUBJECT: ${subject || "(unspecified)"}
 ESSAY QUESTION:
 ${question || "(not given)"}
-${topic ? "CHOSEN TOPIC OR OPTION: " + topic + "\n" : ""}PLANNED STRUCTURE: ${structure || "(not given)"}
+${topic ? "CHOSEN TOPIC OR OPTION: " + topic + "\n" : ""}PLANNED STRUCTURE: ${structure || "(not given)"}${paragraph_model ? "\nPARAGRAPH STRUCTURE: " + paragraph_model : ""}
 THIS PARAGRAPH'S ROLE: ${paragraph_role || "(unspecified)"}
 THE STUDENT'S PLANNED POINT FOR THIS PARAGRAPH: ${planned_point || "(none written)"}
+
+${slotBlock}
 
 ${rubricBlock}
 
@@ -320,7 +365,7 @@ Coach this paragraph now. Remember: suggest, never substitute. Nudges are questi
         model: COACH_MODEL,
         max_tokens: COACH_MAX_TOKENS,
         system: [{ type: "text", text: COACH_SYSTEM, cache_control: { type: "ephemeral" } }],
-        tools: [COACH_TOOL],
+        tools: [coachTool(slotKeys)],
         tool_choice: { type: "tool", name: "submit_coaching" },
         messages: [{ role: "user", content: userMsg }],
       }),
@@ -332,7 +377,7 @@ Coach this paragraph now. Remember: suggest, never substitute. Nudges are questi
   }
   const block = (data.content || []).find(b => b.type === "tool_use");
   if (!block || !block.input) return json({ error: "coach returned nothing", stop_reason: data.stop_reason || null }, 502, cors);
-  return json(normalizeCoaching(block.input), 200, cors);
+  return json(normalizeCoaching(block.input, slotKeys), 200, cors);
 }
 
 export default {

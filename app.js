@@ -2574,7 +2574,28 @@
   function esView() {
     const sc = esSubjectContent(ES.subject);
     const questions = (sc && Array.isArray(sc.questions)) ? sc.questions : [];
-    return { label: esSubjectLabel(), stage: (sc && sc.stage) || "", questions, hasQuestions: questions.length > 0 };
+    const models = (sc && sc.scaffolds) ? (sc.paraModels || Object.keys(sc.scaffolds)) : [];
+    return {
+      label: esSubjectLabel(), stage: (sc && sc.stage) || "",
+      questions, hasQuestions: questions.length > 0,
+      paraModels: models, hasParaModels: models.length > 0,
+      defaultStructure: (sc && sc.defaultStructure) || (window.ESSAY && window.ESSAY.defaultStructure) || "five"
+    };
+  }
+  // Subjects a student can pick in setup: any that ship their own questions or a
+  // paragraph scaffold. Lets any login load a subject's bank without a class-code
+  // rule (the routed subject is just the default selection).
+  function esSubjectsList() {
+    const subs = (window.ESSAY && window.ESSAY.subjects) || {};
+    return Object.keys(subs)
+      .filter(k => { const s = subs[k]; return s && ((Array.isArray(s.questions) && s.questions.length) || s.scaffolds); })
+      .map(k => ({ key: k, label: subs[k].label || k }));
+  }
+  // A model's short label (e.g. "teeec" -> "TEEEC") from the subject's scaffolds.
+  function esParaModelLabel(model) {
+    const sc = esSubjectContent(ES.subject);
+    const m = sc && sc.scaffolds && sc.scaffolds[model];
+    return (m && m.label) || String(model || "").toUpperCase();
   }
   // The worked-example set for the current subject, with the fallback flagged as a
   // placeholder. Examples are ALWAYS fixed and pre-written (never generated), whether
@@ -2599,17 +2620,36 @@
   // peeked persists for the whole attempt: revealing once disqualifies mastery even
   // if the answer is hidden again before checking. Cleared only on a new attempt.
   function esResetQuiz() { ES.quiz = { revealed: false, peeked: false, attempt: "", result: null }; }
-  // Map a paragraph's role to its slot set in the ONE shared model (window.ESSAY.slots).
-  // Intro/Conclusion get their light sets; everything else is a body paragraph.
+  // The active per-subject paragraph scaffold (e.g. Business Studies TEEEC/TDECC),
+  // chosen from the draft (or the setup form before a draft exists). Returns null
+  // when the subject ships no scaffolds, so the shared slot model is used instead.
+  function esActiveScaffold() {
+    const sc = esSubjectContent(ES.subject);
+    const models = sc && sc.scaffolds;
+    if (!models) return null;
+    const chosen = (ES.draft && ES.draft.paraModel) || (ES.form && ES.form.paraModel) ||
+                   (Array.isArray(sc.paraModels) && sc.paraModels[0]) || Object.keys(models)[0];
+    return (chosen && models[chosen]) || null;
+  }
+  // Map a paragraph's role to its slot set. Intro/Conclusion use the shared light
+  // sets; the BODY set is the subject scaffold's when present (TEEEC/TDECC),
+  // otherwise the shared body slots (window.ESSAY.slots).
   function slotsForRole(role) {
     const sets = (window.ESSAY && window.ESSAY.slots && window.ESSAY.slots.roleSets) || {};
     const r = String(role || "").toLowerCase();
     if (r.indexOf("introduction") === 0 || r === "intro") return sets.introduction || [];
     if (r.indexOf("conclusion") === 0) return sets.conclusion || [];
-    return sets.body || [];
+    const scaf = esActiveScaffold();
+    return (scaf && scaf.body) || sets.body || [];
   }
   function slotDef(role, key) { return slotsForRole(role).find(s => s.key === key) || null; }
-  function slotTemplates(key) { return (window.ESSAY && window.ESSAY.slots && window.ESSAY.slots.templates && window.ESSAY.slots.templates[key]) || null; }
+  // Frame templates for a slot: the active scaffold's when it defines the key,
+  // otherwise the shared templates.
+  function slotTemplates(key) {
+    const scaf = esActiveScaffold();
+    if (scaf && scaf.templates && scaf.templates[key]) return scaf.templates[key];
+    return (window.ESSAY && window.ESSAY.slots && window.ESSAY.slots.templates && window.ESSAY.slots.templates[key]) || null;
+  }
   function esBagKey() { return ES.subject + "|" + ES.code; }
   const ES_DRAFT_CAP = 24; // keep a manageable set of saved essays; drop the oldest beyond this
   function esReadStore() { try { return JSON.parse(store.getItem(ES_KEY) || "{}") || {}; } catch (e) { return {}; } }
@@ -2690,6 +2730,16 @@
       demoNote: demoNote || ""
     };
   }
+  // The labelled demo fallback, made subject/model-aware: the "missing" slots are
+  // derived from THIS paragraph's actual slot set (two middle slots) so the ordered
+  // skeleton demo works for any scaffold, including Business Studies TEEEC/TDECC.
+  // Note and chips come from the shared demo sample (generic, clearly labelled).
+  function esDemoRaw(role) {
+    const base = (window.ESSAY && window.ESSAY.coachSample) || {};
+    const slots = slotsForRole(role);
+    const mid = slots.slice(1, 3).map(s => ({ slot: s.key }));
+    return Object.assign({}, base, { missing: mid.length ? mid : (base.missing || []) });
+  }
 
   function esOpen(opts) {
     opts = opts || {};
@@ -2746,8 +2796,27 @@
   }
   // ---------------------------------- SETUP ----------------------------------
   function esRenderSetup(host, sc) {
-    if (!ES.form) ES.form = { question: "", topic: "", rubric: "", structure: (window.ESSAY && window.ESSAY.defaultStructure) || "five", rubricOpen: false };
+    if (!ES.form) ES.form = { question: "", topic: "", rubric: "", structure: sc.defaultStructure, paraModel: (sc.paraModels[0] || null), rubricOpen: false };
     const f = ES.form;
+    // Optional subject picker: any login can load a subject's question bank and
+    // paragraph scaffold, defaulting to the subject routed from their class code.
+    const subjectList = esSubjectsList();
+    const subjectPicker = subjectList.length > 1 ? `
+      <div class="es-field">
+        <label class="es-label" for="essubject">Subject</label>
+        <select id="essubject" class="es-input es-select">${subjectList.map(s =>
+          `<option value="${esc(s.key)}" ${s.key === ES.subject ? "selected" : ""}>${esc(s.label)}</option>`).join("")}</select>
+      </div>` : "";
+    // Paragraph-structure picker (e.g. Business Studies TEEEC vs TDECC), only when
+    // the subject ships selectable scaffolds.
+    const scObj = esSubjectContent(ES.subject);
+    const modelPicker = sc.hasParaModels ? `
+      <div class="es-field">
+        <label class="es-label" for="esparamodel">Paragraph structure</label>
+        <select id="esparamodel" class="es-input es-select">${sc.paraModels.map(m =>
+          `<option value="${esc(m)}" ${m === f.paraModel ? "selected" : ""}>${esc(esParaModelLabel(m))}${(scObj.scaffolds[m] && scObj.scaffolds[m].expansion) ? " — " + esc(scObj.scaffolds[m].expansion) : ""}</option>`).join("")}</select>
+        <p class="es-help">Each body paragraph will be scaffolded to this structure.</p>
+      </div>` : "";
     // Suggested questions are subject-specific: show them ONLY when THIS subject ships
     // its own set. Otherwise hide the block cleanly (the student types their own).
     const qChips = sc.hasQuestions ? sc.questions.map(q =>
@@ -2786,6 +2855,7 @@
       </div>
       <h1 class="es-h1">Set up your essay</h1>
       <p class="es-lead">Only the question is needed. Everything else is optional and you can change all of it later.</p>
+      ${subjectPicker}
       ${resume}
       <div class="es-field">
         <label class="es-label" for="esq">Essay question <span class="es-req">needed</span></label>
@@ -2808,6 +2878,7 @@
         <label class="es-label" for="esstruct">Structure</label>
         <select id="esstruct" class="es-input es-select">${structOpts}</select>
       </div>
+      ${modelPicker}
       <div class="es-actions">
         <button class="es-btn primary" id="esstart">Start practising</button>
         <span class="es-foothint">You will write one paragraph at a time with a coach, or you can switch to a full timed attempt.</span>
@@ -2818,6 +2889,17 @@
     const tp = $("#estopic"); tp.oninput = () => { f.topic = tp.value; };
     const rb = $("#esrubric"); rb.oninput = () => { f.rubric = rb.value; };
     const stt = $("#esstruct"); stt.onchange = () => { f.structure = stt.value; };
+    const subjSel = $("#essubject");
+    if (subjSel) subjSel.onchange = () => {
+      ES.subject = subjSel.value;
+      const nv = esView();                       // new subject defaults
+      f.structure = nv.defaultStructure;
+      f.paraModel = nv.paraModels[0] || null;
+      esLoadList();                              // saved essays are per subject
+      esRender();
+    };
+    const pmSel = $("#esparamodel");
+    if (pmSel) pmSel.onchange = () => { f.paraModel = pmSel.value; };
     $("#esbandsref").onclick = () => {
       f.rubricOpen = !f.rubricOpen;
       const bands = document.querySelector("[data-bands]"); if (bands) bands.hidden = !f.rubricOpen;
@@ -2835,7 +2917,7 @@
     // (not the written text), prefilling setup so Start practising makes a fresh draft.
     host.querySelectorAll("[data-estemplate]").forEach(b => b.onclick = () => {
       const d = ES.list.find(x => x.id === b.dataset.estemplate);
-      if (d) { ES.form = { question: d.question || "", topic: d.topic || "", rubric: d.rubric || "", structure: d.structure || ((window.ESSAY && window.ESSAY.defaultStructure) || "five"), rubricOpen: false }; esRender(); const el = $("#esq"); if (el) el.focus(); }
+      if (d) { ES.form = { question: d.question || "", topic: d.topic || "", rubric: d.rubric || "", structure: d.structure || sc.defaultStructure, paraModel: d.paraModel || (sc.paraModels[0] || null), rubricOpen: false }; esRender(); const el = $("#esq"); if (el) el.focus(); }
     });
     // Delete a saved essay: remove from localStorage + list, then drop just this
     // row from the DOM (no full re-render, no flash). Section goes if it empties.
@@ -2851,7 +2933,8 @@
       ES.draft = {
         id: esId(), subject: ES.subject, code: ES.code,
         question, topic: (f.topic || "").trim(), rubric: (f.rubric || "").trim(),
-        structure: f.structure, paras: esBuildParas(f.structure, null),
+        structure: f.structure, paraModel: f.paraModel || undefined,
+        paras: esBuildParas(f.structure, null),
         mode: "coached", pos: 0, createdAt: new Date().toISOString()
       };
       esSaveDraft();
@@ -3293,7 +3376,7 @@
     host.querySelector(".es-completion").innerHTML = `
       <div class="es-submitted">
         <div class="es-submittedh">Saved. Your full attempt is kept as one draft.</div>
-        <p class="es-help">When marking is connected for ${esc(esSubjectContent(ES.subject).label)}, Submit will send this for a grade. Coaching and marking stay separate, so connecting one never changes the other.</p>
+        <p class="es-help">When marking is connected for ${esc(esSubjectLabel() || "your subject")}, Submit will send this for a grade. Coaching and marking stay separate, so connecting one never changes the other.</p>
         <button class="es-linkbtn" id="esbacksetup">Back to setup</button>
       </div>`;
     const b = $("#esbacksetup"); if (b) b.onclick = () => { ES.screen = "setup"; esRender(); };
@@ -3337,6 +3420,12 @@
           paragraph_text: submittedText, paragraph_role: p.role, planned_point: p.point || "",
           question: d.question, topic: d.topic || "",
           structure: esStructureLabel(d.structure), subject: ES.subject || undefined,
+          paragraph_model: d.paraModel || undefined,
+          // Tell the coach the exact slots expected for THIS paragraph (key + label +
+          // job). Lets the worker detect absent elements for any scaffold (TEEEC/
+          // TDECC included) without a per-subject worker change. Backward compatible:
+          // an older worker ignores it and falls back to its built-in slot keys.
+          slots: slotsForRole(p.role).map(s => ({ key: s.key, label: s.label, job: s.job })),
           code: state.code || undefined
         };
         if ((d.rubric || "").trim()) payload.rubric = d.rubric.trim(); // omit when skipped -> generic bands
@@ -3344,10 +3433,10 @@
         if (!res.ok) throw new Error("coach " + res.status);
         fb = esNormalizeCoach(await res.json(), "", p.role);
       } catch (e) {
-        fb = esNormalizeCoach(window.ESSAY.coachSample, "Could not reach coaching (" + e.message + "). Showing demo suggestions instead.", p.role);
+        fb = esNormalizeCoach(esDemoRaw(p.role), "Could not reach coaching (" + e.message + "). Showing demo suggestions instead.", p.role);
       }
     } else {
-      fb = esNormalizeCoach(window.ESSAY.coachSample, ES.demo
+      fb = esNormalizeCoach(esDemoRaw(p.role), ES.demo
         ? "Demo coaching. Real Haiku feedback switches on once the worker is re-pasted."
         : "Demo coaching. Real feedback switches on once your teacher connects coaching.", p.role);
     }
