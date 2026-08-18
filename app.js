@@ -31,10 +31,11 @@
   const state = load();
   function load() {
     try { return JSON.parse(store.getItem(LS_KEY)) || blank(); } catch { return blank(); }
-    function blank() { return { cards: {}, endpoint: "", code: "", log: [], customSets: [], lessons: {} }; }
+    function blank() { return { cards: {}, endpoint: "", code: "", log: [], customSets: [], lessons: {}, exams: [] }; }
   }
   state.customSets = state.customSets || [];
   state.lessons = state.lessons || {};
+  state.exams = state.exams || [];  // imported practice-exam papers (marginal-exam@1)
   // Teacher's TEACHER SETUP config is the source of truth for the endpoint —
   // students have no field to edit it, so always sync from CONFIG (this also
   // clears any endpoint a returning user has stale in localStorage).
@@ -198,7 +199,7 @@
     const payload = {
       format: BACKUP_FORMAT, exported: new Date().toISOString(),
       subject: C.subject || "",
-      data: { cards: state.cards, lessons: state.lessons, log: state.log, customSets: state.customSets }
+      data: { cards: state.cards, lessons: state.lessons, log: state.log, customSets: state.customSets, exams: state.exams }
     };
     const stamp = new Date().toISOString().slice(0, 10);
     download("marginal-backup-" + stamp + ".json", JSON.stringify(payload, null, 2));
@@ -222,6 +223,10 @@
       let added = 0;
       d.customSets.forEach(s => { if (!names.has(s.name)) { state.customSets.push(s); added++; } });
       mergeCustomGlossaries();
+    }
+    if (Array.isArray(d.exams)) {
+      const ids = new Set((state.exams || []).map(x => x.id));
+      d.exams.forEach(p => { if (!ids.has(p.id)) state.exams.push(p); });
     }
     if (Array.isArray(d.log)) state.log = state.log.concat(d.log);
     save();
@@ -453,6 +458,19 @@
           </button>`;
         }).join("")}
       </div>
+      ${examList().length ? `<div class="exam-list">
+        <p class="exam-listh">Practice exams</p>
+        ${examList().map(p => {
+          const qn = (p.sections || []).reduce((n, s) => n + (s.questions || []).length, 0);
+          const mk = (p.sections || []).reduce((n, s) => n + (s.questions || []).reduce((m, q) => m + (q.marks || 0), 0), 0);
+          return `<div class="exam-row">
+            <div class="exam-rowmain"><span class="exam-rowname">📝 ${esc(p.name)}</span>
+              <span class="exam-rowmeta">${qn} question${qn === 1 ? "" : "s"} · ${mk} mark${mk === 1 ? "" : "s"}${p.time ? " · " + esc(p.time) : ""}</span></div>
+            <div class="exam-rowacts"><button class="btn sm" data-examsit="${esc(p.id)}">Sit this paper</button>
+              <button class="btn sm ghost danger" data-examdel="${esc(p.id)}">Delete</button></div>
+          </div>`;
+        }).join("")}
+      </div>` : ""}
       <div id="setsmgrwrap">${setsManagerHTML()}</div>
       <div class="settings">
         <details>
@@ -475,6 +493,11 @@
     app.querySelectorAll(".topiccard:not(.locked)").forEach(b => b.onclick = () => areaMap(b.dataset.topic));
     wireCloudBar();
     wireSetsManager();
+    app.querySelectorAll("[data-examsit]").forEach(b => b.onclick = () => examStartById(b.dataset.examsit));
+    app.querySelectorAll("[data-examdel]").forEach(b => b.onclick = () => {
+      if (!confirm("Delete this practice exam?")) return;
+      state.exams = (state.exams || []).filter(x => x.id !== b.dataset.examdel); save(); mainPage();
+    });
     const saveBtn = $("#saveEndpoint");
     if (saveBtn) saveBtn.onclick = () => { state.code = $("#classcode").value.trim(); save(); toast("Saved"); };
     $("#resetAll").onclick = () => { if (confirm("Clear all progress on this device?")) { state.cards = {}; state.log = []; state.lessons = {}; save(); mainPage(); } };
@@ -1633,6 +1656,234 @@
     $("#back").onclick = home;
   }
 
+  // ============================ PRACTICE EXAM (past paper) ============================
+  // A whole paper imported as marginal-exam@1: ordered SECTIONS of mixed-type
+  // questions (multiple choice, calculation, short/interpret-the-source, extended
+  // response). The student sits it end to end in GUIDED mode: each question is
+  // graded on submit, with feedback and a "try again" before continuing. Reuses the
+  // existing graders (gradeMC/gradeCalc/gradeLocal/gradeEssay), answer inputs and the
+  // essay review overlay. Short answers get line-by-line marking-POINTS feedback
+  // (which of the mark-worthy points were addressed), plus an optional deeper AI
+  // sentence review when marking is connected.
+  const EXAM_FORMAT = "marginal-exam@1";
+  const EXAM = { paper: null, seq: [], pos: 0, results: {}, answers: {} };
+
+  function examList() { return state.exams || []; }
+
+  function validateExam(d) {
+    const e = [];
+    if (!d || typeof d !== "object") return ["Not an exam object."];
+    if (!Array.isArray(d.sections) || !d.sections.length) return ["The exam has no sections array."];
+    let qn = 0;
+    d.sections.forEach((s, si) => {
+      if (!Array.isArray(s.questions) || !s.questions.length) { e.push("Section " + (si + 1) + " has no questions."); return; }
+      s.questions.forEach((q, qi) => {
+        const at = "S" + (si + 1) + "Q" + (qi + 1) + ": "; qn++;
+        if (!q.prompt) e.push(at + "missing prompt.");
+        if (!q.marks || q.marks < 1) e.push(at + "missing marks.");
+        if (!["mc", "calc", "short", "define", "essay"].includes(q.type)) e.push(at + "unknown type '" + q.type + "'.");
+        if (q.type === "mc") {
+          if (!Array.isArray(q.choices) || q.choices.length < 2) e.push(at + "MC needs 2+ choices.");
+          else if (q.choices.filter(c => c.ok).length !== 1) e.push(at + "MC needs exactly one correct choice.");
+        }
+        if (q.type === "calc" && typeof q.expected !== "number") e.push(at + "calc needs a numeric 'expected'.");
+        if (["short", "define", "essay"].includes(q.type) && !q.model && !(Array.isArray(q.points) && q.points.length))
+          e.push(at + "needs a model answer or a points rubric.");
+      });
+    });
+    if (!qn) e.push("The exam has no questions.");
+    return e;
+  }
+  function importExamFromBox(data, msg) {
+    const errs = validateExam(data);
+    if (errs.length) return msg.textContent = errs[0];
+    const paper = { id: "exam-" + Date.now(), name: data.name || "Practice exam", subject: data.subject || "",
+      time: data.time || "", instructions: data.instructions || "", sections: data.sections };
+    state.exams.push(paper); save();
+    msg.textContent = "Imported ✓ — the paper is on your Study map.";
+    builder();
+  }
+  function examStartById(id) { const p = examList().find(x => x.id === id); if (p) examStart(p); }
+  function examStart(paper) {
+    const seq = [];
+    (paper.sections || []).forEach((sec, si) => {
+      seq.push({ kind: "section", si, sec });
+      (sec.questions || []).forEach((q, qi) => seq.push({ kind: "q", si, qi, sec, q }));
+    });
+    seq.push({ kind: "end" });
+    EXAM.paper = paper; EXAM.seq = seq; EXAM.pos = 0; EXAM.results = {}; EXAM.answers = {};
+    examRender();
+  }
+  function examTotals() {
+    const qs = EXAM.seq.filter(x => x.kind === "q");
+    const total = qs.length;
+    const maxMarks = qs.reduce((n, x) => n + (x.q.marks || 0), 0);
+    const done = Object.keys(EXAM.results).length;
+    const got = Object.values(EXAM.results).reduce((n, g) => n + g.score, 0);
+    return { total, maxMarks, done, got };
+  }
+  function examBar() {
+    const t = examTotals();
+    return `<div class="exam-bar"><button class="x" id="examquit" title="Leave this paper">←</button>
+      <span class="lbl">${esc(EXAM.paper.name)}</span>
+      <span class="exam-progress">${t.done}/${t.total} answered · ${t.got}/${t.maxMarks} marks</span></div>`;
+  }
+  function examQuit() { if (confirm("Leave this paper? Your progress on this attempt is not saved.")) home(); }
+  // Render a source/stimulus block (shared section source or per-question stimulus).
+  // Accepts a plain string, or an object with caption/text/img/charts.
+  function examSourceHTML(src, label) {
+    if (!src) return "";
+    let inner = "";
+    if (typeof src === "string") inner = `<p>${esc(src)}</p>`;
+    else {
+      if (src.caption) inner += `<p class="exam-srccap">${esc(src.caption)}</p>`;
+      if (src.text) inner += `<p>${esc(src.text)}</p>`;
+      if (src.img) inner += `<img class="exam-srcimg" src="${esc(src.img)}" alt="${esc(src.caption || "source")}">`;
+      if (Array.isArray(src.charts)) inner += src.charts.map((c, i) => rvChartHTML(c, i)).join("");
+    }
+    return `<div class="exam-source"><div class="exam-srclbl">${esc(label)}</div><div class="exam-srcbody">${inner}</div></div>`;
+  }
+  function examRender() {
+    const item = EXAM.seq[EXAM.pos];
+    if (!item || item.kind === "end") return examResults();
+    if (item.kind === "section") return examRenderSection(item);
+    return examRenderQuestion(item);
+  }
+  function examRenderSection(item) {
+    const sec = item.sec;
+    const qn = (sec.questions || []).length;
+    const mk = (sec.questions || []).reduce((n, q) => n + (q.marks || 0), 0);
+    app.innerHTML = `${examBar()}
+      <div class="exam-wrap"><div class="exam-sectionintro">
+        <div class="exam-sec">${esc(sec.name || "Section")}</div>
+        ${sec.instructions ? `<p class="exam-instr">${esc(sec.instructions)}</p>` : ""}
+        <p class="exam-meta">${qn} question${qn === 1 ? "" : "s"} · ${mk} mark${mk === 1 ? "" : "s"}</p>
+        ${sec.source ? examSourceHTML(sec.source, "Source material") : ""}
+        <button class="btn" id="exambegin">Begin ${esc(sec.name || "section")}</button>
+      </div></div>`;
+    $("#examquit").onclick = examQuit;
+    $("#exambegin").onclick = () => { EXAM.pos++; examRender(); };
+    wireStimulus(sec.source); wireGlossary();
+  }
+  function examRenderQuestion(item) {
+    const { q, sec, si, qi } = item;
+    const key = si + "-" + qi;
+    const t = examTotals();
+    const num = EXAM.seq.slice(0, EXAM.pos + 1).filter(x => x.kind === "q").length;
+    app.innerHTML = `${examBar()}
+      <div class="exam-wrap"><div class="exam-q">
+        <div class="exam-sec small">${esc(sec.name || "")}</div>
+        ${sec.source ? examSourceHTML(sec.source, "Source material") : ""}
+        <div class="exam-qhead">Question ${num} of ${t.total} · ${q.marks} mark${q.marks === 1 ? "" : "s"}</div>
+        ${q.stimulus ? examSourceHTML(q.stimulus, "Source") : ""}
+        <div class="exam-prompt">${linkGlossary(q.prompt)}</div>
+        <div id="answerzone">${answerInput(q)}</div>
+        ${submitRow(q)}
+        <div id="sheet"></div>
+      </div></div>`;
+    const prev = EXAM.answers[key];
+    if (prev && $("#ans")) $("#ans").value = prev;
+    $("#examquit").onclick = examQuit;
+    examWireAnswer(item, key);
+    wireStimulus(sec.source); wireStimulus(q.stimulus); wireGlossary();
+  }
+  function examWireAnswer(item, key) {
+    const q = item.q;
+    if (q.type === "mc") {
+      app.querySelectorAll(".choice").forEach(b => b.onclick = () => {
+        app.querySelectorAll(".choice").forEach(x => x.onclick = null);
+        const g = gradeMC(q, +b.dataset.i);
+        b.classList.add(g.correct ? "right" : "wrong");
+        EXAM.answers[key] = q.choices[+b.dataset.i].t; EXAM.results[key] = g;
+        examSheet(item, key, g);
+      });
+      return;
+    }
+    const ch = $("#check");
+    if (ch) ch.onclick = async () => {
+      const ans = ($("#ans") && $("#ans").value || "").trim();
+      if (!ans) { toast("Write your answer first."); return; }
+      EXAM.answers[key] = ans; ch.disabled = true; ch.textContent = "Checking…";
+      let g;
+      if (q.type === "calc") g = gradeCalc(q, ans);
+      else if (q.type === "essay") g = await gradeEssay(q, ans);
+      else g = (Array.isArray(q.points) && q.points.length) ? gradePoints(q, ans) : gradeLocal(q, ans);
+      EXAM.results[key] = g;
+      examSheet(item, key, g);
+    };
+  }
+  // Marking-POINTS grading for short answers: one mark per point addressed. A point
+  // is "hit" when the answer contains any of its accepted phrasings (need[]), else
+  // the point's own text. Deterministic, offline, and shows exactly what was missed.
+  function gradePoints(q, answer) {
+    const a = norm(answer);
+    const pts = (q.points || []).map(pt => {
+      const need = (Array.isArray(pt.need) && pt.need.length) ? pt.need : [pt.text];
+      const hit = need.some(al => a.includes(norm(al)));
+      return { text: pt.text, hit, hint: pt.hint || "", marks: pt.marks || 1 };
+    });
+    const raw = pts.filter(p => p.hit).reduce((n, p) => n + p.marks, 0);
+    return { score: Math.min(raw, q.marks), max: q.marks, kind: "points", points: pts, model: q.model || "" };
+  }
+  function examSheetHTML(q, g) {
+    const ratio = g.max ? g.score / g.max : 0;
+    const mood = ratio >= 0.95 ? ["great", "Full marks"] : ratio >= 0.6 ? ["good", "Most of it"] : ratio >= 0.3 ? ["mid", "Partly there"] : ["low", "Not yet"];
+    let body = "";
+    if (g.kind === "mc") body = `<p><b>${g.correct ? "Correct." : "Not this one."}</b> ${esc(g.why)}</p>${g.correct ? "" : `<p>Answer: <b>${esc(g.answerText)}</b></p>`}`;
+    else if (g.kind === "calc") body = `<p>${g.correct ? "Correct." : "Expected <b>" + esc(g.model) + "</b>."}</p>${g.working ? `<p class="working"><b>Working:</b> ${esc(g.working)}</p>` : ""}`;
+    else if (g.kind === "points") body = `<div class="exam-points">${g.points.map(pt =>
+        `<div class="exam-pt ${pt.hit ? "hit" : "miss"}"><span class="exam-ptmark">${pt.hit ? "✓" : "✗"}</span><span class="exam-ptbody">${esc(pt.text)}${(!pt.hit && pt.hint) ? `<span class="exam-pthint">${esc(pt.hint)}</span>` : ""}</span></div>`).join("")}</div>${g.model ? `<details ${ratio < 0.7 ? "open" : ""}><summary>Model answer</summary><p>${linkGlossary(g.model)}</p></details>` : ""}`;
+    else if (g.kind === "local") body = `${(g.matched.length || g.missing.length) ? `<div class="chips">${g.matched.map(t => `<span class="chip">${esc(t)} ✓</span>`).join("")}${g.missing.map(t => `<span class="chip todo" data-term="${esc(t)}">${esc(t)}</span>`).join("")}</div>` : ""}<details ${ratio < 0.7 ? "open" : ""}><summary>Model answer</summary><p>${linkGlossary(g.model)}</p></details>`;
+    else { const fb = g.fb || {}; body = `${fb.overall ? `<p>${esc(fb.overall.summary || "")}</p>` : ""}${(fb.criteria || []).map(c => `<div class="crit ${c.status}"><span class="dot"></span><b>${esc(c.name)}:</b> ${esc(c.comment || c.status)}</div>`).join("")}${(fb.missing_vocabulary || []).length ? `<div class="chips">${fb.missing_vocabulary.map(t => `<span class="chip todo">${esc(t)}</span>`).join("")}</div>` : ""}${q.model ? `<details><summary>What a top answer covers</summary><p>${linkGlossary(q.model)}</p></details>` : ""}`; }
+    return `<div class="sheet ${mood[0]}"><div class="head"><div class="score">${g.score}<small>/${g.max}</small></div><h3>${mood[1]}</h3></div><div class="bd">${body}</div></div>`;
+  }
+  function examSheet(item, key, g) {
+    const last = !EXAM.seq.slice(EXAM.pos + 1).some(x => x.kind === "q");
+    const hasEssayReview = g.fb && Array.isArray(g.fb.paragraphs) && g.fb.paragraphs.length > 0;
+    const deepable = !hasEssayReview && ["points", "local"].includes(g.kind) && !!state.endpoint;
+    const reviewBtn = hasEssayReview ? `<button class="btn" id="examreview">Work through the issues (${rvIssueCount(g.fb)}) →</button>`
+      : deepable ? `<button class="btn ghost" id="examreview">Deeper AI review →</button>` : "";
+    $("#sheet").innerHTML = examSheetHTML(item.q, g) +
+      `<div class="exam-acts"><button class="btn ghost" id="examretry">Try again</button>${reviewBtn}<button class="btn" id="examnext">${last ? "Finish paper" : "Continue"}</button></div>`;
+    $("#examretry").onclick = () => examRender();
+    $("#examnext").onclick = () => { EXAM.pos++; examRender(); };
+    const rb = $("#examreview");
+    if (rb) rb.onclick = () => { if (hasEssayReview) openReview(g.fb, () => examRender()); else examDeepReview(item, key); };
+    const sh = $("#sheet"); if (sh && sh.scrollIntoView) sh.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    wireGlossary();
+  }
+  async function examDeepReview(item, key) {
+    const ans = EXAM.answers[key] || "";
+    toast("Asking for a sentence-level review…");
+    const g = await gradeEssay(item.q, ans);
+    if (g.fb && Array.isArray(g.fb.paragraphs) && g.fb.paragraphs.length) {
+      EXAM.results[key] = Object.assign({}, EXAM.results[key], { fb: g.fb });
+      openReview(g.fb, () => examRender());
+    } else toast("Sentence-level review needs AI marking connected.");
+  }
+  function examResults() {
+    let got = 0, max = 0;
+    const rows = (EXAM.paper.sections || []).map((sec, si) => {
+      let sg = 0, sm = 0;
+      const qs = (sec.questions || []).map((q, qi) => {
+        const g = EXAM.results[si + "-" + qi]; const s = g ? g.score : 0; sg += s; sm += q.marks || 0;
+        return `<div class="exam-resq"><span>${esc(q.prompt.slice(0, 70))}${q.prompt.length > 70 ? "…" : ""}</span><span class="exam-resm">${s}/${q.marks || 0}</span></div>`;
+      }).join("");
+      got += sg; max += sm;
+      return `<div class="exam-ressec"><div class="exam-ressech">${esc(sec.name || "Section")} <span class="exam-resm">${sg}/${sm}</span></div>${qs}</div>`;
+    }).join("");
+    app.innerHTML = `${examBar()}<div class="exam-wrap"><div class="summary">
+      <div class="bigscore">${got}<small>/${max}</small></div>
+      <h2>${esc(EXAM.paper.name)}</h2>
+      <p>Paper complete. Your marks by section are below.</p>
+      <div class="exam-results">${rows}</div>
+      <div class="row center"><button class="btn" id="examretake">Retake paper</button><button class="btn ghost" id="exambackhome">Back to study</button></div>
+    </div></div>`;
+    $("#examquit").onclick = home;
+    $("#examretake").onclick = () => examStart(EXAM.paper);
+    $("#exambackhome").onclick = home;
+  }
+
   // ===================== CREATE (set builder + JSON import/export) =====================
   let draft = null; // { name, cards: [] }
 
@@ -1691,8 +1942,8 @@
       </div>
 
       <div class="bcard">
-        <h3 class="bh">Import a set</h3>
-        <p class="bhint">Paste a set's JSON below (or the contents of an exported file) and load it as a studyable area.</p>
+        <h3 class="bh">Import a set or a practice exam</h3>
+        <p class="bhint">Paste a set's JSON to load it as a studyable area, or a whole practice exam (<code>marginal-exam@1</code>) to sit as a guided past paper on your Study map.</p>
         <textarea id="importjson" class="binput mono" rows="4" placeholder='{"format":"${SET_FORMAT}","name":"…","cards":[…]}'></textarea>
         <div class="row"><button class="btn sm" id="doimport">Import set</button><span class="hint" id="importmsg"></span></div>
         ${state.customSets.length ? `<div class="setlist">${state.customSets.map(s =>
@@ -1905,6 +2156,7 @@
     let data;
     try { data = JSON.parse($("#importjson").value); }
     catch { return msg.textContent = "That isn't valid JSON."; }
+    if (data && data.format === EXAM_FORMAT) return importExamFromBox(data, msg); // a whole paper, not a flat set
     data = normalizeImport(data);
     const errs = validateSet(data);
     if (errs.length) return msg.textContent = errs[0];
