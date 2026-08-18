@@ -313,14 +313,33 @@
     return { score: Math.round(ratio * card.marks), max: card.marks, kind: "local",
              matched: hit, missing: need.filter(t => !hit.includes(t)), model: card.model };
   }
+  // Which subject is being marked, and the criteria IT is marked against. Marking
+  // used to be hardcoded to Economics, so an Ancient History or Business Studies
+  // response was judged by an Economics marker against economic criteria. The
+  // subject namespace is now the source of truth, and a card or paper can override.
+  function markingContext(card) {
+    // Test mode (a whole imported paper) may carry its own subject/criteria; it is
+    // defined only when that mode is present, so reach for it defensively.
+    const paper = (typeof EXAM !== "undefined" && EXAM && EXAM.paper) ? EXAM.paper : null;
+    const label = (card && card.subject) || (paper && paper.subject) || C.subject || "";
+    let criteria = (card && card.markingCriteria) || (paper && paper.markingCriteria) || null;
+    if (!criteria) {
+      const subs = (window.ESSAY && window.ESSAY.subjects) || {};
+      const hit = Object.keys(subs).find(k => String(subs[k].label || "").toLowerCase() === String(label).toLowerCase());
+      criteria = (hit && subs[hit].markingCriteria) || C.markingCriteria || null;
+    }
+    return { subject: label || undefined, criteria: criteria || undefined };
+  }
   async function gradeEssay(card, answer) {
     if (state.endpoint) {
       try {
+        const mc = markingContext(card);
         const res = await fetch(state.endpoint, {
           method: "POST", headers: { "content-type": "application/json" },
           body: JSON.stringify({
             prompt: card.prompt, marks: card.marks, model_answer: card.model, vocab: card.vocab, answer,
             scaffold: card.scaffold, faults: card.faults, command: card.command,
+            subject: mc.subject, criteria: mc.criteria,
             code: state.code || undefined
           })
         });

@@ -858,6 +858,15 @@
 // =============================================================================
 window.CONTENT = {
   subject: "Economics",
+  // The four dimensions this subject's extended responses are marked against.
+  // Sent with every marking request so the marker uses THIS subject's criteria.
+  // Original wording describing the assessed dimensions, not copied from NESA.
+  markingCriteria: [
+    "thesis and sustained judgement",
+    "use of evidence and data",
+    "economic terminology",
+    "cohesion"
+  ],
   unit: "Distribution of Income and Wealth",
   glossary: {
     "income": "A flow of money and benefits received over a period of time, in return for factors of production or as government transfers.",
@@ -2940,6 +2949,13 @@ window.ESSAY = {
       key: "ancient_history",
       label: "Ancient History",
       stage: "Year 11",
+      // Marked against THIS subject's dimensions, never another's. Original wording.
+      markingCriteria: [
+        "historical argument and judgement",
+        "use of sources and evidence",
+        "historical terms and concepts",
+        "sustained and cohesive response"
+      ],
       // Original practice questions in the HSC extended-response genre. Each is a
       // single, self-contained prompt a student picks from (or they paste their
       // own in setup). "command" is the HSC directive verb, surfaced as a chip.
@@ -2985,6 +3001,14 @@ window.ESSAY = {
       key: "business_studies",
       label: "Business Studies",
       stage: "Year 12",
+      // The four dimensions an HSC Business Studies extended response is assessed on,
+      // described in original wording.
+      markingCriteria: [
+        "knowledge and understanding of course content",
+        "application of business case studies and contemporary business issues",
+        "business terminology and concepts",
+        "sustained, logical and cohesive response"
+      ],
       defaultStructure: "six",           // intro + four body + conclusion (four relationships)
       paraModels: ["teeec", "tdecc"],    // student-selectable paragraph structure (see scaffolds)
       questions: [
@@ -3577,14 +3601,33 @@ window.ESSAY = {
     return { score: Math.round(ratio * card.marks), max: card.marks, kind: "local",
              matched: hit, missing: need.filter(t => !hit.includes(t)), model: card.model };
   }
+  // Which subject is being marked, and the criteria IT is marked against. Marking
+  // used to be hardcoded to Economics, so an Ancient History or Business Studies
+  // response was judged by an Economics marker against economic criteria. The
+  // subject namespace is now the source of truth, and a card or paper can override.
+  function markingContext(card) {
+    // Test mode (a whole imported paper) may carry its own subject/criteria; it is
+    // defined only when that mode is present, so reach for it defensively.
+    const paper = (typeof EXAM !== "undefined" && EXAM && EXAM.paper) ? EXAM.paper : null;
+    const label = (card && card.subject) || (paper && paper.subject) || C.subject || "";
+    let criteria = (card && card.markingCriteria) || (paper && paper.markingCriteria) || null;
+    if (!criteria) {
+      const subs = (window.ESSAY && window.ESSAY.subjects) || {};
+      const hit = Object.keys(subs).find(k => String(subs[k].label || "").toLowerCase() === String(label).toLowerCase());
+      criteria = (hit && subs[hit].markingCriteria) || C.markingCriteria || null;
+    }
+    return { subject: label || undefined, criteria: criteria || undefined };
+  }
   async function gradeEssay(card, answer) {
     if (state.endpoint) {
       try {
+        const mc = markingContext(card);
         const res = await fetch(state.endpoint, {
           method: "POST", headers: { "content-type": "application/json" },
           body: JSON.stringify({
             prompt: card.prompt, marks: card.marks, model_answer: card.model, vocab: card.vocab, answer,
             scaffold: card.scaffold, faults: card.faults, command: card.command,
+            subject: mc.subject, criteria: mc.criteria,
             code: state.code || undefined
           })
         });
