@@ -18,6 +18,13 @@ window.ESSAY = {
       key: "ancient_history",
       label: "Ancient History",
       stage: "Year 11",
+      // Marked against THIS subject's dimensions, never another's. Original wording.
+      markingCriteria: [
+        "historical argument and judgement",
+        "use of sources and evidence",
+        "historical terms and concepts",
+        "sustained and cohesive response"
+      ],
       // Original practice questions in the HSC extended-response genre. Each is a
       // single, self-contained prompt a student picks from (or they paste their
       // own in setup). "command" is the HSC directive verb, surfaced as a chip.
@@ -63,6 +70,14 @@ window.ESSAY = {
       key: "business_studies",
       label: "Business Studies",
       stage: "Year 12",
+      // The four dimensions an HSC Business Studies extended response is assessed on,
+      // described in original wording.
+      markingCriteria: [
+        "knowledge and understanding of course content",
+        "application of business case studies and contemporary business issues",
+        "business terminology and concepts",
+        "sustained, logical and cohesive response"
+      ],
       defaultStructure: "six",           // intro + four body + conclusion (four relationships)
       paraModels: ["teeec", "tdecc"],    // student-selectable paragraph structure (see scaffolds)
       questions: [

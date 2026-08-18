@@ -8,6 +8,15 @@
 // =============================================================================
 window.CONTENT = {
   subject: "Economics",
+  // The four dimensions this subject's extended responses are marked against.
+  // Sent with every marking request so the marker uses THIS subject's criteria.
+  // Original wording describing the assessed dimensions, not copied from NESA.
+  markingCriteria: [
+    "thesis and sustained judgement",
+    "use of evidence and data",
+    "economic terminology",
+    "cohesion"
+  ],
   unit: "Distribution of Income and Wealth",
   glossary: {
     "income": "A flow of money and benefits received over a period of time, in return for factors of production or as government transfers.",

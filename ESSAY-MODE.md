@@ -296,3 +296,40 @@ is needed.
 - Stage 3: the structured paragraph builder + evaluator (Concept -> Explanation ->
   Relationship -> Evidence -> Judgement), Type-C mandatory paragraph targets, and
   exemplar model paragraphs.
+
+---
+
+# Patch: the marker is subject-aware
+
+## The defect
+
+Marking was hardcoded to Economics. The system prompt opened "You are an
+experienced HSC Economics marker" and demanded four fixed criteria including
+"economic terminology". Every extended response, in every subject, was therefore
+judged by an Economics marker against Economics criteria. Ancient History and
+Business Studies responses were affected in production.
+
+## The fix
+
+- The marker identity is now the SUBJECT named in the request, and the prompt
+  tells it to mark as a specialist in that subject rather than another.
+- Marking criteria are SUBJECT-DRIVEN. Each subject namespace carries its own
+  four dimensions and the client sends them with the request:
+  - `window.CONTENT.markingCriteria` for Economics (unchanged from what it was
+    already marked against)
+  - `window.ESSAY.subjects.<key>.markingCriteria` for Ancient History and
+    Business Studies
+  - an imported exam paper may carry `subject` and `markingCriteria` of its own
+- A subject that ships none falls back to neutral HSC dimensions in the worker,
+  so no subject is ever marked against another subject's criteria.
+- The criteria names are original wording describing the assessed dimensions.
+
+Adding marking criteria for a new subject stays content-only.
+
+## Worker re-paste (your step) REQUIRED for this patch
+
+The worker now reads `subject` and `criteria` from the request. Until it is
+re-pasted, marking still runs the old Economics prompt.
+
+Cloudflare -> Workers -> `marginal-grader` -> Edit code -> paste the current
+`proxy/worker.js` -> Deploy. No new secrets.

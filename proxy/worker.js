@@ -20,11 +20,25 @@ const COACH_MAX_TOKENS = 700;
 const WINDOW_MS = 10 * 60 * 1000, MAX_PER_WINDOW = 20;
 const hits = new Map(); // in-memory per-isolate limiter (fine for a small trial)
 const SEVRANK = { critical: 0, should: 1, optional: 2 };
+// Marking criteria are SUBJECT-DRIVEN: the client sends the four dimensions from the
+// subject's own namespace. These neutral defaults apply only when a subject ships
+// none, so no subject is ever marked against another subject's criteria.
+const DEFAULT_CRITERIA = [
+  "knowledge and understanding of course content",
+  "application of relevant evidence or examples",
+  "subject terminology and concepts",
+  "sustained, logical and cohesive response",
+];
+function markCriteria(raw) {
+  const c = (Array.isArray(raw) ? raw : [])
+    .map(x => String(x || "").trim()).filter(Boolean).slice(0, 4);
+  return c.length === 4 ? c : DEFAULT_CRITERIA;
+}
 
 // The grading prompt. Every model sentence, starter, reason, descriptor and
 // explanation must be in writable Year 12 English with NO em-dashes, so it
 // reads as something a student could actually write.
-const SYSTEM = `You are an experienced HSC Economics marker building a paragraph-by-paragraph review that teaches a student to improve their extended response.
+const SYSTEM = `You are an experienced HSC marker for the SUBJECT named in the request, building a paragraph-by-paragraph review that teaches a student to improve their extended response. Mark as a specialist in that subject: use its terminology, its conventions and the kind of evidence it expects, never another subject's.
 
 Mark honestly. Flag every real fault, even if that means most of a paragraph is marked, because leniency teaches a student that a flawed answer is nearly perfect. The marks must be consistent with what you flag: a paragraph with several weak sentences cannot score near full marks, and the total is the sum of the paragraph marks.
 
@@ -36,7 +50,7 @@ Each issue has a severity: critical when it loses marks, should when it lifts th
 
 Each issue carries a three-rung ladder: Clear, Better, Band 6. Every rung must be creditworthy. Clear is the simplest sentence that still earns the mark, never a failing strawman. Better is solid mid-band. Band 6 is exceptional. Give only the sentence for each rung. Do not write practice starters: the app derives those from each rung's sentence.
 
-Return the four rubric criteria (thesis and sustained judgement, use of evidence and data, economic terminology, cohesion) with marks, a one-line descriptor, and band descriptors, setting here to true on the band the response sits in. Keep the rubric marks consistent with the paragraph marks.
+Return one entry per MARKING CRITERION named in the request, in the order given, using those exact criterion names. Give each marks, a one-line descriptor, and band descriptors, setting here to true on the band the response sits in. Keep the rubric marks consistent with the paragraph marks.
 
 Register: use commas, colons and because, since or as clauses, and full stops. Do not use em-dashes anywhere in your output, because a student would not write them. Return the review only through the submit_review tool.`;
 
@@ -120,7 +134,7 @@ const REVIEW_TOOL = {
         type: "array",
         minItems: 4,
         maxItems: 4,
-        description: "Exactly four criteria: thesis and sustained judgement, use of evidence and data, economic terminology, cohesion.",
+        description: "One entry per marking criterion named in the request, in that order, using those exact names.",
         items: {
           type: "object",
           properties: {
@@ -400,6 +414,8 @@ export default {
     let body;
     try { body = await req.json(); } catch { return json({ error: "bad json" }, 400, cors); }
     const { prompt, marks, model_answer, vocab = [], answer, code, scaffold = [], faults = [], command } = body || {};
+    const markSubject = String((body && body.subject) || "").trim().slice(0, 80);
+    const criteria = markCriteria(body && body.criteria);
     // optional shared class code: set secret CLASS_CODE on the worker and only
     // requests carrying it are graded — stops strangers spending your credits.
     if (env.CLASS_CODE && code !== env.CLASS_CODE) return json({ error: "Class code missing or wrong — check Settings in the app." }, 403, cors);
@@ -440,7 +456,7 @@ export default {
         tool_choice: { type: "tool", name: "submit_review" },
         messages: [{
           role: "user",
-          content: `QUESTION${command ? " (" + command + ")" : ""} (${marks} marks):\n${prompt}\n\nREFERENCE, WHAT A TOP ANSWER COVERS:\n${model_answer || "(none provided)"}\n\nREQUIRED METALANGUAGE: ${vocab.join(", ") || "(none provided)"}\n\nSCAFFOLD THE ANSWER SHOULD FOLLOW:\n${scaffoldText}\n\nANTICIPATED FAULTS (grade against the marking scheme; if one appears, flag it at the given severity and base its ladder on the one below, adapted to the student's wording):\n${faultsText}\n\nSTUDENT ANSWER (numbered paragraphs):\n${paras}`,
+          content: `SUBJECT: ${markSubject || "(unspecified)"}\n\nMARKING CRITERIA (return one rubric entry per criterion, in this order, using these exact names):\n${criteria.map((c, i) => `${i + 1}. ${c}`).join("\n")}\n\nQUESTION${command ? " (" + command + ")" : ""} (${marks} marks):\n${prompt}\n\nREFERENCE, WHAT A TOP ANSWER COVERS:\n${model_answer || "(none provided)"}\n\nREQUIRED METALANGUAGE: ${vocab.join(", ") || "(none provided)"}\n\nSCAFFOLD THE ANSWER SHOULD FOLLOW:\n${scaffoldText}\n\nANTICIPATED FAULTS (grade against the marking scheme; if one appears, flag it at the given severity and base its ladder on the one below, adapted to the student's wording):\n${faultsText}\n\nSTUDENT ANSWER (numbered paragraphs):\n${paras}`,
         }],
       }),
     });
