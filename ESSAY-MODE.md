@@ -296,3 +296,52 @@ is needed.
 - Stage 3: the structured paragraph builder + evaluator (Concept -> Explanation ->
   Relationship -> Evidence -> Judgement), Type-C mandatory paragraph targets, and
   exemplar model paragraphs.
+
+---
+
+# Batch 5: line-by-line guidance in the typing box
+
+Direct, per-sentence guidance docked under the paragraph you are writing.
+
+## What it does
+
+After Get feedback, up to five of YOUR OWN sentences are listed under the typing
+box, weakest first. Each row carries:
+
+- a severity (loses marks / lifts the band / polish)
+- the sentence itself, quoted back
+- a DIRECT diagnosis of the fault, stated not asked ("this describes what happened
+  instead of explaining why it matters")
+- a CONTENT-FREE frame with blanks to type over
+
+Clicking "show me this line" selects that exact sentence inside the textarea, so
+the box itself shows which line is meant.
+
+## Why the guidance is not written for you
+
+Suggest-never-substitute still holds. The coach is now direct about WHAT is wrong
+with a specific sentence, but it still never writes the improved sentence. That is
+enforced in code at both ends, not merely asked for in the prompt. A frame is
+rejected unless it:
+
+- contains blanks (`____`),
+- stays short (at most 12 non-blank words), and
+- uses ONLY structural words. The words around the blanks are checked against a
+  fixed connective vocabulary, so a frame like "Factoring improves liquidity
+  because ____" is dropped: it hands over half the sentence.
+
+Rejected lines are dropped rather than shown, so the failure direction is losing a
+hint, never leaking an answer.
+
+Note: markup cannot be rendered inside a `<textarea>`, so the guidance is docked
+directly beneath it and uses text selection to point at the line, rather than
+overlaying highlights on the box.
+
+## Worker re-paste (your step) REQUIRED for this batch
+
+The coach tool schema and system prompt changed: `submit_coaching` now returns a
+`lines` array. Until you re-paste `proxy/worker.js`, coaching falls back to the
+labelled demo, which carries demo lines so the feature is still walkable.
+
+Cloudflare -> Workers -> `marginal-grader` -> Edit code -> paste the current
+`proxy/worker.js` -> Deploy. No new secrets.

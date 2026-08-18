@@ -816,6 +816,23 @@
   .es-exsub{font-size:11px;color:var(--ink-3);font-weight:700;margin:1px 0 6px}
   .es-exph{font-size:11px;color:var(--ink-2);font-weight:600;line-height:1.45;background:#FBFBFB;border:1px dashed var(--line);border-radius:8px;padding:5px 8px;margin:0 0 7px}
   .es-extext{font-size:13px;color:var(--ink);font-weight:600;line-height:1.6}
+  /* ---- line-by-line guidance under the typing box ---- */
+  .es-linehost:empty{display:none}
+  .es-lines{margin-top:12px;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--card)}
+  .es-linesh{font-family:var(--disp);font-weight:600;font-size:11.5px;color:var(--ink-3);text-transform:lowercase;margin-bottom:9px}
+  .es-line{border-left:4px solid var(--line);border-radius:8px;padding:8px 11px;margin-bottom:9px;background:#FAFCFC}
+  .es-line:last-child{margin-bottom:0}
+  .es-line.critical{border-left-color:var(--coral,#d1495b)}
+  .es-line.should{border-left-color:var(--green)}
+  .es-line.optional{border-left-color:var(--ink-3)}
+  .es-line.on{background:var(--green-soft);border-left-color:var(--green)}
+  .es-linetop{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+  .es-linesev{font-family:var(--disp);font-weight:700;font-size:10.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.4px}
+  .es-linefind{font:inherit;font-weight:700;font-size:11.5px;color:var(--green-dk);background:none;border:none;padding:0;cursor:pointer;text-decoration:underline}
+  .es-linequote{font-size:12.5px;color:var(--ink-3);font-style:italic;line-height:1.5;margin-bottom:5px}
+  .es-lineissue{font-size:13.5px;color:var(--ink);font-weight:600;line-height:1.55;margin-bottom:6px}
+  .es-linefix{font-size:14px;color:var(--ink-2);font-style:italic;line-height:1.7}
+  .es-linefixh{display:block;font-family:var(--disp);font-style:normal;font-weight:600;font-size:10.5px;color:var(--ink-3);text-transform:lowercase;margin-bottom:2px}
   @media(max-width:760px){.es-coachcols{flex-direction:column}.es-margin{flex:1 1 auto;max-width:none;position:static}}
 </style>
 </head>

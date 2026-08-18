@@ -333,6 +333,15 @@ window.ESSAY = {
       { from: "big", options: ["significant", "substantial", "far-reaching"] },
       { from: "a lot of", options: ["considerable", "extensive"] }
     ],
-    check: "If you have stated a date or figure, check it against your own notes before you rely on it."
+    check: "If you have stated a date or figure, check it against your own notes before you rely on it.",
+    // Line-by-line demo: the coach names the fault in a specific sentence directly,
+    // then hands over a blank frame. Never the improved sentence. The client matches
+    // "quote" against the student's own text, so these are generic openers that will
+    // usually miss in the demo; the app falls back to the paragraph's first sentences.
+    lines: [
+      { quote: "", issue: "This sentence describes what happened instead of explaining why it matters.", fix: "This shows ____ because ____.", severity: "critical" },
+      { quote: "", issue: "There is a claim here with no evidence attached to it.", fix: "This is supported by ____, which shows ____.", severity: "should" },
+      { quote: "", issue: "This sentence never links back to the question.", fix: "Therefore ____, which addresses ____.", severity: "should" }
+    ]
   }
 };

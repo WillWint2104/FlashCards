@@ -209,6 +209,12 @@ The paragraph slot model. The elements this paragraph should contain are listed 
 
 Detect a GENUINELY ABSENT element, which is different from one that is present but weak. Report an absent element in "missing" using only its key from the EXPECTED ELEMENTS given for this paragraph. Do not list an element that is present but thin; for those, raise a question in "nudges" instead. Only report elements that belong to this paragraph.
 
+LINE BY LINE guidance in "lines". Pick up to five of the student's own sentences that can be improved, weakest first. For each one:
+- "quote" is the first six to twelve words of THEIR sentence, copied exactly, so the app can find it in their paragraph. Never paraphrase it.
+- "issue" is a DIRECT diagnosis of what is wrong with that sentence. State it, do not ask it. Name the fault plainly, for example that the sentence describes instead of analysing, makes a claim with no evidence, never links back to the question, or leans on a vague verb. This is the one place you are direct rather than Socratic.
+- "fix" is a CONTENT-FREE FRAME the student types over. Every frame must contain ____ blanks and must be useless on its own until they fill it. Never write their improved sentence, never fill a blank with real content, and never include any subject content, names, dates or figures in the frame.
+Rule 1 still holds absolutely: you diagnose the problem precisely and hand them a blank frame, and the student writes the sentence.
+
 Categorise each nudge so the app can surface substance first and tuck wording polish away:
 - on_target: substance and analysis, the heart of answering the question.
 - signposting: cohesion, ordering, and clear topic sentences.
@@ -264,6 +270,20 @@ function coachTool(slotKeys) {
         },
       },
       check: { type: "string", description: "Optional. If a factual point looks shaky, tell the student to check it against their notes. Never assert the correct fact." },
+      lines: {
+        type: "array",
+        description: "LINE BY LINE guidance. Up to five of the student's own sentences that can be improved, weakest first. Diagnose directly, then give a blank frame. NEVER write the improved sentence for them.",
+        items: {
+          type: "object",
+          properties: {
+            quote: { type: "string", description: "The FIRST FEW WORDS of the student's sentence, copied verbatim from their paragraph so the app can locate it. Six to twelve words. Never your own wording." },
+            issue: { type: "string", description: "What is wrong with this specific sentence, stated DIRECTLY as a diagnosis, not as a question. One sentence, at most 30 words. Name the fault, for example describing instead of analysing, no link to the question, a claim with no evidence, or a vague verb." },
+            fix: { type: "string", description: "A CONTENT-FREE FRAME the student types over, using ____ for every blank. It must contain at least one ____ and must never be a usable sentence on its own. For example: This shows ____ because ____, which addresses ____. Never fill a blank with real content, and never restate their sentence improved." },
+            severity: { type: "string", enum: ["critical", "should", "optional"], description: "critical loses marks, should lifts the band, optional is polish." },
+          },
+          required: ["quote", "issue", "fix", "severity"],
+        },
+      },
     },
     required: ["note", "nudges"],
   },
@@ -276,6 +296,24 @@ function coachTool(slotKeys) {
 // and chips stay word-level. So a misbehaving model can never return a
 // substitution through any field. (The client enforces the same limits.)
 function shortPhrase(s, maxWords) { return String(s || "").trim().split(/\s+/).filter(Boolean).length <= maxWords; }
+// A frame is meant to be CONNECTIVE TISSUE: blanks joined by structural words. The
+// model could otherwise smuggle real content into the words around the blanks, for
+// example "Factoring improves liquidity because ____", which hands the student half
+// the sentence. So the words outside the blanks must all come from this structural
+// vocabulary. Anything subject-specific fails, and the line is dropped rather than
+// shown. Failing closed loses a hint, which is far better than leaking an answer.
+const FRAME_WORDS = new Set(("a an and as at because been be but by can could for from had has have how however " +
+  "if in into is it its led leads mean means more most of on one only or over shows show shown since so such than " +
+  "that the their then there therefore these this those through to was were what when which while who why will with " +
+  "addresses affect affects allowed allows applies argues assess balance change changed compare demonstrates effect " +
+  "evidence example explains front further gives helps illustrates impact improves increases indicates influence " +
+  "instead judgement key later link linked makes matters method overall point produces reason reduces reveals " +
+  "result results significant significance shows source suggests supported supports term therefore thus way ways " +
+  "whereas whether although despite consider considered addressing meaning matter compared contrast").split(/\s+/));
+function isFrame(fix) {
+  const words = String(fix || "").replace(/_{2,}/g, " ").toLowerCase().replace(/[^a-z ]/g, " ").split(/\s+/).filter(Boolean);
+  return words.every(w => FRAME_WORDS.has(w));
+}
 function normalizeCoaching(c, slotKeys) {
   // missing: keep only keys valid FOR THIS PARAGRAPH (by key alone, no model-written
   // text), deduped. Falls back to the default keys when none were provided.
@@ -299,11 +337,29 @@ function normalizeCoaching(c, slotKeys) {
     }))
     .filter(x => x.from && shortPhrase(x.from, 4) && x.options.length && x.options.every(o => shortPhrase(o, 6)))
     .slice(0, 6);
+  // lines: DIRECT per-sentence diagnosis plus a CONTENT-FREE frame. The frame is the
+  // one place the model could smuggle in a paste-ready sentence, so it is enforced
+  // here in code, not just asked for in the prompt: a fix must carry blanks, must
+  // stay short, and must not be usable prose once the blanks are removed.
+  const lines = (Array.isArray(c.lines) ? c.lines : [])
+    .map(l => ({
+      quote: String((l && l.quote) || "").trim(),
+      issue: String((l && l.issue) || "").trim(),
+      fix: String((l && l.fix) || "").trim(),
+      severity: String((l && l.severity) || "should").trim(),
+    }))
+    .filter(l => l.issue && l.fix)                          // quote is only a locator hint
+    .filter(l => shortPhrase(l.quote, 14) && shortPhrase(l.issue, 34) && shortPhrase(l.fix, 26))
+    .filter(l => /_{2,}/.test(l.fix))                       // a frame MUST have blanks
+    .filter(l => l.fix.replace(/_{2,}/g, " ").split(/\s+/).filter(Boolean).length <= 12) // and stay a frame, not a sentence
+    .filter(l => isFrame(l.fix))                            // structural words only: no smuggled content
+    .map(l => ({ ...l, severity: ["critical", "should", "optional"].includes(l.severity) ? l.severity : "should" }))
+    .slice(0, 5);
   const note = String(c.note || "").trim();
   const check = String(c.check || "").trim();
   return {
     note: shortPhrase(note, 60) ? note : "",
-    missing, nudges, chips,
+    missing, nudges, chips, lines,
     check: (check && shortPhrase(check, 30)) ? check : "",
   };
 }
