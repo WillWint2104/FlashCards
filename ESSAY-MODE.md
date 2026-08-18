@@ -333,3 +333,59 @@ re-pasted, marking still runs the old Economics prompt.
 
 Cloudflare -> Workers -> `marginal-grader` -> Edit code -> paste the current
 `proxy/worker.js` -> Deploy. No new secrets.
+# Batch 4: study hints, the content layer, and the case study bank
+
+Answers the problem that practice alone cannot solve: a student who does not yet
+know the content cannot improve by attempting questions. Still behind `essayMode`.
+
+## The content layer (`business-content.js`)
+
+`window.BUSCONTENT` carries core information for EVERY HSC Business Studies
+syllabus dot point, structured straight from the NESA Stage 6 syllabus: four
+topics, 17 sections, 83 dot points. Each dot point has:
+
+- `what` the definition or description, written so a student can learn from it
+- `why` why it matters to a business, which is the cause and effect a marker wants
+- `terms` the syllabus terms to use when writing about it
+- `exam` how it is usually tested, including the directive verbs
+
+The dot point strings are kept verbatim from the syllabus, so the content joins
+back to the syllabus structure exactly.
+
+## The McDonald's case study bank
+
+`window.BUSCONTENT.evidence` holds 58 pieces of McDonald's evidence keyed by topic
+and section, each with the evidence itself and a `use` line saying which
+relationship it proves and how to link it back to the question.
+
+Accuracy rules, because a student will repeat this in an exam:
+- Only long-standing, general, uncontroversial characteristics are asserted.
+- No invented statistics, dollar figures, store counts, dates or quotations.
+- Anything carrying a specific is flagged `verify`, and the widget shows a "check
+  a current figure yourself" badge on it.
+
+## The hints widget
+
+A floating button on both writing screens opens a panel with three tabs. All three
+are rendered once and flipped with the hidden attribute, so switching tabs never
+rebuilds the panel.
+
+- **Know** the core content for the topic this essay sits in, so a student can
+  learn the material at the moment they need it. The topic is resolved from the
+  picked question, or from keywords in the question, or the student chooses it.
+- **Plan** the paragraph angles for this essay. The student selects their angles
+  and **locks them in**. Once locked, every paragraph shows the same locked plan,
+  which is what keeps a long response consistent across sections. The plan lives on
+  the draft, so it survives navigation, saving and reopening. It can be unlocked.
+- **Evidence** the McDonald's bank for this topic, with the how to use it line.
+
+## Walkthrough checklist
+
+- [ ] A "hints" button floats on the coached practice and full attempt screens.
+- [ ] Know resolves the topic from the question and lists that topic's syllabus
+      sections; opening one shows learnable content per dot point.
+- [ ] Plan offers the angles, the lock button is disabled until something is
+      picked, and locking shows the numbered plan.
+- [ ] Move to the next paragraph: the plan is still locked and still shown.
+- [ ] Evidence lists McDonald's items, with a "check a current figure yourself"
+      badge on anything carrying a specific.
