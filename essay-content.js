@@ -33,10 +33,50 @@ window.ESSAY = {
           command: "Assess",
           text: "Assess the extent to which written and archaeological sources together shape our understanding of one ancient society you have studied.",
           topic: "Investigating ancient history: sources and evidence" },
+        // --------------------------------------------------------------------
+        // THE GENERIC QUESTION-DEFINITION SCHEMA, shown on this question and on
+        // mkt-01 below. Everything here is content: no engine knows any subject.
+        //
+        //   id           stable slug, append-only. The join key for the argument
+        //                pathways, concept explainers and evidence authored later.
+        //   command      the HSC directive verb, surfaced as a chip and sent to
+        //                the marker so it knows what kind of response is owed.
+        //   text         the exact question the student sees and is marked against.
+        //   marks        total marks. Drives the mark split in the review.
+        //   topic        where in the course the question sits. Not a content claim.
+        //   requirements what a response must DO. Claim-side by construction: it
+        //                never states subject facts, so it stays content-free.
+        //                  concepts       what has to be addressed
+        //                  relationships  what has to be demonstrated, not just named
+        //                  accomplish     what a strong response achieves
+        //                  syllabus       the scope, in the syllabus's own terms
+        //   criteria     { bands, source }. bands: null means fall through to the
+        //                subject's, then to the general expectations above.
+        //
+        // Only id, command, text are required. Everything else is optional and the
+        // marker simply has less to go on without it.
+        // --------------------------------------------------------------------
         { id: "ah-religion",
           command: "Explain",
           text: "Explain how religious beliefs shaped everyday life in one ancient society you have studied.",
-          topic: "Features of ancient societies: religion and belief" },
+          marks: 20,
+          topic: "Features of ancient societies: religion and belief",
+          requirements: {
+            concepts: ["religious belief", "religious practice and ritual", "everyday life", "social structure and roles", "the limits of the surviving evidence"],
+            relationships: [
+              "religious belief shapes daily practice, not only formal ceremony",
+              "religious authority shapes social and family roles",
+              "belief and material life influence each other, rather than one simply following the other"
+            ],
+            accomplish: [
+              "holds one judgement about how far religious belief reached into ordinary life, rather than listing the areas it touched",
+              "explains at least one area of everyday life deeply enough to show the mechanism, instead of covering several at surface level",
+              "draws on more than one kind of source and says what each one proves",
+              "separates what the sources show from what they leave unclear"
+            ],
+            syllabus: "Features of ancient societies: religion, belief and their place in daily life. The society is the student's own choice and is never named here."
+          },
+          criteria: { bands: null, source: "general HSC band expectations" } },
         { id: "ah-geography",
           command: "To what extent",
           text: "To what extent did geography shape the development of one ancient society you have studied?",
@@ -96,7 +136,28 @@ window.ESSAY = {
           topic: "Operations", term1: "Operations strategies", term2: "Corporate social responsibility",
           plan: ["Supply chain and global sourcing to social responsibility", "Outsourcing to employee and community responsibilities", "Inventory and waste management to environmental sustainability", "Technology and design to environmental and social consequences"],
           argument: "Operations strategies shape a business's social and environmental responsibilities as much as its efficiency." },
+        // The same schema on a Business Studies question. Requirements say what the
+        // response must DO with the case study, never what the case study contains:
+        // the facts live in the evidence bank, which is author-checked, and a
+        // requirement that named one would be a claim this file cannot vouch for.
         { id: "mkt-01", command: "Explain", qtype: "C", qtypeLabel: "multi-element",
+          marks: 20,
+          requirements: {
+            concepts: ["target market", "e-marketing", "people as a marketing strategy", "processes as a marketing strategy", "physical evidence as a marketing strategy"],
+            relationships: [
+              "the characteristics of the chosen target market cause each strategy to take the form it does",
+              "the same target market pulls the four elements in a consistent direction, rather than each being decided separately",
+              "a strategy is a response to what the target market expects, not simply a feature the business happens to have"
+            ],
+            accomplish: [
+              "covers all four named elements, since the question fixes them",
+              "for each element, shows the causal step from a target-market characteristic to the strategy, rather than describing the strategy alone",
+              "uses one business consistently so the four relationships hold together",
+              "makes the case study evidence do work, saying what each detail demonstrates about the target market"
+            ],
+            syllabus: "Marketing: market segmentation and target markets, and the marketing strategies of e-marketing, people, processes and physical evidence."
+          },
+          criteria: { bands: null, source: "general HSC band expectations" },
           text: "Explain how target markets influence the development of marketing strategies.",
           topic: "Marketing", term1: "Target markets", term2: "Marketing strategies",
           plan: ["Target market to product", "Target market to price", "Target market to promotion and e-marketing", "Target market to place, people, processes and physical evidence"],
@@ -226,6 +287,31 @@ window.ESSAY = {
   // light reference in setup when a student has not pasted their own rubric. The
   // coaching model is told these same expectations server-side; this copy is for
   // the student to read, never asserted as the only right answer.
+  // ---------------------------------------------------------------------------
+  // bandExpectations — the general ladder an extended response is judged against
+  // when no official set is authored for the question or the subject. Sent with
+  // every marking request. Subject-agnostic and ORIGINAL: written for this app
+  // from general knowledge of what separates a strong HSC extended response from
+  // a weak one, describing observable behaviour of the writing. Nothing here is
+  // reproduced or reworded from NESA marking guidelines, performance descriptions
+  // or any textbook, and it carries no subject facts, names or dates.
+  //
+  // Resolution order, highest priority first (see markingContext in app.js):
+  //   question.criteria.bands  ->  subject.bandExpectations.bands  ->  this
+  // `criteria.bands: null` on a question means "fall through", which is normal.
+  // ---------------------------------------------------------------------------
+  bandExpectations: {
+    source: "general HSC band expectations",
+    bands: [
+      { range: "Band 6", text: "The response answers the exact question asked and holds one judgement from the first paragraph to the last. Evidence is chosen because it proves the point being made, and the writing says what it proves. Subject terms carry the reasoning instead of decorating it. Each paragraph builds on the one before it, so the whole reads as a single line of thought." },
+      { range: "Band 5", text: "The response answers the question and keeps its line of argument to the end, with only brief drops into retelling. Evidence is specific and is explained, though one or two examples do less work than the rest. Subject terms are accurate and are used where they matter. The paragraphs are ordered on purpose and the joins between them are easy to follow." },
+      { range: "Band 4", text: "The response takes a position, but that position is stated more often than it is proved. Evidence is relevant and mostly accurate, though some of it is dropped in and left to speak for itself. Subject terms appear and are broadly right, with a few used loosely. The paragraphs are organised, but they read more as a list of points than as one argument." },
+      { range: "Band 3", text: "An answer to the question is present but it is not held steadily, and parts of the response drift onto a nearby topic instead. Explanation gives way to description for long stretches, and evidence is named without being tied to the point it is meant to support. Subject terms appear, sometimes only as labels. The paragraphs could be reordered without much being lost." },
+      { range: "Band 2", text: "The response stays close to the topic rather than to the question, and retells what the student knows instead of arguing a case. Evidence is thin, general or repeated, and its relevance is assumed rather than shown. Only a few subject terms are used and some are used wrongly. The writing moves from one point to the next without connecting them." },
+      { range: "Band 1", text: "The response touches the topic but does not take up the question. Statements stay general and are not developed, and there is little evidence beyond what is asserted. Subject terms are mostly absent or are used incorrectly. The writing is fragmentary or circles one idea, so there is no line of argument for a marker to follow." }
+    ]
+  },
+
   bands: [
     { range: "Bands 5 to 6", text: "Sustained, well reasoned judgement. Analysis runs ahead of description, evidence is integrated and specific, and the writing signposts clearly." },
     { range: "Bands 3 to 4", text: "A clear line of argument with some analysis, but parts slip into retelling and the evidence is uneven or loosely linked." },

@@ -131,7 +131,7 @@
   .term{color:var(--blue-dk);font-weight:800;border-bottom:2px dotted var(--blue);cursor:pointer}
   .pop{position:absolute;z-index:50;max-width:300px;background:var(--ink);color:#EFF5F5;border-radius:14px;padding:12px 15px;font-size:13.5px;box-shadow:0 12px 30px rgba(27,42,41,.3)}
   .pop b{font-family:var(--disp);display:block;margin-bottom:3px;color:#fff;text-transform:capitalize}
-  .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;font-weight:700;font-size:14px;padding:11px 20px;border-radius:99px;z-index:60}
+  .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;font-weight:700;font-size:14px;padding:11px 20px;border-radius:99px;z-index:200}
 
   .nav{display:flex;gap:6px;background:#E2EAEA;border-radius:99px;padding:5px;width:max-content;margin-bottom:20px}
   .navtab{font-family:var(--disp);font-weight:600;font-size:14px;border:none;background:none;color:var(--ink-2);padding:8px 22px;border-radius:99px}
@@ -399,7 +399,7 @@
   .concept::before{content:"Concept · ";font-family:var(--disp);letter-spacing:.05em;text-transform:uppercase;font-size:10.5px;color:var(--blue-dk)}
 
   /* ===== Long-response review mode (namespaced rv- to avoid collisions) ===== */
-  .rv-scrim{position:fixed;inset:0;background:rgba(28,40,40,.42);display:flex;align-items:flex-start;justify-content:center;padding:26px 16px;overflow:auto;z-index:100}
+  .rv-scrim{position:fixed;inset:0;background:rgba(28,40,40,.42);display:flex;align-items:flex-start;justify-content:center;padding:26px 16px;overflow:auto;z-index:150}
   .rv-blur{filter:blur(3px)}
   .rv-modal{width:100%;max-width:1040px;background:var(--card);border-radius:22px;box-shadow:0 24px 60px rgba(28,40,40,.28);overflow:hidden;animation:rvpop .25s cubic-bezier(.35,.65,.25,1)}
   @keyframes rvpop{from{opacity:0;transform:translateY(12px) scale(.99)}to{opacity:1;transform:none}}
@@ -470,7 +470,7 @@
   .rv-pill.w{background:var(--coral-soft);color:var(--coral-dk)}
 
   /* context overlay (question / stimulus) */
-  .rv-ctxscrim{position:fixed;inset:0;background:rgba(28,40,40,.5);display:none;align-items:center;justify-content:center;z-index:120;padding:20px}
+  .rv-ctxscrim{position:fixed;inset:0;background:rgba(28,40,40,.5);display:none;align-items:center;justify-content:center;z-index:160;padding:20px}
   .rv-ctxscrim.show{display:flex}
   .rv-ctxcard{position:relative;background:#fff;border-radius:20px;max-width:620px;width:100%;max-height:80vh;overflow:auto;padding:24px 26px;box-shadow:0 24px 60px rgba(28,40,40,.3)}
   .rv-ctxx{position:absolute;top:14px;right:16px;border:1.5px solid var(--line);background:#fff;border-radius:50%;width:30px;height:30px;cursor:pointer;color:var(--ink-2)}
@@ -496,6 +496,16 @@
   .rv-misschip.crit:hover{background:var(--coral-soft)}
   .rv-misschip:active{transform:translateY(1px);box-shadow:none}
   .rv-missx{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;background:var(--gold-dk);color:#fff;font-size:11px;font-weight:800;flex:none}
+  /* ===== Marking rebuild: where to start, and the way back into writing ===== */
+  .rv-focus{border:1.5px solid var(--green);border-radius:16px;background:var(--green-soft);padding:14px 16px;margin-bottom:16px}
+  .rv-focushead{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .rv-focustag{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:var(--green-dk);border-radius:999px;padding:3px 9px}
+  .rv-focusarea{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--ink)}
+  .rv-focuswhy{font-size:13.5px;line-height:1.55;color:var(--ink);margin-top:8px}
+  .rv-focusquote{font-size:13px;line-height:1.55;color:var(--ink);margin-top:7px;padding-left:11px;border-left:3px solid var(--green);font-style:italic}
+  .rv-focusrow{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}
+  .rv-credited{font-size:12.5px;line-height:1.5;color:var(--ink);margin-top:10px;padding-top:9px;border-top:1px solid rgba(28,196,125,.35)}
+  .rv-credited b{color:var(--green-dk)}
   .rv-scorecard{margin-top:16px;border:1.5px solid var(--line);border-radius:16px;padding:16px 18px;background:#fff}
   .rv-screasons{margin-top:6px}
   .rv-statusrow{width:100%;display:flex;align-items:center;gap:11px;text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;font-family:var(--body)}
@@ -559,7 +569,7 @@
   .lzhint{font-size:13px;color:var(--ink-2);font-weight:700}
   .lzexp-t{font-family:var(--disp);font-weight:600;font-size:14.5px;color:var(--blue-dk);margin-bottom:4px}
   .lzexp-b{font-size:13.5px;line-height:1.6;color:var(--ink)}
-  .lzbigscrim{position:fixed;inset:0;background:rgba(28,40,40,.6);display:none;align-items:center;justify-content:center;z-index:140;padding:24px}
+  .lzbigscrim{position:fixed;inset:0;background:rgba(28,40,40,.6);display:none;align-items:center;justify-content:center;z-index:170;padding:24px}
   .lzbigscrim.show{display:flex}
   .lzbigcard{position:relative;background:#fff;border-radius:20px;max-width:1000px;width:100%;max-height:88vh;overflow:auto;padding:26px}
   .lzbiggrid{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start}
@@ -753,6 +763,18 @@
   .es-completion{margin-top:14px;border:1.5px solid var(--green);background:var(--card);border-radius:16px;padding:14px 18px}
   .es-completemsg{font-size:13.5px;color:var(--ink);font-weight:700;line-height:1.5;margin-bottom:12px}
   .es-completion .es-actions{margin-top:0}
+  .es-marks{max-width:120px}
+  .es-marked{display:block}
+  .es-markhead{display:flex;align-items:baseline;gap:10px}
+  .es-markscore{font-family:var(--disp);font-weight:700;font-size:30px;color:var(--green-dk);line-height:1}
+  .es-markscore small{font-size:16px;color:var(--ink-3);font-weight:600}
+  .es-markwhat{font-size:12.5px;color:var(--ink-2);font-weight:700}
+  .es-markfocus{margin-top:12px;border-top:1px solid var(--line);padding-top:12px}
+  .es-markarea{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-family:var(--disp);font-weight:600;font-size:15px;color:var(--ink)}
+  .es-marktag{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:var(--green-dk);border-radius:999px;padding:3px 9px}
+  .es-markwhy{font-size:13.5px;line-height:1.55;color:var(--ink);margin-top:8px}
+  .es-markquote{font-size:13px;line-height:1.55;color:var(--ink);margin-top:7px;padding-left:11px;border-left:3px solid var(--green);font-style:italic}
+  .es-marked .es-actions{margin-top:14px}
   .es-submittedh{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--green-dk);margin-bottom:6px}
 
   /* ===== Batch 2: missing-element cards, ghost frames, polish reveal, quiz ===== */
@@ -833,6 +855,7 @@
     endpoint: "https://marginal-grader.williamwinter2104.workers.dev/",  // Cloudflare Worker URL for AI essay marking
     code: "12Ec126",  // class code — must match the worker's CLASS_CODE secret exactly (case-sensitive)
     reviewMode: false,  // PROMOTION SWITCH for guided review mode. false = students get the simple result sheet. Set true to give every student the paragraph-by-paragraph review after marking. Add ?review=1 to the URL to try it without enabling it for everyone.
+    essayMarking: false,  // PROMOTION SWITCH for sending a full essay attempt to the AI marker. false = Submit saves the draft and says marking is not switched on yet. Set true to give every student real marking on a full attempt. Add ?essaymark=1 to the URL to try it without enabling it for everyone (?essaydemo=1 includes it).
     essayMode: true,  // PROMOTION SWITCH for essay practice mode (coached writing + full attempt). false = students never see it. Set true to switch it on for everyone whose class code maps to a known subject. Add ?essay=1 to try it without enabling it for everyone, or ?essaydemo=1 to walk all three screens on an Ancient History context with the labelled demo coaching fallback.
     textbookUrl: "",  // optional: deep link to your class's licensed textbook copy,
                       // e.g. "https://your-lms.school/riley-2026.pdf#page={page}" —

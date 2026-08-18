@@ -13,6 +13,13 @@
 // worker: re-paste and redeploy it in Cloudflare for changes to take effect.
 // =============================================================================
 const MODEL = "claude-sonnet-4-6"; // sharper essay feedback; swap to "claude-haiku-4-5-20251001" for cheaper grading
+// PASS 1 of marking (the diagnosis) runs on the fast model. Pass 1 does not mark:
+// it only reports what is on the page, and every observation it makes is checked
+// against the student's own words in code before the marker sees it. The
+// JUDGEMENT (pass 2) stays on MODEL above. Set DIAG_MODEL to MODEL if you would
+// rather spend the latency.
+const DIAG_MODEL = "claude-haiku-4-5-20251001";
+const DIAG_MAX_TOKENS = 3000;
 // COACHING (essay practice) runs on the cheaper, faster Haiku. Marking above is
 // left on its current model on purpose. Output is capped short (suggestions only).
 const COACH_MODEL = "claude-haiku-4-5-20251001"; // dated pin: the alias claude-haiku-4-5 is rejected on this account
@@ -35,6 +42,191 @@ function markCriteria(raw) {
   return c.length === 4 ? c : DEFAULT_CRITERIA;
 }
 
+// =============================================================================
+// TWO-PASS MARKING.
+//
+// PASS 1 DIAGNOSES. It describes what is actually on the page and assigns no
+// marks: submit_diagnosis has no numeric field anywhere, so it is structurally
+// incapable of scoring. Every observation must carry a verbatim quote, and
+// normalizeDiagnosis() checks each quote against the student's own text, so an
+// observation the response does not support is dropped before the marker sees it.
+//
+// PASS 2 JUDGES. It receives the question, the criteria, the band expectations,
+// the VERIFIED diagnosis and the full response, and returns the review.
+//
+// The student's PLAN and our authored argument pathways go to PASS 1 ONLY. Pass 2,
+// the pass that assigns marks, never receives them. That is the structural
+// guarantee behind "the plan is context, not marks": it holds even if this prompt
+// is edited, and the only way to break it is to add a field to PASS2_FIELDS.
+// =============================================================================
+const DIAG_SYSTEM = `You are reading one student's extended response and describing exactly what is on the page. You are not the marker. You give no marks, no band, no grade and no overall verdict, and you never say whether the response is good.
+
+Report only what the student actually wrote, and quote them. Every observation must carry a short verbatim quote copied exactly from the response, because an observation you cannot quote is discarded before the marker sees it. Copy the words as they appear. Never quote the question, the plan, the scaffold or your own paraphrase.
+
+Read the writing as written, not as intended. If the student planned an argument but the response does not carry it out, say it is not present. Never credit understanding that the words on the page do not show.
+
+A student may argue something we did not anticipate. Record it as a real argument and mark it valid when it is defensible for this question. Deviating from the supplied pathways is not a fault, and those pathways are never the only correct answers.
+
+Separate explaining from describing. Describing says what happened. Explaining says why it happened or what follows from it. Say which one each sentence does.
+
+Separate evidence that is used from evidence that is only mentioned. Evidence is used when the response shows what it demonstrates. It is mentioned when it appears as a name, a figure or a case study and does no work.
+
+Write in plain Year 12 English. Do not use em-dashes anywhere. Return the diagnosis only through the submit_diagnosis tool.`;
+
+// Pass 1 must be structurally incapable of marking. This walks the tool schema at
+// module load and refuses to start if a mark could ever fit in it: no mark-shaped
+// property name, no band or grade enum, and no numeric field except the paragraph
+// locators, which point at a place in the response and carry no value.
+const MARK_KEY = /^(scores?|marks?|bands?|grades?|totals?|points?|rating|rank|level|percent|percentage|out_of|worth|weight|value)$/i;
+const MARK_ENUM = /\b(band|mark|grade)\b|^\s*\d+\s*(\/\s*\d+)?\s*$/i;
+const NUMERIC_LOCATORS = new Set(["paragraph"]);
+function assertScoreFree(node, path) {
+  path = path || "input_schema";
+  if (!node || typeof node !== "object") return;
+  const t = Array.isArray(node.type) ? node.type : [node.type];
+  if (t.some(x => x === "number" || x === "integer") && !NUMERIC_LOCATORS.has(path.split(".").pop())) {
+    throw new Error("pass 1 could score: numeric field at " + path);
+  }
+  if (Array.isArray(node.enum) && node.enum.some(v => MARK_ENUM.test(String(v)))) throw new Error("pass 1 could score: mark-like enum at " + path);
+  if (node.properties) for (const k in node.properties) {
+    if (MARK_KEY.test(k)) throw new Error("pass 1 could score: mark-like property " + k + " at " + path);
+    assertScoreFree(node.properties[k], path + "." + k);
+  }
+  if (node.items) assertScoreFree(node.items, path + "[]");
+}
+
+const QUOTE_FIELD = { type: "string", description: "A short verbatim quote from the student's response, copied exactly. An observation whose quote does not appear in the response is discarded." };
+
+const DIAG_TOOL = {
+  name: "submit_diagnosis",
+  description: "Describe what is actually in the student's response. Report only: no marks, no bands, no verdict.",
+  input_schema: {
+    type: "object",
+    properties: {
+      coverage: {
+        type: "array",
+        description: "One entry per part the question requires.",
+        items: {
+          type: "object",
+          properties: {
+            required: { type: "string", description: "The required concept, element or relationship, in the question's own terms." },
+            state: { type: "string", enum: ["addressed", "partial", "absent"] },
+            paragraph: { type: "number", description: "1-based paragraph where it is addressed, or 0 when absent." },
+            quote: QUOTE_FIELD,
+          },
+          required: ["required", "state", "paragraph", "quote"],
+        },
+      },
+      arguments: {
+        type: "array",
+        description: "The argument each paragraph actually makes, in the student's own words.",
+        items: {
+          type: "object",
+          properties: {
+            paragraph: { type: "number", description: "1-based paragraph number." },
+            argument: { type: "string", description: "What this paragraph actually argues as written, not as intended." },
+            onPathway: { type: "boolean", description: "True when it matches a supplied pathway. False is not a fault." },
+            valid: { type: "boolean", description: "True when the argument is defensible for this question, whether or not it is one of ours." },
+            quote: QUOTE_FIELD,
+          },
+          required: ["paragraph", "argument", "onPathway", "valid", "quote"],
+        },
+      },
+      explanation: {
+        type: "array",
+        description: "Where the writing explains, and where it only describes or asserts.",
+        items: {
+          type: "object",
+          properties: {
+            paragraph: { type: "number", description: "1-based paragraph number." },
+            mode: { type: "string", enum: ["explained", "descriptive", "asserted"] },
+            note: { type: "string", description: "One sentence on what this sentence does or fails to do." },
+            quote: QUOTE_FIELD,
+          },
+          required: ["paragraph", "mode", "note", "quote"],
+        },
+      },
+      evidence: {
+        type: "array",
+        description: "Every example, source, case study or figure, and whether it does any work. The FACT and the CLAIM it supports are separate quotes, and they must be different words: a detail that is never turned into a claim has only been mentioned.",
+        items: {
+          type: "object",
+          properties: {
+            paragraph: { type: "number", description: "1-based paragraph number." },
+            use: { type: "string", enum: ["used", "mentioned", "misused"] },
+            note: { type: "string", description: "One sentence on what it shows, or on what it was left to show." },
+            quote: { type: "string", description: "The FACT: the exact words carrying the detail, figure, source or case study. Copied verbatim." },
+            claimQuote: { type: "string", description: "The CLAIM: a DIFFERENT run of the student's words saying what that fact demonstrates. Empty when they never say. Never the same words as the fact." },
+          },
+          required: ["paragraph", "use", "note", "quote", "claimQuote"],
+        },
+      },
+      terminology: {
+        type: "array",
+        description: "Subject terms the student used, and whether each is used accurately.",
+        items: {
+          type: "object",
+          properties: {
+            term: { type: "string" },
+            accurate: { type: "boolean" },
+            note: { type: "string" },
+            quote: QUOTE_FIELD,
+          },
+          required: ["term", "accurate", "note", "quote"],
+        },
+      },
+      repetition: {
+        type: "array",
+        description: "Places where the response repeats itself without adding anything.",
+        items: {
+          type: "object",
+          properties: {
+            paragraph: { type: "number", description: "1-based paragraph number." },
+            note: { type: "string" },
+            quote: QUOTE_FIELD,
+          },
+          required: ["paragraph", "note", "quote"],
+        },
+      },
+      missing: {
+        type: "array",
+        description: "What the question asks for that the response never does. No quote, because it is absent.",
+        items: {
+          type: "object",
+          properties: {
+            what: { type: "string" },
+            where: { type: "string", description: "Where it belongs, e.g. the introduction, or the paragraph on processes." },
+          },
+          required: ["what", "where"],
+        },
+      },
+      planVsResponse: {
+        type: "array",
+        description: "For each item the student planned, whether the response actually carries it out. Presence needs a verbatim quote: the worker forces present to false when the quote does not appear in the response.",
+        items: {
+          type: "object",
+          properties: {
+            planned: { type: "string" },
+            present: { type: "boolean" },
+            quote: { type: "string", description: "Verbatim quote showing it carried out. Empty when it is not present." },
+          },
+          required: ["planned", "present", "quote"],
+        },
+      },
+      firstToFix: { type: "string", description: "The one paragraph or sentence that would gain most from a rewrite, named plainly. No marks." },
+    },
+    required: ["coverage", "arguments", "explanation", "evidence", "terminology", "repetition", "missing", "planVsResponse", "firstToFix"],
+  },
+};
+// A Pass 1 that could score must never run. Throwing at module load would guarantee
+// that, but this worker is deployed by hand-pasting the file, so a schema slip would
+// take the whole app down with no visible error. Instead the check disables PASS 1
+// and marking carries on single-pass: the guarantee holds, the app stays up, and the
+// reason is visible in the response under checks.
+let DIAG_SAFE = true, DIAG_UNSAFE_WHY = "";
+try { assertScoreFree(DIAG_TOOL.input_schema); }
+catch (e) { DIAG_SAFE = false; DIAG_UNSAFE_WHY = String(e.message || e); }
+
 // The grading prompt. Every model sentence, starter, reason, descriptor and
 // explanation must be in writable Year 12 English with NO em-dashes, so it
 // reads as something a student could actually write.
@@ -50,7 +242,17 @@ Each issue has a severity: critical when it loses marks, should when it lifts th
 
 Each issue carries a three-rung ladder: Clear, Better, Band 6. Every rung must be creditworthy. Clear is the simplest sentence that still earns the mark, never a failing strawman. Better is solid mid-band. Band 6 is exceptional. Give only the sentence for each rung. Do not write practice starters: the app derives those from each rung's sentence.
 
+Build every rung out of what is already in this student's response and in the question. Never lift a sentence from the reference answer, the scaffold or any material supplied with the request. A rung is a better version of what THEY wrote, not a model answer for them to memorise.
+
 Return one entry per MARKING CRITERION named in the request, in the order given, using those exact criterion names. Give each marks, a one-line descriptor, and band descriptors, setting here to true on the band the response sits in. Keep the rubric marks consistent with the paragraph marks.
+
+A DIAGNOSIS of this response comes with the request. It lists what the student actually wrote, quoted from their own page, and every quote in it has already been checked against their response. Use it as your evidence. It carries no marks and no verdict, so the judgement is entirely yours, but do not contradict a quoted observation without saying why.
+
+Every reason you give and every issue you raise must point at this student's own words. Quote them, or name the exact place. Never write a comment that would fit any response, such as saying the explanation could be more detailed or the argument could be clearer. Say what THIS student wrote and what it does not yet do: for example, that a paragraph names a strategy but does not say why the cause named in the question led to it. If you cannot ground a comment in something on the page, do not make it.
+
+Credit what the student argued, not what you would have argued. A defensible argument that is not the one our materials anticipated earns full marks. Never mark a response down for taking a different valid path, and never treat a reference answer or scaffold as a checklist. Equally, never infer understanding the words do not show.
+
+Return a FOCUS: the single place the student should rewrite first, the improvement area it belongs to, one or two sentences saying what that paragraph does and does not do, and a short verbatim quote from it. One place only, and it must be the one that gains the most marks.
 
 Register: use commas, colons and because, since or as clauses, and full stops. Do not use em-dashes anywhere in your output, because a student would not write them. Return the review only through the submit_review tool.`;
 
@@ -80,6 +282,17 @@ const REVIEW_TOOL = {
     type: "object",
     properties: {
       summary: { type: "string", description: "One or two sentences overall, writable register, no em-dashes." },
+      focus: {
+        type: "object",
+        description: "Where the student should go back and rewrite FIRST. Exactly one place.",
+        properties: {
+          area: { type: "string", description: "The improvement area, two or three words, e.g. Explanation, Use of evidence, Judgement." },
+          paragraph: { type: "number", description: "1-based number of the paragraph to revise first." },
+          why: { type: "string", description: "One or two sentences on what this paragraph does and what it does not yet do, pointing at the student's own words. No em-dashes." },
+          quote: { type: "string", description: "A short verbatim quote from that paragraph, copied exactly." },
+        },
+        required: ["area", "paragraph", "why", "quote"],
+      },
       paragraphs: {
         type: "array",
         items: {
@@ -90,7 +303,8 @@ const REVIEW_TOOL = {
             max: { type: "number", description: "Marks available for this paragraph." },
             reasons: {
               type: "array",
-              description: "Brief score-open status list, strongest first.",
+              maxItems: 3,
+              description: "Brief score-open status list, strongest first, at most three.",
               items: {
                 type: "object",
                 properties: {
@@ -110,6 +324,7 @@ const REVIEW_TOOL = {
                   missing_label: { type: "string", description: "For a missing sentence (text null), the short label shown on the chip." },
                   issues: {
                     type: "array",
+                    maxItems: 2,
                     items: {
                       type: "object",
                       properties: {
@@ -144,6 +359,7 @@ const REVIEW_TOOL = {
             descriptor: { type: "string", description: "One line on what the criterion rewards." },
             bands: {
               type: "array",
+              maxItems: 3,
               items: {
                 type: "object",
                 properties: {
@@ -159,7 +375,7 @@ const REVIEW_TOOL = {
         },
       },
     },
-    required: ["summary", "paragraphs", "rubric"],
+    required: ["summary", "paragraphs", "rubric", "focus"],
   },
 };
 
@@ -416,6 +632,9 @@ export default {
     const { prompt, marks, model_answer, vocab = [], answer, code, scaffold = [], faults = [], command } = body || {};
     const markSubject = String((body && body.subject) || "").trim().slice(0, 80);
     const criteria = markCriteria(body && body.criteria);
+    // The richer marking context. Every field is optional and bounded, so an older
+    // client (or a hand-rolled request) still marks, just with less to go on.
+    const ctx = markingInput(body);
     // optional shared class code: set secret CLASS_CODE on the worker and only
     // requests carrying it are graded — stops strangers spending your credits.
     if (env.CLASS_CODE && code !== env.CLASS_CODE) return json({ error: "Class code missing or wrong — check Settings in the app." }, 403, cors);
@@ -423,6 +642,9 @@ export default {
     // output. It shares the rate limit and class-code gate above, then returns.
     if (body && body.action === "coach") return await handleCoach(body, env, cors);
     if (!prompt || !answer || !marks) return json({ error: "prompt, marks and answer are required" }, 400, cors);
+    // One bad mark value would otherwise turn every number in the review into NaN.
+    const markTotal = Math.round(Number(marks));
+    if (!Number.isFinite(markTotal) || markTotal < 1 || markTotal > 200) return json({ error: "marks must be a whole number between 1 and 200" }, 400, cors);
     if (answer.length > 12000) return json({ error: "answer too long" }, 400, cors);
 
     const paras = String(answer).split(/\n\s*\n/).map((p, i) => `[${i + 1}] ${p.trim()}`).join("\n\n");
@@ -436,6 +658,28 @@ export default {
     const faultsText = (Array.isArray(faults) && faults.length)
       ? faults.map(f => `- [${f.severity || "should"}] ${f.head || ""}: ${f.why || ""}\n    ladder -> ${(f.ladder || []).map(r => `${r.level}: ${r.text}`).join(" | ")}`).join("\n")
       : "(none provided)";
+
+    // ---- PASS 1: diagnose what is actually on the page (no marks) -----------
+    const diagnosis = await diagnose({
+      subject: markSubject, prompt, command, marks, topic: ctx.topic,
+      requirements: ctx.requirements, validContent: ctx.validContent, plan: ctx.plan,
+      response: paras, answer,
+    }, env);
+
+    // ---- PASS 2: judge, from the verified diagnosis and the response ---------
+    let userMessage;
+    try {
+      userMessage = pass2Message({
+        subject: markSubject, criteria, bands: ctx.bands, bandsSource: ctx.bandsSource,
+        command, marks, prompt, topic: ctx.topic, requirements: ctx.requirements,
+        reference: String(model_answer || "").slice(0, 1600), vocab, scaffold: scaffoldText, faults: faultsText, rubric: ctx.rubric,
+        diagnosis: diagnosisText(diagnosis),
+        offPathway: offPathwayCount(diagnosis, ctx.validContent.pathways.length > 0),
+        response: paras,
+      });
+    } catch (e) {
+      return json({ error: String(e.message || e) }, 500, cors);
+    }
 
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -454,10 +698,7 @@ export default {
         system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
         tools: [REVIEW_TOOL],
         tool_choice: { type: "tool", name: "submit_review" },
-        messages: [{
-          role: "user",
-          content: `SUBJECT: ${markSubject || "(unspecified)"}\n\nMARKING CRITERIA (return one rubric entry per criterion, in this order, using these exact names):\n${criteria.map((c, i) => `${i + 1}. ${c}`).join("\n")}\n\nQUESTION${command ? " (" + command + ")" : ""} (${marks} marks):\n${prompt}\n\nREFERENCE, WHAT A TOP ANSWER COVERS:\n${model_answer || "(none provided)"}\n\nREQUIRED METALANGUAGE: ${vocab.join(", ") || "(none provided)"}\n\nSCAFFOLD THE ANSWER SHOULD FOLLOW:\n${scaffoldText}\n\nANTICIPATED FAULTS (grade against the marking scheme; if one appears, flag it at the given severity and base its ladder on the one below, adapted to the student's wording):\n${faultsText}\n\nSTUDENT ANSWER (numbered paragraphs):\n${paras}`,
-        }],
+        messages: [{ role: "user", content: userMessage }],
       }),
     });
 
@@ -469,9 +710,598 @@ export default {
       // stop_reason "max_tokens" here means the review truncated; raise max_tokens.
       return json({ error: "grader returned no review", stop_reason: data.stop_reason || null }, 502, cors);
     }
-    return json(finalize(r, Number(marks)), 200, cors);
+    // A review cut off part way through is worse than no review: finalize() sums the
+    // paragraph marks, so a response truncated after paragraph four of six would
+    // report a total several marks below what was actually awarded, and the student
+    // would read it as their grade. Fail loudly instead. The app already falls back
+    // to a labelled demo grade on a non-ok response, so nothing silently understates.
+    const chunkCount = String(answer).split(/\n\s*\n/).filter(x => x.trim()).length;
+    if (data.stop_reason === "max_tokens" && r.paragraphs.length < chunkCount) {
+      return json({ error: "grading ran long and was cut off before it finished. Try again.", stop_reason: "max_tokens" }, 502, cors);
+    }
+    return json(finalize(r, markTotal, String(answer), diagnosis, criteria, ctx.validContent.pathways.length > 0), 200, cors);
   },
 };
+
+const asArray = v => (Array.isArray(v) ? v : []);
+const asObject = v => (v && typeof v === "object" && !Array.isArray(v) ? v : {});
+
+// =============================================================================
+// MARKING ENFORCEMENT. The house rule is that guarantees live in code, not in the
+// prompt: a prompt can be edited or ignored, these cannot.
+// =============================================================================
+
+// ---- 1. NO EM-DASHES, enforced ---------------------------------------------
+// A student would not write one, so none may reach the page. Punctuation dashes
+// become commas; hyphenated words and numeric ranges (1-2, 2019-20) are left alone.
+const DASHES = /[\u2010\u2011\u2012\u2013\u2014\u2015\u2212]|--+/;
+function deDash(s) {
+  if (typeof s !== "string" || !DASHES.test(s)) return s;
+  // 1. these are always hyphens or minus signs, never punctuation
+  let t = s.replace(/[\u2010\u2011\u2012\u2212]/g, "-");
+  // 2. a dash between two digits is a RANGE: 1-2, 3-4, 2019-20, band labels
+  t = t.replace(/(\d) ?(?:[\u2013\u2014\u2015]|--+) ?(\d)/g, "$1-$2");
+  // 3. a dash sitting tight between two word characters stands in for a hyphen,
+  //    so cost-benefit and e-marketing survive intact
+  t = t.replace(/(\w)(?:[\u2013\u2014\u2015]|--+)(\w)/g, "$1-$2");
+  // 4. everything left is punctuation. Replace it in ONE pass, deciding from what
+  //    precedes it, so a doubled comma is never created and never has to be undone.
+  t = t.replace(/\s*(?:[\u2013\u2014\u2015]|--+)\s*/g, (m, at, whole) => {
+    const before = whole.slice(0, at).replace(/\s+$/, "");
+    if (!before) return "";                       // opened with a dash: drop it
+    if (/[,;:.!?]$/.test(before)) return " ";     // already punctuated: just a space
+    const after = whole.slice(at + m.length);
+    if (!after.trim()) return "";                 // ended with a dash: drop it
+    return ", ";
+  });
+  return t.replace(/\s+([,;:.!?])/g, "$1").replace(/\s{2,}/g, " ").trim();
+}
+// Apply it to every string in a returned object, however deeply nested, so a new
+// field can never quietly reintroduce a dash. Quotes are skipped: they are the
+// student's own words, given back to them exactly as they wrote them.
+const QUOTE_KEYS = new Set(["quote", "claimQuote"]);
+function sweepDashes(node) {
+  if (typeof node === "string") return deDash(node);
+  if (Array.isArray(node)) return node.map(sweepDashes);
+  if (node && typeof node === "object") { for (const k in node) node[k] = QUOTE_KEYS.has(k) ? node[k] : sweepDashes(node[k]); return node; }
+  return node;
+}
+
+// ---- 2. QUOTE VERIFICATION -------------------------------------------------
+// Feedback has to be grounded in what the student actually wrote, so anything
+// claiming to quote them is checked against their text. Normalises case, curly
+// quotes, dashes and whitespace, then accepts either an exact run of words or the
+// same words in order inside a bounded span (which tolerates a light elision but
+// not an invented sentence). Fewer than three words proves nothing, so it fails.
+// Tokenise, keeping each token's position in the ORIGINAL string. Positions are what
+// let a verified quote be snapped back to the exact characters the student typed.
+const QUOTE_TOKEN = /[a-z0-9]+(?:[.,][0-9]+)*(?:'[a-z]+)*/g;
+function quoteTokens(s) {
+  const src = String(s == null ? "" : s).replace(/[‘’ʼ]/g, "'").toLowerCase();
+  const out = [];
+  let m;
+  QUOTE_TOKEN.lastIndex = 0;
+  // The token keeps its span in the original string, but its comparison key drops
+  // apostrophes, so McDonald's and McDonalds are the same word and customers'
+  // matches customers. Punctuation never decides whether two quotes match.
+  while ((m = QUOTE_TOKEN.exec(src))) {
+    const w = m[0].replace(/'/g, "");
+    if (w) out.push({ w, at: m.index, to: m.index + m[0].length });
+  }
+  return out;
+}
+function quoteWords(s) { return quoteTokens(s).map(t => t.w); }
+// Words that prove nothing on their own: a "quote" made only of these is not evidence.
+const QUOTE_STOP = new Set("the a an of to and or but in on at for with as by from into onto that this these those it its is are was were be been being has have had do does did will would can could should may might not no so such more most less than then there here they them their he she we you i".split(" "));
+// The tokenised answer, built once per request and reused for every quote. Paragraph
+// markers ([1], [2]) are stripped: the model is shown them, so a quote copied with
+// one must not be rejected for carrying it.
+function answerIndex(answer) {
+  const raw = String(answer == null ? "" : answer);
+  // One index per paragraph as well as one for the whole response, so an observation
+  // that names a paragraph can be checked against THAT paragraph. Otherwise a quote
+  // lifted from anywhere verifies, and the marker is pointed at the wrong place.
+  const paras = [];
+  let at = 0;
+  raw.split(/\n\s*\n/).forEach(chunk => {
+    const start = raw.indexOf(chunk, at);
+    if (start < 0 || !chunk.trim()) { at += chunk.length; return; }
+    at = start + chunk.length;
+    paras.push({ raw: chunk, toks: quoteTokens(chunk) });
+  });
+  return { raw, toks: quoteTokens(raw), paras };
+}
+// The index to check an observation against: the paragraph it names when that
+// paragraph exists, otherwise the whole response.
+function scopeFor(idx, paragraph) {
+  const n = Math.round(Number(paragraph));
+  const ps = (idx && idx.paras) || [];
+  return (n >= 1 && n <= ps.length) ? ps[n - 1] : idx;
+}
+function stripMarkers(q) { return String(q == null ? "" : q).replace(/\[\s*\d+\s*\]/g, " "); }
+
+// Where a quote sits in the response, as a word range, or null when it is not there.
+// TOLERANCE, stated exactly. A quote must be 3 to 60 words and contain at least one
+// word that is not a function word. Under six words it must match contiguously. From
+// six words up it may skip at most a quarter of its own length, inside a window no
+// wider than the quote plus that slack. So a light elision passes and a sentence
+// stitched together out of scattered words does not.
+function quoteSpan(idx, quote, maxWords) {
+  const q = quoteWords(stripMarkers(quote));
+  if (q.length < 3 || q.length > (maxWords || 60)) return null;
+  if (!q.some(w => !QUOTE_STOP.has(w))) return null;
+  const a = idx && idx.toks;
+  if (!a || !a.length) return null;
+  // contiguous run first
+  for (let k = 0; k + q.length <= a.length; k++) {
+    let hit = true;
+    for (let j = 0; j < q.length; j++) if (a[k + j].w !== q[j]) { hit = false; break; }
+    if (hit) return { first: k, last: k + q.length - 1 };
+  }
+  if (q.length < 6) return null;
+  const slack = Math.floor(q.length / 4), width = q.length + slack;
+  for (let k = 0; k < a.length; k++) {
+    if (a[k].w !== q[0]) continue;
+    let qi = 1, last = k;
+    for (let j = k + 1; j < a.length && j - k < width && qi < q.length; j++) {
+      if (a[j].w === q[qi]) { qi++; last = j; }
+    }
+    if (qi === q.length) return { first: k, last };
+  }
+  return null;
+}
+function verifyQuote(idx, quote) { return !!quoteSpan(idx, quote); }
+function spansOverlap(a, b) { return !!a && !!b && a.first <= b.last && b.first <= a.last; }
+// The student's OWN characters for a verified span. This is what makes it impossible
+// for a paraphrase to be shown back to them as their own line.
+function spanText(idx, span) {
+  if (!span || !idx || !idx.toks.length) return "";
+  const a = idx.toks[span.first], b = idx.toks[span.last];
+  return idx.raw.slice(a.at, b.to);
+}
+
+// ---- 3. THE DIAGNOSIS, VERIFIED --------------------------------------------
+// Drops every observation whose quote the student's response does not support,
+// and forces present:false on any planned item claimed as done without a quote
+// that verifies. This is what stops the PLAN from standing in for the writing.
+// Pass 1 is the only pass that sees the plan, and its own prose travels to pass 2.
+// So a phrase the student PLANNED but never wrote could reach the marker through a
+// note rather than through a field. Build the plan's distinctive phrases, minus
+// anything the student actually wrote, and drop any observation that repeats one.
+function planEcho(planText, idx) {
+  const plan = quoteWords(planText);
+  const grams = new Set();
+  for (let n = 4; n <= 6; n++) {
+    for (let i = 0; i + n <= plan.length; i++) {
+      const g = plan.slice(i, i + n);
+      if (!g.some(w => !QUOTE_STOP.has(w))) continue;
+      if (verifyQuote(idx, g.join(" "))) continue;   // they wrote it: not an echo
+      grams.add(g.join(" "));
+    }
+  }
+  return grams;
+}
+function echoesPlan(text, grams) {
+  if (!grams || !grams.size) return false;
+  const w = quoteWords(text);
+  for (let n = 4; n <= 6; n++) {
+    for (let i = 0; i + n <= w.length; i++) if (grams.has(w.slice(i, i + n).join(" "))) return true;
+  }
+  return false;
+}
+function normalizeDiagnosis(raw, answer, planText) {
+  const idx = (answer && answer.toks) ? answer : answerIndex(answer);
+  const grams = planEcho(planText || "", idx);
+  const d = asObject(raw);
+  const out = { kept: 0, dropped: 0 };
+  const quoted = (key, prose, scoped) => {
+    const rows = asArray(d[key]).map(asObject);
+    const ok = [];
+    rows.forEach(r => {
+      const where = scoped ? scopeFor(idx, r.paragraph) : idx;
+      const at = quoteSpan(where, r.quote);
+      if (!at) return;
+      if ((prose || []).some(fl => echoesPlan(r[fl], grams))) return;
+      // Snap to the student's literal characters. Everything downstream, the
+      // marking prompt and the credited list the student reads, then carries their
+      // words exactly, never a near-copy the model tidied on the way through.
+      r.quote = spanText(where, at);
+      ok.push(r);
+    });
+    out.kept += ok.length; out.dropped += rows.length - ok.length;
+    return ok;
+  };
+  // INVARIANT: a fact and a claim never live in the same record. Evidence counts as
+  // USED only when the response carries the detail in one run of words and what it
+  // demonstrates in a DIFFERENT run. Same words, overlapping words, or no claim at
+  // all, and it was only mentioned. Checked on word ranges, because in real writing
+  // both halves often sit inside one sentence.
+  const evidence = quoted("evidence", ["note"], true).map(r => {
+    const where = scopeFor(idx, r.paragraph);
+    const factAt = quoteSpan(where, r.quote);
+    const claimAt = r.claimQuote ? quoteSpan(where, r.claimQuote) : null;
+    const distinct = !!claimAt && !spansOverlap(factAt, claimAt);
+    return {
+      paragraph: r.paragraph, note: r.note, quote: r.quote,
+      claimQuote: distinct ? spanText(where, claimAt) : "",
+      use: r.use === "misused" ? "misused" : (distinct ? "used" : "mentioned"),
+    };
+  });
+  const clean = {
+    coverage: quoted("coverage", ["required"], true),
+    arguments: quoted("arguments", ["argument"], true),
+    explanation: quoted("explanation", ["note"], true),
+    evidence: evidence,
+    terminology: quoted("terminology", ["term", "note"]),
+    repetition: quoted("repetition", ["note"], true),
+    // absent things cannot be quoted, so these pass through as written
+    // An absence cannot be quoted, so nothing here has been checked. It is capped
+    // and labelled as unchecked where it is handed on, because an unverified claim
+    // of absence is the cheapest possible route to an unearned penalty.
+    missing: asArray(d.missing).map(asObject).filter(m => m.what && !echoesPlan(m.what + " " + m.where, grams)).slice(0, 6),
+    planVsResponse: asArray(d.planVsResponse).map(asObject).map(m => {
+      const at = m.present ? quoteSpan(idx, m.quote) : null;
+      return { planned: String(m.planned || ""), present: !!at, quote: at ? spanText(idx, at) : "" };
+    }).filter(m => m.planned),
+    firstToFix: echoesPlan(d.firstToFix, grams) ? "" : String(d.firstToFix || ""),
+  };
+  clean.verified = out;
+  // CIRCUIT BREAKER. A reader who invents two quotes in five is not describing this
+  // response, so the diagnosis is discarded whole rather than half trusted, and the
+  // marker works from the writing alone. Half-trusted evidence is worse than none.
+  const seen = out.kept + out.dropped;
+  if (seen >= 6 && out.dropped / seen > 0.4) return { verified: { kept: 0, dropped: out.dropped, discarded: true } };
+  return sweepDashes(clean);
+}
+
+// Render the verified diagnosis as short labelled lines. Compact on purpose: it
+// rides in every pass 2 request and the review output is already near the limit.
+// planVsResponse is DELIBERATELY not in this list. Pass 2 never learns what was
+// planned, only what is on the page. Adding a key here is the only way to change
+// that, and it would be a one-line reviewable diff.
+const DIAG_TO_PASS2 = ["coverage", "arguments", "explanation", "evidence", "terminology", "repetition", "missing", "firstToFix"];
+function diagnosisText(d) {
+  if (!d || !d.coverage) return "(not available for this response, mark from the writing alone)";
+  const L = [];
+  const push = (head, key, fmt) => {
+    if (DIAG_TO_PASS2.indexOf(key) < 0) throw new Error("diagnosis field not cleared for the marking pass: " + key);
+    const rows = d[key];
+    if (rows && rows.length) L.push(head + "\n" + rows.map(fmt).join("\n"));
+  };
+  const at = n => (Number(n) > 0 ? "P" + Number(n) : "?");
+  push("COVERAGE OF WHAT THE QUESTION ASKS", "coverage", r => `- ${r.required}: ${r.state} (${at(r.paragraph)}) "${r.quote}"`);
+  push("THE ARGUMENT ACTUALLY MADE", "arguments", r => `- ${at(r.paragraph)} ${r.argument}${r.valid && !r.onPathway ? " [an argument of the student's own: credit it in full]" : ""} "${r.quote}"`);
+  push("EXPLAINING VS DESCRIBING", "explanation", r => `- ${at(r.paragraph)} ${r.mode}: ${r.note} "${r.quote}"`);
+  push("EVIDENCE, USED OR ONLY MENTIONED", "evidence", r => `- ${at(r.paragraph)} ${r.use}: ${r.note}\n    the fact: "${r.quote}"\n    what they say it shows: ${r.claimQuote ? '"' + r.claimQuote + '"' : "nothing, the detail is left to speak for itself"}`);
+  push("TERMINOLOGY", "terminology", r => `- ${r.term}: ${r.accurate ? "accurate" : "not accurate"}, ${r.note}`);
+  push("REPETITION", "repetition", r => `- ${at(r.paragraph)} ${r.note}`);
+  push("REPORTED AS NEVER DONE, NOT CHECKED (an absence cannot be quoted, so confirm each of these against the response before you act on it)", "missing", r => `- ${r.what} (belongs ${r.where})`);
+  if (d.firstToFix) L.push("WEAKEST PLACE\n- " + d.firstToFix);
+  return L.join("\n\n") || "(the diagnosis found nothing to report)";
+}
+
+// Pass 1's message. This is the ONLY place the student's plan and our authored
+// argument pathways appear. Pass 1 cannot award a mark, so nothing here can.
+function diagMessage(f) {
+  const req = f.requirements || {};
+  const listOr = (a, none) => (Array.isArray(a) && a.length ? a.map((x, i) => `${i + 1}. ${x}`).join("\n") : none);
+  const pl = f.plan || {};
+  const planRows = (pl.paragraphs || []).map((x, i) =>
+    `${i + 1}. ${x.role || "paragraph " + (i + 1)}: ${x.point || "(nothing written down)"}${(x.evidence || []).length ? " | evidence chosen: " + x.evidence.join("; ") : ""}`);
+  const planText = (pl.argument || planRows.length)
+    ? [pl.argument ? "overall line: " + pl.argument : "", planRows.join("\n")].filter(Boolean).join("\n")
+    : "(the student did not record a plan)";
+  const vc = f.validContent || {};
+  const pathways = (vc.pathways || []).map((x, i) => `${i + 1}. ${x.area ? x.area + ": " : ""}${x.argument}`).join("\n");
+  const concepts = (vc.concepts || []).map(x => `- ${x.term}: ${x.explain}`).join("\n");
+  const evidence = (vc.evidence || []).map(x => `- ${x.label}: ${x.fact}`).join("\n");
+  return [
+    `SUBJECT: ${f.subject || "(unspecified)"}`,
+    `QUESTION${f.command ? " (" + f.command + ")" : ""} (${f.marks} marks)${f.topic ? " [" + f.topic + "]" : ""}:\n${f.prompt}`,
+    `WHAT THIS QUESTION REQUIRES:\nconcepts: ${listOr(req.concepts, "(not specified)")}\nrelationships to demonstrate: ${listOr(req.relationships, "(not specified)")}\nwhat a strong response accomplishes: ${listOr(req.accomplish, "(not specified)")}${req.syllabus ? "\nsyllabus scope: " + req.syllabus : ""}`,
+    `ARGUMENT PATHWAYS WE ANTICIPATED (a menu, NOT the correct answers. A different defensible argument is valid and you must record it as valid):\n${pathways || "(none provided)"}`,
+    `CONCEPTS:\n${concepts || "(none provided)"}`,
+    `VERIFIED EVIDENCE AVAILABLE TO THE STUDENT:\n${evidence || "(none provided)"}`,
+    `THE STUDENT'S PLAN (what they intended. It is NOT proof they wrote it. Only the response can show that):\n${planText}`,
+    `STUDENT RESPONSE (numbered paragraphs):\n${f.response}`,
+  ].join("\n\n");
+}
+
+// Everything the plan says, as one string, so its phrases can be kept out of pass 2.
+function planProse(pl) {
+  pl = asObject(pl);
+  return [pl.argument].concat(asArray(pl.paragraphs).map(x => asObject(x).point || "")).filter(Boolean).join(" ");
+}
+
+// Pass 1. Never fatal: if the diagnosis fails, times out or returns nothing, the
+// worker marks from the writing alone rather than failing the whole request.
+async function diagnose(f, env) {
+  if (!DIAG_SAFE) return null;
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify({
+        model: DIAG_MODEL,
+        max_tokens: DIAG_MAX_TOKENS,
+        system: [{ type: "text", text: DIAG_SYSTEM, cache_control: { type: "ephemeral" } }],
+        tools: [DIAG_TOOL],
+        tool_choice: { type: "tool", name: "submit_diagnosis" },
+        messages: [{ role: "user", content: diagMessage(f) }],
+      }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const block = (data.content || []).find(b => b.type === "tool_use");
+    if (!block || !block.input) return null;
+    return normalizeDiagnosis(block.input, answerIndex(f.answer), planProse(f.plan));
+  } catch (e) {
+    return null;
+  }
+}
+
+// ---- 4. THE PLAN CAN NEVER REACH THE PASS THAT MARKS -----------------------
+// Pass 2 is built from this allowlist and nothing else. The student's plan and our
+// authored argument pathways are absent by construction, so no prompt edit can let
+// them score. Adding a key here is the only way to change that, and it throws
+// loudly rather than leaking quietly.
+const PASS2_FIELDS = ["subject", "criteria", "bands", "bandsSource", "rubric", "command", "marks", "prompt", "topic", "requirements", "reference", "vocab", "scaffold", "faults", "diagnosis", "offPathway", "response"];
+// Pass 2's message is CONSTRUCTED from the allowlist, never passed through. A field
+// we know must never appear throws loudly, so the mistake is caught in test. Any
+// other unrecognised field is simply ignored, because ignoring is already the safe
+// direction and no student's marking should die over a stray key.
+const PASS2_FORBIDDEN = ["plan", "validContent", "pathways", "concepts", "evidence", "evidenceBank", "planVsResponse"];
+function pickPass2(bag) {
+  bag = asObject(bag);
+  const leaked = Object.keys(bag).filter(k => PASS2_FORBIDDEN.indexOf(k) >= 0);
+  if (leaked.length) throw new Error("pass 2 payload leak: " + leaked.join(", "));
+  const out = {};
+  PASS2_FIELDS.forEach(k => { if (bag[k] !== undefined) out[k] = bag[k]; });
+  return out;
+}
+function pass2Message(bag) {
+  const f = pickPass2(bag);
+  const req = f.requirements || {};
+  const listOr = (a, none) => (Array.isArray(a) && a.length ? a.map((x, i) => `${i + 1}. ${x}`).join("\n") : none);
+  return [
+    `SUBJECT: ${f.subject || "(unspecified)"}`,
+    `MARKING CRITERIA (return one rubric entry per criterion, in this order, using these exact names):\n${(f.criteria || []).map((c, i) => `${i + 1}. ${c}`).join("\n")}`,
+    `BAND EXPECTATIONS (${f.bandsSource || "general HSC band expectations"}):\n${(f.bands || []).map(b => `${b.range}: ${b.text}`).join("\n") || "(none provided)"}`,
+    f.rubric ? `THE MARKING GUIDE THE STUDENT SUPPLIED (aim the judgement at this where it differs from the general expectations):\n${f.rubric}` : "",
+    `QUESTION${f.command ? " (" + f.command + ")" : ""} (${f.marks} marks)${f.topic ? " [" + f.topic + "]" : ""}:\n${f.prompt}`,
+    `WHAT THIS QUESTION REQUIRES:\nconcepts: ${listOr(req.concepts, "(not specified)")}\nrelationships to demonstrate: ${listOr(req.relationships, "(not specified)")}\nwhat a strong response accomplishes: ${listOr(req.accomplish, "(not specified)")}${req.syllabus ? "\nsyllabus scope: " + req.syllabus : ""}`,
+    `REFERENCE, WHAT A TOP ANSWER CAN COVER (a guide, never a checklist, and never the only valid answer):\n${f.reference || "(none provided)"}`,
+    `REQUIRED METALANGUAGE: ${(f.vocab || []).join(", ") || "(none provided)"}`,
+    `SCAFFOLD THE ANSWER CAN FOLLOW (a shape, not a requirement: credit a different valid structure):\n${f.scaffold || "(none provided)"}`,
+    `ANTICIPATED FAULTS (if one appears, flag it at the given severity and base its ladder on the one below, adapted to the student's wording):\n${f.faults || "(none provided)"}`,
+    `DIAGNOSIS OF THIS RESPONSE (already checked against the student's own words, carries no marks):\n${f.diagnosis}`,
+    `HOW TO READ THE DIAGNOSIS:\nThe reader who wrote it was not told the marks, the criteria or the bands, and awarded nothing. Every quote in it has been checked and does appear in the response. Where it is silent, read the response yourself: silence is not a fault. Nothing in it tells you what the student meant to write, so judge only what they wrote.${f.offPathway ? "\n\nTHIS RESPONSE MAKES " + f.offPathway + " ARGUMENT" + (f.offPathway > 1 ? "S" : "") + " THAT OUR MATERIALS DID NOT ANTICIPATE. Our list is a menu that removes the blank page, not the set of correct answers. Judge those arguments on the reasoning actually written, exactly as you judge the rest. Never take a mark off because an argument was not on our list." : ""}`,
+    `STUDENT RESPONSE (numbered paragraphs):\n${f.response}`,
+  ].filter(Boolean).join("\n\n");
+}
+
+// How many arguments the student made that our materials never anticipated. Counted
+// in code and injected into pass 2, so the instruction to credit them appears only
+// when it applies and cannot be lost in a long prompt.
+function offPathwayCount(d, pathwaysSupplied) {
+  if (!pathwaysSupplied) return 0;   // with no list to be off, "off the list" says nothing
+  return asArray(d && d.arguments).filter(a => a && a.valid && !a.onPathway).length;
+}
+
+// The paragraph the student reads back in the review is built by concatenating
+// sentences[].text, so whatever the marker returns there IS what they see as their
+// own writing. Snap every sentence that verifies back to the exact characters they
+// typed, and count the ones that do not. A paraphrase can then never be handed back
+// to a student as their own line.
+function snapSentences(r, idx) {
+  let total = 0, snapped = 0, unplaced = 0;
+  (r.paragraphs || []).forEach(p => (p.sentences || []).forEach(sn => {
+    if (typeof sn.text !== "string" || !sn.text.trim()) return;   // a missing-sentence slot
+    total++;
+    // A sentence is not a pointer, it is the student's own line, and a run-on can
+    // be long. The 60-word cap that keeps a "quote" useful would drop those, so
+    // locating a sentence gets a wider limit.
+    const at = quoteSpan(idx, sn.text, 250);
+    if (!at) { unplaced++; sn.unplaced = true; return; }
+    const exact = spanText(idx, at);
+    if (exact && exact !== sn.text) { sn.text = exact; snapped++; } else snapped++;
+  }));
+  return { total, snapped, unplaced };
+}
+
+// ---- 6. MARK ARITHMETIC ----------------------------------------------------
+// The mark a student reads has to be the mark the marking supports, on the scale
+// the question is actually worth. Never trust the model to add up, and never let a
+// mis-split denominator turn an imperfect response into full marks.
+
+// Share `total` across `n` slots using each slot's weight, so the parts sum to the
+// whole exactly. Largest remainder, which is deterministic and loses nothing.
+function shareOut(weights, total) {
+  const sum = weights.reduce((a, b) => a + b, 0);
+  if (!sum) { // no usable weights: an even split, remainder to the earliest slots
+    const base = Math.floor(total / (weights.length || 1));
+    const out = weights.map(() => base);
+    let left = total - base * weights.length;
+    for (let i = 0; i < out.length && left > 0; i++, left--) out[i]++;
+    return out;
+  }
+  const exact = weights.map(w => (w * total) / sum);
+  const out = exact.map(Math.floor);
+  let left = total - out.reduce((a, b) => a + b, 0);
+  const order = exact.map((v, i) => ({ i, frac: v - Math.floor(v) })).sort((a, b) => b.frac - a.frac || a.i - b.i);
+  for (let k = 0; k < order.length && left > 0; k++, left--) out[order[k].i]++;
+  return out;
+}
+// Move a set of scores onto an exact target without breaking any ceiling.
+function fitScores(scores, caps, target) {
+  const out = scores.map((v, i) => clamp(Math.round(v), 0, caps[i]));
+  let sum = out.reduce((a, b) => a + b, 0);
+  const capTotal = caps.reduce((a, b) => a + b, 0);
+  target = clamp(Math.round(target), 0, capTotal);
+  // take from the largest first, give to the one with the most headroom first
+  while (sum > target) {
+    let pick = -1;
+    out.forEach((v, i) => { if (v > 0 && (pick < 0 || v > out[pick])) pick = i; });
+    if (pick < 0) break;
+    out[pick]--; sum--;
+  }
+  while (sum < target) {
+    let pick = -1;
+    out.forEach((v, i) => { if (v < caps[i] && (pick < 0 || caps[i] - v > caps[pick] - out[pick])) pick = i; });
+    if (pick < 0) break;
+    out[pick]++; sum++;
+  }
+  return out;
+}
+// Paragraph marks: whole numbers, no paragraph worth zero taking the whole question,
+// and the maxima reconciled to what the question is actually worth. The marker's
+// PROPORTION is the judgement, so it is preserved and only the scale is corrected.
+function reconcileParagraphs(r, marks) {
+  const ps = asArray(r.paragraphs);
+  if (!ps.length) { r.total = 0; r.max = marks; return; }
+  ps.forEach(p => {
+    p.max = Math.max(0, Math.round(Number(p.max) || 0));
+    p.score = clamp(Math.round(Number(p.score) || 0), 0, p.max);
+  });
+  const sumMax = ps.reduce((a, p) => a + p.max, 0);
+  if (sumMax !== marks) {
+    const ratios = ps.map(p => (p.max ? p.score / p.max : 0));
+    const fresh = shareOut(ps.map(p => p.max), marks);
+    ps.forEach((p, i) => { p.max = fresh[i]; p.score = clamp(Math.round(ratios[i] * p.max), 0, p.max); });
+  }
+  r.total = clamp(ps.reduce((a, p) => a + p.score, 0), 0, marks);
+  r.max = marks;
+}
+// The rubric is the SAME response seen a second way, so it must land on the same
+// mark and use this subject's criterion names. A renamed, short or long rubric is
+// rebuilt against the names that were asked for, rather than shown as if the
+// response had been marked against something else.
+function reconcileRubric(r, marks, criteria) {
+  const given = asArray(r.rubric).map(asObject);
+  const names = (Array.isArray(criteria) && criteria.length) ? criteria : given.map(c => String(c.name || ""));
+  const rows = names.map((name, i) => {
+    const hit = given.find(c => String(c.name || "").toLowerCase().trim() === String(name).toLowerCase().trim()) || given[i] || {};
+    let seenHere = false;
+    const bands = asArray(hit.bands).map(asObject).slice(0, 3).map(b => {
+      const here = !!b.here && !seenHere;      // exactly one "you are here", never three
+      if (here) seenHere = true;
+      return { range: String(b.range || ""), text: String(b.text || ""), here };
+    });
+    return { name: String(name), score: Math.max(0, Math.round(Number(hit.score) || 0)),
+             max: Math.max(0, Math.round(Number(hit.max) || 0)), descriptor: String(hit.descriptor || ""), bands };
+  });
+  const caps = shareOut(rows.map(c => c.max), marks);
+  const fitted = fitScores(rows.map(c => c.score), caps, r.total);
+  rows.forEach((c, i) => { c.max = caps[i]; c.score = fitted[i]; });
+  r.rubric = rows;
+}
+
+// The feedback the student reads is prose, and prose quotes them: "you say mobile
+// ordering but never say why". A quotation mark is a claim that these are their
+// words. Check every quoted run, and where it is not in their response, take the
+// quotation marks off. The point stands, it just stops claiming to be a quotation.
+function groundProse(r, idx) {
+  let quoted = 0, unquoted = 0;
+  const fix = t => {
+    if (typeof t !== "string" || t.indexOf('"') < 0 && t.indexOf("“") < 0) return t;
+    return t.replace(/["“]([^"“”]{3,240})["”]/g, (m, inner) => {
+      if (verifyQuote(idx, inner)) { quoted++; return '"' + inner + '"'; }
+      unquoted++; return inner;
+    });
+  };
+  r.summary = fix(r.summary);
+  if (r.focus) r.focus.why = fix(r.focus.why);
+  (r.paragraphs || []).forEach(p => {
+    (p.reasons || []).forEach(rs => { rs.text = fix(rs.text); });
+    (p.sentences || []).forEach(sn => (sn.issues || []).forEach(iss => { iss.why = fix(iss.why); iss.head = fix(iss.head); }));
+  });
+  return { quoted, unquoted };
+}
+
+// ---- 5. THE REVIEW, GROUNDED ----------------------------------------------
+// focus is where the student goes back to WRITE, so it has to land somewhere real.
+// Clamp it to a paragraph that exists, verify its quote, and locate the sentence it
+// points at so the app can open that exact line. Fall back to the worst open issue
+// rather than dropping the student back on a summary with nowhere to go.
+function groundFocus(r, answer) {
+  const words = (answer && answer.toks) ? answer : answerIndex(answer);
+  const paras = r.paragraphs || [];
+  const f = asObject(r.focus);
+  let idx = Math.round(Number(f.paragraph)) - 1;
+  if (!(idx >= 0 && idx < paras.length)) idx = -1;
+  let area = String(f.area || "").trim();
+  let why = String(f.why || "").trim();
+  // The quote is snapped back to the student's own characters, or blanked.
+  const qAt = quoteSpan(words, f.quote);
+  let quote = qAt ? spanText(words, qAt) : "";
+  if (idx < 0 || !area || !why) {
+    // derive from the most severe open issue, so there is always somewhere to go
+    let best = null;
+    paras.forEach((p, pi) => (p.sentences || []).forEach((sn, si) => (sn.issues || []).forEach(iss => {
+      const rank = SEVRANK[iss.severity] != null ? SEVRANK[iss.severity] : 1;
+      if (!best || rank < best.rank) best = { rank, pi, si, iss, text: sn.text };
+    })));
+    if (best) {
+      if (idx < 0) idx = best.pi;
+      if (!area) area = best.iss.head || "Where to start";
+      if (!why) why = best.iss.why || "";
+      if (!quote && typeof best.text === "string") quote = best.text;
+    }
+  }
+  if (idx < 0) idx = 0;
+  // which sentence in that paragraph the quote sits in, so the app can open the line
+  let sentence = null;
+  const sents = (paras[idx] && paras[idx].sentences) || [];
+  if (quote) {
+    const qw = quoteWords(quote).join(" ");
+    for (let i = 0; i < sents.length; i++) {
+      const t = sents[i] && sents[i].text;
+      if (typeof t !== "string") continue;
+      const tw = quoteWords(t).join(" ");
+      if (tw && (tw.indexOf(qw) >= 0 || qw.indexOf(tw) >= 0)) { sentence = i; break; }
+    }
+  }
+  return { area: area || "Where to start", paragraph: idx + 1, index: idx, sentence, why, quote };
+}
+
+// Read the optional marking context off the request, bounded so a large or hostile
+// payload cannot blow the prompt out. Shapes are documented in review-model.md.
+function markingInput(body) {
+  const b = asObject(body);
+  const str = (v, n) => String(v == null ? "" : v).trim().slice(0, n);
+  const strs = (v, n, max) => asArray(v).slice(0, max).map(x => str(x, n)).filter(Boolean);
+  const rq = asObject(b.requirements);
+  const vc = asObject(b.validContent);
+  const pl = asObject(b.plan);
+  return {
+    topic: str(b.topic, 120),
+    rubric: str(b.rubric, 3000),
+    bandsSource: str(b.bandsSource, 80),
+    bands: asArray(b.bands).slice(0, 8).map(asObject)
+      .map(x => ({ range: str(x.range, 40), text: str(x.text, 400) }))
+      .filter(x => x.range && x.text),
+    requirements: {
+      concepts: strs(rq.concepts, 160, 12),
+      relationships: strs(rq.relationships, 200, 12),
+      accomplish: strs(rq.accomplish, 300, 10),
+      syllabus: str(rq.syllabus, 600),
+    },
+    validContent: {
+      pathways: asArray(vc.pathways).slice(0, 20).map(asObject)
+        .map(x => ({ area: str(x.area, 60), argument: str(x.argument, 300) })).filter(x => x.argument),
+      concepts: asArray(vc.concepts).slice(0, 12).map(asObject)
+        .map(x => ({ term: str(x.term, 60), explain: str(x.explain, 400) })).filter(x => x.term && x.explain),
+      evidence: asArray(vc.evidence).slice(0, 20).map(asObject)
+        .map(x => ({ label: str(x.label, 80), fact: str(x.fact, 300) })).filter(x => x.label && x.fact),
+    },
+    plan: {
+      argument: str(pl.argument, 400),
+      paragraphs: asArray(pl.paragraphs).slice(0, 12).map(asObject).map(x => ({
+        role: str(x.role, 40), point: str(x.point, 300), evidence: strs(x.evidence, 120, 6),
+      })),
+    },
+  };
+}
 
 function clamp(n, lo, hi) { n = Number(n) || 0; return Math.max(lo, Math.min(n, hi)); }
 
@@ -484,8 +1314,6 @@ function exactly3(arr, fill) {
   while (a.length < 3) a.push(fill(a.length, a));
   return a;
 }
-const asArray = v => (Array.isArray(v) ? v : []);
-const asObject = v => (v && typeof v === "object" && !Array.isArray(v) ? v : {});
 
 // Guarantee the rendering contract the review UI assumes: every issue has a
 // three-rung ladder (Clear/Better/Band 6, levels fixed by position). The app
@@ -496,13 +1324,16 @@ const asObject = v => (v && typeof v === "object" && !Array.isArray(v) ? v : {})
 function normalizeReview(r) {
   r.paragraphs = asArray(r.paragraphs).map(rawP => {
     const p = asObject(rawP);
-    p.reasons = asArray(p.reasons).map(rawR => {
+    // Schema maxItems is guidance to the model, not a rule the API enforces, so the
+    // caps are applied here as well. Sentences are NEVER capped: the review rebuilds
+    // the student's paragraph out of them, and dropping one would delete their writing.
+    p.reasons = asArray(p.reasons).slice(0, 3).map(rawR => {
       const rs = asObject(rawR);
       return { kind: rs.kind === "good" ? "good" : "weak", text: String(rs.text || "") };
     });
     p.sentences = asArray(p.sentences).map(rawS => {
       const s = asObject(rawS);
-      s.issues = asArray(s.issues).map(rawIss => {
+      s.issues = asArray(s.issues).slice(0, 3).map(rawIss => {
         const iss = asObject(rawIss);
         iss.kind = iss.kind === "term" ? "term" : "fix";
         iss.severity = SEVS.includes(iss.severity) ? iss.severity : "should";
@@ -533,18 +1364,13 @@ function normalizeReview(r) {
 
 // Enforce the honest-marking invariants in code (never trust the model to add
 // up), and derive the legacy grade fields the current essay sheet still reads.
-function finalize(r, marks) {
+function finalize(r, marks, answer, diagnosis, criteria, creditable) {
+  answer = String(answer == null ? "" : answer);
+  marks = Math.round(Number(marks));
+  if (!Number.isFinite(marks) || marks < 1) marks = 1;   // never render NaN as a mark
   normalizeReview(r);
-  let total = 0;
-  (r.paragraphs || []).forEach(p => {
-    const pmax = Math.max(0, Number(p.max) || 0);
-    p.max = pmax;
-    p.score = clamp(p.score, 0, pmax || marks);
-    total += p.score;
-  });
-  r.total = clamp(total, 0, marks);
-  r.max = marks;
-  (r.rubric || []).forEach(c => { c.score = clamp(c.score, 0, Math.max(0, Number(c.max) || 0)); });
+  reconcileParagraphs(r, marks);
+  reconcileRubric(r, marks, criteria);
 
   // ---- legacy fields (derived, not asked of the model) ----
   r.score = r.total;
@@ -561,6 +1387,40 @@ function finalize(r, marks) {
     .slice(0, 3)
     .map(i => i.head);
   r.missing_vocabulary = [];
+
+  // ---- grounding: where the student goes back to write, and how we know ----
+  const idx = answerIndex(answer);
+  const snap = snapSentences(r, idx);
+  r.focus = groundFocus(r, idx);
+  const prose = groundProse(r, idx);
+  if (diagnosis) {
+    r.diagnosis = diagnosis;
+    // A valid argument that was not one of our pathways is CREDITED, not penalised,
+    // and saying so out loud is how the student sees that thinking for themselves paid.
+    r.credited = (creditable ? asArray(diagnosis.arguments) : [])
+      .filter(a => a && a.valid && !a.onPathway)
+      .map(a => ({ paragraph: Math.max(0, Math.round(Number(a.paragraph) || 0)), argument: String(a.argument || ""), quote: String(a.quote || "") }));
+  } else {
+    r.credited = [];
+  }
+  // How much of the review is verifiably drawn from this student's page. Reported,
+  // never silently swallowed: a low figure means the marking drifted generic.
+  r.checks = {
+    passes: diagnosis ? 2 : 1,
+    sentences: snap.total,
+    sentencesVerified: snap.snapped,
+    sentencesUnplaced: snap.unplaced,
+    grounded: snap.total ? Math.round(100 * snap.snapped / snap.total) / 100 : 1,
+    focusQuoted: !!(r.focus && r.focus.quote),
+    prose: prose,
+    diagnosis: diagnosis ? diagnosis.verified : null,
+  };
+
+  // Our writing loses its dashes; the student's sentences are handed back exactly
+  // as they wrote them, so their own words are never quietly edited.
+  const mine = (r.paragraphs || []).map(p => (p.sentences || []).map(sn => sn.text));
+  sweepDashes(r);
+  (r.paragraphs || []).forEach((p, pi) => (p.sentences || []).forEach((sn, si) => { sn.text = mine[pi][si]; }));
   return r;
 }
 
