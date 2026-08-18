@@ -244,7 +244,7 @@ Each issue carries a three-rung ladder: Clear, Better, Band 6. Every rung must b
 
 Build every rung out of what is already in this student's response and in the question. Never lift a sentence from the reference answer, the scaffold or any material supplied with the request. A rung is a better version of what THEY wrote, not a model answer for them to memorise.
 
-Return one entry per MARKING CRITERION named in the request, in the order given, using those exact criterion names. Give each marks, a one-line descriptor, and band descriptors, setting here to true on the band the response sits in. Keep the rubric marks consistent with the paragraph marks.
+Return the rubric exactly as the RESPONSE TYPE in the request directs. For an extended response that means one entry per MARKING CRITERION named in the request, in the order given, using those exact criterion names, each with marks, a one-line descriptor and band descriptors, setting here to true on the band the response sits in, and the rubric marks consistent with the paragraph marks. For a short answer it means an empty rubric, because band criteria describe an extended response and say nothing useful about a three-mark answer.
 
 A DIAGNOSIS of this response comes with the request. It lists what the student actually wrote, quoted from their own page, and every quote in it has already been checked against their response. Use it as your evidence. It carries no marks and no verdict, so the judgement is entirely yours, but do not contradict a quoted observation without saying why.
 
@@ -347,9 +347,8 @@ const REVIEW_TOOL = {
       },
       rubric: {
         type: "array",
-        minItems: 4,
         maxItems: 4,
-        description: "One entry per marking criterion named in the request, in that order, using those exact names.",
+        description: "For an extended response, one entry per marking criterion named in the request, in that order, using those exact names. For a short answer, an empty array.",
         items: {
           type: "object",
           properties: {
@@ -717,7 +716,7 @@ export default {
 
     // ---- PASS 1: diagnose what is actually on the page (no marks) -----------
     const diagnosis = await diagnose({
-      subject: markSubject, prompt, command, marks, topic: ctx.topic,
+      subject: markSubject, prompt, command, marks, topic: ctx.topic, responseType: ctx.responseType,
       requirements: ctx.requirements, validContent: ctx.validContent, plan: ctx.plan,
       response: paras, answer,
     }, env);
@@ -728,6 +727,7 @@ export default {
       userMessage = pass2Message({
         subject: markSubject, criteria, bands: ctx.bands, bandsSource: ctx.bandsSource,
         command, marks, prompt, topic: ctx.topic, requirements: ctx.requirements,
+        responseType: ctx.responseType, stimulus: ctx.stimulus,
         reference: String(model_answer || "").slice(0, 1600), vocab, scaffold: scaffoldText, faults: faultsText, rubric: ctx.rubric,
         diagnosis: diagnosisText(diagnosis),
         offPathway: offPathwayCount(diagnosis, ctx.validContent.pathways.length > 0),
@@ -775,7 +775,7 @@ export default {
     if (data.stop_reason === "max_tokens" && r.paragraphs.length < chunkCount) {
       return json({ error: "grading ran long and was cut off before it finished. Try again.", stop_reason: "max_tokens" }, 502, cors);
     }
-    return json(finalize(r, markTotal, String(answer), diagnosis, criteria, ctx.validContent.pathways.length > 0), 200, cors);
+    return json(finalize(r, markTotal, String(answer), diagnosis, criteria, ctx.validContent.pathways.length > 0, ctx.responseType), 200, cors);
   },
 };
 
@@ -1053,6 +1053,7 @@ function diagMessage(f) {
   const evidence = (vc.evidence || []).map(x => `- ${x.label}: ${x.fact}`).join("\n");
   return [
     `SUBJECT: ${f.subject || "(unspecified)"}`,
+    `RESPONSE TYPE: ${f.responseType === "short" ? "short answer" : "extended response"}, worth ${f.marks} marks. Describe it as what it is. A short answer has no introduction or conclusion to be missing.`,
     `QUESTION${f.command ? " (" + f.command + ")" : ""} (${f.marks} marks)${f.topic ? " [" + f.topic + "]" : ""}:\n${f.prompt}`,
     `WHAT THIS QUESTION REQUIRES:\nconcepts: ${listOr(req.concepts, "(not specified)")}\nrelationships to demonstrate: ${listOr(req.relationships, "(not specified)")}\nwhat a strong response accomplishes: ${listOr(req.accomplish, "(not specified)")}${req.syllabus ? "\nsyllabus scope: " + req.syllabus : ""}`,
     `ARGUMENT PATHWAYS WE ANTICIPATED (a menu, NOT the correct answers. A different defensible argument is valid and you must record it as valid):\n${pathways || "(none provided)"}`,
@@ -1101,7 +1102,27 @@ async function diagnose(f, env) {
 // authored argument pathways are absent by construction, so no prompt edit can let
 // them score. Adding a key here is the only way to change that, and it throws
 // loudly rather than leaking quietly.
-const PASS2_FIELDS = ["subject", "criteria", "bands", "bandsSource", "rubric", "command", "marks", "prompt", "topic", "requirements", "reference", "vocab", "scaffold", "faults", "diagnosis", "offPathway", "response"];
+const PASS2_FIELDS = ["subject", "criteria", "bands", "bandsSource", "rubric", "command", "marks", "prompt", "topic", "requirements", "reference", "vocab", "scaffold", "faults", "diagnosis", "offPathway", "responseType", "stimulus", "response"];
+
+// How to mark THIS kind of response. A short answer is not a miniature essay: it
+// earns its marks by doing what the directive verb asks at the depth the mark
+// value implies, and asking it for a thesis and a conclusion is marking it against
+// a genre it was never written in. The instruction rides in the user message so
+// the system prompt stays static and keeps prompt-caching.
+function responseTypeRule(f) {
+  const marks = Math.max(1, Math.round(Number(f.marks) || 1));
+  if (f.responseType !== "short") {
+    return `RESPONSE TYPE: extended response, worth ${marks} marks. Mark it against the marking criteria and the band expectations above, and return one rubric entry per criterion.`;
+  }
+  const verb = f.command ? `The directive verb is "${f.command}", so mark whether the response does THAT.` : "Mark whether the response does what the question actually asks.";
+  return [
+    `RESPONSE TYPE: short answer, worth ${marks} marks.`,
+    `Mark it as a short answer, not a miniature essay. ${verb} Do not ask for an introduction, a thesis, a signposted structure or a conclusion unless the directive verb asks for one, and do not penalise their absence.`,
+    `At this mark value there are roughly ${marks} distinct creditworthy things to do, so look for about that many and no more. Depth is set by the marks, not by how much could be said.`,
+    f.stimulus ? `A stimulus was provided with the question. Judge whether the response actually uses it, rather than answering from general knowledge alongside it.` : "",
+    `Return an EMPTY rubric. Keep the whole review short: flag only what actually costs a mark here, at most three issues in total.`,
+  ].filter(Boolean).join(" ");
+}
 // Pass 2's message is CONSTRUCTED from the allowlist, never passed through. A field
 // we know must never appear throws loudly, so the mistake is caught in test. Any
 // other unrecognised field is simply ignored, because ignoring is already the safe
@@ -1121,11 +1142,14 @@ function pass2Message(bag) {
   const listOr = (a, none) => (Array.isArray(a) && a.length ? a.map((x, i) => `${i + 1}. ${x}`).join("\n") : none);
   return [
     `SUBJECT: ${f.subject || "(unspecified)"}`,
-    `MARKING CRITERIA (return one rubric entry per criterion, in this order, using these exact names):\n${(f.criteria || []).map((c, i) => `${i + 1}. ${c}`).join("\n")}`,
-    `BAND EXPECTATIONS (${f.bandsSource || "general HSC band expectations"}):\n${(f.bands || []).map(b => `${b.range}: ${b.text}`).join("\n") || "(none provided)"}`,
+    f.responseType === "short" ? "" :
+      `MARKING CRITERIA (return one rubric entry per criterion, in this order, using these exact names):\n${(f.criteria || []).map((c, i) => `${i + 1}. ${c}`).join("\n")}`,
+    f.responseType === "short" ? "" :
+      `BAND EXPECTATIONS (${f.bandsSource || "general HSC band expectations"}):\n${(f.bands || []).map(b => `${b.range}: ${b.text}`).join("\n") || "(none provided)"}`,
     f.rubric ? `THE MARKING GUIDE THE STUDENT SUPPLIED (aim the judgement at this where it differs from the general expectations):\n${f.rubric}` : "",
     `QUESTION${f.command ? " (" + f.command + ")" : ""} (${f.marks} marks)${f.topic ? " [" + f.topic + "]" : ""}:\n${f.prompt}`,
     `WHAT THIS QUESTION REQUIRES:\nconcepts: ${listOr(req.concepts, "(not specified)")}\nrelationships to demonstrate: ${listOr(req.relationships, "(not specified)")}\nwhat a strong response accomplishes: ${listOr(req.accomplish, "(not specified)")}${req.syllabus ? "\nsyllabus scope: " + req.syllabus : ""}`,
+    responseTypeRule(f),
     `REFERENCE, WHAT A TOP ANSWER CAN COVER (a guide, never a checklist, and never the only valid answer):\n${f.reference || "(none provided)"}`,
     `REQUIRED METALANGUAGE: ${(f.vocab || []).join(", ") || "(none provided)"}`,
     `SCAFFOLD THE ANSWER CAN FOLLOW (a shape, not a requirement: credit a different valid structure):\n${f.scaffold || "(none provided)"}`,
@@ -1330,6 +1354,10 @@ function markingInput(body) {
   const vc = asObject(b.validContent);
   const pl = asObject(b.plan);
   return {
+    // A short answer is marked as a short answer. Anything else is an extended
+    // response, which keeps every older client on exactly its current behaviour.
+    responseType: b.responseType === "short" ? "short" : "extended",
+    stimulus: !!b.stimulus,
     topic: str(b.topic, 120),
     rubric: str(b.rubric, 3000),
     bandsSource: str(b.bandsSource, 80),
@@ -1420,13 +1448,17 @@ function normalizeReview(r) {
 
 // Enforce the honest-marking invariants in code (never trust the model to add
 // up), and derive the legacy grade fields the current essay sheet still reads.
-function finalize(r, marks, answer, diagnosis, criteria, creditable) {
+function finalize(r, marks, answer, diagnosis, criteria, creditable, responseType) {
   answer = String(answer == null ? "" : answer);
   marks = Math.round(Number(marks));
   if (!Number.isFinite(marks) || marks < 1) marks = 1;   // never render NaN as a mark
   normalizeReview(r);
   reconcileParagraphs(r, marks);
-  reconcileRubric(r, marks, criteria);
+  // Band criteria describe an extended response. On a three-mark short answer they
+  // are noise at best and a misleading second mark at worst, so there is no rubric
+  // and the review's rubric tab does not appear.
+  if (responseType === "short") r.rubric = [];
+  else reconcileRubric(r, marks, criteria);
 
   // ---- legacy fields (derived, not asked of the model) ----
   r.score = r.total;

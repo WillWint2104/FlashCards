@@ -370,10 +370,19 @@
       requirements: markingRequirements(card),
     };
   }
+  // THE marking path for every written response, short answer or extended, wherever
+  // it is answered: a study card, a paper in Test mode, or a full essay attempt. The
+  // response type travels with the request so the marker judges a three-mark short
+  // answer as a short answer and not as a miniature essay.
+  //
   // opts.plan is the student's own plan and opts.validContent our authored argument
   // pathways. Both are sent, and the worker routes them to the DIAGNOSIS pass only:
   // they are context for reading the response, never a checklist that awards marks.
-  async function gradeEssay(card, answer, opts) {
+  function responseTypeOf(card, opts) {
+    if (opts && opts.responseType) return opts.responseType;
+    return (card && card.type === "essay") ? "extended" : "short";
+  }
+  async function gradeWritten(card, answer, opts) {
     opts = opts || {};
     if (state.endpoint) {
       try {
@@ -382,9 +391,11 @@
           method: "POST", headers: { "content-type": "application/json" },
           body: JSON.stringify({
             prompt: card.prompt, marks: card.marks, model_answer: card.model, vocab: card.vocab, answer,
-            scaffold: card.scaffold, faults: card.faults, command: card.command,
+            scaffold: card.scaffold, faults: card.faults,
+            command: card.command || commandOf(card.prompt) || undefined,
             subject: mc.subject, criteria: mc.criteria,
             bands: mc.bands, bandsSource: mc.bandsSource, topic: mc.topic, requirements: mc.requirements,
+            responseType: responseTypeOf(card, opts), stimulus: !!card.stimulus,
             rubric: card.rubric || undefined,
             plan: opts.plan, validContent: opts.validContent,
             code: state.code || undefined
@@ -1633,9 +1644,10 @@
         const ans = $("#ans").value.trim();
         if (!ans) return toast("Write an answer first — retrieval is the point!");
         $("#check").disabled = true; $("#check").textContent = "Marking…";
+        session.lastAnswer = ans;   // kept so a written answer can be marked properly on request
         let g;
         if (card.type === "calc") g = gradeCalc(card, ans);
-        else if (card.type === "essay") g = await gradeEssay(card, ans);
+        else if (card.type === "essay") g = await gradeWritten(card, ans);
         else g = gradeLocal(card, ans);
         finishCard(card, g);
       };
@@ -1645,8 +1657,11 @@
   // A graded essay can offer guided review when enabled and the worker returned
   // a structured (paragraphs) review. Review is OFFERED on the grade screen via a
   // button — never auto-launched — so the student keeps agency to just take the grade.
+  // A review exists whenever marking came back with paragraphs, whatever the
+  // question type. Short answers get one too: the guidance is the point, and it is
+  // the same guidance an extended response gets, scaled to the marks.
   function canReview(card, g) {
-    return card.type === "essay" && reviewEnabled() && g.fb && Array.isArray(g.fb.paragraphs) && g.fb.paragraphs.length > 0;
+    return reviewEnabled() && !!g.fb && Array.isArray(g.fb.paragraphs) && g.fb.paragraphs.length > 0;
   }
 
   function finishCard(card, g) {
@@ -1655,6 +1670,14 @@
     $("#sheet").innerHTML = sheetHTML(card, g);
     const rb = $("#reviewbtn");
     if (rb) rb.onclick = () => openReview(g.fb, () => { session.idx++; renderCard(); });
+    const ab = $("#askreview");
+    if (ab) ab.onclick = async () => {
+      ab.disabled = true; ab.textContent = "Marking…";
+      const deep = await gradeWritten(card, session.lastAnswer || "", { responseType: "short" });
+      if (deep.fb && Array.isArray(deep.fb.paragraphs) && deep.fb.paragraphs.length) {
+        g.fb = deep.fb; openReview(deep.fb, () => { session.idx++; renderCard(); });
+      } else { ab.disabled = false; ab.textContent = "Mark this properly →"; toast("Marking could not be reached just now."); }
+    };
     const cont = $("#continue");
     cont.onclick = () => { session.idx++; renderCard(); };
     cont.focus();
@@ -1683,7 +1706,12 @@
     }
     const ctx = card.context ? `<details class="ctx"><summary>Why — the concept</summary><p>${linkGlossary(card.context)}</p></details>` : "";
     const n = canReview(card, g) ? rvIssueCount(g.fb) : 0;
-    const reviewBtn = n ? `<button class="btn" id="reviewbtn">Work through the issues (${n}) →</button>` : "";
+    // A locally graded written answer has a mark but no guidance. Offer the same
+    // review the marker gives an essay, on request, so help is reachable from every
+    // written question rather than only from an extended response.
+    const askable = !n && reviewEnabled() && !!state.endpoint && g.kind === "local" && ["short", "define"].indexOf(card.type) >= 0;
+    const reviewBtn = n ? `<button class="btn" id="reviewbtn">Work through the issues (${n}) →</button>`
+      : askable ? `<button class="btn ghost" id="askreview">Mark this properly →</button>` : "";
     const contCls = n ? "btn ghost" : "btn";
     return `<div class="sheet ${mood[0]}">
       <div class="head"><div class="score">${g.score}<small>/${g.max}</small></div><h3>${mood[1]}</h3></div>
@@ -1715,7 +1743,7 @@
   // questions (multiple choice, calculation, short/interpret-the-source, extended
   // response). The student sits it end to end in GUIDED mode: each question is
   // graded on submit, with feedback and a "try again" before continuing. Reuses the
-  // existing graders (gradeMC/gradeCalc/gradeLocal/gradeEssay), answer inputs and the
+  // existing graders (gradeMC/gradeCalc/gradeLocal/gradeWritten), answer inputs and the
   // essay review overlay. Short answers get line-by-line marking-POINTS feedback
   // (which of the mark-worthy points were addressed), plus an optional deeper AI
   // sentence review when marking is connected.
@@ -2006,7 +2034,7 @@
       EXAM.answers[key] = ans; ch.disabled = true; ch.textContent = "Checking…";
       let g;
       if (q.type === "calc") g = gradeCalc(q, ans);
-      else if (q.type === "essay") g = await gradeEssay(q, ans);
+      else if (q.type === "essay") g = await gradeWritten(q, ans);
       else g = (Array.isArray(q.points) && q.points.length) ? gradePoints(q, ans) : gradeLocal(q, ans);
       EXAM.results[key] = g;
       examSheet(item, key, g);
@@ -2039,27 +2067,49 @@
   }
   function examSheet(item, key, g) {
     const last = !EXAM.seq.slice(EXAM.pos + 1).some(x => x.kind === "q");
-    const hasEssayReview = g.fb && Array.isArray(g.fb.paragraphs) && g.fb.paragraphs.length > 0;
-    const deepable = !hasEssayReview && ["points", "local"].includes(g.kind) && !!state.endpoint;
-    const reviewBtn = hasEssayReview ? `<button class="btn" id="examreview">Work through the issues (${rvIssueCount(g.fb)}) →</button>`
-      : deepable ? `<button class="btn ghost" id="examreview">Deeper AI review →</button>` : "";
+    const hasReview = g.fb && Array.isArray(g.fb.paragraphs) && g.fb.paragraphs.length > 0;
+    // The marking-points checklist keeps the mark, because one point is one mark and
+    // that is how the paper is actually marked. What the checklist cannot do is say
+    // WHY a point was missed or hand the student back to the sentence, so the same
+    // review an extended response gets is offered here too, on request.
+    const askable = !hasReview && ["points", "local"].includes(g.kind) && !!state.endpoint;
+    const reviewBtn = hasReview ? `<button class="btn" id="examreview">Work through the issues (${rvIssueCount(g.fb)}) →</button>`
+      : askable ? `<button class="btn ghost" id="examreview">Mark this properly →</button>` : "";
     $("#sheet").innerHTML = examSheetHTML(item.q, g) +
       `<div class="exam-acts"><button class="btn ghost" id="examretry">Try again</button>${reviewBtn}<button class="btn" id="examnext">${last ? "Finish paper" : "Continue"}</button></div>`;
     $("#examretry").onclick = () => examRender();
     $("#examnext").onclick = () => { EXAM.pos++; examRender(); };
     const rb = $("#examreview");
-    if (rb) rb.onclick = () => { if (hasEssayReview) openReview(g.fb, () => examRender()); else examDeepReview(item, key); };
+    if (rb) rb.onclick = () => { if (hasReview) examOpenReview(item, key, g.fb); else examDeepReview(item, key); };
     const sh = $("#sheet"); if (sh && sh.scrollIntoView) sh.scrollIntoView({ behavior: "smooth", block: "nearest" });
     wireGlossary();
   }
   async function examDeepReview(item, key) {
     const ans = EXAM.answers[key] || "";
-    toast("Asking for a sentence-level review…");
-    const g = await gradeEssay(item.q, ans);
+    const btn = $("#examreview"); if (btn) { btn.disabled = true; btn.textContent = "Marking…"; }
+    const g = await gradeWritten(item.q, ans, { responseType: item.q.type === "essay" ? "extended" : "short" });
     if (g.fb && Array.isArray(g.fb.paragraphs) && g.fb.paragraphs.length) {
       EXAM.results[key] = Object.assign({}, EXAM.results[key], { fb: g.fb });
-      openReview(g.fb, () => examRender());
-    } else toast("Sentence-level review needs AI marking connected.");
+      examOpenReview(item, key, g.fb);
+    } else {
+      if (btn) { btn.disabled = false; btn.textContent = "Mark this properly →"; }
+      toast("Marking could not be reached just now.");
+    }
+  }
+  // Inside a paper the answer box is one Try again away, so the revise action can
+  // actually close the loop: it reopens the question with the answer restored and
+  // the marker's line selected, ready to be rewritten.
+  function examOpenReview(item, key, fb) {
+    openReview(fb, () => examRender(), { onRevise: (idx, quote) => examRevise(quote) });
+  }
+  function examRevise(quote) {
+    examRender();
+    const ta = document.getElementById("ans"); if (!ta) return;
+    ta.focus();
+    const at = esLocateQuote(ta.value, quote);
+    if (at) { try { ta.setSelectionRange(at.start, at.end); } catch (e) { /* older browsers */ } }
+    if (ta.scrollIntoView) ta.scrollIntoView({ behavior: "smooth", block: "center" });
+    toast("Rewrite this part, then submit it again.");
   }
   function examResults() {
     let got = 0, max = 0;
@@ -2583,37 +2633,41 @@
     const ratio = rv.max ? rv.total / rv.max : 1;
     const ringCls = ratio >= 0.8 ? "" : ratio >= 0.6 ? "mid" : "low";
     const q = (rv.question && rv.question.stem) || "";
+    // A short answer carries no band rubric, so the tab and the tap-the-score hint
+    // that lead to one do not appear. Nothing offers a student an empty pane.
+    const hasRubric = Array.isArray(rv.rubric) && rv.rubric.length > 0;
+    if (!hasRubric && RVS.tab === "rubric") RVS.tab = "paragraphs";
     const hasStim = !!(rv.question && (rv.question.stimulus || (rv.question.graphs && rv.question.graphs.length)));
     host.innerHTML = `
     <div class="rv-scrim" id="rvscrim">
       <div class="rv-modal" role="dialog" aria-modal="true" aria-label="Answer review">
         <div class="rv-mhead">
           <div class="rv-scorewrap">
-            <button class="rv-ring ${ringCls}" id="rvring" title="See how this was marked">${rv.total}</button>
+            <button class="rv-ring ${ringCls}" id="rvring"${hasRubric ? ' title="See how this was marked"' : ""}>${rv.total}</button>
             <div>
               <h2 class="rv-h2">${rv.total} / ${rv.max}</h2>
               <div class="rv-q">${esc(q)}</div>
-              <div class="rv-scorehint">tap the score to see the marking rubric</div>
+              ${hasRubric ? `<div class="rv-scorehint">tap the score to see the marking rubric</div>` : ""}
             </div>
           </div>
           <button class="rv-x" id="rvclose" aria-label="Close review">✕</button>
         </div>
         <div class="rv-stages">
-          <button class="rv-stage ${RVS.tab === "paragraphs" ? "on" : ""}" id="rvtab-paragraphs">1 · Paragraphs</button>
-          <button class="rv-stage ${RVS.tab === "rubric" ? "on" : ""}" id="rvtab-rubric">Rubric</button>
+          <button class="rv-stage ${RVS.tab === "paragraphs" ? "on" : ""}" id="rvtab-paragraphs">${hasRubric ? "1 · Paragraphs" : "Your answer"}</button>
+          ${hasRubric ? `<button class="rv-stage ${RVS.tab === "rubric" ? "on" : ""}" id="rvtab-rubric">Rubric</button>` : ""}
           <span class="rv-spacer"></span>
           <button class="rv-ctxbtn" id="rvctx-question">▢ The question</button>
           ${hasStim ? `<button class="rv-ctxbtn" id="rvctx-stimulus">▦ Stimulus</button>` : ""}
         </div>
-        ${RVS.tab === "paragraphs" ? rvParagraphsPane(rv) : rvRubricPane(rv)}
+        ${(RVS.tab === "rubric" && hasRubric) ? rvRubricPane(rv) : rvParagraphsPane(rv)}
         <div class="rv-mfoot"><span class="rv-spacer"></span><button class="rv-btn primary" id="rvdone">Done</button></div>
       </div>
     </div>`;
     $("#rvclose").onclick = closeReview;
     $("#rvdone").onclick = closeReview;
-    $("#rvring").onclick = () => { RVS.tab = "rubric"; rvRender(); };
+    if (hasRubric) $("#rvring").onclick = () => { RVS.tab = "rubric"; rvRender(); };
     $("#rvtab-paragraphs").onclick = () => { RVS.tab = "paragraphs"; rvRender(); };
-    $("#rvtab-rubric").onclick = () => { RVS.tab = "rubric"; rvRender(); };
+    const rubTab = $("#rvtab-rubric"); if (rubTab) rubTab.onclick = () => { RVS.tab = "rubric"; rvRender(); };
     $("#rvctx-question").onclick = () => rvOpenContext("question");
     const sb = $("#rvctx-stimulus"); if (sb) sb.onclick = () => rvOpenContext("stimulus");
     host.querySelectorAll("[data-rvpara]").forEach(b => b.onclick = () => { RVS.active = Number(b.dataset.rvpara); RVS.tab = "paragraphs"; RVS.view = "paragraph"; rvRender(); });
@@ -3053,7 +3107,7 @@
   // SINGLE draft: there is never a second draft to reconcile. The draft persists
   // in localStorage for now; an essay_drafts table with owner = auth.uid() RLS is
   // the later go-live step. Reuses the worker-call shape and the labelled demo
-  // fallback pattern (see gradeEssay / demoEssay), never the substitution ladder.
+  // fallback pattern (see gradeWritten / demoEssay), never the substitution ladder.
   // ===========================================================================
   function essayEnabled() {
     if (CONFIG.essayMode === true) return true;
@@ -3505,7 +3559,7 @@
         question, topic: (f.topic || "").trim(), rubric: (f.rubric || "").trim(),
         marks: (f.marks >= 1 && f.marks <= 60) ? f.marks : 20,
         questionId: f.questionId || null,
-        command: esCommandOf(question),
+        command: commandOf(question),
         structure: f.structure, paraModel: f.paraModel || undefined,
         paras: esBuildParas(f.structure, null),
         mode: "coached", pos: 0, createdAt: new Date().toISOString()
@@ -4174,13 +4228,17 @@
     try { if (localStorage.getItem("marginal.essaymark") === "1") return true; } catch (e) { /* sandboxed */ }
     return false;
   }
-  // The HSC directive verb the question opens with. Read off whatever question the
-  // student typed, so it works on their own question and not only on ours.
+  // The HSC directive verb the question opens with, read off the question text
+  // itself. That means it works on a question the student typed, and on a question
+  // in an imported paper that never tagged one.
   const ES_COMMANDS = ["account for", "to what extent", "assess", "evaluate", "analyse", "analyze", "discuss", "explain",
                        "examine", "describe", "outline", "compare", "contrast", "distinguish", "justify", "propose",
                        "recommend", "how can", "identify", "demonstrate", "why"].sort((a, b) => b.length - a.length);
-  function esCommandOf(q) {
-    const t = String(q || "").trim().toLowerCase();
+  function commandOf(q) {
+    // An imported paper keeps its numbering in the prompt ("Question 21 (a) Outline
+    // the..."), so strip a leading question label before looking for the verb.
+    const t = String(q || "").trim().toLowerCase()
+      .replace(/^(?:question\s*)?\d+\s*(?:\([a-z0-9]+\)\s*)*[.:)\-]?\s*/i, "");
     const hit = ES_COMMANDS.find(c => t.indexOf(c) === 0);
     return hit ? hit.replace(/\b\w/g, ch => ch.toUpperCase()) : "";
   }
@@ -4206,7 +4264,7 @@
     const def = (d.questionId && sc && (sc.questions || []).find(x => x.id === d.questionId)) || null;
     return {
       id: "es-" + d.id, type: "essay",
-      prompt: d.question, command: d.command || esCommandOf(d.question),
+      prompt: d.question, command: d.command || commandOf(d.question),
       marks: d.marks || (def && def.marks) || 20,
       topic: d.topic || (def && def.topic) || "",
       subject: esSubjectLabel() || undefined,
@@ -4234,7 +4292,7 @@
       return;
     }
     box.innerHTML = `<div class="es-submitted"><div class="es-submittedh">Marking your response…</div><p class="es-help">The marker reads what you actually wrote, paragraph by paragraph. This takes a moment.</p></div>`;
-    const g = await gradeEssay(esMarkCard(d), answer, { plan: esPlanFromDraft(d) });
+    const g = await gradeWritten(esMarkCard(d), answer, { plan: esPlanFromDraft(d), responseType: "extended" });
     d.mark = { score: g.score, max: g.max, at: new Date().toISOString() };
     esSaveDraft();
     esRenderMarked(g, answer);
