@@ -7,14 +7,21 @@ source/stimulus rendering, and the essay sentence-by-sentence review overlay.
 
 ## How a student reaches it
 
+**Test mode** is a tab on the front page, next to Study, Create and Essay
+practice. It is the single home for practice exams.
+
 1. Create tab -> "Import a set or a practice exam" -> paste a `marginal-exam@1`
-   JSON -> Import.
-2. The paper appears under "Practice exams" on the Study map with **Sit this
-   paper** and **Delete**.
+   JSON -> Import. (Test mode's empty state links straight here.)
+2. Open **Test mode**: every imported paper is listed with its subject, question
+   count, total marks and time, plus **Sit this paper** and **Delete**.
 3. Sitting the paper walks the sections in order (a short section intro, then each
    question), grades each answer immediately, allows a retry, and ends on a
-   per-section marks summary. It is stored locally (and travels in Backup/restore);
-   cloud sync can come later.
+   per-section marks summary. Leaving a paper or finishing it returns to Test mode.
+   Papers are stored locally (and travel in Backup/restore); cloud sync can come
+   later.
+
+The Study map is unchanged except for a one-line pointer ("open Test mode to sit
+one") when papers exist, so there is only ever one place to manage them.
 
 ## Question types (all reuse existing graders)
 

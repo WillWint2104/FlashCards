@@ -414,6 +414,7 @@
     return `<div class="nav">
       <button class="navtab ${view === "study" ? "on" : ""}" data-v="study">Study</button>
       <button class="navtab ${view === "create" ? "on" : ""}" data-v="create">Create</button>
+      <button class="navtab ${view === "test" ? "on" : ""}" data-v="test">Test mode</button>
       ${essayEnabled() ? `<button class="navtab" data-v="essay">Essay practice</button>` : ""}
     </div>`;
   }
@@ -424,6 +425,9 @@
       // on the student's own question, so it is available to any login while the flag
       // is on. It never changes the underlying Study/Create view.
       if (v === "essay") { esOpen({}); return; }
+      // Test mode is a real view (full screen), not an overlay: it lists the
+      // practice exams a teacher has imported and is where a paper is sat.
+      if (v === "test") { view = "test"; examHome(); return; }
       view = v; view === "study" ? home() : builder();
     });
   }
@@ -458,19 +462,7 @@
           </button>`;
         }).join("")}
       </div>
-      ${examList().length ? `<div class="exam-list">
-        <p class="exam-listh">Practice exams</p>
-        ${examList().map(p => {
-          const qn = (p.sections || []).reduce((n, s) => n + (s.questions || []).length, 0);
-          const mk = (p.sections || []).reduce((n, s) => n + (s.questions || []).reduce((m, q) => m + (q.marks || 0), 0), 0);
-          return `<div class="exam-row">
-            <div class="exam-rowmain"><span class="exam-rowname">📝 ${esc(p.name)}</span>
-              <span class="exam-rowmeta">${qn} question${qn === 1 ? "" : "s"} · ${mk} mark${mk === 1 ? "" : "s"}${p.time ? " · " + esc(p.time) : ""}</span></div>
-            <div class="exam-rowacts"><button class="btn sm" data-examsit="${esc(p.id)}">Sit this paper</button>
-              <button class="btn sm ghost danger" data-examdel="${esc(p.id)}">Delete</button></div>
-          </div>`;
-        }).join("")}
-      </div>` : ""}
+      ${examList().length ? `<p class="exam-hint">You have ${examList().length} practice exam${examList().length === 1 ? "" : "s"} ready. Open <b>Test mode</b> to sit one.</p>` : ""}
       <div id="setsmgrwrap">${setsManagerHTML()}</div>
       <div class="settings">
         <details>
@@ -493,11 +485,6 @@
     app.querySelectorAll(".topiccard:not(.locked)").forEach(b => b.onclick = () => areaMap(b.dataset.topic));
     wireCloudBar();
     wireSetsManager();
-    app.querySelectorAll("[data-examsit]").forEach(b => b.onclick = () => examStartById(b.dataset.examsit));
-    app.querySelectorAll("[data-examdel]").forEach(b => b.onclick = () => {
-      if (!confirm("Delete this practice exam?")) return;
-      state.exams = (state.exams || []).filter(x => x.id !== b.dataset.examdel); save(); mainPage();
-    });
     const saveBtn = $("#saveEndpoint");
     if (saveBtn) saveBtn.onclick = () => { state.code = $("#classcode").value.trim(); save(); toast("Saved"); };
     $("#resetAll").onclick = () => { if (confirm("Clear all progress on this device?")) { state.cards = {}; state.log = []; state.lessons = {}; save(); mainPage(); } };
@@ -1669,6 +1656,47 @@
   const EXAM = { paper: null, seq: [], pos: 0, results: {}, answers: {} };
 
   function examList() { return state.exams || []; }
+  function examCounts(p) {
+    const qs = (p.sections || []).reduce((n, s) => n + (s.questions || []).length, 0);
+    const mk = (p.sections || []).reduce((n, s) => n + (s.questions || []).reduce((m, q) => m + (q.marks || 0), 0), 0);
+    return { qs, mk };
+  }
+  // Test mode: the front-page entry to practice exams. Lists every imported paper
+  // and is where a paper is sat. Empty until a paper is imported, with a clear
+  // pointer to the Create tab (papers are teacher-imported, not built in).
+  function examHome() {
+    if (gated()) return authScreen();
+    view = "test"; session = null; currentTopic = null;
+    const papers = examList();
+    app.innerHTML = `
+      ${nav()}
+      ${cloudBarHTML()}
+      <div class="hi">Test mode</div>
+      <div class="hi-s">Sit a full practice exam, guided. You get feedback after every question and a mark breakdown at the end.</div>
+      ${papers.length ? `<div class="exam-list">
+        ${papers.map(p => {
+          const c = examCounts(p);
+          return `<div class="exam-row">
+            <div class="exam-rowmain"><span class="exam-rowname">📝 ${esc(p.name)}</span>
+              <span class="exam-rowmeta">${esc(p.subject || "")}${p.subject ? " · " : ""}${c.qs} question${c.qs === 1 ? "" : "s"} · ${c.mk} mark${c.mk === 1 ? "" : "s"}${p.time ? " · " + esc(p.time) : ""}</span></div>
+            <div class="exam-rowacts"><button class="btn sm" data-examsit="${esc(p.id)}">Sit this paper</button>
+              <button class="btn sm ghost danger" data-examdel="${esc(p.id)}">Delete</button></div>
+          </div>`;
+        }).join("")}
+      </div>` : `<div class="exam-empty">
+        <p class="exam-emptyh">No practice exams yet</p>
+        <p>Practice exams are imported, not built in. Paste a paper's JSON in the Create tab and it will appear here, ready to sit.</p>
+        <button class="btn sm" id="examgocreate">Go to Create to import one</button>
+      </div>`}`;
+    wireNav();
+    wireCloudBar();
+    app.querySelectorAll("[data-examsit]").forEach(b => b.onclick = () => examStartById(b.dataset.examsit));
+    app.querySelectorAll("[data-examdel]").forEach(b => b.onclick = () => {
+      if (!confirm("Delete this practice exam?")) return;
+      state.exams = (state.exams || []).filter(x => x.id !== b.dataset.examdel); save(); examHome();
+    });
+    const gc = $("#examgocreate"); if (gc) gc.onclick = () => { view = "create"; builder(); };
+  }
 
   function validateExam(d) {
     const e = [];
@@ -1700,7 +1728,7 @@
     const paper = { id: "exam-" + Date.now(), name: data.name || "Practice exam", subject: data.subject || "",
       time: data.time || "", instructions: data.instructions || "", sections: data.sections };
     state.exams.push(paper); save();
-    msg.textContent = "Imported ✓ — the paper is on your Study map.";
+    msg.textContent = "Imported ✓ — open Test mode to sit it.";
     builder();
   }
   function examStartById(id) { const p = examList().find(x => x.id === id); if (p) examStart(p); }
@@ -1728,7 +1756,7 @@
       <span class="lbl">${esc(EXAM.paper.name)}</span>
       <span class="exam-progress">${t.done}/${t.total} answered · ${t.got}/${t.maxMarks} marks</span></div>`;
   }
-  function examQuit() { if (confirm("Leave this paper? Your progress on this attempt is not saved.")) home(); }
+  function examQuit() { if (confirm("Leave this paper? Your progress on this attempt is not saved.")) examHome(); }
   // Render a source/stimulus block (shared section source or per-question stimulus).
   // Accepts a plain string, or an object with caption/text/img/charts.
   function examSourceHTML(src, label) {
@@ -1877,11 +1905,11 @@
       <h2>${esc(EXAM.paper.name)}</h2>
       <p>Paper complete. Your marks by section are below.</p>
       <div class="exam-results">${rows}</div>
-      <div class="row center"><button class="btn" id="examretake">Retake paper</button><button class="btn ghost" id="exambackhome">Back to study</button></div>
+      <div class="row center"><button class="btn" id="examretake">Retake paper</button><button class="btn ghost" id="exambackhome">Back to Test mode</button></div>
     </div></div>`;
-    $("#examquit").onclick = home;
+    $("#examquit").onclick = examHome;
     $("#examretake").onclick = () => examStart(EXAM.paper);
-    $("#exambackhome").onclick = home;
+    $("#exambackhome").onclick = examHome;
   }
 
   // ===================== CREATE (set builder + JSON import/export) =====================
