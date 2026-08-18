@@ -794,16 +794,24 @@
   /* ordered skeleton (writing column): solid = present, dashed = missing gap */
   .es-skelhost:empty{display:none}
   .es-skel{margin-top:12px;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--card)}
-  .es-skelh{font-family:var(--disp);font-weight:600;font-size:12px;color:var(--ink-2);line-height:1.55;margin-bottom:11px}
-  .es-skelrow{border-radius:10px;padding:9px 12px;margin-bottom:8px}
+  .es-skelh{font-family:var(--disp);font-weight:600;font-size:12.5px;color:var(--ink);line-height:1.55;margin-bottom:11px}
+  .es-skelrow{border-radius:10px;padding:9px 12px;margin-bottom:8px;border:1.5px solid var(--line)}
   .es-skelrow:last-child{margin-bottom:0}
-  .es-skelrow.have{border:1.5px solid var(--line);background:#FBFBFB;display:flex;align-items:baseline;gap:9px}
+  .es-skelrow.have{background:#FBFBFB}
+  .es-skeltop{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
   .es-skellabel{font-family:var(--disp);font-weight:700;font-size:12.5px;color:var(--green-dk)}
-  .es-skellabel::before{content:"\2713 ";color:var(--green)}
+  .es-skelrow.have .es-skellabel::before{content:"\2713 ";color:var(--green)}
   .es-skelhave{font-size:12.5px;color:var(--ink-3);font-weight:600}
-  .es-skelrow.gap{border:1.5px dashed var(--green);background:#FAFCFC}
+  /* the JOB this sentence has to do: the guidance itself, so it reads at full strength */
+  .es-skeljob{font-size:13.5px;line-height:1.55;color:var(--ink);margin-top:3px}
+  .es-skelrow.have .es-skeljob{color:var(--ink-2)}
+  .es-skelask{font:inherit;font-weight:700;font-size:11.5px;color:var(--ink-2);background:none;border:none;padding:0;margin-left:auto;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+  .es-skelask:hover{color:var(--green-dk)}
+  .es-skelframes{margin-top:9px;padding-top:9px;border-top:1px dashed var(--line)}
+  .es-skelnote{font-size:11.5px;color:var(--ink-2);font-weight:600;margin-top:7px}
+  .es-skel.graded .es-skelrow.gap{border:1.5px dashed var(--green);background:#FAFCFC}
   .es-skelgaplabel{font-family:var(--disp);font-weight:600;font-size:11px;color:var(--ink-3);text-transform:lowercase;margin-bottom:6px}
-  .es-skelframe{font-size:14px;color:var(--ink-2);font-style:italic;line-height:1.7}
+  .es-skelframe{font-size:14px;color:var(--ink);font-style:italic;line-height:1.7}
   .es-skelchips{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
   .es-skelchip{font:inherit;font-weight:700;font-size:11.5px;color:var(--ink-2);background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:3px 10px;cursor:pointer}
   .es-skelchip.on{color:var(--green-dk);border-color:var(--green);background:var(--green-soft)}

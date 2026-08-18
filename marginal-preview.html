@@ -794,16 +794,24 @@
   /* ordered skeleton (writing column): solid = present, dashed = missing gap */
   .es-skelhost:empty{display:none}
   .es-skel{margin-top:12px;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--card)}
-  .es-skelh{font-family:var(--disp);font-weight:600;font-size:12px;color:var(--ink-2);line-height:1.55;margin-bottom:11px}
-  .es-skelrow{border-radius:10px;padding:9px 12px;margin-bottom:8px}
+  .es-skelh{font-family:var(--disp);font-weight:600;font-size:12.5px;color:var(--ink);line-height:1.55;margin-bottom:11px}
+  .es-skelrow{border-radius:10px;padding:9px 12px;margin-bottom:8px;border:1.5px solid var(--line)}
   .es-skelrow:last-child{margin-bottom:0}
-  .es-skelrow.have{border:1.5px solid var(--line);background:#FBFBFB;display:flex;align-items:baseline;gap:9px}
+  .es-skelrow.have{background:#FBFBFB}
+  .es-skeltop{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
   .es-skellabel{font-family:var(--disp);font-weight:700;font-size:12.5px;color:var(--green-dk)}
-  .es-skellabel::before{content:"\2713 ";color:var(--green)}
+  .es-skelrow.have .es-skellabel::before{content:"\2713 ";color:var(--green)}
   .es-skelhave{font-size:12.5px;color:var(--ink-3);font-weight:600}
-  .es-skelrow.gap{border:1.5px dashed var(--green);background:#FAFCFC}
+  /* the JOB this sentence has to do: the guidance itself, so it reads at full strength */
+  .es-skeljob{font-size:13.5px;line-height:1.55;color:var(--ink);margin-top:3px}
+  .es-skelrow.have .es-skeljob{color:var(--ink-2)}
+  .es-skelask{font:inherit;font-weight:700;font-size:11.5px;color:var(--ink-2);background:none;border:none;padding:0;margin-left:auto;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+  .es-skelask:hover{color:var(--green-dk)}
+  .es-skelframes{margin-top:9px;padding-top:9px;border-top:1px dashed var(--line)}
+  .es-skelnote{font-size:11.5px;color:var(--ink-2);font-weight:600;margin-top:7px}
+  .es-skel.graded .es-skelrow.gap{border:1.5px dashed var(--green);background:#FAFCFC}
   .es-skelgaplabel{font-family:var(--disp);font-weight:600;font-size:11px;color:var(--ink-3);text-transform:lowercase;margin-bottom:6px}
-  .es-skelframe{font-size:14px;color:var(--ink-2);font-style:italic;line-height:1.7}
+  .es-skelframe{font-size:14px;color:var(--ink);font-style:italic;line-height:1.7}
   .es-skelchips{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
   .es-skelchip{font:inherit;font-weight:700;font-size:11.5px;color:var(--ink-2);background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:3px 10px;cursor:pointer}
   .es-skelchip.on{color:var(--green-dk);border-color:var(--green);background:var(--green-soft)}
@@ -8359,11 +8367,11 @@ window.BUSCONTENT = {
   function esStructureLabel(key) { return esStructureDef(key).label; }
 
   const ES = { subject: null, code: "", demo: false, screen: "setup", draft: null, list: [], form: null, pending: false,
-    ui: { polishOpen: false, scaffoldOpen: false, miss: {}, frame: {} },  // transient coached-view state, reset on paragraph change
+    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {} },  // transient coached-view state, reset on paragraph change
     hint: { open: false, tab: "know" },          // study hints: persists across paragraphs on purpose
     quiz: { revealed: false, peeked: false, attempt: "", result: null } };
   const ES_KEY = "marginal.essay.v1";
-  function esResetCoachUI() { ES.ui = { polishOpen: false, scaffoldOpen: false, miss: {}, frame: {} }; }
+  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {} }; }
   // peeked persists for the whole attempt: revealing once disqualifies mastery even
   // if the answer is hidden again before checking. Cleared only on a new attempt.
   function esResetQuiz() { ES.quiz = { revealed: false, peeked: false, attempt: "", result: null }; }
@@ -8831,10 +8839,10 @@ window.BUSCONTENT = {
   function esCoachMargin(p) {
     if (ES.pending) return `<div class="es-mempty">Asking the coach for suggestions on this paragraph…</div>`;
     const fb = p.feedback;
-    if (!fb) return `<div class="es-mempty">Write your paragraph, then press <b>Get feedback</b>. Suggestions appear here. The coach never rewrites your paragraph for you, it nudges and offers word choices you apply yourself.</div>`;
+    if (!fb) return `<div class="es-mempty">The shape of this paragraph is under the box: each row is one sentence and the job it does. Ask for a frame on any row you are stuck on. When you have written it, press <b>Get feedback</b> and suggestions appear here. The coach never rewrites your paragraph for you.</div>`;
     const demo = fb.demoNote ? `<div class="es-demonote">${esc(fb.demoNote)}</div>` : "";
     const note = fb.note ? `<div class="es-mnote">${esc(fb.note)}</div>` : "";
-    const scaff = fb.missing.length ? `<button type="button" class="es-scafftoggle" data-esscaffold>${ES.ui.scaffoldOpen ? "Hide scaffold" : "Show scaffold"}</button><div class="es-scaffhint">${ES.ui.scaffoldOpen ? "the dashed gaps below your paragraph show where each missing piece goes, in order." : "see every gap in order, framed under your paragraph where it belongs."}</div>` : "";
+    const scaff = fb.missing.length ? `<div class="es-scaffhint">the dashed rows under your paragraph show each of these in order, where it belongs.</div>` : "";
     const miss = fb.missing.length ? `<div class="es-mblock"><div class="es-mh">missing elements</div>${fb.missing.map(slot => esMissCard(p, slot)).join("")}${scaff}</div>` : "";
     const onTarget = fb.nudges.filter(n => n.category === "on_target");
     const polish = fb.nudges.filter(n => n.category !== "on_target");
@@ -8897,33 +8905,53 @@ window.BUSCONTENT = {
   // one at a time). Frames are content-free blanks, pre-rendered, never written to
   // the draft. Per-gap chips swap that gap's frame wording in place (the old "more
   // guidance" frame types), without revealing or hiding any gap.
+  // The paragraph's shape, ALWAYS on screen, blank paragraph included. This is the
+  // guidance that used to arrive only after marking: each row names one sentence and
+  // the JOB that sentence has to do. It states the job, it never performs it, and the
+  // student types every word. Frames stay behind a request, one slot at a time, so a
+  // student who already knows what to write is never handed half a sentence they did
+  // not ask for. Once the coach has replied, the rows it reported as missing open
+  // their frame, because at that point the student HAS asked.
   function esSkeletonBlock(p) {
-    const fb = p.feedback; if (!fb || !fb.missing.length) return "";
     const slots = slotsForRole(p.role); if (!slots.length) return "";
-    const missingSet = {}; fb.missing.forEach(s => missingSet[s] = true);
-    const blanks = s => esc(s).replace(/_{2,}/g, '<span class="es-blank">____</span>');
+    const fb = p.feedback, graded = !!fb;
+    const missing = {}; if (graded) (fb.missing || []).forEach(k => { missing[k] = true; });
+    const blanks = t => esc(t).replace(/_{2,}/g, '<span class="es-blank">____</span>');
     const rows = slots.map(sdef => {
-      if (!missingSet[sdef.key]) {
-        return `<div class="es-skelrow have"><span class="es-skellabel">${esc(sdef.label)}</span><span class="es-skelhave">your sentence sits here</span></div>`;
-      }
+      const done = graded && !missing[sdef.key];
       const t = slotTemplates(sdef.key) || {};
       const tier2 = t.tier2 || [];
-      const choice = ES.ui.frame[sdef.key] || 0; // 0 = simple (tier1); 1.. = tier2 type
+      const hasFrames = !!(t.tier1 || tier2.length);
+      // opened by the student, or opened for a gap the coach just named
+      const open = Object.prototype.hasOwnProperty.call(ES.ui.frameOpen, sdef.key)
+        ? !!ES.ui.frameOpen[sdef.key] : (graded && !!missing[sdef.key]);
+      const choice = ES.ui.frame[sdef.key] || 0;
       let frames = "";
-      if (t.tier1) frames += `<div class="es-skelframe" data-skf="${esc(sdef.key)}:0"${choice === 0 ? "" : " hidden"}>${blanks(t.tier1)}</div>`;
-      tier2.forEach((tt, i) => { frames += `<div class="es-skelframe" data-skf="${esc(sdef.key)}:${i + 1}"${choice === i + 1 ? "" : " hidden"}>${blanks(tt.frame)}</div>`; });
-      const chips = (t.tier1 || tier2.length) ? `<div class="es-skelchips">` +
-        (t.tier1 ? `<button type="button" class="es-skelchip ${choice === 0 ? "on" : ""}" data-esframe="${esc(sdef.key)}" data-esframeidx="0">simple</button>` : "") +
-        tier2.map((tt, i) => `<button type="button" class="es-skelchip ${choice === i + 1 ? "on" : ""}" data-esframe="${esc(sdef.key)}" data-esframeidx="${i + 1}">${esc(tt.type)}</button>`).join("") +
-        `</div>` : "";
-      return `<div class="es-skelrow gap"><div class="es-skelgaplabel">type over the blanks · ${esc(sdef.label)}</div>${frames}${chips}</div>`;
+      if (hasFrames) {
+        let inner = "";
+        if (t.tier1) inner += `<div class="es-skelframe" data-skf="${esc(sdef.key)}:0"${choice === 0 ? "" : " hidden"}>${blanks(t.tier1)}</div>`;
+        tier2.forEach((tt, i) => { inner += `<div class="es-skelframe" data-skf="${esc(sdef.key)}:${i + 1}"${choice === i + 1 ? "" : " hidden"}>${blanks(tt.frame)}</div>`; });
+        const chips = `<div class="es-skelchips">` +
+          (t.tier1 ? `<button type="button" class="es-skelchip ${choice === 0 ? "on" : ""}" data-esframe="${esc(sdef.key)}" data-esframeidx="0">simple</button>` : "") +
+          tier2.map((tt, i) => `<button type="button" class="es-skelchip ${choice === i + 1 ? "on" : ""}" data-esframe="${esc(sdef.key)}" data-esframeidx="${i + 1}">${esc(tt.type)}</button>`).join("") +
+          `</div>`;
+        frames = `<div class="es-skelframes" data-frames="${esc(sdef.key)}"${open ? "" : " hidden"}>${inner}${chips}<div class="es-skelnote">type over the blanks in your own words. This is a shape, not a sentence.</div></div>`;
+      }
+      const ask = hasFrames
+        ? `<button type="button" class="es-skelask" data-esaskframe="${esc(sdef.key)}">${open ? "hide the frame" : "show me a frame"}</button>` : "";
+      return `<div class="es-skelrow ${done ? "have" : "gap"}">
+        <div class="es-skeltop"><span class="es-skellabel">${esc(sdef.label)}</span>${done ? `<span class="es-skelhave">your sentence sits here</span>` : ask}</div>
+        <div class="es-skeljob">${esc(sdef.job || "")}</div>
+        ${done ? "" : frames}
+      </div>`;
     }).join("");
-    return `<div class="es-skel" data-skel${ES.ui.scaffoldOpen ? "" : " hidden"}>
-      <div class="es-skelh">Your paragraph in order: solid rows are sentences you already have, dashed rows are the gaps. Type over the blanks. Nothing here is written into your draft.</div>
-      ${rows}</div>`;
+    const head = graded
+      ? "Your paragraph in order. Solid rows are sentences you already have, dashed rows are still to write. Nothing here is written into your draft."
+      : "What this paragraph has to do, in order. Each row is one sentence and the job that sentence does. You write every word of it. Nothing here is written into your draft.";
+    // Before the coach has replied every row is simply "still to write", so the block
+    // stays quiet. After it replies, a real gap is marked as one.
+    return `<div class="es-skel ${graded ? "graded" : "plain"}" data-skel><div class="es-skelh">${esc(head)}</div>${rows}</div>`;
   }
-  // Reflect a slot's worked-example state onto its EXISTING card DOM by flipping the
-  // hidden attribute only. No innerHTML is regenerated, so nothing flashes.
   function esApplyExampleDom(slot) {
     const card = document.querySelector('.es-miss[data-slot="' + slot + '"]'); if (!card) return;
     const open = !!(ES.ui.miss[slot] && ES.ui.miss[slot].example);
@@ -8946,15 +8974,6 @@ window.BUSCONTENT = {
       const chev = pol.querySelector(".es-polishchev"); if (chev) chev.textContent = ES.ui.polishOpen ? "▾" : "▸";
     };
     host.querySelectorAll("[data-eschip]").forEach(b => b.onclick = () => esApplyChip(ES.draft.pos, b.dataset.eschipfrom, b.dataset.eschipopt));
-    // ONE toggle reveals/clears ALL gap frames together; never one at a time.
-    const scaff = host.querySelector("[data-esscaffold]");
-    if (scaff) scaff.onclick = () => {
-      ES.ui.scaffoldOpen = !ES.ui.scaffoldOpen;
-      const skel = host.querySelector("[data-skel]"); if (skel) skel.hidden = !ES.ui.scaffoldOpen;
-      scaff.textContent = ES.ui.scaffoldOpen ? "Hide scaffold" : "Show scaffold";
-      const hint = host.querySelector(".es-scaffhint");
-      if (hint) hint.textContent = ES.ui.scaffoldOpen ? "the dashed gaps below your paragraph show where each missing piece goes, in order." : "see every gap in order, framed under your paragraph where it belongs.";
-    };
     host.querySelectorAll("[data-esmiss-ex]").forEach(b => b.onclick = () => {
       const s = b.dataset.esmissEx;
       ES.ui.miss[s] = Object.assign({ example: false }, ES.ui.miss[s]);
@@ -9165,6 +9184,15 @@ window.BUSCONTENT = {
   function esBindSkeleton(p) {
     const host = document.getElementById("eshost"); if (!host) return;
     const skel = host.querySelector("[data-skel]"); if (!skel) return;
+    // Reveal ONE slot's frame, on request. Visibility flip, no rebuild, no flash.
+    skel.querySelectorAll("[data-esaskframe]").forEach(b => b.onclick = () => {
+      const slot = b.dataset.esaskframe;
+      const box = skel.querySelector('[data-frames="' + slot + '"]'); if (!box) return;
+      const open = box.hidden;
+      box.hidden = !open;
+      ES.ui.frameOpen[slot] = open;
+      b.textContent = open ? "hide the frame" : "show me a frame";
+    });
     skel.querySelectorAll("[data-esframe]").forEach(b => b.onclick = () => {
       const slot = b.dataset.esframe, idx = Number(b.dataset.esframeidx);
       ES.ui.frame[slot] = idx;
@@ -9579,8 +9607,9 @@ window.BUSCONTENT = {
       const host = document.getElementById("eshost");
       const m = host && host.querySelector(".es-margin");
       if (m) { m.innerHTML = esCoachMargin(p); host.querySelectorAll("button:not([type])").forEach(b => b.type = "button"); esBindCoachMargin(p); }
-      // the missing set changed, so rebuild the ordered skeleton (starts hidden, since
-      // esResetCoachUI cleared scaffoldOpen) and rebind its per-gap chips.
+      // The missing set changed, so rebuild the ordered shape and rebind it. It stays
+      // on screen either way; what changes is which rows read as done and which gaps
+      // open their frame.
       const lh = host && host.querySelector("[data-linehost]");
       if (lh) { lh.innerHTML = esLinesBlock(p); host.querySelectorAll("button:not([type])").forEach(b => b.type = "button"); esBindLines(); }
       const sk = host && host.querySelector("[data-skelhost]");
