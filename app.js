@@ -1653,7 +1653,17 @@
   // (which of the mark-worthy points were addressed), plus an optional deeper AI
   // sentence review when marking is connected.
   const EXAM_FORMAT = "marginal-exam@1";
-  const EXAM = { paper: null, seq: [], pos: 0, results: {}, answers: {} };
+  const EXAM = { paper: null, seq: [], pos: 0, results: {}, answers: {}, choice: {} };
+  // A section with `choose: 1` is an either/or (e.g. HSC Section IV: attempt
+  // Question 26 OR Question 27). The student picks at the section intro; only the
+  // chosen question is sequenced, counted in the totals and shown in the results.
+  function examChooseCount(sec) { const n = Number(sec && sec.choose) || 0; return n > 0 ? n : 0; }
+  function examIsActive(si, qi) {
+    const sec = EXAM.paper.sections[si];
+    if (!examChooseCount(sec)) return true;
+    const c = EXAM.choice[si];
+    return c === undefined ? false : c === qi;
+  }
 
   function examList() { return state.exams || []; }
   function examCounts(p) {
@@ -1739,11 +1749,20 @@
       (sec.questions || []).forEach((q, qi) => seq.push({ kind: "q", si, qi, sec, q }));
     });
     seq.push({ kind: "end" });
-    EXAM.paper = paper; EXAM.seq = seq; EXAM.pos = 0; EXAM.results = {}; EXAM.answers = {};
+    EXAM.paper = paper; EXAM.seq = seq; EXAM.pos = 0; EXAM.results = {}; EXAM.answers = {}; EXAM.choice = {};
     examRender();
   }
   function examTotals() {
-    const qs = EXAM.seq.filter(x => x.kind === "q");
+    // Count only ACTIVE questions. In an either/or section that is the chosen
+    // question; before the choice is made, count the first option as representative
+    // so the paper's mark total is right from the start.
+    const qs = EXAM.seq.filter(x => {
+      if (x.kind !== "q") return false;
+      const sec = EXAM.paper.sections[x.si];
+      if (!examChooseCount(sec)) return true;
+      const c = EXAM.choice[x.si];
+      return c === undefined ? x.qi < examChooseCount(sec) : c === x.qi;
+    });
     const total = qs.length;
     const maxMarks = qs.reduce((n, x) => n + (x.q.marks || 0), 0);
     const done = Object.keys(EXAM.results).length;
@@ -1766,32 +1785,60 @@
     else {
       if (src.caption) inner += `<p class="exam-srccap">${esc(src.caption)}</p>`;
       if (src.text) inner += `<p>${esc(src.text)}</p>`;
-      if (src.img) inner += `<img class="exam-srcimg" src="${esc(src.img)}" alt="${esc(src.caption || "source")}">`;
+      if (src.img) inner += `<img class="exam-srcimg" src="${esc(src.img)}" alt="${esc(src.caption || "source")}" title="Tap to enlarge">`;
       if (Array.isArray(src.charts)) inner += src.charts.map((c, i) => rvChartHTML(c, i)).join("");
     }
     return `<div class="exam-source"><div class="exam-srclbl">${esc(label)}</div><div class="exam-srcbody">${inner}</div></div>`;
   }
+  // Data displays (graphs, tables, Gantt charts) are rendered as images and scale to
+  // the column, which can make small print hard to read. Tapping one opens it full
+  // screen so a student can actually read the figures they are answering on.
+  function examWireLightbox() {
+    app.querySelectorAll(".exam-srcimg").forEach(img => img.onclick = () => {
+      const box = document.createElement("div");
+      box.className = "exam-lightbox";
+      box.innerHTML = `<img src="${img.getAttribute("src")}" alt="${esc(img.getAttribute("alt") || "source")}"><button class="exam-lbclose" aria-label="Close">close</button>`;
+      const shut = () => box.remove();
+      box.onclick = shut;
+      document.body.appendChild(box);
+      document.addEventListener("keydown", function esc2(e) { if (e.key === "Escape") { shut(); document.removeEventListener("keydown", esc2); } });
+    });
+  }
   function examRender() {
     const item = EXAM.seq[EXAM.pos];
     if (!item || item.kind === "end") return examResults();
+    // Skip the questions a student did not choose in an either/or section.
+    if (item.kind === "q" && !examIsActive(item.si, item.qi)) { EXAM.pos++; return examRender(); }
     if (item.kind === "section") return examRenderSection(item);
     return examRenderQuestion(item);
   }
   function examRenderSection(item) {
     const sec = item.sec;
-    const qn = (sec.questions || []).length;
-    const mk = (sec.questions || []).reduce((n, q) => n + (q.marks || 0), 0);
+    const pick = examChooseCount(sec);
+    const qs = sec.questions || [];
+    const qn = qs.length;
+    const mk = pick ? (qs[0] ? qs[0].marks || 0 : 0) : qs.reduce((n, q) => n + (q.marks || 0), 0);
+    // Either/or: the student picks which question to attempt before starting.
+    const body = pick
+      ? `<p class="exam-meta">${mk} mark${mk === 1 ? "" : "s"} · choose ${pick} of ${qn}</p>
+         ${sec.source ? examSourceHTML(sec.source, "Source material") : ""}
+         <div class="exam-choices">${qs.map((q, qi) =>
+           `<button class="exam-choice" data-examchoose="${qi}"><span class="exam-choicelbl">${esc(q.label || ("Question " + (qi + 1)))}</span><span class="exam-choicetext">${esc(q.prompt)}</span></button>`).join("")}</div>`
+      : `<p class="exam-meta">${qn} question${qn === 1 ? "" : "s"} · ${mk} mark${mk === 1 ? "" : "s"}</p>
+         ${sec.source ? examSourceHTML(sec.source, "Source material") : ""}
+         <button class="btn" id="exambegin">Begin ${esc(sec.name || "section")}</button>`;
     app.innerHTML = `${examBar()}
       <div class="exam-wrap"><div class="exam-sectionintro">
         <div class="exam-sec">${esc(sec.name || "Section")}</div>
         ${sec.instructions ? `<p class="exam-instr">${esc(sec.instructions)}</p>` : ""}
-        <p class="exam-meta">${qn} question${qn === 1 ? "" : "s"} · ${mk} mark${mk === 1 ? "" : "s"}</p>
-        ${sec.source ? examSourceHTML(sec.source, "Source material") : ""}
-        <button class="btn" id="exambegin">Begin ${esc(sec.name || "section")}</button>
+        ${body}
       </div></div>`;
     $("#examquit").onclick = examQuit;
-    $("#exambegin").onclick = () => { EXAM.pos++; examRender(); };
-    wireStimulus(sec.source); wireGlossary();
+    const bg = $("#exambegin"); if (bg) bg.onclick = () => { EXAM.pos++; examRender(); };
+    app.querySelectorAll("[data-examchoose]").forEach(b => b.onclick = () => {
+      EXAM.choice[item.si] = Number(b.dataset.examchoose); EXAM.pos++; examRender();
+    });
+    wireStimulus(sec.source); wireGlossary(); examWireLightbox();
   }
   function examRenderQuestion(item) {
     const { q, sec, si, qi } = item;
@@ -1813,7 +1860,7 @@
     if (prev && $("#ans")) $("#ans").value = prev;
     $("#examquit").onclick = examQuit;
     examWireAnswer(item, key);
-    wireStimulus(sec.source); wireStimulus(q.stimulus); wireGlossary();
+    wireStimulus(sec.source); wireStimulus(q.stimulus); wireGlossary(); examWireLightbox();
   }
   function examWireAnswer(item, key) {
     const q = item.q;
@@ -1894,6 +1941,7 @@
     const rows = (EXAM.paper.sections || []).map((sec, si) => {
       let sg = 0, sm = 0;
       const qs = (sec.questions || []).map((q, qi) => {
+        if (!examIsActive(si, qi)) return "";           // not chosen in an either/or section
         const g = EXAM.results[si + "-" + qi]; const s = g ? g.score : 0; sg += s; sm += q.marks || 0;
         return `<div class="exam-resq"><span>${esc(q.prompt.slice(0, 70))}${q.prompt.length > 70 ? "…" : ""}</span><span class="exam-resm">${s}/${q.marks || 0}</span></div>`;
       }).join("");

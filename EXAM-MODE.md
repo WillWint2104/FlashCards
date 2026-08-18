@@ -82,6 +82,14 @@ miss. Deterministic, offline, and exam-authentic (1 mark = 1 point).
 - A `source` on a **section** shows above every question in it (Section III style);
   a `stimulus` on a **question** shows above just that question. Both accept a plain
   string or an object with `caption` / `text` / `img` (data URI) / `charts`.
+- **Image slots.** Where a graph, table or chart cannot be rendered as text, put it
+  in `img` as a data URI. It scales to the column and can be **tapped to enlarge**
+  full screen, so small print in a data display stays readable. This is how the
+  HSC paper's graphs, cash-flow tables and Gantt chart are carried.
+- **Either/or sections.** A section with `"choose": 1` lets the student pick which
+  question to attempt (HSC Section IV style: attempt Question 26 OR 27). The intro
+  lists the options; only the chosen question is sequenced, counted in the running
+  total, and shown in the results. Give each option a `label` (e.g. "Question 26").
 - Validation requires: at least one section with questions; every question has a
   `prompt`, `marks >= 1`, a known `type`; MC has 2+ choices with exactly one `ok`;
   calc has a numeric `expected`; short/define/essay has a `model` or a `points`
