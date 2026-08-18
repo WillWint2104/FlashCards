@@ -1667,8 +1667,16 @@
 
   function examList() { return state.exams || []; }
   function examCounts(p) {
-    const qs = (p.sections || []).reduce((n, s) => n + (s.questions || []).length, 0);
-    const mk = (p.sections || []).reduce((n, s) => n + (s.questions || []).reduce((m, q) => m + (q.marks || 0), 0), 0);
+    // An either/or section contributes only the questions a student will actually
+    // attempt, so the listed totals match the paper's real marks.
+    let qs = 0, mk = 0;
+    (p.sections || []).forEach(s => {
+      const list = s.questions || [];
+      const pick = Number(s.choose) || 0;
+      const counted = pick > 0 ? list.slice(0, pick) : list;
+      qs += counted.length;
+      mk += counted.reduce((m, q) => m + (q.marks || 0), 0);
+    });
     return { qs, mk };
   }
   // Test mode: the front-page entry to practice exams. Lists every imported paper
