@@ -1653,6 +1653,19 @@ window.CONTENT.reviewSample = {
   question: { stem: "Evaluate the effectiveness of the tax-transfer system", command: "Evaluate", marks: 20 },
   total: 13, max: 20,
   summary: "A clear, sustained judgement backed by good income data, but the wealth side is thinly evidenced and a few lines overstate or slip into everyday wording.",
+  // focus — the one place to go back and rewrite first, named, quoted from the
+  // student's own writing, and pointing at a real paragraph. The worker returns
+  // this; the app derives a fallback when an older worker does not (rvEnsureFocus).
+  focus: {
+    area: "Use of evidence",
+    paragraph: 2, index: 1, sentence: 1,
+    why: "Your income paragraph reads the two curves correctly, but the sentence that follows states the effect without the figure that would prove it.",
+    quote: "The tax-transfer system reduces inequality."
+  },
+  // credited — a valid argument the student made that our materials never
+  // anticipated. Shown so a student can see that thinking for themselves paid.
+  credited: [],
+  checks: { passes: 2, sentences: 6, sentencesVerified: 6, sentencesUnplaced: 0, grounded: 1, focusQuoted: true, diagnosis: { kept: 11, dropped: 0 } },
   paragraphs: [
     { name: "Introduction", score: 3, max: 3, reasons: [], sentences: [] },
     {

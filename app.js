@@ -318,24 +318,63 @@
     return { score: Math.round(ratio * card.marks), max: card.marks, kind: "local",
              matched: hit, missing: need.filter(t => !hit.includes(t)), model: card.model };
   }
-  // Which subject is being marked, and the criteria IT is marked against. Marking
-  // used to be hardcoded to Economics, so an Ancient History or Business Studies
-  // response was judged by an Economics marker against economic criteria. The
-  // subject namespace is now the source of truth, and a card or paper can override.
+  // The subject namespace whose label matches this one, or null. Subject content is
+  // the source of truth for criteria and band expectations, so adding a subject
+  // stays content-only.
+  function essaySubjectByLabel(label) {
+    const subs = (window.ESSAY && window.ESSAY.subjects) || {};
+    const hit = Object.keys(subs).find(k => String(subs[k].label || "").toLowerCase() === String(label || "").toLowerCase());
+    return hit ? subs[hit] : null;
+  }
+  // What THIS question requires: the concepts to address, the relationships to
+  // demonstrate, and what a strong response accomplishes. An authored
+  // `requirements` block wins. Otherwise we DERIVE from what the card already
+  // carries (its required metalanguage and its scaffold) rather than inventing
+  // requirements nobody wrote. Returns undefined when there is nothing real to send.
+  function markingRequirements(card) {
+    const r = (card && card.requirements) || null;
+    const out = {
+      concepts: (r && r.concepts) || (card && card.vocab) || [],
+      relationships: (r && r.relationships) || [],
+      accomplish: (r && r.accomplish) || (card && card.scaffold) || [],
+      syllabus: (r && r.syllabus) || "",
+    };
+    const any = out.concepts.length || out.relationships.length || out.accomplish.length || out.syllabus;
+    return any ? out : undefined;
+  }
+  // Which subject is being marked, the criteria IT is marked against, the band
+  // expectations to judge against, and what this question requires. Marking used to
+  // be hardcoded to Economics; the subject namespace is now the source of truth,
+  // and a card or an imported paper can override.
   function markingContext(card) {
     // Test mode (a whole imported paper) may carry its own subject/criteria; it is
     // defined only when that mode is present, so reach for it defensively.
     const paper = (typeof EXAM !== "undefined" && EXAM && EXAM.paper) ? EXAM.paper : null;
     const label = (card && card.subject) || (paper && paper.subject) || C.subject || "";
+    const sub = essaySubjectByLabel(label);
     let criteria = (card && card.markingCriteria) || (paper && paper.markingCriteria) || null;
-    if (!criteria) {
-      const subs = (window.ESSAY && window.ESSAY.subjects) || {};
-      const hit = Object.keys(subs).find(k => String(subs[k].label || "").toLowerCase() === String(label).toLowerCase());
-      criteria = (hit && subs[hit].markingCriteria) || C.markingCriteria || null;
-    }
-    return { subject: label || undefined, criteria: criteria || undefined };
+    if (!criteria) criteria = (sub && sub.markingCriteria) || C.markingCriteria || null;
+    // Band expectations. A question may ship its own; criteria.bands === null means
+    // "use the general ones", which is the normal case while no official set is
+    // authored. The general set is written originally and is subject-agnostic.
+    const qc = (card && card.criteria) || null;
+    const gen = (window.ESSAY && window.ESSAY.bandExpectations) || null;
+    const bands = (qc && qc.bands) || (sub && sub.bandExpectations && sub.bandExpectations.bands) || (gen && gen.bands) || null;
+    const src = (qc && qc.source) || (sub && sub.bandExpectations && sub.bandExpectations.source) || (gen && gen.source) || "";
+    return {
+      subject: label || undefined,
+      criteria: criteria || undefined,
+      bands: bands || undefined,
+      bandsSource: src || undefined,
+      topic: (card && card.topic) || undefined,
+      requirements: markingRequirements(card),
+    };
   }
-  async function gradeEssay(card, answer) {
+  // opts.plan is the student's own plan and opts.validContent our authored argument
+  // pathways. Both are sent, and the worker routes them to the DIAGNOSIS pass only:
+  // they are context for reading the response, never a checklist that awards marks.
+  async function gradeEssay(card, answer, opts) {
+    opts = opts || {};
     if (state.endpoint) {
       try {
         const mc = markingContext(card);
@@ -345,6 +384,9 @@
             prompt: card.prompt, marks: card.marks, model_answer: card.model, vocab: card.vocab, answer,
             scaffold: card.scaffold, faults: card.faults, command: card.command,
             subject: mc.subject, criteria: mc.criteria,
+            bands: mc.bands, bandsSource: mc.bandsSource, topic: mc.topic, requirements: mc.requirements,
+            rubric: card.rubric || undefined,
+            plan: opts.plan, validContent: opts.validContent,
             code: state.code || undefined
           })
         });
@@ -352,6 +394,12 @@
         const g = await res.json();
         // Carry the question context onto the review for the modal header / overlays.
         if (g && Array.isArray(g.paragraphs)) g.question = { stem: card.prompt, command: card.command, marks: card.marks, stimulus: card.stimulus };
+        // How much of the marking is verifiably drawn from this student's page. A low
+        // figure means the feedback drifted generic, which is the fault this rebuild
+        // exists to kill, so it is surfaced rather than swallowed (BUILD-CHECKS).
+        if (g && g.checks && g.checks.sentences && g.checks.grounded < 0.6) {
+          console.warn("[marking] only", Math.round(g.checks.grounded * 100) + "% of the marked sentences match the student's text");
+        }
         return { score: Math.min(g.score ?? 0, card.marks), max: card.marks, kind: "llm", fb: g };
       } catch (e) {
         return demoEssay(card, answer, "Couldn't reach your grading endpoint (" + e.message + ") — showing a demo grade instead.");
@@ -2490,9 +2538,34 @@
     const rs = (rv.rubric || []).reduce((a, c) => a + (Number(c.score) || 0), 0);
     if ((rv.rubric || []).length && rs !== rv.total) console.warn("[review] rubric sum", rs, "!= total", rv.total);
   }
-  function openReview(review, onClose) {
+  // opts.onRevise(paragraphIndex, quote) hands the student back to the WRITING
+  // surface at that exact paragraph. Supplied by essay mode, absent for a study
+  // card (which has no paragraph editor), so the focus button degrades to opening
+  // that paragraph inside the review instead.
+  // The rebuilt worker returns `focus`. An older worker (before the marking rebuild
+  // is re-pasted) does not, so derive it here from the worst open issue. Either way
+  // the student is given one place to go back and rewrite.
+  function rvEnsureFocus(rv) {
+    if (rv.focus && rv.focus.area && Number.isFinite(rv.focus.index)) return;
+    let best = null;
+    (rv.paragraphs || []).forEach((p, pi) => (p.sentences || []).forEach(sn => (sn.issues || []).forEach(iss => {
+      const rank = rvSevRank(iss.severity);
+      if (!best || rank < best.rank) best = { rank, pi, iss, text: sn.text };
+    })));
+    if (!best) { rv.focus = null; return; }
+    rv.focus = {
+      area: best.iss.head || "Where to start", paragraph: best.pi + 1, index: best.pi, sentence: null,
+      why: rvStripTerms(best.iss.why || ""), quote: typeof best.text === "string" ? best.text : "", derived: true,
+    };
+  }
+  function openReview(review, onClose, opts) {
     if (!review || !Array.isArray(review.paragraphs) || !review.paragraphs.length) return;
+    rvEnsureFocus(review);
     RVS.review = review; RVS.active = 0; RVS.tab = "paragraphs"; RVS.view = "paragraph"; RVS.qpos = 0; RVS.resolved = {}; RVS.skipped = {}; RVS.rebuiltOpen = false; RVS.onClose = onClose || null; rvResetIssue();
+    RVS.onRevise = (opts && opts.onRevise) || null;
+    // Land on the paragraph the marker says to fix first, so the first thing the
+    // student sees is the one thing to do next.
+    if (review.focus && Number.isFinite(review.focus.index) && review.focus.index >= 0 && review.focus.index < review.paragraphs.length) RVS.active = review.focus.index;
     rvCheckMarks(review);
     if (!document.getElementById("rvhost")) { const h = document.createElement("div"); h.id = "rvhost"; document.body.appendChild(h); }
     app.classList.add("rv-blur");
@@ -2502,6 +2575,7 @@
     const h = document.getElementById("rvhost"); if (h) h.remove();
     const c = document.getElementById("rvctxhost"); if (c) c.remove();
     app.classList.remove("rv-blur");
+    RVS.onRevise = null;
     const cb = RVS.onClose; RVS.onClose = null; if (cb) cb();
   }
   function rvRender() {
@@ -2546,6 +2620,22 @@
     host.querySelectorAll("[data-rvcrit]").forEach(b => b.onclick = () => { const el = $("#rvbands-" + b.dataset.rvcrit); if (el) el.classList.toggle("show"); });
     // targeted jumps: a span / missing chip / status row opens THAT specific issue (CHECK 4)
     host.querySelectorAll("[data-rvgoto]").forEach(b => b.onclick = () => { RVS.qpos = Number(b.dataset.rvgoto); RVS.view = "walk"; rvResetIssue(); rvRender(); });
+    // "Revise this paragraph" hands the student back to the writing surface at that
+    // paragraph, with the marker's line selected. Without a writing surface (a study
+    // card), it opens that paragraph's worst issue inside the review instead.
+    const fg = $("#rvfocusgo");
+    if (fg) fg.onclick = () => {
+      const f = RVS.review.focus || {};
+      const idx = Math.max(0, Math.min(Number(f.index) || 0, RVS.review.paragraphs.length - 1));
+      if (RVS.onRevise) { const cb = RVS.onRevise; closeReview(); cb(idx, f.quote || ""); return; }
+      RVS.active = idx; RVS.view = "walk"; RVS.qpos = 0; rvResetIssue(); rvRender();
+    };
+    const fr2 = $("#rvfocusread");
+    if (fr2) fr2.onclick = () => {
+      const f = RVS.review.focus || {};
+      RVS.active = Math.max(0, Math.min(Number(f.index) || 0, RVS.review.paragraphs.length - 1));
+      RVS.view = "walk"; RVS.qpos = 0; rvResetIssue(); rvRender();
+    };
     const wb = $("#rvwalk"); if (wb) wb.onclick = () => { const q = rvQueue(RVS.review.paragraphs[RVS.active]); const firstOpen = q.findIndex(x => !rvAddressed(rvKey(RVS.active, x.si, x.ii))); RVS.qpos = firstOpen >= 0 ? firstOpen : 0; RVS.view = "walk"; rvResetIssue(); rvRender(); };
     // walkthrough navigation
     const back = $("#rvback"); if (back) back.onclick = () => { RVS.view = "paragraph"; rvRender(); };
@@ -2575,6 +2665,28 @@
     else { RVS.view = "paragraph"; rvRender(); }
   }
   function rvParaResolved(p, pi) { const q = rvQueue(p); return q.length > 0 && q.every(x => rvKey(pi, x.si, x.ii) in RVS.resolved); }
+  // WHERE TO START. The marker names one improvement area, quotes the student's own
+  // words for it, and offers one action: go back and rewrite that paragraph. This is
+  // the whole point of the cycle, so it sits above everything else and there is only
+  // ever one of them.
+  function rvFocusStrip(rv) {
+    const f = rv.focus;
+    if (!f || !f.area) return "";
+    const p = (rv.paragraphs || [])[f.index] || null;
+    const where = (p && p.name) ? p.name : "paragraph " + ((Number(f.index) || 0) + 1);
+    const label = RVS.onRevise ? "Revise " + where.toLowerCase() : "Take me to " + where.toLowerCase();
+    const credited = (rv.credited || []).filter(c => c && c.argument);
+    const cred = credited.length
+      ? `<p class="rv-credited"><b>Credited:</b> you argued ${credited.map(c => esc(c.argument.replace(/\.$/, ""))).join(", and ")}. That was not one of the paths we suggested, and it counted.</p>`
+      : "";
+    return `<div class="rv-focus">
+      <div class="rv-focushead"><span class="rv-focustag">start here</span><span class="rv-focusarea">${esc(f.area)}</span></div>
+      ${f.why ? `<p class="rv-focuswhy">${esc(f.why)}</p>` : ""}
+      ${f.quote ? `<p class="rv-focusquote">${esc(f.quote)}</p>` : ""}
+      <div class="rv-focusrow"><button class="rv-btn blue" id="rvfocusgo">${esc(label)}</button>${RVS.onRevise ? `<button class="rv-btn" id="rvfocusread">See the issues first</button>` : ""}</div>
+      ${cred}
+    </div>`;
+  }
   function rvParagraphsPane(rv) {
     const rail = rv.paragraphs.map((p, i) => {
       const tick = rvParaResolved(p, i) ? `<span class="rv-ptick">✓</span>` : "";
@@ -2585,7 +2697,10 @@
     // "your paragraph now" stays present in both views (collapsed by default,
     // auto-opens when every issue is addressed so Re-grade is reachable).
     const right = main + rvRebuildPanel(p, RVS.active);
-    return `<div class="rv-pane show"><div class="rv-cols"><div class="rv-left"><p class="rv-railhint">paragraphs</p>${rail}</div><div class="rv-right">${right}</div></div></div>`;
+    // The focus strip shows on the calm default view only: once the student is
+    // inside the issue walkthrough they are already doing the work it points at.
+    const focus = RVS.view === "walk" ? "" : rvFocusStrip(rv);
+    return `<div class="rv-pane show">${focus}<div class="rv-cols"><div class="rv-left"><p class="rv-railhint">paragraphs</p>${rail}</div><div class="rv-right">${right}</div></div></div>`;
   }
   // The calm, score-open default view: the paragraph with severity-coloured issue
   // markers, then the score + a tappable issue status list, then "work through".
@@ -3238,7 +3353,7 @@
   }
   // ---------------------------------- SETUP ----------------------------------
   function esRenderSetup(host, sc) {
-    if (!ES.form) ES.form = { question: "", topic: "", rubric: "", structure: sc.defaultStructure, paraModel: (sc.paraModels[0] || null), rubricOpen: false };
+    if (!ES.form) ES.form = { question: "", topic: "", rubric: "", marks: 20, structure: sc.defaultStructure, paraModel: (sc.paraModels[0] || null), rubricOpen: false };
     const f = ES.form;
     // Optional subject picker: any login can load a subject's question bank and
     // paragraph scaffold, defaulting to the subject routed from their class code.
@@ -3317,6 +3432,11 @@
         <div class="es-bands" data-bands${f.rubricOpen ? "" : " hidden"}>${bandsRef}</div>
       </div>
       <div class="es-field">
+        <label class="es-label" for="esmarks">Marks this question is worth</label>
+        <p class="es-help">Used only when you submit a full attempt for marking, so the mark you get back means something.</p>
+        <input id="esmarks" class="es-input es-marks" type="number" min="1" max="60" step="1" value="${esc(String(f.marks))}">
+      </div>
+      <div class="es-field">
         <label class="es-label" for="esstruct">Structure</label>
         <select id="esstruct" class="es-input es-select">${structOpts}</select>
       </div>
@@ -3327,9 +3447,14 @@
       </div>
     </div></div></div>`;
     $("#esx").onclick = esClose;
-    const q = $("#esq"); q.oninput = () => { f.question = q.value; };
+    const q = $("#esq"); q.oninput = () => {
+      f.question = q.value;
+      const picked = f.questionId && sc.questions.find(x => x.id === f.questionId);
+      if (picked && picked.text.trim() !== q.value.trim()) f.questionId = null;
+    };
     const tp = $("#estopic"); tp.oninput = () => { f.topic = tp.value; };
     const rb = $("#esrubric"); rb.oninput = () => { f.rubric = rb.value; };
+    const mk = $("#esmarks"); if (mk) mk.oninput = () => { const n = Math.round(Number(mk.value)); f.marks = (n >= 1 && n <= 60) ? n : 20; };
     const stt = $("#esstruct"); stt.onchange = () => { f.structure = stt.value; };
     const subjSel = $("#essubject");
     if (subjSel) subjSel.onchange = () => {
@@ -3349,7 +3474,10 @@
     };
     host.querySelectorAll("[data-esq]").forEach(b => b.onclick = () => {
       const qq = sc.questions.find(x => x.id === b.dataset.esq);
-      if (qq) { f.question = qq.text; if (!f.topic) f.topic = qq.topic || ""; esRender(); $("#esq").focus(); }
+      // Remember the id: it carries this question's requirements, band expectations
+      // and mark value into marking. Typing over the text clears it, because the
+      // definition no longer describes the question being answered.
+      if (qq) { f.question = qq.text; f.questionId = qq.id; if (!f.topic) f.topic = qq.topic || ""; if (qq.marks) f.marks = qq.marks; esRender(); $("#esq").focus(); }
     });
     host.querySelectorAll("[data-esresume]").forEach(b => b.onclick = () => {
       const d = ES.list.find(x => x.id === b.dataset.esresume);
@@ -3375,6 +3503,9 @@
       ES.draft = {
         id: esId(), subject: ES.subject, code: ES.code,
         question, topic: (f.topic || "").trim(), rubric: (f.rubric || "").trim(),
+        marks: (f.marks >= 1 && f.marks <= 60) ? f.marks : 20,
+        questionId: f.questionId || null,
+        command: esCommandOf(question),
         structure: f.structure, paraModel: f.paraModel || undefined,
         paras: esBuildParas(f.structure, null),
         mode: "coached", pos: 0, createdAt: new Date().toISOString()
@@ -4013,18 +4144,151 @@
     ES.draft.mode = "coached"; ES.draft.pos = Math.max(0, Math.min(pos, ES.draft.paras.length - 1));
     ES.screen = "coached"; esSaveDraft(); esRender();
   }
-  function esSubmitFull() {
+  // Sending a full attempt for marking is the newest part of essay mode, so it
+  // carries its own switch while it is being walked, exactly like review mode.
+  // CONFIG.essayMarking promotes it; ?essaymark=1 (or ?essaydemo=1) tries it alone.
+  function essayMarkingEnabled() {
+    if (ES.demo) return true;
+    if (CONFIG.essayMarking === true) return true;
+    if (/[?&]essaymark=1/.test(location.search)) return true;
+    try { if (localStorage.getItem("marginal.essaymark") === "1") return true; } catch (e) { /* sandboxed */ }
+    return false;
+  }
+  // The HSC directive verb the question opens with. Read off whatever question the
+  // student typed, so it works on their own question and not only on ours.
+  const ES_COMMANDS = ["account for", "to what extent", "assess", "evaluate", "analyse", "analyze", "discuss", "explain",
+                       "examine", "describe", "outline", "compare", "contrast", "distinguish", "justify", "propose",
+                       "recommend", "how can", "identify", "demonstrate", "why"].sort((a, b) => b.length - a.length);
+  function esCommandOf(q) {
+    const t = String(q || "").trim().toLowerCase();
+    const hit = ES_COMMANDS.find(c => t.indexOf(c) === 0);
+    return hit ? hit.replace(/\b\w/g, ch => ch.toUpperCase()) : "";
+  }
+  // The draft IS the plan: the point the student wrote for each paragraph, and the
+  // overall line from the introduction. Sent as context for READING the response.
+  // The worker routes it to the diagnosis pass only, so it can never award a mark.
+  function esPlanFromDraft(d) {
+    const intro = d.paras.find(pp => /introduction|intro/i.test(pp.role || ""));
+    return {
+      argument: (intro && intro.point) || "",
+      paragraphs: d.paras.map(pp => ({ role: pp.role, point: pp.point || "", evidence: [] })),
+    };
+  }
+  // A marking card built from the draft. Nothing is invented: there is no reference
+  // answer, no metalanguage list and no anticipated faults for a question the
+  // student brought, so those go across empty and the marker marks the writing.
+  function esMarkCard(d) {
+    const sc = esSubjectContent(ES.subject);
+    // When the student started from one of our questions, its definition travels
+    // with the response: what the question requires, and which bands to judge it
+    // against. On their own question there is no definition, and the marker marks
+    // the writing against the general expectations. Both cases are first class.
+    const def = (d.questionId && sc && (sc.questions || []).find(x => x.id === d.questionId)) || null;
+    return {
+      id: "es-" + d.id, type: "essay",
+      prompt: d.question, command: d.command || esCommandOf(d.question),
+      marks: d.marks || (def && def.marks) || 20,
+      topic: d.topic || (def && def.topic) || "",
+      subject: esSubjectLabel() || undefined,
+      markingCriteria: (sc && sc.markingCriteria) || undefined,
+      requirements: (def && def.requirements) || undefined,
+      criteria: (def && def.criteria) || undefined,
+      rubric: d.rubric || "",
+      model: "", vocab: [], scaffold: [], faults: [],
+    };
+  }
+  async function esSubmitFull() {
     const d = ES.draft;
-    const words = d.paras.map(p => p.text || "").join(" ").trim().split(/\s+/).filter(Boolean).length;
-    if (!words) { toast("Write your essay before submitting."); return; }
+    const answer = d.paras.map(pp => (pp.text || "").trim()).filter(Boolean).join("\n\n");
+    if (!answer.trim()) { toast("Write your essay before submitting."); return; }
     const host = document.getElementById("eshost");
-    host.querySelector(".es-completion").innerHTML = `
+    const box = host.querySelector(".es-completion");
+    if (!essayMarkingEnabled()) {
+      box.innerHTML = `
       <div class="es-submitted">
         <div class="es-submittedh">Saved. Your full attempt is kept as one draft.</div>
-        <p class="es-help">When marking is connected for ${esc(esSubjectLabel() || "your subject")}, Submit will send this for a grade. Coaching and marking stay separate, so connecting one never changes the other.</p>
+        <p class="es-help">When marking is switched on for ${esc(esSubjectLabel() || "your subject")}, Submit will send this for a grade. Coaching and marking stay separate, so connecting one never changes the other.</p>
         <button class="es-linkbtn" id="esbacksetup">Back to setup</button>
       </div>`;
-    const b = $("#esbacksetup"); if (b) b.onclick = () => { ES.screen = "setup"; esRender(); };
+      const b = $("#esbacksetup"); if (b) b.onclick = () => { ES.screen = "setup"; esRender(); };
+      return;
+    }
+    box.innerHTML = `<div class="es-submitted"><div class="es-submittedh">Marking your response…</div><p class="es-help">The marker reads what you actually wrote, paragraph by paragraph. This takes a moment.</p></div>`;
+    const g = await gradeEssay(esMarkCard(d), answer, { plan: esPlanFromDraft(d) });
+    d.mark = { score: g.score, max: g.max, at: new Date().toISOString() };
+    esSaveDraft();
+    esRenderMarked(g, answer);
+  }
+  // The result: the mark, then the ONE thing to do next, then a way back into the
+  // writing. Reading the full feedback is the secondary action on purpose, because
+  // the cycle is write, feedback, revise, not write, mark, done.
+  function esRenderMarked(g, answer) {
+    const host = document.getElementById("eshost");
+    const box = host && host.querySelector(".es-completion");
+    if (!box) return;
+    const rv = g.fb && Array.isArray(g.fb.paragraphs) && g.fb.paragraphs.length ? g.fb : null;
+    if (rv) rvEnsureFocus(rv);
+    const f = rv && rv.focus;
+    const where = f && rv.paragraphs[f.index] && rv.paragraphs[f.index].name
+      ? rv.paragraphs[f.index].name : (f ? "paragraph " + (f.index + 1) : "");
+    box.innerHTML = `
+      <div class="es-marked">
+        <div class="es-markhead"><span class="es-markscore">${g.score}<small>/${g.max}</small></span><span class="es-markwhat">marked on what you wrote</span></div>
+        ${g.kind === "demo" ? `<p class="es-help">${esc((g.fb && g.fb.overall && g.fb.overall.summary) || "")}</p>` : ""}
+        ${f ? `<div class="es-markfocus">
+          <div class="es-markarea"><span class="es-marktag">start here</span>${esc(f.area)}</div>
+          ${f.why ? `<p class="es-markwhy">${esc(f.why)}</p>` : ""}
+          ${f.quote ? `<p class="es-markquote">${esc(f.quote)}</p>` : ""}
+        </div>` : ""}
+        <div class="es-actions">
+          ${f ? `<button class="es-btn primary" id="esrevise">Revise ${esc(String(where).toLowerCase())}</button>` : ""}
+          ${rv ? `<button class="es-btn ghost" id="esseemark">See the full marking</button>` : ""}
+          <button class="es-linkbtn" id="esbacksetup">Back to setup</button>
+        </div>
+      </div>`;
+    const bk = $("#esbacksetup"); if (bk) bk.onclick = () => { ES.screen = "setup"; esRender(); };
+    const rvb = $("#esrevise"); if (rvb && f) rvb.onclick = () => esReviseParagraph(f.index, f.quote);
+    const see = $("#esseemark"); if (see && rv) see.onclick = () => openReview(rv, null, {
+      onRevise: (idx, quote) => esReviseParagraph(idx, quote),
+    });
+  }
+  // Feedback hands the student back to WRITING. Open the coached screen on that
+  // paragraph and put the cursor on the line the marker pointed at, so the next
+  // action is typing rather than reading more feedback.
+  // The marker numbers the paragraphs it was SENT, and an empty structure slot is
+  // never sent. Map its numbering back through the filled slots, or "revise your
+  // second paragraph" lands on slot 2 rather than on the paragraph the student
+  // actually wrote second.
+  function esFilledSlots(d) { return d.paras.map((pp, i) => i).filter(i => (d.paras[i].text || "").trim()); }
+  function esSlotForMarked(idx) {
+    const d = ES.draft; if (!d) return 0;
+    const filled = esFilledSlots(d);
+    if (!filled.length) return 0;
+    const at = filled[Math.max(0, Number(idx) || 0)];
+    return at == null ? filled[filled.length - 1] : at;
+  }
+  function esReviseParagraph(idx, quote) {
+    const d = ES.draft; if (!d) return;
+    esGoCoached(esSlotForMarked(idx));
+    const ta = document.getElementById("espara"); if (!ta) return;
+    ta.focus();
+    const at = esLocateQuote(ta.value, quote);
+    if (at) { try { ta.setSelectionRange(at.start, at.end); } catch (e) { /* older browsers */ } }
+    toast("Rewrite this paragraph, then ask the coach or submit again.");
+  }
+  // Where the marker's line sits inside the paragraph. Exact match first, then the
+  // opening few words. Returns null rather than guessing, so a miss just leaves the
+  // cursor at the start of the paragraph.
+  function esLocateQuote(text, quote) {
+    const q = String(quote || "").trim();
+    if (!q) return null;
+    const i = text.indexOf(q);
+    if (i >= 0) return { start: i, end: i + q.length };
+    const head = q.split(/\s+/).slice(0, 6).join(" ");
+    const j = head.length > 8 ? text.indexOf(head) : -1;
+    if (j < 0) return null;
+    const dot = text.indexOf(".", j + head.length);
+    return { start: j, end: dot >= 0 ? dot + 1 : Math.min(text.length, j + q.length) };
   }
 
   function esBindWritingHead() {

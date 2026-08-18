@@ -435,3 +435,39 @@ labelled demo, which carries demo lines so the feature is still walkable.
 
 Cloudflare -> Workers -> `marginal-grader` -> Edit code -> paste the current
 `proxy/worker.js` -> Deploy. No new secrets.
+
+---
+
+# Task 1: the marking rebuild
+
+Marking is now two passes, the payload carries what the question actually
+requires, and feedback ends with one place to go back and rewrite. Full detail,
+the enforcement layer and the walkthrough checklist are in **`MARKING.md`**.
+
+## What changed in essay mode
+
+- **Submit now marks.** A full attempt is sent for real marking and comes back
+  with a mark, one named improvement area quoted from the student's own writing,
+  and a **Revise this paragraph** button that opens the coached screen on that
+  paragraph with the marker's line selected.
+- **A marks field** in setup, default 20, so the mark that comes back means
+  something. Starting from one of our practice questions also brings that
+  question's requirements and mark value with it.
+- The review opens **above** essay mode now, not behind it, and toasts are visible
+  over both. Those were pre-existing layering bugs found while walking this.
+
+## What is gated
+
+`CONFIG.essayMarking` in `index.html`, `false` on main. `?essaymark=1` turns it on
+for one person, and `?essaydemo=1` includes it. With the switch off, Submit saves
+the draft exactly as before and says marking is not switched on yet.
+
+## Worker re-paste (your step) REQUIRED for this batch
+
+Cloudflare, Workers, `marginal-grader`, Edit code, paste the current
+`proxy/worker.js`, Deploy. No new secrets.
+
+Marking makes two upstream calls per submission now instead of one, so it costs
+more and takes longer. Merging the client before the paste is safe: the old worker
+ignores the new fields and the app derives its own focus, so the revise cycle
+works either way, it just will not be two-pass until the paste lands.
