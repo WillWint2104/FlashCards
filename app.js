@@ -1489,7 +1489,7 @@
       ${hasHelp ? `<div class="helppanel" id="helppanel" hidden>${scaf ? `<div class="helpsec"><div class="helph">How to structure it</div><ol class="helpol">${scaf.map(s => "<li>" + esc(s) + "</li>").join("")}</ol></div>` : ""}${ph ? `<div class="helpsec"><div class="helph">Hint</div><button class="btn ghost sm" id="showhint">Show a hint</button><div class="hintbox" id="hintbox" hidden style="margin-top:8px">${esc(ph)}</div></div>` : ""}</div>` : ""}
       <div class="enter">
         <div class="qwork" id="qwork">
-          <div class="qmain"><div id="answerzone">${answerInput(card)}</div></div>
+          <div class="qmain"><div id="answerzone">${answerInput(card)}</div>${answerShapeBlock(card)}</div>
           ${card.stimulus ? `<aside class="sourcepanel" id="sourcepanel" hidden><div class="sphead">Source</div><div class="spbody">${stimulusInnerHTML(card.stimulus)}</div></aside>` : ""}
         </div>
         ${submitRow(card)}
@@ -1615,15 +1615,47 @@
     if (card.type === "calc")
       return `<input class="calcin" id="ans" inputmode="decimal" placeholder="Your answer (number)" autocomplete="off">`;
     const big = card.type === "essay";
-    return `<textarea id="ans" class="answerbox" rows="${big ? 14 : 5}" placeholder="${big ? "Write your full response here — use blank lines between paragraphs." : "Type your answer in full sentences."}"></textarea>`;
+    return `<textarea id="ans" class="answerbox" rows="${big ? 14 : 5}" placeholder="${big ? "Write your full response here, using blank lines between paragraphs." : "Type your answer in full sentences."}"></textarea>`;
   }
   // The submit row, full width below both columns. Multiple choice grades on click.
+  // ---- what this answer has to do, shown BEFORE it is written -----------------
+  // The same guidance essay practice gives per paragraph, generalised to every
+  // written question: a study card, a question inside a paper, an extended response.
+  // It adapts to the directive verb, the mark value and whether a stimulus is
+  // attached, because a two-mark Identify and a fifteen-mark Evaluate are not the
+  // same task. It states each job and never performs it, and nothing here is ever
+  // written into the student's answer.
+  function answerShapeFor(card) {
+    const shapes = (window.ESSAY && window.ESSAY.answerShapes) || null;
+    if (!shapes) return null;
+    const marks = Math.max(1, Math.round(Number(card.marks) || 1));
+    const extended = card.type === "essay";
+    const verb = String(card.command || commandOf(card.prompt) || "").toLowerCase();
+    let rows = extended ? shapes.extended : ((shapes.commands || {})[verb] || shapes.fallback || []);
+    if (!rows.length) return null;
+    if (!extended && card.stimulus && shapes.stimulus) rows = [shapes.stimulus].concat(rows);
+    const note = extended
+      ? "Worth " + marks + " marks, so the marker is reading for a sustained argument, not a list of points."
+      : "Worth " + marks + " mark" + (marks === 1 ? "" : "s") + ", so the marker is looking for about " + marks + " distinct creditworthy point" + (marks === 1 ? "" : "s") + ". Depth is set by the marks, not by how much could be said.";
+    return { rows: rows, note: note, verb: verb, extended: extended };
+  }
+  function answerShapeBlock(card) {
+    const sh = answerShapeFor(card);
+    if (!sh) return "";
+    const head = sh.verb
+      ? "This question says " + esc(sh.verb) + ", so here is what your answer has to do."
+      : "What your answer has to do.";
+    const rows = sh.rows.map(r =>
+      `<div class="es-skelrow gap"><div class="es-skeltop"><span class="es-skellabel">${esc(r.label)}</span></div><div class="es-skeljob">${esc(r.job)}</div></div>`).join("");
+    return `<div class="es-skel plain ansshape"><div class="es-skelh">${head} You write every word of it. Nothing here is written into your answer.</div>${rows}<div class="es-skelnote">${esc(sh.note)}</div></div>`;
+  }
+
   function submitRow(card) {
     if (card.type === "mc") return "";
     if (card.type === "calc")
       return `<div class="submitrow"><button class="btn" id="check">Check answer</button><span class="hint">Numeric answer, checked with a small tolerance.</span></div>`;
     const big = card.type === "essay";
-    return `<div class="submitrow"><button class="btn" id="check">${big ? "Submit for marking" : "Check answer"}</button><span class="hint">${big ? "Marked against the criteria — takes a few seconds." : "Graded on key terms and content — write it properly."}</span></div>`;
+    return `<div class="submitrow"><button class="btn" id="check">${big ? "Submit for marking" : "Check answer"}</button><span class="hint">${big ? "Marked against the criteria. It takes a few seconds." : "Graded on key terms and content, so write it properly."}</span></div>`;
   }
 
   function wireAnswer(card) {
@@ -2006,6 +2038,7 @@
         ${q.stimulus ? examSourceHTML(q.stimulus, "Source") : ""}
         <div class="exam-prompt">${linkGlossary(q.prompt)}</div>
         <div id="answerzone">${answerInput(q)}</div>
+        ${answerShapeBlock(q)}
         ${submitRow(q)}
         <div id="sheet"></div>
       </div></div>`;

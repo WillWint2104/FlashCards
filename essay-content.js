@@ -300,6 +300,89 @@ window.ESSAY = {
   //   question.criteria.bands  ->  subject.bandExpectations.bands  ->  this
   // `criteria.bands: null` on a question means "fall through", which is normal.
   // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // answerShapes — what a response has to DO, shown before the student writes,
+  // on every written question: a study card, a question in a paper, an essay.
+  //
+  // Content-free by construction. Every row names a job, never a fact, never a
+  // sentence, so the same rows are correct in any subject and for any topic. The
+  // app states the job; the student writes every word.
+  //
+  // `commands` is keyed by the HSC directive verb, because a two-mark Identify and
+  // a fifteen-mark Evaluate are not the same task and must not be handed the same
+  // five lines. `fallback` covers a verb we do not recognise, and a question that
+  // opens with no verb at all.
+  // ---------------------------------------------------------------------------
+  answerShapes: {
+    // An extended response written in one go, so the shape is the whole response
+    // rather than one paragraph. Essay practice uses the per-paragraph slot model
+    // instead, which is finer grained.
+    extended: [
+      { label: "introduction", job: "state the overall line of argument and signpost how the response will get there" },
+      { label: "each body paragraph", job: "make one argument, explain how it works, ground it in specific evidence, then link back to the question" },
+      { label: "conclusion", job: "answer the question outright and weigh it, with no new evidence" }
+    ],
+    commands: {
+      identify:   [{ label: "name it", job: "name what the question asks for and nothing else. No explanation is being asked for" }],
+      list:       [{ label: "name them", job: "name each one the question asks for, briefly and separately" }],
+      outline:    [{ label: "name it", job: "name what the question asks for" },
+                   { label: "main features", job: "give its main features in a sentence, without going into why" }],
+      describe:   [{ label: "name it", job: "name what the question asks for" },
+                   { label: "features", job: "set out its characteristics or how it works in practice" }],
+      explain:    [{ label: "name it", job: "name the thing the question asks about" },
+                   { label: "how or why", job: "say how it works or why it happens, as cause and effect, not as a description" }],
+      analyse:    [{ label: "the parts", job: "identify the components or factors the question points at" },
+                   { label: "the relationship", job: "show how they act on each other and what follows from that" }],
+      compare:    [{ label: "both sides", job: "set out each one on the same terms, so they can be held against each other" },
+                   { label: "similarities and differences", job: "state where they are alike and where they part, rather than describing each in turn" }],
+      distinguish:[{ label: "each one", job: "state what each one is, in the same terms" },
+                   { label: "the difference", job: "name the difference itself, plainly" }],
+      assess:     [{ label: "position", job: "state the judgement the question is asking you to make" },
+                   { label: "reasons", job: "give the reasons that support it, each tied to evidence" },
+                   { label: "the other side", job: "acknowledge what weighs against it, briefly" },
+                   { label: "judgement", job: "land the judgement, weighed rather than absolute" }],
+      evaluate:   [{ label: "criteria", job: "say what you are judging it against" },
+                   { label: "strengths", job: "give what works, tied to evidence" },
+                   { label: "limitations", job: "give what does not, tied to evidence" },
+                   { label: "judgement", job: "land a clear judgement against the criteria you set" }],
+      discuss:    [{ label: "the issue", job: "set out what is at stake in the question" },
+                   { label: "one side", job: "give the case for, with evidence" },
+                   { label: "the other side", job: "give the case against, with evidence" },
+                   { label: "where you land", job: "state your position on the balance of it" }],
+      justify:    [{ label: "the position", job: "state the position you are defending" },
+                   { label: "reasons", job: "give the reasons it holds, tied to evidence" },
+                   { label: "why not the alternative", job: "say why a reasonable alternative is weaker" }],
+      recommend:  [{ label: "the recommendation", job: "state plainly what should be done" },
+                   { label: "why", job: "give the reasoning that makes it the right call here" },
+                   { label: "what it depends on", job: "name the condition or trade-off it rests on" }],
+      propose:    [{ label: "the proposal", job: "state what you are proposing" },
+                   { label: "how it works", job: "explain the mechanism, not just the intention" },
+                   { label: "why it fits", job: "tie it to the situation the question describes" }],
+      demonstrate:[{ label: "the claim", job: "state what you are showing to be true" },
+                   { label: "the working", job: "show it step by step, so each step follows from the last" }],
+      examine:    [{ label: "the elements", job: "set out the parts the question asks you to look at" },
+                   { label: "how they work", job: "explain each one in turn, in cause and effect terms" },
+                   { label: "what it amounts to", job: "say what the whole picture shows" }],
+      "account for": [{ label: "what happened", job: "state the thing to be accounted for" },
+                   { label: "the causes", job: "give the reasons it came about, ranked by weight" },
+                   { label: "why those", job: "say why those causes rather than others" }],
+      "to what extent": [{ label: "your position", job: "state how far you think it holds, in the question's own terms" },
+                   { label: "where it holds", job: "give the case for, with evidence" },
+                   { label: "where it does not", job: "give the limits, with evidence" },
+                   { label: "the measure", job: "land a judgement about how far, not simply whether" }],
+      "how can":  [{ label: "the ways", job: "name the ways the question asks about" },
+                   { label: "how each works", job: "explain the mechanism of each, in cause and effect terms" },
+                   { label: "the effect", job: "say what each one achieves for the outcome in the question" }]
+    },
+    fallback: [
+      { label: "answer it", job: "answer the question that was actually asked, in its own terms" },
+      { label: "support it", job: "back the answer with specific evidence rather than assertion" }
+    ],
+    // Added in code when the question carries a stimulus. Never asserts what the
+    // stimulus says: it only says the response has to use it.
+    stimulus: { label: "use the source", job: "draw on the material given with the question, rather than answering from general knowledge alongside it" }
+  },
+
   bandExpectations: {
     source: "general HSC band expectations",
     bands: [

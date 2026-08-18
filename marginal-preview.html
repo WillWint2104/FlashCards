@@ -812,6 +812,10 @@
   .es-skel.graded .es-skelrow.gap{border:1.5px dashed var(--green);background:#FAFCFC}
   .es-skelgaplabel{font-family:var(--disp);font-weight:600;font-size:11px;color:var(--ink-3);text-transform:lowercase;margin-bottom:6px}
   .es-skelframe{font-size:14px;color:var(--ink);font-style:italic;line-height:1.7}
+  /* the answer shape shown on a study card or inside a paper, outside essay mode */
+  .ansshape{margin-top:14px}
+  .ansshape .es-skelrow.gap{border:1.5px solid var(--line);background:#FBFDFD}
+  .ansshape .es-skelnote{margin-top:10px;padding-top:9px;border-top:1px dashed var(--line)}
   .es-skelchips{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
   .es-skelchip{font:inherit;font-weight:700;font-size:11.5px;color:var(--ink-2);background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:3px 10px;cursor:pointer}
   .es-skelchip.on{color:var(--green-dk);border-color:var(--green);background:var(--green-soft)}
@@ -3388,6 +3392,89 @@ window.ESSAY = {
   //   question.criteria.bands  ->  subject.bandExpectations.bands  ->  this
   // `criteria.bands: null` on a question means "fall through", which is normal.
   // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // answerShapes — what a response has to DO, shown before the student writes,
+  // on every written question: a study card, a question in a paper, an essay.
+  //
+  // Content-free by construction. Every row names a job, never a fact, never a
+  // sentence, so the same rows are correct in any subject and for any topic. The
+  // app states the job; the student writes every word.
+  //
+  // `commands` is keyed by the HSC directive verb, because a two-mark Identify and
+  // a fifteen-mark Evaluate are not the same task and must not be handed the same
+  // five lines. `fallback` covers a verb we do not recognise, and a question that
+  // opens with no verb at all.
+  // ---------------------------------------------------------------------------
+  answerShapes: {
+    // An extended response written in one go, so the shape is the whole response
+    // rather than one paragraph. Essay practice uses the per-paragraph slot model
+    // instead, which is finer grained.
+    extended: [
+      { label: "introduction", job: "state the overall line of argument and signpost how the response will get there" },
+      { label: "each body paragraph", job: "make one argument, explain how it works, ground it in specific evidence, then link back to the question" },
+      { label: "conclusion", job: "answer the question outright and weigh it, with no new evidence" }
+    ],
+    commands: {
+      identify:   [{ label: "name it", job: "name what the question asks for and nothing else. No explanation is being asked for" }],
+      list:       [{ label: "name them", job: "name each one the question asks for, briefly and separately" }],
+      outline:    [{ label: "name it", job: "name what the question asks for" },
+                   { label: "main features", job: "give its main features in a sentence, without going into why" }],
+      describe:   [{ label: "name it", job: "name what the question asks for" },
+                   { label: "features", job: "set out its characteristics or how it works in practice" }],
+      explain:    [{ label: "name it", job: "name the thing the question asks about" },
+                   { label: "how or why", job: "say how it works or why it happens, as cause and effect, not as a description" }],
+      analyse:    [{ label: "the parts", job: "identify the components or factors the question points at" },
+                   { label: "the relationship", job: "show how they act on each other and what follows from that" }],
+      compare:    [{ label: "both sides", job: "set out each one on the same terms, so they can be held against each other" },
+                   { label: "similarities and differences", job: "state where they are alike and where they part, rather than describing each in turn" }],
+      distinguish:[{ label: "each one", job: "state what each one is, in the same terms" },
+                   { label: "the difference", job: "name the difference itself, plainly" }],
+      assess:     [{ label: "position", job: "state the judgement the question is asking you to make" },
+                   { label: "reasons", job: "give the reasons that support it, each tied to evidence" },
+                   { label: "the other side", job: "acknowledge what weighs against it, briefly" },
+                   { label: "judgement", job: "land the judgement, weighed rather than absolute" }],
+      evaluate:   [{ label: "criteria", job: "say what you are judging it against" },
+                   { label: "strengths", job: "give what works, tied to evidence" },
+                   { label: "limitations", job: "give what does not, tied to evidence" },
+                   { label: "judgement", job: "land a clear judgement against the criteria you set" }],
+      discuss:    [{ label: "the issue", job: "set out what is at stake in the question" },
+                   { label: "one side", job: "give the case for, with evidence" },
+                   { label: "the other side", job: "give the case against, with evidence" },
+                   { label: "where you land", job: "state your position on the balance of it" }],
+      justify:    [{ label: "the position", job: "state the position you are defending" },
+                   { label: "reasons", job: "give the reasons it holds, tied to evidence" },
+                   { label: "why not the alternative", job: "say why a reasonable alternative is weaker" }],
+      recommend:  [{ label: "the recommendation", job: "state plainly what should be done" },
+                   { label: "why", job: "give the reasoning that makes it the right call here" },
+                   { label: "what it depends on", job: "name the condition or trade-off it rests on" }],
+      propose:    [{ label: "the proposal", job: "state what you are proposing" },
+                   { label: "how it works", job: "explain the mechanism, not just the intention" },
+                   { label: "why it fits", job: "tie it to the situation the question describes" }],
+      demonstrate:[{ label: "the claim", job: "state what you are showing to be true" },
+                   { label: "the working", job: "show it step by step, so each step follows from the last" }],
+      examine:    [{ label: "the elements", job: "set out the parts the question asks you to look at" },
+                   { label: "how they work", job: "explain each one in turn, in cause and effect terms" },
+                   { label: "what it amounts to", job: "say what the whole picture shows" }],
+      "account for": [{ label: "what happened", job: "state the thing to be accounted for" },
+                   { label: "the causes", job: "give the reasons it came about, ranked by weight" },
+                   { label: "why those", job: "say why those causes rather than others" }],
+      "to what extent": [{ label: "your position", job: "state how far you think it holds, in the question's own terms" },
+                   { label: "where it holds", job: "give the case for, with evidence" },
+                   { label: "where it does not", job: "give the limits, with evidence" },
+                   { label: "the measure", job: "land a judgement about how far, not simply whether" }],
+      "how can":  [{ label: "the ways", job: "name the ways the question asks about" },
+                   { label: "how each works", job: "explain the mechanism of each, in cause and effect terms" },
+                   { label: "the effect", job: "say what each one achieves for the outcome in the question" }]
+    },
+    fallback: [
+      { label: "answer it", job: "answer the question that was actually asked, in its own terms" },
+      { label: "support it", job: "back the answer with specific evidence rather than assertion" }
+    ],
+    // Added in code when the question carries a stimulus. Never asserts what the
+    // stimulus says: it only says the response has to use it.
+    stimulus: { label: "use the source", job: "draw on the material given with the question, rather than answering from general knowledge alongside it" }
+  },
+
   bandExpectations: {
     source: "general HSC band expectations",
     bands: [
@@ -6717,7 +6804,7 @@ window.BUSCONTENT = {
       ${hasHelp ? `<div class="helppanel" id="helppanel" hidden>${scaf ? `<div class="helpsec"><div class="helph">How to structure it</div><ol class="helpol">${scaf.map(s => "<li>" + esc(s) + "</li>").join("")}</ol></div>` : ""}${ph ? `<div class="helpsec"><div class="helph">Hint</div><button class="btn ghost sm" id="showhint">Show a hint</button><div class="hintbox" id="hintbox" hidden style="margin-top:8px">${esc(ph)}</div></div>` : ""}</div>` : ""}
       <div class="enter">
         <div class="qwork" id="qwork">
-          <div class="qmain"><div id="answerzone">${answerInput(card)}</div></div>
+          <div class="qmain"><div id="answerzone">${answerInput(card)}</div>${answerShapeBlock(card)}</div>
           ${card.stimulus ? `<aside class="sourcepanel" id="sourcepanel" hidden><div class="sphead">Source</div><div class="spbody">${stimulusInnerHTML(card.stimulus)}</div></aside>` : ""}
         </div>
         ${submitRow(card)}
@@ -6843,15 +6930,47 @@ window.BUSCONTENT = {
     if (card.type === "calc")
       return `<input class="calcin" id="ans" inputmode="decimal" placeholder="Your answer (number)" autocomplete="off">`;
     const big = card.type === "essay";
-    return `<textarea id="ans" class="answerbox" rows="${big ? 14 : 5}" placeholder="${big ? "Write your full response here — use blank lines between paragraphs." : "Type your answer in full sentences."}"></textarea>`;
+    return `<textarea id="ans" class="answerbox" rows="${big ? 14 : 5}" placeholder="${big ? "Write your full response here, using blank lines between paragraphs." : "Type your answer in full sentences."}"></textarea>`;
   }
   // The submit row, full width below both columns. Multiple choice grades on click.
+  // ---- what this answer has to do, shown BEFORE it is written -----------------
+  // The same guidance essay practice gives per paragraph, generalised to every
+  // written question: a study card, a question inside a paper, an extended response.
+  // It adapts to the directive verb, the mark value and whether a stimulus is
+  // attached, because a two-mark Identify and a fifteen-mark Evaluate are not the
+  // same task. It states each job and never performs it, and nothing here is ever
+  // written into the student's answer.
+  function answerShapeFor(card) {
+    const shapes = (window.ESSAY && window.ESSAY.answerShapes) || null;
+    if (!shapes) return null;
+    const marks = Math.max(1, Math.round(Number(card.marks) || 1));
+    const extended = card.type === "essay";
+    const verb = String(card.command || commandOf(card.prompt) || "").toLowerCase();
+    let rows = extended ? shapes.extended : ((shapes.commands || {})[verb] || shapes.fallback || []);
+    if (!rows.length) return null;
+    if (!extended && card.stimulus && shapes.stimulus) rows = [shapes.stimulus].concat(rows);
+    const note = extended
+      ? "Worth " + marks + " marks, so the marker is reading for a sustained argument, not a list of points."
+      : "Worth " + marks + " mark" + (marks === 1 ? "" : "s") + ", so the marker is looking for about " + marks + " distinct creditworthy point" + (marks === 1 ? "" : "s") + ". Depth is set by the marks, not by how much could be said.";
+    return { rows: rows, note: note, verb: verb, extended: extended };
+  }
+  function answerShapeBlock(card) {
+    const sh = answerShapeFor(card);
+    if (!sh) return "";
+    const head = sh.verb
+      ? "This question says " + esc(sh.verb) + ", so here is what your answer has to do."
+      : "What your answer has to do.";
+    const rows = sh.rows.map(r =>
+      `<div class="es-skelrow gap"><div class="es-skeltop"><span class="es-skellabel">${esc(r.label)}</span></div><div class="es-skeljob">${esc(r.job)}</div></div>`).join("");
+    return `<div class="es-skel plain ansshape"><div class="es-skelh">${head} You write every word of it. Nothing here is written into your answer.</div>${rows}<div class="es-skelnote">${esc(sh.note)}</div></div>`;
+  }
+
   function submitRow(card) {
     if (card.type === "mc") return "";
     if (card.type === "calc")
       return `<div class="submitrow"><button class="btn" id="check">Check answer</button><span class="hint">Numeric answer, checked with a small tolerance.</span></div>`;
     const big = card.type === "essay";
-    return `<div class="submitrow"><button class="btn" id="check">${big ? "Submit for marking" : "Check answer"}</button><span class="hint">${big ? "Marked against the criteria — takes a few seconds." : "Graded on key terms and content — write it properly."}</span></div>`;
+    return `<div class="submitrow"><button class="btn" id="check">${big ? "Submit for marking" : "Check answer"}</button><span class="hint">${big ? "Marked against the criteria. It takes a few seconds." : "Graded on key terms and content, so write it properly."}</span></div>`;
   }
 
   function wireAnswer(card) {
@@ -7234,6 +7353,7 @@ window.BUSCONTENT = {
         ${q.stimulus ? examSourceHTML(q.stimulus, "Source") : ""}
         <div class="exam-prompt">${linkGlossary(q.prompt)}</div>
         <div id="answerzone">${answerInput(q)}</div>
+        ${answerShapeBlock(q)}
         ${submitRow(q)}
         <div id="sheet"></div>
       </div></div>`;
