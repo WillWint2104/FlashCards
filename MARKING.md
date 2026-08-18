@@ -224,6 +224,82 @@ falls through to the general expectations.
 
 ---
 
+## Every written answer, not just an essay
+
+`gradeWritten()` (was `gradeEssay`) is the marking path for every written
+response, wherever it is answered: a study card, a question inside a paper, or a
+full essay attempt. `responseType` travels with the request.
+
+### A short answer is marked as a short answer
+
+For `responseType: "short"` the worker:
+
+- names the directive verb and marks whether the response does **that**
+- sets depth from the mark value: roughly one creditworthy thing per mark
+- says plainly not to ask for an introduction, a thesis or a conclusion the verb
+  never asked for, and not to penalise their absence
+- flags a stimulus, so the response is judged on whether it actually uses it
+  rather than answering from general knowledge alongside it
+- sends **no** band expectations and **no** four extended-response criteria, and
+  returns an **empty rubric**. Band descriptors describe an extended response and
+  say nothing useful about three marks
+- caps the whole review at three issues
+
+The instruction rides in the user message, so the system prompt stays static and
+keeps prompt-caching. A request with no `responseType` is treated as an extended
+response, so an older client is unchanged.
+
+The review drops its Rubric tab, its tap-the-score hint and its score-ring link
+when there is no rubric, and the remaining tab reads "Your answer". Nothing
+offers a student an empty pane.
+
+### The mark stays where it belongs
+
+Inside a paper the **marking-points checklist still gives the mark**: one point is
+one mark, and that is how the paper is actually marked. What a checklist cannot do
+is say why a point was missed, or hand the student back to the sentence. So the
+review is offered alongside it, on request, as **Mark this properly**. A locally
+graded short answer in a study session gets the same offer. Marking is never spent
+without the student asking for it.
+
+### Revise closes the loop inside a paper
+
+A paper already restores the answer on **Try again**, so revise reopens the
+question with the answer intact and the marker's line selected in the box.
+Extended responses inside a paper get this too; they previously opened a review
+with no way back to the writing.
+
+In a study session there is no retry after grading, so revise there opens that
+paragraph's issues instead. That is the honest degradation: there is nowhere to
+send the student back to.
+
+### The directive verb is derived, not required
+
+An imported paper rarely tags one and keeps its numbering in the prompt
+("Question 21 (a) Outline the..."), so `commandOf()` strips a leading question
+label before reading the verb. Checked against the 2025 paper's prompts and
+against the essay questions, which carry no label.
+
+---
+
+## Guidance before marking, not after it
+
+`esSkeletonBlock()` used to open with `if (!fb || !fb.missing.length) return ""`,
+so the scaffold, the slot labels and the frames all returned nothing until the
+student had already asked the AI. A blank paragraph offered nothing at all.
+
+The block is now always on screen. Each row names one sentence and states the
+**job** that sentence has to do, taken from the slot definitions each subject
+already ships, so TEEEC and TDECC state their own jobs with no engine change. It
+states the job and never performs it.
+
+Frames stay behind a request, one slot at a time, so a student who knows what to
+write is never handed half a sentence they did not ask for. Once the coach has
+replied, the rows it named as missing open their frame, because by then the
+student has asked. The old all-or-nothing "Show scaffold" toggle is gone.
+
+---
+
 ## Walkthrough checklist
 
 Open the preview build with `?essaydemo=1`, which turns on essay marking for one
@@ -246,6 +322,16 @@ person without switching it on for anyone else.
    Rubric tab should show the same total again, out of the marks you set in setup.
 7. **Study cards still work.** Open a long-answer card in the Economics topic and
    submit an answer. It should still grade and the review should still open.
+8. **Short answers, in a paper.** Open Test mode, sit only the short-answer
+   section, answer a question. The points checklist gives the mark; press **Mark
+   this properly** and the review opens with no Rubric tab and one start-here
+   area. Press **Revise** and you land back in the answer box with your answer
+   intact and the marker's line selected.
+9. **Guidance before you write.** Open essay practice on a fresh question. The
+   paragraph's shape is under the box before you type anything, one row per
+   sentence with the job it has to do. Press **show me a frame** on one row: only
+   that row opens, and it is blanks, not a sentence. Nothing is written into your
+   draft.
 
 Worth checking with a deliberately weak response: the feedback should name what
 *you* wrote, not what a good answer contains.
