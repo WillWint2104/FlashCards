@@ -496,6 +496,35 @@
   .rv-misschip.crit:hover{background:var(--coral-soft)}
   .rv-misschip:active{transform:translateY(1px);box-shadow:none}
   .rv-missx{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;background:var(--gold-dk);color:#fff;font-size:11px;font-weight:800;flex:none}
+  /* ===== Phase C: argument and evidence as paragraph context ===== */
+  .es-setup{border:1.5px solid var(--green);border-radius:16px;background:var(--card);padding:18px 20px}
+  .es-setuph{font-family:var(--disp);font-weight:600;font-size:17px;color:var(--ink)}
+  .es-setupsub{font-size:13px;line-height:1.55;color:var(--ink-2);font-weight:600;margin:5px 0 13px}
+  .es-pick{display:block;width:100%;text-align:left;font:inherit;background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer}
+  .es-pick:hover{border-color:var(--green);background:var(--green-soft)}
+  .es-pick.on{border-color:var(--green);background:var(--green-soft)}
+  .es-pick.own{border-style:dashed;font-weight:700;color:var(--ink-2)}
+  .es-pickrel{display:block;font-size:14.5px;line-height:1.5;color:var(--ink);font-weight:700}
+  .es-picksub{display:block;font-size:12.5px;line-height:1.5;color:var(--ink-2);font-weight:600;margin-top:4px}
+  .es-ownwrap{display:flex;gap:9px;align-items:center;margin-top:9px}
+  .es-ownwrap .es-input{flex:1}
+  .es-setupbtns{display:flex;gap:14px;align-items:center;margin-top:14px}
+  .es-argchanged{border:1.5px solid var(--gold-dk);background:var(--gold-soft);border-radius:12px;padding:10px 13px;margin-bottom:12px;font-size:13px;line-height:1.55;color:var(--ink)}
+  .es-rest{border:1.5px solid var(--line);border-radius:16px;background:var(--card);padding:15px 16px;position:sticky;top:8px;display:flex;flex-direction:column;gap:15px}
+  .es-resth{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--ink)}
+  .es-restblk{display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+  .es-restlbl{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+  .es-restval{font-size:13.5px;line-height:1.5;color:var(--ink);font-weight:700}
+  .es-restown{font-size:11px;font-weight:800;color:var(--green-dk);background:var(--green-soft);border-radius:99px;padding:2px 7px}
+  .es-restnone{font-size:13px;color:var(--ink-3);font-weight:600;font-style:italic}
+  .es-reststeps{list-style:none;display:flex;flex-direction:column;gap:5px;margin-top:2px}
+  .es-reststeps li{font-size:12.5px;font-weight:700;color:var(--ink-3);display:flex;align-items:center;gap:8px}
+  .es-reststeps li::before{content:"";width:8px;height:8px;border-radius:50%;border:2px solid var(--ink-3);flex:none}
+  .es-reststeps li.done{color:var(--ink-2)}
+  .es-reststeps li.done::before{background:var(--green);border-color:var(--green)}
+  .es-reststeps li.now{color:var(--ink)}
+  .es-reststeps li.now::before{background:var(--green);border-color:var(--green);box-shadow:0 0 0 3px rgba(28,196,125,.25)}
+
   /* ===== The toolbelt: information comes to the writing, never the reverse ===== */
   .es-belt{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px}
   .es-belt-b{display:inline-flex;align-items:center;gap:7px;font:inherit;font-weight:700;font-size:12.5px;color:var(--ink-2);background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:6px 13px;cursor:pointer}

@@ -157,6 +157,106 @@ window.ESSAY = {
             ],
             syllabus: "Marketing: market segmentation and target markets, and the marketing strategies of e-marketing, people, processes and physical evidence."
           },
+          // ------------------------------------------------------------------
+          // ARGUMENT PATHWAYS. A pathway is a RELATIONSHIP the student can choose
+          // to argue, never a prewritten topic sentence: they still write every
+          // word. Choosing one changes the guidance for the sentences that follow,
+          // filters the evidence to what actually supports it, and tells Understand
+          // which concept to open. All authored, so nothing here calls a model.
+          //
+          // `evidence` holds labels from the verified bank. `guides` overrides the
+          // scaffold's generic job for a slot, so the guide reads as if it were
+          // written for this argument, because it was.
+          // ------------------------------------------------------------------
+          pathways: [
+            { id: "mkt01-em-digital", area: "e-marketing",
+              relationship: "Digitally engaged customers lead to greater use of digital marketing",
+              concept: { topic: "marketing", section: "marketing strategies", point: "e-marketing" },
+              evidence: ["App, loyalty rewards and mobile ordering", "Promotion mix from advertising to sponsorship"],
+              guides: {
+                topic: "State the relationship: a target market that spends its time on digital channels pushes the business towards e-marketing.",
+                explain: "Explain WHY a target market that is highly engaged with digital technology would cause the business to market through digital channels. Name the mechanism, not the outcome.",
+                example: "Apply the evidence you selected. State the relevant fact accurately first, then say what it demonstrates about the target market.",
+                effect: "Say what this achieves for the business, in marketing terms rather than general benefit.",
+                link: "Tie it back to the question: this is one way the target market affects e-marketing." } },
+            { id: "mkt01-em-value", area: "e-marketing",
+              relationship: "Value-conscious customers lead to digital promotions and loyalty offers",
+              concept: { topic: "marketing", section: "marketing strategies", point: "promotion" },
+              evidence: ["App, loyalty rewards and mobile ordering", "Price points from value range to McCafe"],
+              guides: {
+                explain: "Explain why a target market that weighs price closely would push the business towards discounting and loyalty offers delivered digitally.",
+                example: "Apply the evidence you selected, stating the fact before what it shows.",
+                effect: "Say what this achieves: which marketing objective it serves and at what cost." } },
+            { id: "mkt01-em-convenience", area: "e-marketing",
+              relationship: "Convenience-oriented customers lead to marketing through ordering apps and digital channels",
+              concept: { topic: "marketing", section: "marketing strategies", point: "e-marketing" },
+              evidence: ["App, loyalty rewards and mobile ordering"],
+              guides: {
+                explain: "Explain why customers who value convenience make it worth marketing inside the same app they order in." } },
+
+            { id: "mkt01-pe-service", area: "people",
+              relationship: "Customers who expect personal service lead to investment in staff training and service standards",
+              concept: { topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
+              evidence: ["Intensive distribution and standardised service"],
+              guides: {
+                explain: "Explain why what this target market expects of an interaction changes how staff are trained and what they are asked to do.",
+                example: "Apply the evidence you selected. Say what it shows about the people element specifically." } },
+            { id: "mkt01-pe-speed", area: "people",
+              relationship: "Customers who expect speed lead to staffing and rostering built around peak demand",
+              concept: { topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
+              evidence: ["Intensive distribution and standardised service"],
+              guides: {
+                explain: "Explain the link between what the target market will wait for and how the business staffs its service." } },
+            { id: "mkt01-pe-consistency", area: "people",
+              relationship: "Customers who expect the same experience everywhere lead to standardised service training",
+              concept: { topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
+              evidence: ["Standardisation with local customisation", "Intensive distribution and standardised service"],
+              guides: {
+                explain: "Explain why an expectation of consistency forces the business to standardise what its people do." } },
+
+            { id: "mkt01-pr-convenience", area: "processes",
+              relationship: "Convenience-oriented customers lead to faster and more flexible ordering processes",
+              concept: { topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
+              evidence: ["App, loyalty rewards and mobile ordering"],
+              guides: {
+                topic: "State the relationship between what this target market values and the way the business organises ordering.",
+                explain: "Explain WHY a preference for convenience causes the business to change its ordering process. The cause is the customer expectation, not the technology.",
+                example: "Apply the evidence you selected. State the fact, then say what it demonstrates about the process.",
+                effect: "Say what the changed process achieves for the customer experience and for the business.",
+                link: "Tie it back: this is how the target market affects processes." } },
+            { id: "mkt01-pr-customisation", area: "processes",
+              relationship: "Customers who want to customise orders lead to ordering systems built to take variations",
+              concept: { topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
+              evidence: ["App, loyalty rewards and mobile ordering", "Standardisation with local customisation"],
+              guides: {
+                explain: "Explain why a target market that expects to change an order shapes how the ordering system has to work." } },
+            { id: "mkt01-pr-speed", area: "processes",
+              relationship: "Customers who expect speed lead to streamlined service and collection processes",
+              concept: { topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
+              evidence: ["App, loyalty rewards and mobile ordering", "Intensive distribution and standardised service"],
+              guides: {
+                explain: "Explain the causal step from an expectation of speed to the way service and collection are organised." } },
+
+            { id: "mkt01-ph-servicescape", area: "physical evidence",
+              relationship: "Customers who judge a business by its surroundings lead to a designed servicescape",
+              concept: { topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
+              evidence: ["Standardisation with local customisation", "Segments served by Happy Meal and McCafe"],
+              guides: {
+                explain: "Explain why what this target market reads into a physical space causes the business to design that space deliberately.",
+                example: "Apply the evidence you selected, stating the fact before what it shows about physical evidence." } },
+            { id: "mkt01-ph-segments", area: "physical evidence",
+              relationship: "Serving different segments leads to different physical settings for each",
+              concept: { topic: "marketing", section: "marketing strategies", point: "market segmentation" },
+              evidence: ["Segments served by Happy Meal and McCafe"],
+              guides: {
+                explain: "Explain why serving more than one segment forces the physical setting to differ between them." } },
+            { id: "mkt01-ph-selfservice", area: "physical evidence",
+              relationship: "Customers who prefer to serve themselves lead to physical evidence built around self-service",
+              concept: { topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
+              evidence: ["App, loyalty rewards and mobile ordering", "Intensive distribution and standardised service"],
+              guides: {
+                explain: "Explain why a preference for serving themselves changes what the business puts in front of the customer." } }
+          ],
           criteria: { bands: null, source: "general HSC band expectations" },
           text: "Explain how target markets influence the development of marketing strategies.",
           topic: "Marketing", term1: "Target markets", term2: "Marketing strategies",

@@ -3761,12 +3761,18 @@
     const sameEv = JSON.stringify(p.evidenceIds || []) === JSON.stringify(evidenceIds || []);
     if (sameArg && sameEv) return 0;
     p.contextVersion = (Number(p.contextVersion) || 0) + 1;
+    const hadArg = p.argumentId || null;
     p.argumentId = argumentId || null;
     p.evidenceIds = evidenceIds || [];
+    esSaveDraft();
+    // Only a change of ARGUMENT calls the existing sentences into question. Adding a
+    // piece of evidence does not make what is already written wrong, and flagging it
+    // would train the student to ignore the flag.
+    if (sameArg || !hadArg) return 0;
     let flagged = 0;
     esBlocks(p).forEach(b => {
       if (!String(b.text || "").trim()) return;
-      b.needsReview = true;            // written under the old context
+      b.needsReview = true;
       flagged++;
     });
     esSaveDraft();
@@ -3803,7 +3809,7 @@
     if (!step) return { head: "Your sentence", job: "" };
     const bits = [];
     if (p.point) bits.push("your point is " + p.point.replace(/\.$/, ""));
-    return { head: String(step.label || "").toUpperCase(), job: step.job || "", context: bits.join(", ") };
+    return { head: String(step.label || "").toUpperCase(), job: esSlotGuide(p, step), context: bits.join(", ") };
   }
 
   // Guidance rungs, in order, ALL from content. Nothing here calls the worker.
@@ -3885,9 +3891,21 @@
     const d = ES.draft;
     return ((p.point || "") + " " + (p.role || "") + " " + ((esPlan().picks || []).join(" ")) + " " + ((d && d.question) || "")).toLowerCase();
   }
+  // Resolution priority, highest first:
+  //   1. the concept named by the chosen pathway
+  //   2. the paragraph's own point and the question, scored against the dot points
+  //   3. nothing, and the tool is disabled
+  // Student prose is the FALLBACK, never the primary resolver, so a sentence that
+  // happens to echo another syllabus concept cannot pull the drawer off target.
   function esSectionFor(p) {
     const b = busContent(); const key = busTopicKey();
     const topic = b && key && b.topics[key]; if (!topic) return null;
+    const path = esPathway(p);
+    if (path && path.concept) {
+      const c = path.concept;
+      const sec = (topic.sections || []).find(x => x.name === c.section);
+      if (sec) return { topic: topic, section: sec, point: (sec.points || []).find(pt => String(pt.point || "").toLowerCase().indexOf(String(c.point || "").toLowerCase()) === 0) || null, authored: true };
+    }
     const hay = esContextHay(p);
     // Score a section on its own name AND on its syllabus dot points, because what a
     // student writes ("e-marketing") matches the dot point far more often than the
@@ -3912,6 +3930,7 @@
   // how a contextual tool turns back into a chapter: an e-marketing sentence must
   // not open on situational analysis. No matching point means the tool is disabled.
   function esBestPoint(p, hit) {
+    if (hit.authored && hit.point) return hit.point;   // the pathway named it
     const hay = esContextHay(p);
     let best = null, bestScore = 0;
     (hit.section.points || []).forEach(pt => {
@@ -3928,7 +3947,7 @@
     const hit = esSectionFor(p); if (!hit) return null;
     const pt = esBestPoint(p, hit); if (!pt) return null;
     return {
-      title: String(pt.point || hit.section.name).replace(/\s*[-\u2013].*$/, "").trim(),
+      title: String(pt.point || hit.section.name).replace(/\s+[-\u2013\u2014]\s+.*$/, "").trim(),
       topic: hit.topic.label + " \u00b7 " + hit.section.name,
       quick: pt.what,
       terms: pt.terms || [],
@@ -3944,7 +3963,7 @@
     const add = t => { if (t && terms.indexOf(t) < 0) terms.push(t); };
     (pt ? (pt.terms || []) : []).forEach(add);
     (hit.section.points || []).forEach(x => (x.terms || []).forEach(add));
-    return terms.length ? { title: pt ? String(pt.point).replace(/\s*[-\u2013].*$/, "").trim() : hit.section.name, terms: terms.slice(0, 16) } : null;
+    return terms.length ? { title: pt ? String(pt.point).replace(/\s+[-\u2013\u2014]\s+.*$/, "").trim() : hit.section.name, terms: terms.slice(0, 16) } : null;
   }
   function esToolIdeas(p) {
     const opts = esPlanOptions();
@@ -4085,6 +4104,164 @@
     if (keep) { ES.ui.ctx = keep; esRestoreContext(); }
   }
 
+  // ===========================================================================
+  // PHASE C: the paragraph's argument and evidence.
+  //
+  // A pathway is a RELATIONSHIP the student chooses to argue, never a prewritten
+  // topic sentence. Choosing one is an input to guidance and is NEVER written into
+  // the response: the student still types every word. The choice then drives the
+  // guide for each sentence, filters the evidence to what supports it, and tells
+  // Understand which concept to open. All authored, so nothing here calls a model.
+  // ===========================================================================
+  function esQuestionDef() {
+    const d = ES.draft, sc = esSubjectContent(ES.subject);
+    if (!d || !sc) return null;
+    const qs = sc.questions || [];
+    if (d.questionId) { const byId = qs.find(x => x.id === d.questionId); if (byId) return byId; }
+    return qs.find(x => x.text && d.question && x.text.trim() === d.question.trim()) || null;
+  }
+  // Pathways offered for THIS paragraph. Matched on the area the paragraph is about,
+  // falling back to every pathway when the paragraph has not said yet.
+  function esPathwaysFor(p) {
+    const q = esQuestionDef();
+    const all = (q && q.pathways) || [];
+    if (!all.length) return [];
+    const hay = ((p.point || "") + " " + (p.role || "") + " " + (p.area || "")).toLowerCase();
+    const inArea = all.filter(x => x.area && hay.indexOf(x.area.toLowerCase()) >= 0);
+    return inArea.length ? inArea : all;
+  }
+  function esPathway(p) {
+    if (!p || !p.argumentId) return null;
+    const q = esQuestionDef();
+    return ((q && q.pathways) || []).find(x => x.id === p.argumentId) || null;
+  }
+  // Evidence compatible with the chosen argument. With a custom argument there is no
+  // authored mapping, so nothing is claimed to be compatible: the student is told
+  // plainly rather than shown the nearest authored set.
+  function esEvidenceFor(p) {
+    const b = busContent(); const key = busTopicKey();
+    const bank = (b && key && b.evidence && b.evidence[key]) || [];
+    if (!bank.length) return { items: [], custom: false, none: "no-bank" };
+    const path = esPathway(p);
+    if (p.argumentId && !path) return { items: [], custom: true, none: "custom" };   // their own argument
+    if (!path) return { items: bank.slice(0, 12), custom: false, none: null };       // nothing chosen yet
+    const labels = path.evidence || [];
+    const items = bank.filter(e => labels.indexOf(e.label) >= 0);
+    return { items: items, custom: false, none: items.length ? null : "unlinked", pathway: path };
+  }
+  function esEvidenceByLabel(label) {
+    const b = busContent(); const key = busTopicKey();
+    return ((b && key && b.evidence && b.evidence[key]) || []).find(e => e.label === label) || null;
+  }
+  // The guide for the active sentence, now shaped by what the student chose. An
+  // authored pathway guide for this slot wins; otherwise the slot's own job stands.
+  function esSlotGuide(p, step) {
+    if (!step) return "";
+    const path = esPathway(p);
+    const authored = path && path.guides && path.guides[step.key];
+    return authored || step.job || "";
+  }
+  // Whether this paragraph still needs its argument chosen before writing starts.
+  function esNeedsSetup(p) {
+    if (!p) return false;
+    if (p.argumentId || p.setupDone) return false;
+    if (!esPathwaysFor(p).length) return false;                 // nothing authored to choose from
+    return !esBlocks(p).length;                                  // already writing: do not interrupt
+  }
+  // ---- the setup card: argument first, then evidence, then writing -----------
+  function esSetupHTML(p) {
+    const stage = ES.ui.setupStage || (p.argumentId ? "evidence" : "argument");
+    if (stage === "argument") {
+      const opts = esPathwaysFor(p);
+      return `<div class="es-setup">
+        <div class="es-setuph">Choose how you want to answer this part</div>
+        <p class="es-setupsub">You are choosing a relationship to argue, not a sentence. You still write every word of it.</p>
+        ${opts.map(o => `<button type="button" class="es-pick" data-espath="${esc(o.id)}"><span class="es-pickrel">${esc(o.relationship)}</span></button>`).join("")}
+        <button type="button" class="es-pick own" data-espathown>Write my own argument</button>
+        <div class="es-ownwrap" data-ownwrap hidden>
+          <input id="esownarg" class="es-input" placeholder="In one line, the relationship you want to argue">
+          <button type="button" class="es-btn primary sm" id="esownok">Use this</button>
+        </div>
+      </div>`;
+    }
+    const ev = esEvidenceFor(p);
+    const chosen = p.evidenceIds || [];
+    const rows = ev.items.map(e => `<button type="button" class="es-pick ev ${chosen.indexOf(e.label) >= 0 ? "on" : ""}" data-esev="${esc(e.label)}">
+        <span class="es-pickrel">${esc(e.label)}</span>
+        <span class="es-picksub">${esc(String(e.use || e.fact).slice(0, 120))}</span>
+        ${e.verify ? `<span class="es-evflag">check a current figure yourself</span>` : ""}
+      </button>`).join("");
+    const none = ev.none === "custom"
+      ? `<p class="es-setupsub">No verified evidence has been linked to your own argument yet. You can still use your own evidence, and the Evidence tool stays open to you.</p>`
+      : ev.none === "unlinked"
+      ? `<p class="es-setupsub">No verified evidence has been linked to this argument yet. You can still use your own.</p>`
+      : ev.none === "no-bank"
+      ? `<p class="es-setupsub">No evidence bank has been written for this subject yet.</p>` : "";
+    return `<div class="es-setup">
+      <div class="es-setuph">Choose evidence that could support this argument</div>
+      <p class="es-setupsub">Only evidence that supports what you chose. Picking one does not write anything: you still use it in your own words.</p>
+      ${rows}${none}
+      <div class="es-setupbtns">
+        <button type="button" class="es-linkbtn" id="esbackarg">Change the argument</button>
+        <button type="button" class="es-btn primary" id="esstartwriting">Start writing</button>
+      </div>
+    </div>`;
+  }
+  function esBindSetup(p) {
+    const host = document.getElementById("eshost"); if (!host) return;
+    host.querySelectorAll("[data-espath]").forEach(b => b.onclick = () => {
+      const path = esPathwaysFor(p).find(x => x.id === b.dataset.espath);
+      const flagged = esSetParagraphContext(p, b.dataset.espath, []);
+      p.area = (path && path.area) || p.area || "";
+      ES.ui.setupStage = "evidence"; esSaveDraft(); esRender();
+      if (flagged) toast(flagged + " sentence" + (flagged === 1 ? "" : "s") + " to check against the new argument.");
+    });
+    const own = host.querySelector("[data-espathown]");
+    if (own) own.onclick = () => { const w = host.querySelector("[data-ownwrap]"); if (w) { w.hidden = false; const i = host.querySelector("#esownarg"); if (i) i.focus(); } };
+    const ok = host.querySelector("#esownok");
+    if (ok) ok.onclick = () => {
+      const v = (host.querySelector("#esownarg").value || "").trim(); if (!v) return;
+      // Their own argument is first class: it is kept as written and never quietly
+      // snapped to the nearest authored pathway.
+      esSetParagraphContext(p, "own:" + v, []);
+      p.ownArgument = v;
+      ES.ui.setupStage = "evidence"; esSaveDraft(); esRender();
+    };
+    host.querySelectorAll("[data-esev]").forEach(b => b.onclick = () => {
+      const label = b.dataset.esev, list = (p.evidenceIds || []).slice();
+      const i = list.indexOf(label);
+      if (i >= 0) list.splice(i, 1); else list.push(label);
+      esSetParagraphContext(p, p.argumentId, list);
+      esSaveDraft(); esRender();
+    });
+    const back = host.querySelector("#esbackarg"); if (back) back.onclick = () => { ES.ui.setupStage = "argument"; esRender(); };
+    const go = host.querySelector("#esstartwriting"); if (go) go.onclick = () => { p.setupDone = true; ES.ui.setupStage = null; esSaveDraft(); esRender(); };
+  }
+  // ---- the resting right rail: what this paragraph is arguing, and where it is
+  // The rail has two states and one width, so opening a tool never shifts the page.
+  function esRestHTML(p) {
+    const path = esPathway(p);
+    const arg = path ? path.relationship : (p.ownArgument || "");
+    const ev = (p.evidenceIds || []).map(esEvidenceByLabel).filter(Boolean);
+    const steps = slotsForRole(p.role), si = esStepIndex(p);
+    return `<aside class="es-rest">
+      <div class="es-resth">${esc(p.role)}</div>
+      <div class="es-restblk">
+        <div class="es-restlbl">Your argument</div>
+        ${arg ? `<div class="es-restval">${esc(arg)}${path ? "" : ` <span class="es-restown">your own</span>`}</div>` : `<div class="es-restnone">not chosen yet</div>`}
+        <button type="button" class="es-linkbtn" data-esrestchange="argument">${arg ? "Change" : "Choose"}</button>
+      </div>
+      <div class="es-restblk">
+        <div class="es-restlbl">Your evidence</div>
+        ${ev.length ? ev.map(e => `<div class="es-restval">${esc(e.label)}</div>`).join("") : `<div class="es-restnone">none selected</div>`}
+        <button type="button" class="es-linkbtn" data-esrestchange="evidence">${ev.length ? "Change" : "Choose"}</button>
+      </div>
+      <div class="es-restblk">
+        <div class="es-restlbl">Where you are</div>
+        <ol class="es-reststeps">${steps.map((st, i) => `<li class="${i < si ? "done" : i === si ? "now" : ""}">${esc(st.label)}</li>`).join("")}</ol>
+      </div>
+    </aside>`;
+  }
   // ------------------------------ COACHED PRACTICE ------------------------------
   // One element at a time. Only the current paragraph renders: its planned point
   // pinned (muted) above, an editable box, that paragraph's feedback in the right
@@ -4102,6 +4279,9 @@
     const step = steps[si] || null;
     const guide = esGuideFor(p, step);
     const editing = (ES.ui.editBlock != null && ES.ui.editBlock < blocks.length) ? ES.ui.editBlock : null;
+    // While the paragraph is choosing its argument there is no writing surface at
+    // all, so nothing hidden can take focus and nothing half-visible can confuse.
+    const inSetup = esNeedsSetup(p) || !!ES.ui.setupStage;
 
     // the response map: where the student is in the whole response
     const map = d.paras.map((pp, i) => {
@@ -4120,7 +4300,7 @@
     const prose = blocks.map((b, k) => editing === k
       ? `<div class="es-editrow"><textarea class="es-input es-linebox" data-esedit="${k}" rows="2">${esc(b.text)}</textarea>
          <div class="es-linebtns"><button type="button" class="es-btn primary sm" data-essaveedit="${k}">Save</button><button type="button" class="es-linkbtn" data-escanceledit>Cancel</button><button type="button" class="es-linkbtn es-del" data-esdelblock="${k}">Delete sentence</button></div></div>`
-      : `<span class="es-said ${(b.ambiguous || b.needsReview) ? "flagged" : ""}" data-esreopen="${k}" title="Click to rewrite this sentence">${esc(b.text)}</span>${(b.ambiguous || b.needsReview) ? `<span class="es-checkline" data-escheck="${k}">${b.needsReview ? "your argument changed. Does this still support it?" : "this sentence changed a lot. Does it still fit here?"} <button type="button" class="es-linkbtn" data-esok="${k}">Looks right</button></span>` : ""}`).join(" ");
+      : `<span class="es-said ${(b.ambiguous || b.needsReview) ? "flagged" : ""}" data-esreopen="${k}" title="Click to rewrite this sentence">${esc(b.text)}</span>${(b.ambiguous || b.needsReview) ? `<span class="es-checkline">${b.needsReview ? "written for your previous argument." : "this sentence changed a lot."} <button type="button" class="es-linkbtn" data-esreopen="${k}">Review sentence</button> <button type="button" class="es-linkbtn" data-esok="${k}">Still works</button></span>` : ""}`).join(" ");
 
     const words = (p.text || "").trim().split(/\s+/).filter(Boolean).length;
     const target = esWordTarget(d);
@@ -4157,7 +4337,9 @@
             <label class="es-pinlabel" for="espoint">your point for this paragraph <span class="es-opt">optional</span></label>
             <input id="espoint" class="es-pointin" value="${esc(p.point)}" placeholder="In one line, what does this ${esc(p.role.toLowerCase())} argue?">
           </div>
-          <div class="es-flow">
+          ${inSetup ? esSetupHTML(p) : ""}
+          ${inSetup ? "" : `<div class="es-flow">
+            ${(() => { const n = blocks.filter(b => b.needsReview).length; return n ? `<div class="es-argchanged"><b>Argument changed.</b> ${n} existing sentence${n === 1 ? " was" : "s were"} written for your previous argument. Check each one still supports the new direction.</div>` : ""; })()}
             ${blocks.length ? `<p class="es-prose">${prose}</p>` : `<p class="es-prose empty">Your paragraph builds here, one sentence at a time.</p>`}
             ${editing == null ? `
             <div class="es-active">
@@ -4176,7 +4358,7 @@
                 <button type="button" class="es-linkbtn" id="esbackstep" ${si === 0 && !blocks.length ? "disabled" : ""}>Back a step</button>
               </div>
             </div>` : ""}
-          </div>
+          </div>`}
           <div class="es-navrow">
             <button class="es-btn ghost" id="esprev" ${d.pos === 0 ? "disabled" : ""}>Previous section</button>
             <button class="es-btn ${canAsk ? "primary" : "ghost"}" id="esask" ${(!canAsk || ES.pending) ? "disabled" : ""}>${askLabel}</button>
@@ -4186,7 +4368,7 @@
           <div class="es-linehost" data-linehost>${esLinesBlock(p)}</div>
           <div class="es-seqhost">${esSeqNudge(p)}</div>
         </div>
-        ${ES.ui.tool ? esDrawerHTML(p) : `<aside class="es-margin">${esCoachMargin(p)}</aside>`}
+        ${ES.ui.tool ? esDrawerHTML(p) : esRestHTML(p)}
       </div>
     </div></div></div>`;
 
@@ -4233,7 +4415,7 @@
       line.onkeydown = e => {
         if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); if (!accept.disabled) accept.click(); }
       };
-      line.focus();
+      if (!inSetup) line.focus();
       accept.onclick = () => {
         const v = line.value.trim(); if (!v) return;
         const nb = esNewBlock(d, v, step ? step.key : null, "written");
@@ -4257,7 +4439,10 @@
     const ask = $("#esask"); if (ask) ask.onclick = () => esGetFeedback(d.pos);
     $("#esquizlink").onclick = () => { ES.screen = "quiz"; esResetQuiz(); esRender(); };
     esBindToolbelt(p);
-    if (!ES.ui.tool) esBindCoachMargin(p);
+    esBindSetup(p);
+    host.querySelectorAll("[data-esrestchange]").forEach(b => b.onclick = () => {
+      ES.ui.setupStage = b.dataset.esrestchange; ES.ui.tool = null; esRender();
+    });
     esBindLines();
     esBindSeqNudge(p);
   }
