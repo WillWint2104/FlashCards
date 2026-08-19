@@ -628,3 +628,107 @@ submitted, evidence chosen while planning still invalidates precisely and by nam
 and the conclusion is handed the four arguments it has to draw together. Zero model
 calls throughout: planning, the map, completion and review are all authored data and
 local state.
+
+---
+
+## 15. P1: the reference area, built as a vertical slice
+
+Processes is authored end to end as the standard the rest of P1 will be written
+against. Nothing else was scaled. The point of this phase is that the voice, the
+depth and the amount of help can be judged on something real before sixty
+combinations exist.
+
+### The content model
+
+The schema is general. There is no `processesHelp` special case, and every layer
+below already works for any subject, question and area:
+
+```
+question
+  requirements
+  pathways[]                      one per defensible argument, tagged with its AREA
+    relationship                  the one-line label the student picks
+    meaning                       what the argument actually claims, in student words
+    concept.key ------------------> subject.concepts[key]     the Learn resource
+    evidence[] { label, why, limits }  ---> the fixed evidence bank
+    guides   { component: text }  what this component has to do FOR THIS argument
+    help     { component: ladder } hint, needs, direction, starter, example
+subject.concepts[key]
+    title, syllabus, quick, readMore[], terms[{term,meaning}], confusions[], example, related[]
+```
+
+A student-authored argument runs the same path with the pathway link missing: the
+component guidance still appears, the concept resource resolves through the
+paragraph's content match, and the evidence tool widens to the topic instead of
+narrowing to a pathway. Authoring your own argument removes constraints, not
+support.
+
+### Guidance is written per argument, per component
+
+Every component of the Processes paragraph carries its own guide and its own five
+rung ladder for all three pathways. Components are keyed so that the SAME authored
+content serves both paragraph models: TEEEC reads topic, explain, example, effect,
+link, and TDECC reads topic, demonstrate knowledge, explain, case study, connect.
+Six component keys cover both, so choosing a different scaffold never drops the
+student onto generic prose.
+
+TDECC was also corrected to the five components it is actually taught as:
+Topic, Demonstrate knowledge, Explain, Case study, Connect.
+
+### The ladder, with a new third rung
+
+L1 hint, a question. L2 what this part has to do. **L3 the direction to take**, which
+names the reasoning without wording it. L4 a start you finish. L5 the same reasoning
+somewhere else. L3 used to be a blank frame; a frame is still accepted where one is
+authored, but a direction is preferred because it leaves more of the thinking with
+the student.
+
+Three rung types are validated in code, so safety is a property of the data:
+
+* `reasoningDirection` must address the writer, must be under 320 characters, and
+  must not name the subject's case study.
+* `scaffoldFrame` must leave at least two meaningful blanks and must not hand over
+  the question's own concepts or the selected evidence.
+* `differentContextExample` must declare its context and must not mention the case
+  study the student is writing about.
+
+Nothing on the ladder has an insert or apply control, at any level.
+
+### Four help needs, four separate answers
+
+| the student's problem | where it is answered |
+|---|---|
+| I do not know what I could argue | **Arguments**, with what each pathway means |
+| I do not understand the content | **Learn**, quick explanation then read more |
+| I do not know what evidence to use | **Evidence**, filtered to the chosen argument |
+| I know what I mean but cannot write this part | **Help me**, under the line |
+
+Help is deliberately still not a tool in the belt, and the belt is still not an
+assistant.
+
+### Evidence says what it is for, and what it cannot prove
+
+Each item now carries the verified fact from the fixed bank, why it suits THIS
+argument, a limit on how far it can be pushed, and its source. Sources are not
+invented: an item with none says so rather than being filled in. The picker shows
+the best few for the argument, with the rest of the bank behind one link.
+
+Removing evidence is its own labelled action. Clicking a chosen item no longer
+silently unselects it, because removal can invalidate writing.
+
+### Measured
+
+One Processes paragraph, five components, three profiles:
+
+| | clicks | rungs reached | drawers |
+|---|---|---|---|
+| independent | 5 | 0 | none |
+| moderate | 25 | 2 per component | Learn |
+| high support | 60 | 5 per component | Learn, Arguments, Evidence |
+
+186 words of interface on screen before any help is requested, 27 permanent
+controls. Zero model calls at every level of support. After the paragraph is
+written the student's own words are 119 against 172 of interface.
+
+`ui16` (39 assertions) covers the reference area on TEEEC; `ui17` (9) repeats it on
+TDECC; `ui15` (48) still covers P0.

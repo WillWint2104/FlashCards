@@ -3226,11 +3226,11 @@
   function esStructureLabel(key) { return esStructureDef(key).label; }
 
   const ES = { subject: null, code: "", demo: false, screen: "setup", draft: null, list: [], form: null, pending: false,
-    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, ctx: null, moreLine: false, mapOpen: {}, planOpen: {} },  // transient guided-view state, reset on paragraph change
+    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, mapOpen: {}, planOpen: {} },  // transient guided-view state, reset on paragraph change
     hint: { open: false, tab: "know" },          // study hints: persists across paragraphs on purpose
     quiz: { revealed: false, peeked: false, attempt: "", result: null } };
   const ES_KEY = "marginal.essay.v1";
-  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, ctx: null, moreLine: false, mapOpen: {}, planOpen: {} }; }
+  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, mapOpen: {}, planOpen: {} }; }
   // peeked persists for the whole attempt: revealing once disqualifies mastery even
   // if the answer is hidden again before checking. Cleared only on a new attempt.
   function esResetQuiz() { ES.quiz = { revealed: false, peeked: false, attempt: "", result: null }; }
@@ -3878,6 +3878,19 @@
     if (cs && String(ex.text || "").toLowerCase().indexOf(cs.toLowerCase()) >= 0) return null;
     return ex;
   }
+  // A direction names the reasoning to make. It is the rung between "what this
+  // part is for" and "here are some words", so it must talk TO the writer and
+  // must never be a sentence that could be pasted in as the answer.
+  const ES_IMPERATIVE = /^(say|show|name|explain|define|describe|start|make|point|establish|set|move|work|turn|give|trace|follow|decide|choose|avoid|do not|don't|keep|use|take|put|open|finish|land|connect|apply|state|treat|write|read|check)\b/i;
+  function esValidDirection(dir) {
+    if (!dir || dir.type !== "reasoningDirection") return null;
+    const text = String(dir.text || "").trim();
+    if (!text || text.length > 320) return null;
+    if (!/\b(you|your)\b/i.test(text) && !ES_IMPERATIVE.test(text)) return null;   // it must address the writer
+    const cs = esSubjectCaseStudy();
+    if (cs && text.toLowerCase().indexOf(cs.toLowerCase()) >= 0) return null;        // never writes their own case for them
+    return text;
+  }
   function esAuthoredHelp(p, step) {
     const path = esPathway(p);
     const h = path && path.help && step && path.help[step.key];
@@ -3887,15 +3900,23 @@
     if (!step) return [];
     const h = esAuthoredHelp(p, step) || {};
     const rungs = [];
-    if (h.hint) rungs.push({ level: 1, label: "Hint", text: h.hint, cta: "Still stuck" });
-    if (h.needs) rungs.push({ level: 2, label: "What this line has to establish", text: h.needs, cta: "Show a structure" });
+    if (h.hint) rungs.push({ label: "Hint", text: h.hint, cta: "Still stuck" });
+    if (h.needs) rungs.push({ label: "What this part has to do", text: h.needs, cta: "Point me in a direction" });
+    // Rung three is the reasoning direction where one is authored, and a blank
+    // structure where it is not. Both leave the thinking and the wording with the
+    // student; the direction leaves more of it.
+    const dir = esValidDirection(h.direction);
     const frame = esValidFrame(h.frame, p);
-    if (frame) rungs.push({ level: 3, label: "A structure to fill in", text: frame, kind: "frame", cta: "Give me a start" });
+    if (dir) rungs.push({ label: "The direction to take", text: dir, kind: "direction", cta: "Give me a start" });
+    else if (frame) rungs.push({ label: "A structure to fill in", text: frame, kind: "frame", cta: "Give me a start" });
     if (h.starter && h.starter.type === "sentenceStarter" && h.starter.text) {
-      rungs.push({ level: 4, label: "A start you finish", text: String(h.starter.text).replace(/\s*$/, "") + "…", kind: "starter", cta: "Show another example" });
+      rungs.push({ label: "A start you finish", text: String(h.starter.text).replace(/\s*$/, "") + "…", kind: "starter", cta: "Show a worked example" });
     }
     const ex = esValidExample(h.example);
-    if (ex) rungs.push({ level: 5, label: "The same reasoning, somewhere else", text: ex.text, kind: "example", context: ex.context, pattern: ex.pattern || "" });
+    if (ex) rungs.push({ label: "The same reasoning, somewhere else", text: ex.text, kind: "example", context: ex.context, pattern: ex.pattern || "" });
+    // levels are the rungs that actually exist, so pressing help three times always
+    // shows three rungs numbered one to three
+    rungs.forEach((r, i) => { r.level = i + 1; });
     return rungs;
   }
 
@@ -3982,8 +4003,8 @@
   // is the whole mental model.
   // ===========================================================================
   const ES_TOOLS = [
-    { key: "understand", label: "Understand", icon: "book" },
-    { key: "ideas",      label: "Ideas",      icon: "bulb" },
+    { key: "understand", label: "Learn",      icon: "book" },
+    { key: "ideas",      label: "Arguments", icon: "bulb" },
     { key: "evidence",   label: "Evidence",   icon: "search" },
     { key: "structure",  label: "Structure",  icon: "blocks" },
     { key: "vocabulary", label: "Vocabulary", icon: "type" },
@@ -4064,7 +4085,25 @@
     });
     return bestScore > 0 ? best : null;
   }
+  // An authored concept resource, attached to the pathway the student chose. This
+  // is the "I do not understand the content" layer: written for the concept rather
+  // than scraped from the paragraph, and reachable without leaving the sentence.
+  function esConceptFor(p) {
+    const sc = esSubjectContent(ES.subject);
+    const bank = (sc && sc.concepts) || null; if (!bank) return null;
+    const path = esPathway(p);
+    const key = path && path.concept && path.concept.key;
+    return (key && bank[key]) || null;
+  }
   function esToolUnderstand(p) {
+    const c = esConceptFor(p);
+    if (c) return {
+      kind: "concept", title: c.title, topic: c.syllabus || "",
+      quick: c.quick, terms: (c.terms || []).map(t => t.term || t),
+      glossary: (c.terms || []).filter(t => t && t.meaning),
+      confusions: c.confusions || [], example: c.example || "", related: c.related || [],
+      more: (c.readMore || []).join("\n\n") || null,
+    };
     const hit = esSectionFor(p); if (!hit) return null;
     const pt = esBestPoint(p, hit); if (!pt) return null;
     return {
@@ -4086,22 +4125,42 @@
     (hit.section.points || []).forEach(x => (x.terms || []).forEach(add));
     return terms.length ? { title: pt ? String(pt.point).replace(/\s+[-\u2013\u2014]\s+.*$/, "").trim() : hit.section.name, terms: terms.slice(0, 16) } : null;
   }
+  // "I do not know what I could argue". The pathways written for THIS part of the
+  // question, each with what the argument actually means, plus whatever the student
+  // has already chosen. Reading it never changes anything: choosing is a separate,
+  // deliberate act through Change.
   function esToolIdeas(p) {
-    const opts = esPlanOptions();
-    if (!opts || !opts.length) return null;
-    return { options: opts, chosen: (esPlan().picks || []), locked: !!esPlan().locked };
+    if (esIsIntro(p) || esIsConcl(p)) {
+      const rows = esPlanRows(ES.draft).filter(r => r.argument);
+      return rows.length ? { kind: "plan", rows: rows } : null;
+    }
+    const opts = esPathwaysFor(p);
+    if (opts.length) return { kind: "pathways", options: opts, chosenId: p.argumentId || "", own: p.ownArgument || "" };
+    const legacy = esPlanOptions();
+    if (legacy && legacy.length) return { kind: "legacy", options: legacy, chosen: (esPlan().picks || []), locked: !!esPlan().locked };
+    return null;
   }
   function esToolEvidence(p) {
     const b = busContent(); const key = busTopicKey();
     const all = (b && key && b.evidence && b.evidence[key]) || [];
     if (!all.length) return null;
+    const path = esPathway(p);
+    const notes = esPathEvidence(path);                       // label -> why it suits THIS argument
+    const linked = notes.map(n => n.label);
     const hit = esSectionFor(p);
-    const compatible = hit ? all.filter(e => e.section === hit.section.name) : [];
+    // The pathway's own evidence first, then the rest of the section, then the bank.
+    // The best few for this exact argument, not a generic list.
+    const bySection = hit ? all.filter(e => e.section === hit.section.name) : [];
     const chosen = p.evidenceIds || [];
+    const rank = e => (linked.indexOf(e.label) >= 0 ? 0 : bySection.indexOf(e) >= 0 ? 1 : 2);
+    const rest = all.filter(e => chosen.indexOf(e.label) < 0).slice().sort((x, y) => rank(x) - rank(y));
+    const best = rest.filter(e => rank(e) === 0);
     return {
-      selected: all.filter(e => chosen.indexOf(e.label) >= 0),
-      compatible: (compatible.length ? compatible : all).filter(e => chosen.indexOf(e.label) < 0).slice(0, 12),
-      narrowed: !!(hit && compatible.length),
+      selected: all.filter(e => chosen.indexOf(e.label) >= 0).map(e => esEvidenceWith(e, notes)),
+      compatible: (best.length ? best : rest.filter(e => rank(e) < 2)).map(e => esEvidenceWith(e, notes)),
+      wider: rest.filter(e => rank(e) === 2).map(e => esEvidenceWith(e, notes)),
+      narrowed: !!(best.length || bySection.length),
+      forArgument: !!best.length,
     };
   }
   function esToolStructure(p) {
@@ -4133,24 +4192,56 @@
     let body = "";
     if (!d) body = `<p class="es-drawer-none">Nothing has been written for this part of the question yet.</p>`;
     else if (key === "understand") {
+      const gloss = (d.glossary && d.glossary.length)
+        ? `<dl class="es-gloss">${d.glossary.map(t => `<dt>${esc(t.term)}</dt><dd>${esc(t.meaning)}</dd>`).join("")}</dl>` : "";
+      const confuse = (d.confusions && d.confusions.length)
+        ? `<div class="es-drawer-block"><div class="es-drawer-sub">easy to get wrong</div>${d.confusions.map(x => `<p class="es-drawer-p">${esc(x)}</p>`).join("")}</div>` : "";
+      const conex = d.example
+        ? `<div class="es-drawer-block"><div class="es-drawer-sub">a simple example</div><p class="es-drawer-p">${esc(d.example)}</p></div>` : "";
+      const rel = (d.related && d.related.length) ? `<p class="es-drawer-note">Sits next to: ${d.related.map(esc).join(", ")}.</p>` : "";
+      const deep = gloss + confuse + conex + rel;
       body = `<div class="es-drawer-sub">${esc(d.topic)}</div><h4 class="es-drawer-h">${esc(d.title)}</h4>
         <p class="es-drawer-p">${esc(d.quick)}</p>
         ${(d.terms && d.terms.length) ? `<div class="es-terms">${d.terms.slice(0, 8).map(t => `<span class="es-term">${esc(t)}</span>`).join("")}</div>` : ""}
-        ${d.more ? `<button type="button" class="es-linkbtn" id="esmoreread">${ES.ui.readMore ? "Show less" : "Read more"}</button>
-          <div class="es-drawer-more"${ES.ui.readMore ? "" : " hidden"}>${d.more.split("\n\n").map(x => `<p class="es-drawer-p">${esc(x)}</p>`).join("")}</div>` : ""}`;
+        ${(d.more || deep) ? `<button type="button" class="es-linkbtn" id="esmoreread">${ES.ui.readMore ? "Show less" : "Read more"}</button>
+          <div class="es-drawer-more"${ES.ui.readMore ? "" : " hidden"}>${(d.more || "").split("\n\n").filter(Boolean).map(x => `<p class="es-drawer-p">${esc(x)}</p>`).join("")}${deep}</div>` : ""}`;
     } else if (key === "vocabulary") {
       body = `<h4 class="es-drawer-h">${esc(d.title)}</h4><p class="es-drawer-note">Terms that fit what you are writing now. You still choose which to use.</p>
         <div class="es-terms">${d.terms.map(t => `<span class="es-term">${esc(t)}</span>`).join("")}</div>`;
     } else if (key === "ideas") {
-      body = `<h4 class="es-drawer-h">What you could argue</h4>
-        <p class="es-drawer-note">Options, not a list to work through. Your own is just as valid.</p>
-        ${d.options.map(o => `<div class="es-idea ${d.chosen.indexOf(o) >= 0 ? "on" : ""}">${esc(o)}</div>`).join("")}`;
+      if (d.kind === "plan") {
+        body = `<h4 class="es-drawer-h">What your response argues</h4>
+          <p class="es-drawer-note">The arguments you planned, in order. This section draws on them rather than adding a new one.</p>
+          ${d.rows.map(r => `<div class="es-idea on"><b>${esc(r.role)}</b><span>${esc(r.argument)}</span></div>`).join("")}`;
+      } else if (d.kind === "pathways") {
+        body = `<h4 class="es-drawer-h">What you could argue here</h4>
+          <p class="es-drawer-note">Different defensible relationships, not a list to work through. Your own is just as valid, and reading this changes nothing.</p>
+          ${d.own ? `<div class="es-idea on"><b>your own argument</b><span>${esc(d.own)}</span></div>` : ""}
+          ${d.options.map(o => `<div class="es-idea ${d.chosenId === o.id ? "on" : ""}">
+            <b>${esc(o.relationship)}</b>${o.meaning ? `<span>${esc(o.meaning)}</span>` : ""}
+            ${d.chosenId === o.id ? `<span class="es-ideatag">this is the one you chose</span>` : ""}</div>`).join("")}
+          <p class="es-drawer-note">To argue a different one, close this and use Change beside your argument.</p>`;
+      } else {
+        body = `<h4 class="es-drawer-h">What you could argue</h4>
+          <p class="es-drawer-note">Options, not a list to work through. Your own is just as valid.</p>
+          ${d.options.map(o => `<div class="es-idea ${d.chosen.indexOf(o) >= 0 ? "on" : ""}">${esc(o)}</div>`).join("")}`;
+      }
     } else if (key === "evidence") {
-      const row = e => `<div class="es-ev"><div class="es-evh">${esc(e.label)}</div><p class="es-drawer-p">${esc(e.fact)}</p>${e.use ? `<p class="es-drawer-note">${esc(e.use)}</p>` : ""}${e.verify ? `<span class="es-evflag">check a current figure yourself</span>` : ""}</div>`;
+      const row = e => `<div class="es-ev">
+        <div class="es-evh">${esc(e.label)}</div>
+        <p class="es-drawer-p">${esc(e.fact)}</p>
+        ${e.why ? `<p class="es-evwhy"><b>For this argument:</b> ${esc(e.why)}</p>` : ""}
+        ${e.use ? `<p class="es-drawer-note">${esc(e.use)}</p>` : ""}
+        ${e.limits ? `<p class="es-evlimit">${esc(e.limits)}</p>` : ""}
+        <p class="es-evsrc">${e.source ? "Source: " + esc(e.source) : "No source has been recorded for this item yet."}${e.verify ? ` <span class="es-evflag">check a current figure yourself</span>` : ""}</p>
+      </div>`;
       body = `${d.selected.length ? `<h4 class="es-drawer-h">Your evidence</h4>${d.selected.map(row).join("")}` : ""}
-        <h4 class="es-drawer-h">${d.selected.length ? "Other compatible evidence" : "Evidence you could use"}</h4>
-        ${d.compatible.length ? d.compatible.map(row).join("") : `<p class="es-drawer-none">No further evidence has been authored for this part.</p>`}
-        ${d.narrowed ? "" : `<p class="es-drawer-note">Showing everything for this topic: nothing narrower has been authored yet.</p>`}`;
+        <h4 class="es-drawer-h">${d.selected.length ? "Other evidence that fits this argument" : "Evidence that fits this argument"}</h4>
+        ${d.compatible.length ? d.compatible.map(row).join("") : `<p class="es-drawer-none">No further evidence has been authored for this argument.</p>`}
+        ${d.forArgument ? "" : `<p class="es-drawer-note">Nothing has been linked to this argument yet, so this is the closest evidence in the topic.</p>`}
+        ${(d.wider && d.wider.length) ? `<button type="button" class="es-linkbtn" id="esevall">${ES.ui.evAll ? "Show less" : "Browse all evidence for this topic"}</button>
+          <div class="es-drawer-more"${ES.ui.evAll ? "" : " hidden"}>${d.wider.map(row).join("")}</div>` : ""}
+        <p class="es-drawer-note">Evidence is supplied. What it proves is still yours to explain.</p>`;
     } else if (key === "structure") {
       body = `<h4 class="es-drawer-h">${esc(d.role)}</h4>
         ${d.current ? `<p class="es-drawer-p"><b>Right now:</b> ${esc(d.current.job)}</p>` : ""}
@@ -4203,6 +4294,8 @@
     });
     const x = host.querySelector("#esdrawerx");
     if (x) x.onclick = () => { ES.ui.tool = null; esRenderKeepingPlace(p); };
+    const ea = host.querySelector("#esevall");
+    if (ea) ea.onclick = () => { ES.ui.evAll = !ES.ui.evAll; esRenderKeepingPlace(p); };
     const mr = host.querySelector("#esmoreread");
     if (mr) mr.onclick = () => { ES.ui.readMore = !ES.ui.readMore; esRenderKeepingPlace(p); };
   }
@@ -4266,9 +4359,26 @@
     const path = esPathway(p);
     if (p.argumentId && !path) return { items: [], custom: true, none: "custom" };   // their own argument
     if (!path) return { items: bank.slice(0, 12), custom: false, none: null };       // nothing chosen yet
-    const labels = path.evidence || [];
-    const items = bank.filter(e => labels.indexOf(e.label) >= 0);
+    const notes = esPathEvidence(path);
+    const labels = notes.map(n => n.label);
+    const items = bank.filter(e => labels.indexOf(e.label) >= 0)
+      .sort((x, y) => labels.indexOf(x.label) - labels.indexOf(y.label))
+      .map(e => esEvidenceWith(e, notes));
     return { items: items, custom: false, none: items.length ? null : "unlinked", pathway: path };
+  }
+  // A pathway may list evidence as plain labels or as {label, why}. Both are read
+  // the same way, so the authored files can deepen one pathway at a time.
+  function esPathEvidence(path) {
+    return ((path && path.evidence) || []).map(e => typeof e === "string"
+      ? { label: e, why: "", limits: "" }
+      : { label: e.label, why: e.why || "", limits: e.limits || "" });
+  }
+  // The bank item, plus what it is for in THIS argument. Nothing here is invented:
+  // a source that was never recorded is shown as missing rather than filled in.
+  function esEvidenceWith(e, notes) {
+    const n = (notes || []).find(x => x.label === e.label);
+    return { label: e.label, fact: e.fact, use: e.use, verify: !!e.verify,
+             why: (n && n.why) || "", source: e.source || "", limits: (n && n.limits) || e.limits || "" };
   }
   function esEvidenceByLabel(label) {
     const b = busContent(); const key = busTopicKey();
@@ -4310,11 +4420,20 @@
     }
     const ev = esEvidenceFor(p);
     const chosen = p.evidenceIds || [];
-    const rows = ev.items.map(e => `<button type="button" class="es-pick ev ${chosen.indexOf(e.label) >= 0 ? "on" : ""}" data-esev="${esc(e.label)}">
-        <span class="es-pickrel">${esc(e.label)}</span>
-        <span class="es-picksub">${esc(String(e.use || e.fact).slice(0, 120))}</span>
-        ${e.verify ? `<span class="es-evflag">check a current figure yourself</span>` : ""}
-      </button>`).join("");
+    // A selected item is not un-selected by clicking it again: removing evidence can
+    // invalidate writing, so it is its own labelled action rather than a silent toggle.
+    const rows = ev.items.map(e => {
+      const on = chosen.indexOf(e.label) >= 0;
+      return `<div class="es-pickwrap${on ? " on" : ""}">
+        <button type="button" class="es-pick ev ${on ? "on" : ""}" data-esev="${esc(e.label)}" ${on ? "disabled" : ""}>
+          <span class="es-pickrel">${esc(e.label)}</span>
+          <span class="es-picksub">${esc(String(e.why || e.use || e.fact).slice(0, 150))}</span>
+          ${e.limits ? `<span class="es-evlimit">${esc(e.limits)}</span>` : ""}
+          ${e.verify ? `<span class="es-evflag">check a current figure yourself</span>` : ""}
+        </button>
+        ${on ? `<div class="es-pickon"><span class="es-pickchosen">chosen</span><button type="button" class="es-linkbtn es-del" data-esevremove="${esc(e.label)}">Remove</button></div>` : ""}
+      </div>`;
+    }).join("");
     const none = ev.none === "custom"
       ? `<p class="es-setupsub">No verified evidence has been linked to your own argument yet. You can still use your own evidence, and the Evidence tool stays open to you.</p>`
       : ev.none === "unlinked"
@@ -4330,6 +4449,16 @@
         <button type="button" class="es-btn primary" id="esstartwriting">Start writing</button>
       </div>
     </div>`;
+  }
+  // Replace just the setup card, keeping the point field and its cursor untouched.
+  function esRefreshSetup(p) {
+    const host = document.getElementById("eshost"); if (!host) return;
+    const card = host.querySelector(".es-setup"); if (!card) return;
+    const wrap = document.createElement("div");
+    wrap.innerHTML = esSetupHTML(p);
+    const fresh = wrap.firstElementChild; if (!fresh) return;
+    card.replaceWith(fresh);
+    esBindSetup(p);
   }
   function esBindSetup(p) {
     const host = document.getElementById("eshost"); if (!host) return;
@@ -4353,11 +4482,17 @@
     };
     host.querySelectorAll("[data-esev]").forEach(b => b.onclick = () => {
       const label = b.dataset.esev, list = (p.evidenceIds || []).slice();
-      const i = list.indexOf(label);
-      if (i >= 0) list.splice(i, 1); else list.push(label);
+      if (list.indexOf(label) < 0) list.push(label);      // adding only; removal is its own action
+      esSetParagraphContext(p, p.argumentId, list);
+      esSaveDraft(); esRender();
+    });
+    host.querySelectorAll("[data-esevremove]").forEach(b => b.onclick = () => {
+      const label = b.dataset.esevremove;
+      const list = (p.evidenceIds || []).filter(x => x !== label);
       const n = esSetParagraphContext(p, p.argumentId, list);
       esSaveDraft(); esRender();
-      if (n) toast(n + " sentence" + (n === 1 ? "" : "s") + " used that evidence. Check " + (n === 1 ? "it" : "them") + ".");
+      // one signal, not three: the banner and the highlighted sentence say it already
+      if (!n) toast("Removed. Nothing you have written rested on it.");
     });
     const back = host.querySelector("#esbackarg"); if (back) back.onclick = () => { ES.ui.setupStage = "argument"; esRender(); };
     const go = host.querySelector("#esstartwriting"); if (go) go.onclick = () => { p.setupDone = true; ES.ui.setupStage = null; esSaveDraft(); esRender(); };
@@ -4752,6 +4887,9 @@
     esBindWritingHead();
     const pt = $("#espoint"); if (pt) pt.oninput = () => {
       p.point = pt.value; esSaveDraft();
+      // While the paragraph is still choosing, saying what it is about must narrow
+      // the options AS IT IS TYPED. Only the card is replaced, so the cursor stays.
+      if (inSetup) { esRefreshBelt(p); esRefreshSetup(p); return; }
       // Which tools have something behind them depends on what the paragraph is
       // about, so the belt wakes up as the student says what they are arguing.
       // Only the belt is replaced, so the cursor never leaves the point field.

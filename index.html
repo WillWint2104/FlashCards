@@ -552,6 +552,29 @@
   .es-ev{border:1.5px solid var(--line);border-radius:11px;padding:10px 12px;margin-bottom:8px}
   .es-evh{font-family:var(--disp);font-weight:600;font-size:13px;color:var(--green-dk);margin-bottom:4px}
   .es-evflag{display:inline-block;font-size:11px;font-weight:800;color:var(--gold-dk);background:var(--gold-soft);border-radius:99px;padding:3px 9px}
+  /* Learn: the concept behind the paragraph, at two depths */
+  .es-drawer-block{margin-top:12px;padding-top:11px;border-top:1px solid var(--line)}
+  .es-gloss{margin-top:12px;padding-top:11px;border-top:1px solid var(--line)}
+  .es-gloss dt{font-size:12.5px;font-weight:800;color:var(--ink)}
+  .es-gloss dd{font-size:12.5px;line-height:1.55;font-weight:600;color:var(--ink-2);margin:2px 0 9px}
+  /* Arguments: what each pathway actually means */
+  .es-idea b{display:block;font-size:13.5px;font-weight:700;color:var(--ink)}
+  .es-idea span{display:block;font-size:12.5px;line-height:1.55;font-weight:600;color:var(--ink-2);margin-top:3px}
+  .es-ideatag{color:var(--green-dk)!important;font-weight:800!important;font-size:11.5px!important}
+  /* Evidence: what it is, what it proves here, and what it cannot prove */
+  .es-evwhy{font-size:12.5px;line-height:1.55;font-weight:600;color:var(--ink);margin-top:6px}
+  .es-evlimit{display:block;font-size:12px;line-height:1.5;font-weight:600;color:var(--gold-dk);margin-top:6px}
+  .es-evsrc{font-size:11.5px;font-weight:600;color:var(--ink-3);margin-top:7px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  /* choosing evidence: adding is a click, removing says so */
+  .es-pickwrap{margin-bottom:8px}
+  .es-pickwrap .es-pick{margin-bottom:0}
+  .es-pickwrap.on .es-pick{border-color:var(--green);background:var(--green-soft);cursor:default;opacity:1}
+  .es-pickon{display:flex;gap:12px;align-items:center;padding:6px 14px 0}
+  .es-pickchosen{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--green-dk)}
+  /* the direction rung reads as guidance, never as a sentence to lift */
+  .es-rung.direction{border-color:var(--line);background:#FBFDFD}
+  .es-rungtext.direction{font-style:normal;color:var(--ink-2);font-weight:600}
+
   .es-struct{list-style:none;counter-reset:st}
   .es-struct li{display:flex;flex-direction:column;gap:1px;border-left:3px solid var(--line);padding:5px 0 9px 11px;font-size:13px;color:var(--ink-2)}
   .es-struct li.done{border-color:var(--green)}

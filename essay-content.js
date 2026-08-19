@@ -124,6 +124,42 @@ window.ESSAY = {
       ],
       defaultStructure: "six",           // intro + four body + conclusion (four relationships)
       paraModels: ["teeec", "tdecc"],    // student-selectable paragraph structure (see scaffolds)
+      // ---- concept resources -------------------------------------------------
+      // The "I do not understand the content" layer. Written for the syllabus
+      // concept rather than assembled from whatever the student typed, in original
+      // wording, at two depths: enough to unblock, then enough to actually learn
+      // it. A pathway points at one of these through concept.key, so the resource
+      // travels with the argument and stays open while the paragraph is written.
+      concepts: {
+        processes: {
+          title: "Processes in the marketing mix",
+          syllabus: "Marketing \u00b7 marketing strategies \u00b7 people, processes and physical evidence",
+          quick: "Processes are the systems a customer moves through to get the service: how an order is placed, paid for, prepared, handed over and fixed when it goes wrong. They are part of what the customer is buying, because for a service the experience of getting it cannot be separated from the thing itself.",
+          readMore: [
+            "A good or a service is bought through a sequence of steps, and for a service that sequence is visible to the customer. Choosing, queuing, ordering, paying, waiting, collecting and returning are all process steps. Some are done by staff, some by equipment such as a kiosk or an app, and some by the customer themselves. The marketing decision is which steps exist at all, who performs them, in what order, and how much time and effort each one costs the customer.",
+            "Processes are one of the three extra elements of the services marketing mix, alongside people and physical evidence. They are separated out because a service is intangible and is produced at the moment it is consumed, so the customer judges quality partly by how smoothly the delivery ran. A business can sell an identical product and lose to a competitor purely on the process around it.",
+            "A target market changes processes because different customers are prepared to spend different things. Some will spend time but not money, some will spend money to save time, some want to control the detail of what they receive, and some want no decisions at all. Once a business identifies which of these describes its target market, the process is redesigned to remove whatever that group is least willing to give up. That is why the customer expectation is the cause and the process change is the effect, and not the other way around.",
+            "Process changes are rarely free. Self service shifts work onto the customer and can suit one segment while alienating another. Extra choice at the ordering step slows the queue behind it. Faster collection can need more space, more staff at peak, or investment in equipment. A strong answer names the gain and is honest about what it costs."
+          ],
+          terms: [
+            { term: "processes", meaning: "the systems and flow that deliver a service to the customer, such as ordering, payment, preparation, collection and returns." },
+            { term: "services marketing mix", meaning: "the seven elements used for services: product, price, place, promotion, people, processes and physical evidence." },
+            { term: "intangible", meaning: "cannot be seen, touched or tested before it is bought, which is why the delivery experience is used to judge quality." },
+            { term: "target market", meaning: "the group of customers a business chooses to aim its marketing at, defined by shared characteristics and expectations." },
+            { term: "customer service", meaning: "the way a business treats customers before, during and after a sale; processes are the machinery that makes it consistent." },
+            { term: "self service", meaning: "a process design that transfers a step, such as ordering or payment, from staff to the customer." },
+            { term: "throughput", meaning: "how many customers a process can serve in a given time, which is why process design matters most at peak." }
+          ],
+          confusions: [
+            "Processes are not the product. Changing what is sold is a product strategy; changing how it is obtained is a process strategy.",
+            "Processes are not place. Place is where and through which channel the customer buys; processes are the sequence of steps once they are there.",
+            "Naming the technology is not analysis. An app or a kiosk is the means; the answer has to say which step it removed and for whom.",
+            "The cause runs from the customer to the business. A process did not change because the technology existed, it changed because a target market would not tolerate the old one."
+          ],
+          example: "A hardware shop finds its main customers are tradespeople who arrive before seven in the morning and cannot wait. It adds a phone-ahead order and a collection bay at the front of the store. Nothing about the products changed; the sequence the customer moves through did, and it changed because of who the customer is.",
+          related: ["people", "physical evidence", "place and distribution", "customer service"]
+        }
+      },
       questions: [
         { id: "ops-01", command: "How can", qtype: "A", qtypeLabel: "relationship",
           text: "How can operations strategies contribute to the achievement of performance objectives?",
@@ -241,37 +277,224 @@ window.ESSAY = {
               guides: {
                 explain: "Explain why an expectation of consistency forces the business to standardise what its people do." } },
 
+            // ---- REFERENCE AREA: processes -----------------------------------
+            // Every component of the paragraph is written for the argument that was
+            // chosen, not for the slot in general, and every component carries the
+            // full ladder. Guides and ladders are keyed for BOTH paragraph models,
+            // so a student on TEEEC (topic, explain, example, effect, link) and one
+            // on TDECC (topic, demonstrate knowledge, explain, case study, connect)
+            // get the same depth. Nothing here is a sentence the student can lift:
+            // the direction rung names the reasoning, the starter stops mid-thought,
+            // and the worked example is always somewhere else entirely.
             { id: "mkt01-pr-convenience", area: "processes",
               relationship: "Convenience-oriented customers lead to faster and more flexible ordering processes",
-              concept: { topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
-              evidence: ["App, loyalty rewards and mobile ordering"],
+              meaning: "This target market will not spend time or effort on the act of ordering. The business answers by redesigning how an order is placed, so it takes fewer steps and can be done at more times and in more ways. The expectation is the cause; the process change is the effect.",
+              concept: { key: "processes", topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
+              evidence: [
+                { label: "App, loyalty rewards and mobile ordering",
+                  why: "It moves ordering and payment off the counter and onto the customer's own device, which is exactly the process step this argument is about.",
+                  limits: "It shows the ordering process changed. It does not by itself prove customers are more satisfied, so do not claim a result you cannot support." },
+                { label: "Intensive distribution and standardised service",
+                  why: "Drive through lanes, delivery platforms and self service kiosks are alternative ways to place and receive the same order, which is the flexibility half of this argument.",
+                  limits: "This is about place as well as process, so say plainly that you are using it for the ordering steps and not for how many outlets there are." }
+              ],
               guides: {
-                topic: "State the relationship between what this target market values and the way the business organises ordering.",
-                explain: "Explain WHY a preference for convenience causes the business to change its ordering process. The cause is the customer expectation, not the technology.",
-                example: "Apply the evidence you selected. State the fact, then say what it demonstrates about the process.",
-                effect: "Say what the changed process achieves for the customer experience and for the business.",
-                link: "Tie it back: this is how the target market affects processes." },
+                topic: "State the relationship between what this target market will not spend and the way the business organises ordering. Name processes as the element you are arguing about.",
+                define: "Show what processes are in the marketing mix, and that ordering and payment are process steps rather than product or place.",
+                explain: "Explain WHY a preference for convenience causes the ordering process to change. The cause is the customer expectation, not the availability of the technology.",
+                example: "Apply the evidence you chose. State what the business actually does, then say which ordering step it removed, and for whom.",
+                effect: "Say what the changed ordering process achieves for the customer and for the business, and name what it costs.",
+                link: "Return to the question: identifying what this target market expects is what produced this process strategy." },
               help: {
+                topic: {
+                  hint: "In one line, what does this group refuse to spend, and what does the business change because of it?",
+                  needs: "Open the paragraph by naming the target market's expectation and the marketing element it acts on. No evidence yet, and no explanation yet.",
+                  direction: { type: "reasoningDirection", text: "Put the customer first in the sentence and the business second, so it reads as a cause rather than a coincidence. Name processes explicitly, so the marker knows which element of the mix you are arguing about." },
+                  starter: { type: "sentenceStarter", text: "A target market that is unwilling to spend time or effort on ordering pushes a business to" },
+                  example: { type: "differentContextExample", context: "a bank and customers who work full time",
+                    text: "A customer group that will not queue for routine transactions pushes a bank to redesign how those transactions are started.",
+                    pattern: "the group, what they will not do, then the process the business changes" } },
+                define: {
+                  hint: "If someone asked you what counts as a process here, which steps would you list?",
+                  needs: "Show the marker you know what processes are, in one sentence, before you argue anything with them.",
+                  direction: { type: "reasoningDirection", text: "Define processes as the steps a customer moves through to obtain the service, then name the two or three steps this paragraph is actually about. Keep it to the knowledge; the argument comes in the next line." },
+                  starter: { type: "sentenceStarter", text: "Processes are the systems a customer moves through to obtain a service, including" },
+                  example: { type: "differentContextExample", context: "a dental practice",
+                    text: "Processes are the steps a patient moves through to obtain treatment, including booking, arrival, waiting, treatment and payment.",
+                    pattern: "the definition, then the specific steps this paragraph will use" } },
                 explain: {
                   hint: "Ask what this customer is unwilling to spend, and what the business changes so they do not have to.",
                   needs: "Establish the causal step from the customer expectation to the process. The expectation comes first and causes the change.",
-                  frame: { type: "scaffoldFrame", text: "Because [what this target market expects], the business changed [which process] so that [result for the customer]." },
-                  starter: { type: "sentenceStarter", text: "Customers who place a high value on convenience push the business to reorganise its ordering process because" },
+                  direction: { type: "reasoningDirection", text: "Trace the chain in order: this group treats effort as a cost, so a business that wants their repeat custom takes steps out of ordering, so the ordering process itself is rebuilt. Say why the business had no real alternative if it wanted this group." },
+                  starter: { type: "sentenceStarter", text: "Because this target market treats time and effort as a cost of buying, a business competing for it has to" },
                   example: { type: "differentContextExample", context: "a pharmacy and shift workers",
-                    text: "Because shift workers cannot visit during ordinary hours, the pharmacy moved repeat prescriptions to an online request, so that an order can be placed at any time.",
-                    pattern: "the expectation, then the process changed, then the result" } } }, },
-            { id: "mkt01-pr-customisation", area: "processes",
-              relationship: "Customers who want to customise orders lead to ordering systems built to take variations",
-              concept: { topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
-              evidence: ["App, loyalty rewards and mobile ordering", "Standardisation with local customisation"],
-              guides: {
-                explain: "Explain why a target market that expects to change an order shapes how the ordering system has to work." } },
+                    text: "Because shift workers cannot visit during ordinary hours, the pharmacy moved repeat prescriptions to an online request, so an order can be placed at any time.",
+                    pattern: "the expectation, then the process changed, then the result" } },
+                example: {
+                  hint: "What does the business actually do, and which ordering step does it take away?",
+                  needs: "Use the evidence as proof of the process change, not as a mention. The fact first, then what it demonstrates.",
+                  direction: { type: "reasoningDirection", text: "State the practice in one clause, then in the next say which step of ordering it removed and for whom. If the sentence would still make sense with the business's name taken out, it is not applied yet." },
+                  starter: { type: "sentenceStarter", text: "The business allows an order to be placed and paid for before the customer arrives, which removes" },
+                  example: { type: "differentContextExample", context: "a supermarket and parents with young children",
+                    text: "The supermarket lets an order be assembled online and collected from a bay in the car park, which removes the trip through the aisles for a customer who cannot easily make it.",
+                    pattern: "the practice, the step removed, then the customer it was removed for" } },
+                effect: {
+                  hint: "Who gains, and what does the business give up to get it?",
+                  needs: "Say what the changed process achieves, and be honest about its cost. A gain with no cost reads as advertising.",
+                  direction: { type: "reasoningDirection", text: "Name the gain for the customer, then the gain for the business, then one genuine trade-off, such as work shifted onto the customer or a group that finds the new process harder than the old one." },
+                  starter: { type: "sentenceStarter", text: "The result is that this target market spends less effort to buy, which for the business means" },
+                  example: { type: "differentContextExample", context: "a council library",
+                    text: "The result is that borrowers collect reserved items without queuing, which raises the number served at peak, although members who are less confident with the system now need help they did not need before.",
+                    pattern: "customer gain, business gain, then the honest cost" } },
+                link: {
+                  hint: "What did this paragraph prove about the question, in one line?",
+                  needs: "Return to the question. The point is that identifying the target market is what produced the strategy.",
+                  direction: { type: "reasoningDirection", text: "Say what the paragraph has demonstrated rather than repeating what the business did, and use the words of the question so the marker can see the claim being answered." },
+                  starter: { type: "sentenceStarter", text: "This shows that identifying a convenience-driven target market is what led the business to" },
+                  example: { type: "differentContextExample", context: "a bank and customers who work full time",
+                    text: "This shows that identifying who the customers were is what led the bank to redesign the process, rather than the technology arriving first.",
+                    pattern: "the judgement, put in the question's own terms" } } } },
+
             { id: "mkt01-pr-speed", area: "processes",
               relationship: "Customers who expect speed lead to streamlined service and collection processes",
-              concept: { topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
-              evidence: ["App, loyalty rewards and mobile ordering", "Intensive distribution and standardised service"],
+              meaning: "This argument is about elapsed time between paying and receiving. The target market is buying speed as much as the product, so the business reorganises how orders are prepared, handed over and collected in order to cut the wait, especially at peak.",
+              concept: { key: "processes", topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
+              evidence: [
+                { label: "App, loyalty rewards and mobile ordering",
+                  why: "An order placed before arrival means preparation can start earlier, which is how the wait at the counter is cut rather than merely moved.",
+                  limits: "The app changes when the order is placed. Say how that shortens the wait, or the link to speed is assumed rather than argued." },
+                { label: "Intensive distribution and standardised service",
+                  why: "Drive through lanes, separate collection points and standardised service steps exist to move a queue, which is the collection half of this argument.",
+                  limits: "Use it for how service is organised, not for how many outlets there are." }
+              ],
               guides: {
-                explain: "Explain the causal step from an expectation of speed to the way service and collection are organised." } },
+                topic: "State that this target market's expectation is about time, and that it acts on how service and collection are organised.",
+                define: "Show what processes cover, and that preparation, handover and collection are process steps.",
+                explain: "Explain the causal step from an expectation of speed to the way service and collection are organised. Speed is part of what is being sold.",
+                example: "Apply your evidence to the wait itself. Name the step that was moved, separated or run alongside another.",
+                effect: "Say what shorter waiting does for the customer and for the business at peak, and what it costs.",
+                link: "Return to the question: the expectation of speed is what shaped this process strategy." },
+              help: {
+                topic: {
+                  hint: "What exactly is this customer buying, besides the product itself?",
+                  needs: "Open by naming the expectation as a time expectation, and name processes as the element it acts on.",
+                  direction: { type: "reasoningDirection", text: "Make time the subject of the sentence, so the paragraph cannot drift into being about the product or the price, and say which part of the process, service or collection, you are going to argue about." },
+                  starter: { type: "sentenceStarter", text: "A target market that treats waiting as the main cost of buying pushes a business to" },
+                  example: { type: "differentContextExample", context: "a printing shop and small businesses",
+                    text: "A customer group that is paying for turnaround as much as for the print pushes the shop to reorganise how jobs are queued and collected.",
+                    pattern: "the expectation named as time, then the process it acts on" } },
+                define: {
+                  hint: "Which steps happen after the customer has already paid?",
+                  needs: "Show what processes are, and locate preparation, handover and collection inside them.",
+                  direction: { type: "reasoningDirection", text: "Define processes as the delivery sequence, then name the steps that happen after payment, because those are the ones this paragraph changes. Define the process, not speed." },
+                  starter: { type: "sentenceStarter", text: "Processes are the sequence that delivers a service, and the steps that follow payment are" },
+                  example: { type: "differentContextExample", context: "a dental practice",
+                    text: "Processes are the sequence that delivers the service, and the steps after booking are arrival, waiting, treatment and follow-up.",
+                    pattern: "define the sequence, then name the steps in scope" } },
+                explain: {
+                  hint: "Why can a business chasing this group not simply do the same thing faster?",
+                  needs: "Establish that the expectation forces a structural change to the sequence, not just more effort from the staff.",
+                  direction: { type: "reasoningDirection", text: "Trace it: this group counts waiting as a cost, so a business competing for them takes steps out of the queue or runs them alongside each other, so preparation and collection separate from ordering. Say why working harder is not the same as redesigning." },
+                  starter: { type: "sentenceStarter", text: "Because this target market counts waiting as part of the price, a business competing for it has to" },
+                  example: { type: "differentContextExample", context: "an airport cafe",
+                    text: "Because travellers count minutes against a departure time, the cafe separated ordering from collection so drinks are made while the next customer is still paying.",
+                    pattern: "the expectation, the step separated, then the time saved" } },
+                example: {
+                  hint: "Which step now happens somewhere else, or at the same time as another?",
+                  needs: "Use the evidence to show a step that was moved, separated or run in parallel. The fact, then what it demonstrates about the wait.",
+                  direction: { type: "reasoningDirection", text: "State what the business does, then name the step it took out of the queue. Aim at the wait itself: if your sentence never mentions time or order, it is describing a channel rather than a process." },
+                  starter: { type: "sentenceStarter", text: "The business takes the order and the payment before the customer arrives, so that" },
+                  example: { type: "differentContextExample", context: "a supermarket",
+                    text: "The supermarket routes online orders to a separate picking team, so the trolleys never enter the checkout queue that walk-in customers are standing in.",
+                    pattern: "the practice, the step separated, then the queue it protects" } },
+                effect: {
+                  hint: "What happens at the busiest hour, and who pays for it?",
+                  needs: "Say what shorter waiting does for the customer and for the business, and name the cost of achieving it.",
+                  direction: { type: "reasoningDirection", text: "Put the gain in terms of how many customers can be served at peak, because that is where speed is worth money, then name a real cost such as extra space, extra staff, or a second queue that has to be managed." },
+                  starter: { type: "sentenceStarter", text: "The effect is that more customers can be served in the same peak hour, which matters because" },
+                  example: { type: "differentContextExample", context: "a council library",
+                    text: "The effect is that the desk clears faster at closing time, which lets the same staff handle more borrowers, although the separate collection shelf takes floor space the branch does not really have.",
+                    pattern: "the gain at peak, why it matters, then the honest cost" } },
+                link: {
+                  hint: "What has this paragraph shown about the question itself?",
+                  needs: "Return to the question and say what the expectation of speed produced.",
+                  direction: { type: "reasoningDirection", text: "Name the target market characteristic and the strategy it produced in the same sentence, so the causal claim the question makes is the thing you actually land." },
+                  starter: { type: "sentenceStarter", text: "This demonstrates that reading the target market's expectation of speed is what produced" },
+                  example: { type: "differentContextExample", context: "an airport cafe",
+                    text: "This demonstrates that reading who the customers were, and what they were short of, is what produced the change in how the service was organised.",
+                    pattern: "the characteristic, then the strategy it produced" } } } },
+
+            { id: "mkt01-pr-customisation", area: "processes",
+              relationship: "Customers who want to customise orders lead to ordering systems built to take variations",
+              meaning: "This argument is about variety rather than time. The target market expects to change what it orders, so the ordering process has to capture that variation accurately and pass it on without stopping the queue behind it.",
+              concept: { key: "processes", topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
+              evidence: [
+                { label: "App, loyalty rewards and mobile ordering",
+                  why: "An order entered by the customer records a variation exactly and carries it through without a spoken exchange, which is the accuracy problem this argument turns on.",
+                  limits: "Show the variation being captured. Saying the app exists does not prove the ordering system was built to take variations." },
+                { label: "Standardisation with local customisation",
+                  why: "It shows the business already varies what it offers between markets, so you can argue that variation has to be handled somewhere in the process.",
+                  limits: "This is variation in the menu, not variation in one customer's order. Say which of the two you mean or the example will not land." },
+                { label: "Segments served by Happy Meal and McCafe",
+                  why: "Different ranges for different segments mean one ordering process has to carry several kinds of order at once.",
+                  limits: "This sits closer to segmentation than to processes, so make the process point explicitly rather than assuming it." }
+              ],
+              guides: {
+                topic: "State that this target market expects to alter its order, and that this acts on how the ordering system is built.",
+                define: "Show what processes cover, and that capturing an order and passing it on accurately are process steps.",
+                explain: "Explain why a target market that expects to change an order shapes how the ordering system has to work, and why accuracy is the pressure point.",
+                example: "Apply your evidence to the capture of a variation. State what the business does, then what it proves about handling variety.",
+                effect: "Say what handling variation reliably achieves, and what it costs the rest of the queue.",
+                link: "Return to the question: the expectation of choice is what shaped the ordering process." },
+              help: {
+                topic: {
+                  hint: "What does this customer expect to be able to change, and where in the process does that land?",
+                  needs: "Open by naming the expectation as an expectation of choice, and name the ordering system as what it acts on.",
+                  direction: { type: "reasoningDirection", text: "Make the expectation about variation rather than about speed or effort, so this paragraph is clearly a different argument from a convenience one, and name the ordering system as the process under pressure." },
+                  starter: { type: "sentenceStarter", text: "A target market that expects to alter what it orders pushes a business to build an ordering system that" },
+                  example: { type: "differentContextExample", context: "a paint retailer and trade customers",
+                    text: "A customer group that expects a colour mixed to its own specification pushes the retailer to build an ordering system that can record and repeat that specification.",
+                    pattern: "the expectation as variation, then the system it forces" } },
+                define: {
+                  hint: "What has to happen to an order between the customer saying it and the kitchen making it?",
+                  needs: "Show what processes are, and that recording an order and passing it on accurately are process steps.",
+                  direction: { type: "reasoningDirection", text: "Define processes as the delivery sequence, then isolate the step that records what was asked for, because that is where variation is won or lost. Define the process, not customisation." },
+                  starter: { type: "sentenceStarter", text: "Processes are the systems that deliver a service, and the step that records what the customer asked for is" },
+                  example: { type: "differentContextExample", context: "a tailor",
+                    text: "Processes are the systems that deliver the service, and the step that records the measurements and passes them to the workroom is where an error becomes expensive.",
+                    pattern: "define the sequence, then isolate the step at risk" } },
+                explain: {
+                  hint: "What goes wrong if the process cannot carry the variation accurately?",
+                  needs: "Establish that the expectation of choice creates an accuracy problem, and that the process is where it has to be solved.",
+                  direction: { type: "reasoningDirection", text: "Trace it: this group expects to change the order, so no two orders are identical, so a process built for identical orders starts producing mistakes and delays. Say why the system had to change rather than the staff being asked to remember more." },
+                  starter: { type: "sentenceStarter", text: "Because this target market expects to change what it receives, every order becomes slightly different, which means" },
+                  example: { type: "differentContextExample", context: "a paint retailer",
+                    text: "Because each trade customer expects a mix to their own specification, no two orders are identical, so a process that relied on staff memory began producing the wrong colour.",
+                    pattern: "the expectation, the variety it creates, then the failure the old process produced" } },
+                example: {
+                  hint: "How does the variation get recorded, and who records it?",
+                  needs: "Use the evidence to show a variation being captured, not simply an order being placed.",
+                  direction: { type: "reasoningDirection", text: "State what the business does, then say what happens to a non-standard order inside it. If your sentence would read exactly the same for an ordinary order, it has not shown customisation yet." },
+                  starter: { type: "sentenceStarter", text: "The business lets the customer build the order themselves before it is sent through, which means a change to it is" },
+                  example: { type: "differentContextExample", context: "a supermarket deli counter",
+                    text: "The counter takes the thickness and the quantity on the ticket itself, so an unusual request is carried through to the slicer instead of being repeated across a queue.",
+                    pattern: "the practice, the variation captured, then the error avoided" } },
+                effect: {
+                  hint: "What does the business gain, and what does the customer behind them lose?",
+                  needs: "Say what handling variation reliably achieves, and name what it costs the rest of the queue.",
+                  direction: { type: "reasoningDirection", text: "Name the gain as accuracy and repeat custom rather than speed, then be honest that choice at the ordering step slows the people waiting, and say how the business manages that tension." },
+                  starter: { type: "sentenceStarter", text: "The effect is that a non-standard order is filled correctly the first time, which matters because" },
+                  example: { type: "differentContextExample", context: "a tailor",
+                    text: "The effect is that alterations are right the first time, which protects a reputation built on fit, although taking the detail properly makes each appointment longer than a simple sale.",
+                    pattern: "the accuracy gain, why it matters, then the honest cost in time" } },
+                link: {
+                  hint: "What does this paragraph prove about the question?",
+                  needs: "Return to the question and name what the expectation of choice produced.",
+                  direction: { type: "reasoningDirection", text: "Land the judgement on the direction of cause: the target market's appetite for variation produced the ordering system, and not the other way round." },
+                  starter: { type: "sentenceStarter", text: "This shows that the expectation of choice within the target market is what shaped" },
+                  example: { type: "differentContextExample", context: "a paint retailer",
+                    text: "This shows that what the customers expected to be able to change is what shaped the ordering system, rather than the system arriving first and then offering choice.",
+                    pattern: "the characteristic, the strategy, then the direction of cause" } } } },
 
             { id: "mkt01-ph-servicescape", area: "physical evidence",
               relationship: "Customers who judge a business by its surroundings lead to a designed servicescape",
@@ -366,21 +589,21 @@ window.ESSAY = {
           }
         },
         tdecc: {
-          label: "TDECC", expansion: "Topic, Define, Example, Comment, Concluding link",
+          label: "TDECC", expansion: "Topic, Demonstrate knowledge, Explain, Case study, Connect",
           body: [
-            { key: "topic",   label: "topic",           job: "state the relationship this paragraph argues, a strategy affecting an objective" },
-            { key: "define",  label: "definition",      job: "define the key strategy or term precisely, using business terminology" },
-            { key: "example", label: "example",         job: "apply a real case study or business example" },
-            { key: "comment", label: "comment",         job: "analyse the consequence: how it affects the objective, including any trade-off" },
-            { key: "link",    label: "concluding link", job: "link back to the question with a clear judgement" }
+            { key: "topic",   label: "topic",                job: "state the relationship this paragraph argues, a strategy affecting an objective" },
+            { key: "define",  label: "demonstrate knowledge", job: "show what the syllabus concept is and what it covers, in business terminology" },
+            { key: "explain", label: "explain",              job: "make the causal reasoning explicit: what causes what, and why" },
+            { key: "example", label: "case study",           job: "apply your selected evidence as proof, not as a mention" },
+            { key: "link",    label: "connect",              job: "return to the question and say what the example has demonstrated" }
           ],
           templates: {
             topic:   { tier1: "____ can affect ____ because ____." },
             define:  { tier1: "____ refers to ____.",
                        tier2: [ { type: "define then apply", frame: "____ is ____, which allows a business to ____." } ] },
+            explain: { tier1: "This happens because ____ leads to ____.",
+                       tier2: [ { type: "cause and effect", frame: "Because ____, a business ____, which changes ____." } ] },
             example: { tier1: "For example, a business could ____, which shows ____." },
-            comment: { tier1: "This matters because ____ leads to ____, although ____.",
-                       tier2: [ { type: "weigh it", frame: "This affects ____ more than ____ because ____." } ] },
             link:    { tier1: "Therefore, ____ affects ____, which addresses the question because ____." }
           }
         }
