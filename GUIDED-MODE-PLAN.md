@@ -548,3 +548,83 @@ next step is to write a full response, Introduction through four body paragraphs
 Conclusion, and look for friction: too many clicks per sentence, prompts that
 repeat, help that is too wordy, and any point where the student loses sight of the
 essay as a whole. Features come after that, not before.
+
+---
+
+## 14. The friction pass, and what it changed (P0)
+
+The full-response pass was run three times (independent, moderate and high support)
+across a 24-sentence, six-section answer to `mkt-01`. It confirmed the sentence loop
+is cheap (1.04 to 2.42 clicks per sentence) and that the real problem is everything
+around it: the essay was being planned paragraph by paragraph, the student could
+never see what they had already argued, finishing a paragraph produced no state, and
+guided mode could not show or submit the response it had just helped build.
+
+P0 answers those, and only those. Guidance coverage (P1), multi-sentence components
+(P2) and density (P3) are deliberately not touched here.
+
+### The response plan comes first
+
+A question that ships authored pathways now opens on **Build your response**. One
+card per body paragraph, each locked to its own part of the question, three options
+plus "Write my own argument", and evidence optional at this point. The plan writes
+straight into the paragraphs, so it is not a separate object that can drift.
+
+Consequences, all measured:
+
+* Planning costs **6 clicks once**, replacing **20 clicks spread over six sections**.
+* Entering a planned paragraph costs **1 click** and lands on the writing line.
+* Each card offers **3 options, in its own area**, not the same 12 everywhere.
+* The introduction is written with the four body arguments in the rail beside it,
+  instead of signposting arguments that do not exist yet.
+* A four-part question whose structure has three body paragraphs is offered the
+  matching structure rather than silently losing a part.
+
+The plan is a recommendation, never a gate: "Start writing anyway" leaves any row
+open, and an unplanned paragraph still asks in place exactly as before.
+
+### The introduction and the conclusion stop pretending to be body paragraphs
+
+Neither is ever asked to choose a body relationship. The introduction's rail shows
+**Your plan**; the conclusion's shows **Arguments you established**, with the words
+written for each and a jump back into any of them. Nothing new is introduced in a
+conclusion, so no evidence picker appears there.
+
+### The response map carries the argument, not only the name
+
+Every section in the left rail now shows what it argues, and any written section can
+be opened and read in place. At the start of Body 3 the student can see **four
+section arguments with no click at all** and read **any earlier section in one**,
+where before there was nothing.
+
+### A finished paragraph is a state
+
+When every part of the structure has something in it, the composer becomes a
+completion card: the word count, "Continue to <next section>", "Add another
+sentence", and "Check this paragraph". It never leaves an empty box under the last
+label, and it never accepts a sixth sentence still labelled as the fifth. Writing
+more is one click away, so the structure recommends and does not gate.
+
+### Guided mode ends where a real answer ends
+
+**Read the whole response** opens the entire draft on one page, section by section,
+with each paragraph's argument, its word count and a way back into it, and a Submit
+that runs the same marking path as a full attempt. Guided work is no longer
+described as written cold, here or in the full-attempt screen.
+
+### The word count knows which number is which
+
+`This paragraph N words` and `Whole response M words`, with the mark-derived target
+attached to the whole response and labelled as a guide, not a limit.
+
+### Acceptance
+
+`ui15` covers all of it in 47 assertions: the plan screen opens first and the
+composer does not, the structure offer appears and disappears correctly, the four
+parts map to the four bodies, entering a planned paragraph costs one click, the
+completion state appears and steps aside, both word scales are shown, the map
+carries arguments and previews, the review page shows the writing itself and can be
+submitted, evidence chosen while planning still invalidates precisely and by name,
+and the conclusion is handed the four arguments it has to draw together. Zero model
+calls throughout: planning, the map, completion and review are all authored data and
+local state.

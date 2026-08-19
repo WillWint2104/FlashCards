@@ -580,6 +580,74 @@
   .es-mapitem.on .es-mapdot{background:var(--green);border-color:var(--green);box-shadow:0 0 0 3px rgba(28,196,125,.25)}
   .es-wordcount{margin-top:14px;padding-top:11px;border-top:1px solid var(--line);font-size:12px;font-weight:700;color:var(--ink-2);display:flex;flex-direction:column;gap:2px}
   .es-wctarget{color:var(--ink-3);font-weight:600}
+  /* the response plan: the whole essay decided once, before the introduction */
+  .es-planwrap{display:flex;flex-direction:column;gap:16px;max-width:820px;margin:0 auto}
+  .es-planhh{font-family:var(--disp);font-weight:600;font-size:20px;color:var(--ink)}
+  .es-plansub{font-size:13.5px;line-height:1.6;color:var(--ink-2);font-weight:600;margin-top:5px}
+  .es-plannote{margin-top:10px;font-size:12.5px;font-weight:700;color:var(--ink-2);background:var(--green-soft);border-radius:10px;padding:8px 12px;display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+  .es-plancards{display:flex;flex-direction:column;gap:12px}
+  .es-plancard{border:1.5px solid var(--line);border-radius:16px;background:var(--card);padding:15px 17px}
+  .es-plancard.done{border-color:var(--green-soft);background:#FCFEFD}
+  .es-planh{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+  .es-plandot{width:9px;height:9px;border-radius:50%;border:2px solid var(--ink-3);flex:none}
+  .es-plancard.done .es-plandot{background:var(--green);border-color:var(--green)}
+  .es-plann{font-family:var(--disp);font-weight:600;font-size:14.5px;color:var(--ink)}
+  .es-planarea{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--green-dk);background:var(--green-soft);border-radius:99px;padding:3px 9px}
+  .es-planareas{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:11px}
+  .es-areachip{font:inherit;font-size:12.5px;font-weight:700;color:var(--ink-2);background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:5px 12px;cursor:pointer}
+  .es-areachip:hover{border-color:var(--green)}
+  .es-areachip.on{border-color:var(--green);background:var(--green-soft);color:var(--ink)}
+  .es-planopts .es-pick{margin-bottom:7px}
+  .es-planval{font-size:14.5px;line-height:1.5;color:var(--ink);font-weight:700}
+  .es-planev{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:11px;padding-top:11px;border-top:1px solid var(--line)}
+  .es-planevlbl{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+  .es-evchip{font:inherit;font-size:12.5px;font-weight:700;color:var(--ink-2);background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:5px 12px;cursor:pointer}
+  .es-evchip:hover{border-color:var(--green)}
+  .es-evchip.on{border-color:var(--green);background:var(--green-soft);color:var(--ink)}
+  .es-planevnote{font-size:12px;font-weight:600;color:var(--ink-3)}
+  .es-planfoot{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding-top:4px}
+  .es-planstate{font-size:12.5px;font-weight:600;color:var(--ink-2)}
+  /* the plan, read from the introduction and the conclusion */
+  .es-planlist{list-style:none;display:flex;flex-direction:column;gap:7px;counter-reset:pl;width:100%}
+  .es-planjump{display:flex;flex-direction:column;gap:2px;width:100%;text-align:left;font:inherit;background:none;border:none;border-left:2px solid var(--green-soft);padding:2px 0 2px 10px;cursor:pointer}
+  .es-planjump:hover{border-left-color:var(--green)}
+  .es-planlrole{font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3)}
+  .es-planlarg{font-size:13px;line-height:1.45;font-weight:700;color:var(--ink)}
+  .es-planlw{font-size:11.5px;font-weight:700;color:var(--green-dk)}
+  .es-planlw.muted{color:var(--ink-3);font-weight:600}
+  .es-restnote{font-size:12px;line-height:1.5;font-weight:600;color:var(--ink-2);margin-top:4px}
+  /* the response map: what each section argues, and what it says */
+  .es-mapwrap{display:flex;flex-direction:column}
+  .es-maprow{display:flex;align-items:flex-start;gap:2px}
+  .es-mapitem{align-items:flex-start}
+  .es-maptext{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .es-maparg{font-size:11.5px;line-height:1.4;font-weight:600;color:var(--ink-2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .es-mapdot{margin-top:4px}
+  .es-mappeek{font:inherit;font-size:10.5px;font-weight:800;color:var(--ink-3);background:none;border:none;border-radius:7px;padding:6px 5px;cursor:pointer;flex:none}
+  .es-mappeek:hover{color:var(--green-dk);background:var(--green-soft)}
+  .es-mappeek.on{color:var(--green-dk)}
+  .es-mapprev{font-size:12px;line-height:1.6;color:var(--ink-2);font-weight:600;background:var(--bg);border-radius:10px;padding:9px 11px;margin:2px 0 6px 9px;max-height:190px;overflow:auto}
+  /* a finished paragraph is a state, not an empty box under the last label */
+  .es-done{border:1.5px solid var(--green);border-radius:14px;background:var(--green-soft);padding:14px 16px;margin-top:12px}
+  .es-doneh{display:flex;align-items:center;gap:9px;font-family:var(--disp);font-weight:600;font-size:15.5px;color:var(--ink)}
+  .es-donetick{display:flex;color:var(--green-dk)}
+  .es-donetick .es-ico{width:17px;height:17px}
+  .es-donew{margin-left:auto;font-size:12px;font-weight:700;color:var(--green-dk)}
+  .es-donesub{font-size:12.5px;line-height:1.55;font-weight:600;color:var(--ink-2);margin:6px 0 12px}
+  .es-donebtns{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  /* reading the whole response, without leaving guided practice */
+  .es-rvwrap{display:flex;flex-direction:column;gap:14px;max-width:820px;margin:0 auto}
+  .es-rvh{font-family:var(--disp);font-weight:600;font-size:20px;color:var(--ink)}
+  .es-rvsub{font-size:13px;line-height:1.55;color:var(--ink-2);font-weight:600;margin-top:5px}
+  .es-rvsec{border:1.5px solid var(--line);border-radius:16px;background:var(--card);padding:14px 18px}
+  .es-rvsec.empty{border-style:dashed;background:none}
+  .es-rvsech{display:flex;align-items:baseline;gap:11px;flex-wrap:wrap;margin-bottom:8px}
+  .es-rvrole{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--ink)}
+  .es-rvarg{font-size:12px;font-weight:700;color:var(--green-dk);background:var(--green-soft);border-radius:99px;padding:3px 10px;max-width:min(46ch,100%);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .es-rvw{font-size:11.5px;font-weight:700;color:var(--ink-3);margin-left:auto}
+  .es-rvtext{font-size:15px;line-height:1.75;color:var(--ink);font-weight:600}
+  .es-rvempty{font-size:13px;font-weight:600;color:var(--ink-3);font-style:italic}
+
   .es-compose{min-width:0}
   .es-parahead{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:10px}
   .es-progrow{display:flex;gap:12px;flex-wrap:wrap}

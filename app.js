@@ -3226,11 +3226,11 @@
   function esStructureLabel(key) { return esStructureDef(key).label; }
 
   const ES = { subject: null, code: "", demo: false, screen: "setup", draft: null, list: [], form: null, pending: false,
-    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, ctx: null },  // transient guided-view state, reset on paragraph change
+    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, ctx: null, moreLine: false, mapOpen: {}, planOpen: {} },  // transient guided-view state, reset on paragraph change
     hint: { open: false, tab: "know" },          // study hints: persists across paragraphs on purpose
     quiz: { revealed: false, peeked: false, attempt: "", result: null } };
   const ES_KEY = "marginal.essay.v1";
-  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, ctx: null }; }
+  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, ctx: null, moreLine: false, mapOpen: {}, planOpen: {} }; }
   // peeked persists for the whole attempt: revealing once disqualifies mastery even
   // if the answer is hidden again before checking. Cleared only on a new attempt.
   function esResetQuiz() { ES.quiz = { revealed: false, peeked: false, attempt: "", result: null }; }
@@ -3409,6 +3409,8 @@
     const sy = prevScrim ? prevScrim.scrollTop : 0;
     const sc = esView(); // always available: the core runs on the student's own question
     if (!window.ESSAY || !window.ESSAY.slots) esRenderUnavailable(host);
+    else if (ES.screen === "plan" && ES.draft) esRenderPlan(host, sc);
+    else if (ES.screen === "review" && ES.draft) esRenderReview(host, sc);
     else if (ES.screen === "coached" && ES.draft) esRenderCoached(host, sc);
     else if (ES.screen === "quiz" && ES.draft) esRenderQuiz(host, sc);
     else if (ES.screen === "full" && ES.draft) esRenderFull(host, sc);
@@ -3598,7 +3600,10 @@
         mode: "coached", pos: 0, createdAt: new Date().toISOString()
       };
       esSaveDraft();
-      ES.screen = "coached"; ES.form = null; esRender();
+      // A question that ships authored pathways is planned as a whole before the
+      // introduction is written. Anything else goes straight to the writing.
+      ES.screen = esQuestionAreas().length ? "plan" : "coached";
+      ES.form = null; esRender();
     };
   }
 
@@ -3992,6 +3997,7 @@
     blocks: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
     type: '<path d="M4 7V5h16v2M12 5v14M9 19h6"/>',
     close: '<path d="M6 6l12 12M18 6 6 18"/>',
+    check: '<path d="m5 12.5 4.5 4.5L19 7"/>',
   };
   function esIcon(name) {
     return '<svg class="es-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ES_ICONS[name] || "") + '</svg>';
@@ -4279,6 +4285,9 @@
   // Whether this paragraph still needs its argument chosen before writing starts.
   function esNeedsSetup(p) {
     if (!p) return false;
+    // The introduction and the conclusion argue the whole response, not one
+    // relationship, so they never ask for a body pathway. They read the plan.
+    if (esIsIntro(p) || esIsConcl(p)) return false;
     if (p.argumentId || p.setupDone) return false;
     if (!esPathwaysFor(p).length) return false;                 // nothing authored to choose from
     return !esBlocks(p).length;                                  // already writing: do not interrupt
@@ -4356,10 +4365,39 @@
   // ---- the resting right rail: what this paragraph is arguing, and where it is
   // The rail has two states and one width, so opening a tool never shifts the page.
   function esRestHTML(p) {
+    const d = ES.draft;
+    const steps0 = slotsForRole(p.role), si0 = esStepIndex(p);
+    const where = `<div class="es-restblk">
+        <div class="es-restlbl">Where you are</div>
+        <ol class="es-reststeps">${steps0.map((st, i) => `<li class="${i < si0 ? "done" : i === si0 ? "now" : ""}">${esc(st.label)}</li>`).join("")}</ol>
+      </div>`;
+    // The introduction signposts a plan that already exists, and the conclusion
+    // draws together arguments that have already been made. Both read the same
+    // rows; neither is asked to choose a body relationship of its own.
+    if (esIsIntro(p) || esIsConcl(p)) {
+      const rows = esPlanRows(d).filter(r => r.argument || r.words);
+      const intro = esIsIntro(p);
+      return `<aside class="es-rest">
+        <div class="es-resth">${esc(p.role)}</div>
+        <div class="es-restblk">
+          <div class="es-restlbl">${intro ? "Your plan" : "Arguments you established"}</div>
+          ${rows.length ? `<ol class="es-planlist">${rows.map(r => `<li><button type="button" class="es-planjump" data-esgo="${r.i}">
+              <span class="es-planlrole">${esc(r.role)}${r.area ? " \u00b7 " + esc(r.area) : ""}</span>
+              <span class="es-planlarg">${esc(r.argument || "not chosen yet")}</span>
+              ${r.words ? `<span class="es-planlw">${r.words} words</span>` : `<span class="es-planlw muted">not written yet</span>`}
+            </button></li>`).join("")}</ol>`
+            : `<div class="es-restnone">no body paragraphs planned yet</div>`}
+          <div class="es-restnote">${intro
+            ? "Signpost these in the order you will argue them. No evidence is needed here."
+            : "Draw these together into one judgement. Nothing new belongs in a conclusion."}</div>
+          <button type="button" class="es-linkbtn" id="esrestplan">${intro ? "Change the plan" : "Open the plan"}</button>
+        </div>
+        ${where}
+      </aside>`;
+    }
     const path = esPathway(p);
     const arg = path ? path.relationship : (p.ownArgument || "");
     const ev = (p.evidenceIds || []).map(esEvidenceByLabel).filter(Boolean);
-    const steps = slotsForRole(p.role), si = esStepIndex(p);
     return `<aside class="es-rest">
       <div class="es-resth">${esc(p.role)}</div>
       <div class="es-restblk">
@@ -4372,12 +4410,182 @@
         ${ev.length ? ev.map(e => `<div class="es-restval">${esc(e.label)}</div>`).join("") : `<div class="es-restnone">none selected</div>`}
         <button type="button" class="es-linkbtn" data-esrestchange="evidence">${ev.length ? "Change" : "Choose"}</button>
       </div>
-      <div class="es-restblk">
-        <div class="es-restlbl">Where you are</div>
-        <ol class="es-reststeps">${steps.map((st, i) => `<li class="${i < si ? "done" : i === si ? "now" : ""}">${esc(st.label)}</li>`).join("")}</ol>
-      </div>
+      ${where}
     </aside>`;
   }
+  // ===========================================================================
+  // THE RESPONSE PLAN
+  //
+  // An essay is planned as an essay, once, before the introduction is written.
+  // The student decides what each body paragraph will argue while they can see
+  // all of them side by side, so the introduction is written with that plan in
+  // front of them instead of signposting arguments that do not exist yet.
+  //
+  // Planning writes straight into the paragraphs, so arriving at a paragraph
+  // later lands on the writing surface rather than back on a picker. It is a
+  // recommendation, never a gate: a student can skip it and choose as they go,
+  // and any row can be left unchosen.
+  // ===========================================================================
+  function esIsIntro(p) { return /^(introduction|intro)/i.test((p && p.role) || ""); }
+  function esIsConcl(p) { return /^conclusion/i.test((p && p.role) || ""); }
+  function esBodyIndexes(d) { return (d.paras || []).map((p, i) => i).filter(i => !esIsIntro(d.paras[i]) && !esIsConcl(d.paras[i])); }
+  // The parts of the question its pathways are written against, in authored order.
+  function esQuestionAreas() {
+    const q = esQuestionDef(); const out = [];
+    ((q && q.pathways) || []).forEach(x => { if (x.area && out.indexOf(x.area) < 0) out.push(x.area); });
+    return out;
+  }
+  function esPathwaysInArea(area) {
+    const q = esQuestionDef(); const all = (q && q.pathways) || [];
+    if (!area) return all;
+    return all.filter(x => String(x.area || "").toLowerCase() === String(area).toLowerCase());
+  }
+  // One line of what a paragraph argues: the authored relationship, or the
+  // student's own words, which are kept exactly as they wrote them.
+  function esArgLine(p) { const path = esPathway(p); return path ? path.relationship : (p.ownArgument || ""); }
+  function esWordsOf(t) { return String(t || "").trim().split(/\s+/).filter(Boolean).length; }
+  function esResponseWords(d) { return (d.paras || []).reduce((n, pp) => n + esWordsOf(pp.text), 0); }
+  function esPlanned(d) { const idx = esBodyIndexes(d); return idx.length > 0 && idx.every(i => !!d.paras[i].argumentId); }
+  // Every body argument the student has established, for the introduction to
+  // signpost and for the conclusion to draw together.
+  function esPlanRows(d) {
+    return esBodyIndexes(d).map(i => ({
+      i: i, role: d.paras[i].role, area: d.paras[i].area || "",
+      argument: esArgLine(d.paras[i]), words: esWordsOf(d.paras[i].text),
+      evidence: (d.paras[i].evidenceIds || []).slice()
+    }));
+  }
+  // A structure whose body count matches the number of parts in the question.
+  function esStructureForBodies(n) {
+    const S = (window.ESSAY && window.ESSAY.structures) || [];
+    return S.find(x => (x.roles || []).filter(r => !/^(introduction|intro|conclusion)/i.test(r)).length === n) || null;
+  }
+  function esApplyStructure(key) {
+    const d = ES.draft;
+    d.structure = key; d.paras = esBuildParas(key, d.paras);
+    d.pos = Math.min(d.pos || 0, d.paras.length - 1);
+    esSaveDraft();
+  }
+
+  function esRenderPlan(host, sc) {
+    const d = ES.draft;
+    const areas = esQuestionAreas();
+    const bodies = esBodyIndexes(d);
+    ES.ui.planOpen = ES.ui.planOpen || {};
+    const suggest = areas.length && areas.length !== bodies.length ? esStructureForBodies(areas.length) : null;
+
+    const cards = bodies.map((i, k) => {
+      const p = d.paras[i];
+      const area = p.area || areas[k] || "";
+      const chosen = !!p.argumentId;
+      const open = !chosen || ES.ui.planOpen[i];
+      const opts = esPathwaysInArea(area);
+      const ev = chosen ? esEvidenceFor(p) : { items: [] };
+      const picked = p.evidenceIds || [];
+      const areaRow = areas.length > 1 ? `<div class="es-planareas">${areas.map(a =>
+        `<button type="button" class="es-areachip ${String(a).toLowerCase() === String(area).toLowerCase() ? "on" : ""}" data-esplanarea="${i}|${esc(a)}">${esc(a)}</button>`).join("")}</div>` : "";
+      const body = open ? `
+        ${areaRow}
+        <div class="es-planopts">
+          ${opts.map(o => `<button type="button" class="es-pick ${p.argumentId === o.id ? "on" : ""}" data-esplanpick="${i}|${esc(o.id)}"><span class="es-pickrel">${esc(o.relationship)}</span></button>`).join("")}
+          <button type="button" class="es-pick own" data-esplanown="${i}">Write my own argument</button>
+          <div class="es-ownwrap" data-ownwrap="${i}" hidden>
+            <input class="es-input" data-esplanowninput="${i}" value="${esc(p.ownArgument || "")}" placeholder="In one line, the relationship this paragraph argues">
+            <button type="button" class="es-btn primary sm" data-esplanownok="${i}">Use this</button>
+          </div>
+        </div>` : `
+        <div class="es-planval">${esc(esArgLine(p))}${esPathway(p) ? "" : ` <span class="es-restown">your own</span>`}</div>
+        <button type="button" class="es-linkbtn" data-esplanedit="${i}">Change</button>`;
+      const evRow = (chosen && !open) ? `
+        <div class="es-planev">
+          <span class="es-planevlbl">evidence</span>
+          ${ev.items.length ? ev.items.map(e => `<button type="button" class="es-evchip ${picked.indexOf(e.label) >= 0 ? "on" : ""}" data-esplanev="${i}|${esc(e.label)}">${esc(e.label)}</button>`).join("")
+            : `<span class="es-planevnote">${ev.none === "custom" ? "Nothing is linked to your own argument. The Evidence tool stays open to you." : "No evidence has been linked to this argument yet."}</span>`}
+          ${ev.items.length ? `<span class="es-planevnote">optional now, and you can change it when you get there</span>` : ""}
+        </div>` : "";
+      return `<div class="es-plancard ${chosen ? "done" : ""}">
+        <div class="es-planh"><span class="es-plandot"></span><span class="es-plann">${esc(p.role)}</span>${(chosen && area) ? `<span class="es-planarea">${esc(area)}</span>` : ""}</div>
+        ${body}${evRow}
+      </div>`;
+    }).join("");
+
+    const done = esPlanned(d);
+    host.innerHTML = `
+    <div class="es-scrim"><div class="es-shell"><div class="es-wrap es-canvas">
+      ${esWritingHead(sc, "Planning", "Write a full attempt instead", "full")}
+      <div class="es-planwrap">
+        <div class="es-planhead">
+          <h3 class="es-planhh">Build your response</h3>
+          <p class="es-plansub">Decide what each paragraph will argue before you write the introduction. You are choosing relationships, not sentences: every word is still yours.</p>
+          ${suggest ? `<div class="es-plannote">This question has ${areas.length} parts and your structure has ${bodies.length} body paragraph${bodies.length === 1 ? "" : "s"}.
+            <button type="button" class="es-linkbtn" id="esplanstruct">Use ${areas.length} body paragraphs</button></div>` : ""}
+        </div>
+        <div class="es-plancards">${cards}</div>
+        <div class="es-planfoot">
+          <button class="es-btn ${done ? "primary" : "ghost"}" id="esplango">${done ? "Write the introduction" : "Start writing anyway"}</button>
+          <span class="es-planstate">${done ? "Your plan is set. You can change any of it while you write." : "You can leave any of these open and choose when you reach the paragraph."}</span>
+        </div>
+      </div>
+    </div></div></div>`;
+    esBindWritingHead();
+    esBindPlan();
+  }
+  function esBindPlan() {
+    const host = document.getElementById("eshost"); if (!host) return;
+    const d = ES.draft;
+    const pair = v => { const k = String(v).indexOf("|"); return [Number(String(v).slice(0, k)), String(v).slice(k + 1)]; };
+    host.querySelectorAll("[data-esplanarea]").forEach(b => b.onclick = () => {
+      const [i, area] = pair(b.dataset.esplanarea);
+      const p = d.paras[i];
+      // switching the part of the question this paragraph covers clears an
+      // argument that belonged to the old one, and says so through the same
+      // precise rule the composer uses
+      if (p.argumentId && esPathway(p) && String(esPathway(p).area || "").toLowerCase() !== area.toLowerCase()) esSetParagraphContext(p, null, []);
+      p.area = area; ES.ui.planOpen[i] = true; esSaveDraft(); esRender();
+    });
+    host.querySelectorAll("[data-esplanpick]").forEach(b => b.onclick = () => {
+      const [i, id] = pair(b.dataset.esplanpick);
+      const p = d.paras[i], path = esPathwaysInArea("").find(x => x.id === id);
+      const flagged = esSetParagraphContext(p, id, p.evidenceIds || []);
+      p.area = (path && path.area) || p.area || ""; p.ownArgument = "";
+      ES.ui.planOpen[i] = false; esSaveDraft(); esRender();
+      if (flagged) toast(flagged + " sentence" + (flagged === 1 ? "" : "s") + " to check against the new argument.");
+    });
+    host.querySelectorAll("[data-esplanown]").forEach(b => b.onclick = () => {
+      const i = Number(b.dataset.esplanown);
+      const w = host.querySelector('[data-ownwrap="' + i + '"]');
+      if (w) { w.hidden = false; const el = host.querySelector('[data-esplanowninput="' + i + '"]'); if (el) el.focus(); }
+    });
+    host.querySelectorAll("[data-esplanownok]").forEach(b => b.onclick = () => {
+      const i = Number(b.dataset.esplanownok);
+      const el = host.querySelector('[data-esplanowninput="' + i + '"]');
+      const v = ((el && el.value) || "").trim(); if (!v) return;
+      const p = d.paras[i];
+      esSetParagraphContext(p, "own:" + v, p.evidenceIds || []);
+      p.ownArgument = v; ES.ui.planOpen[i] = false; esSaveDraft(); esRender();
+    });
+    host.querySelectorAll("[data-esplanedit]").forEach(b => b.onclick = () => {
+      ES.ui.planOpen[Number(b.dataset.esplanedit)] = true; esRender();
+    });
+    host.querySelectorAll("[data-esplanev]").forEach(b => b.onclick = () => {
+      const [i, label] = pair(b.dataset.esplanev);
+      const p = d.paras[i], list = (p.evidenceIds || []).slice();
+      const k = list.indexOf(label);
+      if (k >= 0) list.splice(k, 1); else list.push(label);
+      const n = esSetParagraphContext(p, p.argumentId, list);
+      esSaveDraft(); esRender();
+      if (n) toast(n + " sentence" + (n === 1 ? "" : "s") + " used that evidence. Check " + (n === 1 ? "it" : "them") + ".");
+    });
+    const st = host.querySelector("#esplanstruct");
+    if (st) st.onclick = () => { const def = esStructureForBodies(esQuestionAreas().length); if (def) { esApplyStructure(def.key); esRender(); } };
+    const go = host.querySelector("#esplango");
+    if (go) go.onclick = () => {
+      // a planned paragraph never asks again
+      esBodyIndexes(d).forEach(i => { if (d.paras[i].argumentId) d.paras[i].setupDone = true; });
+      d.planned = true; d.pos = 0; ES.screen = "coached"; ES.ui.setupStage = null; esSaveDraft(); esRender();
+    };
+  }
+
   // ------------------------------ COACHED PRACTICE ------------------------------
   // One element at a time. Only the current paragraph renders: its planned point
   // pinned (muted) above, an editable box, that paragraph's feedback in the right
@@ -4399,11 +4607,25 @@
     // all, so nothing hidden can take focus and nothing half-visible can confuse.
     const inSetup = esNeedsSetup(p) || !!ES.ui.setupStage;
 
-    // the response map: where the student is in the whole response
+    // The response map. It carries what each section ARGUES, not only its name,
+    // and any written section can be read here without leaving the sentence being
+    // written, so the student can look backwards while writing forwards.
+    ES.ui.mapOpen = ES.ui.mapOpen || {};
     const map = d.paras.map((pp, i) => {
-      const written = (pp.text || "").trim().length > 0;
-      const cls = i === d.pos ? "on" : written ? "done" : "";
-      return `<button type="button" class="es-mapitem ${cls}" data-esgo="${i}"><span class="es-mapdot"></span><span class="es-maplbl">${esc(pp.role)}</span></button>`;
+      const w = esWordsOf(pp.text);
+      const cls = i === d.pos ? "on" : w ? "done" : "";
+      const line = (esIsIntro(pp) || esIsConcl(pp)) ? (pp.point || "") : esArgLine(pp);
+      const open = !!ES.ui.mapOpen[i];
+      return `<div class="es-mapwrap">
+        <div class="es-maprow">
+          <button type="button" class="es-mapitem ${cls}" data-esgo="${i}">
+            <span class="es-mapdot"></span>
+            <span class="es-maptext"><span class="es-maplbl">${esc(pp.role)}</span>${line ? `<span class="es-maparg">${esc(line)}</span>` : ""}</span>
+          </button>
+          ${w ? `<button type="button" class="es-mappeek ${open ? "on" : ""}" data-espeek="${i}" aria-expanded="${open}" title="${open ? "Hide" : "Read"} this section">${w}w</button>` : ""}
+        </div>
+        ${(open && w) ? `<div class="es-mapprev">${esc(pp.text)}</div>` : ""}
+      </div>`;
     }).join("");
 
     // this paragraph's structural progress, small enough not to read as a form
@@ -4419,7 +4641,8 @@
          <div class="es-linebtns"><button type="button" class="es-btn primary sm" data-essaveedit="${k}">Save</button><button type="button" class="es-linkbtn" data-escanceledit>Cancel</button><button type="button" class="es-linkbtn es-del" data-esdelblock="${k}">Delete sentence</button></div></div>`
       : `<span class="es-said ${(b.ambiguous || b.needsReview) ? "flagged" : ""}" data-esreopen="${k}" title="Click to rewrite this sentence">${esc(b.text)}</span>${(b.ambiguous || b.needsReview) ? `<span class="es-checkline">${esReviewWhy(b)} <button type="button" class="es-linkbtn" data-esreopen="${k}">Review sentence</button> <button type="button" class="es-linkbtn" data-esok="${k}">Still works</button></span>` : ""}`).join(" ");
 
-    const words = (p.text || "").trim().split(/\s+/).filter(Boolean).length;
+    const words = esWordsOf(p.text);
+    const whole = esResponseWords(d);
     const target = esWordTarget(d);
     // the ladder follows whichever line is being written: the active one, or the
     // reopened block and the job IT was written to do
@@ -4450,6 +4673,22 @@
         </div>
       </div>`;
 
+    // A paragraph is complete when every part of its structure has something in
+    // it. That is a STATE, not a gate: writing more is one click away and nothing
+    // is closed off, but the student is told they have built a whole argument
+    // instead of being left in front of an empty box under the last label.
+    const complete = steps.length > 0 && steps.every(st => blocks.some(bb => bb.slot === st.key)) && !ES.ui.moreLine;
+    const nextPara = d.paras[d.pos + 1] || null;
+    const doneCard = `
+            <div class="es-done">
+              <div class="es-doneh"><span class="es-donetick">${esIcon("check")}</span>Paragraph complete<span class="es-donew">${words} word${words === 1 ? "" : "s"}</span></div>
+              <p class="es-donesub">Every part of this paragraph has something in it. Read it back before you move on: click any sentence above to rewrite it.</p>
+              <div class="es-donebtns">
+                <button type="button" class="es-btn primary" id="esdonenext">${nextPara ? "Continue to " + esc(nextPara.role.toLowerCase()) : "Review the whole response"}</button>
+                <button type="button" class="es-linkbtn" id="esmoreline">Add another sentence</button>
+                <button type="button" class="es-linkbtn" id="esdonecheck">Check this paragraph</button>
+              </div>
+            </div>`;
     const canAsk = (p.text || "").trim() && (!p.feedback || ((p.text || "").trim() !== (p.gradedText || "").trim()));
     const askLabel = ES.pending ? "Checking this paragraph…" : "Check this paragraph";
 
@@ -4461,7 +4700,11 @@
         <aside class="es-map">
           <div class="es-maph">Response</div>
           ${map}
-          <div class="es-wordcount">${words} word${words === 1 ? "" : "s"}${target ? `<span class="es-wctarget">around ${target} suggested</span>` : ""}</div>
+          <div class="es-wordcount">
+            <span>This paragraph <b>${words}</b> word${words === 1 ? "" : "s"}</span>
+            <span>Whole response <b>${whole}</b> word${whole === 1 ? "" : "s"}</span>
+            ${target ? `<span class="es-wctarget">around ${target} would be a full answer at ${esc(String(d.marks || 20))} marks. A guide, not a limit.</span>` : ""}
+          </div>
         </aside>
         <div class="es-compose">
           <div class="es-parahead"><span class="es-pararole">${esc(p.role)}</span><span class="es-progrow">${prog}</span></div>
@@ -4474,7 +4717,7 @@
             ${esReviewBannerHTML(blocks)}
             ${blocks.length ? `<p class="es-prose">${prose}</p>` : `<p class="es-prose empty">Your paragraph builds here, one sentence at a time.</p>`}
             ${editing != null ? help : ""}
-            ${editing == null ? `
+            ${editing != null ? "" : complete ? doneCard : `
             <div class="es-active">
               <textarea id="esline" class="es-input es-linebox" rows="2" placeholder="Type your next sentence..."></textarea>
               <div class="es-guide">
@@ -4490,12 +4733,13 @@
                 <span class="es-spacer"></span>
                 <button type="button" class="es-linkbtn" id="esbackstep" ${si === 0 && !blocks.length ? "disabled" : ""}>Back a step</button>
               </div>
-            </div>` : ""}
+            </div>`}
           </div>`}
           <div class="es-navrow">
             <button class="es-btn ghost" id="esprev" ${d.pos === 0 ? "disabled" : ""}>Previous section</button>
             <button class="es-btn ${canAsk ? "primary" : "ghost"}" id="esask" ${(!canAsk || ES.pending) ? "disabled" : ""}>${askLabel}</button>
             <button class="es-btn ghost" id="esnext" ${d.pos === total - 1 ? "disabled" : ""}>Next section</button>
+            <button class="es-linkbtn" id="esreview">read the whole response</button>
             <button class="es-linkbtn" id="esquizlink">memorise this paragraph</button>
           </div>
           <div class="es-linehost" data-linehost>${esLinesBlock(p)}</div>
@@ -4573,6 +4817,18 @@
     $("#esprev").onclick = () => { d.pos = Math.max(0, d.pos - 1); ES.ui.editBlock = null; esResetCoachUI(); esSaveDraft(); esRender(); };
     $("#esnext").onclick = () => { d.pos = Math.min(total - 1, d.pos + 1); ES.ui.editBlock = null; esResetCoachUI(); esSaveDraft(); esRender(); };
     const ask = $("#esask"); if (ask) ask.onclick = () => esGetFeedback(d.pos);
+    const rv = $("#esreview"); if (rv) rv.onclick = () => { ES.screen = "review"; esSaveDraft(); esRender(); };
+    const ml = $("#esmoreline"); if (ml) ml.onclick = () => { ES.ui.moreLine = true; esRender(); };
+    const dn = $("#esdonenext"); if (dn) dn.onclick = () => {
+      if (d.pos < total - 1) { d.pos = d.pos + 1; ES.ui.editBlock = null; esResetCoachUI(); esSaveDraft(); esRender(); }
+      else { ES.screen = "review"; esSaveDraft(); esRender(); }
+    };
+    const dc = $("#esdonecheck"); if (dc) dc.onclick = () => esGetFeedback(d.pos);
+    const rp = $("#esrestplan"); if (rp) rp.onclick = () => { ES.screen = "plan"; esSaveDraft(); esRender(); };
+    host.querySelectorAll("[data-espeek]").forEach(b => b.onclick = () => {
+      const i = Number(b.dataset.espeek);
+      ES.ui.mapOpen[i] = !ES.ui.mapOpen[i]; esRender();
+    });
     $("#esquizlink").onclick = () => { ES.screen = "quiz"; esResetQuiz(); esRender(); };
     esBindToolbelt(p);
     esBindSetup(p);
@@ -5089,6 +5345,60 @@
     esRender();
   }
 
+  // ===========================================================================
+  // REVIEW THE WHOLE RESPONSE
+  //
+  // Guided practice ends where a real answer ends: reading the whole thing, going
+  // back into any paragraph, and submitting it. A student who builds an essay
+  // here never has to leave for another mode to see it or to have it marked.
+  // ===========================================================================
+  function esRenderReview(host, sc) {
+    const d = ES.draft;
+    const rows = d.paras.map((pp, i) => {
+      const w = esWordsOf(pp.text);
+      const line = (esIsIntro(pp) || esIsConcl(pp)) ? (pp.point || "") : esArgLine(pp);
+      return `<section class="es-rvsec ${w ? "" : "empty"}">
+        <div class="es-rvsech">
+          <span class="es-rvrole">${esc(pp.role)}</span>
+          ${line ? `<span class="es-rvarg">${esc(line)}</span>` : ""}
+          <span class="es-rvw">${w ? w + " word" + (w === 1 ? "" : "s") : "not written yet"}</span>
+          <button type="button" class="es-linkbtn" data-esrvedit="${i}">${w ? "Edit this paragraph" : "Write this paragraph"}</button>
+        </div>
+        ${w ? `<p class="es-rvtext">${esc(pp.text)}</p>` : `<p class="es-rvempty">Nothing here yet.</p>`}
+      </section>`;
+    }).join("");
+    const whole = esResponseWords(d);
+    const target = esWordTarget(d);
+    const written = d.paras.filter(pp => esWordsOf(pp.text)).length;
+    const guided = esAllBlocks(d).length > 0;
+    const firstGap = d.paras.findIndex(pp => !esWordsOf(pp.text));
+    host.innerHTML = `
+    <div class="es-scrim"><div class="es-shell"><div class="es-wrap es-canvas">
+      ${esWritingHead(sc, "Review", "Write a full attempt instead", "full")}
+      <div class="es-rvwrap">
+        <div class="es-rvhead">
+          <h3 class="es-rvh">Your response, read straight through</h3>
+          <p class="es-rvsub">${written} of ${d.paras.length} sections written, ${whole} word${whole === 1 ? "" : "s"}${target ? `. Around ${target} would be a full answer at ${esc(String(d.marks || 20))} marks, as a guide.` : "."}</p>
+        </div>
+        ${rows}
+        <div class="es-completion">
+          <p class="es-completemsg">${guided
+            ? "You built this in guided practice, one sentence at a time. Read it through, then send it to the marker."
+            : "Read it through, then send it to the marker."}${firstGap >= 0 ? ` ${esc(d.paras[firstGap].role)} is still empty; you can submit anyway.` : ""}</p>
+          <div class="es-actions">
+            <button class="es-btn ghost" id="esrvback">${firstGap >= 0 ? "Write " + esc(d.paras[firstGap].role.toLowerCase()) : "Keep revising"}</button>
+            <button class="es-btn primary" id="essubmit">Submit for marking</button>
+          </div>
+        </div>
+      </div>
+    </div></div></div>`;
+    esBindWritingHead();
+    host.querySelectorAll("[data-esrvedit]").forEach(b => b.onclick = () => esGoCoached(Number(b.dataset.esrvedit)));
+    const back = $("#esrvback");
+    if (back) back.onclick = () => esGoCoached(firstGap >= 0 ? firstGap : d.pos);
+    const sub = $("#essubmit"); if (sub) sub.onclick = () => esSubmitFull();
+  }
+
   // -------------------------------- FULL ATTEMPT --------------------------------
   // The other mode: write cold, like an exam. One continuous surface, NO feedback
   // margin. Three escape hatches so practice is never silently skipped, all into
@@ -5110,7 +5420,7 @@
       <textarea id="esfull" class="es-input es-fullbox" rows="18" placeholder="Write your whole essay here, in one go. Separate paragraphs with a blank line.">${esc(text)}</textarea>
       <div class="es-coachstrip"><span class="es-help">Take a paragraph into practice without losing it from here:</span> ${coachLinks}</div>
       <div class="es-completion">
-        <p class="es-completemsg">You wrote this without feedback. Take any paragraph into practice first? You can decline.</p>
+        <p class="es-completemsg">${esAllBlocks(d).length ? "You built part of this in guided practice. Take any paragraph back in before you submit? You can decline." : "You wrote this without feedback. Take any paragraph into practice first? You can decline."}</p>
         <div class="es-actions">
           <button class="es-btn ghost" id="estopractice">Take a paragraph into practice</button>
           <button class="es-btn primary" id="essubmit">Submit anyway</button>
