@@ -496,6 +496,56 @@
   .rv-misschip.crit:hover{background:var(--coral-soft)}
   .rv-misschip:active{transform:translateY(1px);box-shadow:none}
   .rv-missx{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;background:var(--gold-dk);color:#fff;font-size:11px;font-weight:800;flex:none}
+  /* ===== The sentence composer: the scaffold travels with the cursor ===== */
+  .es-cols{display:grid;grid-template-columns:190px minmax(0,1fr) 300px;gap:20px;align-items:start;margin-top:16px}
+  .es-map{position:sticky;top:8px;display:flex;flex-direction:column;gap:3px}
+  .es-maph{font-family:var(--disp);font-weight:600;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:5px}
+  .es-mapitem{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:none;border:none;border-radius:9px;padding:7px 9px;cursor:pointer;font:inherit;font-size:13px;font-weight:700;color:var(--ink-2)}
+  .es-mapitem:hover{background:var(--green-soft)}
+  .es-mapitem.on{background:var(--green-soft);color:var(--ink)}
+  .es-mapitem.done{color:var(--ink)}
+  .es-mapdot{width:9px;height:9px;border-radius:50%;border:2px solid var(--ink-3);flex:none}
+  .es-mapitem.done .es-mapdot{background:var(--green);border-color:var(--green)}
+  .es-mapitem.on .es-mapdot{background:var(--green);border-color:var(--green);box-shadow:0 0 0 3px rgba(28,196,125,.25)}
+  .es-wordcount{margin-top:14px;padding-top:11px;border-top:1px solid var(--line);font-size:12px;font-weight:700;color:var(--ink-2);display:flex;flex-direction:column;gap:2px}
+  .es-wctarget{color:var(--ink-3);font-weight:600}
+  .es-compose{min-width:0}
+  .es-parahead{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:10px}
+  .es-progrow{display:flex;gap:12px;flex-wrap:wrap}
+  .es-prog{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-3)}
+  .es-prog.done{color:var(--green-dk)}
+  .es-prog.now{color:var(--ink)}
+  .es-progdot{width:7px;height:7px;border-radius:50%;background:var(--line)}
+  .es-prog.done .es-progdot{background:var(--green)}
+  .es-prog.now .es-progdot{background:var(--green);box-shadow:0 0 0 3px rgba(28,196,125,.25)}
+  .es-flow{border:1.5px solid var(--line);border-radius:16px;background:var(--card);padding:18px 20px}
+  .es-prose{font-size:16.5px;line-height:1.85;color:var(--ink)}
+  .es-prose.empty{color:var(--ink-3);font-style:italic;font-size:15px}
+  .es-said{border-radius:4px;cursor:pointer;transition:background .12s}
+  .es-said:hover{background:var(--gold-soft);box-shadow:0 0 0 2px var(--gold-soft)}
+  .es-active{margin-top:14px}
+  .es-linebox{width:100%;font-size:16.5px;line-height:1.7;resize:vertical;min-height:62px}
+  .es-editrow{margin:8px 0}
+  .es-linebtns{display:flex;gap:10px;align-items:center;margin-top:7px}
+  .es-del{color:var(--coral-dk)}
+  .es-guide{margin-top:10px;border-left:3px solid var(--green);padding:2px 0 2px 13px}
+  .es-guideh{font-family:var(--disp);font-weight:600;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--green-dk)}
+  .es-guidejob{font-size:14.5px;line-height:1.55;color:var(--ink);margin-top:3px}
+  .es-guidectx{font-size:12.5px;color:var(--ink-2);font-weight:600;margin-top:4px}
+  .es-help{margin-top:12px}
+  .es-rung{display:flex;gap:11px;align-items:flex-start;border:1.5px solid var(--line);border-radius:12px;padding:10px 13px;margin-bottom:8px;background:#FBFDFD}
+  .es-rungn{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--green);color:#fff;font-size:11.5px;font-weight:800;flex:none;margin-top:1px}
+  .es-runglbl{font-family:var(--disp);font-weight:600;font-size:12px;color:var(--ink-2)}
+  .es-rungtext{font-size:14px;line-height:1.6;color:var(--ink);margin-top:2px}
+  .es-rungtext.frame{font-style:italic}
+  .es-rungnote{font-size:12px;font-weight:700;color:var(--green-dk);margin-top:5px}
+  .es-helpbtns{display:flex;gap:11px;align-items:center;flex-wrap:wrap}
+  .es-linerow{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:16px}
+  .es-linerow .es-spacer{flex:1}
+  .es-linerow .es-linkbtn[disabled]{opacity:.4;pointer-events:none}
+  .es-btn.sm{padding:7px 13px;font-size:13px}
+  @media(max-width:1100px){.es-cols{grid-template-columns:minmax(0,1fr)}.es-map{position:static;flex-direction:row;flex-wrap:wrap}.es-margin{order:3}}
+
   /* ===== Marking rebuild: where to start, and the way back into writing ===== */
   .rv-focus{border:1.5px solid var(--green);border-radius:16px;background:var(--green-soft);padding:14px 16px;margin-bottom:16px}
   .rv-focushead{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
@@ -669,6 +719,8 @@
   .es-shell{width:100%;max-width:760px}
   .es-wrap{background:var(--card);border-radius:22px;box-shadow:0 24px 60px rgba(28,40,40,.28);padding:22px clamp(18px,3vw,30px) 28px;animation:rvpop .22s cubic-bezier(.35,.65,.25,1)}
   .es-shell:has(.es-wide){max-width:1040px}
+  /* the composer takes the canvas: the writing has to be the dominant thing on screen */
+  .es-shell:has(.es-canvas){max-width:min(1480px,94vw)}
   .es-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
   .es-brand{font-family:var(--disp);font-weight:600;font-size:15px;color:var(--ink);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .es-subj{font-size:12.5px;font-weight:700;color:var(--ink-2)}
@@ -8541,11 +8593,11 @@ window.BUSCONTENT = {
   function esStructureLabel(key) { return esStructureDef(key).label; }
 
   const ES = { subject: null, code: "", demo: false, screen: "setup", draft: null, list: [], form: null, pending: false,
-    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {} },  // transient coached-view state, reset on paragraph change
+    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false },  // transient guided-view state, reset on paragraph change
     hint: { open: false, tab: "know" },          // study hints: persists across paragraphs on purpose
     quiz: { revealed: false, peeked: false, attempt: "", result: null } };
   const ES_KEY = "marginal.essay.v1";
-  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {} }; }
+  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false }; }
   // peeked persists for the whole attempt: revealing once disqualifies mastery even
   // if the answer is hidden again before checking. Cleared only on a new attempt.
   function esResetQuiz() { ES.quiz = { revealed: false, peeked: false, attempt: "", result: null }; }
@@ -8614,7 +8666,7 @@ window.BUSCONTENT = {
     const st = esStructureDef(structureKey);
     return st.roles.map((role, i) => {
       const old = prev && prev[i];
-      return { role, point: old ? old.point : "", text: old ? old.text : "", feedback: old ? old.feedback || null : null, gradedText: old ? old.gradedText || null : null, mastered: old ? !!old.mastered : false };
+      return { role, point: old ? old.point : "", text: old ? old.text : "", feedback: old ? old.feedback || null : null, gradedText: old ? old.gradedText || null : null, mastered: old ? !!old.mastered : false, blocks: null, blocksFrom: null, step: 0 };
     });
   }
   function esId() { return "e" + (ES.list.length + 1) + "-" + (ES.draft ? "" : "") + Math.abs((esBagKey() + ES.list.length).split("").reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 7)).toString(36); }
@@ -8936,6 +8988,110 @@ window.BUSCONTENT = {
       </div>`;
   }
 
+  // ===========================================================================
+  // THE SENTENCE COMPOSER (guided mode)
+  //
+  // The scaffold travels down the page with the cursor. One sentence is editable
+  // at a time, its guide sits immediately beneath it, and an accepted sentence
+  // becomes ordinary prose above. So the screen fills with the student's writing
+  // rather than with controls, and the guidance is never somewhere else.
+  //
+  // NO MODEL CALL HAPPENS WHILE WRITING. Every rung of guidance is either the slot
+  // job the subject already ships or an exemplar authored in the content JSON. The
+  // one model call is the evaluation of the finished paragraph or response.
+  //
+  // paras[i].text stays the source of truth, so full attempt, marking and the
+  // saved draft are untouched by any of this. blocks[] is the guided view of the
+  // same text, rebuilt whenever the text changed somewhere else (no fork).
+  // ===========================================================================
+
+  // Split a paragraph into sentences, keeping the trailing punctuation with each
+  // one so joining them back is lossless.
+  function esSplitBlocks(text) {
+    const out = [];
+    const re = /[^.!?]+[.!?]*\s*/g;
+    let m;
+    while ((m = re.exec(String(text || ""))) !== null) {
+      const t = m[0].trim();
+      if (t) out.push(t);
+    }
+    return out;
+  }
+  // The guided view of this paragraph. Rebuilt from text whenever text moved on
+  // without us (a full attempt edit, a restored draft, an older saved essay), so
+  // the two representations can never drift apart.
+  function esBlocks(p) {
+    const text = String(p.text || "");
+    if (!Array.isArray(p.blocks) || p.blocksFrom !== text) {
+      const steps = slotsForRole(p.role);
+      p.blocks = esSplitBlocks(text).map((t, i) => ({ text: t, step: (steps[Math.min(i, steps.length - 1)] || {}).key || "" }));
+      p.blocksFrom = text;
+    }
+    return p.blocks;
+  }
+  // Write the blocks back to the paragraph text. This is the ONLY place guided mode
+  // touches the draft, which is what keeps the single-draft rule intact.
+  function esCommitBlocks(p) {
+    p.text = p.blocks.map(b => b.text.trim()).filter(Boolean).join(" ");
+    p.blocksFrom = p.text;
+    if (p.feedback && (p.gradedText || "") !== p.text) { p.feedback = null; p.gradedText = null; }
+  }
+  // Which structural step the student is on. Held on the paragraph so moving away
+  // and back returns them to the same place.
+  function esStepIndex(p) {
+    const steps = slotsForRole(p.role);
+    let i = Number(p.step);
+    if (!Number.isFinite(i) || i < 0) {
+      // returning to a part-written paragraph: stand at the step after the last one written
+      const done = esBlocks(p).length;
+      i = Math.min(done, Math.max(0, steps.length - 1));
+    }
+    return Math.max(0, Math.min(i, Math.max(0, steps.length - 1)));
+  }
+  function esStepDef(p) { return slotsForRole(p.role)[esStepIndex(p)] || null; }
+
+  // The guide for the active sentence. Composed from the step's job and whatever
+  // the student has actually chosen, so it reads specifically without any of it
+  // being authored per question.
+  function esGuideFor(p, step) {
+    if (!step) return { head: "Your sentence", job: "" };
+    const bits = [];
+    if (p.point) bits.push("your point is " + p.point.replace(/\.$/, ""));
+    return { head: String(step.label || "").toUpperCase(), job: step.job || "", context: bits.join(", ") };
+  }
+
+  // Guidance rungs, in order, ALL from content. Nothing here calls the worker.
+  // L1 hint, L2 what this line has to do, L3 a direction, L4 a content-free frame,
+  // L5 an example IN A DIFFERENT CONTEXT. A question that ships no exemplars still
+  // gets L1 to L3 from the slot job it already has.
+  function esRungs(p, step) {
+    if (!step) return [];
+    const ex = esExemplarFor(step.key);
+    const rungs = [
+      { level: 1, label: "Hint", text: "This sentence has one job: " + (step.job || "carry the paragraph forward") + "." },
+      { level: 2, label: "What this line needs to do", text: ex && ex.needs ? ex.needs : "Write one sentence that does that job and nothing else. Keep the next job for the next sentence." },
+    ];
+    if (ex && ex.direction) rungs.push({ level: 3, label: "Give me a direction", text: ex.direction });
+    const frame = slotTemplates(step.key);
+    const f = frame && (frame.tier1 || (frame.tier2 && frame.tier2[0] && frame.tier2[0].frame));
+    if (f) rungs.push({ level: 4, label: "Sentence starter", text: f, isFrame: true });
+    // L5 GUARD: only a DIFFERENT-CONTEXT example may be shown, ever. An exemplar
+    // without one is not rendered, because an example in the student's own context
+    // is a sentence to copy rather than a shape to learn.
+    if (ex && ex.differentContextExample) {
+      rungs.push({ level: 5, label: "Show me an example", text: ex.differentContextExample, note: ex.differentContextNote || "A different topic on purpose. Take the shape, not the words." });
+    }
+    return rungs;
+  }
+  // Authored exemplars for a slot, from the subject's scaffold. Absent is fine.
+  function esExemplarFor(key) {
+    const scaf = esActiveScaffold();
+    const ex = scaf && scaf.exemplars && scaf.exemplars[key];
+    if (ex) return ex;
+    const shared = window.ESSAY && window.ESSAY.slots && window.ESSAY.slots.exemplars;
+    return (shared && shared[key]) || null;
+  }
+
   // ------------------------------ COACHED PRACTICE ------------------------------
   // One element at a time. Only the current paragraph renders: its planned point
   // pinned (muted) above, an editable box, that paragraph's feedback in the right
@@ -8947,57 +9103,166 @@ window.BUSCONTENT = {
     if (d.pos < 0) d.pos = 0; if (d.pos > d.paras.length - 1) d.pos = d.paras.length - 1;
     const p = d.paras[d.pos];
     const total = d.paras.length, n = d.pos + 1;
-    const steps = d.paras.map((pp, i) =>
-      `<span class="es-step ${i === d.pos ? "on" : ""} ${pp.mastered ? "mastered" : pp.feedback ? "done" : ""}" title="${esc(pp.role)}${pp.mastered ? " · mastered" : ""}"><span class="es-stepn">${pp.mastered ? "✓" : i + 1}</span><span class="es-steplbl">${esc(pp.role)}</span></span>`).join("");
-    const canAsk = !p.feedback || ((p.text || "").trim() !== (p.gradedText || "").trim());
-    const askLabel = ES.pending ? "Asking the coach…" : "Get feedback";
-    const margin = esCoachMargin(p);
+    const blocks = esBlocks(p);
+    const steps = slotsForRole(p.role);
+    const si = esStepIndex(p);
+    const step = steps[si] || null;
+    const guide = esGuideFor(p, step);
+    const editing = (ES.ui.editBlock != null && ES.ui.editBlock < blocks.length) ? ES.ui.editBlock : null;
+
+    // the response map: where the student is in the whole response
+    const map = d.paras.map((pp, i) => {
+      const written = (pp.text || "").trim().length > 0;
+      const cls = i === d.pos ? "on" : written ? "done" : "";
+      return `<button type="button" class="es-mapitem ${cls}" data-esgo="${i}"><span class="es-mapdot"></span><span class="es-maplbl">${esc(pp.role)}</span></button>`;
+    }).join("");
+
+    // this paragraph's structural progress, small enough not to read as a form
+    const prog = steps.map((st, k) => {
+      const state = k < si ? "done" : k === si ? "now" : "";
+      return `<span class="es-prog ${state}"><span class="es-progdot"></span>${esc(st.label)}</span>`;
+    }).join("");
+
+    // accepted sentences, as ordinary prose. Click one to reopen it.
+    const prose = blocks.map((b, k) => editing === k
+      ? `<div class="es-editrow"><textarea class="es-input es-linebox" data-esedit="${k}" rows="2">${esc(b.text)}</textarea>
+         <div class="es-linebtns"><button type="button" class="es-btn primary sm" data-essaveedit="${k}">Save</button><button type="button" class="es-linkbtn" data-escanceledit>Cancel</button><button type="button" class="es-linkbtn es-del" data-esdelblock="${k}">Delete sentence</button></div></div>`
+      : `<span class="es-said" data-esreopen="${k}" title="Click to rewrite this sentence">${esc(b.text)}</span>`).join(" ");
+
+    const words = (p.text || "").trim().split(/\s+/).filter(Boolean).length;
+    const target = esWordTarget(d);
+    const rungs = esRungs(p, step);
+    const shown = Math.min(Number(ES.ui.rung) || 0, rungs.length);
+    const helpRows = rungs.slice(0, shown).map(r =>
+      `<div class="es-rung"><span class="es-rungn">${r.level}</span><div class="es-rungbody"><div class="es-runglbl">${esc(r.label)}</div><div class="es-rungtext ${r.isFrame ? "frame" : ""}">${r.isFrame ? esc(r.text).replace(/_{2,}/g, '<span class="es-blank">____</span>') : esc(r.text)}</div>${r.note ? `<div class="es-rungnote">${esc(r.note)}</div>` : ""}</div></div>`).join("");
+    const moreLabel = shown === 0 ? "Help me" : shown < rungs.length ? "Still stuck" : "";
+    const help = !esGuidanceOn() ? "" : `
+      <div class="es-help">
+        ${helpRows}
+        <div class="es-helpbtns">
+          ${moreLabel ? `<button type="button" class="es-btn sm" id="esmorehelp">${esc(moreLabel)}</button>` : `<span class="es-help">That is as much as this sentence gets. The rest is yours.</span>`}
+          ${shown ? `<button type="button" class="es-linkbtn" id="eshidehelp">Hide help</button>` : ""}
+        </div>
+      </div>`;
+
+    const canAsk = (p.text || "").trim() && (!p.feedback || ((p.text || "").trim() !== (p.gradedText || "").trim()));
+    const askLabel = ES.pending ? "Checking this paragraph…" : "Check this paragraph";
+
     host.innerHTML = `
-    <div class="es-scrim"><div class="es-shell"><div class="es-wrap es-wide">
-      ${esWritingHead(sc, "Coached practice", "Write a full attempt instead", "full")}
-      <div class="es-stepper">
-        <div class="es-steps">${steps}</div>
-        <div class="es-ring" title="paragraph ${n} of ${total}"><span>${n}/${total}</span></div>
-      </div>
-      <div class="es-coachcols">
-        <div class="es-coachmain">
+    <div class="es-scrim"><div class="es-shell"><div class="es-wrap es-canvas">
+      ${esWritingHead(sc, "Guided", "Write a full attempt instead", "full")}
+      <div class="es-cols">
+        <aside class="es-map">
+          <div class="es-maph">Response</div>
+          ${map}
+          <div class="es-wordcount">${words} word${words === 1 ? "" : "s"}${target ? `<span class="es-wctarget">around ${target} suggested</span>` : ""}</div>
+        </aside>
+        <div class="es-compose">
+          <div class="es-parahead"><span class="es-pararole">${esc(p.role)}</span><span class="es-progrow">${prog}</span></div>
           <div class="es-pointpin">
             <label class="es-pinlabel" for="espoint">your point for this paragraph <span class="es-opt">optional</span></label>
             <input id="espoint" class="es-pointin" value="${esc(p.point)}" placeholder="In one line, what does this ${esc(p.role.toLowerCase())} argue?">
           </div>
-          <div class="es-pararole">${esc(p.role)}</div>
-          <textarea id="espara" class="es-input es-parabox" rows="11" placeholder="Write only this paragraph here. The coach will respond in the margin.">${esc(p.text)}</textarea>
+          <div class="es-flow">
+            ${blocks.length ? `<p class="es-prose">${prose}</p>` : `<p class="es-prose empty">Your paragraph builds here, one sentence at a time.</p>`}
+            ${editing == null ? `
+            <div class="es-active">
+              <textarea id="esline" class="es-input es-linebox" rows="2" placeholder="Type your next sentence..."></textarea>
+              <div class="es-guide">
+                <div class="es-guideh">${esc(guide.head)}</div>
+                <div class="es-guidejob">${esc(guide.job)}</div>
+                ${guide.context ? `<div class="es-guidectx">${esc(guide.context)}</div>` : ""}
+              </div>
+              ${help}
+              <div class="es-linerow">
+                <button type="button" class="es-btn primary" id="esaccept" disabled>Add this sentence</button>
+                <button type="button" class="es-linkbtn" id="essamestep">Another sentence at this stage</button>
+                <button type="button" class="es-linkbtn" id="esnextguide" ${si >= steps.length - 1 ? "disabled" : ""}>Next guide</button>
+                <span class="es-spacer"></span>
+                <button type="button" class="es-linkbtn" id="esbackstep" ${si === 0 && !blocks.length ? "disabled" : ""}>Back a step</button>
+              </div>
+            </div>` : ""}
+          </div>
           <div class="es-navrow">
-            <button class="es-btn ghost" id="esprev" ${d.pos === 0 ? "disabled" : ""}>Back</button>
+            <button class="es-btn ghost" id="esprev" ${d.pos === 0 ? "disabled" : ""}>Previous section</button>
             <button class="es-btn ${canAsk ? "primary" : "ghost"}" id="esask" ${(!canAsk || ES.pending) ? "disabled" : ""}>${askLabel}</button>
-            <button class="es-btn ghost" id="esnext" ${d.pos === total - 1 ? "disabled" : ""}>Next</button>
+            <button class="es-btn ghost" id="esnext" ${d.pos === total - 1 ? "disabled" : ""}>Next section</button>
             <button class="es-linkbtn" id="esquizlink">memorise this paragraph</button>
           </div>
-          ${(!canAsk) ? `<p class="es-cooldown">Revise this paragraph, then ask again. The pause is for thinking between drafts, not button grinding.</p>` : ""}
           <div class="es-linehost" data-linehost>${esLinesBlock(p)}</div>
-          <div class="es-skelhost" data-skelhost>${esSkeletonBlock(p)}</div>
           <div class="es-seqhost">${esSeqNudge(p)}</div>
         </div>
-        <aside class="es-margin">${margin}</aside>
+        <aside class="es-margin">${esCoachMargin(p)}</aside>
       </div>
-      <div data-hinthost>${esHintHTML()}</div>
     </div></div></div>`;
+
     esBindWritingHead();
-    const pt = $("#espoint"); pt.oninput = () => { p.point = pt.value; esSaveDraft(); };
-    const ta = $("#espara"); ta.oninput = () => {
-      if (ta.value !== p.text) { p.text = ta.value; p.mastered = false; esResetQuiz(); } // editing the target unmasters it
-      esSaveDraft(); esRefreshAskButton(p);
-    };
-    $("#esprev").onclick = () => { d.pos = Math.max(0, d.pos - 1); esResetCoachUI(); esSaveDraft(); esRender(); };
-    $("#esnext").onclick = () => { d.pos = Math.min(total - 1, d.pos + 1); esResetCoachUI(); esSaveDraft(); esRender(); };
+    const pt = $("#espoint"); if (pt) pt.oninput = () => { p.point = pt.value; esSaveDraft(); };
+    host.querySelectorAll("[data-esgo]").forEach(b => b.onclick = () => {
+      d.pos = Number(b.dataset.esgo); p.step = si; ES.ui.editBlock = null; ES.ui.rung = 0; esResetCoachUI(); esSaveDraft(); esRender();
+    });
+    // reopen an accepted sentence
+    host.querySelectorAll("[data-esreopen]").forEach(b => b.onclick = () => { ES.ui.editBlock = Number(b.dataset.esreopen); esRender(); });
+    const ce = host.querySelector("[data-escanceledit]"); if (ce) ce.onclick = () => { ES.ui.editBlock = null; esRender(); };
+    host.querySelectorAll("[data-essaveedit]").forEach(b => b.onclick = () => {
+      const k = Number(b.dataset.essaveedit);
+      const ta = host.querySelector('[data-esedit="' + k + '"]');
+      const v = (ta && ta.value || "").trim();
+      if (v) p.blocks[k].text = v; else p.blocks.splice(k, 1);
+      esCommitBlocks(p); ES.ui.editBlock = null; esSaveDraft(); esRender();
+    });
+    host.querySelectorAll("[data-esdelblock]").forEach(b => b.onclick = () => {
+      p.blocks.splice(Number(b.dataset.esdelblock), 1);
+      esCommitBlocks(p); ES.ui.editBlock = null; esSaveDraft(); esRender();
+    });
+
+    const line = $("#esline"), accept = $("#esaccept");
+    if (line && accept) {
+      const sync = () => { accept.disabled = !line.value.trim(); };
+      line.oninput = sync; sync();
+      line.onkeydown = e => {
+        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); if (!accept.disabled) accept.click(); }
+      };
+      line.focus();
+      accept.onclick = () => {
+        const v = line.value.trim(); if (!v) return;
+        p.blocks = esBlocks(p).concat([{ text: v, step: step ? step.key : "" }]);
+        esCommitBlocks(p);
+        // advance a step unless the student chose to stay
+        if (!ES.ui.stayStep && si < steps.length - 1) p.step = si + 1;
+        ES.ui.stayStep = false; ES.ui.rung = 0;
+        esSaveDraft(); esRender();
+      };
+    }
+    const ss = $("#essamestep"); if (ss) ss.onclick = () => { ES.ui.stayStep = true; p.step = si; ES.ui.rung = 0; esSaveDraft(); esRender(); };
+    const ng = $("#esnextguide"); if (ng) ng.onclick = () => { p.step = Math.min(si + 1, steps.length - 1); ES.ui.rung = 0; esSaveDraft(); esRender(); };
+    const bs = $("#esbackstep"); if (bs) bs.onclick = () => { p.step = Math.max(0, si - 1); ES.ui.rung = 0; esSaveDraft(); esRender(); };
+    const mh = $("#esmorehelp"); if (mh) mh.onclick = () => { ES.ui.rung = (Number(ES.ui.rung) || 0) + 1; esRender(); };
+    const hh = $("#eshidehelp"); if (hh) hh.onclick = () => { ES.ui.rung = 0; esRender(); };
+
+    $("#esprev").onclick = () => { d.pos = Math.max(0, d.pos - 1); ES.ui.editBlock = null; ES.ui.rung = 0; esResetCoachUI(); esSaveDraft(); esRender(); };
+    $("#esnext").onclick = () => { d.pos = Math.min(total - 1, d.pos + 1); ES.ui.editBlock = null; ES.ui.rung = 0; esResetCoachUI(); esSaveDraft(); esRender(); };
     const ask = $("#esask"); if (ask) ask.onclick = () => esGetFeedback(d.pos);
     $("#esquizlink").onclick = () => { ES.screen = "quiz"; esResetQuiz(); esRender(); };
     esBindCoachMargin(p);
     esBindLines();
-    esBindSkeleton(p);
     esBindSeqNudge(p);
-    esBindHint();
   }
+  // Sentence guidance is a MODE. It is for a student who has nothing, not a
+  // permanent fixture, and it never calls the model: every rung is content.
+  function esGuidanceOn() {
+    if (ES.draft && ES.draft.guidance === false) return false;
+    return true;
+  }
+  // A recommended length for this kind of question. Guidance, never a gate: a
+  // student who wants to write more is not stopped and nothing is truncated.
+  function esWordTarget(d) {
+    const marks = Number(d && d.marks) || 0;
+    if (!marks) return 0;
+    const perMark = (window.ESSAY && window.ESSAY.wordsPerMark) || 40;
+    return Math.round(marks * perMark / 50) * 50;
+  }
+
   // Toggle the ask button live as the student types (cooldown releases the moment
   // the paragraph differs from what was last sent), without a full re-render.
   function esRefreshAskButton(p) {
@@ -9013,7 +9278,7 @@ window.BUSCONTENT = {
   function esCoachMargin(p) {
     if (ES.pending) return `<div class="es-mempty">Asking the coach for suggestions on this paragraph…</div>`;
     const fb = p.feedback;
-    if (!fb) return `<div class="es-mempty">The shape of this paragraph is under the box: each row is one sentence and the job it does. Ask for a frame on any row you are stuck on. When you have written it, press <b>Get feedback</b> and suggestions appear here. The coach never rewrites your paragraph for you.</div>`;
+    if (!fb) return `<div class="es-mempty">Write the paragraph one sentence at a time. The guide under the line you are on says what that sentence has to do, and <b>Help me</b> takes you further only if you ask. When the paragraph is done, press <b>Check this paragraph</b> and suggestions appear here. Nothing is ever written into your draft for you.</div>`;
     const demo = fb.demoNote ? `<div class="es-demonote">${esc(fb.demoNote)}</div>` : "";
     const note = fb.note ? `<div class="es-mnote">${esc(fb.note)}</div>` : "";
     const scaff = fb.missing.length ? `<div class="es-scaffhint">the dashed rows under your paragraph show each of these in order, where it belongs.</div>` : "";
@@ -9695,12 +9960,29 @@ window.BUSCONTENT = {
   }
   function esReviseParagraph(idx, quote) {
     const d = ES.draft; if (!d) return;
-    esGoCoached(esSlotForMarked(idx));
-    const ta = document.getElementById("espara"); if (!ta) return;
-    ta.focus();
-    const at = esLocateQuote(ta.value, quote);
-    if (at) { try { ta.setSelectionRange(at.start, at.end); } catch (e) { /* older browsers */ } }
-    toast("Rewrite this paragraph, then ask the coach or submit again.");
+    const slot = esSlotForMarked(idx);
+    const p = d.paras[slot];
+    // Open the exact SENTENCE the marker pointed at, as an editable block, rather
+    // than dropping the student into a paragraph with a selection they can lose on
+    // the first keystroke. Falls back to the paragraph when the line cannot be found.
+    ES.ui.editBlock = p ? esBlockForQuote(p, quote) : null;
+    ES.ui.rung = 0;
+    esGoCoached(slot);
+    const box = ES.ui.editBlock != null && document.querySelector('[data-esedit="' + ES.ui.editBlock + '"]');
+    if (box) { box.focus(); try { box.setSelectionRange(box.value.length, box.value.length); } catch (e) { /* older browsers */ } }
+    toast(ES.ui.editBlock != null ? "Rewrite this sentence, then Save." : "Rewrite this paragraph, then check it again.");
+  }
+  // Which sentence block the marker's quote sits in, or null.
+  function esBlockForQuote(p, quote) {
+    const q = String(quote || "").trim().toLowerCase();
+    if (!q) return null;
+    const blocks = esBlocks(p);
+    const head = q.split(/\s+/).slice(0, 6).join(" ");
+    for (let i = 0; i < blocks.length; i++) {
+      const t = blocks[i].text.toLowerCase();
+      if (t.indexOf(q) >= 0 || (head.length > 8 && t.indexOf(head) >= 0) || q.indexOf(t) >= 0) return i;
+    }
+    return null;
   }
   // Where the marker's line sits inside the paragraph. Exact match first, then the
   // opening few words. Returns null rather than guessing, so a miss just leaves the
@@ -9790,8 +10072,6 @@ window.BUSCONTENT = {
       // open their frame.
       const lh = host && host.querySelector("[data-linehost]");
       if (lh) { lh.innerHTML = esLinesBlock(p); host.querySelectorAll("button:not([type])").forEach(b => b.type = "button"); esBindLines(); }
-      const sk = host && host.querySelector("[data-skelhost]");
-      if (sk) { sk.innerHTML = esSkeletonBlock(p); host.querySelectorAll("button:not([type])").forEach(b => b.type = "button"); esBindSkeleton(p); }
       esRefreshAskButton(p);
       const step = host && host.querySelectorAll(".es-step")[idx]; if (step) step.classList.add("done");
       const seqHost = host && host.querySelector(".es-seqhost"); if (seqHost) { seqHost.innerHTML = esSeqNudge(p); esBindSeqNudge(p); }

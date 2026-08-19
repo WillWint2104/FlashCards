@@ -94,15 +94,36 @@ Two consequences:
 
 ## 3. What the advice does not account for
 
-### Cost and latency
+### Writing makes no model call at all
 
-Sentence-level help on a 20 sentence response could mean 20 or more model calls.
-At present one coaching call covers a whole paragraph.
+The brief implies sentence help comes from the coach. It does not, and this is a
+correction to what I proposed:
 
-**Decision:** L1 to L4 are generated **in code** from the slot job, the student's
-chosen argument and the chosen evidence label. They are deterministic, instant and
-free. Only `More help` beyond L4, and marking, hit the model. This also removes
-the failure mode where the guide is unavailable because the worker is down.
+> Sentences are guided based on exemplars informed by JSON, not a separate call.
+> We are using the final call to evaluate the entire essay, answer or paragraph.
+> Sentence guidance is only for if they don't have anything, and is a mode that is
+> enabled. It is not supposed to generate an AI call.
+
+So the split is:
+
+| | Source | Cost |
+| --- | --- | --- |
+| Every rung of sentence guidance, L1 to L5, including worked examples | **authored JSON** | none |
+| Evaluating a finished paragraph, answer or whole response | model | one call |
+
+This is stronger than what I suggested and better in every direction. Writing
+works offline, guidance is instant, it cannot vary between two students on the
+same sentence, and it cannot be unavailable because the worker is down. It also
+puts the level 5 examples where the evidence bank already lives: authored and
+author-checked, never generated.
+
+Two consequences:
+
+1. **Every L5 example is authored content**, with its `differentContextExample`
+   written by hand. That is the only way the invariant can hold, since there is no
+   model in the loop to enforce it against.
+2. **Sentence guidance is a mode.** It is switched on, not always present. A
+   student who knows what to write never sees it.
 
 ### Round-tripping to the single draft
 
@@ -198,19 +219,21 @@ Phases E and F are held: more guidance on both is coming.
 
 ---
 
-## 7. What I need decided
+## 7. Decisions taken
 
-1. **Scope of Phase A.** Build the composer for the one question the guided
-   composition work is scoped to, or for any question from the start? Building it
-   general costs little more, because the guide is composed rather than authored.
-2. **Where guided mode lives.** A third mode beside Coached practice and Full
-   attempt, or does it replace Coached practice? Replacing it is cleaner and
-   avoids three overlapping writing surfaces, but it retires something already
-   walked and approved.
-3. **The 800 word target** in mockup 1. Displaying a word target is a claim about
-   what the question expects. Confirm the number, or it says "aim for a sustained
-   response" instead of asserting a figure.
-4. **Evidence provenance.** Mockup 1 shows `View source` on each evidence item.
-   The bank has verify flags but not source URLs for every item. Items without a
-   checked source will show the existing "check a current figure yourself" badge
-   rather than a link.
+1. **Phase A scope.** The **engine** is general from the start; the **content**
+   starts with one question. This flips my earlier reasoning: now that guidance is
+   authored JSON rather than composed at runtime, "general" means authoring
+   exemplars for every question, which is not cheap. The engine reads whatever
+   exemplars a question ships and degrades to the slot job alone when it ships
+   none, so adding a question later is content-only. This matches the standing
+   instruction to prove the loop on one question before generalising.
+2. **Guided mode replaces Coached practice.** Three overlapping writing surfaces
+   is one too many. Full attempt stays exactly as it is, because exam stamina is
+   the point of it.
+3. **Word targets vary by question type, and never gate.** A recommended range per
+   type, shown as guidance. A student who wants to write more can. Nothing is
+   blocked and nothing is truncated.
+4. **Evidence sources arrive with the authored JSON**, on import with the research
+   round. Until an item carries a checked source it shows the existing "check a
+   current figure yourself" badge rather than a link. Nothing is invented here.

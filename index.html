@@ -496,6 +496,56 @@
   .rv-misschip.crit:hover{background:var(--coral-soft)}
   .rv-misschip:active{transform:translateY(1px);box-shadow:none}
   .rv-missx{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;background:var(--gold-dk);color:#fff;font-size:11px;font-weight:800;flex:none}
+  /* ===== The sentence composer: the scaffold travels with the cursor ===== */
+  .es-cols{display:grid;grid-template-columns:190px minmax(0,1fr) 300px;gap:20px;align-items:start;margin-top:16px}
+  .es-map{position:sticky;top:8px;display:flex;flex-direction:column;gap:3px}
+  .es-maph{font-family:var(--disp);font-weight:600;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:5px}
+  .es-mapitem{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:none;border:none;border-radius:9px;padding:7px 9px;cursor:pointer;font:inherit;font-size:13px;font-weight:700;color:var(--ink-2)}
+  .es-mapitem:hover{background:var(--green-soft)}
+  .es-mapitem.on{background:var(--green-soft);color:var(--ink)}
+  .es-mapitem.done{color:var(--ink)}
+  .es-mapdot{width:9px;height:9px;border-radius:50%;border:2px solid var(--ink-3);flex:none}
+  .es-mapitem.done .es-mapdot{background:var(--green);border-color:var(--green)}
+  .es-mapitem.on .es-mapdot{background:var(--green);border-color:var(--green);box-shadow:0 0 0 3px rgba(28,196,125,.25)}
+  .es-wordcount{margin-top:14px;padding-top:11px;border-top:1px solid var(--line);font-size:12px;font-weight:700;color:var(--ink-2);display:flex;flex-direction:column;gap:2px}
+  .es-wctarget{color:var(--ink-3);font-weight:600}
+  .es-compose{min-width:0}
+  .es-parahead{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:10px}
+  .es-progrow{display:flex;gap:12px;flex-wrap:wrap}
+  .es-prog{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-3)}
+  .es-prog.done{color:var(--green-dk)}
+  .es-prog.now{color:var(--ink)}
+  .es-progdot{width:7px;height:7px;border-radius:50%;background:var(--line)}
+  .es-prog.done .es-progdot{background:var(--green)}
+  .es-prog.now .es-progdot{background:var(--green);box-shadow:0 0 0 3px rgba(28,196,125,.25)}
+  .es-flow{border:1.5px solid var(--line);border-radius:16px;background:var(--card);padding:18px 20px}
+  .es-prose{font-size:16.5px;line-height:1.85;color:var(--ink)}
+  .es-prose.empty{color:var(--ink-3);font-style:italic;font-size:15px}
+  .es-said{border-radius:4px;cursor:pointer;transition:background .12s}
+  .es-said:hover{background:var(--gold-soft);box-shadow:0 0 0 2px var(--gold-soft)}
+  .es-active{margin-top:14px}
+  .es-linebox{width:100%;font-size:16.5px;line-height:1.7;resize:vertical;min-height:62px}
+  .es-editrow{margin:8px 0}
+  .es-linebtns{display:flex;gap:10px;align-items:center;margin-top:7px}
+  .es-del{color:var(--coral-dk)}
+  .es-guide{margin-top:10px;border-left:3px solid var(--green);padding:2px 0 2px 13px}
+  .es-guideh{font-family:var(--disp);font-weight:600;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--green-dk)}
+  .es-guidejob{font-size:14.5px;line-height:1.55;color:var(--ink);margin-top:3px}
+  .es-guidectx{font-size:12.5px;color:var(--ink-2);font-weight:600;margin-top:4px}
+  .es-help{margin-top:12px}
+  .es-rung{display:flex;gap:11px;align-items:flex-start;border:1.5px solid var(--line);border-radius:12px;padding:10px 13px;margin-bottom:8px;background:#FBFDFD}
+  .es-rungn{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--green);color:#fff;font-size:11.5px;font-weight:800;flex:none;margin-top:1px}
+  .es-runglbl{font-family:var(--disp);font-weight:600;font-size:12px;color:var(--ink-2)}
+  .es-rungtext{font-size:14px;line-height:1.6;color:var(--ink);margin-top:2px}
+  .es-rungtext.frame{font-style:italic}
+  .es-rungnote{font-size:12px;font-weight:700;color:var(--green-dk);margin-top:5px}
+  .es-helpbtns{display:flex;gap:11px;align-items:center;flex-wrap:wrap}
+  .es-linerow{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:16px}
+  .es-linerow .es-spacer{flex:1}
+  .es-linerow .es-linkbtn[disabled]{opacity:.4;pointer-events:none}
+  .es-btn.sm{padding:7px 13px;font-size:13px}
+  @media(max-width:1100px){.es-cols{grid-template-columns:minmax(0,1fr)}.es-map{position:static;flex-direction:row;flex-wrap:wrap}.es-margin{order:3}}
+
   /* ===== Marking rebuild: where to start, and the way back into writing ===== */
   .rv-focus{border:1.5px solid var(--green);border-radius:16px;background:var(--green-soft);padding:14px 16px;margin-bottom:16px}
   .rv-focushead{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
@@ -669,6 +719,8 @@
   .es-shell{width:100%;max-width:760px}
   .es-wrap{background:var(--card);border-radius:22px;box-shadow:0 24px 60px rgba(28,40,40,.28);padding:22px clamp(18px,3vw,30px) 28px;animation:rvpop .22s cubic-bezier(.35,.65,.25,1)}
   .es-shell:has(.es-wide){max-width:1040px}
+  /* the composer takes the canvas: the writing has to be the dominant thing on screen */
+  .es-shell:has(.es-canvas){max-width:min(1480px,94vw)}
   .es-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
   .es-brand{font-family:var(--disp);font-weight:600;font-size:15px;color:var(--ink);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .es-subj{font-size:12.5px;font-weight:700;color:var(--ink-2)}
