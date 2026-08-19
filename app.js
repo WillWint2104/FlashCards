@@ -3226,11 +3226,11 @@
   function esStructureLabel(key) { return esStructureDef(key).label; }
 
   const ES = { subject: null, code: "", demo: false, screen: "setup", draft: null, list: [], form: null, pending: false,
-    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false },  // transient guided-view state, reset on paragraph change
+    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, ctx: null },  // transient guided-view state, reset on paragraph change
     hint: { open: false, tab: "know" },          // study hints: persists across paragraphs on purpose
     quiz: { revealed: false, peeked: false, attempt: "", result: null } };
   const ES_KEY = "marginal.essay.v1";
-  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false }; }
+  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, ctx: null }; }
   // peeked persists for the whole attempt: revealing once disqualifies mastery even
   // if the answer is hidden again before checking. Cleared only on a new attempt.
   function esResetQuiz() { ES.quiz = { revealed: false, peeked: false, attempt: "", result: null }; }
@@ -3838,6 +3838,253 @@
     return (shared && shared[key]) || null;
   }
 
+  // ===========================================================================
+  // THE TOOLBELT (Phase B)
+  //
+  // Brings information to where the student is writing. It must never make them
+  // leave, lose, shrink or relocate their writing, so: the composer keeps a
+  // minimum usable width and the drawer overlays rather than squeezing it, and
+  // closing returns the cursor to the exact character it was on.
+  //
+  // NO MODEL REQUEST HAPPENS HERE, EVER. Everything a tool shows comes from the
+  // authored question JSON, the authored content layer and the verified evidence
+  // bank. A tool with nothing authored behind it is disabled rather than filled.
+  //
+  // Help is deliberately NOT a tool. The toolbelt answers "I do not know the
+  // content / what to argue / what to use / where I am / how to say it". The line
+  // under the composer answers "I cannot write THIS sentence". Keeping those apart
+  // is the whole mental model.
+  // ===========================================================================
+  const ES_TOOLS = [
+    { key: "understand", label: "Understand", icon: "book" },
+    { key: "ideas",      label: "Ideas",      icon: "bulb" },
+    { key: "evidence",   label: "Evidence",   icon: "search" },
+    { key: "structure",  label: "Structure",  icon: "blocks" },
+    { key: "vocabulary", label: "Vocabulary", icon: "type" },
+  ];
+  // One inline SVG set, defined once. No icon font and no CDN: the app ships as a
+  // single self-contained file.
+  const ES_ICONS = {
+    book: '<path d="M3 4.5A1.5 1.5 0 0 1 4.5 3H9a3 3 0 0 1 3 3v9a2.5 2.5 0 0 0-2.5-2.5H3z"/><path d="M21 4.5A1.5 1.5 0 0 0 19.5 3H15a3 3 0 0 0-3 3v9a2.5 2.5 0 0 1 2.5-2.5H21z"/>',
+    bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.4.3.6.7.6 1.1V16h5.8v-1c0-.4.2-.8.6-1.1A6 6 0 0 0 12 3z"/>',
+    search: '<circle cx="11" cy="11" r="6"/><path d="m20 20-4.4-4.4"/>',
+    blocks: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+    type: '<path d="M4 7V5h16v2M12 5v14M9 19h6"/>',
+    close: '<path d="M6 6l12 12M18 6 6 18"/>',
+  };
+  function esIcon(name) {
+    return '<svg class="es-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ES_ICONS[name] || "") + '</svg>';
+  }
+
+  // ---- resolving what each tool has to show, from authored content only -------
+  // Which syllabus section this paragraph is about. The locked plan pick for this
+  // paragraph first, then the paragraph's own point, then the role.
+  // Everything the app knows about what this paragraph is about: the point the
+  // student wrote, their locked plan picks, and the question itself.
+  function esContextHay(p) {
+    const d = ES.draft;
+    return ((p.point || "") + " " + (p.role || "") + " " + ((esPlan().picks || []).join(" ")) + " " + ((d && d.question) || "")).toLowerCase();
+  }
+  function esSectionFor(p) {
+    const b = busContent(); const key = busTopicKey();
+    const topic = b && key && b.topics[key]; if (!topic) return null;
+    const hay = esContextHay(p);
+    // Score a section on its own name AND on its syllabus dot points, because what a
+    // student writes ("e-marketing") matches the dot point far more often than the
+    // section heading. No fallback to an arbitrary section: an unresolved section
+    // means the tool is disabled, never filled with something that does not fit.
+    const secs = topic.sections || [];
+    let best = null, bestScore = 0;
+    secs.forEach(sec => {
+      const src = String(sec.name || "") + " " + (sec.points || []).map(x => x.point || "").join(" ");
+      const words = src.toLowerCase().replace(/[^a-z\s-]/g, " ").split(/\s+/).filter(w => w.length > 4);
+      const seen = {};
+      let score = 0;
+      words.forEach(w => { if (!seen[w] && hay.indexOf(w) >= 0) { seen[w] = 1; score++; } });
+      const nameWords = String(sec.name || "").toLowerCase().split(/\s+/).filter(w => w.length > 3);
+      score += 2 * nameWords.filter(w => hay.indexOf(w) >= 0).length;   // the heading counts double
+      if (score > bestScore) { best = sec; bestScore = score; }
+    });
+    return best && bestScore > 0 ? { topic: topic, section: best } : null;
+  }
+  // Resolve to the DOT POINT the student is actually writing about, not merely to
+  // the section it lives in. Showing the first point of a loosely matched section is
+  // how a contextual tool turns back into a chapter: an e-marketing sentence must
+  // not open on situational analysis. No matching point means the tool is disabled.
+  function esBestPoint(p, hit) {
+    const hay = esContextHay(p);
+    let best = null, bestScore = 0;
+    (hit.section.points || []).forEach(pt => {
+      if (!pt.what) return;
+      const words = String(pt.point || "").toLowerCase().replace(/[^a-z\s-]/g, " ").split(/\s+/).filter(w => w.length > 4);
+      const seen = {};
+      let score = 0;
+      words.forEach(w => { if (!seen[w] && hay.indexOf(w) >= 0) { seen[w] = 1; score++; } });
+      if (score > bestScore) { best = pt; bestScore = score; }
+    });
+    return bestScore > 0 ? best : null;
+  }
+  function esToolUnderstand(p) {
+    const hit = esSectionFor(p); if (!hit) return null;
+    const pt = esBestPoint(p, hit); if (!pt) return null;
+    return {
+      title: String(pt.point || hit.section.name).replace(/\s*[-\u2013].*$/, "").trim(),
+      topic: hit.topic.label + " \u00b7 " + hit.section.name,
+      quick: pt.what,
+      terms: pt.terms || [],
+      more: [pt.why, pt.exam].filter(Boolean).join("\n\n") || null,
+    };
+  }
+  // Terms for the point being written, then the rest of the section behind them, so
+  // the closest vocabulary comes first rather than an alphabetical glossary.
+  function esToolVocabulary(p) {
+    const hit = esSectionFor(p); if (!hit) return null;
+    const pt = esBestPoint(p, hit);
+    const terms = [];
+    const add = t => { if (t && terms.indexOf(t) < 0) terms.push(t); };
+    (pt ? (pt.terms || []) : []).forEach(add);
+    (hit.section.points || []).forEach(x => (x.terms || []).forEach(add));
+    return terms.length ? { title: pt ? String(pt.point).replace(/\s*[-\u2013].*$/, "").trim() : hit.section.name, terms: terms.slice(0, 16) } : null;
+  }
+  function esToolIdeas(p) {
+    const opts = esPlanOptions();
+    if (!opts || !opts.length) return null;
+    return { options: opts, chosen: (esPlan().picks || []), locked: !!esPlan().locked };
+  }
+  function esToolEvidence(p) {
+    const b = busContent(); const key = busTopicKey();
+    const all = (b && key && b.evidence && b.evidence[key]) || [];
+    if (!all.length) return null;
+    const hit = esSectionFor(p);
+    const compatible = hit ? all.filter(e => e.section === hit.section.name) : [];
+    const chosen = p.evidenceIds || [];
+    return {
+      selected: all.filter(e => chosen.indexOf(e.label) >= 0),
+      compatible: (compatible.length ? compatible : all).filter(e => chosen.indexOf(e.label) < 0).slice(0, 12),
+      narrowed: !!(hit && compatible.length),
+    };
+  }
+  function esToolStructure(p) {
+    const steps = slotsForRole(p.role), si = esStepIndex(p);
+    return { role: p.role, steps: steps, at: si, current: steps[si] || null };
+  }
+  function esToolData(key, p) {
+    if (key === "understand") return esToolUnderstand(p);
+    if (key === "vocabulary") return esToolVocabulary(p);
+    if (key === "ideas") return esToolIdeas(p);
+    if (key === "evidence") return esToolEvidence(p);
+    if (key === "structure") return esToolStructure(p);
+    return null;
+  }
+
+  // ---- the drawer ------------------------------------------------------------
+  function esToolbeltHTML(p) {
+    return `<div class="es-belt" role="toolbar" aria-label="Writing support">` + ES_TOOLS.map(t => {
+      const has = !!esToolData(t.key, p);
+      const on = ES.ui.tool === t.key;
+      // Nothing authored behind it means the tool is disabled, not filled with filler.
+      return `<button type="button" class="es-belt-b ${on ? "on" : ""}" data-estool="${t.key}" ${has ? "" : "disabled title=\"Nothing has been written for this question yet\""}>${esIcon(t.icon)}<span>${esc(t.label)}</span></button>`;
+    }).join("") + `</div>`;
+  }
+  function esDrawerHTML(p) {
+    const key = ES.ui.tool; if (!key) return "";
+    const tool = ES_TOOLS.find(t => t.key === key); if (!tool) return "";
+    const d = esToolData(key, p);
+    let body = "";
+    if (!d) body = `<p class="es-drawer-none">Nothing has been written for this part of the question yet.</p>`;
+    else if (key === "understand") {
+      body = `<div class="es-drawer-sub">${esc(d.topic)}</div><h4 class="es-drawer-h">${esc(d.title)}</h4>
+        <p class="es-drawer-p">${esc(d.quick)}</p>
+        ${(d.terms && d.terms.length) ? `<div class="es-terms">${d.terms.slice(0, 8).map(t => `<span class="es-term">${esc(t)}</span>`).join("")}</div>` : ""}
+        ${d.more ? `<button type="button" class="es-linkbtn" id="esmoreread">${ES.ui.readMore ? "Show less" : "Read more"}</button>
+          <div class="es-drawer-more"${ES.ui.readMore ? "" : " hidden"}>${d.more.split("\n\n").map(x => `<p class="es-drawer-p">${esc(x)}</p>`).join("")}</div>` : ""}`;
+    } else if (key === "vocabulary") {
+      body = `<h4 class="es-drawer-h">${esc(d.title)}</h4><p class="es-drawer-note">Terms that fit what you are writing now. You still choose which to use.</p>
+        <div class="es-terms">${d.terms.map(t => `<span class="es-term">${esc(t)}</span>`).join("")}</div>`;
+    } else if (key === "ideas") {
+      body = `<h4 class="es-drawer-h">What you could argue</h4>
+        <p class="es-drawer-note">Options, not a list to work through. Your own is just as valid.</p>
+        ${d.options.map(o => `<div class="es-idea ${d.chosen.indexOf(o) >= 0 ? "on" : ""}">${esc(o)}</div>`).join("")}`;
+    } else if (key === "evidence") {
+      const row = e => `<div class="es-ev"><div class="es-evh">${esc(e.label)}</div><p class="es-drawer-p">${esc(e.fact)}</p>${e.use ? `<p class="es-drawer-note">${esc(e.use)}</p>` : ""}${e.verify ? `<span class="es-evflag">check a current figure yourself</span>` : ""}</div>`;
+      body = `${d.selected.length ? `<h4 class="es-drawer-h">Your evidence</h4>${d.selected.map(row).join("")}` : ""}
+        <h4 class="es-drawer-h">${d.selected.length ? "Other compatible evidence" : "Evidence you could use"}</h4>
+        ${d.compatible.length ? d.compatible.map(row).join("") : `<p class="es-drawer-none">No further evidence has been authored for this part.</p>`}
+        ${d.narrowed ? "" : `<p class="es-drawer-note">Showing everything for this topic: nothing narrower has been authored yet.</p>`}`;
+    } else if (key === "structure") {
+      body = `<h4 class="es-drawer-h">${esc(d.role)}</h4>
+        ${d.current ? `<p class="es-drawer-p"><b>Right now:</b> ${esc(d.current.job)}</p>` : ""}
+        <ol class="es-struct">${d.steps.map((st, i) => `<li class="${i < d.at ? "done" : i === d.at ? "now" : ""}"><b>${esc(st.label)}</b><span>${esc(st.job)}</span></li>`).join("")}</ol>`;
+    }
+    return `<aside class="es-drawer" role="dialog" aria-label="${esc(tool.label)}">
+      <div class="es-drawer-top">${esIcon(tool.icon)}<span class="es-drawer-title">${esc(tool.label)}</span>
+        <button type="button" class="es-drawer-x" id="esdrawerx" aria-label="Close and return to your sentence">${esIcon("close")}</button></div>
+      <div class="es-drawer-body">${body}</div>
+      <div class="es-drawer-foot">Close to go straight back to the word you were on. <kbd>Esc</kbd></div>
+    </aside>`;
+  }
+  // Opening a tool CAPTURES where the student was; closing puts them back exactly
+  // there, cursor included. Returning to the sentence is good; returning to the
+  // character is what lets them keep typing without thinking about it.
+  function esCaptureContext(p) {
+    const line = document.getElementById("esline");
+    const scrim = document.querySelector(".es-scrim");
+    ES.ui.ctx = {
+      paragraph: ES.draft ? ES.draft.pos : 0,
+      blockId: null,
+      slot: (esStepDef(p) || {}).key || null,
+      argumentId: p.argumentId || null,
+      evidenceIds: (p.evidenceIds || []).slice(),
+      text: line ? line.value : "",
+      selStart: line ? line.selectionStart : 0,
+      selEnd: line ? line.selectionEnd : 0,
+      scroll: scrim ? scrim.scrollTop : 0,
+    };
+  }
+  function esRestoreContext() {
+    const c = ES.ui.ctx; if (!c) return;
+    const line = document.getElementById("esline");
+    if (line) {
+      if (typeof c.text === "string" && line.value !== c.text) line.value = c.text;
+      line.focus();
+      try { line.setSelectionRange(c.selStart, c.selEnd); } catch (e) { /* older browsers */ }
+    }
+    const scrim = document.querySelector(".es-scrim");
+    if (scrim && c.scroll) scrim.scrollTop = c.scroll;
+  }
+  function esBindToolbelt(p) {
+    const host = document.getElementById("eshost"); if (!host) return;
+    host.querySelectorAll("[data-estool]").forEach(b => b.onclick = () => {
+      const key = b.dataset.estool;
+      if (ES.ui.tool === key) { ES.ui.tool = null; esRenderKeepingPlace(p); return; }
+      esCaptureContext(p);
+      ES.ui.tool = key; ES.ui.readMore = false;
+      esRenderKeepingPlace(p);
+    });
+    const x = host.querySelector("#esdrawerx");
+    if (x) x.onclick = () => { ES.ui.tool = null; esRenderKeepingPlace(p); };
+    const mr = host.querySelector("#esmoreread");
+    if (mr) mr.onclick = () => { ES.ui.readMore = !ES.ui.readMore; esRenderKeepingPlace(p); };
+  }
+  // Refresh only the toolbelt, in place. Used when the paragraph's context changes
+  // under it, so nothing else on screen moves and no focus is stolen.
+  function esRefreshBelt(p) {
+    const host = document.getElementById("eshost"); if (!host) return;
+    const belt = host.querySelector(".es-belt"); if (!belt) return;
+    const fresh = document.createElement("div");
+    fresh.innerHTML = esToolbeltHTML(p);
+    const next = fresh.firstElementChild; if (!next) return;
+    belt.replaceWith(next);
+    next.querySelectorAll("button:not([type])").forEach(b => b.type = "button");
+    esBindToolbelt(p);
+  }
+  // A tool opening or closing must not cost the student their place.
+  function esRenderKeepingPlace(p) {
+    const keep = ES.ui.ctx;
+    esRender();
+    if (keep) { ES.ui.ctx = keep; esRestoreContext(); }
+  }
+
   // ------------------------------ COACHED PRACTICE ------------------------------
   // One element at a time. Only the current paragraph renders: its planned point
   // pinned (muted) above, an editable box, that paragraph's feedback in the right
@@ -3873,7 +4120,7 @@
     const prose = blocks.map((b, k) => editing === k
       ? `<div class="es-editrow"><textarea class="es-input es-linebox" data-esedit="${k}" rows="2">${esc(b.text)}</textarea>
          <div class="es-linebtns"><button type="button" class="es-btn primary sm" data-essaveedit="${k}">Save</button><button type="button" class="es-linkbtn" data-escanceledit>Cancel</button><button type="button" class="es-linkbtn es-del" data-esdelblock="${k}">Delete sentence</button></div></div>`
-      : `<span class="es-said" data-esreopen="${k}" title="Click to rewrite this sentence">${esc(b.text)}</span>`).join(" ");
+      : `<span class="es-said ${(b.ambiguous || b.needsReview) ? "flagged" : ""}" data-esreopen="${k}" title="Click to rewrite this sentence">${esc(b.text)}</span>${(b.ambiguous || b.needsReview) ? `<span class="es-checkline" data-escheck="${k}">${b.needsReview ? "your argument changed. Does this still support it?" : "this sentence changed a lot. Does it still fit here?"} <button type="button" class="es-linkbtn" data-esok="${k}">Looks right</button></span>` : ""}`).join(" ");
 
     const words = (p.text || "").trim().split(/\s+/).filter(Boolean).length;
     const target = esWordTarget(d);
@@ -3897,7 +4144,8 @@
     host.innerHTML = `
     <div class="es-scrim"><div class="es-shell"><div class="es-wrap es-canvas">
       ${esWritingHead(sc, "Guided", "Write a full attempt instead", "full")}
-      <div class="es-cols">
+      ${esToolbeltHTML(p)}
+      <div class="es-cols ${ES.ui.tool ? "withdrawer" : ""}">
         <aside class="es-map">
           <div class="es-maph">Response</div>
           ${map}
@@ -3938,17 +4186,28 @@
           <div class="es-linehost" data-linehost>${esLinesBlock(p)}</div>
           <div class="es-seqhost">${esSeqNudge(p)}</div>
         </div>
-        <aside class="es-margin">${esCoachMargin(p)}</aside>
+        ${ES.ui.tool ? esDrawerHTML(p) : `<aside class="es-margin">${esCoachMargin(p)}</aside>`}
       </div>
     </div></div></div>`;
 
     esBindWritingHead();
-    const pt = $("#espoint"); if (pt) pt.oninput = () => { p.point = pt.value; esSaveDraft(); };
+    const pt = $("#espoint"); if (pt) pt.oninput = () => {
+      p.point = pt.value; esSaveDraft();
+      // Which tools have something behind them depends on what the paragraph is
+      // about, so the belt wakes up as the student says what they are arguing.
+      // Only the belt is replaced, so the cursor never leaves the point field.
+      esRefreshBelt(p);
+    };
     host.querySelectorAll("[data-esgo]").forEach(b => b.onclick = () => {
       d.pos = Number(b.dataset.esgo); p.step = si; ES.ui.editBlock = null; ES.ui.rung = 0; esResetCoachUI(); esSaveDraft(); esRender();
     });
     // reopen an accepted sentence
     host.querySelectorAll("[data-esreopen]").forEach(b => b.onclick = () => { ES.ui.editBlock = Number(b.dataset.esreopen); esRender(); });
+    host.querySelectorAll("[data-esok]").forEach(b => b.onclick = e => {
+      e.stopPropagation();
+      const k = Number(b.dataset.esok), blk = esBlocks(p)[k];
+      if (blk) { blk.ambiguous = false; blk.needsReview = false; esSaveDraft(); esRender(); }
+    });
     const ce = host.querySelector("[data-escanceledit]"); if (ce) ce.onclick = () => { ES.ui.editBlock = null; esRender(); };
     host.querySelectorAll("[data-essaveedit]").forEach(b => b.onclick = () => {
       const k = Number(b.dataset.essaveedit);
@@ -3962,6 +4221,11 @@
       esCommitBlocks(p); ES.ui.editBlock = null; esSaveDraft(); esRender();
     });
 
+    // Escape closes whatever is open and returns the student to their sentence.
+    const scrimEl = host.querySelector(".es-scrim");
+    if (scrimEl) scrimEl.onkeydown = e => {
+      if (e.key === "Escape" && ES.ui.tool) { e.preventDefault(); e.stopPropagation(); ES.ui.tool = null; esRenderKeepingPlace(p); }
+    };
     const line = $("#esline"), accept = $("#esaccept");
     if (line && accept) {
       const sync = () => { accept.disabled = !line.value.trim(); };
@@ -3992,7 +4256,8 @@
     $("#esnext").onclick = () => { d.pos = Math.min(total - 1, d.pos + 1); ES.ui.editBlock = null; ES.ui.rung = 0; esResetCoachUI(); esSaveDraft(); esRender(); };
     const ask = $("#esask"); if (ask) ask.onclick = () => esGetFeedback(d.pos);
     $("#esquizlink").onclick = () => { ES.screen = "quiz"; esResetQuiz(); esRender(); };
-    esBindCoachMargin(p);
+    esBindToolbelt(p);
+    if (!ES.ui.tool) esBindCoachMargin(p);
     esBindLines();
     esBindSeqNudge(p);
   }

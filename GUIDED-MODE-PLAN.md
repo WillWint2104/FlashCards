@@ -427,3 +427,35 @@ Now in the pass 2 message, next to the block list:
 
 This is the same rule as "the plan is context, not marks", applied to the block
 metadata that Phase C is about to start sending.
+
+---
+
+## 11. Phase B, built against the acceptance criteria
+
+| Criterion | How it is met |
+| --- | --- |
+| Never crush the composer | Grid is `230px / minmax(650px,1fr) / 340px`. Below 1320px the drawer **overlays** rather than squeezing the centre. Below 1000px the response map collapses first. Tested: composer width is unchanged when a drawer opens. |
+| Exact context capture | `esCaptureContext` records paragraph, block, slot, argument, evidence, the half-written text, the **selection range** and the scroll position. Close or Escape restores all of it. Tested: cursor mid-word, open a tool, Escape, type a character, it lands at exactly the same offset. |
+| Tools change with context | Understand and Vocabulary resolve to the **syllabus dot point** the student is writing about, not the section it lives in. Ideas reads the authored plan options. Evidence separates the student's selected items from other compatible ones. Structure names the current job and the sequence. |
+| Help stays out of the drawer | Five tools. Help is not one of them and stays under the active sentence. |
+| Progressive reading | Quick explanation first, `Read more` opens the fuller text. Terms sit with the quick explanation so the two tools agree. |
+| No AI anywhere | Every tool reads authored content. Tested: open all five, count worker calls, zero. |
+| Missing resources fail cleanly | A tool with nothing behind it is **disabled**, never filled. Tested on Ancient History, which has no content layer: Understand, Evidence and Vocabulary are disabled while Structure still works, because Structure is derived rather than authored. No filler text anywhere. |
+| Compact, ignorable | A strip of icon chips, measured under 60px tall. Inline SVG, no emoji. The guide is still immediately under the active line, so a student who needs nothing can write straight past it. |
+
+**One content bug this found.** The first build resolved Understand to a *section*
+and showed its first dot point, so an e-marketing sentence opened on situational
+analysis, SWOT and the product life cycle. That is precisely the generic-chapter
+failure the criteria warn about. Resolution is now point-level and scores against
+what the student actually wrote, and a section with no matching point disables the
+tool rather than showing something adjacent.
+
+### `ambiguous` has a student-safe treatment now
+
+It no longer stays internal. A sentence the reconciler could not place, or one
+written before the paragraph's argument changed, is highlighted with a plain line:
+
+- "this sentence changed a lot. Does it still fit here?"
+- "your argument changed. Does this still support it?"
+
+with **Looks right** to clear it. No mention of reconciliation.
