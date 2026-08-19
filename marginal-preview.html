@@ -9362,11 +9362,11 @@ window.BUSCONTENT = {
     p.evidenceIds = evidenceIds || [];
     const written = esBlocks(p).filter(b => String(b.text || "").trim());
     let flagged = 0;
-    const flag = b => { if (!b.needsReview) { b.needsReview = true; flagged++; } };
-    if (!sameArg && beforeArg) written.forEach(flag);                    // a different argument
+    const flag = (b, why) => { if (!b.needsReview) { b.needsReview = true; b.reviewReason = why; flagged++; } };
+    if (!sameArg && beforeArg) written.forEach(b => flag(b, "argument"));   // a different argument
     if (!sameEv && beforeEv.length) {
       const removed = beforeEv.filter(l => (evidenceIds || []).indexOf(l) < 0);
-      removed.forEach(l => written.forEach(b => { if (esBlockUsesEvidence(b, l)) flag(b); }));
+      removed.forEach(l => written.forEach(b => { if (esBlockUsesEvidence(b, l)) flag(b, "evidence"); }));
     }
     esSaveDraft();
     return flagged;
@@ -9472,6 +9472,23 @@ window.BUSCONTENT = {
     const ex = esValidExample(h.example);
     if (ex) rungs.push({ level: 5, label: "The same reasoning, somewhere else", text: ex.text, kind: "example", context: ex.context, pattern: ex.pattern || "" });
     return rungs;
+  }
+
+  // Say what actually changed. Telling a student their argument changed when they
+  // swapped a piece of evidence is a small lie that costs trust.
+  function esReviewWhy(b) {
+    if (b.needsReview && b.reviewReason === "evidence") return "rested on evidence you removed.";
+    if (b.needsReview) return "written for your previous argument.";
+    return "this sentence changed a lot.";
+  }
+  function esReviewBannerHTML(blocks) {
+    const arg = blocks.filter(b => b.needsReview && b.reviewReason !== "evidence").length;
+    const ev = blocks.filter(b => b.needsReview && b.reviewReason === "evidence").length;
+    if (!arg && !ev) return "";
+    const parts = [];
+    if (arg) parts.push(`<b>Argument changed.</b> ${arg} sentence${arg === 1 ? " was" : "s were"} written for your previous argument.`);
+    if (ev) parts.push(`<b>Evidence changed.</b> ${ev} sentence${ev === 1 ? "" : "s"} rested on evidence you removed.`);
+    return `<div class="es-argchanged">${parts.join(" ")} Check each one, or say it still works.</div>`;
   }
 
   // The guide and ladder for a sentence being REOPENED. Same content, same rungs,
@@ -9980,7 +9997,7 @@ window.BUSCONTENT = {
       ? `<div class="es-editrow"><textarea class="es-input es-linebox" data-esedit="${k}" rows="2">${esc(b.text)}</textarea>
          ${esEditGuideHTML(p, b)}
          <div class="es-linebtns"><button type="button" class="es-btn primary sm" data-essaveedit="${k}">Save</button><button type="button" class="es-linkbtn" data-escanceledit>Cancel</button><button type="button" class="es-linkbtn es-del" data-esdelblock="${k}">Delete sentence</button></div></div>`
-      : `<span class="es-said ${(b.ambiguous || b.needsReview) ? "flagged" : ""}" data-esreopen="${k}" title="Click to rewrite this sentence">${esc(b.text)}</span>${(b.ambiguous || b.needsReview) ? `<span class="es-checkline">${b.needsReview ? "written for your previous argument." : "this sentence changed a lot."} <button type="button" class="es-linkbtn" data-esreopen="${k}">Review sentence</button> <button type="button" class="es-linkbtn" data-esok="${k}">Still works</button></span>` : ""}`).join(" ");
+      : `<span class="es-said ${(b.ambiguous || b.needsReview) ? "flagged" : ""}" data-esreopen="${k}" title="Click to rewrite this sentence">${esc(b.text)}</span>${(b.ambiguous || b.needsReview) ? `<span class="es-checkline">${esReviewWhy(b)} <button type="button" class="es-linkbtn" data-esreopen="${k}">Review sentence</button> <button type="button" class="es-linkbtn" data-esok="${k}">Still works</button></span>` : ""}`).join(" ");
 
     const words = (p.text || "").trim().split(/\s+/).filter(Boolean).length;
     const target = esWordTarget(d);
@@ -10034,7 +10051,7 @@ window.BUSCONTENT = {
           </div>
           ${inSetup ? esSetupHTML(p) : ""}
           ${inSetup ? "" : `<div class="es-flow">
-            ${(() => { const n = blocks.filter(b => b.needsReview).length; return n ? `<div class="es-argchanged"><b>Argument changed.</b> ${n} existing sentence${n === 1 ? " was" : "s were"} written for your previous argument. Check each one still supports the new direction.</div>` : ""; })()}
+            ${esReviewBannerHTML(blocks)}
             ${blocks.length ? `<p class="es-prose">${prose}</p>` : `<p class="es-prose empty">Your paragraph builds here, one sentence at a time.</p>`}
             ${editing != null ? help : ""}
             ${editing == null ? `
