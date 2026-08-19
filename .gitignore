@@ -3,3 +3,6 @@ node_modules/
 *.log
 .DS_Store
 .claude/
+tests/out/
+tests/worker.mjs
+tests/blocks.mjs

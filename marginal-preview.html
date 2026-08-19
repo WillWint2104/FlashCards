@@ -10861,8 +10861,15 @@ window.BUSCONTENT = {
         p.blocks = esBlocks(p).concat([nb]);
         esCommitBlocks(p);
         // advance a step unless the student chose to stay
-        if (!ES.ui.stayStep && si < steps.length - 1) p.step = si + 1;
-        ES.ui.stayStep = false;         esSaveDraft(); esRender();
+        const stayed = ES.ui.stayStep;
+        if (!stayed && si < steps.length - 1) p.step = si + 1;
+        ES.ui.stayStep = false;
+        // A student who asked for another sentence at this stage has said they are
+        // still writing, so completing the paragraph must not take the line away
+        // from them mid-thought. They get the line they asked for; the completion
+        // state returns after it, so it is deferred rather than suppressed.
+        ES.ui.moreLine = stayed;
+        esSaveDraft(); esRender();
       };
     }
     const ss = $("#essamestep"); if (ss) ss.onclick = () => { ES.ui.stayStep = true; p.step = si; esSaveDraft(); esRender(); };

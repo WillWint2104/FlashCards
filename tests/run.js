@@ -1,0 +1,42 @@
+// Run the whole harness. Rebuilds the shims and the walkthrough file first, so a
+// fresh clone needs one command.
+//
+//   node build.js && node tests/run.js            everything
+//   node tests/run.js ui16 ui17                   just these
+const { execFileSync } = require("child_process");
+const path = require("path"), fs = require("fs");
+const HERE = __dirname, ROOT = path.resolve(HERE, "..");
+const only = process.argv.slice(2);
+
+const run = (cmd, args, label) => {
+  process.stdout.write((label || args[0]).padEnd(9));
+  try {
+    const out = execFileSync(cmd, args, { cwd: HERE, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+    const last = out.trim().split("\n").filter(Boolean).pop() || "(no output)";
+    console.log(last);
+    return /0 failed/.test(last) || !/failed/.test(last);
+  } catch (e) {
+    const out = String((e.stdout || "") + (e.stderr || "")).trim().split("\n").filter(Boolean);
+    console.log(out.filter(l => /FAIL|failed|Error/.test(l)).slice(0, 3).join(" | ") || "FAILED");
+    return false;
+  }
+};
+
+if (!fs.existsSync(path.join(ROOT, "marginal-preview.html"))) {
+  console.error("Run `node build.js` in the repo root first."); process.exit(1);
+}
+console.log("--- building fixtures");
+run("node", ["mkshim.js"], "shim");
+run("node", ["mkblockshim.js"], "blocks");
+run("python3", ["mkwalk.py"], "walk");
+
+const WORKER = ["t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10", "t11"];
+const UI = ["ui", "ui2", "ui3", "ui5", "ui6", "ui7", "ui8", "ui9", "ui10", "ui12", "ui13", "ui14", "ui15", "ui16", "ui17", "ui18"];
+const pick = list => only.length ? list.filter(x => only.includes(x)) : list;
+
+let bad = 0;
+const worker = pick(WORKER), ui = pick(UI);
+if (worker.length) { console.log("\n--- worker and block suites"); worker.forEach(f => { if (!run("node", [f + ".mjs"], f)) bad++; }); }
+if (ui.length) { console.log("\n--- ui suites"); ui.forEach(f => { if (!run("node", [f + ".js"], f)) bad++; }); }
+console.log(bad ? "\n" + bad + " suite(s) failed" : "\nall suites green");
+process.exit(bad ? 1 : 0);
