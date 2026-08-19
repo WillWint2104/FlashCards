@@ -4141,9 +4141,10 @@
     return null;
   }
   function esToolEvidence(p) {
-    const b = busContent(); const key = busTopicKey();
-    const all = (b && key && b.evidence && b.evidence[key]) || [];
-    if (!all.length) return null;
+    const store = esEvidenceBank();
+    const all = store.usable;
+    if (!store.all.length) return null;
+    if (!all.length) return { empty: true, withheld: store.withheld, selected: [], compatible: [], wider: [] };
     const path = esPathway(p);
     const notes = esPathEvidence(path);                       // label -> why it suits THIS argument
     const linked = notes.map(n => n.label);
@@ -4161,6 +4162,7 @@
       wider: rest.filter(e => rank(e) === 2).map(e => esEvidenceWith(e, notes)),
       narrowed: !!(best.length || bySection.length),
       forArgument: !!best.length,
+      withheld: store.withheld,
     };
   }
   function esToolStructure(p) {
@@ -4235,12 +4237,17 @@
         ${e.limits ? `<p class="es-evlimit">${esc(e.limits)}</p>` : ""}
         <p class="es-evsrc">${e.source ? "Source: " + esc(e.source) : "No source has been recorded for this item yet."}${e.verify ? ` <span class="es-evflag">check a current figure yourself</span>` : ""}</p>
       </div>`;
+      if (d.empty) {
+        body = `<p class="es-drawer-none">No verified evidence is available for this topic yet.</p>
+          <p class="es-drawer-note">${d.withheld} item${d.withheld === 1 ? " is" : "s are"} written but still waiting on a checked source, so ${d.withheld === 1 ? "it is" : "they are"} not offered. Your own evidence is always allowed, and everything else here still works.</p>`;
+      } else
       body = `${d.selected.length ? `<h4 class="es-drawer-h">Your evidence</h4>${d.selected.map(row).join("")}` : ""}
         <h4 class="es-drawer-h">${d.selected.length ? "Other evidence that fits this argument" : "Evidence that fits this argument"}</h4>
         ${d.compatible.length ? d.compatible.map(row).join("") : `<p class="es-drawer-none">No further evidence has been authored for this argument.</p>`}
         ${d.forArgument ? "" : `<p class="es-drawer-note">Nothing has been linked to this argument yet, so this is the closest evidence in the topic.</p>`}
         ${(d.wider && d.wider.length) ? `<button type="button" class="es-linkbtn" id="esevall">${ES.ui.evAll ? "Show less" : "Browse all evidence for this topic"}</button>
           <div class="es-drawer-more"${ES.ui.evAll ? "" : " hidden"}>${d.wider.map(row).join("")}</div>` : ""}
+        ${d.withheld ? `<p class="es-drawer-note">${d.withheld} further item${d.withheld === 1 ? " is" : "s are"} waiting on a checked source and are not offered until then.</p>` : ""}
         <p class="es-drawer-note">Evidence is supplied. What it proves is still yours to explain.</p>`;
     } else if (key === "structure") {
       body = `<h4 class="es-drawer-h">${esc(d.role)}</h4>
@@ -4353,18 +4360,19 @@
   // authored mapping, so nothing is claimed to be compatible: the student is told
   // plainly rather than shown the nearest authored set.
   function esEvidenceFor(p) {
-    const b = busContent(); const key = busTopicKey();
-    const bank = (b && key && b.evidence && b.evidence[key]) || [];
-    if (!bank.length) return { items: [], custom: false, none: "no-bank" };
+    const store = esEvidenceBank();
+    const bank = store.usable;
+    if (!store.all.length) return { items: [], custom: false, none: "no-bank", withheld: 0 };
+    if (!bank.length) return { items: [], custom: false, none: "unverified", withheld: store.withheld };
     const path = esPathway(p);
-    if (p.argumentId && !path) return { items: [], custom: true, none: "custom" };   // their own argument
-    if (!path) return { items: bank.slice(0, 12), custom: false, none: null };       // nothing chosen yet
+    if (p.argumentId && !path) return { items: [], custom: true, none: "custom", withheld: store.withheld };   // their own argument
+    if (!path) return { items: bank.slice(0, 12), custom: false, none: null, withheld: store.withheld };       // nothing chosen yet
     const notes = esPathEvidence(path);
     const labels = notes.map(n => n.label);
     const items = bank.filter(e => labels.indexOf(e.label) >= 0)
       .sort((x, y) => labels.indexOf(x.label) - labels.indexOf(y.label))
       .map(e => esEvidenceWith(e, notes));
-    return { items: items, custom: false, none: items.length ? null : "unlinked", pathway: path };
+    return { items: items, custom: false, none: items.length ? null : (store.withheld ? "unverified" : "unlinked"), pathway: path, withheld: store.withheld };
   }
   // A pathway may list evidence as plain labels or as {label, why}. Both are read
   // the same way, so the authored files can deepen one pathway at a time.
@@ -4379,6 +4387,19 @@
     const n = (notes || []).find(x => x.label === e.label);
     return { label: e.label, fact: e.fact, use: e.use, verify: !!e.verify,
              why: (n && n.why) || "", source: e.source || "", limits: (n && n.limits) || e.limits || "" };
+  }
+  // ---- the verification gate -------------------------------------------------
+  // A student must be able to trust that anything in the evidence picker is safe
+  // to put in an answer. So an item without a recorded source is a CANDIDATE, held
+  // internally until it has been checked, and never offered as usable evidence.
+  // It is withheld rather than shown with a warning, because a warning still puts
+  // an unverified claim in front of someone who is about to be marked on it.
+  function esEvidenceUsable(e) { return !!(e && String(e.source || "").trim()); }
+  function esEvidenceBank() {
+    const b = busContent(); const key = busTopicKey();
+    const all = (b && key && b.evidence && b.evidence[key]) || [];
+    const usable = all.filter(esEvidenceUsable);
+    return { all: all, usable: usable, withheld: all.length - usable.length };
   }
   function esEvidenceByLabel(label) {
     const b = busContent(); const key = busTopicKey();
@@ -4438,6 +4459,8 @@
       ? `<p class="es-setupsub">No verified evidence has been linked to your own argument yet. You can still use your own evidence, and the Evidence tool stays open to you.</p>`
       : ev.none === "unlinked"
       ? `<p class="es-setupsub">No verified evidence has been linked to this argument yet. You can still use your own.</p>`
+      : ev.none === "unverified"
+      ? `<p class="es-setupsub">Nothing is offered here yet: ${ev.withheld} piece${ev.withheld === 1 ? " is" : "s are"} written but still waiting on a checked source. Use your own evidence for now, and everything else about this paragraph works as normal.</p>`
       : ev.none === "no-bank"
       ? `<p class="es-setupsub">No evidence bank has been written for this subject yet.</p>` : "";
     return `<div class="es-setup">
@@ -4635,7 +4658,9 @@
         <div class="es-planev">
           <span class="es-planevlbl">evidence</span>
           ${ev.items.length ? ev.items.map(e => `<button type="button" class="es-evchip ${picked.indexOf(e.label) >= 0 ? "on" : ""}" data-esplanev="${i}|${esc(e.label)}">${esc(e.label)}</button>`).join("")
-            : `<span class="es-planevnote">${ev.none === "custom" ? "Nothing is linked to your own argument. The Evidence tool stays open to you." : "No evidence has been linked to this argument yet."}</span>`}
+            : `<span class="es-planevnote">${ev.none === "custom" ? "Nothing is linked to your own argument. The Evidence tool stays open to you."
+                : ev.none === "unverified" ? "Waiting on checked sources, so nothing is offered here yet. Your own evidence still counts."
+                : "No evidence has been linked to this argument yet."}</span>`}
           ${ev.items.length ? `<span class="es-planevnote">optional now, and you can change it when you get there</span>` : ""}
         </div>` : "";
       return `<div class="es-plancard ${chosen ? "done" : ""}">
