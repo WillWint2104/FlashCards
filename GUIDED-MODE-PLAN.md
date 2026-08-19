@@ -459,3 +459,92 @@ written before the paragraph's argument changed, is highlighted with a plain lin
 - "your argument changed. Does this still support it?"
 
 with **Looks right** to clear it. No mention of reconciliation.
+
+---
+
+## 12. Phase D, and the evidence rule corrected
+
+### The invalidation rule is now precise
+
+The earlier "only an argument change flags" was too broad in the other direction.
+The rule the durable provenance actually supports:
+
+| Change | Flagged |
+| --- | --- |
+| No evidence, then the first selection | nothing |
+| Evidence changed before any sentence used it | nothing |
+| Evidence A removed after sentences rested on it | **only those sentences** |
+| A different argument chosen | every written sentence |
+
+A sentence "rests on" evidence when it was written at the evidence step while that
+item was selected, or when it names the item. Both are recorded on the block, so
+the flag lands on the sentence that used it and nowhere else. Adding evidence
+still flags nothing: it does not make what is already written wrong, and flagging
+it would train the student to ignore the flag.
+
+### The ladder
+
+One question only: *I know what I want to say but cannot construct this line.*
+Not knowing the content is Understand, not knowing what to argue is Ideas, not
+knowing what to use is Evidence.
+
+```
+L0  guide       what this sentence must accomplish
+L1  hint        prompt the thinking            -> Still stuck
+L2  needs       the relationship to establish  -> Show a structure
+L3  frame       grammar given, meaning blank   -> Give me a start
+L4  starter     an opening they finish         -> Show another example
+L5  example     fully written, somewhere else, with its pattern named
+```
+
+Revealed one rung at a time, nothing by default, each rung's button naming what
+comes next. All authored, zero model calls, verified by counting worker requests
+across the whole pathway.
+
+### Safety is declared, not inferred
+
+Rungs are **typed**, so the validator checks a contract rather than guessing from
+wording:
+
+- `scaffoldFrame` must keep at least two placeholders, and the words it does
+  supply must not already carry the question's own concepts, the selected evidence
+  or the case study. This is what replaces the verb allowlist that wrongly rejected
+  `uses`. The question is "has the meaningful content been left for the student",
+  not "is every word structural".
+- `differentContextExample` must declare a `context` and must not mention the case
+  study the student is writing about. It is rendered with its pattern named and
+  **no insert or apply control anywhere on it**, asserted in the test.
+
+A rung that is not authored does not appear. Nothing is filled in.
+
+### Help belongs to the sentence
+
+`helpLevel` and `helpContextVersion` live on the block. Reopen a sentence and the
+help it was written with is there. Change the paragraph's argument and that help
+is withheld, because a level 4 starter written for the previous argument must not
+sit under a sentence that now belongs to a different one. The student's writing is
+never touched by any of this.
+
+This found a real gap: the guide and ladder only rendered for the active line, so a
+reopened sentence had no help at all. Both now follow whichever line is being
+written, and a reopened sentence shows the job **it** was written to do.
+
+### The sixteen-step acceptance test passes
+
+Select argument A and evidence A, reach Explain, confirm L0 only, reveal L1 to L5
+one at a time, assert zero model calls, assert L3 keeps meaningful blanks, assert
+L5 comes only from `differentContextExample` and carries no insert control, write
+and accept a sentence, reopen it and confirm the help persists, change the
+argument, confirm the writing survives and the sentence is flagged, confirm the
+stale help is withheld, then change evidence after writing an evidence-linked
+sentence and confirm exactly that sentence is flagged and nothing else.
+
+---
+
+## 13. Next: walk it, do not extend it
+
+The architecture is good enough that the remaining risks are pedagogy and UX. The
+next step is to write a full response, Introduction through four body paragraphs to
+Conclusion, and look for friction: too many clicks per sentence, prompts that
+repeat, help that is too wordy, and any point where the student loses sight of the
+essay as a whole. Features come after that, not before.

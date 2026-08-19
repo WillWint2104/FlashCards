@@ -3756,25 +3756,38 @@
   // were written to argue something else. Their provenance stays, they are flagged
   // for the student to look at again, and the student decides. Reconsidering the
   // paragraph is the correct consequence of changing its argument.
+  // Does this sentence actually rest on that piece of evidence? Either it was
+  // written at the evidence step while that item was selected, or it names it.
+  function esBlockUsesEvidence(b, label) {
+    if ((b.evidenceIds || []).indexOf(label) >= 0) return true;
+    const words = String(label || "").toLowerCase().split(/[^a-z0-9']+/).filter(w => w.length > 4);
+    if (!words.length) return false;
+    const t = String(b.text || "").toLowerCase();
+    return words.some(w => t.indexOf(w) >= 0);
+  }
+  // What a context change actually invalidates:
+  //   a new ARGUMENT calls every written sentence into question, because they were
+  //     all written to argue something else;
+  //   REMOVING a piece of evidence questions only the sentences that rested on it;
+  //   ADDING evidence, or choosing it for the first time, invalidates nothing.
+  // Flagging more than that trains the student to ignore the flag.
   function esSetParagraphContext(p, argumentId, evidenceIds) {
-    const sameArg = (p.argumentId || null) === (argumentId || null);
-    const sameEv = JSON.stringify(p.evidenceIds || []) === JSON.stringify(evidenceIds || []);
+    const beforeArg = p.argumentId || null;
+    const beforeEv = (p.evidenceIds || []).slice();
+    const sameArg = beforeArg === (argumentId || null);
+    const sameEv = JSON.stringify(beforeEv) === JSON.stringify(evidenceIds || []);
     if (sameArg && sameEv) return 0;
     p.contextVersion = (Number(p.contextVersion) || 0) + 1;
-    const hadArg = p.argumentId || null;
     p.argumentId = argumentId || null;
     p.evidenceIds = evidenceIds || [];
-    esSaveDraft();
-    // Only a change of ARGUMENT calls the existing sentences into question. Adding a
-    // piece of evidence does not make what is already written wrong, and flagging it
-    // would train the student to ignore the flag.
-    if (sameArg || !hadArg) return 0;
+    const written = esBlocks(p).filter(b => String(b.text || "").trim());
     let flagged = 0;
-    esBlocks(p).forEach(b => {
-      if (!String(b.text || "").trim()) return;
-      b.needsReview = true;
-      flagged++;
-    });
+    const flag = b => { if (!b.needsReview) { b.needsReview = true; flagged++; } };
+    if (!sameArg && beforeArg) written.forEach(flag);                    // a different argument
+    if (!sameEv && beforeEv.length) {
+      const removed = beforeEv.filter(l => (evidenceIds || []).indexOf(l) < 0);
+      removed.forEach(l => written.forEach(b => { if (esBlockUsesEvidence(b, l)) flag(b); }));
+    }
     esSaveDraft();
     return flagged;
   }
@@ -3812,29 +3825,114 @@
     return { head: String(step.label || "").toUpperCase(), job: esSlotGuide(p, step), context: bits.join(", ") };
   }
 
-  // Guidance rungs, in order, ALL from content. Nothing here calls the worker.
-  // L1 hint, L2 what this line has to do, L3 a direction, L4 a content-free frame,
-  // L5 an example IN A DIFFERENT CONTEXT. A question that ships no exemplars still
-  // gets L1 to L3 from the slot job it already has.
+  // ---- THE HELP LADDER (Phase D) ---------------------------------------------
+  // Answers one question only: "I know what I want to say, but I cannot construct
+  // this line." Not knowing the content is Understand, not knowing what to argue is
+  // Ideas, not knowing what to use is Evidence. Keeping those apart is the point.
+  //
+  // Every rung is authored. Nothing here calls a model, and a rung that has not been
+  // written simply does not appear rather than being filled with something generic.
+  //
+  //   L1 hint      prompt the thinking
+  //   L2 needs     name the relationship that has to be established
+  //   L3 frame     grammar supplied, the meaningful content left blank
+  //   L4 starter   an opening the student finishes
+  //   L5 example   a fully written sentence IN A DIFFERENT CONTEXT, with its pattern
+  //
+  // L3 and L5 are validated in code against their declared type, so safety is a
+  // property of the data rather than a guess about its wording.
+  const ES_PLACEHOLDER = /\[[^\]]+\]|_{3,}/g;
+  // A scaffold frame supplies grammar and withholds meaning. The test is not whether
+  // every word is "structural" (which wrongly rejected "uses"), it is whether the
+  // question's own content has been left for the student to write.
+  function esValidFrame(frame, p) {
+    if (!frame || frame.type !== "scaffoldFrame") return null;
+    const text = String(frame.text || "");
+    const holes = text.match(ES_PLACEHOLDER) || [];
+    if (holes.length < 2) return null;                       // one blank is a sentence with a gap
+    const bare = text.replace(ES_PLACEHOLDER, " ").toLowerCase();
+    const q = esQuestionDef();
+    const loaded = ((q && q.requirements && q.requirements.concepts) || [])
+      .concat((p.evidenceIds || []))
+      .concat([esSubjectCaseStudy()].filter(Boolean));
+    // the supplied words must not already carry the answer's subject matter
+    const leaked = loaded.filter(term => {
+      const t = String(term || "").toLowerCase().split(/[^a-z0-9']+/).filter(w => w.length > 4);
+      return t.length && t.every(w => bare.indexOf(w) >= 0);
+    });
+    return leaked.length ? null : text;
+  }
+  function esSubjectCaseStudy() { const sc = esSubjectContent(ES.subject); return (sc && sc.caseStudy) || ""; }
+  // A level 5 example is a fully written sentence, so the only thing that makes it
+  // safe is that it is set somewhere else. It must declare its context, and it must
+  // not mention the case study the student is writing about.
+  function esValidExample(ex) {
+    if (!ex || ex.type !== "differentContextExample") return null;
+    if (!String(ex.context || "").trim()) return null;
+    const cs = esSubjectCaseStudy();
+    if (cs && String(ex.text || "").toLowerCase().indexOf(cs.toLowerCase()) >= 0) return null;
+    return ex;
+  }
+  function esAuthoredHelp(p, step) {
+    const path = esPathway(p);
+    const h = path && path.help && step && path.help[step.key];
+    return h || null;
+  }
   function esRungs(p, step) {
     if (!step) return [];
-    const ex = esExemplarFor(step.key);
-    const rungs = [
-      { level: 1, label: "Hint", text: "This sentence has one job: " + (step.job || "carry the paragraph forward") + "." },
-      { level: 2, label: "What this line needs to do", text: ex && ex.needs ? ex.needs : "Write one sentence that does that job and nothing else. Keep the next job for the next sentence." },
-    ];
-    if (ex && ex.direction) rungs.push({ level: 3, label: "Give me a direction", text: ex.direction });
-    const frame = slotTemplates(step.key);
-    const f = frame && (frame.tier1 || (frame.tier2 && frame.tier2[0] && frame.tier2[0].frame));
-    if (f) rungs.push({ level: 4, label: "Sentence starter", text: f, isFrame: true });
-    // L5 GUARD: only a DIFFERENT-CONTEXT example may be shown, ever. An exemplar
-    // without one is not rendered, because an example in the student's own context
-    // is a sentence to copy rather than a shape to learn.
-    if (ex && ex.differentContextExample) {
-      rungs.push({ level: 5, label: "Show me an example", text: ex.differentContextExample, note: ex.differentContextNote || "A different topic on purpose. Take the shape, not the words." });
+    const h = esAuthoredHelp(p, step) || {};
+    const rungs = [];
+    if (h.hint) rungs.push({ level: 1, label: "Hint", text: h.hint, cta: "Still stuck" });
+    if (h.needs) rungs.push({ level: 2, label: "What this line has to establish", text: h.needs, cta: "Show a structure" });
+    const frame = esValidFrame(h.frame, p);
+    if (frame) rungs.push({ level: 3, label: "A structure to fill in", text: frame, kind: "frame", cta: "Give me a start" });
+    if (h.starter && h.starter.type === "sentenceStarter" && h.starter.text) {
+      rungs.push({ level: 4, label: "A start you finish", text: String(h.starter.text).replace(/\s*$/, "") + "…", kind: "starter", cta: "Show another example" });
     }
+    const ex = esValidExample(h.example);
+    if (ex) rungs.push({ level: 5, label: "The same reasoning, somewhere else", text: ex.text, kind: "example", context: ex.context, pattern: ex.pattern || "" });
     return rungs;
   }
+
+  // The guide and ladder for a sentence being REOPENED. Same content, same rungs,
+  // same rule: the help a sentence was written with is still there when the student
+  // comes back to it, unless the paragraph's argument moved on underneath it.
+  function esEditGuideHTML(p, b) {
+    const step = slotsForRole(p.role).find(x => x.key === b.slot) || null;
+    if (!step) return "";
+    const g = esGuideFor(p, step);
+    return `<div class="es-guide"><div class="es-guideh">${esc(g.head)}</div><div class="es-guidejob">${esc(g.job)}</div></div>`;
+  }
+
+  // ---- help level belongs to the BLOCK, and is reset when its context moves ----
+  function esHelpKey(p, step) { return "h:" + ((step && step.key) || "-"); }
+  function esHelpLevel(p, blockIdx) {
+    const cv = Number(p.contextVersion) || 0;
+    if (blockIdx != null) {
+      const b = esBlocks(p)[blockIdx];
+      if (!b) return 0;
+      // help authored for the previous argument must not sit under a sentence that
+      // now belongs to a different one
+      if ((Number(b.helpContextVersion) || 0) !== cv) return 0;
+      return Number(b.helpLevel) || 0;
+    }
+    p.help = p.help || {};
+    const rec = p.help[esHelpKey(p, esStepDef(p))];
+    if (!rec || (Number(rec.cv) || 0) !== cv) return 0;
+    return Number(rec.n) || 0;
+  }
+  function esSetHelpLevel(p, blockIdx, n) {
+    const cv = Number(p.contextVersion) || 0;
+    if (blockIdx != null) {
+      const b = esBlocks(p)[blockIdx];
+      if (b) { b.helpLevel = n; b.helpContextVersion = cv; }
+    } else {
+      p.help = p.help || {};
+      p.help[esHelpKey(p, esStepDef(p))] = { n: n, cv: cv };
+    }
+    esSaveDraft();
+  }
+
   // Authored exemplars for a slot, from the subject's scaffold. Absent is fine.
   function esExemplarFor(key) {
     const scaf = esActiveScaffold();
@@ -4231,8 +4329,9 @@
       const label = b.dataset.esev, list = (p.evidenceIds || []).slice();
       const i = list.indexOf(label);
       if (i >= 0) list.splice(i, 1); else list.push(label);
-      esSetParagraphContext(p, p.argumentId, list);
+      const n = esSetParagraphContext(p, p.argumentId, list);
       esSaveDraft(); esRender();
+      if (n) toast(n + " sentence" + (n === 1 ? "" : "s") + " used that evidence. Check " + (n === 1 ? "it" : "them") + ".");
     });
     const back = host.querySelector("#esbackarg"); if (back) back.onclick = () => { ES.ui.setupStage = "argument"; esRender(); };
     const go = host.querySelector("#esstartwriting"); if (go) go.onclick = () => { p.setupDone = true; ES.ui.setupStage = null; esSaveDraft(); esRender(); };
@@ -4299,21 +4398,37 @@
     // accepted sentences, as ordinary prose. Click one to reopen it.
     const prose = blocks.map((b, k) => editing === k
       ? `<div class="es-editrow"><textarea class="es-input es-linebox" data-esedit="${k}" rows="2">${esc(b.text)}</textarea>
+         ${esEditGuideHTML(p, b)}
          <div class="es-linebtns"><button type="button" class="es-btn primary sm" data-essaveedit="${k}">Save</button><button type="button" class="es-linkbtn" data-escanceledit>Cancel</button><button type="button" class="es-linkbtn es-del" data-esdelblock="${k}">Delete sentence</button></div></div>`
       : `<span class="es-said ${(b.ambiguous || b.needsReview) ? "flagged" : ""}" data-esreopen="${k}" title="Click to rewrite this sentence">${esc(b.text)}</span>${(b.ambiguous || b.needsReview) ? `<span class="es-checkline">${b.needsReview ? "written for your previous argument." : "this sentence changed a lot."} <button type="button" class="es-linkbtn" data-esreopen="${k}">Review sentence</button> <button type="button" class="es-linkbtn" data-esok="${k}">Still works</button></span>` : ""}`).join(" ");
 
     const words = (p.text || "").trim().split(/\s+/).filter(Boolean).length;
     const target = esWordTarget(d);
-    const rungs = esRungs(p, step);
-    const shown = Math.min(Number(ES.ui.rung) || 0, rungs.length);
-    const helpRows = rungs.slice(0, shown).map(r =>
-      `<div class="es-rung"><span class="es-rungn">${r.level}</span><div class="es-rungbody"><div class="es-runglbl">${esc(r.label)}</div><div class="es-rungtext ${r.isFrame ? "frame" : ""}">${r.isFrame ? esc(r.text).replace(/_{2,}/g, '<span class="es-blank">____</span>') : esc(r.text)}</div>${r.note ? `<div class="es-rungnote">${esc(r.note)}</div>` : ""}</div></div>`).join("");
-    const moreLabel = shown === 0 ? "Help me" : shown < rungs.length ? "Still stuck" : "";
-    const help = !esGuidanceOn() ? "" : `
+    // the ladder follows whichever line is being written: the active one, or the
+    // reopened block and the job IT was written to do
+    const helpStep = editing != null
+      ? (slotsForRole(p.role).find(x => x.key === (blocks[editing] || {}).slot) || step)
+      : step;
+    const rungs = esRungs(p, helpStep);
+    const shown = Math.min(esHelpLevel(p, editing), rungs.length);
+    const blanks = t => esc(t).replace(/\[[^\]]+\]/g, m => `<span class="es-hole">${m.slice(1, -1)}</span>`).replace(/_{3,}/g, '<span class="es-blank">____</span>');
+    const helpRows = rungs.slice(0, shown).map(r => `
+      <div class="es-rung ${r.kind || ""}">
+        <span class="es-rungn">${r.level}</span>
+        <div class="es-rungbody">
+          <div class="es-runglbl">${esc(r.label)}${r.context ? ` <span class="es-rungctx">${esc(r.context)}</span>` : ""}</div>
+          <div class="es-rungtext ${r.kind || ""}">${(r.kind === "frame") ? blanks(r.text) : esc(r.text)}</div>
+          ${r.pattern ? `<div class="es-rungnote">Notice the pattern: ${esc(r.pattern)}. Now use the same reasoning on your own paragraph.</div>` : ""}
+          ${r.kind === "example" ? `<div class="es-rungnote">Deliberately a different situation, so the shape transfers and the words cannot.</div>` : ""}
+        </div>
+      </div>`).join("");
+    const next = rungs[shown];
+    const help = !esGuidanceOn() || !rungs.length ? "" : `
       <div class="es-help">
         ${helpRows}
         <div class="es-helpbtns">
-          ${moreLabel ? `<button type="button" class="es-btn sm" id="esmorehelp">${esc(moreLabel)}</button>` : `<span class="es-help">That is as much as this sentence gets. The rest is yours.</span>`}
+          ${next ? `<button type="button" class="es-btn sm" id="esmorehelp">${esc(shown === 0 ? "Help me" : (rungs[shown - 1].cta || "Show me more"))}</button>`
+                 : `<span class="es-helpend">That is as far as the help goes. The sentence is yours to write.</span>`}
           ${shown ? `<button type="button" class="es-linkbtn" id="eshidehelp">Hide help</button>` : ""}
         </div>
       </div>`;
@@ -4341,6 +4456,7 @@
           ${inSetup ? "" : `<div class="es-flow">
             ${(() => { const n = blocks.filter(b => b.needsReview).length; return n ? `<div class="es-argchanged"><b>Argument changed.</b> ${n} existing sentence${n === 1 ? " was" : "s were"} written for your previous argument. Check each one still supports the new direction.</div>` : ""; })()}
             ${blocks.length ? `<p class="es-prose">${prose}</p>` : `<p class="es-prose empty">Your paragraph builds here, one sentence at a time.</p>`}
+            ${editing != null ? help : ""}
             ${editing == null ? `
             <div class="es-active">
               <textarea id="esline" class="es-input es-linebox" rows="2" placeholder="Type your next sentence..."></textarea>
@@ -4381,7 +4497,7 @@
       esRefreshBelt(p);
     };
     host.querySelectorAll("[data-esgo]").forEach(b => b.onclick = () => {
-      d.pos = Number(b.dataset.esgo); p.step = si; ES.ui.editBlock = null; ES.ui.rung = 0; esResetCoachUI(); esSaveDraft(); esRender();
+      d.pos = Number(b.dataset.esgo); p.step = si; ES.ui.editBlock = null; esResetCoachUI(); esSaveDraft(); esRender();
     });
     // reopen an accepted sentence
     host.querySelectorAll("[data-esreopen]").forEach(b => b.onclick = () => { ES.ui.editBlock = Number(b.dataset.esreopen); esRender(); });
@@ -4419,23 +4535,26 @@
       accept.onclick = () => {
         const v = line.value.trim(); if (!v) return;
         const nb = esNewBlock(d, v, step ? step.key : null, "written");
-        nb.helpLevel = Number(ES.ui.rung) || 0;
+        nb.helpLevel = esHelpLevel(p, null);
+        nb.helpContextVersion = Number(p.contextVersion) || 0;
+        // A sentence written at the evidence step rests on whatever was selected then,
+        // so it carries that provenance and can be flagged precisely later.
+        if (step && /evidence|example/i.test(step.key)) nb.evidenceIds = (p.evidenceIds || []).slice();
         p.blocks = esBlocks(p).concat([nb]);
         esCommitBlocks(p);
         // advance a step unless the student chose to stay
         if (!ES.ui.stayStep && si < steps.length - 1) p.step = si + 1;
-        ES.ui.stayStep = false; ES.ui.rung = 0;
-        esSaveDraft(); esRender();
+        ES.ui.stayStep = false;         esSaveDraft(); esRender();
       };
     }
-    const ss = $("#essamestep"); if (ss) ss.onclick = () => { ES.ui.stayStep = true; p.step = si; ES.ui.rung = 0; esSaveDraft(); esRender(); };
-    const ng = $("#esnextguide"); if (ng) ng.onclick = () => { p.step = Math.min(si + 1, steps.length - 1); ES.ui.rung = 0; esSaveDraft(); esRender(); };
-    const bs = $("#esbackstep"); if (bs) bs.onclick = () => { p.step = Math.max(0, si - 1); ES.ui.rung = 0; esSaveDraft(); esRender(); };
-    const mh = $("#esmorehelp"); if (mh) mh.onclick = () => { ES.ui.rung = (Number(ES.ui.rung) || 0) + 1; esRender(); };
-    const hh = $("#eshidehelp"); if (hh) hh.onclick = () => { ES.ui.rung = 0; esRender(); };
+    const ss = $("#essamestep"); if (ss) ss.onclick = () => { ES.ui.stayStep = true; p.step = si; esSaveDraft(); esRender(); };
+    const ng = $("#esnextguide"); if (ng) ng.onclick = () => { p.step = Math.min(si + 1, steps.length - 1); esSaveDraft(); esRender(); };
+    const bs = $("#esbackstep"); if (bs) bs.onclick = () => { p.step = Math.max(0, si - 1); esSaveDraft(); esRender(); };
+    const mh = $("#esmorehelp"); if (mh) mh.onclick = () => { esSetHelpLevel(p, editing, esHelpLevel(p, editing) + 1); esRender(); };
+    const hh = $("#eshidehelp"); if (hh) hh.onclick = () => { esSetHelpLevel(p, editing, 0); esRender(); };
 
-    $("#esprev").onclick = () => { d.pos = Math.max(0, d.pos - 1); ES.ui.editBlock = null; ES.ui.rung = 0; esResetCoachUI(); esSaveDraft(); esRender(); };
-    $("#esnext").onclick = () => { d.pos = Math.min(total - 1, d.pos + 1); ES.ui.editBlock = null; ES.ui.rung = 0; esResetCoachUI(); esSaveDraft(); esRender(); };
+    $("#esprev").onclick = () => { d.pos = Math.max(0, d.pos - 1); ES.ui.editBlock = null; esResetCoachUI(); esSaveDraft(); esRender(); };
+    $("#esnext").onclick = () => { d.pos = Math.min(total - 1, d.pos + 1); ES.ui.editBlock = null; esResetCoachUI(); esSaveDraft(); esRender(); };
     const ask = $("#esask"); if (ask) ask.onclick = () => esGetFeedback(d.pos);
     $("#esquizlink").onclick = () => { ES.screen = "quiz"; esResetQuiz(); esRender(); };
     esBindToolbelt(p);
@@ -5164,8 +5283,7 @@
     // than dropping the student into a paragraph with a selection they can lose on
     // the first keystroke. Falls back to the paragraph when the line cannot be found.
     ES.ui.editBlock = p ? esBlockTarget(p, quote, ES.reviseBlockId) : null;
-    ES.ui.rung = 0;
-    esGoCoached(slot);
+        esGoCoached(slot);
     const box = ES.ui.editBlock != null && document.querySelector('[data-esedit="' + ES.ui.editBlock + '"]');
     if (box) { box.focus(); try { box.setSelectionRange(box.value.length, box.value.length); } catch (e) { /* older browsers */ } }
     toast(ES.ui.editBlock != null ? "Rewrite this sentence, then Save." : "Rewrite this paragraph, then check it again.");

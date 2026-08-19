@@ -110,6 +110,10 @@ window.ESSAY = {
       key: "business_studies",
       label: "Business Studies",
       stage: "Year 12",
+      // The business the verified evidence bank is built on. A level 5 example is
+      // rejected in code if it mentions this, because an example in the student's
+      // own context is a sentence to copy rather than a pattern to learn.
+      caseStudy: "McDonald",
       // The four dimensions an HSC Business Studies extended response is assessed on,
       // described in original wording.
       markingCriteria: [
@@ -178,7 +182,30 @@ window.ESSAY = {
                 explain: "Explain WHY a target market that is highly engaged with digital technology would cause the business to market through digital channels. Name the mechanism, not the outcome.",
                 example: "Apply the evidence you selected. State the relevant fact accurately first, then say what it demonstrates about the target market.",
                 effect: "Say what this achieves for the business, in marketing terms rather than general benefit.",
-                link: "Tie it back to the question: this is one way the target market affects e-marketing." } },
+                link: "Tie it back to the question: this is one way the target market affects e-marketing." },
+              // ------------------------------------------------------------
+              // THE HELP LADDER for this pathway, authored. Rungs are TYPED so
+              // safety is declared rather than guessed at: a scaffoldFrame must
+              // leave the meaningful content blank, and a differentContextExample
+              // must be set somewhere else entirely. A rung that is not authored
+              // simply does not appear.
+              // ------------------------------------------------------------
+              help: {
+                explain: {
+                  hint: "Think about where this target market spends its time, and how a business can reach them there.",
+                  needs: "Show the cause and effect between the target market's digital behaviour and the business's choice of marketing channel. The customer habit is the cause.",
+                  frame: { type: "scaffoldFrame", text: "Because [target-market characteristic], the business uses [strategy] to [effect]." },
+                  starter: { type: "sentenceStarter", text: "A target market that is highly engaged with digital technology can influence a business's choice of marketing channel because" },
+                  example: { type: "differentContextExample", context: "a gym and time-poor professionals",
+                    text: "A target market of time-poor professionals may encourage a gym to offer online booking, because this lets customers arrange a session without phoning during business hours.",
+                    pattern: "target-market characteristic, then strategy, then why it suits that market" } },
+                example: {
+                  hint: "Give the detail first. A marker cannot credit a claim about evidence they have not been shown.",
+                  needs: "State the fact accurately, then say what it demonstrates. Two moves, in that order.",
+                  frame: { type: "scaffoldFrame", text: "[specific detail from the evidence], which shows [what it demonstrates about the target market]." },
+                  example: { type: "differentContextExample", context: "a bookshop and its loyalty card",
+                    text: "The bookshop's loyalty card records what each member buys, which shows that its target market is willing to trade some privacy for a discount.",
+                    pattern: "the detail, then what the detail proves" } } }, },
             { id: "mkt01-em-value", area: "e-marketing",
               relationship: "Value-conscious customers lead to digital promotions and loyalty offers",
               concept: { topic: "marketing", section: "marketing strategies", point: "promotion" },
@@ -223,7 +250,16 @@ window.ESSAY = {
                 explain: "Explain WHY a preference for convenience causes the business to change its ordering process. The cause is the customer expectation, not the technology.",
                 example: "Apply the evidence you selected. State the fact, then say what it demonstrates about the process.",
                 effect: "Say what the changed process achieves for the customer experience and for the business.",
-                link: "Tie it back: this is how the target market affects processes." } },
+                link: "Tie it back: this is how the target market affects processes." },
+              help: {
+                explain: {
+                  hint: "Ask what this customer is unwilling to spend, and what the business changes so they do not have to.",
+                  needs: "Establish the causal step from the customer expectation to the process. The expectation comes first and causes the change.",
+                  frame: { type: "scaffoldFrame", text: "Because [what this target market expects], the business changed [which process] so that [result for the customer]." },
+                  starter: { type: "sentenceStarter", text: "Customers who place a high value on convenience push the business to reorganise its ordering process because" },
+                  example: { type: "differentContextExample", context: "a pharmacy and shift workers",
+                    text: "Because shift workers cannot visit during ordinary hours, the pharmacy moved repeat prescriptions to an online request, so that an order can be placed at any time.",
+                    pattern: "the expectation, then the process changed, then the result" } } }, },
             { id: "mkt01-pr-customisation", area: "processes",
               relationship: "Customers who want to customise orders lead to ordering systems built to take variations",
               concept: { topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
