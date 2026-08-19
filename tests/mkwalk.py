@@ -54,3 +54,24 @@ src = src[:i] + boot + src[i:]
 dest = os.path.join(OUT, "marginal-walkthrough.html")
 io.open(dest, "w", encoding="utf-8").write(src)
 print("walkthrough:", dest, len(src), "bytes")
+
+# A second build for walking the Evidence layer before real sources exist. Every
+# item is stamped with a source that SAYS it is not verified, and the app prints
+# it under each piece of evidence, so nothing here can be mistaken for checked
+# work. Never deploy this file; it exists to let the layer be judged.
+stamp = """
+<script>
+(function(){
+  var S="PREVIEW ONLY, not a verified source";
+  function mark(){ try{
+    var E=(window.BUSCONTENT||{}).evidence||{};
+    Object.keys(E).forEach(function(k){ E[k].forEach(function(e){ if(!e.source) e.source=S; }); });
+  }catch(err){} }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",mark); else mark();
+})();
+</script>
+"""
+prev = src.replace("</body>", stamp + "</body>", 1) if "</body>" in src else src + stamp
+dest2 = os.path.join(OUT, "marginal-walkthrough-evidence-preview.html")
+io.open(dest2, "w", encoding="utf-8").write(prev)
+print("evidence preview:", dest2, len(prev), "bytes")
