@@ -1159,7 +1159,7 @@ function pass2Message(bag) {
     `HOW TO READ THE DIAGNOSIS:\nThe reader who wrote it was not told the marks, the criteria or the bands, and awarded nothing. Every quote in it has been checked and does appear in the response. Where it is silent, read the response yourself: silence is not a fault. Nothing in it tells you what the student meant to write, so judge only what they wrote.${f.offPathway ? "\n\nTHIS RESPONSE MAKES " + f.offPathway + " ARGUMENT" + (f.offPathway > 1 ? "S" : "") + " THAT OUR MATERIALS DID NOT ANTICIPATE. Our list is a menu that removes the blank page, not the set of correct answers. Judge those arguments on the reasoning actually written, exactly as you judge the rest. Never take a mark off because an argument was not on our list." : ""}`,
     `STUDENT RESPONSE (numbered paragraphs):\n${f.response}`,
     f.blocks && f.blocks.length
-      ? `THE SAME RESPONSE, SENTENCE BY SENTENCE, WITH IDS. Mark the response above; these ids only say WHERE. When an issue belongs to one sentence, put that sentence's id in targetBlockId so the student is taken straight back to it:\n${f.blocks.map(b => `${b.id}${b.slot ? " [" + b.slot + "]" : ""} P${b.paragraph}: ${b.text}`).join("\n")}`
+      ? `THE SAME RESPONSE, SENTENCE BY SENTENCE, WITH IDS.\nThis list is NAVIGATION AND CONTEXT ONLY. Award marks solely for the knowledge, reasoning, application and communication in the written response above. A slot name, a chosen argument, a chosen piece of evidence or a concept the student selected while writing is a statement of what they INTENDED, never evidence that they did it. If the sentence does not communicate it, it does not earn it. Use these only to understand what a line was for and to say which line to fix: when an issue belongs to one sentence, put that sentence's id in targetBlockId so the student is taken straight back to it.\n${f.blocks.map(b => `${b.id}${b.slot ? " [" + b.slot + "]" : ""} P${b.paragraph}: ${b.text}`).join("\n")}`
       : "",
   ].filter(Boolean).join("\n\n");
 }
@@ -1335,16 +1335,22 @@ function groundFocus(r, answer, blocks) {
   }
   if (idx < 0) idx = 0;
   // which sentence in that paragraph the quote sits in, so the app can open the line
+  // A quotation names a sentence only when it names EXACTLY one. Two sentences that
+  // both match means we do not know which, so the student is returned to the
+  // paragraph rather than sent to a guess. The block id is the reliable route; this
+  // is only the fallback for a client that sent no blocks.
   let sentence = null;
   const sents = (paras[idx] && paras[idx].sentences) || [];
   if (quote) {
     const qw = quoteWords(quote).join(" ");
+    const hits = [];
     for (let i = 0; i < sents.length; i++) {
       const t = sents[i] && sents[i].text;
       if (typeof t !== "string") continue;
       const tw = quoteWords(t).join(" ");
-      if (tw && (tw.indexOf(qw) >= 0 || qw.indexOf(tw) >= 0)) { sentence = i; break; }
+      if (tw && (tw.indexOf(qw) >= 0 || qw.indexOf(tw) >= 0)) hits.push(i);
     }
+    if (hits.length === 1) sentence = hits[0];
   }
   // A block id is only useful if it exists. A made-up one would send the student
   // nowhere, so it is checked against the list we sent and dropped otherwise; the

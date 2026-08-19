@@ -9017,14 +9017,33 @@ window.BUSCONTENT = {
   // export and the full-attempt view. The one hard case is a student editing the
   // text somewhere else, and that is reconciled rather than rebuilt: a sentence
   // whose words did not change keeps its identity.
+  // Splitting on every full stop broke on decimals, initials and abbreviations,
+  // which then handed the wrong text to a block and, through it, to marking.
+  const ES_ABBR = /\b(?:mr|mrs|ms|dr|prof|st|no|vs|etc|eg|ie|approx|est|fig|inc|ltd|co|pty|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)$/i;
   function esSplitBlocks(text) {
+    const t = String(text || "");
     const out = [];
-    const re = /[^.!?]+[.!?]*\s*/g;
-    let m;
-    while ((m = re.exec(String(text || ""))) !== null) {
-      const t = m[0].trim();
-      if (t) out.push(t);
+    let start = 0;
+    for (let i = 0; i < t.length; i++) {
+      const c = t[i];
+      if (c !== "." && c !== "!" && c !== "?") continue;
+      if (c === ".") {
+        if (/\d/.test(t[i - 1] || "") && /\d/.test(t[i + 1] || "")) continue;            // 3.5, 1,200.50
+        if (/[A-Z]/.test(t[i - 1] || "") && !/[A-Za-z]/.test(t[i - 2] || "")) continue;   // J. Smith, U.S.
+        const word = (t.slice(start, i).trim().split(/\s+/).pop() || "").replace(/\./g, "");
+        if (ES_ABBR.test(word)) continue;                                                 // e.g. etc. Dr.
+      }
+      let j = i + 1;
+      while (j < t.length && /[.!?"'\u201d\u2019)\]]/.test(t[j])) j++;
+      const after = t.slice(j);
+      if (after && !/^\s/.test(after)) continue;   // no break: still inside the sentence
+      const chunk = t.slice(start, j).trim();
+      if (chunk) out.push(chunk);
+      start = j;
+      i = j - 1;
     }
+    const tail = t.slice(start).trim();
+    if (tail) out.push(tail);
     return out;
   }
   // Ids are minted per draft and never reused, so marking can point at one for the
@@ -9040,6 +9059,8 @@ window.BUSCONTENT = {
       argumentId: null,   // set in paragraph setup
       evidenceIds: [],    // set in paragraph setup
       sourceRefs: [],     // which stimulus material this line draws on
+      contextVersion: (d && Number(d.contextVersion)) || 0,
+      needsReview: false, // set when the paragraph's argument or evidence changed under it
     };
   }
   const esNormLine = t => String(t || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
@@ -9064,7 +9085,21 @@ window.BUSCONTENT = {
       else if (dp[i + 1][j] >= dp[i][j + 1]) i++;                                      // deleted elsewhere
       else { out.push(esNewBlock(d, want[j], null, "derived")); j++; }                 // typed elsewhere
     }
-    while (j < m) out.push(esNewBlock(d, want[j], null, "derived"));
+    while (j < m) { out.push(esNewBlock(d, want[j], null, "derived")); j++; }
+    // AMBIGUITY IS RESOLVED BY LOSING METADATA, NEVER BY GUESSING. When the same
+    // sentence appears more than once and the count changed, there is no way to know
+    // which one survived, so the semantics are cleared from that group and only the
+    // words are kept. A wrong slot or a wrong evidence id on a sentence is worse than
+    // no slot at all, because marking would then point the student at the wrong line.
+    const before = {}, after = {};
+    A.forEach(k => { before[k] = (before[k] || 0) + 1; });
+    out.forEach(b => { const k = esNormLine(b.text); after[k] = (after[k] || 0) + 1; });
+    out.forEach(b => {
+      const k = esNormLine(b.text);
+      if (before[k] > 1 && before[k] !== after[k]) {
+        b.slot = null; b.argumentId = null; b.evidenceIds = []; b.status = "derived"; b.ambiguous = true;
+      }
+    });
     return out;
   }
   function esBlocks(p) {
@@ -9084,6 +9119,28 @@ window.BUSCONTENT = {
     p.blocksFrom = p.text;
     if (p.feedback && (p.gradedText || "") !== p.text) { p.feedback = null; p.gradedText = null; }
   }
+  // Changing the argument or the evidence does NOT silently relabel sentences that
+  // were written to argue something else. Their provenance stays, they are flagged
+  // for the student to look at again, and the student decides. Reconsidering the
+  // paragraph is the correct consequence of changing its argument.
+  function esSetParagraphContext(p, argumentId, evidenceIds) {
+    const sameArg = (p.argumentId || null) === (argumentId || null);
+    const sameEv = JSON.stringify(p.evidenceIds || []) === JSON.stringify(evidenceIds || []);
+    if (sameArg && sameEv) return 0;
+    p.contextVersion = (Number(p.contextVersion) || 0) + 1;
+    p.argumentId = argumentId || null;
+    p.evidenceIds = evidenceIds || [];
+    let flagged = 0;
+    esBlocks(p).forEach(b => {
+      if (!String(b.text || "").trim()) return;
+      b.needsReview = true;            // written under the old context
+      flagged++;
+    });
+    esSaveDraft();
+    return flagged;
+  }
+  function esClearReview(p, k) { const b = esBlocks(p)[k]; if (b) { b.needsReview = false; b.contextVersion = p.contextVersion || 0; esSaveDraft(); } }
+
   // Every block in the draft, flattened, for the marking payload.
   function esAllBlocks(d) {
     const out = [];
@@ -10039,16 +10096,20 @@ window.BUSCONTENT = {
     }
     return esBlockForQuote(p, quote);
   }
+  // A quotation only names a sentence when it names exactly one. Two sentences that
+  // both match means we do not know which, so the student is returned to the
+  // paragraph rather than sent to a guess.
   function esBlockForQuote(p, quote) {
     const q = String(quote || "").trim().toLowerCase();
     if (!q) return null;
     const blocks = esBlocks(p);
     const head = q.split(/\s+/).slice(0, 6).join(" ");
+    const hits = [];
     for (let i = 0; i < blocks.length; i++) {
       const t = blocks[i].text.toLowerCase();
-      if (t.indexOf(q) >= 0 || (head.length > 8 && t.indexOf(head) >= 0) || q.indexOf(t) >= 0) return i;
+      if (t.indexOf(q) >= 0 || (head.length > 8 && t.indexOf(head) >= 0) || q.indexOf(t) >= 0) hits.push(i);
     }
-    return null;
+    return hits.length === 1 ? hits[0] : null;
   }
   // Where the marker's line sits inside the paragraph. Exact match first, then the
   // opening few words. Returns null rather than guessing, so a miss just leaves the

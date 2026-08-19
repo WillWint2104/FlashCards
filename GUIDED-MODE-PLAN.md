@@ -352,3 +352,78 @@ The verb allowlist is the wrong rule. The right distinction:
 So the guard stops asking "is every word structural" and starts asking "does this
 leave the meaningful content blank". That is both looser where it was wrong and
 tighter where it matters.
+
+---
+
+## 10. Five safeguards, assessed and applied
+
+### Weaken the quote fallback: applied
+
+A valid `targetBlockId` always wins. When it is invalid the quotation is used
+**only if it resolves to exactly one sentence**; two matches means neither, and
+the student is returned to the paragraph rather than sent to a guess. Enforced on
+both sides: `groundFocus` in the worker and `esBlockForQuote` in the app.
+
+### A nastier reconciliation suite: applied, and it found a freeze
+
+Eleven splitter cases and twelve reconciliation cases now run against the shipped
+functions, extracted from `app.js` rather than reimplemented. They found three
+real defects:
+
+1. **An infinite loop.** The tail of the reconciler, `while (j < m) out.push(...)`,
+   never advanced `j`. It only triggers when the old blocks run out before the new
+   sentences do, which is exactly what merging two sentences into one does. A
+   student who joined two sentences in full attempt would have frozen the tab. The
+   original single test never left the loop in that state, which is precisely the
+   reviewer's point about the easy case.
+2. **The splitter broke on ordinary writing.** `3.5`, `$1,200.50`, `Dr. Smith`,
+   `e.g.` and `U.S.` each became sentence boundaries, so blocks held fragments and
+   marking pointed at half a sentence.
+3. **The duplicate rule was checking the wrong side.** It tested the new count
+   when the question is which OLD block survived.
+
+The governing rule is now explicit in the code: when reconciliation is ambiguous,
+**lose the metadata rather than attach it to the wrong sentence**. A duplicated
+sentence whose count changed has its slot, argument and evidence cleared and is
+flagged `ambiguous`. A wrong slot is worse than none, because marking would then
+send the student to the wrong line.
+
+Where identity cannot be preserved (a word changed mid-sentence, a merge, a
+split, a move), the block is rebuilt with no slot rather than inheriting a
+neighbour's.
+
+### Argument change invalidation: mechanism built, UI in C
+
+`esSetParagraphContext()` bumps a `contextVersion`, keeps every existing sentence
+and its original provenance, and flags each one `needsReview`. Nothing is silently
+relabelled. Phase C wires the prompt: "your argument changed, review these three
+sentences to make sure they still support it." As the review says, that is
+educationally correct rather than merely safe.
+
+### Report structure is many-to-many: recorded for F
+
+`taskRequirements[] -> reportSections[]`, authored, not generated one-to-one. A
+requirement may split into subsections and related requirements may combine. The
+2025 question's Gantt bullet clearly wants purpose and issues as separate
+subsections, so one bullet becoming one giant heading would be its own rigid
+formula.
+
+### Short answer is criteria-driven: already true, now stated
+
+Nothing infers `marks = number of slots`. `answerShapes.commands` keys the jobs by
+directive; marks only set the depth note. Phase E uses authored `responseJobs[]`
+when a question ships them and falls back to the directive shape when it does not.
+Marks are a depth signal; the question and its criteria determine the jobs.
+
+### The marking rule, locked in
+
+Now in the pass 2 message, next to the block list:
+
+> This list is NAVIGATION AND CONTEXT ONLY. Award marks solely for the knowledge,
+> reasoning, application and communication in the written response above. A slot
+> name, a chosen argument, a chosen piece of evidence or a concept the student
+> selected while writing is a statement of what they INTENDED, never evidence that
+> they did it. If the sentence does not communicate it, it does not earn it.
+
+This is the same rule as "the plan is context, not marks", applied to the block
+metadata that Phase C is about to start sending.
