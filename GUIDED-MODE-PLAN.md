@@ -237,3 +237,118 @@ Phases E and F are held: more guidance on both is coming.
 4. **Evidence sources arrive with the authored JSON**, on import with the research
    round. Until an item carries a checked source it shows the existing "check a
    current figure yourself" badge rather than a link. Nothing is invented here.
+
+---
+
+## 8. Blocks are durable state, not a view (resolved, and built)
+
+The review was right and this is now the model.
+
+Making `blocks[]` a view of `paras[i].text` was fine while a block was only text.
+It stops being fine the moment a block carries a job, a help level, an argument, a
+piece of evidence and an id that marking points at, because rebuilding from text
+throws all of that away the first time somebody fixes a comma.
+
+**Inverted.** A block is first-class and durable:
+
+```js
+{ id, slot, text, status, helpLevel, argumentId, evidenceIds, sourceRefs }
+```
+
+`paras[i].text` is derived from the ordered blocks and stays the source of truth
+for marking, export and full attempt, so nothing downstream changed.
+
+**The hard case is an edit made somewhere else**, and it is reconciled rather than
+rebuilt. When the text moves on without us, the sentences it now contains are
+aligned against the blocks we hold by longest common subsequence: a sentence whose
+words are unchanged **keeps its id, its slot and its help level**, a sentence that
+is new becomes a fresh block marked `derived` with no slot, and a sentence that
+disappeared is dropped. An edit in the middle no longer renumbers everything after
+it. Reconciling writes straight to storage, because the ids it keeps are what
+marking will point at later.
+
+### Marking targets a block id
+
+The payload now carries the assembled response **and** the sentence list, each
+line with its id, slot and paragraph. `focus.targetBlockId` comes back with it.
+
+Enforced in code, as everywhere else: an id that was not in the list we sent is
+**refused**, and the quote fallback that already exists takes over. A hallucinated
+id can never send a student to the wrong sentence. `checks.focusBlock` reports
+whether a real target came back.
+
+Revise then opens that exact sentence, which is what makes the loop close:
+
+```
+content -> choice -> writing -> marking -> exact revision
+```
+
+with no model call anywhere in the writing half.
+
+---
+
+## 9. Corrections and guidance for E and F
+
+### Section III is 20 marks, not 15
+
+Verified against the 2025 paper rather than taken on trust:
+
+```
+Section III - Business report | 1 question | 20 marks
+```
+
+No title page and no reference list in an exam-writing interface.
+
+### The report's sections come from the task, not a template
+
+The same paper settles this. Question 25 carries its directives in the task:
+
+```
+In your report:
+  • outline ONE relevant human resource management process the business could use
+  • describe the purpose of the above chart and any issues found in the chart
+  • recommend appropriate global factors the business can use to achieve cost leadership
+```
+
+Three directives, three body requirements. So the report structure is
+**generated from the task's own bullets**, never a fixed Issue 1 / Issue 2 /
+Issue 3. The report begins with a task-analysis stage, not a sentence input:
+what the scenario shows, what each directive asks, which syllabus areas answer
+it, which stimulus facts support it. Only then does the composer open.
+
+Executive summary is written **last** and identifies the issues, the strategies
+and the intended outcomes. The conclusion reviews without introducing anything
+new. Described in our own words, never lifted.
+
+### The toolbelt is adaptive, per mode
+
+| Mode | What structures the writing | Toolbelt |
+| --- | --- | --- |
+| Short answer | creditworthy jobs from directive, marks and stimulus | Understand, Source **or** Ideas, Structure, Vocabulary |
+| Business report | task components, scenario issues, report sections | Understand, Task, Evidence, Structure, Vocabulary |
+| Extended response | argument pathway, body paragraphs, TDECC | Understand, Ideas, Evidence, Structure, Vocabulary |
+
+`Evidence` does not appear when the support is a supplied stimulus; `Source` does.
+Help stays attached to the active sentence. If a Help icon appears in the toolbelt
+it opens the same stack for the active block, never a second help system.
+
+Opening any tool captures the active paragraph, block and slot, and closing it
+returns the cursor to that exact sentence. That return is as much the feature as
+the drawer.
+
+One engine, one authored-help system, one contextual-resource system, one marker.
+Three modes that do not look like skins of each other.
+
+### Phase D, restated
+
+The verb allowlist is the wrong rule. The right distinction:
+
+- **Scaffold frame** — blanks force the student to supply the meaningful content.
+  `Because ____, McDonald's uses ____ to ____.` is fine: the reasoning is still
+  theirs to write.
+- **Model sentence** — fully written. Allowed only at the final rung, and only
+  from `differentContextExample`.
+
+So the guard stops asking "is every word structural" and starts asking "does this
+leave the meaningful content blank". That is both looser where it was wrong and
+tighter where it matters.

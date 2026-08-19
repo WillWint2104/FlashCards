@@ -290,8 +290,9 @@ const REVIEW_TOOL = {
           paragraph: { type: "number", description: "1-based number of the paragraph to revise first." },
           why: { type: "string", description: "One or two sentences on what this paragraph does and what it does not yet do, pointing at the student's own words. No em-dashes." },
           quote: { type: "string", description: "A short verbatim quote from that paragraph, copied exactly." },
+          targetBlockId: { type: "string", description: "The id of the ONE sentence to rewrite, from the sentence list in the request. Empty when the issue is the paragraph as a whole rather than one line." },
         },
-        required: ["area", "paragraph", "why", "quote"],
+        required: ["area", "paragraph", "why", "quote", "targetBlockId"],
       },
       paragraphs: {
         type: "array",
@@ -727,7 +728,7 @@ export default {
       userMessage = pass2Message({
         subject: markSubject, criteria, bands: ctx.bands, bandsSource: ctx.bandsSource,
         command, marks, prompt, topic: ctx.topic, requirements: ctx.requirements,
-        responseType: ctx.responseType, stimulus: ctx.stimulus,
+        responseType: ctx.responseType, stimulus: ctx.stimulus, blocks: ctx.blocks,
         reference: String(model_answer || "").slice(0, 1600), vocab, scaffold: scaffoldText, faults: faultsText, rubric: ctx.rubric,
         diagnosis: diagnosisText(diagnosis),
         offPathway: offPathwayCount(diagnosis, ctx.validContent.pathways.length > 0),
@@ -775,7 +776,7 @@ export default {
     if (data.stop_reason === "max_tokens" && r.paragraphs.length < chunkCount) {
       return json({ error: "grading ran long and was cut off before it finished. Try again.", stop_reason: "max_tokens" }, 502, cors);
     }
-    return json(finalize(r, markTotal, String(answer), diagnosis, criteria, ctx.validContent.pathways.length > 0, ctx.responseType), 200, cors);
+    return json(finalize(r, markTotal, String(answer), diagnosis, criteria, ctx.validContent.pathways.length > 0, ctx.responseType, ctx.blocks), 200, cors);
   },
 };
 
@@ -1102,7 +1103,7 @@ async function diagnose(f, env) {
 // authored argument pathways are absent by construction, so no prompt edit can let
 // them score. Adding a key here is the only way to change that, and it throws
 // loudly rather than leaking quietly.
-const PASS2_FIELDS = ["subject", "criteria", "bands", "bandsSource", "rubric", "command", "marks", "prompt", "topic", "requirements", "reference", "vocab", "scaffold", "faults", "diagnosis", "offPathway", "responseType", "stimulus", "response"];
+const PASS2_FIELDS = ["subject", "criteria", "bands", "bandsSource", "rubric", "command", "marks", "prompt", "topic", "requirements", "reference", "vocab", "scaffold", "faults", "diagnosis", "offPathway", "responseType", "stimulus", "blocks", "response"];
 
 // How to mark THIS kind of response. A short answer is not a miniature essay: it
 // earns its marks by doing what the directive verb asks at the depth the mark
@@ -1157,6 +1158,9 @@ function pass2Message(bag) {
     `DIAGNOSIS OF THIS RESPONSE (already checked against the student's own words, carries no marks):\n${f.diagnosis}`,
     `HOW TO READ THE DIAGNOSIS:\nThe reader who wrote it was not told the marks, the criteria or the bands, and awarded nothing. Every quote in it has been checked and does appear in the response. Where it is silent, read the response yourself: silence is not a fault. Nothing in it tells you what the student meant to write, so judge only what they wrote.${f.offPathway ? "\n\nTHIS RESPONSE MAKES " + f.offPathway + " ARGUMENT" + (f.offPathway > 1 ? "S" : "") + " THAT OUR MATERIALS DID NOT ANTICIPATE. Our list is a menu that removes the blank page, not the set of correct answers. Judge those arguments on the reasoning actually written, exactly as you judge the rest. Never take a mark off because an argument was not on our list." : ""}`,
     `STUDENT RESPONSE (numbered paragraphs):\n${f.response}`,
+    f.blocks && f.blocks.length
+      ? `THE SAME RESPONSE, SENTENCE BY SENTENCE, WITH IDS. Mark the response above; these ids only say WHERE. When an issue belongs to one sentence, put that sentence's id in targetBlockId so the student is taken straight back to it:\n${f.blocks.map(b => `${b.id}${b.slot ? " [" + b.slot + "]" : ""} P${b.paragraph}: ${b.text}`).join("\n")}`
+      : "",
   ].filter(Boolean).join("\n\n");
 }
 
@@ -1303,8 +1307,9 @@ function groundProse(r, idx) {
 // Clamp it to a paragraph that exists, verify its quote, and locate the sentence it
 // points at so the app can open that exact line. Fall back to the worst open issue
 // rather than dropping the student back on a summary with nowhere to go.
-function groundFocus(r, answer) {
+function groundFocus(r, answer, blocks) {
   const words = (answer && answer.toks) ? answer : answerIndex(answer);
+  const ids = new Set(asArray(blocks).map(b => asObject(b).id).filter(Boolean));
   const paras = r.paragraphs || [];
   const f = asObject(r.focus);
   let idx = Math.round(Number(f.paragraph)) - 1;
@@ -1341,7 +1346,12 @@ function groundFocus(r, answer) {
       if (tw && (tw.indexOf(qw) >= 0 || qw.indexOf(tw) >= 0)) { sentence = i; break; }
     }
   }
-  return { area: area || "Where to start", paragraph: idx + 1, index: idx, sentence, why, quote };
+  // A block id is only useful if it exists. A made-up one would send the student
+  // nowhere, so it is checked against the list we sent and dropped otherwise; the
+  // quote fallback already covers that case.
+  let targetBlockId = String(f.targetBlockId || "");
+  if (!ids.has(targetBlockId)) targetBlockId = "";
+  return { area: area || "Where to start", paragraph: idx + 1, index: idx, sentence, why, quote, targetBlockId };
 }
 
 // Read the optional marking context off the request, bounded so a large or hostile
@@ -1354,6 +1364,12 @@ function markingInput(body) {
   const vc = asObject(b.validContent);
   const pl = asObject(b.plan);
   return {
+    // The student's own sentences, each with a stable id. Marking targets an id
+    // rather than hunting for a quotation, which stops mattering the moment two
+    // sentences look alike or a comma moves.
+    blocks: asArray(b.blocks).slice(0, 200).map(asObject).map(x => ({
+      id: str(x.id, 24), slot: str(x.slot, 24), paragraph: Math.max(0, Math.round(Number(x.paragraph) || 0)), text: str(x.text, 600),
+    })).filter(x => x.id && x.text),
     // A short answer is marked as a short answer. Anything else is an extended
     // response, which keeps every older client on exactly its current behaviour.
     responseType: b.responseType === "short" ? "short" : "extended",
@@ -1448,7 +1464,7 @@ function normalizeReview(r) {
 
 // Enforce the honest-marking invariants in code (never trust the model to add
 // up), and derive the legacy grade fields the current essay sheet still reads.
-function finalize(r, marks, answer, diagnosis, criteria, creditable, responseType) {
+function finalize(r, marks, answer, diagnosis, criteria, creditable, responseType, blocks) {
   answer = String(answer == null ? "" : answer);
   marks = Math.round(Number(marks));
   if (!Number.isFinite(marks) || marks < 1) marks = 1;   // never render NaN as a mark
@@ -1479,7 +1495,7 @@ function finalize(r, marks, answer, diagnosis, criteria, creditable, responseTyp
   // ---- grounding: where the student goes back to write, and how we know ----
   const idx = answerIndex(answer);
   const snap = snapSentences(r, idx);
-  r.focus = groundFocus(r, idx);
+  r.focus = groundFocus(r, idx, blocks);
   const prose = groundProse(r, idx);
   if (diagnosis) {
     r.diagnosis = diagnosis;
@@ -1500,6 +1516,7 @@ function finalize(r, marks, answer, diagnosis, criteria, creditable, responseTyp
     sentencesUnplaced: snap.unplaced,
     grounded: snap.total ? Math.round(100 * snap.snapped / snap.total) / 100 : 1,
     focusQuoted: !!(r.focus && r.focus.quote),
+    focusBlock: !!(r.focus && r.focus.targetBlockId),
     prose: prose,
     diagnosis: diagnosis ? diagnosis.verified : null,
   };

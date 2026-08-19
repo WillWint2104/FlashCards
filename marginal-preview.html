@@ -5764,7 +5764,7 @@ window.BUSCONTENT = {
             bands: mc.bands, bandsSource: mc.bandsSource, topic: mc.topic, requirements: mc.requirements,
             responseType: responseTypeOf(card, opts), stimulus: !!card.stimulus,
             rubric: card.rubric || undefined,
-            plan: opts.plan, validContent: opts.validContent,
+            plan: opts.plan, validContent: opts.validContent, blocks: opts.blocks,
             code: state.code || undefined
           })
         });
@@ -9005,8 +9005,18 @@ window.BUSCONTENT = {
   // same text, rebuilt whenever the text changed somewhere else (no fork).
   // ===========================================================================
 
-  // Split a paragraph into sentences, keeping the trailing punctuation with each
-  // one so joining them back is lossless.
+  // A BLOCK IS DURABLE FIRST-CLASS STATE, not a view of the text.
+  //
+  // A guided sentence is no longer just text. It carries the job it does, how far
+  // the student escalated for help on it, which argument and evidence it rests on,
+  // and the id marking points at when it says "rewrite this one". Rebuilding blocks
+  // from the paragraph text on every change would throw all of that away the first
+  // time somebody fixed a comma.
+  //
+  // So: blocks own the semantics, paras[i].text is DERIVED from them for marking,
+  // export and the full-attempt view. The one hard case is a student editing the
+  // text somewhere else, and that is reconciled rather than rebuilt: a sentence
+  // whose words did not change keeps its identity.
   function esSplitBlocks(text) {
     const out = [];
     const re = /[^.!?]+[.!?]*\s*/g;
@@ -9017,24 +9027,70 @@ window.BUSCONTENT = {
     }
     return out;
   }
-  // The guided view of this paragraph. Rebuilt from text whenever text moved on
-  // without us (a full attempt edit, a restored draft, an older saved essay), so
-  // the two representations can never drift apart.
+  // Ids are minted per draft and never reused, so marking can point at one for the
+  // life of the essay even after sentences are moved, edited or deleted around it.
+  function esNewBlock(d, text, slot, status) {
+    d.seq = (Number(d.seq) || 0) + 1;
+    return {
+      id: "b" + d.seq,
+      slot: slot || null,
+      text: String(text || ""),
+      status: status || "written",
+      helpLevel: 0,
+      argumentId: null,   // set in paragraph setup
+      evidenceIds: [],    // set in paragraph setup
+      sourceRefs: [],     // which stimulus material this line draws on
+    };
+  }
+  const esNormLine = t => String(t || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  // Align the blocks we hold against the sentences the text now contains, keeping
+  // every block whose words are unchanged. Longest common subsequence, so an edit
+  // in the middle does not renumber everything after it.
+  function esReconcileBlocks(d, p) {
+    const want = esSplitBlocks(p.text || "");
+    const have = Array.isArray(p.blocks) ? p.blocks : [];
+    const A = have.map(b => esNormLine(b.text)), B = want.map(esNormLine);
+    const n = A.length, m = B.length;
+    const dp = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+    for (let i = n - 1; i >= 0; i--) {
+      for (let j = m - 1; j >= 0; j--) {
+        dp[i][j] = A[i] === B[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+      }
+    }
+    const out = [];
+    let i = 0, j = 0;
+    while (i < n && j < m) {
+      if (A[i] === B[j]) { have[i].text = want[j]; out.push(have[i]); i++; j++; }      // survives, identity kept
+      else if (dp[i + 1][j] >= dp[i][j + 1]) i++;                                      // deleted elsewhere
+      else { out.push(esNewBlock(d, want[j], null, "derived")); j++; }                 // typed elsewhere
+    }
+    while (j < m) out.push(esNewBlock(d, want[j], null, "derived"));
+    return out;
+  }
   function esBlocks(p) {
+    const d = ES.draft;
     const text = String(p.text || "");
-    if (!Array.isArray(p.blocks) || p.blocksFrom !== text) {
-      const steps = slotsForRole(p.role);
-      p.blocks = esSplitBlocks(text).map((t, i) => ({ text: t, step: (steps[Math.min(i, steps.length - 1)] || {}).key || "" }));
-      p.blocksFrom = text;
+    if (!Array.isArray(p.blocks)) { p.blocks = esSplitBlocks(text).map(t => esNewBlock(d, t, null, "derived")); p.blocksFrom = text; esSaveDraft(); }
+    else if (p.blocksFrom !== text) {
+      // Reconciling is a real state change, not a rendering detail: the ids it keeps
+      // are what marking will point at later, so it is written down straight away.
+      p.blocks = esReconcileBlocks(d, p); p.blocksFrom = text; esSaveDraft();
     }
     return p.blocks;
   }
-  // Write the blocks back to the paragraph text. This is the ONLY place guided mode
-  // touches the draft, which is what keeps the single-draft rule intact.
+  // The blocks are the source; the text is what everything else reads.
   function esCommitBlocks(p) {
-    p.text = p.blocks.map(b => b.text.trim()).filter(Boolean).join(" ");
+    p.text = p.blocks.map(b => String(b.text || "").trim()).filter(Boolean).join(" ");
     p.blocksFrom = p.text;
     if (p.feedback && (p.gradedText || "") !== p.text) { p.feedback = null; p.gradedText = null; }
+  }
+  // Every block in the draft, flattened, for the marking payload.
+  function esAllBlocks(d) {
+    const out = [];
+    d.paras.forEach((p, pi) => esBlocks(p).forEach(b => out.push({
+      id: b.id, slot: b.slot || undefined, paragraph: pi + 1, role: p.role, text: b.text,
+    })));
+    return out;
   }
   // Which structural step the student is on. Held on the paragraph so moving away
   // and back returns them to the same place.
@@ -9226,7 +9282,9 @@ window.BUSCONTENT = {
       line.focus();
       accept.onclick = () => {
         const v = line.value.trim(); if (!v) return;
-        p.blocks = esBlocks(p).concat([{ text: v, step: step ? step.key : "" }]);
+        const nb = esNewBlock(d, v, step ? step.key : null, "written");
+        nb.helpLevel = Number(ES.ui.rung) || 0;
+        p.blocks = esBlocks(p).concat([nb]);
         esCommitBlocks(p);
         // advance a step unless the student chose to stay
         if (!ES.ui.stayStep && si < steps.length - 1) p.step = si + 1;
@@ -9905,7 +9963,7 @@ window.BUSCONTENT = {
       return;
     }
     box.innerHTML = `<div class="es-submitted"><div class="es-submittedh">Marking your response…</div><p class="es-help">The marker reads what you actually wrote, paragraph by paragraph. This takes a moment.</p></div>`;
-    const g = await gradeWritten(esMarkCard(d), answer, { plan: esPlanFromDraft(d), responseType: "extended" });
+    const g = await gradeWritten(esMarkCard(d), answer, { plan: esPlanFromDraft(d), responseType: "extended", blocks: esAllBlocks(d) });
     d.mark = { score: g.score, max: g.max, at: new Date().toISOString() };
     esSaveDraft();
     esRenderMarked(g, answer);
@@ -9938,9 +9996,9 @@ window.BUSCONTENT = {
         </div>
       </div>`;
     const bk = $("#esbacksetup"); if (bk) bk.onclick = () => { ES.screen = "setup"; esRender(); };
-    const rvb = $("#esrevise"); if (rvb && f) rvb.onclick = () => esReviseParagraph(f.index, f.quote);
+    const rvb = $("#esrevise"); if (rvb && f) rvb.onclick = () => { ES.reviseBlockId = f.targetBlockId || ""; esReviseParagraph(f.index, f.quote); };
     const see = $("#esseemark"); if (see && rv) see.onclick = () => openReview(rv, null, {
-      onRevise: (idx, quote) => esReviseParagraph(idx, quote),
+      onRevise: (idx, quote) => { ES.reviseBlockId = (rv.focus && rv.focus.targetBlockId) || ""; esReviseParagraph(idx, quote); },
     });
   }
   // Feedback hands the student back to WRITING. Open the coached screen on that
@@ -9965,14 +10023,22 @@ window.BUSCONTENT = {
     // Open the exact SENTENCE the marker pointed at, as an editable block, rather
     // than dropping the student into a paragraph with a selection they can lose on
     // the first keystroke. Falls back to the paragraph when the line cannot be found.
-    ES.ui.editBlock = p ? esBlockForQuote(p, quote) : null;
+    ES.ui.editBlock = p ? esBlockTarget(p, quote, ES.reviseBlockId) : null;
     ES.ui.rung = 0;
     esGoCoached(slot);
     const box = ES.ui.editBlock != null && document.querySelector('[data-esedit="' + ES.ui.editBlock + '"]');
     if (box) { box.focus(); try { box.setSelectionRange(box.value.length, box.value.length); } catch (e) { /* older browsers */ } }
     toast(ES.ui.editBlock != null ? "Rewrite this sentence, then Save." : "Rewrite this paragraph, then check it again.");
   }
-  // Which sentence block the marker's quote sits in, or null.
+  // Which sentence the marker meant. A verified block id is exact; the quote is the
+  // fallback for an older worker that does not return one.
+  function esBlockTarget(p, quote, blockId) {
+    if (blockId) {
+      const k = esBlocks(p).findIndex(b => b.id === blockId);
+      if (k >= 0) return k;
+    }
+    return esBlockForQuote(p, quote);
+  }
   function esBlockForQuote(p, quote) {
     const q = String(quote || "").trim().toLowerCase();
     if (!q) return null;
