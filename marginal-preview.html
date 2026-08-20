@@ -658,6 +658,19 @@
   .es-corerow{display:flex;gap:13px;align-items:baseline;flex-wrap:wrap}
   .es-corelbl{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
   .es-corepat{font-size:13.5px;font-weight:700;color:var(--green-dk);flex:1;min-width:0}
+  /* judgement questions: a position, and what each argument does for it */
+  .es-judge{border:1.5px solid var(--green);border-radius:16px;background:var(--card);padding:15px 18px}
+  .es-judge.done{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;border-color:var(--line);padding:10px 15px}
+  .es-judgeh{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--ink)}
+  .es-judgeline{font-size:14px;font-weight:700;color:var(--ink);flex:1;min-width:0}
+  .es-tprole{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+    border-radius:99px;padding:2px 9px;margin-left:8px;white-space:nowrap}
+  .es-tprole.support{color:var(--green-dk);background:var(--green-soft)}
+  .es-tprole.conditional{color:var(--gold-dk);background:var(--gold-soft)}
+  .es-tprole.limitation{color:var(--ink-2);background:#EEF2F2}
+  .es-tpargs{flex:1;min-width:0}
+  .es-thesispos{display:flex;gap:11px;align-items:baseline;flex-wrap:wrap;margin:10px 0 4px;
+    padding:9px 13px;border-radius:11px;background:var(--green-soft);font-size:13.5px;font-weight:700;color:var(--ink)}
   .es-coreh{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--ink)}
   .es-corerel{font-size:15px;line-height:1.6;font-weight:700;color:var(--ink);margin:7px 0 13px}
   .es-corebtns{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
@@ -4033,7 +4046,9 @@ window.ESSAY = {
           // collapsed the moment the student says they have it. Authored, never
           // generated, and never a gate: planning works whether it is read or not.
           coreAnswer: {
+            mode: "causal",
             pattern: "target-market characteristic \u2192 strategy change \u2192 what it achieves",
+            statement: "A business identifies characteristics and expectations within its target market, then adapts each marketing strategy to suit those customers.",
             explain: [
               "A target market is not everyone who might buy. It is the group a business has chosen, described by what those people are actually like: what they can spend, how they buy, how much time they will give it, what they will not put up with. Choosing that group is a decision, and every marketing decision after it is downstream of that one.",
               "So the four elements this question names are not free choices. Each is built to suit somebody in particular. Change who the customer is and the same business would promote differently, staff differently, run its service differently and look different inside. That is the relationship you have to explain, four times over."
@@ -4169,7 +4184,9 @@ window.ESSAY = {
             }
           },
           coreAnswer: {
+            mode: "causal",
             pattern: "financial strategy \u2192 what it changes \u2192 financial objective",
+            statement: "Businesses use financial strategies to improve financial objectives. In each paragraph, name a strategy, explain what it changes, and show how that change affects an objective such as liquidity, profitability, efficiency, growth or solvency.",
             explain: [
               "The objectives of financial management are the things a business is trying to be: liquid enough to pay what falls due, profitable, efficient with what it owns, growing, and solvent over the long run. They are the scoreboard.",
               "A financial strategy is a move made on that scoreboard. The question asks HOW a strategy affects an objective, so the argument runs forwards: name the strategy, say what it actually changes, then show that change reaching the objective. Businesses do choose a strategy because an objective is under pressure, and it is worth saying so, but the explanation itself has to travel strategy, change, objective. And because the objectives pull against each other, a strategy that lifts one usually costs something on another, which is where the marks are."
@@ -4314,9 +4331,217 @@ window.ESSAY = {
           topic: "Finance", term1: "Influences on financial management", term2: "Financial management and performance",
           plan: ["Sources of finance", "Financial institutions", "Government", "Global market influences"],
           argument: "The significance of each influence depends on the business's financial position and activities, though global market conditions can be particularly significant for large and international businesses." },
-        { id: "hr-01", command: "Evaluate", qtype: "B", qtypeLabel: "judgement",
+        // ---------------------------------------------------------------------
+        // THIRD ARCHITECTURE CASE: a judgement question. The student decides what
+        // to discuss AND what they think about it, so coreAnswer.mode is
+        // "judgement" and carries what is being judged, the criteria it is judged
+        // against and the positions available. Every pathway declares what it
+        // CONTRIBUTES to that judgement, so the conclusion has something to weigh
+        // rather than four descriptions to repeat.
+        //
+        // Nothing here forces balance. A one-sided judgement is a judgement.
+        // ---------------------------------------------------------------------
+        { id: "hr-01", command: "Evaluate", qtype: "B", qtypeLabel: "judgement", marks: 20,
           text: "Evaluate the effectiveness of human resource strategies in improving business performance.",
           topic: "Human Resources", term1: "Human resource strategies", term2: "Business performance",
+          requirements: {
+            concepts: ["human resource strategies", "business performance", "effectiveness", "indicators of effectiveness"],
+            relationships: [
+              "a strategy is effective to the degree that it moves a named measure of business performance",
+              "how effective a strategy is depends on how it is carried out, not only on choosing it",
+              "strategies interact, so one can undercut another"
+            ],
+            accomplish: [
+              "states an overall judgement and holds it across the whole response",
+              "for each strategy, shows the effect on a NAMED measure of performance rather than describing the strategy",
+              "judges how effective, rather than listing benefits",
+              "recognises a condition or limitation where the evidence supports one, without manufacturing balance",
+              "uses one business consistently so the strategies can be weighed against each other"
+            ],
+            syllabus: "Human resources: strategies in human resource management, and measuring the effectiveness of those strategies against indicators such as turnover, absenteeism, disputation and satisfaction."
+          },
+          decode: {
+            verbMeaning: "Evaluate asks for a judgement with a degree attached. Saying the strategies help is not an evaluation; saying how effective they are, against what measure, and what that depends on, is.",
+            plainEnglish: "Decide how well the things a business does with its staff actually improve how the business performs, back that up, and be honest about what it depends on.",
+            highlights: [
+              { anchor: "Evaluate", kind: "directive", label: "what you need to do",
+                note: "Reach a judgement and support it. A list of benefits is not a judgement, and neither is a conclusion that only appears in the last paragraph." },
+              { anchor: "effectiveness", kind: "judgement", label: "the judgement you have to make",
+                note: "How WELL the strategies work, not whether they exist. Effectiveness has a degree, and the degree is what you are being asked for." },
+              { anchor: "human resource strategies", kind: "subject", label: "what you are judging",
+                note: "Leadership style, job design, recruitment, training and development, performance management, rewards. Which ones you judge is your choice." },
+              { anchor: "business performance", kind: "effect", label: "what has to improve",
+                note: "Judge against something measurable: productivity, turnover, absenteeism, disputation, satisfaction or profitability. Better performance on its own is not a measure." }
+            ],
+            cover: {
+              forEach: "human resource strategy → its effect on a named measure of performance → how effective that makes it, and what it depends on",
+              consistency: "Choose the strategies yourself, use one business throughout, and hold one judgement across the whole response."
+            }
+          },
+          coreAnswer: {
+            mode: "judgement",
+            pattern: "strategy \\u2192 effect on a measure \\u2192 how effective, and when",
+            statement: "Human resource strategies are effective to the degree that they measurably improve business performance, and how far they do depends on how well they are carried out.",
+            judging: "how effective human resource strategies are at improving business performance",
+            criteria: [
+              { id: "measure", label: "against a named measure",
+                note: "Effectiveness has to be judged against something you can point at: productivity, turnover, absenteeism, disputation, satisfaction. Better performance on its own is not a measure." },
+              { id: "degree", label: "how much, not whether",
+                note: "A strategy that helps slightly and one that transforms the business are both effective. Saying which is the whole point of Evaluate." },
+              { id: "conditions", label: "what it depends on",
+                note: "Most of these strategies work only if they are carried out well and suit the workforce. Where that is true, say so. Where your evidence is strong, do not invent a doubt to look balanced." }
+            ],
+            positions: [
+              { id: "high", label: "Highly effective",
+                note: "Take this if you can show large improvements against real measures and the limitations are minor." },
+              { id: "conditional", label: "Effective, but dependent on how they are carried out",
+                note: "Take this if the strategies work in principle and your evidence shows implementation deciding the outcome." },
+              { id: "moderate", label: "Moderately effective, with real limitations",
+                note: "Take this if you can show genuine gains and genuine costs or failures beside them." },
+              { id: "limited", label: "Limited, except under particular conditions",
+                note: "Take this if your evidence suggests the strategies rarely deliver unless something specific is true." }
+            ],
+            explain: [
+              "Human resource strategies are the deliberate things a business does with its people: how it leads them, designs their jobs, trains them, manages their performance and rewards them. Business performance is what those people produce, read off measures such as productivity, turnover, absenteeism, disputation and satisfaction.",
+              "Evaluate is not asking whether there is a link. It is asking how strong the link is. That means every paragraph has to end somewhere on a scale rather than at 'this helps', and the scale has to be anchored to a measure. It also means the paragraphs are not all pulling the same way: some will support your judgement strongly, some only under conditions, and some will push against it. That is not a weakness in the answer, it is the evaluation."
+            ],
+            thesisIdea: "Name your degree of effectiveness, give the main reason for it, and add what it depends on only if your evidence actually calls for one.",
+            acceptableThesis: "Human resource strategies are generally effective in improving business performance, because strategies such as training and job design raise productivity and reduce turnover, although their effectiveness depends heavily on how consistently they are carried out.",
+            checklist: [
+              "states a degree of effectiveness, not simply that the strategies help",
+              "gives the main reason for that degree",
+              "names what measure of performance is improving",
+              "qualifies the judgement only where the evidence calls for it"
+            ]
+          },
+          areasLabel: "human resource strategy",
+          areas: {
+            "training and development": { label: "training and development", guides: {
+              topic:   "Name training and development as the strategy, and the measure of performance you are going to judge it against.",
+              define:  "Show what training and development covers: building the skills staff need now, and preparing them for what they will do next.",
+              explain: "Explain how better skills turn into a better number. Skill is not performance until you say what it changes.",
+              example: "Apply your evidence to what staff can do differently afterwards.",
+              effect:  "Judge how far the measure actually moved, and say what the training cost to deliver.",
+              link:    "Return to the question with a degree: how effective was this, and on what does that rest?" } },
+            "rewards": { label: "rewards", guides: {
+              topic:   "Name the reward strategy, and the measure of performance you are going to judge it against.",
+              define:  "Show what rewards covers: monetary rewards such as pay and bonuses, and non-monetary rewards such as recognition, flexibility and career progression.",
+              explain: "Explain the route from the reward to the behaviour to the measure. A reward that changes nothing anyone does changes no number.",
+              example: "Apply your evidence to what the business actually offers, and who it is aimed at.",
+              effect:  "Judge the gain against the cost, because a reward is an expense before it is a result.",
+              link:    "Return to the question with a degree, and say what the reward depends on to work." } },
+            "performance management": { label: "performance management", guides: {
+              topic:   "Name the performance management strategy, and the measure you are going to judge it against.",
+              define:  "Show what performance management covers: setting standards, appraising against them, and acting on the result.",
+              explain: "Explain how being measured changes what staff do, and be honest that it can change it in more than one direction.",
+              example: "Apply your evidence to the appraisal itself, not to the training that might follow it.",
+              effect:  "Judge how far the measure moved, and whether the way it was carried out helped or hurt.",
+              link:    "Return to the question with a degree, and name the condition it rests on." } },
+            "job design": { label: "job design", guides: {
+              topic:   "Name the job design strategy, and the measure you are going to judge it against.",
+              define:  "Show what job design covers: what the job contains, how much control the worker has over it, and when and where it is done.",
+              explain: "Explain how changing the shape of the job changes what the person does or how long they stay.",
+              example: "Apply your evidence to the content or the conditions of the work.",
+              effect:  "Judge how far the measure moved, and what the design costs in flexibility or supervision.",
+              link:    "Return to the question with a degree, and say who it works for." } }
+          },
+          pathways: [
+            { id: "hr01-td-productivity", area: "training and development",
+              short: "Training \\u2192 productivity",
+              relationship: "Training raises productivity by making staff faster and more accurate at the work",
+              meaning: "A trained worker produces more in the same shift and makes fewer mistakes, which shows up directly in output per hour.",
+              contribution: { role: "support", note: "This is your strongest ground: the link from skill to output is direct and measurable." },
+              whatToProve: "staff are trained → they work faster and with fewer errors → output per hour rises",
+              commonMistake: "Saying training improves skills and stopping there. Skills are not a measure of business performance.",
+              concept: { topic: "human_resources", section: "strategies in human resource management", point: "training and development" },
+              evidence: [{ label: "Standardised acquisition and development",
+                           why: "It shows training delivered the same way to everyone, which is what makes a productivity gain attributable to it.",
+                           limits: "It shows the training exists. Argue what it changes; do not claim a productivity figure you cannot support." }],
+              guides: { explain: "Explain the step from a skill to a number, and name the number." } },
+            { id: "hr01-td-retention", area: "training and development",
+              short: "Development \\u2192 lower turnover",
+              relationship: "Development pathways cut turnover by giving staff a reason to stay",
+              meaning: "Somewhere to go next is a reason not to leave, and turnover is one of the clearest measures of performance in a business that trains people constantly.",
+              contribution: { role: "support", note: "Strong support, and it lets you use turnover, which is a measure the marker will recognise immediately." },
+              whatToProve: "staff can see a path upwards → fewer leave → the cost and disruption of replacing them falls",
+              commonMistake: "Treating low turnover as good in itself rather than saying what it saves the business.",
+              concept: { topic: "human_resources", section: "strategies in human resource management", point: "training and development" },
+              evidence: [{ label: "Internal recruitment and promotion pathway",
+                           why: "A promotion pathway is exactly the reason to stay that this argument depends on.",
+                           limits: "A pathway existing is not proof people take it. Argue the mechanism rather than asserting the result." }],
+              guides: { explain: "Explain why a path upwards changes the decision to leave." } },
+            { id: "hr01-rw-motivation", area: "rewards",
+              short: "Rewards \\u2192 output, where it can be measured",
+              relationship: "Performance-based rewards lift output where the work can be measured fairly",
+              meaning: "Paying for results works when results are visible, and does very little when nobody can tell whose result it was.",
+              contribution: { role: "conditional", note: "Support with a condition attached: this one only holds where individual contribution can actually be measured." },
+              whatToProve: "output is measurable per person → reward is tied to it → staff work to the measure",
+              commonMistake: "Assuming money motivates everyone equally, instead of arguing when it does and when it does not.",
+              concept: { topic: "human_resources", section: "strategies in human resource management", point: "rewards" },
+              evidence: [{ label: "Monetary and non monetary rewards",
+                           why: "It shows both kinds being used, which lets you argue about which suits which worker.",
+                           limits: "Do not claim a motivational effect the evidence does not show. Argue the conditions under which it would hold." }],
+              guides: { explain: "Explain the condition first, then the effect that follows from it." } },
+            { id: "hr01-rw-cost", area: "rewards",
+              short: "Rewards \\u2192 a cost before a result",
+              relationship: "Rewards are an expense, so the gain has to be worth more than what is paid for it",
+              meaning: "Every reward is spent before it works, so a strategy that lifts output slightly can still leave the business worse off.",
+              contribution: { role: "limitation", note: "This is a counterweight. Use it to qualify your judgement, or to argue a lower degree of effectiveness honestly." },
+              whatToProve: "the reward is paid up front → the improvement it buys is measured → the two are compared",
+              commonMistake: "Listing rewards as a cost without weighing them against what they achieved.",
+              concept: { topic: "human_resources", section: "strategies in human resource management", point: "rewards" },
+              evidence: [],
+              guides: { explain: "Explain what is spent, then what is gained, and put them beside each other." } },
+            { id: "hr01-pf-accountability", area: "performance management",
+              short: "Appraisal \\u2192 problems found early",
+              relationship: "Appraisal against clear standards identifies weak performance before it costs the business",
+              meaning: "If everyone knows the standard and is measured against it, a problem shows up as a number rather than as a bad shift nobody records.",
+              contribution: { role: "conditional", note: "Support, provided the standards are clear and applied consistently. Say so rather than assuming it." },
+              whatToProve: "standards are explicit → performance is measured against them → shortfalls are found and acted on",
+              commonMistake: "Describing the appraisal process instead of arguing what finding a problem early is worth.",
+              concept: { topic: "human_resources", section: "strategies in human resource management", point: "performance management" },
+              evidence: [{ label: "Performance management against set standards",
+                           why: "It is standards and appraisal together, which is precisely the mechanism this argument rests on.",
+                           limits: "It shows the system exists. Whether it is applied consistently is the part you have to argue." }],
+              guides: { explain: "Explain what an explicit standard makes visible that would otherwise be invisible." } },
+            { id: "hr01-pf-trust", area: "performance management",
+              short: "Appraisal \\u2192 worse, if it reads as surveillance",
+              relationship: "Appraisal damages performance where staff experience it as surveillance rather than support",
+              meaning: "The same appraisal that finds problems early can make people hide them, if being measured feels like being watched.",
+              contribution: { role: "limitation", note: "A genuine counterweight, and the clearest way to show that effectiveness depends on how a strategy is carried out." },
+              whatToProve: "measurement is experienced as distrust → staff protect themselves rather than improve → the measure gets worse or stops being honest",
+              commonMistake: "Asserting that staff dislike appraisal without connecting it to a measure of performance.",
+              concept: { topic: "human_resources", section: "strategies in human resource management", point: "performance management" },
+              evidence: [{ label: "Workplace disputes in fast food",
+                           why: "Disputation is itself a measure of effectiveness, so it lets you argue the downside in the same terms as the upside.",
+                           limits: "Disputes have many causes. Argue that appraisal can contribute, not that it caused them." }],
+              guides: { explain: "Explain the mechanism by which measuring people makes the number worse, not just less popular." } },
+            { id: "hr01-jd-enrichment", area: "job design",
+              short: "Job enrichment \\u2192 motivation and retention",
+              relationship: "Enriched jobs raise motivation by giving staff more control over their work",
+              meaning: "A job with some judgement in it holds people longer than one that has been stripped down to a sequence of instructions.",
+              contribution: { role: "support", note: "Support, and it pairs well with a turnover measure rather than an output one." },
+              whatToProve: "the job is given more variety and control → staff are more engaged by it → they stay, and put more in",
+              commonMistake: "Confusing enrichment with adding tasks. More work is not more control.",
+              concept: { topic: "human_resources", section: "strategies in human resource management", point: "job design" },
+              evidence: [{ label: "Job design using specific tasks",
+                           why: "It shows a job built as narrow, defined tasks, which is the thing enrichment would change.",
+                           limits: "This is the starting point, not the enrichment. Argue what changing it would do." }],
+              guides: { explain: "Explain what control does to how someone treats the work." } },
+            { id: "hr01-jd-flexibility", area: "job design",
+              short: "Flexible arrangements \\u2192 lower absenteeism",
+              relationship: "Flexible arrangements cut absenteeism for staff with commitments outside work",
+              meaning: "Someone who can fit work around study or family does not have to choose between them, and absenteeism is where that choice usually shows up.",
+              contribution: { role: "conditional", note: "Support for a particular workforce. Say who it works for, because it does very little for people without those commitments." },
+              whatToProve: "staff have commitments outside work → hours are made to fit them → fewer shifts are missed",
+              commonMistake: "Arguing flexibility is good for morale in general, rather than tying it to a measure and a group of workers.",
+              concept: { topic: "human_resources", section: "strategies in human resource management", point: "job design" },
+              evidence: [{ label: "Maintenance through rostering and grievance handling",
+                           why: "Rostering is where flexibility is actually delivered, so it is the practice this argument is about.",
+                           limits: "Rostering serves the business as well as the worker. Do not present it as purely an employee benefit." }],
+              guides: { explain: "Explain who the flexibility is for, then what it changes for them." } }
+          ],
+          criteria: { bands: null, source: "general HSC band expectations" },
           plan: ["Leadership style to satisfaction and culture", "Training and development to productivity and skills", "Performance management and rewards to turnover and performance", "Dispute resolution to disputation and satisfaction"],
           argument: "Human resource strategies can be effective in improving performance, measured against indicators such as turnover, absenteeism, disputation and worker satisfaction." },
         { id: "hr-02", command: "Analyse", qtype: "A", qtypeLabel: "relationship",
@@ -9574,11 +9799,11 @@ window.BUSCONTENT = {
   function esStructureLabel(key) { return esStructureDef(key).label; }
 
   const ES = { subject: null, code: "", demo: false, screen: "setup", draft: null, list: [], form: null, pending: false,
-    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, coreOpen: false, coreExplain: false, coreIdea: false, why: null, compare: false },  // transient guided-view state, reset on paragraph change
+    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false },  // transient guided-view state, reset on paragraph change
     hint: { open: false, tab: "know" },          // study hints: persists across paragraphs on purpose
     quiz: { revealed: false, peeked: false, attempt: "", result: null } };
   const ES_KEY = "marginal.essay.v1";
-  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, coreOpen: false, coreExplain: false, coreIdea: false, why: null, compare: false }; }
+  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false }; }
   // peeked persists for the whole attempt: revealing once disqualifies mastery even
   // if the answer is hidden again before checking. Cleared only on a new attempt.
   function esResetQuiz() { ES.quiz = { revealed: false, peeked: false, attempt: "", result: null }; }
@@ -11017,22 +11242,32 @@ window.BUSCONTENT = {
     // draws together arguments that have already been made. Both read the same
     // rows; neither is asked to choose a body relationship of its own.
     if (esIsIntro(p) || esIsConcl(p)) {
-      const rows = esPlanRows(d).filter(r => r.argument || r.words);
+      const judging = esIsJudgement();
+      const rows = (judging ? esJudgementRows(d) : esPlanRows(d)).filter(r => r.argument || r.words);
       const intro = esIsIntro(p);
+      const pos = esPositionOf(d);
       return `<aside class="es-rest">
         ${esDecodeBox(esQuestionDef())}
         <div data-esrestprogress>
         <div class="es-resth">${esc(p.role)}</div>
+        ${(judging && pos) ? `<div class="es-restblk">
+          <div class="es-restlbl">Your judgement</div>
+          <div class="es-restval">${esc(pos.label)}</div>
+          ${!intro ? `<div class="es-restnote">Weigh what your paragraphs established against this. If they do not support it, change the judgement rather than the evidence.</div>` : ""}
+        </div>` : ""}
         <div class="es-restblk">
-          <div class="es-restlbl">${intro ? "Your plan" : "Arguments you established"}</div>
+          <div class="es-restlbl">${intro ? "Your plan" : judging ? "What your paragraphs established" : "Arguments you established"}</div>
           ${rows.length ? `<ol class="es-planlist">${rows.map(r => `<li><button type="button" class="es-planjump" data-esgo="${r.i}">
               <span class="es-planlrole">${esc(r.role)}${r.area ? " \u00b7 " + esc(r.area) : ""}</span>
               <span class="es-planlarg">${esc(r.argument || "not chosen yet")}</span>
+              ${r.roleLabel ? `<span class="es-tprole ${esc(r.role)}">${esc(r.roleLabel)}</span>` : ""}
               ${r.words ? `<span class="es-planlw">${r.words} words</span>` : `<span class="es-planlw muted">not written yet</span>`}
             </button></li>`).join("")}</ol>`
             : `<div class="es-restnone">no body paragraphs planned yet</div>`}
           <div class="es-restnote">${intro
             ? "Signpost these in the order you will argue them. No evidence is needed here."
+            : judging
+            ? "Say how the support and the limitations balance out, and land on the degree you have argued for. Nothing new belongs in a conclusion."
             : "Draw these together into one judgement. Nothing new belongs in a conclusion."}</div>
           <button type="button" class="es-linkbtn" id="esrestplan">${intro ? "Change the plan" : "Open the plan"}</button>
         </div>
@@ -11106,9 +11341,35 @@ window.BUSCONTENT = {
 
   // ---- the core answer, and the thesis it eventually becomes ------------------
   function esCoreAnswer() { const q = esQuestionDef(); return (q && q.coreAnswer) || null; }
+  // A question's MODE decides what its top-level answer has to contain. A causal
+  // question needs a relationship; a judgement question needs a position, held
+  // against criteria, that its body arguments add up to. Reading the mode rather
+  // than layering conditions around the causal case is what lets both live here.
+  function esCoreMode() { const c = esCoreAnswer(); return (c && c.mode) || "causal"; }
+  function esIsJudgement() { return esCoreMode() === "judgement"; }
   function esCoreRelationship() {
-    const q = esQuestionDef();
-    return (q && q.decode && q.decode.coreRelationship) || "";
+    const c = esCoreAnswer(), q = esQuestionDef();
+    return (c && c.statement) || (q && q.decode && q.decode.coreRelationship) || "";
+  }
+  function esPositions() { const c = esCoreAnswer(); return (c && c.positions) || []; }
+  function esPositionOf(d) {
+    const id = d && d.position;
+    if (!id) return null;
+    if (String(id).indexOf("own:") === 0) return { id: id, label: String(id).slice(4), own: true };
+    return esPositions().find(x => x.id === id) || null;
+  }
+  // What each chosen argument does FOR the judgement, so the conclusion has
+  // something to weigh instead of four topics to repeat.
+  const ES_ROLES = { support: "supports it", conditional: "supports it, with a condition", limitation: "pushes against it" };
+  function esContributionOf(p) {
+    const path = esPathway(p);
+    return (path && path.contribution) || null;
+  }
+  function esJudgementRows(d) {
+    return esPlanRows(d).map(r => {
+      const c = esContributionOf(d.paras[r.i]);
+      return Object.assign({}, r, { role: c && c.role, roleLabel: c && ES_ROLES[c.role], roleNote: c && c.note });
+    });
   }
   // Rich while it is being read, one quiet line once it has been. Leaving the
   // teaching card open through the whole of planning would put back the density
@@ -11135,19 +11396,52 @@ window.BUSCONTENT = {
       ${(ES.ui.coreIdea && core && core.thesisIdea) ? `<div class="es-corebody"><div class="es-drawer-sub">a thesis idea, not a sentence to copy</div><p class="es-corep">${esc(core.thesisIdea)}</p></div>` : ""}
     </div>`;
   }
+  // Two decisions, not one: what do I think, and what will I use to prove it.
+  // Offered before the body plan because the arguments are chosen to serve it,
+  // and skippable because a student may only find their position while writing.
+  function esJudgementHTML(d) {
+    if (!esIsJudgement()) return "";
+    const core = esCoreAnswer();
+    const chosen = esPositionOf(d);
+    const open = ES.ui.posOpen || !chosen;
+    if (!open) return `<div class="es-judge done">
+      <span class="es-corelbl">Your judgement</span>
+      <span class="es-judgeline">${esc(chosen.label)}</span>
+      <button type="button" class="es-linkbtn" id="esposopen">Change</button>
+    </div>`;
+    return `<div class="es-judge">
+      <div class="es-judgeh">What do you think overall?</div>
+      <p class="es-plansub">${esc((core && core.judging) ? "You are judging " + core.judging + "." : "")} Take a position now if you have one. You can change it while you write, and a one-sided judgement is still a judgement.</p>
+      ${esPositions().map(o => `<button type="button" class="es-pick ${(chosen && chosen.id === o.id) ? "on" : ""}" data-espos="${esc(o.id)}">
+          <span class="es-pickrel">${esc(o.label)}</span>${o.note ? `<span class="es-picksub">${esc(o.note)}</span>` : ""}</button>`).join("")}
+      <button type="button" class="es-pick own" data-esposown>Write my own position</button>
+      <div class="es-ownwrap" data-posownwrap hidden>
+        <input id="esposown" class="es-input" value="${esc(chosen && chosen.own ? chosen.label : "")}" placeholder="In one line, how effective do you think they are?">
+        <button type="button" class="es-btn primary sm" id="esposownok">Use this</button>
+      </div>
+      ${(core && (core.criteria || []).length) ? `<button type="button" class="es-linkbtn" id="escrit">${ES.ui.critOpen ? "Hide" : "What am I judging it against?"}</button>
+        ${ES.ui.critOpen ? `<div class="es-corebody">${core.criteria.map(c => `<div class="es-drawer-sub">${esc(c.label)}</div><p class="es-corep">${esc(c.note)}</p>`).join("")}</div>` : ""}` : ""}
+      ${chosen ? `<div class="es-corebtns"><button type="button" class="es-btn sm" id="esposdone">That is my position</button></div>` : ""}
+    </div>`;
+  }
   // The thesis is written once the plan exists, so it can signpost an essay the
   // student has actually decided on.
   function esThesisHTML(d) {
     if (!esPlanned(d)) return "";
-    const rows = esPlanRows(d);
+    const judging = esIsJudgement();
+    const rows = judging ? esJudgementRows(d) : esPlanRows(d);
+    const pos = esPositionOf(d);
     const core = esCoreAnswer();
     const yours = (d.thesis || "").trim();
     return `<div class="es-thesis">
       <div class="es-planhh sm">Now turn your plan into an overall answer</div>
-      <ul class="es-thesisplan">${rows.map(r => `<li><span class="es-tparea">${esc(r.area || r.role)}</span>${esc(r.argument)}</li>`).join("")}</ul>
+      ${judging && pos ? `<div class="es-thesispos"><span class="es-corelbl">Your judgement</span><span>${esc(pos.label)}</span></div>` : ""}
+      <ul class="es-thesisplan">${rows.map(r => `<li><span class="es-tparea">${esc(r.area || r.role)}</span><span class="es-tpargs">${esc(r.argument)}${r.roleLabel ? `<span class="es-tprole ${esc(r.role)}">${esc(r.roleLabel)}</span>` : ""}</span></li>`).join("")}</ul>
       <label class="es-pinlabel" for="esthesis">write your thesis</label>
       <textarea id="esthesis" class="es-input" rows="3" placeholder="One or two sentences giving the overall answer to the question.">${esc(d.thesis || "")}</textarea>
-      <p class="es-thesisguide">Give the overall answer to the question: say that characteristics of the target market cause these strategies to adapt, and signpost the four you have chosen.</p>
+      <p class="es-thesisguide">${judging
+        ? "Three things: how effective you think they are, the main reason you think it, and what it depends on if your evidence calls for a qualification. Do not add a limitation you cannot support."
+        : "Give the overall answer to the question, and signpost the arguments you have chosen."}</p>
       <div class="es-corebtns">
         <button type="button" class="es-btn sm" id="esthesissave">Save thesis</button>
         ${(core && core.acceptableThesis) ? `<button type="button" class="es-linkbtn" id="escompare">${ES.ui.compare ? "Hide" : (yours ? "Compare with an acceptable thesis" : "I need to see an example first")}</button>` : ""}
@@ -11217,6 +11511,7 @@ window.BUSCONTENT = {
       // Showing all eight relationships before the student has said which strategy
       // they are arguing is a list, not a choice. The area comes first.
       const opts = (!area && !required) ? [] : esPathwaysInArea(area);
+      const judgeMode = esIsJudgement();
       const ev = chosen ? esEvidenceFor(p) : { items: [] };
       const picked = p.evidenceIds || [];
       const areaRow = areas.length > 1 ? `
@@ -11238,7 +11533,7 @@ window.BUSCONTENT = {
             const deeper = o.whatToProve || o.commonMistake;
             return `<div class="es-optwrap${why ? " open" : ""}">
               <button type="button" class="es-pick ${p.argumentId === o.id ? "on" : ""}" data-esplanpick="${i}|${esc(o.id)}">
-                ${o.short ? `<span class="es-pickshort">${esc(o.short)}</span>` : ""}
+                ${o.short ? `<span class="es-pickshort">${esc(o.short)}</span>${(judgeMode && o.contribution) ? `<span class="es-tprole ${esc(o.contribution.role)}">${esc(ES_ROLES[o.contribution.role] || "")}</span>` : ""}` : ""}
                 <span class="es-pickrel">${esc(o.relationship)}</span>
                 ${o.meaning ? `<span class="es-picksub">${esc(o.meaning)}</span>` : ""}
               </button>
@@ -11296,6 +11591,7 @@ window.BUSCONTENT = {
             <button type="button" class="es-linkbtn" id="esplanstruct">Use ${areas.length} body paragraphs</button></div>` : ""}
         </div>
         ${esCoreHTML(d)}
+        ${esJudgementHTML(d)}
         <div class="es-plancards">${cards}</div>
         ${esThesisHTML(d)}
         <div class="es-planfoot">
@@ -11357,6 +11653,19 @@ window.BUSCONTENT = {
     host.querySelectorAll("[data-eswhy]").forEach(b => b.onclick = () => {
       ES.ui.why = ES.ui.why === b.dataset.eswhy ? null : b.dataset.eswhy; esRender();
     });
+    host.querySelectorAll("[data-espos]").forEach(b => b.onclick = () => {
+      d.position = b.dataset.espos; d.positionOwn = ""; esSaveDraft(); esRender();
+    });
+    const pown = host.querySelector("[data-esposown]");
+    if (pown) pown.onclick = () => { const w = host.querySelector("[data-posownwrap]"); if (w) { w.hidden = false; const el = host.querySelector("#esposown"); if (el) el.focus(); } };
+    const pok = host.querySelector("#esposownok");
+    if (pok) pok.onclick = () => {
+      const v = ((host.querySelector("#esposown") || {}).value || "").trim(); if (!v) return;
+      d.position = "own:" + v; ES.ui.posOpen = false; esSaveDraft(); esRender();
+    };
+    const pdone = host.querySelector("#esposdone"); if (pdone) pdone.onclick = () => { ES.ui.posOpen = false; esSaveDraft(); esRender(); };
+    const popen = host.querySelector("#esposopen"); if (popen) popen.onclick = () => { ES.ui.posOpen = true; esRender(); };
+    const crit = host.querySelector("#escrit"); if (crit) crit.onclick = () => { ES.ui.critOpen = !ES.ui.critOpen; esRender(); };
     const st = host.querySelector("#esplanstruct");
     if (st) st.onclick = () => { const def = esStructureForBodies(esQuestionAreas().length); if (def) { esApplyStructure(def.key); esRender(); } };
     const go = host.querySelector("#esplango");

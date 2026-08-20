@@ -615,7 +615,9 @@ window.ESSAY = {
           // collapsed the moment the student says they have it. Authored, never
           // generated, and never a gate: planning works whether it is read or not.
           coreAnswer: {
+            mode: "causal",
             pattern: "target-market characteristic \u2192 strategy change \u2192 what it achieves",
+            statement: "A business identifies characteristics and expectations within its target market, then adapts each marketing strategy to suit those customers.",
             explain: [
               "A target market is not everyone who might buy. It is the group a business has chosen, described by what those people are actually like: what they can spend, how they buy, how much time they will give it, what they will not put up with. Choosing that group is a decision, and every marketing decision after it is downstream of that one.",
               "So the four elements this question names are not free choices. Each is built to suit somebody in particular. Change who the customer is and the same business would promote differently, staff differently, run its service differently and look different inside. That is the relationship you have to explain, four times over."
@@ -751,7 +753,9 @@ window.ESSAY = {
             }
           },
           coreAnswer: {
+            mode: "causal",
             pattern: "financial strategy \u2192 what it changes \u2192 financial objective",
+            statement: "Businesses use financial strategies to improve financial objectives. In each paragraph, name a strategy, explain what it changes, and show how that change affects an objective such as liquidity, profitability, efficiency, growth or solvency.",
             explain: [
               "The objectives of financial management are the things a business is trying to be: liquid enough to pay what falls due, profitable, efficient with what it owns, growing, and solvent over the long run. They are the scoreboard.",
               "A financial strategy is a move made on that scoreboard. The question asks HOW a strategy affects an objective, so the argument runs forwards: name the strategy, say what it actually changes, then show that change reaching the objective. Businesses do choose a strategy because an objective is under pressure, and it is worth saying so, but the explanation itself has to travel strategy, change, objective. And because the objectives pull against each other, a strategy that lifts one usually costs something on another, which is where the marks are."
@@ -896,9 +900,217 @@ window.ESSAY = {
           topic: "Finance", term1: "Influences on financial management", term2: "Financial management and performance",
           plan: ["Sources of finance", "Financial institutions", "Government", "Global market influences"],
           argument: "The significance of each influence depends on the business's financial position and activities, though global market conditions can be particularly significant for large and international businesses." },
-        { id: "hr-01", command: "Evaluate", qtype: "B", qtypeLabel: "judgement",
+        // ---------------------------------------------------------------------
+        // THIRD ARCHITECTURE CASE: a judgement question. The student decides what
+        // to discuss AND what they think about it, so coreAnswer.mode is
+        // "judgement" and carries what is being judged, the criteria it is judged
+        // against and the positions available. Every pathway declares what it
+        // CONTRIBUTES to that judgement, so the conclusion has something to weigh
+        // rather than four descriptions to repeat.
+        //
+        // Nothing here forces balance. A one-sided judgement is a judgement.
+        // ---------------------------------------------------------------------
+        { id: "hr-01", command: "Evaluate", qtype: "B", qtypeLabel: "judgement", marks: 20,
           text: "Evaluate the effectiveness of human resource strategies in improving business performance.",
           topic: "Human Resources", term1: "Human resource strategies", term2: "Business performance",
+          requirements: {
+            concepts: ["human resource strategies", "business performance", "effectiveness", "indicators of effectiveness"],
+            relationships: [
+              "a strategy is effective to the degree that it moves a named measure of business performance",
+              "how effective a strategy is depends on how it is carried out, not only on choosing it",
+              "strategies interact, so one can undercut another"
+            ],
+            accomplish: [
+              "states an overall judgement and holds it across the whole response",
+              "for each strategy, shows the effect on a NAMED measure of performance rather than describing the strategy",
+              "judges how effective, rather than listing benefits",
+              "recognises a condition or limitation where the evidence supports one, without manufacturing balance",
+              "uses one business consistently so the strategies can be weighed against each other"
+            ],
+            syllabus: "Human resources: strategies in human resource management, and measuring the effectiveness of those strategies against indicators such as turnover, absenteeism, disputation and satisfaction."
+          },
+          decode: {
+            verbMeaning: "Evaluate asks for a judgement with a degree attached. Saying the strategies help is not an evaluation; saying how effective they are, against what measure, and what that depends on, is.",
+            plainEnglish: "Decide how well the things a business does with its staff actually improve how the business performs, back that up, and be honest about what it depends on.",
+            highlights: [
+              { anchor: "Evaluate", kind: "directive", label: "what you need to do",
+                note: "Reach a judgement and support it. A list of benefits is not a judgement, and neither is a conclusion that only appears in the last paragraph." },
+              { anchor: "effectiveness", kind: "judgement", label: "the judgement you have to make",
+                note: "How WELL the strategies work, not whether they exist. Effectiveness has a degree, and the degree is what you are being asked for." },
+              { anchor: "human resource strategies", kind: "subject", label: "what you are judging",
+                note: "Leadership style, job design, recruitment, training and development, performance management, rewards. Which ones you judge is your choice." },
+              { anchor: "business performance", kind: "effect", label: "what has to improve",
+                note: "Judge against something measurable: productivity, turnover, absenteeism, disputation, satisfaction or profitability. Better performance on its own is not a measure." }
+            ],
+            cover: {
+              forEach: "human resource strategy → its effect on a named measure of performance → how effective that makes it, and what it depends on",
+              consistency: "Choose the strategies yourself, use one business throughout, and hold one judgement across the whole response."
+            }
+          },
+          coreAnswer: {
+            mode: "judgement",
+            pattern: "strategy \\u2192 effect on a measure \\u2192 how effective, and when",
+            statement: "Human resource strategies are effective to the degree that they measurably improve business performance, and how far they do depends on how well they are carried out.",
+            judging: "how effective human resource strategies are at improving business performance",
+            criteria: [
+              { id: "measure", label: "against a named measure",
+                note: "Effectiveness has to be judged against something you can point at: productivity, turnover, absenteeism, disputation, satisfaction. Better performance on its own is not a measure." },
+              { id: "degree", label: "how much, not whether",
+                note: "A strategy that helps slightly and one that transforms the business are both effective. Saying which is the whole point of Evaluate." },
+              { id: "conditions", label: "what it depends on",
+                note: "Most of these strategies work only if they are carried out well and suit the workforce. Where that is true, say so. Where your evidence is strong, do not invent a doubt to look balanced." }
+            ],
+            positions: [
+              { id: "high", label: "Highly effective",
+                note: "Take this if you can show large improvements against real measures and the limitations are minor." },
+              { id: "conditional", label: "Effective, but dependent on how they are carried out",
+                note: "Take this if the strategies work in principle and your evidence shows implementation deciding the outcome." },
+              { id: "moderate", label: "Moderately effective, with real limitations",
+                note: "Take this if you can show genuine gains and genuine costs or failures beside them." },
+              { id: "limited", label: "Limited, except under particular conditions",
+                note: "Take this if your evidence suggests the strategies rarely deliver unless something specific is true." }
+            ],
+            explain: [
+              "Human resource strategies are the deliberate things a business does with its people: how it leads them, designs their jobs, trains them, manages their performance and rewards them. Business performance is what those people produce, read off measures such as productivity, turnover, absenteeism, disputation and satisfaction.",
+              "Evaluate is not asking whether there is a link. It is asking how strong the link is. That means every paragraph has to end somewhere on a scale rather than at 'this helps', and the scale has to be anchored to a measure. It also means the paragraphs are not all pulling the same way: some will support your judgement strongly, some only under conditions, and some will push against it. That is not a weakness in the answer, it is the evaluation."
+            ],
+            thesisIdea: "Name your degree of effectiveness, give the main reason for it, and add what it depends on only if your evidence actually calls for one.",
+            acceptableThesis: "Human resource strategies are generally effective in improving business performance, because strategies such as training and job design raise productivity and reduce turnover, although their effectiveness depends heavily on how consistently they are carried out.",
+            checklist: [
+              "states a degree of effectiveness, not simply that the strategies help",
+              "gives the main reason for that degree",
+              "names what measure of performance is improving",
+              "qualifies the judgement only where the evidence calls for it"
+            ]
+          },
+          areasLabel: "human resource strategy",
+          areas: {
+            "training and development": { label: "training and development", guides: {
+              topic:   "Name training and development as the strategy, and the measure of performance you are going to judge it against.",
+              define:  "Show what training and development covers: building the skills staff need now, and preparing them for what they will do next.",
+              explain: "Explain how better skills turn into a better number. Skill is not performance until you say what it changes.",
+              example: "Apply your evidence to what staff can do differently afterwards.",
+              effect:  "Judge how far the measure actually moved, and say what the training cost to deliver.",
+              link:    "Return to the question with a degree: how effective was this, and on what does that rest?" } },
+            "rewards": { label: "rewards", guides: {
+              topic:   "Name the reward strategy, and the measure of performance you are going to judge it against.",
+              define:  "Show what rewards covers: monetary rewards such as pay and bonuses, and non-monetary rewards such as recognition, flexibility and career progression.",
+              explain: "Explain the route from the reward to the behaviour to the measure. A reward that changes nothing anyone does changes no number.",
+              example: "Apply your evidence to what the business actually offers, and who it is aimed at.",
+              effect:  "Judge the gain against the cost, because a reward is an expense before it is a result.",
+              link:    "Return to the question with a degree, and say what the reward depends on to work." } },
+            "performance management": { label: "performance management", guides: {
+              topic:   "Name the performance management strategy, and the measure you are going to judge it against.",
+              define:  "Show what performance management covers: setting standards, appraising against them, and acting on the result.",
+              explain: "Explain how being measured changes what staff do, and be honest that it can change it in more than one direction.",
+              example: "Apply your evidence to the appraisal itself, not to the training that might follow it.",
+              effect:  "Judge how far the measure moved, and whether the way it was carried out helped or hurt.",
+              link:    "Return to the question with a degree, and name the condition it rests on." } },
+            "job design": { label: "job design", guides: {
+              topic:   "Name the job design strategy, and the measure you are going to judge it against.",
+              define:  "Show what job design covers: what the job contains, how much control the worker has over it, and when and where it is done.",
+              explain: "Explain how changing the shape of the job changes what the person does or how long they stay.",
+              example: "Apply your evidence to the content or the conditions of the work.",
+              effect:  "Judge how far the measure moved, and what the design costs in flexibility or supervision.",
+              link:    "Return to the question with a degree, and say who it works for." } }
+          },
+          pathways: [
+            { id: "hr01-td-productivity", area: "training and development",
+              short: "Training \\u2192 productivity",
+              relationship: "Training raises productivity by making staff faster and more accurate at the work",
+              meaning: "A trained worker produces more in the same shift and makes fewer mistakes, which shows up directly in output per hour.",
+              contribution: { role: "support", note: "This is your strongest ground: the link from skill to output is direct and measurable." },
+              whatToProve: "staff are trained → they work faster and with fewer errors → output per hour rises",
+              commonMistake: "Saying training improves skills and stopping there. Skills are not a measure of business performance.",
+              concept: { topic: "human_resources", section: "strategies in human resource management", point: "training and development" },
+              evidence: [{ label: "Standardised acquisition and development",
+                           why: "It shows training delivered the same way to everyone, which is what makes a productivity gain attributable to it.",
+                           limits: "It shows the training exists. Argue what it changes; do not claim a productivity figure you cannot support." }],
+              guides: { explain: "Explain the step from a skill to a number, and name the number." } },
+            { id: "hr01-td-retention", area: "training and development",
+              short: "Development \\u2192 lower turnover",
+              relationship: "Development pathways cut turnover by giving staff a reason to stay",
+              meaning: "Somewhere to go next is a reason not to leave, and turnover is one of the clearest measures of performance in a business that trains people constantly.",
+              contribution: { role: "support", note: "Strong support, and it lets you use turnover, which is a measure the marker will recognise immediately." },
+              whatToProve: "staff can see a path upwards → fewer leave → the cost and disruption of replacing them falls",
+              commonMistake: "Treating low turnover as good in itself rather than saying what it saves the business.",
+              concept: { topic: "human_resources", section: "strategies in human resource management", point: "training and development" },
+              evidence: [{ label: "Internal recruitment and promotion pathway",
+                           why: "A promotion pathway is exactly the reason to stay that this argument depends on.",
+                           limits: "A pathway existing is not proof people take it. Argue the mechanism rather than asserting the result." }],
+              guides: { explain: "Explain why a path upwards changes the decision to leave." } },
+            { id: "hr01-rw-motivation", area: "rewards",
+              short: "Rewards \\u2192 output, where it can be measured",
+              relationship: "Performance-based rewards lift output where the work can be measured fairly",
+              meaning: "Paying for results works when results are visible, and does very little when nobody can tell whose result it was.",
+              contribution: { role: "conditional", note: "Support with a condition attached: this one only holds where individual contribution can actually be measured." },
+              whatToProve: "output is measurable per person → reward is tied to it → staff work to the measure",
+              commonMistake: "Assuming money motivates everyone equally, instead of arguing when it does and when it does not.",
+              concept: { topic: "human_resources", section: "strategies in human resource management", point: "rewards" },
+              evidence: [{ label: "Monetary and non monetary rewards",
+                           why: "It shows both kinds being used, which lets you argue about which suits which worker.",
+                           limits: "Do not claim a motivational effect the evidence does not show. Argue the conditions under which it would hold." }],
+              guides: { explain: "Explain the condition first, then the effect that follows from it." } },
+            { id: "hr01-rw-cost", area: "rewards",
+              short: "Rewards \\u2192 a cost before a result",
+              relationship: "Rewards are an expense, so the gain has to be worth more than what is paid for it",
+              meaning: "Every reward is spent before it works, so a strategy that lifts output slightly can still leave the business worse off.",
+              contribution: { role: "limitation", note: "This is a counterweight. Use it to qualify your judgement, or to argue a lower degree of effectiveness honestly." },
+              whatToProve: "the reward is paid up front → the improvement it buys is measured → the two are compared",
+              commonMistake: "Listing rewards as a cost without weighing them against what they achieved.",
+              concept: { topic: "human_resources", section: "strategies in human resource management", point: "rewards" },
+              evidence: [],
+              guides: { explain: "Explain what is spent, then what is gained, and put them beside each other." } },
+            { id: "hr01-pf-accountability", area: "performance management",
+              short: "Appraisal \\u2192 problems found early",
+              relationship: "Appraisal against clear standards identifies weak performance before it costs the business",
+              meaning: "If everyone knows the standard and is measured against it, a problem shows up as a number rather than as a bad shift nobody records.",
+              contribution: { role: "conditional", note: "Support, provided the standards are clear and applied consistently. Say so rather than assuming it." },
+              whatToProve: "standards are explicit → performance is measured against them → shortfalls are found and acted on",
+              commonMistake: "Describing the appraisal process instead of arguing what finding a problem early is worth.",
+              concept: { topic: "human_resources", section: "strategies in human resource management", point: "performance management" },
+              evidence: [{ label: "Performance management against set standards",
+                           why: "It is standards and appraisal together, which is precisely the mechanism this argument rests on.",
+                           limits: "It shows the system exists. Whether it is applied consistently is the part you have to argue." }],
+              guides: { explain: "Explain what an explicit standard makes visible that would otherwise be invisible." } },
+            { id: "hr01-pf-trust", area: "performance management",
+              short: "Appraisal \\u2192 worse, if it reads as surveillance",
+              relationship: "Appraisal damages performance where staff experience it as surveillance rather than support",
+              meaning: "The same appraisal that finds problems early can make people hide them, if being measured feels like being watched.",
+              contribution: { role: "limitation", note: "A genuine counterweight, and the clearest way to show that effectiveness depends on how a strategy is carried out." },
+              whatToProve: "measurement is experienced as distrust → staff protect themselves rather than improve → the measure gets worse or stops being honest",
+              commonMistake: "Asserting that staff dislike appraisal without connecting it to a measure of performance.",
+              concept: { topic: "human_resources", section: "strategies in human resource management", point: "performance management" },
+              evidence: [{ label: "Workplace disputes in fast food",
+                           why: "Disputation is itself a measure of effectiveness, so it lets you argue the downside in the same terms as the upside.",
+                           limits: "Disputes have many causes. Argue that appraisal can contribute, not that it caused them." }],
+              guides: { explain: "Explain the mechanism by which measuring people makes the number worse, not just less popular." } },
+            { id: "hr01-jd-enrichment", area: "job design",
+              short: "Job enrichment \\u2192 motivation and retention",
+              relationship: "Enriched jobs raise motivation by giving staff more control over their work",
+              meaning: "A job with some judgement in it holds people longer than one that has been stripped down to a sequence of instructions.",
+              contribution: { role: "support", note: "Support, and it pairs well with a turnover measure rather than an output one." },
+              whatToProve: "the job is given more variety and control → staff are more engaged by it → they stay, and put more in",
+              commonMistake: "Confusing enrichment with adding tasks. More work is not more control.",
+              concept: { topic: "human_resources", section: "strategies in human resource management", point: "job design" },
+              evidence: [{ label: "Job design using specific tasks",
+                           why: "It shows a job built as narrow, defined tasks, which is the thing enrichment would change.",
+                           limits: "This is the starting point, not the enrichment. Argue what changing it would do." }],
+              guides: { explain: "Explain what control does to how someone treats the work." } },
+            { id: "hr01-jd-flexibility", area: "job design",
+              short: "Flexible arrangements \\u2192 lower absenteeism",
+              relationship: "Flexible arrangements cut absenteeism for staff with commitments outside work",
+              meaning: "Someone who can fit work around study or family does not have to choose between them, and absenteeism is where that choice usually shows up.",
+              contribution: { role: "conditional", note: "Support for a particular workforce. Say who it works for, because it does very little for people without those commitments." },
+              whatToProve: "staff have commitments outside work → hours are made to fit them → fewer shifts are missed",
+              commonMistake: "Arguing flexibility is good for morale in general, rather than tying it to a measure and a group of workers.",
+              concept: { topic: "human_resources", section: "strategies in human resource management", point: "job design" },
+              evidence: [{ label: "Maintenance through rostering and grievance handling",
+                           why: "Rostering is where flexibility is actually delivered, so it is the practice this argument is about.",
+                           limits: "Rostering serves the business as well as the worker. Do not present it as purely an employee benefit." }],
+              guides: { explain: "Explain who the flexibility is for, then what it changes for them." } }
+          ],
+          criteria: { bands: null, source: "general HSC band expectations" },
           plan: ["Leadership style to satisfaction and culture", "Training and development to productivity and skills", "Performance management and rewards to turnover and performance", "Dispute resolution to disputation and satisfaction"],
           argument: "Human resource strategies can be effective in improving performance, measured against indicators such as turnover, absenteeism, disputation and worker satisfaction." },
         { id: "hr-02", command: "Analyse", qtype: "A", qtypeLabel: "relationship",

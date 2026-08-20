@@ -3226,11 +3226,11 @@
   function esStructureLabel(key) { return esStructureDef(key).label; }
 
   const ES = { subject: null, code: "", demo: false, screen: "setup", draft: null, list: [], form: null, pending: false,
-    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, coreOpen: false, coreExplain: false, coreIdea: false, why: null, compare: false },  // transient guided-view state, reset on paragraph change
+    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false },  // transient guided-view state, reset on paragraph change
     hint: { open: false, tab: "know" },          // study hints: persists across paragraphs on purpose
     quiz: { revealed: false, peeked: false, attempt: "", result: null } };
   const ES_KEY = "marginal.essay.v1";
-  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, coreOpen: false, coreExplain: false, coreIdea: false, why: null, compare: false }; }
+  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false }; }
   // peeked persists for the whole attempt: revealing once disqualifies mastery even
   // if the answer is hidden again before checking. Cleared only on a new attempt.
   function esResetQuiz() { ES.quiz = { revealed: false, peeked: false, attempt: "", result: null }; }
@@ -4669,22 +4669,32 @@
     // draws together arguments that have already been made. Both read the same
     // rows; neither is asked to choose a body relationship of its own.
     if (esIsIntro(p) || esIsConcl(p)) {
-      const rows = esPlanRows(d).filter(r => r.argument || r.words);
+      const judging = esIsJudgement();
+      const rows = (judging ? esJudgementRows(d) : esPlanRows(d)).filter(r => r.argument || r.words);
       const intro = esIsIntro(p);
+      const pos = esPositionOf(d);
       return `<aside class="es-rest">
         ${esDecodeBox(esQuestionDef())}
         <div data-esrestprogress>
         <div class="es-resth">${esc(p.role)}</div>
+        ${(judging && pos) ? `<div class="es-restblk">
+          <div class="es-restlbl">Your judgement</div>
+          <div class="es-restval">${esc(pos.label)}</div>
+          ${!intro ? `<div class="es-restnote">Weigh what your paragraphs established against this. If they do not support it, change the judgement rather than the evidence.</div>` : ""}
+        </div>` : ""}
         <div class="es-restblk">
-          <div class="es-restlbl">${intro ? "Your plan" : "Arguments you established"}</div>
+          <div class="es-restlbl">${intro ? "Your plan" : judging ? "What your paragraphs established" : "Arguments you established"}</div>
           ${rows.length ? `<ol class="es-planlist">${rows.map(r => `<li><button type="button" class="es-planjump" data-esgo="${r.i}">
               <span class="es-planlrole">${esc(r.role)}${r.area ? " \u00b7 " + esc(r.area) : ""}</span>
               <span class="es-planlarg">${esc(r.argument || "not chosen yet")}</span>
+              ${r.roleLabel ? `<span class="es-tprole ${esc(r.role)}">${esc(r.roleLabel)}</span>` : ""}
               ${r.words ? `<span class="es-planlw">${r.words} words</span>` : `<span class="es-planlw muted">not written yet</span>`}
             </button></li>`).join("")}</ol>`
             : `<div class="es-restnone">no body paragraphs planned yet</div>`}
           <div class="es-restnote">${intro
             ? "Signpost these in the order you will argue them. No evidence is needed here."
+            : judging
+            ? "Say how the support and the limitations balance out, and land on the degree you have argued for. Nothing new belongs in a conclusion."
             : "Draw these together into one judgement. Nothing new belongs in a conclusion."}</div>
           <button type="button" class="es-linkbtn" id="esrestplan">${intro ? "Change the plan" : "Open the plan"}</button>
         </div>
@@ -4758,9 +4768,35 @@
 
   // ---- the core answer, and the thesis it eventually becomes ------------------
   function esCoreAnswer() { const q = esQuestionDef(); return (q && q.coreAnswer) || null; }
+  // A question's MODE decides what its top-level answer has to contain. A causal
+  // question needs a relationship; a judgement question needs a position, held
+  // against criteria, that its body arguments add up to. Reading the mode rather
+  // than layering conditions around the causal case is what lets both live here.
+  function esCoreMode() { const c = esCoreAnswer(); return (c && c.mode) || "causal"; }
+  function esIsJudgement() { return esCoreMode() === "judgement"; }
   function esCoreRelationship() {
-    const q = esQuestionDef();
-    return (q && q.decode && q.decode.coreRelationship) || "";
+    const c = esCoreAnswer(), q = esQuestionDef();
+    return (c && c.statement) || (q && q.decode && q.decode.coreRelationship) || "";
+  }
+  function esPositions() { const c = esCoreAnswer(); return (c && c.positions) || []; }
+  function esPositionOf(d) {
+    const id = d && d.position;
+    if (!id) return null;
+    if (String(id).indexOf("own:") === 0) return { id: id, label: String(id).slice(4), own: true };
+    return esPositions().find(x => x.id === id) || null;
+  }
+  // What each chosen argument does FOR the judgement, so the conclusion has
+  // something to weigh instead of four topics to repeat.
+  const ES_ROLES = { support: "supports it", conditional: "supports it, with a condition", limitation: "pushes against it" };
+  function esContributionOf(p) {
+    const path = esPathway(p);
+    return (path && path.contribution) || null;
+  }
+  function esJudgementRows(d) {
+    return esPlanRows(d).map(r => {
+      const c = esContributionOf(d.paras[r.i]);
+      return Object.assign({}, r, { role: c && c.role, roleLabel: c && ES_ROLES[c.role], roleNote: c && c.note });
+    });
   }
   // Rich while it is being read, one quiet line once it has been. Leaving the
   // teaching card open through the whole of planning would put back the density
@@ -4787,19 +4823,52 @@
       ${(ES.ui.coreIdea && core && core.thesisIdea) ? `<div class="es-corebody"><div class="es-drawer-sub">a thesis idea, not a sentence to copy</div><p class="es-corep">${esc(core.thesisIdea)}</p></div>` : ""}
     </div>`;
   }
+  // Two decisions, not one: what do I think, and what will I use to prove it.
+  // Offered before the body plan because the arguments are chosen to serve it,
+  // and skippable because a student may only find their position while writing.
+  function esJudgementHTML(d) {
+    if (!esIsJudgement()) return "";
+    const core = esCoreAnswer();
+    const chosen = esPositionOf(d);
+    const open = ES.ui.posOpen || !chosen;
+    if (!open) return `<div class="es-judge done">
+      <span class="es-corelbl">Your judgement</span>
+      <span class="es-judgeline">${esc(chosen.label)}</span>
+      <button type="button" class="es-linkbtn" id="esposopen">Change</button>
+    </div>`;
+    return `<div class="es-judge">
+      <div class="es-judgeh">What do you think overall?</div>
+      <p class="es-plansub">${esc((core && core.judging) ? "You are judging " + core.judging + "." : "")} Take a position now if you have one. You can change it while you write, and a one-sided judgement is still a judgement.</p>
+      ${esPositions().map(o => `<button type="button" class="es-pick ${(chosen && chosen.id === o.id) ? "on" : ""}" data-espos="${esc(o.id)}">
+          <span class="es-pickrel">${esc(o.label)}</span>${o.note ? `<span class="es-picksub">${esc(o.note)}</span>` : ""}</button>`).join("")}
+      <button type="button" class="es-pick own" data-esposown>Write my own position</button>
+      <div class="es-ownwrap" data-posownwrap hidden>
+        <input id="esposown" class="es-input" value="${esc(chosen && chosen.own ? chosen.label : "")}" placeholder="In one line, how effective do you think they are?">
+        <button type="button" class="es-btn primary sm" id="esposownok">Use this</button>
+      </div>
+      ${(core && (core.criteria || []).length) ? `<button type="button" class="es-linkbtn" id="escrit">${ES.ui.critOpen ? "Hide" : "What am I judging it against?"}</button>
+        ${ES.ui.critOpen ? `<div class="es-corebody">${core.criteria.map(c => `<div class="es-drawer-sub">${esc(c.label)}</div><p class="es-corep">${esc(c.note)}</p>`).join("")}</div>` : ""}` : ""}
+      ${chosen ? `<div class="es-corebtns"><button type="button" class="es-btn sm" id="esposdone">That is my position</button></div>` : ""}
+    </div>`;
+  }
   // The thesis is written once the plan exists, so it can signpost an essay the
   // student has actually decided on.
   function esThesisHTML(d) {
     if (!esPlanned(d)) return "";
-    const rows = esPlanRows(d);
+    const judging = esIsJudgement();
+    const rows = judging ? esJudgementRows(d) : esPlanRows(d);
+    const pos = esPositionOf(d);
     const core = esCoreAnswer();
     const yours = (d.thesis || "").trim();
     return `<div class="es-thesis">
       <div class="es-planhh sm">Now turn your plan into an overall answer</div>
-      <ul class="es-thesisplan">${rows.map(r => `<li><span class="es-tparea">${esc(r.area || r.role)}</span>${esc(r.argument)}</li>`).join("")}</ul>
+      ${judging && pos ? `<div class="es-thesispos"><span class="es-corelbl">Your judgement</span><span>${esc(pos.label)}</span></div>` : ""}
+      <ul class="es-thesisplan">${rows.map(r => `<li><span class="es-tparea">${esc(r.area || r.role)}</span><span class="es-tpargs">${esc(r.argument)}${r.roleLabel ? `<span class="es-tprole ${esc(r.role)}">${esc(r.roleLabel)}</span>` : ""}</span></li>`).join("")}</ul>
       <label class="es-pinlabel" for="esthesis">write your thesis</label>
       <textarea id="esthesis" class="es-input" rows="3" placeholder="One or two sentences giving the overall answer to the question.">${esc(d.thesis || "")}</textarea>
-      <p class="es-thesisguide">Give the overall answer to the question: say that characteristics of the target market cause these strategies to adapt, and signpost the four you have chosen.</p>
+      <p class="es-thesisguide">${judging
+        ? "Three things: how effective you think they are, the main reason you think it, and what it depends on if your evidence calls for a qualification. Do not add a limitation you cannot support."
+        : "Give the overall answer to the question, and signpost the arguments you have chosen."}</p>
       <div class="es-corebtns">
         <button type="button" class="es-btn sm" id="esthesissave">Save thesis</button>
         ${(core && core.acceptableThesis) ? `<button type="button" class="es-linkbtn" id="escompare">${ES.ui.compare ? "Hide" : (yours ? "Compare with an acceptable thesis" : "I need to see an example first")}</button>` : ""}
@@ -4869,6 +4938,7 @@
       // Showing all eight relationships before the student has said which strategy
       // they are arguing is a list, not a choice. The area comes first.
       const opts = (!area && !required) ? [] : esPathwaysInArea(area);
+      const judgeMode = esIsJudgement();
       const ev = chosen ? esEvidenceFor(p) : { items: [] };
       const picked = p.evidenceIds || [];
       const areaRow = areas.length > 1 ? `
@@ -4890,7 +4960,7 @@
             const deeper = o.whatToProve || o.commonMistake;
             return `<div class="es-optwrap${why ? " open" : ""}">
               <button type="button" class="es-pick ${p.argumentId === o.id ? "on" : ""}" data-esplanpick="${i}|${esc(o.id)}">
-                ${o.short ? `<span class="es-pickshort">${esc(o.short)}</span>` : ""}
+                ${o.short ? `<span class="es-pickshort">${esc(o.short)}</span>${(judgeMode && o.contribution) ? `<span class="es-tprole ${esc(o.contribution.role)}">${esc(ES_ROLES[o.contribution.role] || "")}</span>` : ""}` : ""}
                 <span class="es-pickrel">${esc(o.relationship)}</span>
                 ${o.meaning ? `<span class="es-picksub">${esc(o.meaning)}</span>` : ""}
               </button>
@@ -4948,6 +5018,7 @@
             <button type="button" class="es-linkbtn" id="esplanstruct">Use ${areas.length} body paragraphs</button></div>` : ""}
         </div>
         ${esCoreHTML(d)}
+        ${esJudgementHTML(d)}
         <div class="es-plancards">${cards}</div>
         ${esThesisHTML(d)}
         <div class="es-planfoot">
@@ -5009,6 +5080,19 @@
     host.querySelectorAll("[data-eswhy]").forEach(b => b.onclick = () => {
       ES.ui.why = ES.ui.why === b.dataset.eswhy ? null : b.dataset.eswhy; esRender();
     });
+    host.querySelectorAll("[data-espos]").forEach(b => b.onclick = () => {
+      d.position = b.dataset.espos; d.positionOwn = ""; esSaveDraft(); esRender();
+    });
+    const pown = host.querySelector("[data-esposown]");
+    if (pown) pown.onclick = () => { const w = host.querySelector("[data-posownwrap]"); if (w) { w.hidden = false; const el = host.querySelector("#esposown"); if (el) el.focus(); } };
+    const pok = host.querySelector("#esposownok");
+    if (pok) pok.onclick = () => {
+      const v = ((host.querySelector("#esposown") || {}).value || "").trim(); if (!v) return;
+      d.position = "own:" + v; ES.ui.posOpen = false; esSaveDraft(); esRender();
+    };
+    const pdone = host.querySelector("#esposdone"); if (pdone) pdone.onclick = () => { ES.ui.posOpen = false; esSaveDraft(); esRender(); };
+    const popen = host.querySelector("#esposopen"); if (popen) popen.onclick = () => { ES.ui.posOpen = true; esRender(); };
+    const crit = host.querySelector("#escrit"); if (crit) crit.onclick = () => { ES.ui.critOpen = !ES.ui.critOpen; esRender(); };
     const st = host.querySelector("#esplanstruct");
     if (st) st.onclick = () => { const def = esStructureForBodies(esQuestionAreas().length); if (def) { esApplyStructure(def.key); esRender(); } };
     const go = host.querySelector("#esplango");
