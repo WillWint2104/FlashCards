@@ -718,6 +718,9 @@
   .es-areachip{font:inherit;font-size:12.5px;font-weight:700;color:var(--ink-2);background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:5px 12px;cursor:pointer}
   .es-areachip:hover{border-color:var(--green)}
   .es-areachip.on{border-color:var(--green);background:var(--green-soft);color:var(--ink)}
+  .es-planask{font-size:12.5px;font-weight:700;color:var(--ink-2);margin-bottom:8px}
+  .es-areachip.used{opacity:.6}
+  .es-areaused{font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);margin-left:7px}
   .es-planopts .es-pick{margin-bottom:7px}
   .es-planval{font-size:14.5px;line-height:1.5;color:var(--ink);font-weight:700}
   .es-planev{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:11px;padding-top:11px;border-top:1px solid var(--line)}
@@ -4100,10 +4103,176 @@ window.ESSAY = {
           topic: "Marketing", term1: "Influences on marketing", term2: "Business success",
           plan: ["Psychological influences", "Sociocultural influences", "Economic influences", "Government, legal and ethical influences"],
           argument: "Influences significantly shape customer behaviour and constrain decisions, though management's response ultimately determines their effect on success." },
-        { id: "fin-01", command: "How can", qtype: "A", qtypeLabel: "relationship",
+        // ---------------------------------------------------------------------
+        // SECOND ARCHITECTURE CASE. Unlike mkt-01, this question names a cause
+        // and an effect but FIXES NO AREAS. There is no requirements.requiredAreas,
+        // so the strategies below are relationships a student may argue, not
+        // paragraphs they must write. Nothing here is special-cased: the same
+        // fields drive it, and what changes is that the student chooses which
+        // strategies to cover as well as what to say about them.
+        // ---------------------------------------------------------------------
+        { id: "fin-01", command: "How can", qtype: "A", qtypeLabel: "relationship", marks: 20,
           text: "How can financial strategies affect the objectives of financial management?",
           topic: "Finance", term1: "Financial management strategies", term2: "Objectives of financial management",
           note: "2024 HSC Section IV question.",
+          requirements: {
+            concepts: ["financial management strategies", "objectives of financial management", "liquidity", "profitability", "efficiency", "growth", "solvency"],
+            relationships: [
+              "a strategy is chosen because of the objective it is meant to move, so the objective comes first and the strategy answers it",
+              "one strategy can serve one objective while working against another, so the trade-off is part of the answer",
+              "the objective the business is under pressure on decides which strategy is worth using"
+            ],
+            accomplish: [
+              "defines both financial strategies and the objectives of financial management before arguing between them",
+              "for each strategy chosen, shows how it moves a NAMED objective rather than describing the strategy alone",
+              "weighs at least one trade-off, because no strategy improves every objective at once",
+              "uses one business consistently so the strategies can be compared against each other"
+            ],
+            syllabus: "Finance: financial management strategies, and the objectives of liquidity, profitability, efficiency, growth and solvency."
+          },
+          decode: {
+            verbMeaning: "How can asks you to show the mechanism. It is not enough to say that a strategy helps; you have to say how it moves the objective and why that follows.",
+            plainEnglish: "Show how the things a business does with its money change how well it meets its financial goals, and be honest that fixing one goal can hurt another.",
+            coreRelationship: "A business chooses a financial strategy because of the objective it needs to move, so the objective explains the strategy rather than the other way round.",
+            highlights: [
+              { anchor: "How can", kind: "directive", label: "what you need to do",
+                note: "Show the mechanism. Saying a strategy is beneficial is not an answer; saying how it changes the objective, step by step, is." },
+              { anchor: "financial strategies", kind: "cause", label: "the thing you are arguing from",
+                note: "These are what the business does with its money: managing cash flow, working capital, costs and revenues, and financial risk across borders. Which ones you write about is your choice." },
+              { anchor: "objectives of financial management", kind: "effect", label: "what has to move",
+                note: "Liquidity, profitability, efficiency, growth and solvency. Every strategy you raise has to be tied to one of these by name, or the relationship is not shown." }
+            ],
+            // No fixed areas, so the coverage note is about the SHAPE of the answer
+            // rather than a list of parts. The absence of requiredAreas is the
+            // question's own decision, not missing data.
+            cover: {
+              forEach: "financial strategy → the objective it moves → how it moves it → what it costs elsewhere",
+              consistency: "Choose the strategies yourself, use one business throughout, and weigh at least one trade-off."
+            }
+          },
+          coreAnswer: {
+            explain: [
+              "The objectives of financial management are the things a business is trying to be: liquid enough to pay what falls due, profitable, efficient with what it owns, growing, and solvent over the long run. They are the scoreboard.",
+              "A financial strategy is a move made on that scoreboard. Nobody manages cash flow for its own sake; they do it because liquidity is under pressure. So the question is asking you to run the argument in that direction: name the objective, then show the strategy reaching it. And because the objectives pull against each other, a strategy that lifts one will usually cost something on another, which is where the marks are."
+            ],
+            thesisIdea: "Say that strategies are chosen to move particular objectives, name the ones you will argue, and signal that improving one can cost another.",
+            acceptableThesis: "Financial strategies affect the objectives of financial management because each strategy is chosen to move a particular objective, such as cash flow management improving liquidity or cost controls improving profitability, although a strategy that lifts one objective often works against another.",
+            checklist: [
+              "makes the objective the thing being moved, and the strategy the thing doing the moving",
+              "names specific strategies and specific objectives rather than talking about finance in general",
+              "signals that a trade-off is coming, since no strategy improves everything",
+              "answers how, rather than listing what the strategies are"
+            ]
+          },
+          areas: {
+            "cash flow management": { label: "cash flow management", guides: {
+              topic:   "State which objective is under pressure, and say that cash flow management is the strategy answering it.",
+              define:  "Show what cash flow management covers: distribution of payments, discounts for early payment, and factoring.",
+              explain: "Explain how changing the TIMING of money in and out changes the objective. Timing is the mechanism.",
+              example: "Apply your evidence to the timing of cash, not to how much the business earns.",
+              effect:  "Say what the objective gains, and what the timing change costs the business.",
+              link:    "Return to the question: this is how a cash flow strategy reaches that objective." } },
+            "working capital management": { label: "working capital management", guides: {
+              topic:   "State which objective is under pressure, and say that working capital management is the strategy answering it.",
+              define:  "Show what working capital management covers: controlling current assets and current liabilities, and leasing.",
+              explain: "Explain how holding, releasing or financing assets differently changes the objective.",
+              example: "Apply your evidence to what the business owns and owes, not to its sales.",
+              effect:  "Say what the objective gains, and what is given up by financing it that way.",
+              link:    "Return to the question: this is how a working capital strategy reaches that objective." } },
+            "profitability management": { label: "profitability management", guides: {
+              topic:   "State which objective is under pressure, and say that cost or revenue controls are the strategy answering it.",
+              define:  "Show what profitability management covers: cost controls such as fixed and variable costs, and revenue controls such as pricing policy and sales mix.",
+              explain: "Explain how moving a cost or a price changes the objective, and by what route.",
+              example: "Apply your evidence to a cost or a price, and say which one it is.",
+              effect:  "Say what the objective gains, and what the control costs elsewhere.",
+              link:    "Return to the question: this is how a profitability strategy reaches that objective." } },
+            "global financial management": { label: "global financial management", guides: {
+              topic:   "State which objective is exposed, and say that a global financial strategy is what answers it.",
+              define:  "Show what global financial management covers: exchange rates, interest rates, methods of international payment, and hedging.",
+              explain: "Explain how the strategy removes or reduces a risk, and how removing that risk moves the objective.",
+              example: "Apply your evidence to the exposure itself, not to trading overseas in general.",
+              effect:  "Say what the objective gains, and what protection costs.",
+              link:    "Return to the question: this is how a global financial strategy reaches that objective." } }
+          },
+          pathways: [
+            { id: "fin01-cf-liquidity", area: "cash flow management",
+              relationship: "Managing the timing of payments improves liquidity",
+              meaning: "Liquidity is about whether cash is there when a bill falls due, so moving money in earlier and out later fixes it without earning a cent more.",
+              whatToProve: "liquidity is under pressure → the timing of inflows and outflows is changed → cash is available when it is needed",
+              commonMistake: "Treating liquidity as the same thing as profit. A profitable business can still fail to pay a bill on the day it is due.",
+              concept: { topic: "finance", section: "financial management strategies", point: "cash flow management" },
+              evidence: [{ label: "Immediate cash sales, almost no customer receivables",
+                           why: "It shows money arriving at the moment of sale rather than weeks later, which is the timing point this argument turns on.",
+                           limits: "This is about when cash arrives, not how much. Do not use it to argue profitability." }],
+              guides: { explain: "Explain how the timing change, not the amount, is what improves liquidity." } },
+            { id: "fin01-cf-discounts", area: "cash flow management",
+              relationship: "Offering discounts for early payment brings cash forward at a cost to revenue",
+              meaning: "The business pays for speed: customers hand over money sooner, and in exchange the business collects less of it.",
+              whatToProve: "cash is needed sooner → customers are given a reason to pay early → liquidity improves while revenue falls",
+              commonMistake: "Presenting the discount as a free improvement instead of naming what it costs.",
+              concept: { topic: "finance", section: "financial management strategies", point: "cash flow management" },
+              evidence: [],
+              guides: { explain: "Explain the exchange being made: earlier cash bought with lower revenue." } },
+            { id: "fin01-wc-control", area: "working capital management",
+              relationship: "Controlling current assets and liabilities keeps the business able to meet its debts",
+              meaning: "What the business holds and what it owes in the short term decide whether it can pay, so managing both is how liquidity is protected day to day.",
+              whatToProve: "short-term obligations exist → current assets and liabilities are managed against them → the business stays able to pay",
+              commonMistake: "Listing current assets and liabilities without saying what managing them actually changes.",
+              concept: { topic: "finance", section: "financial management strategies", point: "working capital management" },
+              evidence: [{ label: "Property, leasing and working capital",
+                           why: "It shows the choice between owning and leasing, which is a working capital decision with a visible consequence.",
+                           limits: "Say which objective you are arguing about; this evidence can support liquidity or efficiency and they are not the same." }],
+              guides: { explain: "Explain how the balance between what is owned and what is owed decides the objective." } },
+            { id: "fin01-wc-leasing", area: "working capital management",
+              relationship: "Leasing rather than buying preserves working capital but raises ongoing costs",
+              meaning: "Not spending the cash keeps it available for everything else, and the price of that is a payment that never stops.",
+              whatToProve: "a large asset is needed → leasing avoids tying cash up in it → liquidity is protected while costs rise",
+              commonMistake: "Arguing that leasing is cheaper. It usually is not; the argument is about what it does to available cash.",
+              concept: { topic: "finance", section: "financial management strategies", point: "working capital management" },
+              evidence: [{ label: "Property, leasing and working capital",
+                           why: "It is the leasing decision itself, which is exactly what this argument is about.",
+                           limits: "Do not claim a figure for the saving; the argument is about the effect on cash, not its size." }],
+              guides: { explain: "Explain what is gained by not spending the cash, and what the ongoing payment costs." } },
+            { id: "fin01-pm-cost", area: "profitability management",
+              relationship: "Cost controls raise profitability by reducing what each sale costs to make",
+              meaning: "Profit is what is left after costs, so pushing costs down lifts it without needing a single extra customer.",
+              whatToProve: "profitability is under pressure → fixed or variable costs are cut → more of each sale is kept",
+              commonMistake: "Naming a cost-cutting measure without saying which costs it touches or what it does to quality.",
+              concept: { topic: "finance", section: "financial management strategies", point: "profitability management" },
+              evidence: [{ label: "Standardisation as cost control, marketing as revenue control",
+                           why: "It separates the cost side from the revenue side, which is the distinction this argument depends on.",
+                           limits: "Use the cost half here. The revenue half belongs to a different argument." }],
+              guides: { explain: "Explain the route from a lower cost to a higher profit, and name which costs move." } },
+            { id: "fin01-pm-revenue", area: "profitability management",
+              relationship: "Revenue controls raise profitability by lifting sales and the margin on them",
+              meaning: "The other way to more profit is more revenue, through what is charged and what customers are encouraged to add.",
+              whatToProve: "profitability is under pressure → pricing or sales mix is changed → revenue rises faster than the cost of earning it",
+              commonMistake: "Arguing that more sales means more profit, without dealing with what the extra sales cost to serve.",
+              concept: { topic: "finance", section: "financial management strategies", point: "profitability management" },
+              evidence: [{ label: "Two levels of margin, restaurant and corporation",
+                           why: "It shows margin being managed at more than one level, which is what a revenue control looks like in practice.",
+                           limits: "Margins move for many reasons. Argue the strategy, not the number." }],
+              guides: { explain: "Explain the route from a pricing or mix decision to a higher profit." } },
+            { id: "fin01-gf-hedging", area: "global financial management",
+              relationship: "Hedging exchange rate exposure protects profitability from currency movement",
+              meaning: "A business earning in one currency and paying in another can lose money without selling any less, and hedging fixes the rate so that cannot happen.",
+              whatToProve: "the business is exposed to a currency it does not control → the rate is fixed in advance → profit stops depending on the exchange rate",
+              commonMistake: "Describing what a hedge is without saying which objective it protects, or claiming it makes money rather than removing a risk.",
+              concept: { topic: "finance", section: "financial management strategies", point: "global financial management" },
+              evidence: [{ label: "Exchange rate exposure and hedging",
+                           why: "It is the exposure and the response together, which is the whole of this argument.",
+                           limits: "Hedging removes uncertainty; it does not guarantee a better outcome. Do not argue that it increases profit." }],
+              guides: { explain: "Explain that the gain is certainty, and say which objective that certainty protects." } },
+            { id: "fin01-gf-payment", area: "global financial management",
+              relationship: "Choosing the method of international payment manages the risk of not being paid",
+              meaning: "Selling across a border means trusting someone a long way away, and the payment method decides how much of that risk the business carries.",
+              whatToProve: "payment is uncertain across a border → a method is chosen that shifts who carries the risk → the business is more likely to be paid",
+              commonMistake: "Listing payment methods in order of risk without arguing why the business would choose one.",
+              concept: { topic: "finance", section: "financial management strategies", point: "global financial management" },
+              evidence: [],
+              guides: { explain: "Explain who carries the risk under the method chosen, and what that protects." } }
+          ],
+          criteria: { bands: null, source: "general HSC band expectations" },
           plan: ["Cash flow management to liquidity", "Working capital management to liquidity and efficiency", "Profitability management to profitability and growth", "Global financial management to profitability and solvency"],
           argument: "Financial strategies substantially help businesses achieve financial objectives by controlling cash, working capital, costs, revenues and financial risk, though achieving one objective can involve a trade-off with another." },
         { id: "fin-02", command: "Explain", qtype: "C", qtypeLabel: "multi-element",
@@ -9800,6 +9969,11 @@ window.BUSCONTENT = {
     const chain = cover.forEach || (r.relationships || [])[0] || "";
     if (!areas.length && !chain) return "";
     const n = areas.length, word = ["", "one", "two", "three", "four", "five", "six"][n] || String(n);
+    const offered = esQuestionAreas();
+    if (!n) return `
+      ${chain ? `<p class="es-decp"><b>For each thing you argue, show:</b><br>${esc(chain)}</p>` : ""}
+      ${offered.length ? `<p class="es-decp"><b>Which to write about is your choice.</b> This question does not name its parts, so pick the ones you can argue best: ${offered.map(esc).join(" · ")}</p>` : ""}
+      ${cover.consistency ? `<p class="es-decp">${esc(cover.consistency)}</p>` : ""}`;
     return `
       ${n ? `<p class="es-decp"><b>All ${word} areas:</b> ${areas.map(esc).join(" · ")}</p>` : ""}
       ${chain ? `<p class="es-decp"><b>For each one, show:</b><br>${esc(chain)}</p>` : ""}
@@ -9814,7 +9988,7 @@ window.BUSCONTENT = {
       <div class="es-decrow">
         <button type="button" class="es-decchip" data-esdecopen="plain">Plain English</button>
         <button type="button" class="es-decchip" data-esdecopen="verb">What does ${esc(verb.toLowerCase())} mean?</button>
-        <button type="button" class="es-decchip" data-esdecopen="cover">What must I cover?</button>
+        <button type="button" class="es-decchip" data-esdecopen="cover">${esAreasRequired(q) ? "What must I cover?" : "What does my answer have to do?"}</button>
         <span class="es-dechint">or press any highlighted words above</span>
       </div>`;
   }
@@ -9839,7 +10013,7 @@ window.BUSCONTENT = {
         <p class="es-decp">${esc(dec.verbMeaning || "")}</p>
       </div>
       <div class="es-decpanel" data-esdecpanel="cover" hidden>
-        <div class="es-dech">What you must cover</div>
+        <div class="es-dech">${esAreasRequired(q) ? "What you must cover" : "What your answer has to do"}</div>
         ${esDecodeCoverage(q)}
       </div>`;
     return `
@@ -10863,6 +11037,7 @@ window.BUSCONTENT = {
   function esIsConcl(p) { return /^conclusion/i.test((p && p.role) || ""); }
   function esBodyIndexes(d) { return (d.paras || []).map((p, i) => i).filter(i => !esIsIntro(d.paras[i]) && !esIsConcl(d.paras[i])); }
   // The parts of the question its pathways are written against, in authored order.
+  function esAreasRequired(q) { return (((q || esQuestionDef() || {}).requirements || {}).requiredAreas || []).length > 0; }
   function esQuestionAreas() {
     const q = esQuestionDef(); const out = [];
     ((q && q.pathways) || []).forEach(x => { if (x.area && out.indexOf(x.area) < 0) out.push(x.area); });
@@ -10997,24 +11172,36 @@ window.BUSCONTENT = {
     const areas = esQuestionAreas();
     const bodies = esBodyIndexes(d);
     ES.ui.planOpen = ES.ui.planOpen || {};
-    const suggest = areas.length && areas.length !== bodies.length ? esStructureForBodies(areas.length) : null;
+    // Only a question that FIXES its parts can imply how many paragraphs there
+    // are. Four available strategies is not a demand for four paragraphs.
+    const required = esAreasRequired();
+    const suggest = required && areas.length && areas.length !== bodies.length ? esStructureForBodies(areas.length) : null;
 
     const cards = bodies.map((i, k) => {
       const p = d.paras[i];
-      const area = p.area || areas[k] || "";
+      const area = p.area || (required ? (areas[k] || "") : "");
+      const usedElsewhere = {};
+      bodies.forEach(j => { if (j !== i && d.paras[j].area) usedElsewhere[d.paras[j].area] = d.paras[j].role; });
       const chosen = !!p.argumentId;
       // Rich while deciding, compact once decided, and only one open at a time so
       // the page is a sequence of decisions rather than four panels stacked up.
       const firstUnchosen = bodies.find(j => !d.paras[j].argumentId);
       const open = ES.ui.planOpen[i] === true || (!chosen && i === firstUnchosen && ES.ui.planOpen[i] !== false);
-      const opts = esPathwaysInArea(area);
+      // Showing all eight relationships before the student has said which strategy
+      // they are arguing is a list, not a choice. The area comes first.
+      const opts = (!area && !required) ? [] : esPathwaysInArea(area);
       const ev = chosen ? esEvidenceFor(p) : { items: [] };
       const picked = p.evidenceIds || [];
-      const areaRow = areas.length > 1 ? `<div class="es-planareas">${areas.map(a =>
-        `<button type="button" class="es-areachip ${String(a).toLowerCase() === String(area).toLowerCase() ? "on" : ""}" data-esplanarea="${i}|${esc(a)}">${esc(a)}</button>`).join("")}</div>` : "";
+      const areaRow = areas.length > 1 ? `
+        ${required ? "" : `<div class="es-planask">${area ? "This paragraph is about" : "Which of these will this paragraph argue about?"}</div>`}
+        <div class="es-planareas">${areas.map(a => {
+          const on = String(a).toLowerCase() === String(area).toLowerCase();
+          const used = usedElsewhere[a];
+          return `<button type="button" class="es-areachip ${on ? "on" : ""} ${(used && !on) ? "used" : ""}" data-esplanarea="${i}|${esc(a)}"${used && !on ? ` title="already argued in ${esc(used)}"` : ""}>${esc(a)}${(used && !on) ? `<span class="es-areaused"> in ${esc(used)}</span>` : ""}</button>`;
+        }).join("")}</div>` : "";
       const body = open ? `
         ${areaRow}
-        <div class="es-planopts">
+        ${(!area && !required) ? "" : `<div class="es-planopts">
           ${opts.map(o => {
             const why = ES.ui.why === o.id;
             const deeper = o.whatToProve || o.commonMistake;
@@ -11036,7 +11223,7 @@ window.BUSCONTENT = {
             <input class="es-input" data-esplanowninput="${i}" value="${esc(p.ownArgument || "")}" placeholder="In one line, the relationship this paragraph argues">
             <button type="button" class="es-btn primary sm" data-esplanownok="${i}">Use this</button>
           </div>
-        </div>` : `
+        </div>`}` : `
         <div class="es-planval">${esc(esArgLine(p)) || `<span class="es-restnone">not chosen yet</span>`}</div>
         <button type="button" class="es-linkbtn" data-esplanedit="${i}">${chosen ? "Change" : "Choose"}</button>`;
       const evRow = (chosen && !open) ? `

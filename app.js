@@ -3649,6 +3649,11 @@
     const chain = cover.forEach || (r.relationships || [])[0] || "";
     if (!areas.length && !chain) return "";
     const n = areas.length, word = ["", "one", "two", "three", "four", "five", "six"][n] || String(n);
+    const offered = esQuestionAreas();
+    if (!n) return `
+      ${chain ? `<p class="es-decp"><b>For each thing you argue, show:</b><br>${esc(chain)}</p>` : ""}
+      ${offered.length ? `<p class="es-decp"><b>Which to write about is your choice.</b> This question does not name its parts, so pick the ones you can argue best: ${offered.map(esc).join(" · ")}</p>` : ""}
+      ${cover.consistency ? `<p class="es-decp">${esc(cover.consistency)}</p>` : ""}`;
     return `
       ${n ? `<p class="es-decp"><b>All ${word} areas:</b> ${areas.map(esc).join(" · ")}</p>` : ""}
       ${chain ? `<p class="es-decp"><b>For each one, show:</b><br>${esc(chain)}</p>` : ""}
@@ -3663,7 +3668,7 @@
       <div class="es-decrow">
         <button type="button" class="es-decchip" data-esdecopen="plain">Plain English</button>
         <button type="button" class="es-decchip" data-esdecopen="verb">What does ${esc(verb.toLowerCase())} mean?</button>
-        <button type="button" class="es-decchip" data-esdecopen="cover">What must I cover?</button>
+        <button type="button" class="es-decchip" data-esdecopen="cover">${esAreasRequired(q) ? "What must I cover?" : "What does my answer have to do?"}</button>
         <span class="es-dechint">or press any highlighted words above</span>
       </div>`;
   }
@@ -3688,7 +3693,7 @@
         <p class="es-decp">${esc(dec.verbMeaning || "")}</p>
       </div>
       <div class="es-decpanel" data-esdecpanel="cover" hidden>
-        <div class="es-dech">What you must cover</div>
+        <div class="es-dech">${esAreasRequired(q) ? "What you must cover" : "What your answer has to do"}</div>
         ${esDecodeCoverage(q)}
       </div>`;
     return `
@@ -4712,6 +4717,7 @@
   function esIsConcl(p) { return /^conclusion/i.test((p && p.role) || ""); }
   function esBodyIndexes(d) { return (d.paras || []).map((p, i) => i).filter(i => !esIsIntro(d.paras[i]) && !esIsConcl(d.paras[i])); }
   // The parts of the question its pathways are written against, in authored order.
+  function esAreasRequired(q) { return (((q || esQuestionDef() || {}).requirements || {}).requiredAreas || []).length > 0; }
   function esQuestionAreas() {
     const q = esQuestionDef(); const out = [];
     ((q && q.pathways) || []).forEach(x => { if (x.area && out.indexOf(x.area) < 0) out.push(x.area); });
@@ -4846,24 +4852,36 @@
     const areas = esQuestionAreas();
     const bodies = esBodyIndexes(d);
     ES.ui.planOpen = ES.ui.planOpen || {};
-    const suggest = areas.length && areas.length !== bodies.length ? esStructureForBodies(areas.length) : null;
+    // Only a question that FIXES its parts can imply how many paragraphs there
+    // are. Four available strategies is not a demand for four paragraphs.
+    const required = esAreasRequired();
+    const suggest = required && areas.length && areas.length !== bodies.length ? esStructureForBodies(areas.length) : null;
 
     const cards = bodies.map((i, k) => {
       const p = d.paras[i];
-      const area = p.area || areas[k] || "";
+      const area = p.area || (required ? (areas[k] || "") : "");
+      const usedElsewhere = {};
+      bodies.forEach(j => { if (j !== i && d.paras[j].area) usedElsewhere[d.paras[j].area] = d.paras[j].role; });
       const chosen = !!p.argumentId;
       // Rich while deciding, compact once decided, and only one open at a time so
       // the page is a sequence of decisions rather than four panels stacked up.
       const firstUnchosen = bodies.find(j => !d.paras[j].argumentId);
       const open = ES.ui.planOpen[i] === true || (!chosen && i === firstUnchosen && ES.ui.planOpen[i] !== false);
-      const opts = esPathwaysInArea(area);
+      // Showing all eight relationships before the student has said which strategy
+      // they are arguing is a list, not a choice. The area comes first.
+      const opts = (!area && !required) ? [] : esPathwaysInArea(area);
       const ev = chosen ? esEvidenceFor(p) : { items: [] };
       const picked = p.evidenceIds || [];
-      const areaRow = areas.length > 1 ? `<div class="es-planareas">${areas.map(a =>
-        `<button type="button" class="es-areachip ${String(a).toLowerCase() === String(area).toLowerCase() ? "on" : ""}" data-esplanarea="${i}|${esc(a)}">${esc(a)}</button>`).join("")}</div>` : "";
+      const areaRow = areas.length > 1 ? `
+        ${required ? "" : `<div class="es-planask">${area ? "This paragraph is about" : "Which of these will this paragraph argue about?"}</div>`}
+        <div class="es-planareas">${areas.map(a => {
+          const on = String(a).toLowerCase() === String(area).toLowerCase();
+          const used = usedElsewhere[a];
+          return `<button type="button" class="es-areachip ${on ? "on" : ""} ${(used && !on) ? "used" : ""}" data-esplanarea="${i}|${esc(a)}"${used && !on ? ` title="already argued in ${esc(used)}"` : ""}>${esc(a)}${(used && !on) ? `<span class="es-areaused"> in ${esc(used)}</span>` : ""}</button>`;
+        }).join("")}</div>` : "";
       const body = open ? `
         ${areaRow}
-        <div class="es-planopts">
+        ${(!area && !required) ? "" : `<div class="es-planopts">
           ${opts.map(o => {
             const why = ES.ui.why === o.id;
             const deeper = o.whatToProve || o.commonMistake;
@@ -4885,7 +4903,7 @@
             <input class="es-input" data-esplanowninput="${i}" value="${esc(p.ownArgument || "")}" placeholder="In one line, the relationship this paragraph argues">
             <button type="button" class="es-btn primary sm" data-esplanownok="${i}">Use this</button>
           </div>
-        </div>` : `
+        </div>`}` : `
         <div class="es-planval">${esc(esArgLine(p)) || `<span class="es-restnone">not chosen yet</span>`}</div>
         <button type="button" class="es-linkbtn" data-esplanedit="${i}">${chosen ? "Change" : "Choose"}</button>`;
       const evRow = (chosen && !open) ? `
