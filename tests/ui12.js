@@ -1,4 +1,5 @@
 const { chromium, T, OUT, BASE, fileUrl } = require('./env');
+const { nextSection, prevSection } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 (async()=>{
   const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium'});
@@ -16,11 +17,15 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   await p.$$eval('#essubject option',()=>{});
   await p.selectOption('#essubject','business_studies').catch(()=>{});
   await p.waitForTimeout(300);
-  await p.fill('#esq','Explain how target markets affect e-marketing, people, processes and physical evidence.');
+  // The BROADER practice stem on purpose. It is a separate question with no
+  // authored pathways, so this suite exercises the fallback resolution the
+  // toolbelt has to do when nothing is authored for the question.
+  await p.fill('#esq','Explain how target markets influence the development of marketing strategies.');
   await p.fill('#estopic','Marketing');
   await p.click('#esstart'); await p.waitForTimeout(500);
   // move to a body paragraph and give it a point so context can resolve
-  await p.click('#esnext'); await p.waitForTimeout(350);
+  await nextSection(p);
+  { const t = await p.$('#espointtoggle'); if (t && !(await p.$('#espoint'))) { await t.click(); await p.waitForTimeout(250); } }
   await p.fill('#espoint','Digitally engaged target markets push businesses towards e-marketing.');
   await p.waitForTimeout(200);
 

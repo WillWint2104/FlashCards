@@ -517,6 +517,18 @@ window.ESSAY = {
                 explain: "Explain why a preference for serving themselves changes what the business puts in front of the customer." } }
           ],
           criteria: { bands: null, source: "general HSC band expectations" },
+          // CANONICAL STEM. Everything authored above is built around the four
+          // elements this question fixes, so the exact paper wording is the
+          // question, not a broader practice paraphrase of it. Decoding, plain
+          // English, thesis guidance and comparison answers all read this string.
+          text: "Explain how target markets affect e-marketing, people, processes and physical evidence.",
+          topic: "Marketing", term1: "Target markets", term2: "Marketing strategies",
+          plan: ["Target market to e-marketing", "Target market to people", "Target market to processes", "Target market to physical evidence"],
+          argument: "The chosen target market shapes each of these four elements so that the strategy fits the customer." },
+        // The broader question is a genuinely different, less constrained task, so
+        // it keeps its own id rather than being an alias of the one above. It has
+        // no authored pathways: it is a practice stem, not the reference area.
+        { id: "mkt-04", command: "Explain", qtype: "C", qtypeLabel: "multi-element", marks: 20,
           text: "Explain how target markets influence the development of marketing strategies.",
           topic: "Marketing", term1: "Target markets", term2: "Marketing strategies",
           plan: ["Target market to product", "Target market to price", "Target market to promotion and e-marketing", "Target market to place, people, processes and physical evidence"],

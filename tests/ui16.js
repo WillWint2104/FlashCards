@@ -36,7 +36,7 @@ const rungs = p => p.$$eval('.es-rung',es=>es.map(e=>({n:e.querySelector('.es-ru
   await p.click('#esplango'); await p.waitForTimeout(500);
   // go to the processes paragraph
   await p.$$eval('[data-esgo]',es=>{const t=es.find(x=>/Body 1/.test(x.textContent));t&&t.click();}); await p.waitForTimeout(400);
-  const arg=await p.$eval('.es-rest .es-restval',e=>e.textContent.trim());
+  const arg=await p.$eval('.es-chip-arg',e=>e.textContent.trim());
   ok(/Convenience-oriented/.test(arg),'the processes argument travelled with the paragraph: '+arg.slice(0,34));
 
   console.log('2. every component has a pathway-specific guide AND a full ladder');
@@ -152,7 +152,7 @@ const rungs = p => p.$$eval('.es-rung',es=>es.map(e=>({n:e.querySelector('.es-ru
   await p.fill('#esownarg','Customers who order in groups push the business to split how one order is paid for');
   await p.click('#esownok'); await p.waitForTimeout(400);
   await p.click('#esstartwriting'); await p.waitForTimeout(400);
-  const ownArg=await p.$eval('.es-rest .es-restval',e=>e.textContent.trim());
+  const ownArg=await p.$eval('.es-chip-arg',e=>e.textContent.trim());
   ok(/order in groups/.test(ownArg),'their own words are kept exactly: '+ownArg.slice(0,40));
   const ownTools=await p.$$eval('.es-belt-b',es=>es.map(e=>({l:e.textContent.trim(),off:e.disabled})));
   console.log('    tools on an own argument:',JSON.stringify(ownTools.map(t=>t.l+(t.off?'(off)':''))));

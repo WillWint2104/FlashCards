@@ -1,4 +1,5 @@
 const { chromium, T, OUT, BASE, fileUrl } = require('./env');
+const { nextSection, prevSection } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 (async()=>{
   const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium'});
@@ -19,7 +20,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   await p.click('#esstart'); await p.waitForTimeout(400);
   // this suite tests the per-paragraph route, so it declines the response plan
   await p.click('#esplango'); await p.waitForTimeout(400);
-  await p.click('#esnext'); await p.waitForTimeout(400);
+  await nextSection(p);
   await p.fill('#espoint','How the target market affects e-marketing.'); await p.waitForTimeout(300);
 
   console.log('--- argument comes first ---');
@@ -51,10 +52,10 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
 
   console.log('--- the resting rail shows the paragraph context ---');
   ok(!!(await p.$('.es-rest')),'the rail is the resting state, not coach prose');
-  const rail = await p.$eval('.es-rest',e=>e.textContent);
+  const rail = await p.$eval('.es-cols',e=>e.textContent);   // argument and evidence are chips now
   ok(/Digitally engaged/.test(rail),'it shows the chosen argument');
   ok(rail.indexOf(pickedEv)>=0,'and the evidence they actually chose: '+JSON.stringify(pickedEv));
-  ok(/Where you are/.test(rail),'and where they are');
+  ok(/This paragraph/.test(rail),'and where they are');
   await p.screenshot({path:OUT+'shot-phasec-rest.png'});
 
   console.log('--- the guide changed because of the choice ---');

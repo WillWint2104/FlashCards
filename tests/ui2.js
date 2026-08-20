@@ -1,5 +1,6 @@
 // the plain build on purpose: this suite tests the shipped defaults
 const { chromium, P: T, OUT } = require('./env');
+const { nextSection, prevSection } = require('./env');
 let pass=0, fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 
 // focus points at the SECOND submitted paragraph. The draft has an empty middle slot,
@@ -45,8 +46,8 @@ const REVIEW = {
   // student's third slot. This is the case that a naive index mapping gets wrong.
   await p.fill('#esline','Target markets shape the mix.');
   await p.click('#esaccept'); await p.waitForTimeout(300);
-  await p.click('#esnext'); await p.waitForTimeout(300);
-  await p.click('#esnext'); await p.waitForTimeout(300);
+  await nextSection(p);
+  await nextSection(p);
   const skipped = await p.$eval('.es-pararole',e=>e.textContent.trim());
   await p.fill('#esline','Overall the target market drives the strategy.');
   await p.click('#esaccept'); await p.waitForTimeout(300);

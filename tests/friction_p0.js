@@ -217,7 +217,7 @@ const P = {
   async function nextSection() {
     const done = await p.$('#esdonenext');
     if (done) { await done.click(); await p.waitForTimeout(420); return; }
-    await p.click('#esnext'); await p.waitForTimeout(400);
+    await nextSection(p);
   }
 
   // ================================================================ INTRODUCTION

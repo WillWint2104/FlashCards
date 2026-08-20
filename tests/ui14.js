@@ -1,4 +1,5 @@
 const { chromium, T, OUT, BASE, fileUrl } = require('./env');
+const { nextSection, prevSection } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 const rungs = p => p.$$eval('.es-rung',es=>es.map(e=>({n:e.querySelector('.es-rungn').textContent.trim(),
   lbl:e.querySelector('.es-runglbl').textContent.trim(), txt:e.querySelector('.es-rungtext').textContent.trim(), kind:e.className})));
@@ -19,7 +20,7 @@ const rungs = p => p.$$eval('.es-rung',es=>es.map(e=>({n:e.querySelector('.es-ru
   await p.click('#esstart'); await p.waitForTimeout(400);
   // this suite tests the per-paragraph route, so it declines the response plan
   await p.click('#esplango'); await p.waitForTimeout(400);
-  await p.click('#esnext'); await p.waitForTimeout(350);
+  await nextSection(p);
   await p.fill('#espoint','How the target market affects e-marketing.'); await p.waitForTimeout(250);
 
   console.log('1-2. select argument A and evidence A');

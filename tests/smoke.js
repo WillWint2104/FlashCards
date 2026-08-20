@@ -2,6 +2,7 @@
 // real walkthrough build, and report anything broken or dead-ended. Asserts
 // nothing about design; it is looking for things that do not work.
 const { chromium, T, OUT } = require('./env');
+const { nextSection, prevSection } = require('./env');
 const problems = [], notes = [];
 const bad = m => { problems.push(m); console.log('  BROKEN:', m); };
 const note = m => { notes.push(m); console.log('  note:', m); };

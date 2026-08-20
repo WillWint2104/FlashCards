@@ -3226,11 +3226,11 @@
   function esStructureLabel(key) { return esStructureDef(key).label; }
 
   const ES = { subject: null, code: "", demo: false, screen: "setup", draft: null, list: [], form: null, pending: false,
-    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, mapOpen: {}, planOpen: {} },  // transient guided-view state, reset on paragraph change
+    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {} },  // transient guided-view state, reset on paragraph change
     hint: { open: false, tab: "know" },          // study hints: persists across paragraphs on purpose
     quiz: { revealed: false, peeked: false, attempt: "", result: null } };
   const ES_KEY = "marginal.essay.v1";
-  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, mapOpen: {}, planOpen: {} }; }
+  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {} }; }
   // peeked persists for the whole attempt: revealing once disqualifies mastery even
   // if the answer is hidden again before checking. Cleared only on a new attempt.
   function esResetQuiz() { ES.quiz = { revealed: false, peeked: false, attempt: "", result: null }; }
@@ -4526,7 +4526,7 @@
     const d = ES.draft;
     const steps0 = slotsForRole(p.role), si0 = esStepIndex(p);
     const where = `<div class="es-restblk">
-        <div class="es-restlbl">Where you are</div>
+        <div class="es-restlbl">This paragraph</div>
         <ol class="es-reststeps">${steps0.map((st, i) => `<li class="${i < si0 ? "done" : i === si0 ? "now" : ""}">${esc(st.label)}</li>`).join("")}</ol>
       </div>`;
     // The introduction signposts a plan that already exists, and the conclusion
@@ -4553,21 +4553,10 @@
         ${where}
       </aside>`;
     }
-    const path = esPathway(p);
-    const arg = path ? path.relationship : (p.ownArgument || "");
-    const ev = (p.evidenceIds || []).map(esEvidenceByLabel).filter(Boolean);
-    return `<aside class="es-rest">
-      <div class="es-resth">${esc(p.role)}</div>
-      <div class="es-restblk">
-        <div class="es-restlbl">Your argument</div>
-        ${arg ? `<div class="es-restval">${esc(arg)}${path ? "" : ` <span class="es-restown">your own</span>`}</div>` : `<div class="es-restnone">not chosen yet</div>`}
-        <button type="button" class="es-linkbtn" data-esrestchange="argument">${arg ? "Change" : "Choose"}</button>
-      </div>
-      <div class="es-restblk">
-        <div class="es-restlbl">Your evidence</div>
-        ${ev.length ? ev.map(e => `<div class="es-restval">${esc(e.label)}</div>`).join("") : `<div class="es-restnone">none selected</div>`}
-        <button type="button" class="es-linkbtn" data-esrestchange="evidence">${ev.length ? "Change" : "Choose"}</button>
-      </div>
+    // Argument and evidence live in the chips above the writing now, so the
+    // resting rail is what the chips cannot carry: where this paragraph is up to.
+    // When a drawer opens it becomes information-rich; at rest it recedes.
+    return `<aside class="es-rest quiet">
       ${where}
     </aside>`;
   }
@@ -4774,8 +4763,10 @@
     const map = d.paras.map((pp, i) => {
       const w = esWordsOf(pp.text);
       const cls = i === d.pos ? "on" : w ? "done" : "";
-      const line = (esIsIntro(pp) || esIsConcl(pp)) ? (pp.point || "") : esArgLine(pp);
+      // No argument text stands here. The current one is in the chip beside the
+      // writing, and any other section is one click away through its own row.
       const open = !!ES.ui.mapOpen[i];
+      const line = open ? ((esIsIntro(pp) || esIsConcl(pp)) ? (pp.point || "") : esArgLine(pp)) : "";
       return `<div class="es-mapwrap">
         <div class="es-maprow">
           <button type="button" class="es-mapitem ${cls}" data-esgo="${i}">
@@ -4801,6 +4792,20 @@
          <div class="es-linebtns"><button type="button" class="es-btn primary sm" data-essaveedit="${k}">Save</button><button type="button" class="es-linkbtn" data-escanceledit>Cancel</button><button type="button" class="es-linkbtn es-del" data-esdelblock="${k}">Delete sentence</button></div></div>`
       : `<span class="es-said ${(b.ambiguous || b.needsReview) ? "flagged" : ""}" data-esreopen="${k}" title="Click to rewrite this sentence">${esc(b.text)}</span>${(b.ambiguous || b.needsReview) ? `<span class="es-checkline">${esReviewWhy(b)} <button type="button" class="es-linkbtn" data-esreopen="${k}">Review sentence</button> <button type="button" class="es-linkbtn" data-esok="${k}">Still works</button></span>` : ""}`).join(" ");
 
+    // Argument and evidence stop being cards and become chips once chosen. The
+    // decision deserved a card while it was being made; carrying it at full size
+    // through 800 words only competes with the paragraph.
+    const chipArg = esArgLine(p);
+    const chipEv = (p.evidenceIds || []).map(esEvidenceByLabel).filter(Boolean);
+    const chips = (esIsIntro(p) || esIsConcl(p)) ? "" : `
+      <div class="es-chips">
+        ${chipArg ? `<button type="button" class="es-chip-arg" data-esrestchange="argument" title="Change what this paragraph argues">${esIcon("bulb")}<span>${esc(chipArg)}</span></button>`
+                  : `<button type="button" class="es-chip-arg empty" data-esrestchange="argument">${esIcon("bulb")}<span>choose what this paragraph argues</span></button>`}
+        ${chipEv.length ? chipEv.map(e => `<button type="button" class="es-chip-ev" data-esrestchange="evidence" title="Change your evidence">${esIcon("search")}<span>${esc(e.label)}</span></button>`).join("")
+                  : `<button type="button" class="es-chip-ev empty" data-esrestchange="evidence">${esIcon("search")}<span>evidence</span></button>`}
+        ${(p.point || "").trim() ? `<span class="es-chip-note" title="your note for this paragraph">${esc(p.point)}</span>` : ""}
+        <button type="button" class="es-chip-more" id="espointtoggle" title="a note for this paragraph">${ES.ui.pointOpen ? "hide note" : "note"}</button>
+      </div>`;
     const words = esWordsOf(p.text);
     const whole = esResponseWords(d);
     const target = esWordTarget(d);
@@ -4827,7 +4832,7 @@
       <div class="es-help">
         ${helpRows}
         <div class="es-helpbtns">
-          ${next ? `<button type="button" class="es-btn sm" id="esmorehelp">${esc(shown === 0 ? "Help me" : (rungs[shown - 1].cta || "Show me more"))}</button>`
+          ${next ? `<button type="button" class="es-helpask ${shown ? "on" : ""}" id="esmorehelp">${esc(shown === 0 ? "Help me" : (rungs[shown - 1].cta || "Show me more"))}</button>`
                  : `<span class="es-helpend">That is as far as the help goes. The sentence is yours to write.</span>`}
           ${shown ? `<button type="button" class="es-linkbtn" id="eshidehelp">Hide help</button>` : ""}
         </div>
@@ -4847,6 +4852,7 @@
                 <button type="button" class="es-btn primary" id="esdonenext">${nextPara ? "Continue to " + esc(nextPara.role.toLowerCase()) : "Review the whole response"}</button>
                 <button type="button" class="es-linkbtn" id="esmoreline">Add another sentence</button>
                 <button type="button" class="es-linkbtn" id="esdonecheck">Check this paragraph</button>
+                <button type="button" class="es-linkbtn" id="esquizlink">Memorise it</button>
               </div>
             </div>`;
     const canAsk = (p.text || "").trim() && (!p.feedback || ((p.text || "").trim() !== (p.gradedText || "").trim()));
@@ -4854,24 +4860,23 @@
 
     host.innerHTML = `
     <div class="es-scrim"><div class="es-shell"><div class="es-wrap es-canvas">
-      ${esWritingHead(sc, "Guided", "Write a full attempt instead", "full")}
+      ${esWritingHead(sc, "Guided", "full attempt", "full")}
       ${esToolbeltHTML(p)}
       <div class="es-cols ${ES.ui.tool ? "withdrawer" : ""}">
         <aside class="es-map">
-          <div class="es-maph">Response</div>
+          <div class="es-maph">My response<button type="button" class="es-mapall" id="esreview">read all</button></div>
           ${map}
-          <div class="es-wordcount">
-            <span>This paragraph <b>${words}</b> word${words === 1 ? "" : "s"}</span>
-            <span>Whole response <b>${whole}</b> word${whole === 1 ? "" : "s"}</span>
-            ${target ? `<span class="es-wctarget">around ${target} would be a full answer at ${esc(String(d.marks || 20))} marks. A guide, not a limit.</span>` : ""}
+          <div class="es-wordcount"${target ? ` title="Around ${target} words would be a full answer at ${esc(String(d.marks || 20))} marks. A guide, not a limit: write more if you have more to say."` : ""}>
+            <span><b>${words}</b> here · <b>${whole}</b> in all${target ? ` · ~${target}` : ""}</span>
           </div>
         </aside>
         <div class="es-compose">
-          <div class="es-parahead"><span class="es-pararole">${esc(p.role)}</span><span class="es-progrow">${prog}</span></div>
-          <div class="es-pointpin">
+          <div class="es-parahead"><span class="es-pararole">${esc(p.role)}</span></div>
+          ${inSetup ? "" : chips}
+          ${(chipArg && !ES.ui.pointOpen && !inSetup) ? "" : `<div class="es-pointpin">
             <label class="es-pinlabel" for="espoint">your point for this paragraph <span class="es-opt">optional</span></label>
             <input id="espoint" class="es-pointin" value="${esc(p.point)}" placeholder="In one line, what does this ${esc(p.role.toLowerCase())} argue?">
-          </div>
+          </div>`}
           ${inSetup ? esSetupHTML(p) : ""}
           ${inSetup ? "" : `<div class="es-flow">
             ${esReviewBannerHTML(blocks)}
@@ -4881,26 +4886,26 @@
             <div class="es-active">
               <textarea id="esline" class="es-input es-linebox" rows="2" placeholder="Type your next sentence..."></textarea>
               <div class="es-guide">
-                <div class="es-guideh">${esc(guide.head)}</div>
+                <div class="es-guidetop">
+                  <span class="es-guideh">${esc(guide.head)}</span>
+                  <span class="es-steps">
+                    <button type="button" class="es-step" id="esbackstep" ${si === 0 && !blocks.length ? "disabled" : ""} title="Back a step" aria-label="Back a step">&lsaquo;</button>
+                    <span class="es-stepn">${si + 1}/${steps.length}</span>
+                    <button type="button" class="es-step" id="esnextguide" ${si >= steps.length - 1 ? "disabled" : ""} title="Next guide" aria-label="Next guide">&rsaquo;</button>
+                  </span>
+                </div>
                 <div class="es-guidejob">${esc(guide.job)}</div>
-                ${guide.context ? `<div class="es-guidectx">${esc(guide.context)}</div>` : ""}
               </div>
               ${help}
               <div class="es-linerow">
                 <button type="button" class="es-btn primary" id="esaccept" disabled>Add this sentence</button>
-                <button type="button" class="es-linkbtn" id="essamestep">Another sentence at this stage</button>
-                <button type="button" class="es-linkbtn" id="esnextguide" ${si >= steps.length - 1 ? "disabled" : ""}>Next guide</button>
-                <span class="es-spacer"></span>
-                <button type="button" class="es-linkbtn" id="esbackstep" ${si === 0 && !blocks.length ? "disabled" : ""}>Back a step</button>
+                <button type="button" class="es-linkbtn es-whenwriting" id="essamestep" hidden>stay at this stage</button>
               </div>
             </div>`}
           </div>`}
           <div class="es-navrow">
-            <button class="es-btn ghost" id="esprev" ${d.pos === 0 ? "disabled" : ""}>Previous section</button>
-            <button class="es-btn ${canAsk ? "primary" : "ghost"}" id="esask" ${(!canAsk || ES.pending) ? "disabled" : ""}>${askLabel}</button>
-            <button class="es-btn ghost" id="esnext" ${d.pos === total - 1 ? "disabled" : ""}>Next section</button>
-            <button class="es-linkbtn" id="esreview">read the whole response</button>
-            <button class="es-linkbtn" id="esquizlink">memorise this paragraph</button>
+            ${canAsk ? `<button class="es-btn ghost sm" id="esask" ${ES.pending ? "disabled" : ""}>${askLabel}</button>` : ""}
+
           </div>
           <div class="es-linehost" data-linehost>${esLinesBlock(p)}</div>
           <div class="es-seqhost">${esSeqNudge(p)}</div>
@@ -4950,7 +4955,12 @@
     };
     const line = $("#esline"), accept = $("#esaccept");
     if (line && accept) {
-      const sync = () => { accept.disabled = !line.value.trim(); };
+      const same = $("#essamestep");
+      const sync = () => {
+        const has = !!line.value.trim();
+        accept.disabled = !has;
+        if (same) same.hidden = !has;
+      };
       line.oninput = sync; sync();
       line.onkeydown = e => {
         if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); if (!accept.disabled) accept.click(); }
@@ -4978,15 +4988,24 @@
         esSaveDraft(); esRender();
       };
     }
-    const ss = $("#essamestep"); if (ss) ss.onclick = () => { ES.ui.stayStep = true; p.step = si; esSaveDraft(); esRender(); };
+    const ss = $("#essamestep");
+    if (ss) ss.onclick = () => {
+      ES.ui.stayStep = !ES.ui.stayStep;
+      ss.classList.toggle("armed", ES.ui.stayStep);
+      ss.textContent = ES.ui.stayStep ? "staying at this stage" : "stay at this stage";
+      const el = $("#esline"); if (el) el.focus();
+    };
     const ng = $("#esnextguide"); if (ng) ng.onclick = () => { p.step = Math.min(si + 1, steps.length - 1); esSaveDraft(); esRender(); };
     const bs = $("#esbackstep"); if (bs) bs.onclick = () => { p.step = Math.max(0, si - 1); esSaveDraft(); esRender(); };
     const mh = $("#esmorehelp"); if (mh) mh.onclick = () => { esSetHelpLevel(p, editing, esHelpLevel(p, editing) + 1); esRender(); };
     const hh = $("#eshidehelp"); if (hh) hh.onclick = () => { esSetHelpLevel(p, editing, 0); esRender(); };
 
-    $("#esprev").onclick = () => { d.pos = Math.max(0, d.pos - 1); ES.ui.editBlock = null; esResetCoachUI(); esSaveDraft(); esRender(); };
-    $("#esnext").onclick = () => { d.pos = Math.min(total - 1, d.pos + 1); ES.ui.editBlock = null; esResetCoachUI(); esSaveDraft(); esRender(); };
+    // Moving between sections is the response map's job, so the two buttons that
+    // duplicated it are gone. These stay bound when something else renders them.
+    const prev = $("#esprev"); if (prev) prev.onclick = () => { d.pos = Math.max(0, d.pos - 1); ES.ui.editBlock = null; esResetCoachUI(); esSaveDraft(); esRender(); };
+    const nxt = $("#esnext"); if (nxt) nxt.onclick = () => { d.pos = Math.min(total - 1, d.pos + 1); ES.ui.editBlock = null; esResetCoachUI(); esSaveDraft(); esRender(); };
     const ask = $("#esask"); if (ask) ask.onclick = () => esGetFeedback(d.pos);
+    const ptog = $("#espointtoggle"); if (ptog) ptog.onclick = () => { ES.ui.pointOpen = !ES.ui.pointOpen; esRender(); const el = $("#espoint"); if (el) el.focus(); };
     const rv = $("#esreview"); if (rv) rv.onclick = () => { ES.screen = "review"; esSaveDraft(); esRender(); };
     const ml = $("#esmoreline"); if (ml) ml.onclick = () => { ES.ui.moreLine = true; esRender(); };
     const dn = $("#esdonenext"); if (dn) dn.onclick = () => {
@@ -4999,7 +5018,7 @@
       const i = Number(b.dataset.espeek);
       ES.ui.mapOpen[i] = !ES.ui.mapOpen[i]; esRender();
     });
-    $("#esquizlink").onclick = () => { ES.screen = "quiz"; esResetQuiz(); esRender(); };
+    const qz = $("#esquizlink"); if (qz) qz.onclick = () => { ES.screen = "quiz"; esResetQuiz(); esRender(); };
     esBindToolbelt(p);
     esBindSetup(p);
     host.querySelectorAll("[data-esrestchange]").forEach(b => b.onclick = () => {

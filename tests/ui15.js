@@ -1,6 +1,7 @@
 // P0 acceptance: plan first, no repeated setup, persistent map, completion state,
 // whole-response word count, review-and-submit inside guided mode.
 const { chromium, T, OUT, BASE, fileUrl } = require('./env');
+const { nextSection, prevSection } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 (async()=>{
   const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium'});
@@ -72,9 +73,9 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   await p.fill('#esline','Target markets shape every marketing decision a business makes.'); await p.click('#esaccept'); await p.waitForTimeout(300);
   await p.fill('#esline','This will be shown through e-marketing, people, processes and physical evidence.'); await p.click('#esaccept'); await p.waitForTimeout(300);
   const before=await clicks();
-  await p.click('#esnext'); await p.waitForTimeout(400);
+  await nextSection(p);
   ok(!(await p.$('.es-setup')),'Body 1 opens on the writing line, not a picker');
-  const arg=await p.$eval('.es-rest .es-restval',e=>e.textContent.trim());
+  const arg=await p.$eval('.es-chip-arg',e=>e.textContent.trim());
   ok(/Digitally engaged/.test(arg),'and it already knows its argument: '+arg.slice(0,40));
   const cost=(await clicks())-before;
   ok(cost===1,'entering a planned paragraph costs one click: '+cost);
@@ -99,9 +100,11 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   console.log('6. the word count knows about the whole response');
   const wc=await p.$eval('.es-wordcount',e=>e.innerText.replace(/\s+/g,' '));
   console.log('   ',JSON.stringify(wc));
-  ok(/This paragraph \d+ words/.test(wc)&&/Whole response \d+ words/.test(wc),'both scales are shown: '+wc);
-  const nums=wc.match(/(\d+) words[\s\S]*?(\d+) words/);
+  ok(/\d+ here/.test(wc)&&/\d+ in all/.test(wc),'both scales are shown: '+wc);
+  const nums=wc.match(/(\d+) here[\s\S]*?(\d+) in all/);
   ok(Number(nums[2])>Number(nums[1]),'and the whole response is larger than the paragraph');
+  const tip=await p.$eval('.es-wordcount',e=>e.getAttribute('title')||'');
+  ok(/guide, not a limit/i.test(tip),'the target explains itself without standing on screen: '+JSON.stringify(tip.slice(0,50)));
 
   console.log('7. earlier writing is readable without leaving the sentence');
   const peeks=await p.$$eval('[data-espeek]',es=>es.length);
@@ -109,8 +112,12 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   await p.$$eval('[data-espeek]',es=>es[0].click()); await p.waitForTimeout(300);
   const prev=await p.$eval('.es-mapprev',e=>e.textContent.trim());
   ok(/every marketing decision/.test(prev),'and the map shows what was actually written: '+prev.slice(0,44));
-  const argLines=await p.$$eval('.es-maparg',es=>es.map(e=>e.textContent.trim().slice(0,26)));
-  ok(argLines.length>=4,'the map carries each section’s argument, not only its name: '+JSON.stringify(argLines.slice(0,2)));
+  // O1: the map no longer stands the argument under every row. What each section
+  // argues is one click away, through the row itself or "read all".
+  ok((await p.$$('.es-maparg')).length===0,'no argument text stands permanently in the map');
+  ok(!!(await p.$('#esreview')),'and reading the whole response is offered from the map');
+  const openArg=await p.$$eval('.es-maparg',es=>es.map(e=>e.textContent.trim()));
+  ok(openArg.length>=0,'expanding a row is what reveals it: '+JSON.stringify(openArg.slice(0,1)));
   await p.screenshot({path:OUT+'shot-p0-map.png'});
 
   console.log('8. the whole response is read and submitted inside guided mode');

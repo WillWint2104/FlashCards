@@ -33,7 +33,27 @@ const WALK = path.join(OUT, "marginal-walkthrough.html");
 // The plain build: shipped defaults, no walkthrough seed, marking switch off.
 // Suites that test those defaults must use PLAIN, not the walkthrough.
 const PLAIN = path.join(OUT, "test.html");
+// Move to the next section the way a student does: through the response map, or
+// the completion card when the paragraph is finished.
+async function nextSection(page) {
+  const done = await page.$("#esdonenext");
+  if (done) { await done.click(); await page.waitForTimeout(420); return; }
+  await page.$$eval(".es-mapitem", es => {
+    const i = es.findIndex(e => /(^|\s)on(\s|$)/.test(e.className));
+    const t = es[i + 1] || es[0]; t && t.click();
+  });
+  await page.waitForTimeout(420);
+}
+async function prevSection(page) {
+  await page.$$eval(".es-mapitem", es => {
+    const i = es.findIndex(e => /(^|\s)on(\s|$)/.test(e.className));
+    const t = es[Math.max(0, i - 1)]; t && t.click();
+  });
+  await page.waitForTimeout(420);
+}
+
 module.exports = {
+  nextSection, prevSection,
   chromium, ROOT, OUT, BASE: OUT,
   WALK, T: url(WALK),
   PLAIN, P: url(PLAIN),

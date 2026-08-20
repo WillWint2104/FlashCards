@@ -45,9 +45,12 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
 
   console.log('--- another sentence at this stage keeps the step ---');
   const before = await p.$eval('.es-guideh',e=>e.textContent.trim());
-  await p.click('#essamestep'); await p.waitForTimeout(300);
+  ok(await p.$eval('#essamestep',e=>e.hidden),'staying at a stage is not offered until there is a sentence to add');
+  await p.fill('#esline','This second sentence stays at the same stage.'); await p.waitForTimeout(200);
+  ok(!(await p.$eval('#essamestep',e=>e.hidden)),'and it appears once there is');
+  await p.click('#essamestep'); await p.waitForTimeout(200);
+  ok((await p.$eval('#esline',e=>e.value)).length>0,'arming it does not throw away what they typed');
   ok((await p.$eval('.es-guideh',e=>e.textContent.trim()))===before,'the step held');
-  await p.fill('#esline','This second sentence stays at the same stage.');
   await p.click('#esaccept'); await p.waitForTimeout(400);
   ok((await p.$eval('.es-guideh',e=>e.textContent.trim()))===before,'and it is still the same stage after adding');
   ok((await p.$$('.es-said')).length===2,'two sentences of prose now');
