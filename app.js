@@ -3226,11 +3226,11 @@
   function esStructureLabel(key) { return esStructureDef(key).label; }
 
   const ES = { subject: null, code: "", demo: false, screen: "setup", draft: null, list: [], form: null, pending: false,
-    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false },  // transient guided-view state, reset on paragraph change
+    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false },  // transient guided-view state, reset on paragraph change
     hint: { open: false, tab: "know" },          // study hints: persists across paragraphs on purpose
     quiz: { revealed: false, peeked: false, attempt: "", result: null } };
   const ES_KEY = "marginal.essay.v1";
-  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false }; }
+  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false }; }
   // peeked persists for the whole attempt: revealing once disqualifies mastery even
   // if the answer is hidden again before checking. Cleared only on a new attempt.
   function esResetQuiz() { ES.quiz = { revealed: false, peeked: false, attempt: "", result: null }; }
@@ -4680,13 +4680,15 @@
         ${(judging && pos) ? `<div class="es-restblk">
           <div class="es-restlbl">Your judgement</div>
           <div class="es-restval">${esc(pos.label)}</div>
-          ${!intro ? `<div class="es-restnote">Weigh what your paragraphs established against this. If they do not support it, change the judgement rather than the evidence.</div>` : ""}
+          ${!intro ? `<div class="es-restnote">Weigh what your paragraphs established against this. If they do not support it, change the judgement rather than the evidence.</div>
+            <button type="button" class="es-linkbtn" id="esrejudge">Does this still match what you argued?</button>` : ""}
         </div>` : ""}
         <div class="es-restblk">
           <div class="es-restlbl">${intro ? "Your plan" : judging ? "What your paragraphs established" : "Arguments you established"}</div>
           ${rows.length ? `<ol class="es-planlist">${rows.map(r => `<li><button type="button" class="es-planjump" data-esgo="${r.i}">
               <span class="es-planlrole">${esc(r.role)}${r.area ? " \u00b7 " + esc(r.area) : ""}</span>
-              <span class="es-planlarg">${esc(r.argument || "not chosen yet")}</span>
+              ${(!intro && r.wrote) ? `<span class="es-planlwrote">${esc(r.wrote)}</span>` : ""}
+              <span class="es-planlarg${(!intro && r.wrote) ? " planned" : ""}">${(!intro && r.wrote) ? "planned: " : ""}${esc(r.argument || "not chosen yet")}</span>
               ${r.roleLabel ? `<span class="es-tprole ${esc(r.role)}">${esc(r.roleLabel)}</span>` : ""}
               ${r.words ? `<span class="es-planlw">${r.words} words</span>` : `<span class="es-planlw muted">not written yet</span>`}
             </button></li>`).join("")}</ol>`
@@ -4751,6 +4753,7 @@
     return esBodyIndexes(d).map(i => ({
       i: i, role: d.paras[i].role, area: d.paras[i].area || "",
       argument: esArgLine(d.paras[i]), words: esWordsOf(d.paras[i].text),
+      wrote: esWrittenClaim(d.paras[i]),
       evidence: (d.paras[i].evidenceIds || []).slice()
     }));
   }
@@ -4792,10 +4795,16 @@
     const path = esPathway(p);
     return (path && path.contribution) || null;
   }
+  function esWrittenClaim(p) {
+    const b = esBlocks(p)[0];
+    const t = ((b && b.text) || "").trim();
+    return t.length > 8 ? t : "";
+  }
   function esJudgementRows(d) {
     return esPlanRows(d).map(r => {
       const c = esContributionOf(d.paras[r.i]);
-      return Object.assign({}, r, { role: c && c.role, roleLabel: c && ES_ROLES[c.role], roleNote: c && c.note });
+      return Object.assign({}, r, { role: c && c.role, roleLabel: c && ES_ROLES[c.role], roleNote: c && c.note,
+        wrote: esWrittenClaim(d.paras[r.i]) });
     });
   }
   // Rich while it is being read, one quiet line once it has been. Leaving the
@@ -4931,6 +4940,10 @@
       const usedElsewhere = {};
       bodies.forEach(j => { if (j !== i && d.paras[j].area) usedElsewhere[d.paras[j].area] = d.paras[j].role; });
       const chosen = !!p.argumentId;
+      // Two paragraphs arguing the identical relationship is usually a slip, and
+      // occasionally deliberate. Say so and let the student decide; blocking it
+      // would be the app asserting that reuse is never legitimate.
+      const twin = chosen ? bodies.find(j => j < i && d.paras[j].argumentId === p.argumentId) : undefined;
       // Rich while deciding, compact once decided, and only one open at a time so
       // the page is a sequence of decisions rather than four panels stacked up.
       const firstUnchosen = bodies.find(j => !d.paras[j].argumentId);
@@ -5000,9 +5013,13 @@
         <span class="es-planidle">not planned yet</span>
         <button type="button" class="es-linkbtn" data-esplanedit="${i}">Choose</button>
       </div>`;
+      const twinNote = (twin !== undefined && !ES.ui.twinOk[i]) ? `<div class="es-twin">
+        This is the same argument as ${esc(d.paras[twin].role)}. You can argue the same strategy twice if the point is genuinely different, but repeating the relationship narrows what your response covers.
+        <span class="es-twinbtns"><button type="button" class="es-linkbtn" data-estwinok="${i}">Keep it</button><button type="button" class="es-linkbtn" data-esplanedit="${i}">See other arguments</button></span>
+      </div>` : "";
       return `<div class="es-plancard ${chosen ? "done" : ""}${open ? " open" : ""}">
         <div class="es-planh"><span class="es-plandot"></span><span class="es-plann">${esc(p.role)}</span>${area ? `<span class="es-planarea">${esc(area)}</span>` : ""}</div>
-        ${body}${evRow}
+        ${body}${twinNote}${evRow}
       </div>`;
     }).join("");
 
@@ -5076,6 +5093,9 @@
       const n = esSetParagraphContext(p, p.argumentId, list);
       esSaveDraft(); esRender();
       if (n) toast(n + " sentence" + (n === 1 ? "" : "s") + " used that evidence. Check " + (n === 1 ? "it" : "them") + ".");
+    });
+    host.querySelectorAll("[data-estwinok]").forEach(b => b.onclick = () => {
+      ES.ui.twinOk[Number(b.dataset.estwinok)] = true; esRender();
     });
     host.querySelectorAll("[data-eswhy]").forEach(b => b.onclick = () => {
       ES.ui.why = ES.ui.why === b.dataset.eswhy ? null : b.dataset.eswhy; esRender();
@@ -5382,6 +5402,9 @@
     };
     const dc = $("#esdonecheck"); if (dc) dc.onclick = () => esGetFeedback(d.pos);
     const rp = $("#esrestplan"); if (rp) rp.onclick = () => { ES.screen = "plan"; esSaveDraft(); esRender(); };
+    // Finding, after writing four paragraphs, that the evidence supports a
+    // different judgement is good evaluation, not a mistake to be prevented.
+    const rj = $("#esrejudge"); if (rj) rj.onclick = () => { ES.ui.posOpen = true; ES.screen = "plan"; esSaveDraft(); esRender(); };
     host.querySelectorAll("[data-espeek]").forEach(b => b.onclick = () => {
       const i = Number(b.dataset.espeek);
       ES.ui.mapOpen[i] = !ES.ui.mapOpen[i]; esRender();

@@ -70,11 +70,14 @@ async function open(p, re){
   ok(!(all.support===all.limitation&&all.conditional===0),'and they are not a manufactured fifty-fifty');
 
   console.log('5. the thesis asks for a judgement, not a relationship');
-  for (let n=0;n<4;n++){
-    const did=await p.$$eval('.es-plancard .es-areachip',es=>{const t=es.find(x=>!/ on|on$/.test(x.className)); if(t){t.click();return true;} return false;});
-    if(!did) break; await p.waitForTimeout(280);
+  // a deliberate student, choosing four DIFFERENT strategies
+  for (const area of ['training and development','rewards','performance management','job design']) {
+    const got=await p.$$eval('.es-plancard .es-areachip',(es,a)=>{const t=es.find(x=>x.textContent.trim().indexOf(a)===0); if(t){t.click();return true;} return false;}, area);
+    if(!got) break; await p.waitForTimeout(280);
     await p.$$eval('[data-esplanpick]',es=>{const t=es[0]; t&&t.click();}); await p.waitForTimeout(300);
   }
+  const distinct=await p.$$eval('.es-thesisplan .es-tparea',es=>new Set(es.map(e=>e.textContent.trim())).size);
+  ok(distinct===4,'four different strategies, not the same one four times: '+distinct);
   ok(!!(await p.$('.es-thesis')),'the thesis section appears');
   const guide=await p.$eval('.es-thesisguide',e=>e.textContent.trim());
   ok(/how effective/i.test(guide)&&/main reason/i.test(guide),'asking for degree and reason: '+guide.slice(0,60));
@@ -97,9 +100,30 @@ async function open(p, re){
   ok(/what your paragraphs established/i.test(rail),'and what the paragraphs established');
   const rolesHere=await p.$$eval('.es-rest .es-tprole',es=>es.map(e=>e.textContent.trim()));
   ok(rolesHere.length>=3,'each with its contribution: '+JSON.stringify(rolesHere));
+  ok(!!(await p.$('#esrejudge')),'and the judgement can still move after the paragraphs are in');
   ok(/how the support and the limitations balance out/i.test(rail),'with guidance to weigh rather than repeat');
   ok(/change the judgement rather than the evidence/i.test(rail),'and the honest instruction if they do not add up');
   await p.screenshot({path:OUT+'shot-hr01-conclusion.png'});
+
+  console.log('6b. arguing the same thing twice is warned about, not blocked');
+  // back to the plan the way the conclusion offers it
+  await p.click('#esrestplan'); await p.waitForTimeout(450);
+  ok(!!(await p.$('.es-planwrap')),'the plan is reachable from the conclusion');
+  const firstId=await p.evaluate(()=>{try{const st=JSON.parse(localStorage.getItem('marginal.essay.v1'));const bag=Object.values(st)[0];const d=bag.drafts[bag.drafts.length-1];return d.paras[1].argumentId;}catch(e){return null;}});
+  // reopen BODY 2 and give it Body 1's argument
+  await p.$$eval('.es-plancard,.es-planrow',es=>{const t=es[1]&&es[1].querySelector('[data-esplanedit]'); t&&t.click();});
+  await p.waitForTimeout(350);
+  await p.$$eval('.es-plancard .es-areachip',es=>{const t=es.find(x=>x.textContent.trim().indexOf('training and development')===0); t&&t.click();});
+  await p.waitForTimeout(320);
+  await p.$$eval('[data-esplanpick]',(es,id)=>{const t=es.find(x=>x.dataset.esplanpick.split('|')[1]===id); t&&t.click();}, firstId);
+  await p.waitForTimeout(400);
+  const twin=await p.$eval('.es-twin',e=>e.innerText.replace(/\s+/g,' ')).catch(()=>'');
+  ok(/same argument as/i.test(twin),'it says which paragraph it duplicates: '+twin.slice(0,60));
+  ok(/narrows what your response covers/i.test(twin),'and why that costs them');
+  ok(/if the point is genuinely different/i.test(twin),'without asserting reuse is invalid');
+  ok(!!(await p.$('[data-estwinok]')),'Keep it is offered');
+  await p.$eval('[data-estwinok]',e=>e.click()); await p.waitForTimeout(300);
+  ok(!(await p.$('.es-twin')),'and taking it dismisses the warning rather than the choice');
 
   console.log('7. the causal questions are untouched');
   await open(p,/target markets affect/);
