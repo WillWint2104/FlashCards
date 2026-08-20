@@ -57,13 +57,19 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   ok(openCards===1,'one card is open, the rest are collapsed: '+openCards);
 
   console.log('5. choosing an argument is an act of learning');
+  const subs=await p.$$eval('.es-optwrap .es-picksub',es=>es.map(e=>e.textContent.trim()));
+  console.log('   ',JSON.stringify(subs.map(x=>x.slice(0,58))));
+  ok(subs.length>=3,'every option says what it means without being asked: '+subs.length);
+  ok(new Set(subs).size===subs.length,'and each one distinguishes itself from its siblings');
+  ok(subs.every(x=>x.split('. ').filter(Boolean).length===1),'one sentence each, not a mini-lesson');
+  ok(subs.every(x=>x.length<170),'short enough to read at a glance: max '+Math.max(...subs.map(x=>x.length))+' chars');
   const whys=await p.$$eval('[data-eswhy]',es=>es.length);
-  ok(whys>=3,'every option offers Why?: '+whys);
+  ok(whys>=3,'and every option still offers Why?: '+whys);
   await p.$$eval('[data-eswhy]',es=>{const t=es[0];t&&t.click();}); await p.waitForTimeout(250);
   const why=await p.$eval('.es-whybox',e=>e.innerText.replace(/\s+/g,' '));
   console.log('   ',why.slice(0,130));
-  ok(/what this means/i.test(why),'it says what the argument means');
-  ok(/what you would need to show/i.test(why),'what would have to be proved');
+  ok(!/what this means/i.test(why),'Why? no longer repeats what is already on the option');
+  ok(/what you would need to show/i.test(why),'it holds what would have to be proved');
   ok(/common mistake/i.test(why),'and what students do instead');
   ok(/→/.test(why),'the chain is shown as a chain');
   ok((await p.$$eval('.es-whybox .es-btn',es=>es.length))===1,'and the choice is made from inside the explanation');

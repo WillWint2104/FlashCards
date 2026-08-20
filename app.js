@@ -4866,12 +4866,14 @@
         <div class="es-planopts">
           ${opts.map(o => {
             const why = ES.ui.why === o.id;
-            const teaches = o.meaning || o.whatToProve || o.commonMistake;
+            const deeper = o.whatToProve || o.commonMistake;
             return `<div class="es-optwrap${why ? " open" : ""}">
-              <button type="button" class="es-pick ${p.argumentId === o.id ? "on" : ""}" data-esplanpick="${i}|${esc(o.id)}"><span class="es-pickrel">${esc(o.relationship)}</span></button>
-              ${teaches ? `<button type="button" class="es-why ${why ? "on" : ""}" data-eswhy="${esc(o.id)}" aria-expanded="${why}">${why ? "Hide" : "Why?"}</button>` : ""}
+              <button type="button" class="es-pick ${p.argumentId === o.id ? "on" : ""}" data-esplanpick="${i}|${esc(o.id)}">
+                <span class="es-pickrel">${esc(o.relationship)}</span>
+                ${o.meaning ? `<span class="es-picksub">${esc(o.meaning)}</span>` : ""}
+              </button>
+              ${deeper ? `<button type="button" class="es-why ${why ? "on" : ""}" data-eswhy="${esc(o.id)}" aria-expanded="${why}">${why ? "Hide" : "Why?"}</button>` : ""}
               ${why ? `<div class="es-whybox">
-                ${o.meaning ? `<div class="es-drawer-sub">what this means</div><p class="es-corep">${esc(o.meaning)}</p>` : ""}
                 ${o.whatToProve ? `<div class="es-drawer-sub">what you would need to show</div><p class="es-corep chain">${esc(o.whatToProve)}</p>` : ""}
                 ${o.commonMistake ? `<div class="es-drawer-sub">common mistake</div><p class="es-corep miss">${esc(o.commonMistake)}</p>` : ""}
                 <button type="button" class="es-btn sm" data-esplanpick="${i}|${esc(o.id)}">Choose this argument</button>
