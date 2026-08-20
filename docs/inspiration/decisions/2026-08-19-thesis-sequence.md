@@ -1,7 +1,8 @@
 ---
 title:   Establish the thesis idea before planning, write the sentence after
 date:    2026-08-19
-status:  active
+status:  superseded
+supersededBy: 2026-08-20-progressive-construction.md
 governs: guided mode, the planning stage, the introduction
 ---
 

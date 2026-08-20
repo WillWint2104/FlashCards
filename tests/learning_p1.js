@@ -1,6 +1,7 @@
 // Learning pass over the reference area. Three support profiles through the same
 // Processes paragraph. Changes nothing; counts and records what each one sees.
 const { chromium, T, OUT, BASE, fileUrl } = require('./env');
+const { planAll } = require('./env');
 const PROFILE=process.argv[2]||'moderate';
 const P={ independent:{help:0,drawers:[]}, moderate:{help:2,drawers:['understand']},
           high:{help:9,drawers:['understand','ideas','evidence']} }[PROFILE];
@@ -30,6 +31,7 @@ const LINES=[
   await p.$$eval('.es-qchip',es=>{const t=es.find(x=>/target markets/i.test(x.textContent));t&&t.click();});
   await p.waitForTimeout(200);
   await p.click('#esstart'); await p.waitForTimeout(500);
+  await planAll(p);
   // plan Body 1 as the processes paragraph
   await p.$$eval('.es-plancard [data-esplanarea]',es=>{const t=es.find(x=>/processes/i.test(x.textContent));t&&t.click();});
   await p.waitForTimeout(300);

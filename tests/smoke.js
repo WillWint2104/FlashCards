@@ -2,6 +2,7 @@
 // real walkthrough build, and report anything broken or dead-ended. Asserts
 // nothing about design; it is looking for things that do not work.
 const { chromium, T, OUT } = require('./env');
+const { planAll } = require('./env');
 const { nextSection, prevSection } = require('./env');
 const problems = [], notes = [];
 const bad = m => { problems.push(m); console.log('  BROKEN:', m); };
@@ -95,6 +96,7 @@ const okline = m => console.log('  ok:', m);
     await p.$$eval('.es-qchip', es => { const t = es.find(x=>/target markets/i.test(x.textContent)); t && t.click(); });
     await p.waitForTimeout(250);
     await p.click('#esstart'); await p.waitForTimeout(600);
+  await planAll(p);
 
     // --- plan
     if (!(await p.$('.es-planwrap'))) bad('the planning screen did not open');
@@ -168,6 +170,7 @@ const okline = m => console.log('  ok:', m);
   await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);
   await p.$$eval('.es-qchip', es => { const t=es.find(x=>/target markets/i.test(x.textContent)); t&&t.click(); });
   await p.click('#esstart'); await p.waitForTimeout(500);
+  await planAll(p);
   await p.$$eval('.es-plancard [data-esplanarea]', es => { const t=es.find(x=>/processes/i.test(x.textContent)); t&&t.click(); });
   await p.waitForTimeout(300);
   await p.$$eval('[data-esplanpick]', es => { const t=es.find(x=>/Convenience-oriented/i.test(x.textContent)); t&&t.click(); });

@@ -1,6 +1,7 @@
 // P1 reference area: Processes, end to end. Every component, every rung, every
 // layer of support, and proof that the four help needs stay distinct.
 const { chromium, T, OUT, BASE, fileUrl } = require('./env');
+const { planAll } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 const rungs = p => p.$$eval('.es-rung',es=>es.map(e=>({n:e.querySelector('.es-rungn').textContent.trim(),
   lbl:e.querySelector('.es-runglbl').textContent.trim(), txt:e.querySelector('.es-rungtext').textContent.trim(),
@@ -23,6 +24,7 @@ const rungs = p => p.$$eval('.es-rung',es=>es.map(e=>({n:e.querySelector('.es-ru
   await p.$$eval('.es-qchip',es=>{const t=es.find(x=>/target markets/i.test(x.textContent));t&&t.click();});
   await p.waitForTimeout(250);
   await p.click('#esstart'); await p.waitForTimeout(500);
+  await planAll(p);
 
   console.log('1. three genuinely different processes pathways, each explained');
   await p.$$eval('.es-plancard [data-esplanarea]',es=>{const t=es.find(x=>/processes/i.test(x.textContent));t&&t.click();});

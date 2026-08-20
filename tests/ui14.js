@@ -18,8 +18,8 @@ const rungs = p => p.$$eval('.es-rung',es=>es.map(e=>({n:e.querySelector('.es-ru
   await p.selectOption('#essubject','business_studies').catch(()=>{}); await p.waitForTimeout(250);
   await p.$$eval('.es-qchip',es=>{const t=es.find(x=>/target markets/i.test(x.textContent));t&&t.click();}); await p.waitForTimeout(250);
   await p.click('#esstart'); await p.waitForTimeout(400);
-  // this suite tests the per-paragraph route, so it declines the response plan
-  await p.click('#esplango'); await p.waitForTimeout(400);
+  // this suite tests the per-paragraph route, which the start surface offers
+  await p.click('#esstartintro'); await p.waitForTimeout(400);
   await nextSection(p);
   await p.fill('#espoint','How the target market affects e-marketing.'); await p.waitForTimeout(250);
 

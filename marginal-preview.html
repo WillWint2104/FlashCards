@@ -762,6 +762,40 @@
   .es-twin{margin-top:11px;border:1.5px solid var(--gold-dk);background:var(--gold-soft);border-radius:12px;
     padding:10px 13px;font-size:12.5px;line-height:1.55;font-weight:600;color:var(--ink)}
   .es-twinbtns{display:flex;gap:14px;margin-top:7px}
+  /* the working answer: the system's understanding, never the student's prose */
+  .es-startwrap{display:flex;flex-direction:column;gap:14px}
+  .es-wa{border:1.5px solid var(--green);border-radius:16px;background:var(--card);padding:14px 17px}
+  .es-warow{display:flex;gap:11px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px}
+  .es-wanote{font-size:11.5px;font-weight:600;color:var(--ink-3)}
+  .es-watext{font-size:15px;line-height:1.6;font-weight:700;color:var(--ink)}
+  .es-wapos{display:flex;gap:11px;align-items:baseline;flex-wrap:wrap;margin-top:10px;padding-top:10px;
+    border-top:1px solid var(--line);font-size:13.5px;font-weight:700;color:var(--ink)}
+  .es-cover{display:flex;gap:8px;align-items:center;flex-wrap:wrap;border:1.5px solid var(--line);
+    border-radius:13px;padding:11px 15px}
+  .es-cover.missing{border-color:var(--gold-dk);background:var(--gold-soft)}
+  .es-cover.done{border-color:var(--green-soft);background:#FBFEFC;font-size:13px;font-weight:600;color:var(--ink-2)}
+  .es-covitem{font-size:12px;font-weight:700;color:var(--ink-2);background:var(--card);border:1.5px solid var(--line);
+    border-radius:99px;padding:4px 11px}
+  .es-covitem.on{border-color:var(--green);background:var(--green-soft);color:var(--green-dk)}
+  .es-startrows{display:flex;flex-direction:column;gap:6px}
+  .es-startrow{display:flex;gap:11px;align-items:center;width:100%;text-align:left;font:inherit;
+    border:1.5px dashed var(--line);border-radius:12px;padding:10px 15px;background:none;cursor:pointer}
+  .es-startrow:hover{border-color:var(--green)}
+  .es-startrow.planned,.es-startrow.written{border-style:solid}
+  .es-startrow.written{background:#FBFEFC}
+  .es-startrow.written .es-plandot,.es-startrow.planned .es-plandot{background:var(--green);border-color:var(--green)}
+  .es-startwhat{flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--ink-2);overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap}
+  .es-startstate{font-size:11.5px;font-weight:700;color:var(--ink-3)}
+  .es-startbtns{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding-top:2px}
+  .es-mapwa{display:flex;flex-direction:column;gap:3px;width:100%;text-align:left;font:inherit;background:var(--bg);
+    border:none;border-radius:11px;padding:9px 11px;margin-bottom:8px;cursor:pointer}
+  .es-mapwa:hover{background:var(--green-soft)}
+  .es-mapwatext{font-size:12px;line-height:1.5;font-weight:600;color:var(--ink-2);
+    display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+  .es-drift{border:1.5px solid var(--gold-dk);background:var(--gold-soft);border-radius:13px;padding:13px 16px;margin-top:13px}
+  .es-drifth{font-family:var(--disp);font-weight:600;font-size:14.5px;color:var(--ink);margin-bottom:9px}
+  .es-driftblk{margin-bottom:9px}
   .es-restnote{font-size:12px;line-height:1.5;font-weight:600;color:var(--ink-2);margin-top:4px}
   /* the response map: what each section argues, and what it says */
   .es-mapwrap{display:flex;flex-direction:column}
@@ -3657,6 +3691,7 @@ window.ESSAY = {
             { id: "mkt01-em-digital", area: "e-marketing",
               relationship: "Digitally engaged customers lead to greater use of digital marketing",
               short: "Digital engagement → digital marketing",
+              adds: "the digital channels it markets through",
               meaning: "These customers already spend their attention on digital channels, so that is where the business has to buy it.",
               whatToProve: "customers are already on digital channels \u2192 the business moves its promotion there \u2192 why that reaches them better than the alternative",
               commonMistake: "Listing the business's digital channels without saying what it is about these customers that made digital the right choice.",
@@ -3694,6 +3729,7 @@ window.ESSAY = {
             { id: "mkt01-em-value", area: "e-marketing",
               relationship: "Value-conscious customers lead to digital promotions and loyalty offers",
               short: "Price sensitivity → digital offers and loyalty",
+              adds: "the offers and loyalty schemes it runs digitally",
               meaning: "These customers decide on price, and digital channels are the cheapest way to put an offer in front of them again and again.",
               whatToProve: "customers respond to price \u2192 the business needs a cheap and repeatable way to reach them with offers \u2192 digital promotions and loyalty schemes become the tool",
               commonMistake: "Arguing that discounts attract customers, which is a pricing point, rather than arguing why the offer is delivered digitally.",
@@ -3706,6 +3742,7 @@ window.ESSAY = {
             { id: "mkt01-em-convenience", area: "e-marketing",
               relationship: "Convenience-oriented customers lead to marketing through ordering apps and digital channels",
               short: "Wanting to act at once → marketing inside the ordering channel",
+              adds: "where its marketing sits relative to ordering",
               meaning: "These customers want to act on an offer immediately, so the marketing has to sit inside the channel they already order through.",
               whatToProve: "customers want to act with the least effort \u2192 marketing has to sit where the order is placed \u2192 the ordering channel becomes a promotion channel",
               commonMistake: "Describing the app as convenient to order with, which is a processes argument, instead of arguing that it is where the marketing reaches them.",
@@ -3717,6 +3754,7 @@ window.ESSAY = {
             { id: "mkt01-pe-service", area: "people",
               relationship: "Customers who expect personal service lead to investment in staff training and service standards",
               short: "Expecting personal service → training and service standards",
+              adds: "the training and service standards it sets for staff",
               meaning: "These customers judge the business on the person serving them, so that staff member is part of what is being bought.",
               whatToProve: "customers expect to be dealt with personally \u2192 staff are part of the product \u2192 the business invests in training and service standards",
               commonMistake: "Saying good staff are important, which is true of every business, instead of saying what THIS target market expects that forced the investment.",
@@ -3728,6 +3766,7 @@ window.ESSAY = {
             { id: "mkt01-pe-speed", area: "people",
               relationship: "Customers who expect speed lead to staffing and rostering built around peak demand",
               short: "Expecting speed → staffing and rostering",
+              adds: "how it staffs and rosters for demand",
               meaning: "These customers count waiting as a cost, so the business has to have the right number of staff on at the right hour.",
               whatToProve: "customers will not wait \u2192 service capacity has to match demand hour by hour \u2192 staffing and rostering change",
               commonMistake: "Arguing about the ordering system, which is processes, rather than about the people who have to be there to deliver it.",
@@ -3738,6 +3777,7 @@ window.ESSAY = {
             { id: "mkt01-pe-consistency", area: "people",
               relationship: "Customers who expect the same experience everywhere lead to standardised service training",
               short: "Expecting consistency → standardised training",
+              adds: "how consistently it trains staff across the network",
               meaning: "These customers are buying predictability, so what the staff do has to be the same in every store.",
               whatToProve: "customers are buying predictability \u2192 variation between staff breaks it \u2192 training and service standards are standardised",
               commonMistake: "Describing standard uniforms, signage or layout, which is physical evidence, rather than what the staff are trained to do.",
@@ -3758,6 +3798,7 @@ window.ESSAY = {
             { id: "mkt01-pr-convenience", area: "processes",
               relationship: "Convenience-oriented customers lead to faster and more flexible ordering processes",
               short: "Wanting less effort → faster, more flexible ordering",
+              adds: "how much effort ordering takes",
               meaning: "These customers treat the time and effort of ordering as a cost, so the business changes how ordering works to take steps out of it.",
               whatToProve: "customer expectation \u2192 the process change it forces \u2192 why the new process suits this market better",
               commonMistake: "Describing an app or a kiosk without explaining what it was about these customers that caused the process to change.",
@@ -3830,6 +3871,7 @@ window.ESSAY = {
             { id: "mkt01-pr-speed", area: "processes",
               relationship: "Customers who expect speed lead to streamlined service and collection processes",
               short: "Expecting speed → streamlined service and collection",
+              adds: "how service and collection are organised",
               meaning: "These customers are paying for turnaround, so the business reorganises what happens after payment to cut the wait.",
               whatToProve: "customers count waiting as a cost \u2192 steps are separated or run alongside each other \u2192 the wait falls, especially at peak",
               commonMistake: "Claiming the business is faster without naming which step was taken out of the queue.",
@@ -3902,6 +3944,7 @@ window.ESSAY = {
             { id: "mkt01-pr-customisation", area: "processes",
               relationship: "Customers who want to customise orders lead to ordering systems built to take variations",
               short: "Wanting to customise → ordering built for variations",
+              adds: "how the ordering system handles variations",
               meaning: "These customers expect to change what they order, so the process has to carry a non-standard order without errors.",
               whatToProve: "customers expect to change the order \u2192 no two orders are identical \u2192 the ordering system has to capture the variation accurately",
               commonMistake: "Arguing about choice on the menu, which is a product point, instead of about how the process carries a non-standard order.",
@@ -3977,6 +4020,7 @@ window.ESSAY = {
             { id: "mkt01-ph-servicescape", area: "physical evidence",
               relationship: "Customers who judge a business by its surroundings lead to a designed servicescape",
               short: "Judging by surroundings → a designed servicescape",
+              adds: "how deliberately its surroundings are designed",
               meaning: "These customers cannot test the service before buying it, so they judge it by the room, and the room has to be designed.",
               whatToProve: "the service is intangible \u2192 customers judge it by what they can see \u2192 the setting is designed rather than left to chance",
               commonMistake: "Listing what the premises look like without saying what the customer concludes from it.",
@@ -3988,6 +4032,7 @@ window.ESSAY = {
             { id: "mkt01-ph-segments", area: "physical evidence",
               relationship: "Serving different segments leads to different physical settings for each",
               short: "Serving several segments → a setting for each",
+              adds: "how the space is divided between segments",
               meaning: "More than one group is being served and they do not want the same surroundings, so the space is divided between them.",
               whatToProve: "more than one segment is served \u2192 one setting cannot suit both \u2192 the space is divided so each gets its own",
               commonMistake: "Naming the segments and the products built for them, which is segmentation, without ever getting to the physical space.",
@@ -3998,6 +4043,7 @@ window.ESSAY = {
             { id: "mkt01-ph-selfservice", area: "physical evidence",
               relationship: "Customers who prefer to serve themselves lead to physical evidence built around self-service",
               short: "Preferring self-service → self-explaining surroundings",
+              adds: "how far the surroundings explain themselves",
               meaning: "These customers would rather use a machine than ask someone, so what they can see has to explain itself.",
               whatToProve: "customers prefer to serve themselves \u2192 the surroundings have to do the explaining \u2192 screens, signage and layout are built to be self-explanatory",
               commonMistake: "Arguing that self-service is faster, which is a processes point, rather than about what the customer sees and touches.",
@@ -4050,6 +4096,11 @@ window.ESSAY = {
           // What the whole question turns on, taught before the plan is built and
           // collapsed the moment the student says they have it. Authored, never
           // generated, and never a gate: planning works whether it is read or not.
+          workingAnswer: {
+            base: "Target markets affect the marketing strategies a business develops.",
+            lead: "Target markets affect the marketing strategies a business develops, by shaping",
+            join: ", and"
+          },
           coreAnswer: {
             mode: "causal",
             pattern: "target-market characteristic \u2192 strategy change \u2192 what it achieves",
@@ -4188,6 +4239,11 @@ window.ESSAY = {
               consistency: "Choose the strategies yourself, use one business throughout, and weigh at least one trade-off."
             }
           },
+          workingAnswer: {
+            base: "Financial strategies affect the objectives of financial management.",
+            lead: "Financial strategies affect the objectives of financial management, by",
+            join: ", and by"
+          },
           coreAnswer: {
             mode: "causal",
             pattern: "financial strategy \u2192 what it changes \u2192 financial objective",
@@ -4240,6 +4296,7 @@ window.ESSAY = {
             { id: "fin01-cf-liquidity", area: "cash flow management",
               relationship: "Managing the timing of payments improves liquidity",
               short: "Timing of payments → liquidity",
+              adds: "improving liquidity through the timing of cash",
               meaning: "Liquidity is about whether cash is there when a bill falls due, so moving money in earlier and out later fixes it without earning a cent more.",
               whatToProve: "liquidity is under pressure → the timing of inflows and outflows is changed → cash is available when it is needed",
               commonMistake: "Treating liquidity as the same thing as profit. A profitable business can still fail to pay a bill on the day it is due.",
@@ -4251,6 +4308,7 @@ window.ESSAY = {
             { id: "fin01-cf-discounts", area: "cash flow management",
               relationship: "Offering discounts for early payment brings cash forward at a cost to revenue",
               short: "Discounts for early payment → liquidity, at a cost to revenue",
+              adds: "bringing cash forward at a cost to revenue",
               meaning: "The business pays for speed: customers hand over money sooner, and in exchange the business collects less of it.",
               whatToProve: "cash is needed sooner → customers are given a reason to pay early → liquidity improves while revenue falls",
               commonMistake: "Presenting the discount as a free improvement instead of naming what it costs.",
@@ -4260,6 +4318,7 @@ window.ESSAY = {
             { id: "fin01-wc-control", area: "working capital management",
               relationship: "Controlling current assets and liabilities keeps the business able to meet its debts",
               short: "Managing current assets and liabilities → liquidity",
+              adds: "keeping it able to meet short-term debts",
               meaning: "What the business holds and what it owes in the short term decide whether it can pay, so managing both is how liquidity is protected day to day.",
               whatToProve: "short-term obligations exist → current assets and liabilities are managed against them → the business stays able to pay",
               commonMistake: "Listing current assets and liabilities without saying what managing them actually changes.",
@@ -4271,6 +4330,7 @@ window.ESSAY = {
             { id: "fin01-wc-leasing", area: "working capital management",
               relationship: "Leasing rather than buying preserves working capital but raises ongoing costs",
               short: "Leasing rather than buying → liquidity, at a cost in expenses",
+              adds: "preserving cash at the cost of ongoing expenses",
               meaning: "Not spending the cash keeps it available for everything else, and the price of that is a payment that never stops.",
               whatToProve: "a large asset is needed → leasing avoids tying cash up in it → liquidity is protected while costs rise",
               commonMistake: "Arguing that leasing is cheaper. It usually is not; the argument is about what it does to available cash.",
@@ -4282,6 +4342,7 @@ window.ESSAY = {
             { id: "fin01-pm-cost", area: "profitability management",
               relationship: "Cost controls raise profitability by reducing what each sale costs to make",
               short: "Cost controls → profitability",
+              adds: "raising profitability by cutting what each sale costs",
               meaning: "Profit is what is left after costs, so pushing costs down lifts it without needing a single extra customer.",
               whatToProve: "profitability is under pressure → fixed or variable costs are cut → more of each sale is kept",
               commonMistake: "Naming a cost-cutting measure without saying which costs it touches or what it does to quality.",
@@ -4293,6 +4354,7 @@ window.ESSAY = {
             { id: "fin01-pm-revenue", area: "profitability management",
               relationship: "Revenue controls raise profitability by lifting sales and the margin on them",
               short: "Revenue controls → profitability",
+              adds: "raising profitability through pricing and sales mix",
               meaning: "The other way to more profit is more revenue, through what is charged and what customers are encouraged to add.",
               whatToProve: "profitability is under pressure → pricing or sales mix is changed → revenue rises faster than the cost of earning it",
               commonMistake: "Arguing that more sales means more profit, without dealing with what the extra sales cost to serve.",
@@ -4304,6 +4366,7 @@ window.ESSAY = {
             { id: "fin01-gf-hedging", area: "global financial management",
               relationship: "Hedging exchange rate exposure protects profitability from currency movement",
               short: "Hedging → profitability protected from currency movement",
+              adds: "protecting profit from currency movement",
               meaning: "A business earning in one currency and paying in another can lose money without selling any less, and hedging fixes the rate so that cannot happen.",
               whatToProve: "the business is exposed to a currency it does not control → the rate is fixed in advance → profit stops depending on the exchange rate",
               commonMistake: "Describing what a hedge is without saying which objective it protects, or claiming it makes money rather than removing a risk.",
@@ -4315,6 +4378,7 @@ window.ESSAY = {
             { id: "fin01-gf-payment", area: "global financial management",
               relationship: "Choosing the method of international payment manages the risk of not being paid",
               short: "Method of international payment → risk of not being paid",
+              adds: "reducing the risk of not being paid",
               meaning: "Selling across a border means trusting someone a long way away, and the payment method decides how much of that risk the business carries.",
               whatToProve: "payment is uncertain across a border → a method is chosen that shifts who carries the risk → the business is more likely to be paid",
               commonMistake: "Listing payment methods in order of risk without arguing why the business would choose one.",
@@ -4382,6 +4446,13 @@ window.ESSAY = {
               forEach: "human resource strategy → its effect on a named measure of performance → how effective that makes it, and what it depends on",
               consistency: "Choose the strategies yourself, use one business throughout, and hold one judgement across the whole response."
             }
+          },
+          workingAnswer: {
+            base: "Human resource strategies can improve business performance.",
+            lead: "Human resource strategies can improve business performance by",
+            join: ", and by",
+            // added only once an argument that qualifies the judgement is in play
+            qualifier: "although how effective they are depends on how well they are carried out"
           },
           coreAnswer: {
             mode: "judgement",
@@ -4453,6 +4524,7 @@ window.ESSAY = {
           pathways: [
             { id: "hr01-td-productivity", area: "training and development",
               short: "Training \\u2192 productivity",
+              adds: "raising productivity",
               relationship: "Training raises productivity by making staff faster and more accurate at the work",
               meaning: "A trained worker produces more in the same shift and makes fewer mistakes, which shows up directly in output per hour.",
               contribution: { role: "support", note: "This is your strongest ground: the link from skill to output is direct and measurable." },
@@ -4465,6 +4537,7 @@ window.ESSAY = {
               guides: { explain: "Explain the step from a skill to a number, and name the number." } },
             { id: "hr01-td-retention", area: "training and development",
               short: "Development \\u2192 lower turnover",
+              adds: "reducing turnover",
               relationship: "Development pathways cut turnover by giving staff a reason to stay",
               meaning: "Somewhere to go next is a reason not to leave, and turnover is one of the clearest measures of performance in a business that trains people constantly.",
               contribution: { role: "support", note: "Strong support, and it lets you use turnover, which is a measure the marker will recognise immediately." },
@@ -4477,6 +4550,7 @@ window.ESSAY = {
               guides: { explain: "Explain why a path upwards changes the decision to leave." } },
             { id: "hr01-rw-motivation", area: "rewards",
               short: "Rewards \\u2192 output, where it can be measured",
+              adds: "lifting output where it can be measured",
               relationship: "Performance-based rewards lift output where the work can be measured fairly",
               meaning: "Paying for results works when results are visible, and does very little when nobody can tell whose result it was.",
               contribution: { role: "conditional", note: "Support with a condition attached: this one only holds where individual contribution can actually be measured." },
@@ -4489,6 +4563,7 @@ window.ESSAY = {
               guides: { explain: "Explain the condition first, then the effect that follows from it." } },
             { id: "hr01-rw-cost", area: "rewards",
               short: "Rewards \\u2192 a cost before a result",
+              adds: "raising output at a cost that has to be earned back",
               relationship: "Rewards are an expense, so the gain has to be worth more than what is paid for it",
               meaning: "Every reward is spent before it works, so a strategy that lifts output slightly can still leave the business worse off.",
               contribution: { role: "limitation", note: "This is a counterweight. Use it to qualify your judgement, or to argue a lower degree of effectiveness honestly." },
@@ -4499,6 +4574,7 @@ window.ESSAY = {
               guides: { explain: "Explain what is spent, then what is gained, and put them beside each other." } },
             { id: "hr01-pf-accountability", area: "performance management",
               short: "Appraisal \\u2192 problems found early",
+              adds: "finding weak performance early",
               relationship: "Appraisal against clear standards identifies weak performance before it costs the business",
               meaning: "If everyone knows the standard and is measured against it, a problem shows up as a number rather than as a bad shift nobody records.",
               contribution: { role: "conditional", note: "Support, provided the standards are clear and applied consistently. Say so rather than assuming it." },
@@ -4511,6 +4587,7 @@ window.ESSAY = {
               guides: { explain: "Explain what an explicit standard makes visible that would otherwise be invisible." } },
             { id: "hr01-pf-trust", area: "performance management",
               short: "Appraisal \\u2192 worse, if it reads as surveillance",
+              adds: "affecting trust as well as accountability",
               relationship: "Appraisal damages performance where staff experience it as surveillance rather than support",
               meaning: "The same appraisal that finds problems early can make people hide them, if being measured feels like being watched.",
               contribution: { role: "limitation", note: "A genuine counterweight, and the clearest way to show that effectiveness depends on how a strategy is carried out." },
@@ -4523,6 +4600,7 @@ window.ESSAY = {
               guides: { explain: "Explain the mechanism by which measuring people makes the number worse, not just less popular." } },
             { id: "hr01-jd-enrichment", area: "job design",
               short: "Job enrichment \\u2192 motivation and retention",
+              adds: "raising motivation through more control over the work",
               relationship: "Enriched jobs raise motivation by giving staff more control over their work",
               meaning: "A job with some judgement in it holds people longer than one that has been stripped down to a sequence of instructions.",
               contribution: { role: "support", note: "Support, and it pairs well with a turnover measure rather than an output one." },
@@ -4535,6 +4613,7 @@ window.ESSAY = {
               guides: { explain: "Explain what control does to how someone treats the work." } },
             { id: "hr01-jd-flexibility", area: "job design",
               short: "Flexible arrangements \\u2192 lower absenteeism",
+              adds: "cutting absenteeism for staff with outside commitments",
               relationship: "Flexible arrangements cut absenteeism for staff with commitments outside work",
               meaning: "Someone who can fit work around study or family does not have to choose between them, and absenteeism is where that choice usually shows up.",
               contribution: { role: "conditional", note: "Support for a particular workforce. Say who it works for, because it does very little for people without those commitments." },
@@ -9804,11 +9883,11 @@ window.BUSCONTENT = {
   function esStructureLabel(key) { return esStructureDef(key).label; }
 
   const ES = { subject: null, code: "", demo: false, screen: "setup", draft: null, list: [], form: null, pending: false,
-    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false },  // transient guided-view state, reset on paragraph change
+    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, planAll: false, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false },  // transient guided-view state, reset on paragraph change
     hint: { open: false, tab: "know" },          // study hints: persists across paragraphs on purpose
     quiz: { revealed: false, peeked: false, attempt: "", result: null } };
   const ES_KEY = "marginal.essay.v1";
-  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false }; }
+  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, planAll: false, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false }; }
   // peeked persists for the whole attempt: revealing once disqualifies mastery even
   // if the answer is hidden again before checking. Cleared only on a new attempt.
   function esResetQuiz() { ES.quiz = { revealed: false, peeked: false, attempt: "", result: null }; }
@@ -11141,11 +11220,25 @@ window.BUSCONTENT = {
   function esSetupHTML(p) {
     const stage = ES.ui.setupStage || (p.argumentId ? "evidence" : "argument");
     if (stage === "argument") {
-      const opts = esPathwaysFor(p);
+      const required = esAreasRequired();
+      const areas = esQuestionAreas();
+      const area = p.area || "";
+      const askArea = !required && areas.length > 1 && !area;
+      const opts = askArea ? [] : esPathwaysFor(p);
+      const usedElsewhere = {};
+      esBodyIndexes(ES.draft).forEach(j => { const q = ES.draft.paras[j]; if (q !== p && q.area) usedElsewhere[q.area] = q.role; });
       return `<div class="es-setup">
-        <div class="es-setuph">Choose how you want to answer this part</div>
+        <div class="es-setuph">${askArea ? "Which " + esc(esAreasLabel()) + " will " + esc(p.role) + " use?"
+          : area ? "What will you argue about " + esc(area) + "?" : "Choose how you want to answer this part"}</div>
         <p class="es-setupsub">You are choosing a relationship to argue, not a sentence. You still write every word of it.</p>
-        ${opts.map(o => `<button type="button" class="es-pick" data-espath="${esc(o.id)}"><span class="es-pickrel">${esc(o.relationship)}</span></button>`).join("")}
+        ${(areas.length > 1 && !required) ? `<div class="es-planareas">${areas.map(a => {
+          const on = String(a).toLowerCase() === String(area).toLowerCase(), used = usedElsewhere[a];
+          return `<button type="button" class="es-areachip ${on ? "on" : ""}" data-essetuparea="${esc(a)}">${esc(a)}${(used && !on) ? `<span class="es-areaused">used in ${esc(used)}</span>` : ""}</button>`;
+        }).join("")}</div>` : ""}
+        ${opts.map(o => `<button type="button" class="es-pick" data-espath="${esc(o.id)}">
+          ${o.short ? `<span class="es-pickshort">${esc(o.short)}</span>` : ""}
+          <span class="es-pickrel">${esc(o.relationship)}</span>
+          ${o.meaning ? `<span class="es-picksub">${esc(o.meaning)}</span>` : ""}</button>`).join("")}
         <button type="button" class="es-pick own" data-espathown>Write my own argument</button>
         <div class="es-ownwrap" data-ownwrap hidden>
           <input id="esownarg" class="es-input" placeholder="In one line, the relationship you want to argue">
@@ -11205,6 +11298,11 @@ window.BUSCONTENT = {
       p.area = (path && path.area) || p.area || "";
       ES.ui.setupStage = "evidence"; esSaveDraft(); esRender();
       if (flagged) toast(flagged + " sentence" + (flagged === 1 ? "" : "s") + " to check against the new argument.");
+    });
+    host.querySelectorAll("[data-essetuparea]").forEach(b => b.onclick = () => {
+      const a = b.dataset.essetuparea;
+      if (p.argumentId && esPathway(p) && String(esPathway(p).area || "").toLowerCase() !== a.toLowerCase()) esSetParagraphContext(p, null, []);
+      p.area = a; esSaveDraft(); esRender();
     });
     const own = host.querySelector("[data-espathown]");
     if (own) own.onclick = () => { const w = host.querySelector("[data-ownwrap]"); if (w) { w.hidden = false; const i = host.querySelector("#esownarg"); if (i) i.focus(); } };
@@ -11373,6 +11471,43 @@ window.BUSCONTENT = {
     const path = esPathway(p);
     return (path && path.contribution) || null;
   }
+  // ---------------------------------------------------------------------------
+  // THE WORKING ANSWER
+  //
+  // The system's own understanding of what the response is arguing, rebuilt from
+  // the arguments in play. It is derived, not written: assembled from phrases the
+  // question authored, so it costs nothing and cannot drift from the student's
+  // choices. It is NOT the student's thesis. It never touches their prose.
+  //
+  // A paragraph that has been written counts; a paragraph that has only been
+  // planned counts as intent. Both contribute, and the second is marked.
+  // ---------------------------------------------------------------------------
+  function esWorkingParts(d) {
+    return esBodyIndexes(d).map(i => {
+      const p = d.paras[i], path = esPathway(p);
+      if (!path) return null;
+      return { i: i, role: p.role, adds: path.adds || "", short: path.short || "",
+               role_: (path.contribution || {}).role || "", written: esWordsOf(p.text) > 0 };
+    }).filter(x => x && x.adds);
+  }
+  function esWorkingAnswer(d) {
+    const q = esQuestionDef();
+    const w = (q && q.workingAnswer) || null;
+    if (!w) return null;
+    const parts = esWorkingParts(d);
+    if (!parts.length) return { text: w.base, broad: true, from: 0, written: 0 };
+    const adds = parts.map(x => x.adds);
+    const join = w.join || ", and";
+    const list = adds.length === 1 ? adds[0]
+      : adds.slice(0, -1).join(", ") + join + " " + adds[adds.length - 1];
+    let text = (w.lead || w.base) + " " + list;
+    // a judgement only picks up its qualifier once something qualifies it
+    if (w.qualifier && parts.some(x => x.role_ === "conditional" || x.role_ === "limitation")) {
+      text += ", " + w.qualifier;
+    }
+    return { text: text.replace(/\s+/g, " ").trim() + ".", broad: false,
+             from: parts.length, written: parts.filter(x => x.written).length };
+  }
   function esWrittenClaim(p) {
     const b = esBlocks(p)[0];
     const t = ((b && b.text) || "").trim();
@@ -11440,6 +11575,23 @@ window.BUSCONTENT = {
   }
   // The thesis is written once the plan exists, so it can signpost an essay the
   // student has actually decided on.
+  // The working answer moves as arguments are added. The student's own thesis
+  // sentence does not, and must not: it is theirs. When the two diverge, the
+  // divergence is shown and the revision is left to them.
+  function esThesisDriftHTML(d) {
+    const yours = (d.thesis || "").trim(); if (!yours) return "";
+    const wa = esWorkingAnswer(d); if (!wa || wa.broad) return "";
+    if ((d.thesisSeenAt || 0) >= wa.from) return "";
+    return `<div class="es-drift">
+      <div class="es-drifth">Your response has developed since you wrote your thesis</div>
+      <div class="es-driftblk"><span class="es-corelbl">you wrote</span><p class="es-corep">${esc(yours)}</p></div>
+      <div class="es-driftblk"><span class="es-corelbl">your paragraphs now argue</span><p class="es-corep model">${esc(wa.text)}</p></div>
+      <div class="es-corebtns">
+        <button type="button" class="es-btn sm" id="esdriftrevise">Revise my thesis</button>
+        <button type="button" class="es-linkbtn" id="esdriftkeep">Mine still stands</button>
+      </div>
+    </div>`;
+  }
   function esThesisHTML(d) {
     if (!esPlanned(d)) return "";
     const judging = esIsJudgement();
@@ -11460,6 +11612,7 @@ window.BUSCONTENT = {
         <button type="button" class="es-btn sm" id="esthesissave">Save thesis</button>
         ${(core && core.acceptableThesis) ? `<button type="button" class="es-linkbtn" id="escompare">${ES.ui.compare ? "Hide" : (yours ? "Compare with an acceptable thesis" : "I need to see an example first")}</button>` : ""}
       </div>
+      ${esThesisDriftHTML(d)}
       ${(ES.ui.compare && core && core.acceptableThesis) ? `<div class="es-compare">
         ${yours ? `<div class="es-cmpblk"><div class="es-drawer-sub">yours</div><p class="es-corep">${esc(yours)}</p></div>` : ""}
         <div class="es-cmpblk"><div class="es-drawer-sub">one acceptable thesis</div><p class="es-corep model">${esc(core.acceptableThesis)}</p></div>
@@ -11479,6 +11632,7 @@ window.BUSCONTENT = {
     if (th && save) save.onclick = () => {
       const was = d.thesis || "";
       d.thesis = th.value.trim();
+      const wa0 = esWorkingAnswer(d); d.thesisSeenAt = (wa0 && wa0.from) || 0;
       const i = d.paras.findIndex(pp => esIsIntro(pp));
       let seeded = false;
       if (i >= 0) {
@@ -11498,10 +11652,57 @@ window.BUSCONTENT = {
         : seeded ? "Saved. Your introduction now opens with it."
         : "Saved as your introduction's overall line. The introduction you have already written is untouched.");
     };
+    const dk = host.querySelector("#esdriftkeep");
+    if (dk) dk.onclick = () => { const wa = esWorkingAnswer(d); d.thesisSeenAt = (wa && wa.from) || 0; esSaveDraft(); esRender(); };
+    const dr = host.querySelector("#esdriftrevise");
+    if (dr) dr.onclick = () => { const el = host.querySelector("#esthesis"); if (el) { el.focus(); el.selectionStart = el.value.length; } };
     const cmp = host.querySelector("#escompare");
     if (cmp) cmp.onclick = () => { if (th) { d.thesis = th.value.trim(); esSaveDraft(); } ES.ui.compare = !ES.ui.compare; esRender(); };
   }
 
+  // Where a response begins. It is not a planning exercise to be completed: it
+  // shows what the response will be, offers three ways in, and lets the student
+  // take any of them. Planning everything up front is one of the three.
+  function esStartHTML(d) {
+    const wa = esWorkingAnswer(d);
+    const judging = esIsJudgement();
+    const pos = esPositionOf(d);
+    const req = esAreasRequired() ? esRequiredAreas(esQuestionDef()) : [];
+    const used = {};
+    esBodyIndexes(d).forEach(i => { if (d.paras[i].area) used[d.paras[i].area] = d.paras[i].role; });
+    const rows = d.paras.map((pp, i) => {
+      const w = esWordsOf(pp.text);
+      const path = esPathway(pp);
+      const state = w ? "written" : path ? "planned" : "";
+      return `<button type="button" class="es-startrow ${state}" data-esgo="${i}">
+        <span class="es-plandot"></span><span class="es-plann">${esc(pp.role)}</span>
+        <span class="es-startwhat">${path ? esc(path.short || path.relationship) : (esIsIntro(pp) || esIsConcl(pp)) ? "" : "not planned yet"}</span>
+        <span class="es-startstate">${w ? w + " words" : path ? "planned" : ""}</span>
+      </button>`;
+    }).join("");
+    const firstBody = esBodyIndexes(d)[0];
+    return `<div class="es-startwrap">
+      ${wa ? `<div class="es-wa">
+        <div class="es-warow"><span class="es-corelbl">${judging ? "Your current answer" : "Working answer"}</span>
+          ${wa.broad ? `<span class="es-wanote">this develops as you argue</span>` : `<span class="es-wanote">${wa.from} argument${wa.from === 1 ? "" : "s"} so far</span>`}</div>
+        <p class="es-watext">${esc(wa.text)}</p>
+        ${judging && pos ? `<div class="es-wapos"><span class="es-corelbl">Your current judgement</span><span>${esc(pos.label)}</span>
+          <button type="button" class="es-linkbtn" id="esposopen">Change</button></div>`
+          : judging ? `<button type="button" class="es-linkbtn" id="esposopen">Take a position now</button><span class="es-wanote"> or decide as you write</span>` : ""}
+      </div>` : ""}
+      ${req.length ? `<div class="es-cover">
+        <span class="es-corelbl">Required in your response</span>
+        ${req.map(a => `<span class="es-covitem ${used[a] ? "on" : ""}">${esc(a)}${used[a] ? " \u00b7 " + esc(used[a]) : ""}</span>`).join("")}
+        <span class="es-wanote">start anywhere; this is checked before you submit</span>
+      </div>` : ""}
+      <div class="es-startrows">${rows}</div>
+      <div class="es-startbtns">
+        <button class="es-btn primary" id="esstartintro">Write the introduction</button>
+        ${firstBody != null ? `<button class="es-btn ghost" id="esstartbody">Start ${esc(d.paras[firstBody].role.toLowerCase())}</button>` : ""}
+        <button class="es-linkbtn" id="esplanall">Plan all paragraphs first</button>
+      </div>
+    </div>`;
+  }
   function esRenderPlan(host, sc) {
     const d = ES.draft;
     const areas = esQuestionAreas();
@@ -11607,19 +11808,22 @@ window.BUSCONTENT = {
       ${esWritingHead(sc, "Planning", "full attempt", "full")}
       <div class="es-planwrap">
         <div class="es-planhead">
-          <h3 class="es-planhh">Build your response</h3>
-          <p class="es-plansub">Choose the argument each paragraph will make. You are choosing relationships, not sentences.</p>
+          <h3 class="es-planhh">${ES.ui.planAll ? "Plan your response" : "Your response"}</h3>
+          <p class="es-plansub">${ES.ui.planAll
+            ? "Choose the argument each paragraph will make. You are choosing relationships, not sentences."
+            : "You do not have to plan it all first. Take a position if you have one, then start wherever is useful."}</p>
           ${suggest ? `<div class="es-plannote">This question has ${areas.length} parts and your structure has ${bodies.length} body paragraph${bodies.length === 1 ? "" : "s"}.
             <button type="button" class="es-linkbtn" id="esplanstruct">Use ${areas.length} body paragraphs</button></div>` : ""}
         </div>
         ${esCoreHTML(d)}
-        ${esJudgementHTML(d)}
-        <div class="es-plancards">${cards}</div>
-        ${esThesisHTML(d)}
-        <div class="es-planfoot">
+        ${(ES.ui.planAll || ES.ui.posOpen || (esIsJudgement() && !esPositionOf(d))) ? esJudgementHTML(d) : ""}
+        ${ES.ui.planAll ? `<div class="es-plancards">${cards}</div>` : esStartHTML(d)}
+        ${ES.ui.planAll ? esThesisHTML(d) : ""}
+        ${ES.ui.planAll ? `<div class="es-planfoot">
           <button class="es-btn ${done ? "primary" : "ghost"}" id="esplango">${done ? "Write the introduction" : "Start writing anyway"}</button>
+          <button class="es-linkbtn" id="esplanless">Back</button>
           <span class="es-planstate">${done ? "Your plan is set. You can change any of it while you write." : "You can leave any of these open and choose when you reach the paragraph."}</span>
-        </div>
+        </div>` : ""}
       </div>
     </div></div></div>`;
     esBindWritingHead();
@@ -11693,6 +11897,17 @@ window.BUSCONTENT = {
     const crit = host.querySelector("#escrit"); if (crit) crit.onclick = () => { ES.ui.critOpen = !ES.ui.critOpen; esRender(); };
     const st = host.querySelector("#esplanstruct");
     if (st) st.onclick = () => { const def = esStructureForBodies(esQuestionAreas().length); if (def) { esApplyStructure(def.key); esRender(); } };
+    const pa = host.querySelector("#esplanall"); if (pa) pa.onclick = () => { ES.ui.planAll = true; esRender(); };
+    const pl = host.querySelector("#esplanless"); if (pl) pl.onclick = () => { ES.ui.planAll = false; esRender(); };
+    const si = host.querySelector("#esstartintro");
+    if (si) si.onclick = () => { esBodyIndexes(d).forEach(i => { if (d.paras[i].argumentId) d.paras[i].setupDone = true; });
+      d.planned = true; d.pos = 0; ES.screen = "coached"; ES.ui.setupStage = null; esSaveDraft(); esRender(); };
+    const sb = host.querySelector("#esstartbody");
+    if (sb) sb.onclick = () => { const k = esBodyIndexes(d)[0]; d.planned = true; d.pos = k == null ? 0 : k;
+      ES.screen = "coached"; ES.ui.setupStage = null; esSaveDraft(); esRender(); };
+    host.querySelectorAll(".es-startrow[data-esgo]").forEach(b => b.onclick = () => {
+      d.planned = true; d.pos = Number(b.dataset.esgo); ES.screen = "coached"; ES.ui.setupStage = null; esSaveDraft(); esRender();
+    });
     const go = host.querySelector("#esplango");
     if (go) go.onclick = () => {
       // a planned paragraph never asks again
@@ -11831,6 +12046,10 @@ window.BUSCONTENT = {
       <div class="es-cols ${ES.ui.tool ? "withdrawer" : ""}">
         <aside class="es-map">
           <div class="es-maph">My response<button type="button" class="es-mapall" id="esreview">read all</button></div>
+          ${(() => { const wa = esWorkingAnswer(d); if (!wa) return "";
+            return `<button type="button" class="es-mapwa" id="esmapwa" title="What your response is arguing so far">
+              <span class="es-corelbl">${esIsJudgement() ? "current answer" : "working answer"}</span>
+              <span class="es-mapwatext">${esc(wa.text)}</span></button>`; })()}
           ${map}
           <div class="es-wordcount"${target ? ` title="Around ${target} words would be a full answer at ${esc(String(d.marks || 20))} marks. A guide, not a limit: write more if you have more to say."` : ""}>
             <span><b>${words}</b> here · <b>${whole}</b> in all${target ? ` · ~${target}` : ""}</span>
@@ -11973,6 +12192,7 @@ window.BUSCONTENT = {
     const ask = $("#esask"); if (ask) ask.onclick = () => esGetFeedback(d.pos);
     const ptog = $("#espointtoggle"); if (ptog) ptog.onclick = () => { ES.ui.pointOpen = !ES.ui.pointOpen; esRender(); const el = $("#espoint"); if (el) el.focus(); };
     const rv = $("#esreview"); if (rv) rv.onclick = () => { ES.screen = "review"; esSaveDraft(); esRender(); };
+    const mw = $("#esmapwa"); if (mw) mw.onclick = () => { ES.ui.planAll = false; ES.screen = "plan"; esSaveDraft(); esRender(); };
     const ml = $("#esmoreline"); if (ml) ml.onclick = () => { ES.ui.moreLine = true; esRender(); };
     const dn = $("#esdonenext"); if (dn) dn.onclick = () => {
       if (d.pos < total - 1) { d.pos = d.pos + 1; ES.ui.editBlock = null; esResetCoachUI(); esSaveDraft(); esRender(); }
@@ -12539,6 +12759,17 @@ window.BUSCONTENT = {
           <p class="es-rvsub">${written} of ${d.paras.length} sections written, ${whole} word${whole === 1 ? "" : "s"}${target ? `. Around ${target} would be a full answer at ${esc(String(d.marks || 20))} marks, as a guide.` : "."}</p>
         </div>
         ${rows}
+        ${(() => {
+          const req = esAreasRequired() ? esRequiredAreas(esQuestionDef()) : [];
+          if (!req.length) return "";
+          const used = {}; esBodyIndexes(d).forEach(i => { if (esWordsOf(d.paras[i].text) && d.paras[i].area) used[d.paras[i].area] = d.paras[i].role; });
+          const missing = req.filter(a => !used[a]);
+          if (!missing.length) return `<div class="es-cover done"><span class="es-corelbl">Required coverage</span>
+            <span>all ${req.length} parts of the question are addressed</span></div>`;
+          return `<div class="es-cover missing"><span class="es-corelbl">Not yet addressed</span>
+            ${missing.map(a => `<span class="es-covitem">${esc(a)}</span>`).join("")}
+            <span class="es-wanote">The question names ${missing.length === 1 ? "this" : "these"}, so leaving ${missing.length === 1 ? "it" : "them"} out costs marks. You can still submit.</span></div>`;
+        })()}
         <div class="es-completion">
           <p class="es-completemsg">${guided
             ? "You built this in guided practice, one sentence at a time. Read it through, then send it to the marker."

@@ -52,8 +52,15 @@ async function prevSection(page) {
   await page.waitForTimeout(420);
 }
 
+// Planning everything up front is now one route in, not the way the screen
+// opens. Suites that exercise the full planner ask for it.
+async function planAll(page) {
+  const b = await page.$("#esplanall");
+  if (b) { await b.click(); await page.waitForTimeout(400); }
+}
+
 module.exports = {
-  nextSection, prevSection,
+  nextSection, prevSection, planAll,
   chromium, ROOT, OUT, BASE: OUT,
   WALK, T: url(WALK),
   PLAIN, P: url(PLAIN),

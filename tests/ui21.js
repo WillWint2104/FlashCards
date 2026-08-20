@@ -1,6 +1,7 @@
 // The planning surface: one page, four states. Understand the answer, inspect
 // and choose four relationships, then write a thesis that signposts them.
 const { chromium, T, OUT } = require('./env');
+const { planAll } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 (async()=>{
   const b=await chromium.launch();
@@ -13,6 +14,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);
   await p.$$eval('.es-qchip',es=>{const t=es.find(x=>/target markets affect/i.test(x.textContent));t&&t.click();});
   await p.click('#esstart'); await p.waitForTimeout(600);
+  await planAll(p);
 
   console.log('1. one surface, not three stages');
   ok(!!(await p.$('.es-decrow')),'the question and its decoder are at the top');
@@ -50,6 +52,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   await fresh.selectOption('#essubject','business_studies'); await fresh.waitForTimeout(200);
   await fresh.$$eval('.es-qchip',es=>{const t=es.find(x=>/target markets affect/i.test(x.textContent));t&&t.click();});
   await fresh.click('#esstart'); await fresh.waitForTimeout(500);
+  await planAll(fresh);
   await fresh.$$eval('[data-esplanpick]',es=>es[0]&&es[0].click()); await fresh.waitForTimeout(300);
   ok((await fresh.$$eval('.es-plancard.done',es=>es.length))===1,'an argument can be chosen without touching the core answer');
   await fresh.close();

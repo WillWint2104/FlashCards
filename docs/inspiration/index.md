@@ -7,8 +7,9 @@ applies. Read this first.
 | --- | --- | --- |
 | `briefs/2026-08-19-learning-architecture.md` | active | guided mode, concept layer, pathway layer, marking |
 | `briefs/2026-08-19-interface-optimisation.md` | active | guided mode, all screens |
+| `decisions/2026-08-20-progressive-construction.md` | active | planning, the response map, the thesis |
 | `decisions/2026-08-20-decode-derives-not-duplicates.md` | active | question decoding, the question schema |
-| `decisions/2026-08-19-thesis-sequence.md` | active | planning stage, the introduction |
+| `decisions/2026-08-19-thesis-sequence.md` | superseded | planning stage, the introduction |
 | `decisions/2026-08-19-canonical-stem.md` | active | question text, decoding, Compare |
 | `decisions/2026-08-19-model-answers-on-request.md` | active | learning layers, Compare, the help ladder |
 | `decisions/2026-08-19-unsourced-evidence-withheld.md` | active | the evidence bank and every picker |

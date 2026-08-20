@@ -1,5 +1,6 @@
 // Question Decode: the stem is readable, pressable, and derives what it can.
 const { chromium, T, OUT } = require('./env');
+const { planAll } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 (async()=>{
   const b=await chromium.launch();
@@ -14,6 +15,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);
   await p.$$eval('.es-qchip',es=>{const t=es.find(x=>/target markets affect/i.test(x.textContent));t&&t.click();});
   await p.click('#esstart'); await p.waitForTimeout(600);
+  await planAll(p);
 
   console.log('1. the stem itself is the decoder');
   const stem=await p.$eval('.es-qbar-q',e=>e.textContent.trim());
@@ -89,6 +91,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);
   await p.fill('#esq','Explain how target markets influence the development of marketing strategies.');
   await p.click('#esstart'); await p.waitForTimeout(500);
+  await planAll(p);
   ok((await p.$$('.es-dec')).length===0,'no invented highlights on a question with no decode');
   ok(!(await p.$('.es-decrow')),'and no chips promising an explanation that does not exist');
 

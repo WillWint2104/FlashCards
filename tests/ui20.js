@@ -2,6 +2,7 @@
 // language written for no question in particular.
 //     pathway.guides[slot]  ->  areas[area].guides[slot]  ->  slot.job
 const { chromium, T, OUT } = require('./env');
+const { planAll } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 const GENERIC=/strategy affecting an objective/;
 async function openWith(p, area, argRe){
@@ -13,6 +14,7 @@ async function openWith(p, area, argRe){
   await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);
   await p.$$eval('.es-qchip',es=>{const t=es.find(x=>/target markets affect/i.test(x.textContent));t&&t.click();});
   await p.click('#esstart'); await p.waitForTimeout(550);
+  await planAll(p);
   await p.$$eval('.es-plancard [data-esplanarea]',(es,a)=>{
     const card=es[0].closest('.es-plancard');
     const t=[...card.querySelectorAll('[data-esplanarea]')].find(x=>x.textContent.trim()===a); t&&t.click();

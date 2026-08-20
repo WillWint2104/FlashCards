@@ -762,6 +762,40 @@
   .es-twin{margin-top:11px;border:1.5px solid var(--gold-dk);background:var(--gold-soft);border-radius:12px;
     padding:10px 13px;font-size:12.5px;line-height:1.55;font-weight:600;color:var(--ink)}
   .es-twinbtns{display:flex;gap:14px;margin-top:7px}
+  /* the working answer: the system's understanding, never the student's prose */
+  .es-startwrap{display:flex;flex-direction:column;gap:14px}
+  .es-wa{border:1.5px solid var(--green);border-radius:16px;background:var(--card);padding:14px 17px}
+  .es-warow{display:flex;gap:11px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px}
+  .es-wanote{font-size:11.5px;font-weight:600;color:var(--ink-3)}
+  .es-watext{font-size:15px;line-height:1.6;font-weight:700;color:var(--ink)}
+  .es-wapos{display:flex;gap:11px;align-items:baseline;flex-wrap:wrap;margin-top:10px;padding-top:10px;
+    border-top:1px solid var(--line);font-size:13.5px;font-weight:700;color:var(--ink)}
+  .es-cover{display:flex;gap:8px;align-items:center;flex-wrap:wrap;border:1.5px solid var(--line);
+    border-radius:13px;padding:11px 15px}
+  .es-cover.missing{border-color:var(--gold-dk);background:var(--gold-soft)}
+  .es-cover.done{border-color:var(--green-soft);background:#FBFEFC;font-size:13px;font-weight:600;color:var(--ink-2)}
+  .es-covitem{font-size:12px;font-weight:700;color:var(--ink-2);background:var(--card);border:1.5px solid var(--line);
+    border-radius:99px;padding:4px 11px}
+  .es-covitem.on{border-color:var(--green);background:var(--green-soft);color:var(--green-dk)}
+  .es-startrows{display:flex;flex-direction:column;gap:6px}
+  .es-startrow{display:flex;gap:11px;align-items:center;width:100%;text-align:left;font:inherit;
+    border:1.5px dashed var(--line);border-radius:12px;padding:10px 15px;background:none;cursor:pointer}
+  .es-startrow:hover{border-color:var(--green)}
+  .es-startrow.planned,.es-startrow.written{border-style:solid}
+  .es-startrow.written{background:#FBFEFC}
+  .es-startrow.written .es-plandot,.es-startrow.planned .es-plandot{background:var(--green);border-color:var(--green)}
+  .es-startwhat{flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--ink-2);overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap}
+  .es-startstate{font-size:11.5px;font-weight:700;color:var(--ink-3)}
+  .es-startbtns{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding-top:2px}
+  .es-mapwa{display:flex;flex-direction:column;gap:3px;width:100%;text-align:left;font:inherit;background:var(--bg);
+    border:none;border-radius:11px;padding:9px 11px;margin-bottom:8px;cursor:pointer}
+  .es-mapwa:hover{background:var(--green-soft)}
+  .es-mapwatext{font-size:12px;line-height:1.5;font-weight:600;color:var(--ink-2);
+    display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+  .es-drift{border:1.5px solid var(--gold-dk);background:var(--gold-soft);border-radius:13px;padding:13px 16px;margin-top:13px}
+  .es-drifth{font-family:var(--disp);font-weight:600;font-size:14.5px;color:var(--ink);margin-bottom:9px}
+  .es-driftblk{margin-bottom:9px}
   .es-restnote{font-size:12px;line-height:1.5;font-weight:600;color:var(--ink-2);margin-top:4px}
   /* the response map: what each section argues, and what it says */
   .es-mapwrap{display:flex;flex-direction:column}

@@ -2,6 +2,7 @@
 // discuss AND what they think, each argument declares what it does for that
 // judgement, and the conclusion can weigh them. Same fields, different mode.
 const { chromium, T, OUT } = require('./env');
+const { planAll } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 async function open(p, re){
   await p.goto(T); await p.waitForTimeout(650);
@@ -12,6 +13,7 @@ async function open(p, re){
   await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);
   await p.$$eval('.es-qchip',(es,r)=>{const t=es.find(x=>new RegExp(r,'i').test(x.textContent));t&&t.click();}, re.source);
   await p.click('#esstart'); await p.waitForTimeout(650);
+  await planAll(p);
 }
 (async()=>{
   const b=await chromium.launch();
@@ -109,6 +111,7 @@ async function open(p, re){
   // back to the plan the way the conclusion offers it
   await p.click('#esrestplan'); await p.waitForTimeout(450);
   ok(!!(await p.$('.es-planwrap')),'the plan is reachable from the conclusion');
+  await planAll(p);
   const firstId=await p.evaluate(()=>{try{const st=JSON.parse(localStorage.getItem('marginal.essay.v1'));const bag=Object.values(st)[0];const d=bag.drafts[bag.drafts.length-1];return d.paras[1].argumentId;}catch(e){return null;}});
   // reopen BODY 2 and give it Body 1's argument
   await p.$$eval('.es-plancard,.es-planrow',es=>{const t=es[1]&&es[1].querySelector('[data-esplanedit]'); t&&t.click();});

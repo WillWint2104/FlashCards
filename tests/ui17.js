@@ -1,6 +1,7 @@
 // The reference area works on BOTH paragraph models, so choosing TDECC does not
 // drop the student onto generic guidance.
 const { chromium, T, OUT, BASE, fileUrl } = require('./env');
+const { planAll } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 (async()=>{
   const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium'});
@@ -24,6 +25,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   });
   await p.waitForTimeout(250);
   await p.click('#esstart'); await p.waitForTimeout(500);
+  await planAll(p);
   await p.$$eval('.es-plancard [data-esplanarea]',es=>{const t=es.find(x=>/processes/i.test(x.textContent));t&&t.click();});
   await p.waitForTimeout(300);
   await p.$$eval('[data-esplanpick]',es=>{const t=es.find(x=>/Convenience-oriented/i.test(x.textContent));t&&t.click();});

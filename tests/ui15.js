@@ -1,6 +1,7 @@
 // P0 acceptance: plan first, no repeated setup, persistent map, completion state,
 // whole-response word count, review-and-submit inside guided mode.
 const { chromium, T, OUT, BASE, fileUrl } = require('./env');
+const { planAll } = require('./env');
 const { nextSection, prevSection } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 (async()=>{
@@ -24,6 +25,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   // deliberately start on a 3-body structure so the mismatch offer is exercised
   await p.selectOption('#esstruct','five'); await p.waitForTimeout(150);
   await p.click('#esstart'); await p.waitForTimeout(500);
+  await planAll(p);
 
   console.log('1. the question is planned before anything is written');
   ok(!!(await p.$('.es-planwrap')),'the plan screen opens first, not the composer');

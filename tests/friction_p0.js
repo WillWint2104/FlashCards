@@ -1,6 +1,7 @@
 // FRICTION PASS: a full 20-mark response, written the way a student would.
 // Nothing in the app is changed. This only drives it and counts.
 const { chromium, T, OUT, BASE, fileUrl } = require('./env');
+const { planAll } = require('./env');
 const fs = require('fs');
 
 const PROFILE = process.argv[2] || 'moderate';
@@ -119,6 +120,7 @@ const P = {
   await p.selectOption('#esstruct', 'six').catch(e => note('setup', 'could not choose a 4-body structure'));
   await p.waitForTimeout(150);
   await p.click('#esstart'); await p.waitForTimeout(500);
+  await planAll(p);
   last = await m();
   REC.setupClicks = last.c;
 

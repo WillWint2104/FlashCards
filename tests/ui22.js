@@ -2,6 +2,7 @@
 // areas, so choosing which strategies to argue is part of the answer. Nothing
 // about it is special-cased: the same fields drive both questions.
 const { chromium, T, OUT } = require('./env');
+const { planAll } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 async function open(p, re){
   await p.goto(T); await p.waitForTimeout(650);
@@ -12,6 +13,7 @@ async function open(p, re){
   await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);
   await p.$$eval('.es-qchip',(es,r)=>{const t=es.find(x=>new RegExp(r,'i').test(x.textContent));t&&t.click();}, re.source);
   await p.click('#esstart'); await p.waitForTimeout(650);
+  await planAll(p);
 }
 (async()=>{
   const b=await chromium.launch();

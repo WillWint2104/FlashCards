@@ -1,4 +1,5 @@
 const { chromium, T, OUT, BASE, fileUrl } = require('./env');
+const { planAll } = require('./env');
 (async()=>{
   const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium'});
   const p=await (await b.newContext({viewport:{width:1500,height:1180},deviceScaleFactor:2})).newPage();
@@ -14,6 +15,7 @@ const { chromium, T, OUT, BASE, fileUrl } = require('./env');
   await p.$$eval('.es-qchip',es=>{const t=es.find(x=>/target markets/i.test(x.textContent));t&&t.click();});
   await p.waitForTimeout(200);
   await p.click('#esstart'); await p.waitForTimeout(500);
+  await planAll(p);
   await p.$$eval('.es-plancard [data-esplanarea]',es=>{const t=es.find(x=>/processes/i.test(x.textContent));t&&t.click();});
   await p.waitForTimeout(300);
   await p.$$eval('[data-esplanpick]',es=>{const t=es.find(x=>/Convenience-oriented/i.test(x.textContent));t&&t.click();});
