@@ -40,8 +40,9 @@ async function run(sourced){
   const a=await run(false);
   console.log('    plan chips:',a.chips,'| note:',JSON.stringify(a.note[0]||''));
   ok(a.chips===0,'nothing is offered in the plan: '+a.chips+' chips');
-  ok(/waiting on checked sources/i.test(a.note.join(' ')),'and it says why, plainly');
-  ok(/own evidence still counts/i.test(a.note.join(' ')),'their own evidence is still allowed');
+  ok(/no verified examples are available/i.test(a.note.join(' ')),'and it says why, in words a student would use');
+  ok(/use your own/i.test(a.note.join(' ')),'their own evidence is still allowed');
+  ok(!/checked source|withheld|unverified/i.test(a.note.join(' ')),'without exposing how the system thinks about it');
   console.log('    evidence drawer:',JSON.stringify(a.drawer.slice(0,150)));
   ok(/No verified evidence/i.test(a.drawer),'the drawer withholds rather than warns');
   ok(/12 items are written/.test(a.drawer),'and is honest about how many are held back: '+/(\d+) items? (is|are) written/.exec(a.drawer));

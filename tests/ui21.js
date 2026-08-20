@@ -17,13 +17,16 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   console.log('1. one surface, not three stages');
   ok(!!(await p.$('.es-decrow')),'the question and its decoder are at the top');
   ok(!!(await p.$('.es-core')),'the core answer is right under it');
-  ok((await p.$$eval('.es-plancard',es=>es.length))===4,'the four choices are on the same page');
+  ok((await p.$$eval('.es-plancard,.es-planrow',es=>es.length))===4,'the four choices are on the same page');
   ok(!(await p.$('.es-thesis')),'and the thesis is not offered yet, with nothing to signpost');
 
   console.log('2. the core answer teaches, then gets out of the way');
-  const rel=await p.$eval('.es-corerel',e=>e.textContent.trim());
-  ok(/characteristics and expectations within its target market/i.test(rel),'it states the relationship: '+rel.slice(0,60));
+  const pat=await p.$eval('.es-corepat',e=>e.textContent.trim());
+  ok(/→/.test(pat)&&pat.split(' ').length<12,'it leads with the shape of the answer: '+JSON.stringify(pat));
+  ok(!(await p.$('#escoregot')),'understanding is not something to certify, so there is nothing to press');
   await p.click('#escoreexplain'); await p.waitForTimeout(250);
+  const rel=await p.$eval('.es-corerel',e=>e.textContent.trim());
+  ok(/characteristics and expectations within its target market/i.test(rel),'and the relationship is one press away: '+rel.slice(0,50));
   const ex=await p.$eval('.es-corebody',e=>e.innerText);
   ok(ex.length>400,'Explain this is a real explanation: '+ex.length+' chars');
   ok(/downstream of that one|not everyone who might buy/i.test(ex),'and teaches what a target market actually is');
@@ -31,11 +34,10 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   await p.waitForTimeout(250);
   const idea=await p.$$eval('.es-corebody',es=>es.map(e=>e.innerText).join(' '));
   ok(/not a sentence to copy/i.test(idea),'a thesis IDEA is offered, labelled as not a sentence to copy');
-  await p.click('#escoregot'); await p.waitForTimeout(300);
-  ok(!!(await p.$('.es-core.done')),'saying you understand collapses it');
-  const line=await p.$eval('.es-core.done',e=>e.innerText.replace(/\s+/g,' '));
-  ok(line.split(' ').length<40,'to one quiet line: '+line.slice(0,70));
-  ok(!!(await p.$('#escorereview')),'with a way back into it');
+  await p.click('#escoreexplain'); await p.waitForTimeout(200);
+  await p.click('#escoreidea').catch(()=>{}); await p.waitForTimeout(200);
+  const shut=await p.$eval('.es-core',e=>e.innerText.replace(/\s+/g,' '));
+  ok(shut.split(' ').length<24,'closing it leaves one quiet line: '+shut.slice(0,70));
 
   console.log('3. it is not a gate');
   const fresh=await (await b.newContext({viewport:{width:1400,height:1000}})).newPage();

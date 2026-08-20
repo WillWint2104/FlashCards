@@ -99,11 +99,14 @@ const okline = m => console.log('  ok:', m);
     // --- plan
     if (!(await p.$('.es-planwrap'))) bad('the planning screen did not open');
     else {
-      const cards = await p.$$eval('.es-plancard', es => es.length);
-      okline('planning opens with ' + cards + ' body cards');
+      // unplanned bodies are compact rows, not cards, so count both
+      const cards = await p.$$eval('.es-plancard,.es-planrow', es => es.length);
+      okline('planning opens with ' + cards + ' bodies to plan');
+      // only the body being decided is expanded, so each is opened in turn
       for (const re of ['Digitally engaged','same experience everywhere','expect speed','different physical settings']) {
-        await p.$$eval('[data-esplanpick]', (es,r)=>{ const t=es.find(x=>new RegExp(r,'i').test(x.textContent)); t&&t.click(); }, re);
-        await p.waitForTimeout(220);
+        const hit = await p.$$eval('[data-esplanpick]', (es,r)=>{ const t=es.find(x=>new RegExp(r,'i').test(x.textContent)); if(t){t.click();return true;} return false; }, re);
+        if (!hit) note('plan: no option matched ' + re + ' in the open card');
+        await p.waitForTimeout(280);
       }
       const done = await p.$$eval('.es-plancard.done', es => es.length);
       if (done !== cards) bad('planned ' + done + ' of ' + cards + ' body paragraphs');

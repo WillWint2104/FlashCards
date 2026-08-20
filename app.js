@@ -4596,7 +4596,7 @@
       : ev.none === "unlinked"
       ? `<p class="es-setupsub">No verified evidence has been linked to this argument yet. You can still use your own.</p>`
       : ev.none === "unverified"
-      ? `<p class="es-setupsub">Nothing is offered here yet: ${ev.withheld} piece${ev.withheld === 1 ? " is" : "s are"} written but still waiting on a checked source. Use your own evidence for now, and everything else about this paragraph works as normal.</p>`
+      ? `<p class="es-setupsub">No verified evidence is available for this argument yet. You can still use your own, and everything else about this paragraph works as normal.</p>`
       : ev.none === "no-bank"
       ? `<p class="es-setupsub">No evidence bank has been written for this subject yet.</p>` : "";
     return `<div class="es-setup">
@@ -4723,6 +4723,7 @@
     ((q && q.pathways) || []).forEach(x => { if (x.area && out.indexOf(x.area) < 0) out.push(x.area); });
     return out;
   }
+  function esAreasLabel() { const q = esQuestionDef(); return (q && q.areasLabel) || "area"; }
   function esPathwaysInArea(area) {
     const q = esQuestionDef(); const all = (q && q.pathways) || [];
     if (!area) return all;
@@ -4764,24 +4765,25 @@
   // Rich while it is being read, one quiet line once it has been. Leaving the
   // teaching card open through the whole of planning would put back the density
   // the writing screen just lost.
+  // One line saying what shape the answer takes, with the teaching one press
+  // away. Understanding is not an action a student has to certify, so there is
+  // nothing to confirm and nothing to collapse.
   function esCoreHTML(d) {
     const core = esCoreAnswer(); const rel = esCoreRelationship();
     if (!core && !rel) return "";
-    const done = !!d.coreUnderstood && !ES.ui.coreOpen;
-    if (done) return `<div class="es-core done">
-      <span class="es-corelbl">Core answer</span>
-      <span class="es-coreline">${esc(rel)}</span>
-      <button type="button" class="es-linkbtn" id="escorereview">Review</button>
-    </div>`;
-    return `<div class="es-core">
-      <div class="es-coreh">The basic relationship</div>
-      <p class="es-corerel">${esc(rel)}</p>
-      <div class="es-corebtns">
-        <button type="button" class="es-btn sm" id="escoregot">I understand</button>
+    const pattern = (core && core.pattern) || "";
+    const open = ES.ui.coreExplain || ES.ui.coreIdea;
+    return `<div class="es-core${open ? " open" : ""}">
+      <div class="es-corerow">
+        <span class="es-corelbl">How to build this answer</span>
+        ${pattern ? `<span class="es-corepat">${esc(pattern)}</span>` : ""}
         <button type="button" class="es-linkbtn" id="escoreexplain">${ES.ui.coreExplain ? "Hide" : "Explain this"}</button>
-        ${core && core.thesisIdea ? `<button type="button" class="es-linkbtn" id="escoreidea">${ES.ui.coreIdea ? "Hide" : "Show me an acceptable thesis idea"}</button>` : ""}
+        ${core && core.thesisIdea ? `<button type="button" class="es-linkbtn" id="escoreidea">${ES.ui.coreIdea ? "Hide" : "Thesis help"}</button>` : ""}
       </div>
-      ${(ES.ui.coreExplain && core && (core.explain || []).length) ? `<div class="es-corebody">${core.explain.map(x => `<p class="es-corep">${esc(x)}</p>`).join("")}</div>` : ""}
+      ${ES.ui.coreExplain ? `<div class="es-corebody">
+        ${rel ? `<p class="es-corerel">${esc(rel)}</p>` : ""}
+        ${(core && (core.explain || []).length) ? core.explain.map(x => `<p class="es-corep">${esc(x)}</p>`).join("") : ""}
+      </div>` : ""}
       ${(ES.ui.coreIdea && core && core.thesisIdea) ? `<div class="es-corebody"><div class="es-drawer-sub">a thesis idea, not a sentence to copy</div><p class="es-corep">${esc(core.thesisIdea)}</p></div>` : ""}
     </div>`;
   }
@@ -4814,9 +4816,6 @@
   function esBindCore() {
     const host = document.getElementById("eshost"); if (!host) return;
     const d = ES.draft;
-    const got = host.querySelector("#escoregot");
-    if (got) got.onclick = () => { d.coreUnderstood = true; ES.ui.coreOpen = false; esSaveDraft(); esRender(); };
-    const rev = host.querySelector("#escorereview"); if (rev) rev.onclick = () => { ES.ui.coreOpen = true; esRender(); };
     const ex = host.querySelector("#escoreexplain"); if (ex) ex.onclick = () => { ES.ui.coreExplain = !ES.ui.coreExplain; esRender(); };
     const id = host.querySelector("#escoreidea"); if (id) id.onclick = () => { ES.ui.coreIdea = !ES.ui.coreIdea; esRender(); };
     const th = host.querySelector("#esthesis");
@@ -4873,11 +4872,15 @@
       const ev = chosen ? esEvidenceFor(p) : { items: [] };
       const picked = p.evidenceIds || [];
       const areaRow = areas.length > 1 ? `
-        ${required ? "" : `<div class="es-planask">${area ? "This paragraph is about" : "Which of these will this paragraph argue about?"}</div>`}
+        ${required ? "" : `<div class="es-planask">${area
+          ? "What will you argue about " + esc(area) + "?"
+          : "Which " + esc(esAreasLabel()) + " will " + esc(p.role) + " use?"}</div>`}
         <div class="es-planareas">${areas.map(a => {
           const on = String(a).toLowerCase() === String(area).toLowerCase();
           const used = usedElsewhere[a];
-          return `<button type="button" class="es-areachip ${on ? "on" : ""} ${(used && !on) ? "used" : ""}" data-esplanarea="${i}|${esc(a)}"${used && !on ? ` title="already argued in ${esc(used)}"` : ""}>${esc(a)}${(used && !on) ? `<span class="es-areaused"> in ${esc(used)}</span>` : ""}</button>`;
+          // A badge, not a dimming. Pale grey reads as "you cannot pick this",
+          // and picking it again with a different argument is legitimate.
+          return `<button type="button" class="es-areachip ${on ? "on" : ""}" data-esplanarea="${i}|${esc(a)}"${used && !on ? ` title="already argued in ${esc(used)}, you can still argue something different here"` : ""}>${esc(a)}${(used && !on) ? `<span class="es-areaused">used in ${esc(used)}</span>` : ""}</button>`;
         }).join("")}</div>` : "";
       const body = open ? `
         ${areaRow}
@@ -4887,6 +4890,7 @@
             const deeper = o.whatToProve || o.commonMistake;
             return `<div class="es-optwrap${why ? " open" : ""}">
               <button type="button" class="es-pick ${p.argumentId === o.id ? "on" : ""}" data-esplanpick="${i}|${esc(o.id)}">
+                ${o.short ? `<span class="es-pickshort">${esc(o.short)}</span>` : ""}
                 <span class="es-pickrel">${esc(o.relationship)}</span>
                 ${o.meaning ? `<span class="es-picksub">${esc(o.meaning)}</span>` : ""}
               </button>
@@ -4904,19 +4908,30 @@
             <button type="button" class="es-btn primary sm" data-esplanownok="${i}">Use this</button>
           </div>
         </div>`}` : `
+        ${(() => { const path = esPathway(p);
+          return path && path.short ? `<div class="es-planshort">${esc(path.short)}</div>` : ""; })()}
         <div class="es-planval">${esc(esArgLine(p)) || `<span class="es-restnone">not chosen yet</span>`}</div>
+        ${(() => { const path = esPathway(p);
+          return path && path.meaning ? `<p class="es-planmeaning">${esc(path.meaning)}</p>` : ""; })()}
         <button type="button" class="es-linkbtn" data-esplanedit="${i}">${chosen ? "Change" : "Choose"}</button>`;
       const evRow = (chosen && !open) ? `
         <div class="es-planev">
           <span class="es-planevlbl">evidence</span>
           ${ev.items.length ? ev.items.map(e => `<button type="button" class="es-evchip ${picked.indexOf(e.label) >= 0 ? "on" : ""}" data-esplanev="${i}|${esc(e.label)}">${esc(e.label)}</button>`).join("")
             : `<span class="es-planevnote">${ev.none === "custom" ? "Nothing is linked to your own argument. The Evidence tool stays open to you."
-                : ev.none === "unverified" ? "Waiting on checked sources, so nothing is offered here yet. Your own evidence still counts."
+                : ev.none === "unverified" ? "No verified examples are available for this argument yet. You can still use your own."
                 : "No evidence has been linked to this argument yet."}</span>`}
           ${ev.items.length ? `<span class="es-planevnote">optional now, and you can change it when you get there</span>` : ""}
         </div>` : "";
-      return `<div class="es-plancard ${chosen ? "done" : ""}">
-        <div class="es-planh"><span class="es-plandot"></span><span class="es-plann">${esc(p.role)}</span>${(chosen && area) ? `<span class="es-planarea">${esc(area)}</span>` : ""}</div>
+      // Four full cards to say "not chosen yet" three times is a lot of screen to
+      // spend on decisions nobody is making. Only the one in hand is a card.
+      if (!chosen && !open) return `<div class="es-planrow">
+        <span class="es-plandot"></span><span class="es-plann">${esc(p.role)}</span>
+        <span class="es-planidle">not planned yet</span>
+        <button type="button" class="es-linkbtn" data-esplanedit="${i}">Choose</button>
+      </div>`;
+      return `<div class="es-plancard ${chosen ? "done" : ""}${open ? " open" : ""}">
+        <div class="es-planh"><span class="es-plandot"></span><span class="es-plann">${esc(p.role)}</span>${area ? `<span class="es-planarea">${esc(area)}</span>` : ""}</div>
         ${body}${evRow}
       </div>`;
     }).join("");
@@ -4924,11 +4939,11 @@
     const done = esPlanned(d);
     host.innerHTML = `
     <div class="es-scrim"><div class="es-shell"><div class="es-wrap es-canvas">
-      ${esWritingHead(sc, "Planning", "Write a full attempt instead", "full")}
+      ${esWritingHead(sc, "Planning", "full attempt", "full")}
       <div class="es-planwrap">
         <div class="es-planhead">
           <h3 class="es-planhh">Build your response</h3>
-          <p class="es-plansub">Decide what each paragraph will argue before you write the introduction. You are choosing relationships, not sentences: every word is still yours.</p>
+          <p class="es-plansub">Choose the argument each paragraph will make. You are choosing relationships, not sentences.</p>
           ${suggest ? `<div class="es-plannote">This question has ${areas.length} parts and your structure has ${bodies.length} body paragraph${bodies.length === 1 ? "" : "s"}.
             <button type="button" class="es-linkbtn" id="esplanstruct">Use ${areas.length} body paragraphs</button></div>` : ""}
         </div>

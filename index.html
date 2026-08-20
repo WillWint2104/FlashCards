@@ -504,7 +504,7 @@
   .es-pick:hover{border-color:var(--green);background:var(--green-soft)}
   .es-pick.on{border-color:var(--green);background:var(--green-soft)}
   .es-pick.own{border-style:dashed;font-weight:700;color:var(--ink-2)}
-  .es-pickrel{display:block;font-size:14.5px;line-height:1.5;color:var(--ink);font-weight:700}
+  .es-pickrel{display:block;font-size:13px;line-height:1.45;color:var(--ink-2);font-weight:600}
   .es-picksub{display:block;font-size:12.5px;line-height:1.5;color:var(--ink-2);font-weight:600;margin-top:4px}
   .es-ownwrap{display:flex;gap:9px;align-items:center;margin-top:9px}
   .es-ownwrap .es-input{flex:1}
@@ -653,11 +653,11 @@
   .es-rest .es-decp{font-size:13px}
   .es-rest .es-dech{font-size:13.5px}
   /* the planning surface: rich while deciding, compact once decided */
-  .es-core{border:1.5px solid var(--green);border-radius:16px;background:var(--card);padding:15px 18px}
-  .es-core.done{display:flex;gap:11px;align-items:baseline;flex-wrap:wrap;border-color:var(--line);
-    background:none;padding:9px 14px}
+  .es-core{border:1.5px solid var(--line);border-radius:14px;background:none;padding:10px 15px}
+  .es-core.open{border-color:var(--green-soft);background:#FBFEFC}
+  .es-corerow{display:flex;gap:13px;align-items:baseline;flex-wrap:wrap}
   .es-corelbl{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
-  .es-coreline{font-size:13px;font-weight:700;color:var(--ink-2);flex:1;min-width:0}
+  .es-corepat{font-size:13.5px;font-weight:700;color:var(--green-dk);flex:1;min-width:0}
   .es-coreh{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--ink)}
   .es-corerel{font-size:15px;line-height:1.6;font-weight:700;color:var(--ink);margin:7px 0 13px}
   .es-corebtns{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
@@ -702,11 +702,13 @@
   .es-rest.quiet{border-color:transparent;background:none;padding:15px 4px}
 
   /* the response plan: the whole essay decided once, before the introduction */
-  .es-planwrap{display:flex;flex-direction:column;gap:16px;max-width:820px;margin:0 auto}
+  .es-planwrap{display:flex;flex-direction:column;gap:14px;max-width:960px;margin:0 auto}
   .es-planhh{font-family:var(--disp);font-weight:600;font-size:20px;color:var(--ink)}
   .es-plansub{font-size:13.5px;line-height:1.6;color:var(--ink-2);font-weight:600;margin-top:5px}
   .es-plannote{margin-top:10px;font-size:12.5px;font-weight:700;color:var(--ink-2);background:var(--green-soft);border-radius:10px;padding:8px 12px;display:flex;gap:9px;align-items:center;flex-wrap:wrap}
-  .es-plancards{display:flex;flex-direction:column;gap:12px}
+  .es-plancards{display:flex;flex-direction:column;gap:10px}
+  .es-planrow{display:flex;gap:11px;align-items:center;border:1.5px dashed var(--line);border-radius:12px;padding:10px 15px}
+  .es-planidle{font-size:12.5px;font-weight:600;font-style:italic;color:var(--ink-3);flex:1}
   .es-plancard{border:1.5px solid var(--line);border-radius:16px;background:var(--card);padding:15px 17px}
   .es-plancard.done{border-color:var(--green-soft);background:#FCFEFD}
   .es-planh{display:flex;align-items:center;gap:9px;margin-bottom:10px}
@@ -719,10 +721,13 @@
   .es-areachip:hover{border-color:var(--green)}
   .es-areachip.on{border-color:var(--green);background:var(--green-soft);color:var(--ink)}
   .es-planask{font-size:12.5px;font-weight:700;color:var(--ink-2);margin-bottom:8px}
-  .es-areachip.used{opacity:.6}
-  .es-areaused{font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);margin-left:7px}
+  .es-areaused{font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--green-dk);
+    background:var(--green-soft);border-radius:99px;padding:2px 7px;margin-left:8px}
   .es-planopts .es-pick{margin-bottom:7px}
-  .es-planval{font-size:14.5px;line-height:1.5;color:var(--ink);font-weight:700}
+  .es-planshort{font-size:15px;line-height:1.45;font-weight:700;color:var(--green-dk);margin-bottom:3px}
+  .es-planval{font-size:13.5px;line-height:1.5;color:var(--ink-2);font-weight:600}
+  .es-planmeaning{font-size:12.5px;line-height:1.55;font-weight:600;color:var(--ink-3);margin-top:4px}
+  .es-pickshort{display:block;font-size:14px;line-height:1.4;font-weight:700;color:var(--green-dk);margin-bottom:2px}
   .es-planev{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:11px;padding-top:11px;border-top:1px solid var(--line)}
   .es-planevlbl{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
   .es-evchip{font:inherit;font-size:12.5px;font-weight:700;color:var(--ink-2);background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:5px 12px;cursor:pointer}

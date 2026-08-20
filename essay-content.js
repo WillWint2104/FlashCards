@@ -220,6 +220,7 @@ window.ESSAY = {
           pathways: [
             { id: "mkt01-em-digital", area: "e-marketing",
               relationship: "Digitally engaged customers lead to greater use of digital marketing",
+              short: "Digital engagement → digital marketing",
               meaning: "These customers already spend their attention on digital channels, so that is where the business has to buy it.",
               whatToProve: "customers are already on digital channels \u2192 the business moves its promotion there \u2192 why that reaches them better than the alternative",
               commonMistake: "Listing the business's digital channels without saying what it is about these customers that made digital the right choice.",
@@ -256,6 +257,7 @@ window.ESSAY = {
                     pattern: "the detail, then what the detail proves" } } }, },
             { id: "mkt01-em-value", area: "e-marketing",
               relationship: "Value-conscious customers lead to digital promotions and loyalty offers",
+              short: "Price sensitivity → digital offers and loyalty",
               meaning: "These customers decide on price, and digital channels are the cheapest way to put an offer in front of them again and again.",
               whatToProve: "customers respond to price \u2192 the business needs a cheap and repeatable way to reach them with offers \u2192 digital promotions and loyalty schemes become the tool",
               commonMistake: "Arguing that discounts attract customers, which is a pricing point, rather than arguing why the offer is delivered digitally.",
@@ -267,6 +269,7 @@ window.ESSAY = {
                 effect: "Say what this achieves: which marketing objective it serves and at what cost." } },
             { id: "mkt01-em-convenience", area: "e-marketing",
               relationship: "Convenience-oriented customers lead to marketing through ordering apps and digital channels",
+              short: "Wanting to act at once → marketing inside the ordering channel",
               meaning: "These customers want to act on an offer immediately, so the marketing has to sit inside the channel they already order through.",
               whatToProve: "customers want to act with the least effort \u2192 marketing has to sit where the order is placed \u2192 the ordering channel becomes a promotion channel",
               commonMistake: "Describing the app as convenient to order with, which is a processes argument, instead of arguing that it is where the marketing reaches them.",
@@ -277,6 +280,7 @@ window.ESSAY = {
 
             { id: "mkt01-pe-service", area: "people",
               relationship: "Customers who expect personal service lead to investment in staff training and service standards",
+              short: "Expecting personal service → training and service standards",
               meaning: "These customers judge the business on the person serving them, so that staff member is part of what is being bought.",
               whatToProve: "customers expect to be dealt with personally \u2192 staff are part of the product \u2192 the business invests in training and service standards",
               commonMistake: "Saying good staff are important, which is true of every business, instead of saying what THIS target market expects that forced the investment.",
@@ -287,6 +291,7 @@ window.ESSAY = {
                 example: "Apply the evidence you selected. Say what it shows about the people element specifically." } },
             { id: "mkt01-pe-speed", area: "people",
               relationship: "Customers who expect speed lead to staffing and rostering built around peak demand",
+              short: "Expecting speed → staffing and rostering",
               meaning: "These customers count waiting as a cost, so the business has to have the right number of staff on at the right hour.",
               whatToProve: "customers will not wait \u2192 service capacity has to match demand hour by hour \u2192 staffing and rostering change",
               commonMistake: "Arguing about the ordering system, which is processes, rather than about the people who have to be there to deliver it.",
@@ -296,6 +301,7 @@ window.ESSAY = {
                 explain: "Explain the link between what the target market will wait for and how the business staffs its service." } },
             { id: "mkt01-pe-consistency", area: "people",
               relationship: "Customers who expect the same experience everywhere lead to standardised service training",
+              short: "Expecting consistency → standardised training",
               meaning: "These customers are buying predictability, so what the staff do has to be the same in every store.",
               whatToProve: "customers are buying predictability \u2192 variation between staff breaks it \u2192 training and service standards are standardised",
               commonMistake: "Describing standard uniforms, signage or layout, which is physical evidence, rather than what the staff are trained to do.",
@@ -315,6 +321,7 @@ window.ESSAY = {
             // and the worked example is always somewhere else entirely.
             { id: "mkt01-pr-convenience", area: "processes",
               relationship: "Convenience-oriented customers lead to faster and more flexible ordering processes",
+              short: "Wanting less effort → faster, more flexible ordering",
               meaning: "These customers treat the time and effort of ordering as a cost, so the business changes how ordering works to take steps out of it.",
               whatToProve: "customer expectation \u2192 the process change it forces \u2192 why the new process suits this market better",
               commonMistake: "Describing an app or a kiosk without explaining what it was about these customers that caused the process to change.",
@@ -386,6 +393,7 @@ window.ESSAY = {
 
             { id: "mkt01-pr-speed", area: "processes",
               relationship: "Customers who expect speed lead to streamlined service and collection processes",
+              short: "Expecting speed → streamlined service and collection",
               meaning: "These customers are paying for turnaround, so the business reorganises what happens after payment to cut the wait.",
               whatToProve: "customers count waiting as a cost \u2192 steps are separated or run alongside each other \u2192 the wait falls, especially at peak",
               commonMistake: "Claiming the business is faster without naming which step was taken out of the queue.",
@@ -457,6 +465,7 @@ window.ESSAY = {
 
             { id: "mkt01-pr-customisation", area: "processes",
               relationship: "Customers who want to customise orders lead to ordering systems built to take variations",
+              short: "Wanting to customise → ordering built for variations",
               meaning: "These customers expect to change what they order, so the process has to carry a non-standard order without errors.",
               whatToProve: "customers expect to change the order \u2192 no two orders are identical \u2192 the ordering system has to capture the variation accurately",
               commonMistake: "Arguing about choice on the menu, which is a product point, instead of about how the process carries a non-standard order.",
@@ -531,6 +540,7 @@ window.ESSAY = {
 
             { id: "mkt01-ph-servicescape", area: "physical evidence",
               relationship: "Customers who judge a business by its surroundings lead to a designed servicescape",
+              short: "Judging by surroundings → a designed servicescape",
               meaning: "These customers cannot test the service before buying it, so they judge it by the room, and the room has to be designed.",
               whatToProve: "the service is intangible \u2192 customers judge it by what they can see \u2192 the setting is designed rather than left to chance",
               commonMistake: "Listing what the premises look like without saying what the customer concludes from it.",
@@ -541,6 +551,7 @@ window.ESSAY = {
                 example: "Apply the evidence you selected, stating the fact before what it shows about physical evidence." } },
             { id: "mkt01-ph-segments", area: "physical evidence",
               relationship: "Serving different segments leads to different physical settings for each",
+              short: "Serving several segments → a setting for each",
               meaning: "More than one group is being served and they do not want the same surroundings, so the space is divided between them.",
               whatToProve: "more than one segment is served \u2192 one setting cannot suit both \u2192 the space is divided so each gets its own",
               commonMistake: "Naming the segments and the products built for them, which is segmentation, without ever getting to the physical space.",
@@ -550,6 +561,7 @@ window.ESSAY = {
                 explain: "Explain why serving more than one segment forces the physical setting to differ between them." } },
             { id: "mkt01-ph-selfservice", area: "physical evidence",
               relationship: "Customers who prefer to serve themselves lead to physical evidence built around self-service",
+              short: "Preferring self-service → self-explaining surroundings",
               meaning: "These customers would rather use a machine than ask someone, so what they can see has to explain itself.",
               whatToProve: "customers prefer to serve themselves \u2192 the surroundings have to do the explaining \u2192 screens, signage and layout are built to be self-explanatory",
               commonMistake: "Arguing that self-service is faster, which is a processes point, rather than about what the customer sees and touches.",
@@ -603,6 +615,7 @@ window.ESSAY = {
           // collapsed the moment the student says they have it. Authored, never
           // generated, and never a gate: planning works whether it is read or not.
           coreAnswer: {
+            pattern: "target-market characteristic \u2192 strategy change \u2192 what it achieves",
             explain: [
               "A target market is not everyone who might buy. It is the group a business has chosen, described by what those people are actually like: what they can spend, how they buy, how much time they will give it, what they will not put up with. Choosing that group is a decision, and every marketing decision after it is downstream of that one.",
               "So the four elements this question names are not free choices. Each is built to suit somebody in particular. Change who the customer is and the same business would promote differently, staff differently, run its service differently and look different inside. That is the relationship you have to explain, four times over."
@@ -720,7 +733,7 @@ window.ESSAY = {
           decode: {
             verbMeaning: "How can asks you to show the mechanism. It is not enough to say that a strategy helps; you have to say how it moves the objective and why that follows.",
             plainEnglish: "Show how the things a business does with its money change how well it meets its financial goals, and be honest that fixing one goal can hurt another.",
-            coreRelationship: "A business chooses a financial strategy because of the objective it needs to move, so the objective explains the strategy rather than the other way round.",
+            coreRelationship: "Businesses use financial strategies to improve financial objectives. In each paragraph, name a strategy, explain what it changes, and show how that change affects an objective such as liquidity, profitability, efficiency, growth or solvency.",
             highlights: [
               { anchor: "How can", kind: "directive", label: "what you need to do",
                 note: "Show the mechanism. Saying a strategy is beneficial is not an answer; saying how it changes the objective, step by step, is." },
@@ -733,48 +746,50 @@ window.ESSAY = {
             // rather than a list of parts. The absence of requiredAreas is the
             // question's own decision, not missing data.
             cover: {
-              forEach: "financial strategy → the objective it moves → how it moves it → what it costs elsewhere",
+              forEach: "financial strategy → what it changes → the objective that moves → what it costs elsewhere",
               consistency: "Choose the strategies yourself, use one business throughout, and weigh at least one trade-off."
             }
           },
           coreAnswer: {
+            pattern: "financial strategy \u2192 what it changes \u2192 financial objective",
             explain: [
               "The objectives of financial management are the things a business is trying to be: liquid enough to pay what falls due, profitable, efficient with what it owns, growing, and solvent over the long run. They are the scoreboard.",
-              "A financial strategy is a move made on that scoreboard. Nobody manages cash flow for its own sake; they do it because liquidity is under pressure. So the question is asking you to run the argument in that direction: name the objective, then show the strategy reaching it. And because the objectives pull against each other, a strategy that lifts one will usually cost something on another, which is where the marks are."
+              "A financial strategy is a move made on that scoreboard. The question asks HOW a strategy affects an objective, so the argument runs forwards: name the strategy, say what it actually changes, then show that change reaching the objective. Businesses do choose a strategy because an objective is under pressure, and it is worth saying so, but the explanation itself has to travel strategy, change, objective. And because the objectives pull against each other, a strategy that lifts one usually costs something on another, which is where the marks are."
             ],
             thesisIdea: "Say that strategies are chosen to move particular objectives, name the ones you will argue, and signal that improving one can cost another.",
-            acceptableThesis: "Financial strategies affect the objectives of financial management because each strategy is chosen to move a particular objective, such as cash flow management improving liquidity or cost controls improving profitability, although a strategy that lifts one objective often works against another.",
+            acceptableThesis: "Financial strategies affect the objectives of financial management because each strategy changes something the business controls, such as the timing of its cash or the cost of each sale, and that change moves a particular objective like liquidity or profitability, although a strategy that lifts one objective often works against another.",
             checklist: [
-              "makes the objective the thing being moved, and the strategy the thing doing the moving",
+              "runs the argument forwards: the strategy, what it changes, then the objective that moves",
               "names specific strategies and specific objectives rather than talking about finance in general",
               "signals that a trade-off is coming, since no strategy improves everything",
               "answers how, rather than listing what the strategies are"
             ]
           },
+          areasLabel: "financial strategy area",
           areas: {
             "cash flow management": { label: "cash flow management", guides: {
-              topic:   "State which objective is under pressure, and say that cash flow management is the strategy answering it.",
+              topic:   "Name cash flow management as the strategy, and the objective you are going to show it moving.",
               define:  "Show what cash flow management covers: distribution of payments, discounts for early payment, and factoring.",
               explain: "Explain how changing the TIMING of money in and out changes the objective. Timing is the mechanism.",
               example: "Apply your evidence to the timing of cash, not to how much the business earns.",
               effect:  "Say what the objective gains, and what the timing change costs the business.",
               link:    "Return to the question: this is how a cash flow strategy reaches that objective." } },
             "working capital management": { label: "working capital management", guides: {
-              topic:   "State which objective is under pressure, and say that working capital management is the strategy answering it.",
+              topic:   "Name working capital management as the strategy, and the objective you are going to show it moving.",
               define:  "Show what working capital management covers: controlling current assets and current liabilities, and leasing.",
               explain: "Explain how holding, releasing or financing assets differently changes the objective.",
               example: "Apply your evidence to what the business owns and owes, not to its sales.",
               effect:  "Say what the objective gains, and what is given up by financing it that way.",
               link:    "Return to the question: this is how a working capital strategy reaches that objective." } },
             "profitability management": { label: "profitability management", guides: {
-              topic:   "State which objective is under pressure, and say that cost or revenue controls are the strategy answering it.",
+              topic:   "Name the cost or revenue control you are arguing, and the objective you are going to show it moving.",
               define:  "Show what profitability management covers: cost controls such as fixed and variable costs, and revenue controls such as pricing policy and sales mix.",
               explain: "Explain how moving a cost or a price changes the objective, and by what route.",
               example: "Apply your evidence to a cost or a price, and say which one it is.",
               effect:  "Say what the objective gains, and what the control costs elsewhere.",
               link:    "Return to the question: this is how a profitability strategy reaches that objective." } },
             "global financial management": { label: "global financial management", guides: {
-              topic:   "State which objective is exposed, and say that a global financial strategy is what answers it.",
+              topic:   "Name the global financial strategy, and the objective you are going to show it protecting.",
               define:  "Show what global financial management covers: exchange rates, interest rates, methods of international payment, and hedging.",
               explain: "Explain how the strategy removes or reduces a risk, and how removing that risk moves the objective.",
               example: "Apply your evidence to the exposure itself, not to trading overseas in general.",
@@ -784,6 +799,7 @@ window.ESSAY = {
           pathways: [
             { id: "fin01-cf-liquidity", area: "cash flow management",
               relationship: "Managing the timing of payments improves liquidity",
+              short: "Timing of payments → liquidity",
               meaning: "Liquidity is about whether cash is there when a bill falls due, so moving money in earlier and out later fixes it without earning a cent more.",
               whatToProve: "liquidity is under pressure → the timing of inflows and outflows is changed → cash is available when it is needed",
               commonMistake: "Treating liquidity as the same thing as profit. A profitable business can still fail to pay a bill on the day it is due.",
@@ -794,6 +810,7 @@ window.ESSAY = {
               guides: { explain: "Explain how the timing change, not the amount, is what improves liquidity." } },
             { id: "fin01-cf-discounts", area: "cash flow management",
               relationship: "Offering discounts for early payment brings cash forward at a cost to revenue",
+              short: "Discounts for early payment → liquidity, at a cost to revenue",
               meaning: "The business pays for speed: customers hand over money sooner, and in exchange the business collects less of it.",
               whatToProve: "cash is needed sooner → customers are given a reason to pay early → liquidity improves while revenue falls",
               commonMistake: "Presenting the discount as a free improvement instead of naming what it costs.",
@@ -802,6 +819,7 @@ window.ESSAY = {
               guides: { explain: "Explain the exchange being made: earlier cash bought with lower revenue." } },
             { id: "fin01-wc-control", area: "working capital management",
               relationship: "Controlling current assets and liabilities keeps the business able to meet its debts",
+              short: "Managing current assets and liabilities → liquidity",
               meaning: "What the business holds and what it owes in the short term decide whether it can pay, so managing both is how liquidity is protected day to day.",
               whatToProve: "short-term obligations exist → current assets and liabilities are managed against them → the business stays able to pay",
               commonMistake: "Listing current assets and liabilities without saying what managing them actually changes.",
@@ -812,6 +830,7 @@ window.ESSAY = {
               guides: { explain: "Explain how the balance between what is owned and what is owed decides the objective." } },
             { id: "fin01-wc-leasing", area: "working capital management",
               relationship: "Leasing rather than buying preserves working capital but raises ongoing costs",
+              short: "Leasing rather than buying → liquidity, at a cost in expenses",
               meaning: "Not spending the cash keeps it available for everything else, and the price of that is a payment that never stops.",
               whatToProve: "a large asset is needed → leasing avoids tying cash up in it → liquidity is protected while costs rise",
               commonMistake: "Arguing that leasing is cheaper. It usually is not; the argument is about what it does to available cash.",
@@ -822,6 +841,7 @@ window.ESSAY = {
               guides: { explain: "Explain what is gained by not spending the cash, and what the ongoing payment costs." } },
             { id: "fin01-pm-cost", area: "profitability management",
               relationship: "Cost controls raise profitability by reducing what each sale costs to make",
+              short: "Cost controls → profitability",
               meaning: "Profit is what is left after costs, so pushing costs down lifts it without needing a single extra customer.",
               whatToProve: "profitability is under pressure → fixed or variable costs are cut → more of each sale is kept",
               commonMistake: "Naming a cost-cutting measure without saying which costs it touches or what it does to quality.",
@@ -832,6 +852,7 @@ window.ESSAY = {
               guides: { explain: "Explain the route from a lower cost to a higher profit, and name which costs move." } },
             { id: "fin01-pm-revenue", area: "profitability management",
               relationship: "Revenue controls raise profitability by lifting sales and the margin on them",
+              short: "Revenue controls → profitability",
               meaning: "The other way to more profit is more revenue, through what is charged and what customers are encouraged to add.",
               whatToProve: "profitability is under pressure → pricing or sales mix is changed → revenue rises faster than the cost of earning it",
               commonMistake: "Arguing that more sales means more profit, without dealing with what the extra sales cost to serve.",
@@ -842,6 +863,7 @@ window.ESSAY = {
               guides: { explain: "Explain the route from a pricing or mix decision to a higher profit." } },
             { id: "fin01-gf-hedging", area: "global financial management",
               relationship: "Hedging exchange rate exposure protects profitability from currency movement",
+              short: "Hedging → profitability protected from currency movement",
               meaning: "A business earning in one currency and paying in another can lose money without selling any less, and hedging fixes the rate so that cannot happen.",
               whatToProve: "the business is exposed to a currency it does not control → the rate is fixed in advance → profit stops depending on the exchange rate",
               commonMistake: "Describing what a hedge is without saying which objective it protects, or claiming it makes money rather than removing a risk.",
@@ -852,6 +874,7 @@ window.ESSAY = {
               guides: { explain: "Explain that the gain is certainty, and say which objective that certainty protects." } },
             { id: "fin01-gf-payment", area: "global financial management",
               relationship: "Choosing the method of international payment manages the risk of not being paid",
+              short: "Method of international payment → risk of not being paid",
               meaning: "Selling across a border means trusting someone a long way away, and the payment method decides how much of that risk the business carries.",
               whatToProve: "payment is uncertain across a border → a method is chosen that shifts who carries the risk → the business is more likely to be paid",
               commonMistake: "Listing payment methods in order of risk without arguing why the business would choose one.",

@@ -35,7 +35,7 @@ async function open(p, re){
   ok(!(await p.$('#esplanstruct')),'no structure is suggested from the number of strategies');
   ok((await p.$$eval('[data-esplanpick]',es=>es.length))===0,'and no argument is offered before the student says which strategy');
   const ask=await p.$eval('.es-planask',e=>e.textContent.trim());
-  ok(/which of these/i.test(ask),'the first decision is which strategy this paragraph is about: '+JSON.stringify(ask));
+  ok(/which financial strategy area/i.test(ask),'the first decision is which strategy this paragraph is about: '+JSON.stringify(ask));
   const chips=await p.$$eval('.es-plancard .es-areachip',es=>es.map(e=>e.textContent.trim()));
   ok(chips.length===4,'all four are offered: '+chips.length);
   ok(!chips.some(c=>/in Body/.test(c)),'none is marked as used yet');
@@ -54,10 +54,10 @@ async function open(p, re){
 
   console.log('4. a strategy already argued elsewhere is marked, not blocked');
   await p.$$eval('[data-esplanpick]',es=>es[0]&&es[0].click()); await p.waitForTimeout(400);
-  const used=await p.$$eval('.es-areachip.used',es=>es.map(e=>e.textContent.trim()));
-  ok(used.length===1&&/in Body 1/.test(used[0]),'the next paragraph says where it was already used: '+JSON.stringify(used));
-  const disabled=await p.$$eval('.es-areachip.used',es=>es.some(e=>e.disabled));
-  ok(!disabled,'but it is not blocked: arguing one strategy twice is the student’s call');
+  const used=await p.$$eval('.es-areaused',es=>es.map(e=>e.textContent.trim()));
+  ok(used.length===1&&/Body 1/.test(used[0]),'the next paragraph says where it was already used: '+JSON.stringify(used));
+  const dim=await p.$$eval('.es-areachip',es=>es.some(e=>e.disabled||parseFloat(getComputedStyle(e).opacity)<0.9));
+  ok(!dim,'but it is not blocked: arguing one strategy twice is the student’s call');
 
   console.log('5. decoding adapts to a question that fixes nothing');
   const chip=await p.$$eval('.es-decchip',es=>es.map(e=>e.textContent.trim()));
@@ -66,7 +66,7 @@ async function open(p, re){
   const cover=await p.$eval('[data-esdecpanel="cover"]',e=>e.innerText.replace(/\s+/g,' '));
   console.log('   ',cover.slice(0,150));
   ok(/which to write about is your choice/i.test(cover),'it says the choice is the student’s');
-  ok(/financial strategy → the objective it moves/.test(cover),'and gives the chain the answer has to follow');
+  ok(/financial strategy → what it changes/.test(cover),'and gives the chain the answer has to follow');
   ok(!/All four areas/i.test(cover),'with no invented list of required parts');
   const hl=await p.$$eval('.es-dec',es=>es.map(e=>e.textContent.trim()));
   ok(hl.length===3,'three parts of the stem are pressable: '+JSON.stringify(hl));
@@ -84,18 +84,22 @@ async function open(p, re){
     await p.$$eval('[data-esplanpick]',es=>{const t=es[0]; t&&t.click();}); await p.waitForTimeout(300);
   }
   ok(!!(await p.$('.es-thesis')),'the thesis appears once every paragraph has a relationship');
-  const core=await p.$eval('.es-core, .es-core.done',e=>e.innerText.replace(/\s+/g,' ')).catch(()=>'');
-  ok(/objective it needs to move/i.test(core),'the core answer is this question’s, not the other one’s');
+  const pat=await p.$eval('.es-corepat',e=>e.textContent.trim()).catch(()=>'');
+  ok(/financial strategy → what it changes/.test(pat),'the pattern is this question’s, not the other one’s: '+JSON.stringify(pat));
+  await p.click('#escoreexplain'); await p.waitForTimeout(250);
+  const core=await p.$eval('.es-corebody',e=>e.innerText.replace(/\s+/g,' ')).catch(()=>'');
+  ok(/name a strategy, explain what it changes/i.test(core),'and the teaching runs the argument forwards');
+  await p.click('#escoreexplain'); await p.waitForTimeout(200);
   await p.fill('#esthesis','Financial strategies change how well a business meets its objectives.');
   await p.click('#esthesissave'); await p.waitForTimeout(300);
   await p.click('#escompare'); await p.waitForTimeout(300);
   const cmp=await p.$eval('.es-compare',e=>e.innerText.replace(/\s+/g,' '));
   ok(/one acceptable thesis/i.test(cmp)&&/trade-off/i.test(cmp),'Compare offers this question’s acceptable thesis');
-  ok(/makes the objective the thing being moved/i.test(cmp),'with its own checklist');
+  ok(/runs the argument forwards/i.test(cmp),'with its own checklist, in this question\u2019s terms');
 
   console.log('7. and the other question still behaves as it did');
   await open(p,/target markets affect/);
-  ok(!!(await p.$('#esplanstruct'))||((await p.$$eval('.es-plancard',es=>es.length))===4),'mkt-01 still maps its fixed areas onto paragraphs');
+  ok(!!(await p.$('#esplanstruct'))||((await p.$$eval('.es-plancard,.es-planrow',es=>es.length))===4),'mkt-01 still maps its fixed areas onto paragraphs');
   const mktAsk=await p.$('.es-planask');
   ok(!mktAsk,'and does not ask which area, because the question already said');
   ok((await p.$$eval('[data-esplanpick]',es=>es.length))===3,'its options are offered straight away: '+(await p.$$eval('[data-esplanpick]',es=>es.length)));

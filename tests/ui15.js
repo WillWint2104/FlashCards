@@ -28,13 +28,13 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   console.log('1. the question is planned before anything is written');
   ok(!!(await p.$('.es-planwrap')),'the plan screen opens first, not the composer');
   ok(!(await p.$('#esline')),'there is no writing surface yet');
-  const cards=await p.$$eval('.es-plancard',es=>es.length);
+  const cards=await p.$$eval('.es-plancard,.es-planrow',es=>es.length);
   const note=await p.$eval('#esplanstruct',e=>e.textContent.trim()).catch(()=>'');
   console.log('    body cards:',cards,'| structure offer:',JSON.stringify(note));
-  ok(cards===3,'the chosen structure is respected, three body cards: '+cards);
+  ok(cards===3,'the chosen structure is respected, three bodies to plan: '+cards);
   ok(/4 body/.test(note),'a 4-part question offers a 4-body structure: '+note);
   await p.click('#esplanstruct'); await p.waitForTimeout(400);
-  ok((await p.$$eval('.es-plancard',es=>es.length))===4,'now four body paragraphs to plan');
+  ok((await p.$$eval('.es-plancard,.es-planrow',es=>es.length))===4,'now four body paragraphs to plan');
   ok(!(await p.$('#esplanstruct')),'and the offer is gone once taken');
 
   console.log('2. each body is planned in its own part of the question');
@@ -45,11 +45,11 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   for (let i=0;i<4;i++){
     // scope the click INSIDE card i: the list of collapsed cards shrinks as
     // each one is opened, so an index into the buttons is not an index into cards
-    await p.$$eval('.es-plancard',(es,k)=>{
+    await p.$$eval('.es-plancard,.es-planrow',(es,k)=>{
       const t=es[k] && es[k].querySelector('[data-esplanedit]'); t && t.click();
     },i);
     await p.waitForTimeout(250);
-    const card=await p.$$eval('.es-plancard',(es,k)=>{
+    const card=await p.$$eval('.es-plancard,.es-planrow',(es,k)=>{
       const e=es[k]; const a=e.querySelector('.es-areachip.on');
       return {area:a?a.textContent.trim():'', n:e.querySelectorAll('[data-esplanpick]').length};
     },i);
