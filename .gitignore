@@ -6,3 +6,6 @@ node_modules/
 tests/out/
 tests/worker.mjs
 tests/blocks.mjs
+
+# inspiration mockups are committed; generated app screenshots are not
+docs/inspiration/**/*.tmp

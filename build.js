@@ -42,5 +42,30 @@ out = inlineScript(out, '<script src="essay-content.js"></script>', essay);
 out = inlineScript(out, '<script src="business-content.js"></script>', buscontent);
 out = inlineScript(out, '<script src="app.js"></script>', app);
 
+// ---------------------------------------------------------------------------
+// PREVIEW EVIDENCE MUST NEVER REACH A BUILD
+//
+// tests/mkwalk.py can stamp unsourced evidence with a fake provenance string so
+// the Evidence layer can be walked before real sources exist. That is a QA
+// convenience, and a QA convenience left unguarded eventually becomes a
+// production mistake. The build refuses to produce output that contains one.
+// ---------------------------------------------------------------------------
+const PREVIEW_MARKERS = [
+  { pattern: /PREVIEW ONLY/i, what: 'the "PREVIEW ONLY" provenance marker' },
+  { pattern: /previewOnly\s*:\s*true/i, what: "a record flagged previewOnly: true" },
+  { pattern: /evidencePreviewMode\s*:\s*(?!["']?development-only)/i, what: "evidencePreviewMode set to anything but development-only" },
+];
+const offences = [];
+[["index.html", shell], ["content.js", content], ["essay-content.js", essay],
+ ["business-content.js", buscontent], ["app.js", app]].forEach(([name, src]) => {
+  PREVIEW_MARKERS.forEach(m => { if (m.pattern.test(src)) offences.push(`${name} contains ${m.what}`); });
+});
+if (offences.length) {
+  console.error("BUILD REFUSED: preview evidence must never ship.");
+  offences.forEach(o => console.error("  - " + o));
+  console.error("Preview provenance is development-only. See EVIDENCE-SOURCES.md.");
+  process.exit(1);
+}
+
 fs.writeFileSync(path.join(root, "marginal-preview.html"), out);
 console.log(`built marginal-preview.html (${out.length} bytes)`);

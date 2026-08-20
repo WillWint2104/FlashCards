@@ -60,6 +60,12 @@ print("walkthrough:", dest, len(src), "bytes")
 # it under each piece of evidence, so nothing here can be mistaken for checked
 # work. Never deploy this file; it exists to let the layer be judged.
 stamp = """
+<style>
+  .evpreview-bar{position:fixed;top:0;left:0;right:0;z-index:9999;background:#8A6300;color:#fff;
+    font:700 13px/1.4 system-ui,sans-serif;letter-spacing:.04em;text-align:center;padding:7px 12px}
+  body{padding-top:30px}
+</style>
+<div class="evpreview-bar">EVIDENCE PREVIEW BUILD &mdash; SOURCES ARE NOT VERIFIED &mdash; NEVER DEPLOY</div>
 <script>
 (function(){
   var S="PREVIEW ONLY, not a verified source";
