@@ -3226,11 +3226,11 @@
   function esStructureLabel(key) { return esStructureDef(key).label; }
 
   const ES = { subject: null, code: "", demo: false, screen: "setup", draft: null, list: [], form: null, pending: false,
-    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {} },  // transient guided-view state, reset on paragraph change
+    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, coreOpen: false, coreExplain: false, coreIdea: false, why: null, compare: false },  // transient guided-view state, reset on paragraph change
     hint: { open: false, tab: "know" },          // study hints: persists across paragraphs on purpose
     quiz: { revealed: false, peeked: false, attempt: "", result: null } };
   const ES_KEY = "marginal.essay.v1";
-  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {} }; }
+  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, coreOpen: false, coreExplain: false, coreIdea: false, why: null, compare: false }; }
   // peeked persists for the whole attempt: revealing once disqualifies mastery even
   // if the answer is hidden again before checking. Cleared only on a new attempt.
   function esResetQuiz() { ES.quiz = { revealed: false, peeked: false, attempt: "", result: null }; }
@@ -4749,6 +4749,98 @@
     esSaveDraft();
   }
 
+  // ---- the core answer, and the thesis it eventually becomes ------------------
+  function esCoreAnswer() { const q = esQuestionDef(); return (q && q.coreAnswer) || null; }
+  function esCoreRelationship() {
+    const q = esQuestionDef();
+    return (q && q.decode && q.decode.coreRelationship) || "";
+  }
+  // Rich while it is being read, one quiet line once it has been. Leaving the
+  // teaching card open through the whole of planning would put back the density
+  // the writing screen just lost.
+  function esCoreHTML(d) {
+    const core = esCoreAnswer(); const rel = esCoreRelationship();
+    if (!core && !rel) return "";
+    const done = !!d.coreUnderstood && !ES.ui.coreOpen;
+    if (done) return `<div class="es-core done">
+      <span class="es-corelbl">Core answer</span>
+      <span class="es-coreline">${esc(rel)}</span>
+      <button type="button" class="es-linkbtn" id="escorereview">Review</button>
+    </div>`;
+    return `<div class="es-core">
+      <div class="es-coreh">The basic relationship</div>
+      <p class="es-corerel">${esc(rel)}</p>
+      <div class="es-corebtns">
+        <button type="button" class="es-btn sm" id="escoregot">I understand</button>
+        <button type="button" class="es-linkbtn" id="escoreexplain">${ES.ui.coreExplain ? "Hide" : "Explain this"}</button>
+        ${core && core.thesisIdea ? `<button type="button" class="es-linkbtn" id="escoreidea">${ES.ui.coreIdea ? "Hide" : "Show me an acceptable thesis idea"}</button>` : ""}
+      </div>
+      ${(ES.ui.coreExplain && core && (core.explain || []).length) ? `<div class="es-corebody">${core.explain.map(x => `<p class="es-corep">${esc(x)}</p>`).join("")}</div>` : ""}
+      ${(ES.ui.coreIdea && core && core.thesisIdea) ? `<div class="es-corebody"><div class="es-drawer-sub">a thesis idea, not a sentence to copy</div><p class="es-corep">${esc(core.thesisIdea)}</p></div>` : ""}
+    </div>`;
+  }
+  // The thesis is written once the plan exists, so it can signpost an essay the
+  // student has actually decided on.
+  function esThesisHTML(d) {
+    if (!esPlanned(d)) return "";
+    const rows = esPlanRows(d);
+    const core = esCoreAnswer();
+    const yours = (d.thesis || "").trim();
+    return `<div class="es-thesis">
+      <div class="es-planhh sm">Now turn your plan into an overall answer</div>
+      <ul class="es-thesisplan">${rows.map(r => `<li><span class="es-tparea">${esc(r.area || r.role)}</span>${esc(r.argument)}</li>`).join("")}</ul>
+      <label class="es-pinlabel" for="esthesis">write your thesis</label>
+      <textarea id="esthesis" class="es-input" rows="3" placeholder="One or two sentences giving the overall answer to the question.">${esc(d.thesis || "")}</textarea>
+      <p class="es-thesisguide">Give the overall answer to the question: say that characteristics of the target market cause these strategies to adapt, and signpost the four you have chosen.</p>
+      <div class="es-corebtns">
+        <button type="button" class="es-btn sm" id="esthesissave">Save thesis</button>
+        ${(core && core.acceptableThesis) ? `<button type="button" class="es-linkbtn" id="escompare">${ES.ui.compare ? "Hide" : (yours ? "Compare with an acceptable thesis" : "I need to see an example first")}</button>` : ""}
+      </div>
+      ${(ES.ui.compare && core && core.acceptableThesis) ? `<div class="es-compare">
+        ${yours ? `<div class="es-cmpblk"><div class="es-drawer-sub">yours</div><p class="es-corep">${esc(yours)}</p></div>` : ""}
+        <div class="es-cmpblk"><div class="es-drawer-sub">one acceptable thesis</div><p class="es-corep model">${esc(core.acceptableThesis)}</p></div>
+        ${(core.checklist || []).length ? `<div class="es-cmpblk"><div class="es-drawer-sub">check whether yours</div>
+          <ul class="es-cmplist">${core.checklist.map(c => `<li>${esc(c)}</li>`).join("")}</ul></div>` : ""}
+        <p class="es-drawer-note">Nothing here is written into your answer. It is here to calibrate against, not to copy.</p>
+      </div>` : ""}
+    </div>`;
+  }
+  function esBindCore() {
+    const host = document.getElementById("eshost"); if (!host) return;
+    const d = ES.draft;
+    const got = host.querySelector("#escoregot");
+    if (got) got.onclick = () => { d.coreUnderstood = true; ES.ui.coreOpen = false; esSaveDraft(); esRender(); };
+    const rev = host.querySelector("#escorereview"); if (rev) rev.onclick = () => { ES.ui.coreOpen = true; esRender(); };
+    const ex = host.querySelector("#escoreexplain"); if (ex) ex.onclick = () => { ES.ui.coreExplain = !ES.ui.coreExplain; esRender(); };
+    const id = host.querySelector("#escoreidea"); if (id) id.onclick = () => { ES.ui.coreIdea = !ES.ui.coreIdea; esRender(); };
+    const th = host.querySelector("#esthesis");
+    const save = host.querySelector("#esthesissave");
+    if (th && save) save.onclick = () => {
+      const was = d.thesis || "";
+      d.thesis = th.value.trim();
+      const i = d.paras.findIndex(pp => esIsIntro(pp));
+      let seeded = false;
+      if (i >= 0) {
+        const ip = d.paras[i];
+        ip.point = d.thesis;                       // the plan the marker reads
+        const blocks = esBlocks(ip);
+        if (d.thesis && !blocks.length) {
+          const nb = esNewBlock(d, d.thesis, (slotsForRole(ip.role)[0] || {}).key || null, "written");
+          nb.fromThesis = true;
+          ip.blocks = [nb]; esCommitBlocks(ip); seeded = true;
+        } else if (d.thesis && blocks[0] && blocks[0].fromThesis && blocks[0].text === was) {
+          blocks[0].text = d.thesis; esCommitBlocks(ip); seeded = true;   // still theirs, still in step
+        }
+      }
+      esSaveDraft(); esRender();
+      toast(!d.thesis ? "Thesis cleared."
+        : seeded ? "Saved. Your introduction now opens with it."
+        : "Saved as your introduction's overall line. The introduction you have already written is untouched.");
+    };
+    const cmp = host.querySelector("#escompare");
+    if (cmp) cmp.onclick = () => { if (th) { d.thesis = th.value.trim(); esSaveDraft(); } ES.ui.compare = !ES.ui.compare; esRender(); };
+  }
+
   function esRenderPlan(host, sc) {
     const d = ES.draft;
     const areas = esQuestionAreas();
@@ -4760,7 +4852,10 @@
       const p = d.paras[i];
       const area = p.area || areas[k] || "";
       const chosen = !!p.argumentId;
-      const open = !chosen || ES.ui.planOpen[i];
+      // Rich while deciding, compact once decided, and only one open at a time so
+      // the page is a sequence of decisions rather than four panels stacked up.
+      const firstUnchosen = bodies.find(j => !d.paras[j].argumentId);
+      const open = ES.ui.planOpen[i] === true || (!chosen && i === firstUnchosen && ES.ui.planOpen[i] !== false);
       const opts = esPathwaysInArea(area);
       const ev = chosen ? esEvidenceFor(p) : { items: [] };
       const picked = p.evidenceIds || [];
@@ -4769,15 +4864,28 @@
       const body = open ? `
         ${areaRow}
         <div class="es-planopts">
-          ${opts.map(o => `<button type="button" class="es-pick ${p.argumentId === o.id ? "on" : ""}" data-esplanpick="${i}|${esc(o.id)}"><span class="es-pickrel">${esc(o.relationship)}</span></button>`).join("")}
+          ${opts.map(o => {
+            const why = ES.ui.why === o.id;
+            const teaches = o.meaning || o.whatToProve || o.commonMistake;
+            return `<div class="es-optwrap${why ? " open" : ""}">
+              <button type="button" class="es-pick ${p.argumentId === o.id ? "on" : ""}" data-esplanpick="${i}|${esc(o.id)}"><span class="es-pickrel">${esc(o.relationship)}</span></button>
+              ${teaches ? `<button type="button" class="es-why ${why ? "on" : ""}" data-eswhy="${esc(o.id)}" aria-expanded="${why}">${why ? "Hide" : "Why?"}</button>` : ""}
+              ${why ? `<div class="es-whybox">
+                ${o.meaning ? `<div class="es-drawer-sub">what this means</div><p class="es-corep">${esc(o.meaning)}</p>` : ""}
+                ${o.whatToProve ? `<div class="es-drawer-sub">what you would need to show</div><p class="es-corep chain">${esc(o.whatToProve)}</p>` : ""}
+                ${o.commonMistake ? `<div class="es-drawer-sub">common mistake</div><p class="es-corep miss">${esc(o.commonMistake)}</p>` : ""}
+                <button type="button" class="es-btn sm" data-esplanpick="${i}|${esc(o.id)}">Choose this argument</button>
+              </div>` : ""}
+            </div>`;
+          }).join("")}
           <button type="button" class="es-pick own" data-esplanown="${i}">Write my own argument</button>
           <div class="es-ownwrap" data-ownwrap="${i}" hidden>
             <input class="es-input" data-esplanowninput="${i}" value="${esc(p.ownArgument || "")}" placeholder="In one line, the relationship this paragraph argues">
             <button type="button" class="es-btn primary sm" data-esplanownok="${i}">Use this</button>
           </div>
         </div>` : `
-        <div class="es-planval">${esc(esArgLine(p))}${esPathway(p) ? "" : ` <span class="es-restown">your own</span>`}</div>
-        <button type="button" class="es-linkbtn" data-esplanedit="${i}">Change</button>`;
+        <div class="es-planval">${esc(esArgLine(p)) || `<span class="es-restnone">not chosen yet</span>`}</div>
+        <button type="button" class="es-linkbtn" data-esplanedit="${i}">${chosen ? "Change" : "Choose"}</button>`;
       const evRow = (chosen && !open) ? `
         <div class="es-planev">
           <span class="es-planevlbl">evidence</span>
@@ -4804,7 +4912,9 @@
           ${suggest ? `<div class="es-plannote">This question has ${areas.length} parts and your structure has ${bodies.length} body paragraph${bodies.length === 1 ? "" : "s"}.
             <button type="button" class="es-linkbtn" id="esplanstruct">Use ${areas.length} body paragraphs</button></div>` : ""}
         </div>
+        ${esCoreHTML(d)}
         <div class="es-plancards">${cards}</div>
+        ${esThesisHTML(d)}
         <div class="es-planfoot">
           <button class="es-btn ${done ? "primary" : "ghost"}" id="esplango">${done ? "Write the introduction" : "Start writing anyway"}</button>
           <span class="es-planstate">${done ? "Your plan is set. You can change any of it while you write." : "You can leave any of these open and choose when you reach the paragraph."}</span>
@@ -4813,6 +4923,7 @@
     </div></div></div>`;
     esBindWritingHead();
     esBindPlan();
+    esBindCore();
   }
   function esBindPlan() {
     const host = document.getElementById("eshost"); if (!host) return;
@@ -4832,7 +4943,7 @@
       const p = d.paras[i], path = esPathwaysInArea("").find(x => x.id === id);
       const flagged = esSetParagraphContext(p, id, p.evidenceIds || []);
       p.area = (path && path.area) || p.area || ""; p.ownArgument = "";
-      ES.ui.planOpen[i] = false; esSaveDraft(); esRender();
+      ES.ui.planOpen[i] = false; ES.ui.why = null; esSaveDraft(); esRender();
       if (flagged) toast(flagged + " sentence" + (flagged === 1 ? "" : "s") + " to check against the new argument.");
     });
     host.querySelectorAll("[data-esplanown]").forEach(b => b.onclick = () => {
@@ -4859,6 +4970,9 @@
       const n = esSetParagraphContext(p, p.argumentId, list);
       esSaveDraft(); esRender();
       if (n) toast(n + " sentence" + (n === 1 ? "" : "s") + " used that evidence. Check " + (n === 1 ? "it" : "them") + ".");
+    });
+    host.querySelectorAll("[data-eswhy]").forEach(b => b.onclick = () => {
+      ES.ui.why = ES.ui.why === b.dataset.eswhy ? null : b.dataset.eswhy; esRender();
     });
     const st = host.querySelector("#esplanstruct");
     if (st) st.onclick = () => { const def = esStructureForBodies(esQuestionAreas().length); if (def) { esApplyStructure(def.key); esRender(); } };

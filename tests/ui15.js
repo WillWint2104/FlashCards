@@ -38,11 +38,26 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   ok(!(await p.$('#esplanstruct')),'and the offer is gone once taken');
 
   console.log('2. each body is planned in its own part of the question');
-  const areas=await p.$$eval('.es-plancard',es=>es.map(e=>{const a=e.querySelector('.es-areachip.on');return a?a.textContent.trim():'';}));
-  console.log('    areas:',JSON.stringify(areas));
+  // Only the decision being made is expanded, so each card is opened in turn.
+  ok((await p.$$eval('.es-plancard [data-esplanpick]',es=>es.length))===3,
+     'only the card being decided is open, and it offers its own three options');
+  const areas=[], opts=[];
+  for (let i=0;i<4;i++){
+    // scope the click INSIDE card i: the list of collapsed cards shrinks as
+    // each one is opened, so an index into the buttons is not an index into cards
+    await p.$$eval('.es-plancard',(es,k)=>{
+      const t=es[k] && es[k].querySelector('[data-esplanedit]'); t && t.click();
+    },i);
+    await p.waitForTimeout(250);
+    const card=await p.$$eval('.es-plancard',(es,k)=>{
+      const e=es[k]; const a=e.querySelector('.es-areachip.on');
+      return {area:a?a.textContent.trim():'', n:e.querySelectorAll('[data-esplanpick]').length};
+    },i);
+    areas.push(card.area); opts.push(card.n);
+  }
+  console.log('    areas:',JSON.stringify(areas),'| options each:',JSON.stringify(opts));
   ok(areas.join('|')==='e-marketing|people|processes|physical evidence','the four parts map to the four bodies in order');
-  const opts=await p.$$eval('.es-plancard',es=>es.map(e=>e.querySelectorAll('[data-esplanpick]').length));
-  ok(opts.every(n=>n===3),'each card offers only its own part, three options: '+JSON.stringify(opts));
+  ok(opts.every(n=>n===3),'and each offers only its own part, three options: '+JSON.stringify(opts));
 
   for (const re of ['Digitally engaged','same experience everywhere','expect speed','different physical settings']) {
     await p.$$eval('[data-esplanpick]',(es,r)=>{const t=es.find(x=>new RegExp(r,'i').test(x.textContent));t&&t.click();},re);

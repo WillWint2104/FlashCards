@@ -652,6 +652,39 @@
   .es-rest .es-decbox{margin:0 0 4px;padding:13px 34px 13px 14px}
   .es-rest .es-decp{font-size:13px}
   .es-rest .es-dech{font-size:13.5px}
+  /* the planning surface: rich while deciding, compact once decided */
+  .es-core{border:1.5px solid var(--green);border-radius:16px;background:var(--card);padding:15px 18px}
+  .es-core.done{display:flex;gap:11px;align-items:baseline;flex-wrap:wrap;border-color:var(--line);
+    background:none;padding:9px 14px}
+  .es-corelbl{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+  .es-coreline{font-size:13px;font-weight:700;color:var(--ink-2);flex:1;min-width:0}
+  .es-coreh{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--ink)}
+  .es-corerel{font-size:15px;line-height:1.6;font-weight:700;color:var(--ink);margin:7px 0 13px}
+  .es-corebtns{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .es-corebody{margin-top:13px;padding-top:12px;border-top:1px solid var(--line)}
+  .es-corep{font-size:13.5px;line-height:1.65;font-weight:600;color:var(--ink-2);margin-bottom:9px}
+  .es-corep.chain{color:var(--ink);font-weight:700}
+  .es-corep.miss{color:var(--gold-dk)}
+  .es-corep.model{color:var(--ink);font-weight:700}
+  /* why an argument is an argument */
+  .es-optwrap{margin-bottom:7px}
+  .es-optwrap .es-pick{margin-bottom:0}
+  .es-why{font:inherit;font-size:11.5px;font-weight:700;color:var(--ink-3);background:none;border:none;
+    cursor:pointer;padding:4px 6px;margin-left:2px}
+  .es-why:hover,.es-why.on{color:var(--green-dk)}
+  .es-whybox{border-left:2px solid var(--green-soft);margin:6px 0 4px 13px;padding:4px 0 4px 13px}
+  /* the thesis, written once the plan exists */
+  .es-thesis{border:1.5px solid var(--line);border-radius:16px;background:var(--card);padding:15px 18px;margin-top:4px}
+  .es-planhh.sm{font-size:16px}
+  .es-thesisplan{list-style:none;display:flex;flex-direction:column;gap:5px;margin:11px 0 14px}
+  .es-thesisplan li{font-size:13px;line-height:1.5;font-weight:700;color:var(--ink);display:flex;gap:9px}
+  .es-tparea{font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--green-dk);
+    min-width:120px;flex:none;padding-top:2px}
+  .es-thesisguide{font-size:12.5px;line-height:1.55;font-weight:600;color:var(--ink-2);margin:7px 0 12px}
+  .es-compare{margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}
+  .es-cmpblk{margin-bottom:12px}
+  .es-cmplist{margin:5px 0 0 17px;display:flex;flex-direction:column;gap:4px}
+  .es-cmplist li{font-size:13px;line-height:1.55;font-weight:600;color:var(--ink-2)}
   /* the guide: a short title, the step position, one instruction */
   .es-guidetop{display:flex;align-items:center;gap:10px}
   .es-steps{display:inline-flex;align-items:center;gap:2px;margin-left:auto}
@@ -3597,6 +3630,9 @@ window.ESSAY = {
           pathways: [
             { id: "mkt01-em-digital", area: "e-marketing",
               relationship: "Digitally engaged customers lead to greater use of digital marketing",
+              meaning: "This target market spends much of its day on phones, apps and social platforms. A business that wants their attention has to buy it where that attention already is, so promotion moves out of print and television and into digital channels.",
+              whatToProve: "customers are already on digital channels \u2192 the business moves its promotion there \u2192 why that reaches them better than the alternative",
+              commonMistake: "Listing the business's digital channels without saying what it is about these customers that made digital the right choice.",
               concept: { topic: "marketing", section: "marketing strategies", point: "e-marketing" },
               evidence: ["App, loyalty rewards and mobile ordering", "Promotion mix from advertising to sponsorship"],
               guides: {
@@ -3630,6 +3666,9 @@ window.ESSAY = {
                     pattern: "the detail, then what the detail proves" } } }, },
             { id: "mkt01-em-value", area: "e-marketing",
               relationship: "Value-conscious customers lead to digital promotions and loyalty offers",
+              meaning: "This target market decides on price and will move for a better deal. Digital channels let a business put an offer in front of them cheaply, repeatedly, and only when it wants to, which a printed price list cannot do.",
+              whatToProve: "customers respond to price \u2192 the business needs a cheap and repeatable way to reach them with offers \u2192 digital promotions and loyalty schemes become the tool",
+              commonMistake: "Arguing that discounts attract customers, which is a pricing point, rather than arguing why the offer is delivered digitally.",
               concept: { topic: "marketing", section: "marketing strategies", point: "promotion" },
               evidence: ["App, loyalty rewards and mobile ordering", "Price points from value range to McCafe"],
               guides: {
@@ -3638,6 +3677,9 @@ window.ESSAY = {
                 effect: "Say what this achieves: which marketing objective it serves and at what cost." } },
             { id: "mkt01-em-convenience", area: "e-marketing",
               relationship: "Convenience-oriented customers lead to marketing through ordering apps and digital channels",
+              meaning: "For this target market the marketing and the buying are nearly the same act: an offer is only useful if it can be taken up immediately. So the business markets inside the channel the customer already orders through, rather than somewhere they would have to leave.",
+              whatToProve: "customers want to act with the least effort \u2192 marketing has to sit where the order is placed \u2192 the ordering channel becomes a promotion channel",
+              commonMistake: "Describing the app as convenient to order with, which is a processes argument, instead of arguing that it is where the marketing reaches them.",
               concept: { topic: "marketing", section: "marketing strategies", point: "e-marketing" },
               evidence: ["App, loyalty rewards and mobile ordering"],
               guides: {
@@ -3645,6 +3687,9 @@ window.ESSAY = {
 
             { id: "mkt01-pe-service", area: "people",
               relationship: "Customers who expect personal service lead to investment in staff training and service standards",
+              meaning: "This target market judges the business on the person in front of them. A service is produced at the moment it is delivered, so the staff member is part of what is being bought, and the business has to spend on who it hires and how it trains them.",
+              whatToProve: "customers expect to be dealt with personally \u2192 staff are part of the product \u2192 the business invests in training and service standards",
+              commonMistake: "Saying good staff are important, which is true of every business, instead of saying what THIS target market expects that forced the investment.",
               concept: { topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
               evidence: ["Intensive distribution and standardised service"],
               guides: {
@@ -3652,12 +3697,18 @@ window.ESSAY = {
                 example: "Apply the evidence you selected. Say what it shows about the people element specifically." } },
             { id: "mkt01-pe-speed", area: "people",
               relationship: "Customers who expect speed lead to staffing and rostering built around peak demand",
+              meaning: "This target market counts waiting as a cost. The same number of staff cannot serve a peak hour and a quiet one equally well, so the business rosters to the shape of demand rather than to a flat day.",
+              whatToProve: "customers will not wait \u2192 service capacity has to match demand hour by hour \u2192 staffing and rostering change",
+              commonMistake: "Arguing about the ordering system, which is processes, rather than about the people who have to be there to deliver it.",
               concept: { topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
               evidence: ["Intensive distribution and standardised service"],
               guides: {
                 explain: "Explain the link between what the target market will wait for and how the business staffs its service." } },
             { id: "mkt01-pe-consistency", area: "people",
               relationship: "Customers who expect the same experience everywhere lead to standardised service training",
+              meaning: "This target market chooses the business because they already know what they will get. One store that behaves differently damages that promise everywhere, so training is written once and applied across the whole network.",
+              whatToProve: "customers are buying predictability \u2192 variation between staff breaks it \u2192 training and service standards are standardised",
+              commonMistake: "Describing standard uniforms, signage or layout, which is physical evidence, rather than what the staff are trained to do.",
               concept: { topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
               evidence: ["Standardisation with local customisation", "Intensive distribution and standardised service"],
               guides: {
@@ -3674,6 +3725,8 @@ window.ESSAY = {
             // and the worked example is always somewhere else entirely.
             { id: "mkt01-pr-convenience", area: "processes",
               relationship: "Convenience-oriented customers lead to faster and more flexible ordering processes",
+              whatToProve: "customer expectation \u2192 the process change it forces \u2192 why the new process suits this market better",
+              commonMistake: "Describing an app or a kiosk without explaining what it was about these customers that caused the process to change.",
               meaning: "This target market will not spend time or effort on the act of ordering. The business answers by redesigning how an order is placed, so it takes fewer steps and can be done at more times and in more ways. The expectation is the cause; the process change is the effect.",
               concept: { key: "processes", topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
               evidence: [
@@ -3743,6 +3796,8 @@ window.ESSAY = {
 
             { id: "mkt01-pr-speed", area: "processes",
               relationship: "Customers who expect speed lead to streamlined service and collection processes",
+              whatToProve: "customers count waiting as a cost \u2192 steps are separated or run alongside each other \u2192 the wait falls, especially at peak",
+              commonMistake: "Claiming the business is faster without naming which step was taken out of the queue.",
               meaning: "This argument is about elapsed time between paying and receiving. The target market is buying speed as much as the product, so the business reorganises how orders are prepared, handed over and collected in order to cut the wait, especially at peak.",
               concept: { key: "processes", topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
               evidence: [
@@ -3812,6 +3867,8 @@ window.ESSAY = {
 
             { id: "mkt01-pr-customisation", area: "processes",
               relationship: "Customers who want to customise orders lead to ordering systems built to take variations",
+              whatToProve: "customers expect to change the order \u2192 no two orders are identical \u2192 the ordering system has to capture the variation accurately",
+              commonMistake: "Arguing about choice on the menu, which is a product point, instead of about how the process carries a non-standard order.",
               meaning: "This argument is about variety rather than time. The target market expects to change what it orders, so the ordering process has to capture that variation accurately and pass it on without stopping the queue behind it.",
               concept: { key: "processes", topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
               evidence: [
@@ -3884,6 +3941,9 @@ window.ESSAY = {
 
             { id: "mkt01-ph-servicescape", area: "physical evidence",
               relationship: "Customers who judge a business by its surroundings lead to a designed servicescape",
+              meaning: "A service cannot be inspected before it is bought, so this target market reads the room instead. Cleanliness, layout, lighting and fittings stand in for the quality they cannot test, and the business designs them deliberately because they are doing the persuading.",
+              whatToProve: "the service is intangible \u2192 customers judge it by what they can see \u2192 the setting is designed rather than left to chance",
+              commonMistake: "Listing what the premises look like without saying what the customer concludes from it.",
               concept: { topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
               evidence: ["Standardisation with local customisation", "Segments served by Happy Meal and McCafe"],
               guides: {
@@ -3891,12 +3951,18 @@ window.ESSAY = {
                 example: "Apply the evidence you selected, stating the fact before what it shows about physical evidence." } },
             { id: "mkt01-ph-segments", area: "physical evidence",
               relationship: "Serving different segments leads to different physical settings for each",
+              meaning: "One business can serve more than one target market at a time, and they do not want the same room. Rather than settle on a single setting that suits neither, the business builds distinct areas so each segment gets surroundings that fit it.",
+              whatToProve: "more than one segment is served \u2192 one setting cannot suit both \u2192 the space is divided so each gets its own",
+              commonMistake: "Naming the segments and the products built for them, which is segmentation, without ever getting to the physical space.",
               concept: { topic: "marketing", section: "marketing strategies", point: "market segmentation" },
               evidence: ["Segments served by Happy Meal and McCafe"],
               guides: {
                 explain: "Explain why serving more than one segment forces the physical setting to differ between them." } },
             { id: "mkt01-ph-selfservice", area: "physical evidence",
               relationship: "Customers who prefer to serve themselves lead to physical evidence built around self-service",
+              meaning: "This target market would rather deal with a machine than a person, so the things they touch have to carry the instructions a staff member would otherwise give. Screens, signage and layout have to be legible enough to be used without help.",
+              whatToProve: "customers prefer to serve themselves \u2192 the surroundings have to do the explaining \u2192 screens, signage and layout are built to be self-explanatory",
+              commonMistake: "Arguing that self-service is faster, which is a processes point, rather than about what the customer sees and touches.",
               concept: { topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
               evidence: ["App, loyalty rewards and mobile ordering", "Intensive distribution and standardised service"],
               guides: {
@@ -3942,6 +4008,24 @@ window.ESSAY = {
               consistency: "Use one business consistently across the whole response."
             }
           },
+          // ---- the core answer ----------------------------------------------
+          // What the whole question turns on, taught before the plan is built and
+          // collapsed the moment the student says they have it. Authored, never
+          // generated, and never a gate: planning works whether it is read or not.
+          coreAnswer: {
+            explain: [
+              "A target market is not everyone who might buy. It is the group a business has chosen, described by what those people are actually like: what they can spend, how they buy, how much time they will give it, what they will not put up with. Choosing that group is a decision, and every marketing decision after it is downstream of that one.",
+              "So the four elements this question names are not free choices. Each is built to suit somebody in particular. Change who the customer is and the same business would promote differently, staff differently, run its service differently and look different inside. That is the relationship you have to explain, four times over."
+            ],
+            thesisIdea: "Say that the customer group comes first and that the strategies follow from it, then name the four elements you are going to show it in.",
+            acceptableThesis: "Target markets affect e-marketing, people, processes and physical evidence because a business adapts each of these strategies to suit the characteristics, behaviours and expectations of the customers it has chosen to serve.",
+            checklist: [
+              "makes the target market the cause, not one factor among several",
+              "says the marketing strategies change in response to it",
+              "carries the relationship across all four named elements",
+              "answers explain, rather than listing what the four elements are"
+            ]
+          },
           // ---- area guidance -----------------------------------------------
           // The fallback chain for a component guide is:
           //     pathway.guides[slot]  ->  areas[area].guides[slot]  ->  slot.job
@@ -3962,9 +4046,9 @@ window.ESSAY = {
             "people": {
               label: "people",
               guides: {
-                topic:   "State what this target market expects of the staff who serve them, and say that it acts on the people element.",
+                topic:   "State which characteristic of the target market is acting, and say that it acts on the staff who deliver the service.",
                 define:  "Show what people covers: the staff the customer deals with, and the skills, training, attitude and service standards they bring.",
-                explain: "Explain why that expectation forces the business to change who it hires, how it trains them, or what standard it holds them to.",
+                explain: "Explain why that characteristic forces the business to change who it hires, how it trains them, or what standard it holds them to.",
                 example: "Apply your evidence to the staff themselves, not to the product they hand over.",
                 effect:  "Say what the change in people achieves for the customer experience and for the business, and name its cost.",
                 link:    "Return to the question: this is one way the target market shapes the people element." }
@@ -3972,9 +4056,9 @@ window.ESSAY = {
             "processes": {
               label: "processes",
               guides: {
-                topic:   "State what this target market will or will not spend, and say that it acts on the processes the customer moves through.",
+                topic:   "State which characteristic of the target market is acting, and say that it acts on the processes the customer moves through.",
                 define:  "Show what processes covers: the steps that deliver the service, such as ordering, payment, preparation and collection.",
-                explain: "Explain why that expectation forces a step to be removed, moved or rebuilt. The expectation is the cause.",
+                explain: "Explain why that characteristic forces a step to be removed, moved or rebuilt. The customer is the cause, not the technology.",
                 example: "Apply your evidence to a step in the process, and name which step it changed.",
                 effect:  "Say what the changed process achieves for the customer and for the business, and be honest about its cost.",
                 link:    "Return to the question: this is one way the target market shapes processes." }
@@ -3982,9 +4066,9 @@ window.ESSAY = {
             "physical evidence": {
               label: "physical evidence",
               guides: {
-                topic:   "State what this target market reads into its surroundings, and say that it acts on the physical evidence the business provides.",
+                topic:   "State which characteristic of the target market is acting, and say that it acts on the physical evidence the business provides.",
                 define:  "Show what physical evidence covers: the tangible surroundings a customer judges the service by, such as layout, fittings, signage, uniforms and packaging.",
-                explain: "Explain why that expectation causes the business to design the space and its presentation deliberately rather than by accident.",
+                explain: "Explain why that characteristic causes the business to design the space and its presentation deliberately rather than by accident.",
                 example: "Apply your evidence to something the customer can actually see, and say what it signals to them.",
                 effect:  "Say what the designed setting achieves for the customer and for the business, and name what it costs.",
                 link:    "Return to the question: this is one way the target market shapes physical evidence." }
@@ -9293,11 +9377,11 @@ window.BUSCONTENT = {
   function esStructureLabel(key) { return esStructureDef(key).label; }
 
   const ES = { subject: null, code: "", demo: false, screen: "setup", draft: null, list: [], form: null, pending: false,
-    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {} },  // transient guided-view state, reset on paragraph change
+    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, coreOpen: false, coreExplain: false, coreIdea: false, why: null, compare: false },  // transient guided-view state, reset on paragraph change
     hint: { open: false, tab: "know" },          // study hints: persists across paragraphs on purpose
     quiz: { revealed: false, peeked: false, attempt: "", result: null } };
   const ES_KEY = "marginal.essay.v1";
-  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {} }; }
+  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, coreOpen: false, coreExplain: false, coreIdea: false, why: null, compare: false }; }
   // peeked persists for the whole attempt: revealing once disqualifies mastery even
   // if the answer is hidden again before checking. Cleared only on a new attempt.
   function esResetQuiz() { ES.quiz = { revealed: false, peeked: false, attempt: "", result: null }; }
@@ -10816,6 +10900,98 @@ window.BUSCONTENT = {
     esSaveDraft();
   }
 
+  // ---- the core answer, and the thesis it eventually becomes ------------------
+  function esCoreAnswer() { const q = esQuestionDef(); return (q && q.coreAnswer) || null; }
+  function esCoreRelationship() {
+    const q = esQuestionDef();
+    return (q && q.decode && q.decode.coreRelationship) || "";
+  }
+  // Rich while it is being read, one quiet line once it has been. Leaving the
+  // teaching card open through the whole of planning would put back the density
+  // the writing screen just lost.
+  function esCoreHTML(d) {
+    const core = esCoreAnswer(); const rel = esCoreRelationship();
+    if (!core && !rel) return "";
+    const done = !!d.coreUnderstood && !ES.ui.coreOpen;
+    if (done) return `<div class="es-core done">
+      <span class="es-corelbl">Core answer</span>
+      <span class="es-coreline">${esc(rel)}</span>
+      <button type="button" class="es-linkbtn" id="escorereview">Review</button>
+    </div>`;
+    return `<div class="es-core">
+      <div class="es-coreh">The basic relationship</div>
+      <p class="es-corerel">${esc(rel)}</p>
+      <div class="es-corebtns">
+        <button type="button" class="es-btn sm" id="escoregot">I understand</button>
+        <button type="button" class="es-linkbtn" id="escoreexplain">${ES.ui.coreExplain ? "Hide" : "Explain this"}</button>
+        ${core && core.thesisIdea ? `<button type="button" class="es-linkbtn" id="escoreidea">${ES.ui.coreIdea ? "Hide" : "Show me an acceptable thesis idea"}</button>` : ""}
+      </div>
+      ${(ES.ui.coreExplain && core && (core.explain || []).length) ? `<div class="es-corebody">${core.explain.map(x => `<p class="es-corep">${esc(x)}</p>`).join("")}</div>` : ""}
+      ${(ES.ui.coreIdea && core && core.thesisIdea) ? `<div class="es-corebody"><div class="es-drawer-sub">a thesis idea, not a sentence to copy</div><p class="es-corep">${esc(core.thesisIdea)}</p></div>` : ""}
+    </div>`;
+  }
+  // The thesis is written once the plan exists, so it can signpost an essay the
+  // student has actually decided on.
+  function esThesisHTML(d) {
+    if (!esPlanned(d)) return "";
+    const rows = esPlanRows(d);
+    const core = esCoreAnswer();
+    const yours = (d.thesis || "").trim();
+    return `<div class="es-thesis">
+      <div class="es-planhh sm">Now turn your plan into an overall answer</div>
+      <ul class="es-thesisplan">${rows.map(r => `<li><span class="es-tparea">${esc(r.area || r.role)}</span>${esc(r.argument)}</li>`).join("")}</ul>
+      <label class="es-pinlabel" for="esthesis">write your thesis</label>
+      <textarea id="esthesis" class="es-input" rows="3" placeholder="One or two sentences giving the overall answer to the question.">${esc(d.thesis || "")}</textarea>
+      <p class="es-thesisguide">Give the overall answer to the question: say that characteristics of the target market cause these strategies to adapt, and signpost the four you have chosen.</p>
+      <div class="es-corebtns">
+        <button type="button" class="es-btn sm" id="esthesissave">Save thesis</button>
+        ${(core && core.acceptableThesis) ? `<button type="button" class="es-linkbtn" id="escompare">${ES.ui.compare ? "Hide" : (yours ? "Compare with an acceptable thesis" : "I need to see an example first")}</button>` : ""}
+      </div>
+      ${(ES.ui.compare && core && core.acceptableThesis) ? `<div class="es-compare">
+        ${yours ? `<div class="es-cmpblk"><div class="es-drawer-sub">yours</div><p class="es-corep">${esc(yours)}</p></div>` : ""}
+        <div class="es-cmpblk"><div class="es-drawer-sub">one acceptable thesis</div><p class="es-corep model">${esc(core.acceptableThesis)}</p></div>
+        ${(core.checklist || []).length ? `<div class="es-cmpblk"><div class="es-drawer-sub">check whether yours</div>
+          <ul class="es-cmplist">${core.checklist.map(c => `<li>${esc(c)}</li>`).join("")}</ul></div>` : ""}
+        <p class="es-drawer-note">Nothing here is written into your answer. It is here to calibrate against, not to copy.</p>
+      </div>` : ""}
+    </div>`;
+  }
+  function esBindCore() {
+    const host = document.getElementById("eshost"); if (!host) return;
+    const d = ES.draft;
+    const got = host.querySelector("#escoregot");
+    if (got) got.onclick = () => { d.coreUnderstood = true; ES.ui.coreOpen = false; esSaveDraft(); esRender(); };
+    const rev = host.querySelector("#escorereview"); if (rev) rev.onclick = () => { ES.ui.coreOpen = true; esRender(); };
+    const ex = host.querySelector("#escoreexplain"); if (ex) ex.onclick = () => { ES.ui.coreExplain = !ES.ui.coreExplain; esRender(); };
+    const id = host.querySelector("#escoreidea"); if (id) id.onclick = () => { ES.ui.coreIdea = !ES.ui.coreIdea; esRender(); };
+    const th = host.querySelector("#esthesis");
+    const save = host.querySelector("#esthesissave");
+    if (th && save) save.onclick = () => {
+      const was = d.thesis || "";
+      d.thesis = th.value.trim();
+      const i = d.paras.findIndex(pp => esIsIntro(pp));
+      let seeded = false;
+      if (i >= 0) {
+        const ip = d.paras[i];
+        ip.point = d.thesis;                       // the plan the marker reads
+        const blocks = esBlocks(ip);
+        if (d.thesis && !blocks.length) {
+          const nb = esNewBlock(d, d.thesis, (slotsForRole(ip.role)[0] || {}).key || null, "written");
+          nb.fromThesis = true;
+          ip.blocks = [nb]; esCommitBlocks(ip); seeded = true;
+        } else if (d.thesis && blocks[0] && blocks[0].fromThesis && blocks[0].text === was) {
+          blocks[0].text = d.thesis; esCommitBlocks(ip); seeded = true;   // still theirs, still in step
+        }
+      }
+      esSaveDraft(); esRender();
+      toast(!d.thesis ? "Thesis cleared."
+        : seeded ? "Saved. Your introduction now opens with it."
+        : "Saved as your introduction's overall line. The introduction you have already written is untouched.");
+    };
+    const cmp = host.querySelector("#escompare");
+    if (cmp) cmp.onclick = () => { if (th) { d.thesis = th.value.trim(); esSaveDraft(); } ES.ui.compare = !ES.ui.compare; esRender(); };
+  }
+
   function esRenderPlan(host, sc) {
     const d = ES.draft;
     const areas = esQuestionAreas();
@@ -10827,7 +11003,10 @@ window.BUSCONTENT = {
       const p = d.paras[i];
       const area = p.area || areas[k] || "";
       const chosen = !!p.argumentId;
-      const open = !chosen || ES.ui.planOpen[i];
+      // Rich while deciding, compact once decided, and only one open at a time so
+      // the page is a sequence of decisions rather than four panels stacked up.
+      const firstUnchosen = bodies.find(j => !d.paras[j].argumentId);
+      const open = ES.ui.planOpen[i] === true || (!chosen && i === firstUnchosen && ES.ui.planOpen[i] !== false);
       const opts = esPathwaysInArea(area);
       const ev = chosen ? esEvidenceFor(p) : { items: [] };
       const picked = p.evidenceIds || [];
@@ -10836,15 +11015,28 @@ window.BUSCONTENT = {
       const body = open ? `
         ${areaRow}
         <div class="es-planopts">
-          ${opts.map(o => `<button type="button" class="es-pick ${p.argumentId === o.id ? "on" : ""}" data-esplanpick="${i}|${esc(o.id)}"><span class="es-pickrel">${esc(o.relationship)}</span></button>`).join("")}
+          ${opts.map(o => {
+            const why = ES.ui.why === o.id;
+            const teaches = o.meaning || o.whatToProve || o.commonMistake;
+            return `<div class="es-optwrap${why ? " open" : ""}">
+              <button type="button" class="es-pick ${p.argumentId === o.id ? "on" : ""}" data-esplanpick="${i}|${esc(o.id)}"><span class="es-pickrel">${esc(o.relationship)}</span></button>
+              ${teaches ? `<button type="button" class="es-why ${why ? "on" : ""}" data-eswhy="${esc(o.id)}" aria-expanded="${why}">${why ? "Hide" : "Why?"}</button>` : ""}
+              ${why ? `<div class="es-whybox">
+                ${o.meaning ? `<div class="es-drawer-sub">what this means</div><p class="es-corep">${esc(o.meaning)}</p>` : ""}
+                ${o.whatToProve ? `<div class="es-drawer-sub">what you would need to show</div><p class="es-corep chain">${esc(o.whatToProve)}</p>` : ""}
+                ${o.commonMistake ? `<div class="es-drawer-sub">common mistake</div><p class="es-corep miss">${esc(o.commonMistake)}</p>` : ""}
+                <button type="button" class="es-btn sm" data-esplanpick="${i}|${esc(o.id)}">Choose this argument</button>
+              </div>` : ""}
+            </div>`;
+          }).join("")}
           <button type="button" class="es-pick own" data-esplanown="${i}">Write my own argument</button>
           <div class="es-ownwrap" data-ownwrap="${i}" hidden>
             <input class="es-input" data-esplanowninput="${i}" value="${esc(p.ownArgument || "")}" placeholder="In one line, the relationship this paragraph argues">
             <button type="button" class="es-btn primary sm" data-esplanownok="${i}">Use this</button>
           </div>
         </div>` : `
-        <div class="es-planval">${esc(esArgLine(p))}${esPathway(p) ? "" : ` <span class="es-restown">your own</span>`}</div>
-        <button type="button" class="es-linkbtn" data-esplanedit="${i}">Change</button>`;
+        <div class="es-planval">${esc(esArgLine(p)) || `<span class="es-restnone">not chosen yet</span>`}</div>
+        <button type="button" class="es-linkbtn" data-esplanedit="${i}">${chosen ? "Change" : "Choose"}</button>`;
       const evRow = (chosen && !open) ? `
         <div class="es-planev">
           <span class="es-planevlbl">evidence</span>
@@ -10871,7 +11063,9 @@ window.BUSCONTENT = {
           ${suggest ? `<div class="es-plannote">This question has ${areas.length} parts and your structure has ${bodies.length} body paragraph${bodies.length === 1 ? "" : "s"}.
             <button type="button" class="es-linkbtn" id="esplanstruct">Use ${areas.length} body paragraphs</button></div>` : ""}
         </div>
+        ${esCoreHTML(d)}
         <div class="es-plancards">${cards}</div>
+        ${esThesisHTML(d)}
         <div class="es-planfoot">
           <button class="es-btn ${done ? "primary" : "ghost"}" id="esplango">${done ? "Write the introduction" : "Start writing anyway"}</button>
           <span class="es-planstate">${done ? "Your plan is set. You can change any of it while you write." : "You can leave any of these open and choose when you reach the paragraph."}</span>
@@ -10880,6 +11074,7 @@ window.BUSCONTENT = {
     </div></div></div>`;
     esBindWritingHead();
     esBindPlan();
+    esBindCore();
   }
   function esBindPlan() {
     const host = document.getElementById("eshost"); if (!host) return;
@@ -10899,7 +11094,7 @@ window.BUSCONTENT = {
       const p = d.paras[i], path = esPathwaysInArea("").find(x => x.id === id);
       const flagged = esSetParagraphContext(p, id, p.evidenceIds || []);
       p.area = (path && path.area) || p.area || ""; p.ownArgument = "";
-      ES.ui.planOpen[i] = false; esSaveDraft(); esRender();
+      ES.ui.planOpen[i] = false; ES.ui.why = null; esSaveDraft(); esRender();
       if (flagged) toast(flagged + " sentence" + (flagged === 1 ? "" : "s") + " to check against the new argument.");
     });
     host.querySelectorAll("[data-esplanown]").forEach(b => b.onclick = () => {
@@ -10926,6 +11121,9 @@ window.BUSCONTENT = {
       const n = esSetParagraphContext(p, p.argumentId, list);
       esSaveDraft(); esRender();
       if (n) toast(n + " sentence" + (n === 1 ? "" : "s") + " used that evidence. Check " + (n === 1 ? "it" : "them") + ".");
+    });
+    host.querySelectorAll("[data-eswhy]").forEach(b => b.onclick = () => {
+      ES.ui.why = ES.ui.why === b.dataset.eswhy ? null : b.dataset.eswhy; esRender();
     });
     const st = host.querySelector("#esplanstruct");
     if (st) st.onclick = () => { const def = esStructureForBodies(esQuestionAreas().length); if (def) { esApplyStructure(def.key); esRender(); } };

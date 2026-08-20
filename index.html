@@ -652,6 +652,39 @@
   .es-rest .es-decbox{margin:0 0 4px;padding:13px 34px 13px 14px}
   .es-rest .es-decp{font-size:13px}
   .es-rest .es-dech{font-size:13.5px}
+  /* the planning surface: rich while deciding, compact once decided */
+  .es-core{border:1.5px solid var(--green);border-radius:16px;background:var(--card);padding:15px 18px}
+  .es-core.done{display:flex;gap:11px;align-items:baseline;flex-wrap:wrap;border-color:var(--line);
+    background:none;padding:9px 14px}
+  .es-corelbl{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+  .es-coreline{font-size:13px;font-weight:700;color:var(--ink-2);flex:1;min-width:0}
+  .es-coreh{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--ink)}
+  .es-corerel{font-size:15px;line-height:1.6;font-weight:700;color:var(--ink);margin:7px 0 13px}
+  .es-corebtns{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .es-corebody{margin-top:13px;padding-top:12px;border-top:1px solid var(--line)}
+  .es-corep{font-size:13.5px;line-height:1.65;font-weight:600;color:var(--ink-2);margin-bottom:9px}
+  .es-corep.chain{color:var(--ink);font-weight:700}
+  .es-corep.miss{color:var(--gold-dk)}
+  .es-corep.model{color:var(--ink);font-weight:700}
+  /* why an argument is an argument */
+  .es-optwrap{margin-bottom:7px}
+  .es-optwrap .es-pick{margin-bottom:0}
+  .es-why{font:inherit;font-size:11.5px;font-weight:700;color:var(--ink-3);background:none;border:none;
+    cursor:pointer;padding:4px 6px;margin-left:2px}
+  .es-why:hover,.es-why.on{color:var(--green-dk)}
+  .es-whybox{border-left:2px solid var(--green-soft);margin:6px 0 4px 13px;padding:4px 0 4px 13px}
+  /* the thesis, written once the plan exists */
+  .es-thesis{border:1.5px solid var(--line);border-radius:16px;background:var(--card);padding:15px 18px;margin-top:4px}
+  .es-planhh.sm{font-size:16px}
+  .es-thesisplan{list-style:none;display:flex;flex-direction:column;gap:5px;margin:11px 0 14px}
+  .es-thesisplan li{font-size:13px;line-height:1.5;font-weight:700;color:var(--ink);display:flex;gap:9px}
+  .es-tparea{font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--green-dk);
+    min-width:120px;flex:none;padding-top:2px}
+  .es-thesisguide{font-size:12.5px;line-height:1.55;font-weight:600;color:var(--ink-2);margin:7px 0 12px}
+  .es-compare{margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}
+  .es-cmpblk{margin-bottom:12px}
+  .es-cmplist{margin:5px 0 0 17px;display:flex;flex-direction:column;gap:4px}
+  .es-cmplist li{font-size:13px;line-height:1.55;font-weight:600;color:var(--ink-2)}
   /* the guide: a short title, the step position, one instruction */
   .es-guidetop{display:flex;align-items:center;gap:10px}
   .es-steps{display:inline-flex;align-items:center;gap:2px;margin-left:auto}

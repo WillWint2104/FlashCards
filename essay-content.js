@@ -220,6 +220,9 @@ window.ESSAY = {
           pathways: [
             { id: "mkt01-em-digital", area: "e-marketing",
               relationship: "Digitally engaged customers lead to greater use of digital marketing",
+              meaning: "This target market spends much of its day on phones, apps and social platforms. A business that wants their attention has to buy it where that attention already is, so promotion moves out of print and television and into digital channels.",
+              whatToProve: "customers are already on digital channels \u2192 the business moves its promotion there \u2192 why that reaches them better than the alternative",
+              commonMistake: "Listing the business's digital channels without saying what it is about these customers that made digital the right choice.",
               concept: { topic: "marketing", section: "marketing strategies", point: "e-marketing" },
               evidence: ["App, loyalty rewards and mobile ordering", "Promotion mix from advertising to sponsorship"],
               guides: {
@@ -253,6 +256,9 @@ window.ESSAY = {
                     pattern: "the detail, then what the detail proves" } } }, },
             { id: "mkt01-em-value", area: "e-marketing",
               relationship: "Value-conscious customers lead to digital promotions and loyalty offers",
+              meaning: "This target market decides on price and will move for a better deal. Digital channels let a business put an offer in front of them cheaply, repeatedly, and only when it wants to, which a printed price list cannot do.",
+              whatToProve: "customers respond to price \u2192 the business needs a cheap and repeatable way to reach them with offers \u2192 digital promotions and loyalty schemes become the tool",
+              commonMistake: "Arguing that discounts attract customers, which is a pricing point, rather than arguing why the offer is delivered digitally.",
               concept: { topic: "marketing", section: "marketing strategies", point: "promotion" },
               evidence: ["App, loyalty rewards and mobile ordering", "Price points from value range to McCafe"],
               guides: {
@@ -261,6 +267,9 @@ window.ESSAY = {
                 effect: "Say what this achieves: which marketing objective it serves and at what cost." } },
             { id: "mkt01-em-convenience", area: "e-marketing",
               relationship: "Convenience-oriented customers lead to marketing through ordering apps and digital channels",
+              meaning: "For this target market the marketing and the buying are nearly the same act: an offer is only useful if it can be taken up immediately. So the business markets inside the channel the customer already orders through, rather than somewhere they would have to leave.",
+              whatToProve: "customers want to act with the least effort \u2192 marketing has to sit where the order is placed \u2192 the ordering channel becomes a promotion channel",
+              commonMistake: "Describing the app as convenient to order with, which is a processes argument, instead of arguing that it is where the marketing reaches them.",
               concept: { topic: "marketing", section: "marketing strategies", point: "e-marketing" },
               evidence: ["App, loyalty rewards and mobile ordering"],
               guides: {
@@ -268,6 +277,9 @@ window.ESSAY = {
 
             { id: "mkt01-pe-service", area: "people",
               relationship: "Customers who expect personal service lead to investment in staff training and service standards",
+              meaning: "This target market judges the business on the person in front of them. A service is produced at the moment it is delivered, so the staff member is part of what is being bought, and the business has to spend on who it hires and how it trains them.",
+              whatToProve: "customers expect to be dealt with personally \u2192 staff are part of the product \u2192 the business invests in training and service standards",
+              commonMistake: "Saying good staff are important, which is true of every business, instead of saying what THIS target market expects that forced the investment.",
               concept: { topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
               evidence: ["Intensive distribution and standardised service"],
               guides: {
@@ -275,12 +287,18 @@ window.ESSAY = {
                 example: "Apply the evidence you selected. Say what it shows about the people element specifically." } },
             { id: "mkt01-pe-speed", area: "people",
               relationship: "Customers who expect speed lead to staffing and rostering built around peak demand",
+              meaning: "This target market counts waiting as a cost. The same number of staff cannot serve a peak hour and a quiet one equally well, so the business rosters to the shape of demand rather than to a flat day.",
+              whatToProve: "customers will not wait \u2192 service capacity has to match demand hour by hour \u2192 staffing and rostering change",
+              commonMistake: "Arguing about the ordering system, which is processes, rather than about the people who have to be there to deliver it.",
               concept: { topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
               evidence: ["Intensive distribution and standardised service"],
               guides: {
                 explain: "Explain the link between what the target market will wait for and how the business staffs its service." } },
             { id: "mkt01-pe-consistency", area: "people",
               relationship: "Customers who expect the same experience everywhere lead to standardised service training",
+              meaning: "This target market chooses the business because they already know what they will get. One store that behaves differently damages that promise everywhere, so training is written once and applied across the whole network.",
+              whatToProve: "customers are buying predictability \u2192 variation between staff breaks it \u2192 training and service standards are standardised",
+              commonMistake: "Describing standard uniforms, signage or layout, which is physical evidence, rather than what the staff are trained to do.",
               concept: { topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
               evidence: ["Standardisation with local customisation", "Intensive distribution and standardised service"],
               guides: {
@@ -297,6 +315,8 @@ window.ESSAY = {
             // and the worked example is always somewhere else entirely.
             { id: "mkt01-pr-convenience", area: "processes",
               relationship: "Convenience-oriented customers lead to faster and more flexible ordering processes",
+              whatToProve: "customer expectation \u2192 the process change it forces \u2192 why the new process suits this market better",
+              commonMistake: "Describing an app or a kiosk without explaining what it was about these customers that caused the process to change.",
               meaning: "This target market will not spend time or effort on the act of ordering. The business answers by redesigning how an order is placed, so it takes fewer steps and can be done at more times and in more ways. The expectation is the cause; the process change is the effect.",
               concept: { key: "processes", topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
               evidence: [
@@ -366,6 +386,8 @@ window.ESSAY = {
 
             { id: "mkt01-pr-speed", area: "processes",
               relationship: "Customers who expect speed lead to streamlined service and collection processes",
+              whatToProve: "customers count waiting as a cost \u2192 steps are separated or run alongside each other \u2192 the wait falls, especially at peak",
+              commonMistake: "Claiming the business is faster without naming which step was taken out of the queue.",
               meaning: "This argument is about elapsed time between paying and receiving. The target market is buying speed as much as the product, so the business reorganises how orders are prepared, handed over and collected in order to cut the wait, especially at peak.",
               concept: { key: "processes", topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
               evidence: [
@@ -435,6 +457,8 @@ window.ESSAY = {
 
             { id: "mkt01-pr-customisation", area: "processes",
               relationship: "Customers who want to customise orders lead to ordering systems built to take variations",
+              whatToProve: "customers expect to change the order \u2192 no two orders are identical \u2192 the ordering system has to capture the variation accurately",
+              commonMistake: "Arguing about choice on the menu, which is a product point, instead of about how the process carries a non-standard order.",
               meaning: "This argument is about variety rather than time. The target market expects to change what it orders, so the ordering process has to capture that variation accurately and pass it on without stopping the queue behind it.",
               concept: { key: "processes", topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
               evidence: [
@@ -507,6 +531,9 @@ window.ESSAY = {
 
             { id: "mkt01-ph-servicescape", area: "physical evidence",
               relationship: "Customers who judge a business by its surroundings lead to a designed servicescape",
+              meaning: "A service cannot be inspected before it is bought, so this target market reads the room instead. Cleanliness, layout, lighting and fittings stand in for the quality they cannot test, and the business designs them deliberately because they are doing the persuading.",
+              whatToProve: "the service is intangible \u2192 customers judge it by what they can see \u2192 the setting is designed rather than left to chance",
+              commonMistake: "Listing what the premises look like without saying what the customer concludes from it.",
               concept: { topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
               evidence: ["Standardisation with local customisation", "Segments served by Happy Meal and McCafe"],
               guides: {
@@ -514,12 +541,18 @@ window.ESSAY = {
                 example: "Apply the evidence you selected, stating the fact before what it shows about physical evidence." } },
             { id: "mkt01-ph-segments", area: "physical evidence",
               relationship: "Serving different segments leads to different physical settings for each",
+              meaning: "One business can serve more than one target market at a time, and they do not want the same room. Rather than settle on a single setting that suits neither, the business builds distinct areas so each segment gets surroundings that fit it.",
+              whatToProve: "more than one segment is served \u2192 one setting cannot suit both \u2192 the space is divided so each gets its own",
+              commonMistake: "Naming the segments and the products built for them, which is segmentation, without ever getting to the physical space.",
               concept: { topic: "marketing", section: "marketing strategies", point: "market segmentation" },
               evidence: ["Segments served by Happy Meal and McCafe"],
               guides: {
                 explain: "Explain why serving more than one segment forces the physical setting to differ between them." } },
             { id: "mkt01-ph-selfservice", area: "physical evidence",
               relationship: "Customers who prefer to serve themselves lead to physical evidence built around self-service",
+              meaning: "This target market would rather deal with a machine than a person, so the things they touch have to carry the instructions a staff member would otherwise give. Screens, signage and layout have to be legible enough to be used without help.",
+              whatToProve: "customers prefer to serve themselves \u2192 the surroundings have to do the explaining \u2192 screens, signage and layout are built to be self-explanatory",
+              commonMistake: "Arguing that self-service is faster, which is a processes point, rather than about what the customer sees and touches.",
               concept: { topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
               evidence: ["App, loyalty rewards and mobile ordering", "Intensive distribution and standardised service"],
               guides: {
@@ -565,6 +598,24 @@ window.ESSAY = {
               consistency: "Use one business consistently across the whole response."
             }
           },
+          // ---- the core answer ----------------------------------------------
+          // What the whole question turns on, taught before the plan is built and
+          // collapsed the moment the student says they have it. Authored, never
+          // generated, and never a gate: planning works whether it is read or not.
+          coreAnswer: {
+            explain: [
+              "A target market is not everyone who might buy. It is the group a business has chosen, described by what those people are actually like: what they can spend, how they buy, how much time they will give it, what they will not put up with. Choosing that group is a decision, and every marketing decision after it is downstream of that one.",
+              "So the four elements this question names are not free choices. Each is built to suit somebody in particular. Change who the customer is and the same business would promote differently, staff differently, run its service differently and look different inside. That is the relationship you have to explain, four times over."
+            ],
+            thesisIdea: "Say that the customer group comes first and that the strategies follow from it, then name the four elements you are going to show it in.",
+            acceptableThesis: "Target markets affect e-marketing, people, processes and physical evidence because a business adapts each of these strategies to suit the characteristics, behaviours and expectations of the customers it has chosen to serve.",
+            checklist: [
+              "makes the target market the cause, not one factor among several",
+              "says the marketing strategies change in response to it",
+              "carries the relationship across all four named elements",
+              "answers explain, rather than listing what the four elements are"
+            ]
+          },
           // ---- area guidance -----------------------------------------------
           // The fallback chain for a component guide is:
           //     pathway.guides[slot]  ->  areas[area].guides[slot]  ->  slot.job
@@ -585,9 +636,9 @@ window.ESSAY = {
             "people": {
               label: "people",
               guides: {
-                topic:   "State what this target market expects of the staff who serve them, and say that it acts on the people element.",
+                topic:   "State which characteristic of the target market is acting, and say that it acts on the staff who deliver the service.",
                 define:  "Show what people covers: the staff the customer deals with, and the skills, training, attitude and service standards they bring.",
-                explain: "Explain why that expectation forces the business to change who it hires, how it trains them, or what standard it holds them to.",
+                explain: "Explain why that characteristic forces the business to change who it hires, how it trains them, or what standard it holds them to.",
                 example: "Apply your evidence to the staff themselves, not to the product they hand over.",
                 effect:  "Say what the change in people achieves for the customer experience and for the business, and name its cost.",
                 link:    "Return to the question: this is one way the target market shapes the people element." }
@@ -595,9 +646,9 @@ window.ESSAY = {
             "processes": {
               label: "processes",
               guides: {
-                topic:   "State what this target market will or will not spend, and say that it acts on the processes the customer moves through.",
+                topic:   "State which characteristic of the target market is acting, and say that it acts on the processes the customer moves through.",
                 define:  "Show what processes covers: the steps that deliver the service, such as ordering, payment, preparation and collection.",
-                explain: "Explain why that expectation forces a step to be removed, moved or rebuilt. The expectation is the cause.",
+                explain: "Explain why that characteristic forces a step to be removed, moved or rebuilt. The customer is the cause, not the technology.",
                 example: "Apply your evidence to a step in the process, and name which step it changed.",
                 effect:  "Say what the changed process achieves for the customer and for the business, and be honest about its cost.",
                 link:    "Return to the question: this is one way the target market shapes processes." }
@@ -605,9 +656,9 @@ window.ESSAY = {
             "physical evidence": {
               label: "physical evidence",
               guides: {
-                topic:   "State what this target market reads into its surroundings, and say that it acts on the physical evidence the business provides.",
+                topic:   "State which characteristic of the target market is acting, and say that it acts on the physical evidence the business provides.",
                 define:  "Show what physical evidence covers: the tangible surroundings a customer judges the service by, such as layout, fittings, signage, uniforms and packaging.",
-                explain: "Explain why that expectation causes the business to design the space and its presentation deliberately rather than by accident.",
+                explain: "Explain why that characteristic causes the business to design the space and its presentation deliberately rather than by accident.",
                 example: "Apply your evidence to something the customer can actually see, and say what it signals to them.",
                 effect:  "Say what the designed setting achieves for the customer and for the business, and name what it costs.",
                 link:    "Return to the question: this is one way the target market shapes physical evidence." }
