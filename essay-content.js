@@ -517,6 +517,35 @@ window.ESSAY = {
                 explain: "Explain why a preference for serving themselves changes what the business puts in front of the customer." } }
           ],
           criteria: { bands: null, source: "general HSC band expectations" },
+          // ---- DECODE ------------------------------------------------------
+          // Student-facing interpretation of the question, and nothing else.
+          // What the response must COVER and ACCOMPLISH is not repeated here: it
+          // is derived from `requirements` above, which stays the single source
+          // of truth. Only what cannot be safely derived is authored: which words
+          // in the stem are worth pressing, what the directive means, the question
+          // in plain English, and the relationship the whole answer turns on.
+          //
+          // Anchors are strings, never character offsets, and the build asserts
+          // that each one occurs exactly once in the canonical stem.
+          decode: {
+            verbMeaning: "Explain means show how or why. For each area you have to establish a cause and an effect, not describe the strategy on its own.",
+            plainEnglish: "Show how knowing who the customers are changes the way a business uses digital marketing, its staff, its service processes and its physical surroundings.",
+            coreRelationship: "A business identifies characteristics and expectations within its target market, then adapts each marketing strategy to suit those customers.",
+            highlights: [
+              { anchor: "Explain", kind: "verb",
+                note: "Show how or why one thing affects another. Describing each strategy on its own will not answer this question, however accurate the description is." },
+              { anchor: "target markets", kind: "cause",
+                note: "This is the cause in the question. Ask what characteristics, behaviours and expectations this group of customers has, because everything else follows from that." },
+              { anchor: "e-marketing", kind: "requiredArea",
+                note: "One of four required areas. Show how a characteristic of the target market causes the business's digital marketing to take the form it does." },
+              { anchor: "people", kind: "requiredArea",
+                note: "One of four required areas. Show how what customers expect of the staff who serve them causes changes to training, skills and service standards." },
+              { anchor: "processes", kind: "requiredArea",
+                note: "One of four required areas. Show how customer characteristics cause the ordering, service or collection process to be built the way it is." },
+              { anchor: "physical evidence", kind: "requiredArea",
+                note: "One of four required areas. Show how customer characteristics cause the physical surroundings, layout and presentation to be designed as they are." }
+            ]
+          },
           // CANONICAL STEM. Everything authored above is built around the four
           // elements this question fixes, so the exact paper wording is the
           // question, not a broader practice paraphrase of it. Decoding, plain

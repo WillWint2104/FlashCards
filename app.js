@@ -3607,8 +3607,105 @@
     };
   }
 
+  // ---- decoding the question -------------------------------------------------
+  function esDecodeOf(q) { return (q && q.decode && (q.decode.highlights || []).length) ? q.decode : null; }
+  // The stem with its authored anchors made pressable. Anchors are matched as
+  // strings and laid down in the order they appear, so a reworded stem cannot
+  // silently shift a highlight onto the wrong words. Overlaps are dropped rather
+  // than nested; the build already refuses an ambiguous anchor.
+  function esDecodeStem(stem, hl) {
+    const spans = [];
+    hl.forEach((h, i) => {
+      const at = String(stem).indexOf(h.anchor);
+      if (at < 0) return;
+      if (spans.some(sp => at < sp.end && at + h.anchor.length > sp.at)) return;
+      spans.push({ at: at, end: at + h.anchor.length, i: i, kind: h.kind || "" });
+    });
+    spans.sort((a, b) => a.at - b.at);
+    let out = "", cur = 0;
+    spans.forEach(sp => {
+      out += esc(stem.slice(cur, sp.at));
+      out += `<button type="button" class="es-dec ${esc(sp.kind)}" data-esdecode="${sp.i}">${esc(stem.slice(sp.at, sp.end))}</button>`;
+      cur = sp.end;
+    });
+    return out + esc(stem.slice(cur));
+  }
+  // What the response has to cover, read off `requirements`. Nothing here is a
+  // second copy of the marking metadata: change the requirements and this moves.
+  function esDecodeCoverage(q) {
+    const r = (q && q.requirements) || {};
+    const areas = ((q.decode && q.decode.highlights) || []).filter(h => h.kind === "requiredArea").map(h => h.anchor);
+    const rel = (r.relationships || [])[0] || "";
+    const acc = r.accomplish || [];
+    if (!areas.length && !rel && !acc.length) return "";
+    return `
+      ${areas.length ? `<p class="es-decp"><b>All ${areas.length === 4 ? "four" : areas.length} areas:</b> ${areas.map(esc).join(" · ")}. The question names them, so leaving one out costs marks however good the rest is.</p>` : ""}
+      ${rel ? `<p class="es-decp"><b>For each one:</b> ${esc(rel)}.</p>` : ""}
+      ${acc.length ? `<div class="es-decp"><b>A response that works:</b><ul class="es-declist">${acc.map(a => `<li>${esc(a)}</li>`).join("")}</ul></div>` : ""}
+      ${r.syllabus ? `<p class="es-decnote">${esc(r.syllabus)}</p>` : ""}`;
+  }
+  // Every panel is rendered once and revealed by flipping `hidden`, so opening
+  // the decoder never rebuilds the writing surface or takes the cursor.
+  function esDecodeHTML(q) {
+    const dec = esDecodeOf(q); if (!dec) return "";
+    const verb = (q.command || "the directive").trim();
+    const panels = dec.highlights.map((h, i) => `
+      <div class="es-decpanel" data-esdecpanel="${i}" hidden>
+        <div class="es-dech">${esc(h.anchor)}<span class="es-deckind">${esc(h.kind === "requiredArea" ? "one of the required areas" : h.kind === "cause" ? "the cause in the question" : "the directive")}</span></div>
+        <p class="es-decp">${esc(h.note || "")}</p>
+      </div>`).join("") + `
+      <div class="es-decpanel" data-esdecpanel="plain" hidden>
+        <div class="es-dech">In plain English</div>
+        <p class="es-decp">${esc(dec.plainEnglish || "")}</p>
+      </div>
+      <div class="es-decpanel" data-esdecpanel="verb" hidden>
+        <div class="es-dech">What ${esc(verb)} means</div>
+        <p class="es-decp">${esc(dec.verbMeaning || "")}</p>
+      </div>
+      <div class="es-decpanel" data-esdecpanel="cover" hidden>
+        <div class="es-dech">What you must cover</div>
+        ${esDecodeCoverage(q)}
+      </div>`;
+    return `
+      <div class="es-decrow">
+        <button type="button" class="es-decchip" data-esdecopen="plain">Plain English</button>
+        <button type="button" class="es-decchip" data-esdecopen="verb">What does ${esc(verb.toLowerCase())} mean?</button>
+        <button type="button" class="es-decchip" data-esdecopen="cover">What must I cover?</button>
+        <span class="es-dechint">or press any highlighted words above</span>
+      </div>
+      <div class="es-decbox" data-esdecbox hidden>
+        ${panels}
+        <button type="button" class="es-decx" data-esdecclose aria-label="Close">${esIcon("close")}</button>
+      </div>`;
+  }
+  function esBindDecode() {
+    const host = document.getElementById("eshost"); if (!host) return;
+    const box = host.querySelector("[data-esdecbox]"); if (!box) return;
+    const panels = Array.from(host.querySelectorAll("[data-esdecpanel]"));
+    let openKey = null;
+    const show = key => {
+      // Pressing the same thing again closes it, so the decoder never becomes
+      // something the student has to dismiss before they can carry on writing.
+      const same = openKey === key;
+      openKey = same ? null : key;
+      panels.forEach(p => { p.hidden = same || String(p.dataset.esdecpanel) !== String(key); });
+      box.hidden = same;
+      host.querySelectorAll("[data-esdecopen],[data-esdecode]").forEach(b => {
+        const k = b.dataset.esdecopen != null ? b.dataset.esdecopen : b.dataset.esdecode;
+        b.classList.toggle("on", !same && String(k) === String(key));
+      });
+    };
+    host.querySelectorAll("[data-esdecopen]").forEach(b => b.onclick = () => show(b.dataset.esdecopen));
+    host.querySelectorAll("[data-esdecode]").forEach(b => b.onclick = () => show(b.dataset.esdecode));
+    const x = host.querySelector("[data-esdecclose]"); if (x) x.onclick = () => show(openKey);
+  }
+
   // ---- shared header for the two writing screens (question + topic + switch) ----
   function esWritingHead(sc, modeLabel, switchLabel, switchTo) {
+    // The question is the one thing on screen at every stage, so the decoder
+    // lives on it rather than being a stage the student passes through once.
+    const qdef = esQuestionDef();
+    const qdec = esDecodeOf(qdef);
     return `
       <div class="es-top">
         <div class="es-brand">Marginal · essay practice ${sc.label ? `<span class="es-subj">${esc(sc.label)}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}</div>
@@ -3618,9 +3715,10 @@
         </div>
       </div>
       <div class="es-qbar">
-        <div>
+        <div class="es-qbar-main">
           <div class="es-qbar-mode">${esc(modeLabel)}</div>
-          <div class="es-qbar-q">${esc(ES.draft.question)}</div>
+          <div class="es-qbar-q">${qdec ? esDecodeStem(ES.draft.question, qdec.highlights) : esc(ES.draft.question)}</div>
+          ${qdec ? esDecodeHTML(qdef) : ""}
         </div>
         ${ES.draft.topic ? `<span class="es-restag">${esc(ES.draft.topic)}</span>` : ""}
       </div>`;
@@ -5844,6 +5942,7 @@
   }
 
   function esBindWritingHead() {
+    esBindDecode();
     const x = $("#esx"); if (x) x.onclick = () => { ES.screen = "setup"; esRender(); };
     const sw = $("#esmodeswitch"); if (sw) sw.onclick = () => {
       ES.draft.mode = ES.draft.mode === "full" ? "coached" : "full";

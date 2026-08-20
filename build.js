@@ -50,6 +50,41 @@ out = inlineScript(out, '<script src="app.js"></script>', app);
 // convenience, and a QA convenience left unguarded eventually becomes a
 // production mistake. The build refuses to produce output that contains one.
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// DECODE ANCHORS MUST MATCH THE CANONICAL STEM
+//
+// A highlight is an anchor string rather than a character offset, so it survives
+// the stem being reworded. The cost of that is that a reworded stem can silently
+// orphan an anchor, or make one ambiguous. The build checks both: every authored
+// anchor must occur EXACTLY ONCE in the question's own text.
+// ---------------------------------------------------------------------------
+function checkDecodeAnchors() {
+  const sandbox = { window: {} };
+  const vm = require("vm");
+  vm.createContext(sandbox);
+  try { vm.runInContext(essay, sandbox); } catch (e) { return ["essay-content.js did not evaluate: " + e.message]; }
+  const subs = (sandbox.window.ESSAY && sandbox.window.ESSAY.subjects) || {};
+  const bad = [];
+  Object.keys(subs).forEach(key => {
+    (subs[key].questions || []).forEach(q => {
+      const hl = (q.decode && q.decode.highlights) || [];
+      if (!hl.length) return;
+      if (!q.text) { bad.push(`${key}/${q.id} has decode highlights but no question text`); return; }
+      hl.forEach(h => {
+        const n = String(q.text).split(String(h.anchor)).length - 1;
+        if (n !== 1) bad.push(`${key}/${q.id} anchor ${JSON.stringify(h.anchor)} occurs ${n} times in the stem, expected exactly 1`);
+      });
+    });
+  });
+  return bad;
+}
+const anchorFaults = checkDecodeAnchors();
+if (anchorFaults.length) {
+  console.error("BUILD REFUSED: a decode highlight does not match its question.");
+  anchorFaults.forEach(o => console.error("  - " + o));
+  process.exit(1);
+}
+
 const PREVIEW_MARKERS = [
   { pattern: /PREVIEW ONLY/i, what: 'the "PREVIEW ONLY" provenance marker' },
   { pattern: /previewOnly\s*:\s*true/i, what: "a record flagged previewOnly: true" },
