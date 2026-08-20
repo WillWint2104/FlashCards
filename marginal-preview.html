@@ -649,6 +649,9 @@
     padding:4px;border-radius:8px;display:flex}
   .es-decx:hover{color:var(--ink);background:var(--green-soft)}
   .es-decx .es-ico{width:15px;height:15px}
+  .es-rest .es-decbox{margin:0 0 4px;padding:13px 34px 13px 14px}
+  .es-rest .es-decp{font-size:13px}
+  .es-rest .es-dech{font-size:13.5px}
   /* the guide: a short title, the step position, one instruction */
   .es-guidetop{display:flex;align-items:center;gap:10px}
   .es-steps{display:inline-flex;align-items:center;gap:2px;margin-left:auto}
@@ -3558,6 +3561,15 @@ window.ESSAY = {
           marks: 20,
           requirements: {
             concepts: ["target market", "e-marketing", "people as a marketing strategy", "processes as a marketing strategy", "physical evidence as a marketing strategy"],
+            // THE AUTHORITY on what this question fixes. Decode highlights point at
+            // these; they never create them. Forgetting to highlight an area must
+            // not make the area optional.
+            requiredAreas: [
+              { id: "e-marketing",      label: "e-marketing" },
+              { id: "people",           label: "people" },
+              { id: "processes",        label: "processes" },
+              { id: "physical evidence", label: "physical evidence" }
+            ],
             relationships: [
               "the characteristics of the chosen target market cause each strategy to take the form it does",
               "the same target market pulls the four elements in a consistent direction, rather than each being decided separately",
@@ -3905,20 +3917,78 @@ window.ESSAY = {
             verbMeaning: "Explain means show how or why. For each area you have to establish a cause and an effect, not describe the strategy on its own.",
             plainEnglish: "Show how knowing who the customers are changes the way a business uses digital marketing, its staff, its service processes and its physical surroundings.",
             coreRelationship: "A business identifies characteristics and expectations within its target market, then adapts each marketing strategy to suit those customers.",
+            // What the panel is CALLED is authored per highlight, because a label
+            // written for this question teaches better than a word the student has
+            // to decode first. `kind` drives behaviour and stays internal.
             highlights: [
-              { anchor: "Explain", kind: "verb",
-                note: "Show how or why one thing affects another. Describing each strategy on its own will not answer this question, however accurate the description is." },
-              { anchor: "target markets", kind: "cause",
-                note: "This is the cause in the question. Ask what characteristics, behaviours and expectations this group of customers has, because everything else follows from that." },
-              { anchor: "e-marketing", kind: "requiredArea",
-                note: "One of four required areas. Show how a characteristic of the target market causes the business's digital marketing to take the form it does." },
-              { anchor: "people", kind: "requiredArea",
-                note: "One of four required areas. Show how what customers expect of the staff who serve them causes changes to training, skills and service standards." },
-              { anchor: "processes", kind: "requiredArea",
-                note: "One of four required areas. Show how customer characteristics cause the ordering, service or collection process to be built the way it is." },
-              { anchor: "physical evidence", kind: "requiredArea",
-                note: "One of four required areas. Show how customer characteristics cause the physical surroundings, layout and presentation to be designed as they are." }
-            ]
+              { anchor: "Explain", kind: "directive", label: "what you need to do",
+                note: "Show how or why one thing affects another. Describing each strategy on its own will not answer this question, however accurate the description is. Explain is the directive verb here." },
+              { anchor: "target markets", kind: "cause", label: "the cause in the question",
+                note: "Ask what characteristics, behaviours and expectations this group of customers has, because everything else in your answer follows from that." },
+              { anchor: "e-marketing", kind: "requiredArea", ref: "e-marketing", label: "must cover",
+                note: "Show how a characteristic of the target market causes the business's digital marketing to take the form it does." },
+              { anchor: "people", kind: "requiredArea", ref: "people", label: "must cover",
+                note: "Show how what customers expect of the staff who serve them causes changes to training, skills and service standards." },
+              { anchor: "processes", kind: "requiredArea", ref: "processes", label: "must cover",
+                note: "Show how customer characteristics cause the ordering, service or collection process to be built the way it is." },
+              { anchor: "physical evidence", kind: "requiredArea", ref: "physical evidence", label: "must cover",
+                note: "Show how customer characteristics cause the physical surroundings, layout and presentation to be designed as they are." }
+            ],
+            // The synthesis a student can act on. The full checklist stays in
+            // `requirements`, where the marker reads it; this is what teaching it
+            // looks like, and it is deliberately shorter.
+            cover: {
+              forEach: "target-market characteristic \u2192 strategy change \u2192 case-study evidence \u2192 what that evidence demonstrates",
+              consistency: "Use one business consistently across the whole response."
+            }
+          },
+          // ---- area guidance -----------------------------------------------
+          // The fallback chain for a component guide is:
+          //     pathway.guides[slot]  ->  areas[area].guides[slot]  ->  slot.job
+          // The last of those is scaffold language written for no question in
+          // particular, so an area layer keeps a chosen argument from ever being
+          // answered with it. A pathway still overrides its own area.
+          areas: {
+            "e-marketing": {
+              label: "e-marketing",
+              guides: {
+                topic:   "State which characteristic of the target market is acting, and say that it acts on the business's digital marketing.",
+                define:  "Show what e-marketing covers: reaching and selling to customers through digital channels such as a website, an app, social media and email.",
+                explain: "Explain why that customer characteristic makes digital channels the ones worth using. The customer comes first in the chain, not the technology.",
+                example: "Apply your evidence. Say what the business actually does digitally, then what it shows about who it is selling to.",
+                effect:  "Say what the digital strategy achieves for the customer and for the business, and name what it costs.",
+                link:    "Return to the question: this is one way the target market shapes e-marketing." }
+            },
+            "people": {
+              label: "people",
+              guides: {
+                topic:   "State what this target market expects of the staff who serve them, and say that it acts on the people element.",
+                define:  "Show what people covers: the staff the customer deals with, and the skills, training, attitude and service standards they bring.",
+                explain: "Explain why that expectation forces the business to change who it hires, how it trains them, or what standard it holds them to.",
+                example: "Apply your evidence to the staff themselves, not to the product they hand over.",
+                effect:  "Say what the change in people achieves for the customer experience and for the business, and name its cost.",
+                link:    "Return to the question: this is one way the target market shapes the people element." }
+            },
+            "processes": {
+              label: "processes",
+              guides: {
+                topic:   "State what this target market will or will not spend, and say that it acts on the processes the customer moves through.",
+                define:  "Show what processes covers: the steps that deliver the service, such as ordering, payment, preparation and collection.",
+                explain: "Explain why that expectation forces a step to be removed, moved or rebuilt. The expectation is the cause.",
+                example: "Apply your evidence to a step in the process, and name which step it changed.",
+                effect:  "Say what the changed process achieves for the customer and for the business, and be honest about its cost.",
+                link:    "Return to the question: this is one way the target market shapes processes." }
+            },
+            "physical evidence": {
+              label: "physical evidence",
+              guides: {
+                topic:   "State what this target market reads into its surroundings, and say that it acts on the physical evidence the business provides.",
+                define:  "Show what physical evidence covers: the tangible surroundings a customer judges the service by, such as layout, fittings, signage, uniforms and packaging.",
+                explain: "Explain why that expectation causes the business to design the space and its presentation deliberately rather than by accident.",
+                example: "Apply your evidence to something the customer can actually see, and say what it signals to them.",
+                effect:  "Say what the designed setting achieves for the customer and for the business, and name what it costs.",
+                link:    "Return to the question: this is one way the target market shapes physical evidence." }
+            }
           },
           // CANONICAL STEM. Everything authored above is built around the four
           // elements this question fixes, so the exact paper wording is the
@@ -9629,26 +9699,51 @@ window.BUSCONTENT = {
   }
   // What the response has to cover, read off `requirements`. Nothing here is a
   // second copy of the marking metadata: change the requirements and this moves.
+  // What the question fixes is read off `requirements`, which is the authority.
+  // Highlights only point at those areas; forgetting to highlight one would not
+  // make it optional. What is SHOWN is a synthesis a student can act on, not the
+  // marker's checklist rendered verbatim.
+  function esRequiredAreas(q) {
+    const r = (q && q.requirements) || {};
+    if ((r.requiredAreas || []).length) return r.requiredAreas.map(a => a.label || a.id);
+    return ((q.decode && q.decode.highlights) || []).filter(h => h.kind === "requiredArea").map(h => h.anchor);
+  }
   function esDecodeCoverage(q) {
     const r = (q && q.requirements) || {};
-    const areas = ((q.decode && q.decode.highlights) || []).filter(h => h.kind === "requiredArea").map(h => h.anchor);
-    const rel = (r.relationships || [])[0] || "";
-    const acc = r.accomplish || [];
-    if (!areas.length && !rel && !acc.length) return "";
+    const dec = (q && q.decode) || {};
+    const areas = esRequiredAreas(q);
+    const cover = dec.cover || {};
+    const chain = cover.forEach || (r.relationships || [])[0] || "";
+    if (!areas.length && !chain) return "";
+    const n = areas.length, word = ["", "one", "two", "three", "four", "five", "six"][n] || String(n);
     return `
-      ${areas.length ? `<p class="es-decp"><b>All ${areas.length === 4 ? "four" : areas.length} areas:</b> ${areas.map(esc).join(" · ")}. The question names them, so leaving one out costs marks however good the rest is.</p>` : ""}
-      ${rel ? `<p class="es-decp"><b>For each one:</b> ${esc(rel)}.</p>` : ""}
-      ${acc.length ? `<div class="es-decp"><b>A response that works:</b><ul class="es-declist">${acc.map(a => `<li>${esc(a)}</li>`).join("")}</ul></div>` : ""}
-      ${r.syllabus ? `<p class="es-decnote">${esc(r.syllabus)}</p>` : ""}`;
+      ${n ? `<p class="es-decp"><b>All ${word} areas:</b> ${areas.map(esc).join(" · ")}</p>` : ""}
+      ${chain ? `<p class="es-decp"><b>For each one, show:</b><br>${esc(chain)}</p>` : ""}
+      ${cover.consistency ? `<p class="es-decp">${esc(cover.consistency)}</p>` : ""}`;
   }
   // Every panel is rendered once and revealed by flipping `hidden`, so opening
   // the decoder never rebuilds the writing surface or takes the cursor.
-  function esDecodeHTML(q) {
+  function esDecodeChips(q) {
+    const dec = esDecodeOf(q); if (!dec) return "";
+    const verb = (q.command || "the directive").trim();
+    return `
+      <div class="es-decrow">
+        <button type="button" class="es-decchip" data-esdecopen="plain">Plain English</button>
+        <button type="button" class="es-decchip" data-esdecopen="verb">What does ${esc(verb.toLowerCase())} mean?</button>
+        <button type="button" class="es-decchip" data-esdecopen="cover">What must I cover?</button>
+        <span class="es-dechint">or press any highlighted words above</span>
+      </div>`;
+  }
+  // The panel is the part with height, so where it renders decides whether the
+  // sentence being written moves. While writing it goes into the right rail,
+  // which is otherwise nearly empty, and the composer never shifts. Everywhere
+  // else it expands under the question, where there is nothing to displace.
+  function esDecodeBox(q) {
     const dec = esDecodeOf(q); if (!dec) return "";
     const verb = (q.command || "the directive").trim();
     const panels = dec.highlights.map((h, i) => `
       <div class="es-decpanel" data-esdecpanel="${i}" hidden>
-        <div class="es-dech">${esc(h.anchor)}<span class="es-deckind">${esc(h.kind === "requiredArea" ? "one of the required areas" : h.kind === "cause" ? "the cause in the question" : "the directive")}</span></div>
+        <div class="es-dech">${esc(h.anchor)}<span class="es-deckind">${esc(h.label || (h.kind === "requiredArea" ? "must cover" : h.kind === "cause" ? "the cause in the question" : "what you need to do"))}</span></div>
         <p class="es-decp">${esc(h.note || "")}</p>
       </div>`).join("") + `
       <div class="es-decpanel" data-esdecpanel="plain" hidden>
@@ -9664,12 +9759,6 @@ window.BUSCONTENT = {
         ${esDecodeCoverage(q)}
       </div>`;
     return `
-      <div class="es-decrow">
-        <button type="button" class="es-decchip" data-esdecopen="plain">Plain English</button>
-        <button type="button" class="es-decchip" data-esdecopen="verb">What does ${esc(verb.toLowerCase())} mean?</button>
-        <button type="button" class="es-decchip" data-esdecopen="cover">What must I cover?</button>
-        <span class="es-dechint">or press any highlighted words above</span>
-      </div>
       <div class="es-decbox" data-esdecbox hidden>
         ${panels}
         <button type="button" class="es-decx" data-esdecclose aria-label="Close">${esIcon("close")}</button>
@@ -9687,6 +9776,8 @@ window.BUSCONTENT = {
       openKey = same ? null : key;
       panels.forEach(p => { p.hidden = same || String(p.dataset.esdecpanel) !== String(key); });
       box.hidden = same;
+      const prog = host.querySelector("[data-esrestprogress]");
+      if (prog) prog.hidden = !box.hidden;
       host.querySelectorAll("[data-esdecopen],[data-esdecode]").forEach(b => {
         const k = b.dataset.esdecopen != null ? b.dataset.esdecopen : b.dataset.esdecode;
         b.classList.toggle("on", !same && String(k) === String(key));
@@ -9698,7 +9789,7 @@ window.BUSCONTENT = {
   }
 
   // ---- shared header for the two writing screens (question + topic + switch) ----
-  function esWritingHead(sc, modeLabel, switchLabel, switchTo) {
+  function esWritingHead(sc, modeLabel, switchLabel, switchTo, boxElsewhere) {
     // The question is the one thing on screen at every stage, so the decoder
     // lives on it rather than being a stage the student passes through once.
     const qdef = esQuestionDef();
@@ -9715,7 +9806,7 @@ window.BUSCONTENT = {
         <div class="es-qbar-main">
           <div class="es-qbar-mode">${esc(modeLabel)}</div>
           <div class="es-qbar-q">${qdec ? esDecodeStem(ES.draft.question, qdec.highlights) : esc(ES.draft.question)}</div>
-          ${qdec ? esDecodeHTML(qdef) : ""}
+          ${qdec ? esDecodeChips(qdef) + (boxElsewhere ? "" : esDecodeBox(qdef)) : ""}
         </div>
         ${ES.draft.topic ? `<span class="es-restag">${esc(ES.draft.topic)}</span>` : ""}
       </div>`;
@@ -10502,11 +10593,23 @@ window.BUSCONTENT = {
   }
   // The guide for the active sentence, now shaped by what the student chose. An
   // authored pathway guide for this slot wins; otherwise the slot's own job stands.
+  // pathway guide -> area guide -> slot job. The last of those is scaffold
+  // language written for no question in particular, so a chosen argument should
+  // almost never reach it: the area knows what THIS question wants from it.
+  function esAreaDef(p) {
+    const q = esQuestionDef(); const bank = (q && q.areas) || null; if (!bank) return null;
+    const path = esPathway(p);
+    const key = (path && path.area) || p.area || "";
+    return (key && bank[key]) || null;
+  }
   function esSlotGuide(p, step) {
     if (!step) return "";
     const path = esPathway(p);
     const authored = path && path.guides && path.guides[step.key];
-    return authored || step.job || "";
+    if (authored) return authored;
+    const area = esAreaDef(p);
+    const byArea = area && area.guides && area.guides[step.key];
+    return byArea || step.job || "";
   }
   // Whether this paragraph still needs its argument chosen before writing starts.
   function esNeedsSetup(p) {
@@ -10631,6 +10734,8 @@ window.BUSCONTENT = {
       const rows = esPlanRows(d).filter(r => r.argument || r.words);
       const intro = esIsIntro(p);
       return `<aside class="es-rest">
+        ${esDecodeBox(esQuestionDef())}
+        <div data-esrestprogress>
         <div class="es-resth">${esc(p.role)}</div>
         <div class="es-restblk">
           <div class="es-restlbl">${intro ? "Your plan" : "Arguments you established"}</div>
@@ -10646,13 +10751,15 @@ window.BUSCONTENT = {
           <button type="button" class="es-linkbtn" id="esrestplan">${intro ? "Change the plan" : "Open the plan"}</button>
         </div>
         ${where}
+        </div>
       </aside>`;
     }
     // Argument and evidence live in the chips above the writing now, so the
     // resting rail is what the chips cannot carry: where this paragraph is up to.
     // When a drawer opens it becomes information-rich; at rest it recedes.
     return `<aside class="es-rest quiet">
-      ${where}
+      ${esDecodeBox(esQuestionDef())}
+      <div data-esrestprogress>${where}</div>
     </aside>`;
   }
   // ===========================================================================
@@ -10955,7 +11062,7 @@ window.BUSCONTENT = {
 
     host.innerHTML = `
     <div class="es-scrim"><div class="es-shell"><div class="es-wrap es-canvas">
-      ${esWritingHead(sc, "Guided", "full attempt", "full")}
+      ${esWritingHead(sc, "Guided", "full attempt", "full", !inSetup)}
       ${esToolbeltHTML(p)}
       <div class="es-cols ${ES.ui.tool ? "withdrawer" : ""}">
         <aside class="es-map">

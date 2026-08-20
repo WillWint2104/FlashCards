@@ -70,9 +70,16 @@ function checkDecodeAnchors() {
       const hl = (q.decode && q.decode.highlights) || [];
       if (!hl.length) return;
       if (!q.text) { bad.push(`${key}/${q.id} has decode highlights but no question text`); return; }
+      const areaIds = (((q.requirements || {}).requiredAreas) || []).map(a => a.id);
       hl.forEach(h => {
         const n = String(q.text).split(String(h.anchor)).length - 1;
         if (n !== 1) bad.push(`${key}/${q.id} anchor ${JSON.stringify(h.anchor)} occurs ${n} times in the stem, expected exactly 1`);
+        // A highlight POINTS AT a required area; it never creates one. A ref that
+        // matches nothing means the presentation and the requirements have drifted.
+        if (h.kind === "requiredArea" && areaIds.length) {
+          if (!h.ref) bad.push(`${key}/${q.id} highlight ${JSON.stringify(h.anchor)} is a requiredArea with no ref into requirements.requiredAreas`);
+          else if (areaIds.indexOf(h.ref) < 0) bad.push(`${key}/${q.id} highlight ref ${JSON.stringify(h.ref)} is not one of requirements.requiredAreas [${areaIds.join(", ")}]`);
+        }
       });
     });
   });

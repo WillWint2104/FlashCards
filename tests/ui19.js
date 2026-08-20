@@ -21,7 +21,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   const hl=await p.$$eval('.es-dec',es=>es.map(e=>({t:e.textContent.trim(),k:e.className.replace('es-dec','').trim()})));
   console.log('   ',JSON.stringify(hl.map(h=>h.t+'['+h.k+']')));
   ok(hl.length===6,'six pressable parts: '+hl.length);
-  ok(hl[0].t==='Explain'&&hl[0].k==='verb','the directive first');
+  ok(hl[0].t==='Explain'&&hl[0].k==='directive','the directive first: '+JSON.stringify(hl[0]));
   ok(hl.filter(h=>h.k==='requiredArea').length===4,'and the four required areas');
   ok(hl.map(h=>h.t).join('|')===stem.match(/Explain|target markets|e-marketing|people|processes|physical evidence/g).join('|'),
      'in the order they appear in the question');
@@ -39,7 +39,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   ok(!(await p.$eval('[data-esdecbox]',e=>e.hidden)),'the panel opens');
   const shown=await p.$$eval('.es-decpanel',es=>es.filter(e=>!e.hidden).map(e=>e.innerText.replace(/\s+/g,' ')));
   ok(shown.length===1,'exactly one panel at a time: '+shown.length);
-  ok(/one of the required areas/i.test(shown[0]),'it says what kind of thing it is: '+shown[0].slice(0,60));
+  ok(/must cover/i.test(shown[0]),'it is labelled in words written for this question: '+shown[0].slice(0,60));
   ok(/ordering, service or collection/i.test(shown[0]),'and teaches that specific word');
 
   console.log('4. it closes back, and never touches the writing');
@@ -52,15 +52,19 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   const cover=await p.$eval('[data-esdecpanel="cover"]',e=>e.innerText.replace(/\s+/g,' '));
   console.log('   ',cover.slice(0,140));
   ok(/All four areas/i.test(cover),'it names all four areas');
-  ok(/e-marketing · people · processes · physical evidence/.test(cover),'from the highlights themselves');
-  ok(/cause each strategy to take the form it does/.test(cover),'the relationship comes from requirements.relationships');
-  ok(/covers all four named elements/.test(cover),'and the checklist from requirements.accomplish');
-  const derived=await p.evaluate(()=>{
+  ok(/e-marketing · people · processes · physical evidence/.test(cover),'from requirements.requiredAreas');
+  ok(/characteristic → strategy change → case-study evidence/.test(cover),'and gives one chain to follow, not a checklist');
+  ok(cover.split(' ').length < 60,'it is a synthesis, not the marking metadata: '+cover.split(' ').length+' words');
+  ok(!/covers all four named elements/.test(cover),'the marker\u2019s wording is not shown to the student');
+  const auth=await p.evaluate(()=>{
     const q=window.ESSAY.subjects.business_studies.questions.find(x=>x.id==='mkt-01');
-    return {inDecode:JSON.stringify(q.decode).toLowerCase(), acc:(q.requirements.accomplish||[])[0]};
+    return { areas:(q.requirements.requiredAreas||[]).map(a=>a.id),
+             refs:(q.decode.highlights||[]).filter(h=>h.kind==='requiredArea').map(h=>h.ref),
+             inDecode:JSON.stringify(q.decode).toLowerCase(), acc:(q.requirements.accomplish||[])[0] };
   });
-  ok(derived.inDecode.indexOf(derived.acc.toLowerCase().slice(0,30))<0,
-     'and decode does NOT carry a second copy of it');
+  ok(auth.areas.length===4,'requirements holds the required areas: '+JSON.stringify(auth.areas));
+  ok(auth.refs.every(r=>auth.areas.indexOf(r)>=0),'and every highlight points at one rather than creating it');
+  ok(auth.inDecode.indexOf(auth.acc.toLowerCase().slice(0,30))<0,'decode carries no second copy of the requirements');
   await p.screenshot({path:OUT+'shot-decode-cover.png'});
 
   console.log('6. it is support, not a gate');

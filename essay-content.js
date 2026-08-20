@@ -184,6 +184,15 @@ window.ESSAY = {
           marks: 20,
           requirements: {
             concepts: ["target market", "e-marketing", "people as a marketing strategy", "processes as a marketing strategy", "physical evidence as a marketing strategy"],
+            // THE AUTHORITY on what this question fixes. Decode highlights point at
+            // these; they never create them. Forgetting to highlight an area must
+            // not make the area optional.
+            requiredAreas: [
+              { id: "e-marketing",      label: "e-marketing" },
+              { id: "people",           label: "people" },
+              { id: "processes",        label: "processes" },
+              { id: "physical evidence", label: "physical evidence" }
+            ],
             relationships: [
               "the characteristics of the chosen target market cause each strategy to take the form it does",
               "the same target market pulls the four elements in a consistent direction, rather than each being decided separately",
@@ -531,20 +540,78 @@ window.ESSAY = {
             verbMeaning: "Explain means show how or why. For each area you have to establish a cause and an effect, not describe the strategy on its own.",
             plainEnglish: "Show how knowing who the customers are changes the way a business uses digital marketing, its staff, its service processes and its physical surroundings.",
             coreRelationship: "A business identifies characteristics and expectations within its target market, then adapts each marketing strategy to suit those customers.",
+            // What the panel is CALLED is authored per highlight, because a label
+            // written for this question teaches better than a word the student has
+            // to decode first. `kind` drives behaviour and stays internal.
             highlights: [
-              { anchor: "Explain", kind: "verb",
-                note: "Show how or why one thing affects another. Describing each strategy on its own will not answer this question, however accurate the description is." },
-              { anchor: "target markets", kind: "cause",
-                note: "This is the cause in the question. Ask what characteristics, behaviours and expectations this group of customers has, because everything else follows from that." },
-              { anchor: "e-marketing", kind: "requiredArea",
-                note: "One of four required areas. Show how a characteristic of the target market causes the business's digital marketing to take the form it does." },
-              { anchor: "people", kind: "requiredArea",
-                note: "One of four required areas. Show how what customers expect of the staff who serve them causes changes to training, skills and service standards." },
-              { anchor: "processes", kind: "requiredArea",
-                note: "One of four required areas. Show how customer characteristics cause the ordering, service or collection process to be built the way it is." },
-              { anchor: "physical evidence", kind: "requiredArea",
-                note: "One of four required areas. Show how customer characteristics cause the physical surroundings, layout and presentation to be designed as they are." }
-            ]
+              { anchor: "Explain", kind: "directive", label: "what you need to do",
+                note: "Show how or why one thing affects another. Describing each strategy on its own will not answer this question, however accurate the description is. Explain is the directive verb here." },
+              { anchor: "target markets", kind: "cause", label: "the cause in the question",
+                note: "Ask what characteristics, behaviours and expectations this group of customers has, because everything else in your answer follows from that." },
+              { anchor: "e-marketing", kind: "requiredArea", ref: "e-marketing", label: "must cover",
+                note: "Show how a characteristic of the target market causes the business's digital marketing to take the form it does." },
+              { anchor: "people", kind: "requiredArea", ref: "people", label: "must cover",
+                note: "Show how what customers expect of the staff who serve them causes changes to training, skills and service standards." },
+              { anchor: "processes", kind: "requiredArea", ref: "processes", label: "must cover",
+                note: "Show how customer characteristics cause the ordering, service or collection process to be built the way it is." },
+              { anchor: "physical evidence", kind: "requiredArea", ref: "physical evidence", label: "must cover",
+                note: "Show how customer characteristics cause the physical surroundings, layout and presentation to be designed as they are." }
+            ],
+            // The synthesis a student can act on. The full checklist stays in
+            // `requirements`, where the marker reads it; this is what teaching it
+            // looks like, and it is deliberately shorter.
+            cover: {
+              forEach: "target-market characteristic \u2192 strategy change \u2192 case-study evidence \u2192 what that evidence demonstrates",
+              consistency: "Use one business consistently across the whole response."
+            }
+          },
+          // ---- area guidance -----------------------------------------------
+          // The fallback chain for a component guide is:
+          //     pathway.guides[slot]  ->  areas[area].guides[slot]  ->  slot.job
+          // The last of those is scaffold language written for no question in
+          // particular, so an area layer keeps a chosen argument from ever being
+          // answered with it. A pathway still overrides its own area.
+          areas: {
+            "e-marketing": {
+              label: "e-marketing",
+              guides: {
+                topic:   "State which characteristic of the target market is acting, and say that it acts on the business's digital marketing.",
+                define:  "Show what e-marketing covers: reaching and selling to customers through digital channels such as a website, an app, social media and email.",
+                explain: "Explain why that customer characteristic makes digital channels the ones worth using. The customer comes first in the chain, not the technology.",
+                example: "Apply your evidence. Say what the business actually does digitally, then what it shows about who it is selling to.",
+                effect:  "Say what the digital strategy achieves for the customer and for the business, and name what it costs.",
+                link:    "Return to the question: this is one way the target market shapes e-marketing." }
+            },
+            "people": {
+              label: "people",
+              guides: {
+                topic:   "State what this target market expects of the staff who serve them, and say that it acts on the people element.",
+                define:  "Show what people covers: the staff the customer deals with, and the skills, training, attitude and service standards they bring.",
+                explain: "Explain why that expectation forces the business to change who it hires, how it trains them, or what standard it holds them to.",
+                example: "Apply your evidence to the staff themselves, not to the product they hand over.",
+                effect:  "Say what the change in people achieves for the customer experience and for the business, and name its cost.",
+                link:    "Return to the question: this is one way the target market shapes the people element." }
+            },
+            "processes": {
+              label: "processes",
+              guides: {
+                topic:   "State what this target market will or will not spend, and say that it acts on the processes the customer moves through.",
+                define:  "Show what processes covers: the steps that deliver the service, such as ordering, payment, preparation and collection.",
+                explain: "Explain why that expectation forces a step to be removed, moved or rebuilt. The expectation is the cause.",
+                example: "Apply your evidence to a step in the process, and name which step it changed.",
+                effect:  "Say what the changed process achieves for the customer and for the business, and be honest about its cost.",
+                link:    "Return to the question: this is one way the target market shapes processes." }
+            },
+            "physical evidence": {
+              label: "physical evidence",
+              guides: {
+                topic:   "State what this target market reads into its surroundings, and say that it acts on the physical evidence the business provides.",
+                define:  "Show what physical evidence covers: the tangible surroundings a customer judges the service by, such as layout, fittings, signage, uniforms and packaging.",
+                explain: "Explain why that expectation causes the business to design the space and its presentation deliberately rather than by accident.",
+                example: "Apply your evidence to something the customer can actually see, and say what it signals to them.",
+                effect:  "Say what the designed setting achieves for the customer and for the business, and name what it costs.",
+                link:    "Return to the question: this is one way the target market shapes physical evidence." }
+            }
           },
           // CANONICAL STEM. Everything authored above is built around the four
           // elements this question fixes, so the exact paper wording is the

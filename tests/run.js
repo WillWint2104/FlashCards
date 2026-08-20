@@ -31,7 +31,7 @@ run("node", ["mkblockshim.js"], "blocks");
 run("python3", ["mkwalk.py"], "walk");
 
 const WORKER = ["t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10", "t11"];
-const UI = ["ui", "ui2", "ui3", "ui5", "ui6", "ui7", "ui8", "ui9", "ui10", "ui12", "ui13", "ui14", "ui15", "ui16", "ui17", "ui18", "ui19"];
+const UI = ["ui", "ui2", "ui3", "ui5", "ui6", "ui7", "ui8", "ui9", "ui10", "ui12", "ui13", "ui14", "ui15", "ui16", "ui17", "ui18", "ui19", "ui20"];
 const pick = list => only.length ? list.filter(x => only.includes(x)) : list;
 
 let bad = 0;
