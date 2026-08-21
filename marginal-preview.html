@@ -778,6 +778,7 @@
   .es-covitem{font-size:12px;font-weight:700;color:var(--ink-2);background:var(--card);border:1.5px solid var(--line);
     border-radius:99px;padding:4px 11px}
   .es-covitem.on{border-color:var(--green);background:var(--green-soft);color:var(--green-dk)}
+  .es-areachip.fixed{cursor:default;opacity:.85}
   .es-coverbtns{display:flex;gap:8px;flex-wrap:wrap}
   .es-startrows{display:flex;flex-direction:column;gap:6px}
   .es-startrow{display:flex;gap:11px;align-items:center;width:100%;text-align:left;font:inherit;
@@ -4459,7 +4460,7 @@ window.ESSAY = {
           },
           coreAnswer: {
             mode: "judgement",
-            pattern: "strategy \\u2192 effect on a measure \\u2192 how effective, and when",
+            pattern: "strategy → effect on a measure → how effective, and when",
             statement: "Human resource strategies are effective to the degree that they measurably improve business performance, and how far they do depends on how well they are carried out.",
             judging: "how effective human resource strategies are at improving business performance",
             criteria: [
@@ -4530,7 +4531,7 @@ window.ESSAY = {
           },
           pathways: [
             { id: "hr01-td-productivity", area: "training and development",
-              short: "Training \\u2192 productivity",
+              short: "Training → productivity",
               adds: "raising productivity",
               relationship: "Training raises productivity by making staff faster and more accurate at the work",
               meaning: "A trained worker produces more in the same shift and makes fewer mistakes, which shows up directly in output per hour.",
@@ -4543,7 +4544,7 @@ window.ESSAY = {
                            limits: "It shows the training exists. Argue what it changes; do not claim a productivity figure you cannot support." }],
               guides: { explain: "Explain the step from a skill to a number, and name the number." } },
             { id: "hr01-td-retention", area: "training and development",
-              short: "Development \\u2192 lower turnover",
+              short: "Development → lower turnover",
               adds: "reducing turnover",
               relationship: "Development pathways cut turnover by giving staff a reason to stay",
               meaning: "Somewhere to go next is a reason not to leave, and turnover is one of the clearest measures of performance in a business that trains people constantly.",
@@ -4556,7 +4557,7 @@ window.ESSAY = {
                            limits: "A pathway existing is not proof people take it. Argue the mechanism rather than asserting the result." }],
               guides: { explain: "Explain why a path upwards changes the decision to leave." } },
             { id: "hr01-rw-motivation", area: "rewards",
-              short: "Rewards \\u2192 output, where it can be measured",
+              short: "Rewards → output, where it can be measured",
               adds: "lifting output where it can be measured",
               relationship: "Performance-based rewards lift output where the work can be measured fairly",
               meaning: "Paying for results works when results are visible, and does very little when nobody can tell whose result it was.",
@@ -4569,7 +4570,7 @@ window.ESSAY = {
                            limits: "Do not claim a motivational effect the evidence does not show. Argue the conditions under which it would hold." }],
               guides: { explain: "Explain the condition first, then the effect that follows from it." } },
             { id: "hr01-rw-cost", area: "rewards",
-              short: "Rewards \\u2192 a cost before a result",
+              short: "Rewards → a cost before a result",
               adds: "raising output at a cost that has to be earned back",
               relationship: "Rewards are an expense, so the gain has to be worth more than what is paid for it",
               meaning: "Every reward is spent before it works, so a strategy that lifts output slightly can still leave the business worse off.",
@@ -4580,7 +4581,7 @@ window.ESSAY = {
               evidence: [],
               guides: { explain: "Explain what is spent, then what is gained, and put them beside each other." } },
             { id: "hr01-pf-accountability", area: "performance management",
-              short: "Appraisal \\u2192 problems found early",
+              short: "Appraisal → problems found early",
               adds: "finding weak performance early",
               relationship: "Appraisal against clear standards identifies weak performance before it costs the business",
               meaning: "If everyone knows the standard and is measured against it, a problem shows up as a number rather than as a bad shift nobody records.",
@@ -4593,7 +4594,7 @@ window.ESSAY = {
                            limits: "It shows the system exists. Whether it is applied consistently is the part you have to argue." }],
               guides: { explain: "Explain what an explicit standard makes visible that would otherwise be invisible." } },
             { id: "hr01-pf-trust", area: "performance management",
-              short: "Appraisal \\u2192 worse, if it reads as surveillance",
+              short: "Appraisal → worse, if it reads as surveillance",
               adds: "affecting trust as well as accountability",
               relationship: "Appraisal damages performance where staff experience it as surveillance rather than support",
               meaning: "The same appraisal that finds problems early can make people hide them, if being measured feels like being watched.",
@@ -4606,7 +4607,7 @@ window.ESSAY = {
                            limits: "Disputes have many causes. Argue that appraisal can contribute, not that it caused them." }],
               guides: { explain: "Explain the mechanism by which measuring people makes the number worse, not just less popular." } },
             { id: "hr01-jd-enrichment", area: "job design",
-              short: "Job enrichment \\u2192 motivation and retention",
+              short: "Job enrichment → motivation and retention",
               adds: "raising motivation through more control over the work",
               relationship: "Enriched jobs raise motivation by giving staff more control over their work",
               meaning: "A job with some judgement in it holds people longer than one that has been stripped down to a sequence of instructions.",
@@ -4619,7 +4620,7 @@ window.ESSAY = {
                            limits: "This is the starting point, not the enrichment. Argue what changing it would do." }],
               guides: { explain: "Explain what control does to how someone treats the work." } },
             { id: "hr01-jd-flexibility", area: "job design",
-              short: "Flexible arrangements \\u2192 lower absenteeism",
+              short: "Flexible arrangements → lower absenteeism",
               adds: "cutting absenteeism for staff with outside commitments",
               relationship: "Flexible arrangements cut absenteeism for staff with commitments outside work",
               meaning: "Someone who can fit work around study or family does not have to choose between them, and absenteeism is where that choice usually shows up.",
@@ -9959,11 +9960,32 @@ window.BUSCONTENT = {
   // Build the paragraph slots for a structure, preserving any text/point/feedback
   // from a previous structure by index (so changing the structure later never
   // silently drops a student's writing).
+  // Changing the structure re-shapes the response around what is already in it.
+  // Two things it must not do. It must not match positionally: growing a five part
+  // response into a six part one shifts every index after the last body, so index
+  // matching would carry the conclusion's prose into a body paragraph. And it must
+  // not drop what a paragraph was planned to argue or the evidence chosen for it,
+  // because adding a paragraph is not a decision to throw the others away.
   function esBuildParas(structureKey, prev) {
     const st = esStructureDef(structureKey);
-    return st.roles.map((role, i) => {
-      const old = prev && prev[i];
-      return { role, point: old ? old.point : "", text: old ? old.text : "", feedback: old ? old.feedback || null : null, gradedText: old ? old.gradedText || null : null, mastered: old ? !!old.mastered : false, blocks: null, blocksFrom: null, step: 0 };
+    const old = prev || [];
+    const bodies = old.filter(x => !esIsIntro(x) && !esIsConcl(x));
+    const intro = old.find(esIsIntro) || null;
+    const concl = old.find(esIsConcl) || null;
+    let b = 0;
+    return st.roles.map(role => {
+      const stub = { role: role };
+      const o = esIsIntro(stub) ? intro : esIsConcl(stub) ? concl : bodies[b++];
+      return { role: role,
+        point: o ? o.point || "" : "", text: o ? o.text || "" : "",
+        feedback: o ? o.feedback || null : null, gradedText: o ? o.gradedText || null : null,
+        mastered: o ? !!o.mastered : false,
+        area: o ? o.area || "" : "", argumentId: o ? o.argumentId || null : null,
+        ownArgument: o ? o.ownArgument || "" : "",
+        evidenceIds: o ? (o.evidenceIds || []).slice() : [],
+        setupDone: o ? !!o.setupDone : false,
+        contextVersion: o ? Number(o.contextVersion) || 0 : 0,
+        blocks: null, blocksFrom: null, step: 0 };
     });
   }
   function esId() { return "e" + (ES.list.length + 1) + "-" + (ES.draft ? "" : "") + Math.abs((esBagKey() + ES.list.length).split("").reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 7)).toString(36); }
@@ -11131,11 +11153,19 @@ window.BUSCONTENT = {
   }
   // Pathways offered for THIS paragraph. Matched on the area the paragraph is about,
   // falling back to every pathway when the paragraph has not said yet.
+  function esAreaForPara(p) {
+    if (!p) return "";
+    if (p.area) return p.area;
+    if (!esAreasRequired()) return "";
+    const d = ES.draft; if (!d) return "";
+    const k = esBodyIndexes(d).indexOf(d.paras.indexOf(p));
+    return k >= 0 ? (esQuestionAreas()[k] || "") : "";
+  }
   function esPathwaysFor(p) {
     const q = esQuestionDef();
     const all = (q && q.pathways) || [];
     if (!all.length) return [];
-    const hay = ((p.point || "") + " " + (p.role || "") + " " + (p.area || "")).toLowerCase();
+    const hay = ((p.point || "") + " " + (p.role || "") + " " + esAreaForPara(p)).toLowerCase();
     const inArea = all.filter(x => x.area && hay.indexOf(x.area.toLowerCase()) >= 0);
     return inArea.length ? inArea : all;
   }
@@ -11214,6 +11244,38 @@ window.BUSCONTENT = {
     return byArea || step.job || "";
   }
   // Whether this paragraph still needs its argument chosen before writing starts.
+  // Two paragraphs arguing the identical relationship is usually a slip and
+  // occasionally deliberate, so it is named and never blocked. Defined once
+  // because it has to behave the same on the planning surface and on the
+  // just-in-time picker, which is now the route most students take.
+  function esTwinOf(d, i) {
+    const id = d.paras[i] && d.paras[i].argumentId;
+    if (!id) return undefined;
+    return esBodyIndexes(d).find(j => j < i && d.paras[j].argumentId === id);
+  }
+  // keyed to the ARGUMENT, so keeping one repeat does not silence the next one
+  function esTwinKey(d, i) { return i + "|" + ((d.paras[i] && d.paras[i].argumentId) || ""); }
+  function esTwinHTML(d, i) {
+    const twin = esTwinOf(d, i);
+    if (twin === undefined || ES.ui.twinOk[esTwinKey(d, i)]) return "";
+    return `<div class="es-twin">
+      This is the same argument as ${esc(d.paras[twin].role)}. You can argue the same strategy twice if the point is genuinely different, but repeating the relationship narrows what your response covers.
+      <span class="es-twinbtns"><button type="button" class="es-linkbtn" data-estwinok="${esc(esTwinKey(d, i))}">Keep it</button><button type="button" class="es-linkbtn" data-estwinother="${i}">See other arguments</button></span>
+    </div>`;
+  }
+  // The same two buttons on both surfaces, so the warning behaves the same way
+  // wherever the argument was chosen.
+  function esBindTwin(host) {
+    host.querySelectorAll("[data-estwinok]").forEach(b => b.onclick = () => {
+      ES.ui.twinOk[b.dataset.estwinok] = true; esRender();
+    });
+    host.querySelectorAll("[data-estwinother]").forEach(b => b.onclick = () => {
+      const i = Number(b.dataset.estwinother);
+      if (ES.screen === "coached") { ES.draft.pos = i; ES.ui.setupStage = "argument"; }
+      else { ES.ui.planOpen[i] = true; ES.ui.planAll = true; }
+      esRender();
+    });
+  }
   function esNeedsSetup(p) {
     if (!p) return false;
     // The introduction and the conclusion argue the whole response, not one
@@ -11229,7 +11291,7 @@ window.BUSCONTENT = {
     if (stage === "argument") {
       const required = esAreasRequired();
       const areas = esQuestionAreas();
-      const area = p.area || "";
+      const area = esAreaForPara(p);
       const askArea = !required && areas.length > 1 && !area;
       const opts = askArea ? [] : esPathwaysFor(p);
       const usedElsewhere = {};
@@ -11241,6 +11303,12 @@ window.BUSCONTENT = {
         ${(areas.length > 1 && !required) ? `<div class="es-planareas">${areas.map(a => {
           const on = String(a).toLowerCase() === String(area).toLowerCase(), used = usedElsewhere[a];
           return `<button type="button" class="es-areachip ${on ? "on" : ""}" data-essetuparea="${esc(a)}">${esc(a)}${(used && !on) ? `<span class="es-areaused">used in ${esc(used)}</span>` : ""}</button>`;
+        }).join("")}</div>` : ""}
+        ${(required && area) ? `<div class="es-planareas">${areas.map(a => {
+          const on = String(a).toLowerCase() === String(area).toLowerCase(), used = usedElsewhere[a];
+          // not choices: the question fixed them. Shown so the student can see
+          // which part this paragraph is answering and which are already done.
+          return `<span class="es-areachip fixed ${on ? "on" : ""}">${esc(a)}${(used && !on) ? `<span class="es-areaused">done in ${esc(used)}</span>` : ""}</span>`;
         }).join("")}</div>` : ""}
         ${opts.map(o => `<button type="button" class="es-pick" data-espath="${esc(o.id)}">
           ${o.short ? `<span class="es-pickshort">${esc(o.short)}</span>` : ""}
@@ -11278,6 +11346,7 @@ window.BUSCONTENT = {
       : ev.none === "no-bank"
       ? `<p class="es-setupsub">No evidence bank has been written for this subject yet.</p>` : "";
     return `<div class="es-setup">
+      ${esTwinHTML(ES.draft, ES.draft.paras.indexOf(p))}
       <div class="es-setuph">Choose evidence that could support this argument</div>
       <p class="es-setupsub">Only evidence that supports what you chose. Picking one does not write anything: you still use it in your own words.</p>
       ${rows}${none}
@@ -11299,6 +11368,7 @@ window.BUSCONTENT = {
   }
   function esBindSetup(p) {
     const host = document.getElementById("eshost"); if (!host) return;
+    esBindTwin(host);
     host.querySelectorAll("[data-espath]").forEach(b => b.onclick = () => {
       const path = esPathwaysFor(p).find(x => x.id === b.dataset.espath);
       const flagged = esSetParagraphContext(p, b.dataset.espath, []);
@@ -11508,12 +11578,33 @@ window.BUSCONTENT = {
                role_: (path.contribution || {}).role || "", written: esWordsOf(p.text) > 0 };
     }).filter(x => x && x.adds);
   }
+  // Two paragraphs may deliberately argue the same relationship. The plan shows
+  // both, and warns about it, because they are two real paragraphs. The ANSWER
+  // must say it once: a response does not argue something twice as hard for
+  // having been written out twice, and listing a phrase twice reads as a fault
+  // in the app rather than a choice by the student.
+  function esDistinctParts(parts) {
+    const out = [], at = {};
+    parts.forEach(x => {
+      const k = String(x.adds || "").toLowerCase().trim();
+      if (!k) return;
+      if (at[k] === undefined) { at[k] = out.length; out.push(x); return; }
+      // keep the position of the first, but let a written paragraph win the
+      // "written" flag: collapsing two paragraphs must not lose the prose
+      if (x.written && !out[at[k]].written) out[at[k]] = Object.assign({}, out[at[k]], { written: true, i: x.i });
+    });
+    return out;
+  }
+  function esOwnArguments(d) {
+    return esBodyIndexes(d).filter(i => String((d.paras[i] || {}).argumentId || "").indexOf("own:") === 0);
+  }
   function esWorkingAnswer(d) {
     const q = esQuestionDef();
     const w = (q && q.workingAnswer) || null;
     if (!w) return null;
-    const parts = esWorkingParts(d);
-    if (!parts.length) return { text: w.base, broad: true, from: 0, written: 0 };
+    const own = esOwnArguments(d).length;
+    const parts = esDistinctParts(esWorkingParts(d));
+    if (!parts.length) return { text: w.base, broad: true, from: 0, written: 0, own: own };
     const adds = parts.map(x => x.adds);
     const join = w.join || ", and";
     const list = adds.length === 1 ? adds[0]
@@ -11523,8 +11614,30 @@ window.BUSCONTENT = {
     if (w.qualifier && parts.some(x => x.role_ === "conditional" || x.role_ === "limitation")) {
       text += ", " + w.qualifier;
     }
-    return { text: text.replace(/\s+/g, " ").trim() + ".", broad: false,
+    return { text: text.replace(/\s+/g, " ").trim() + ".", broad: false, own: own,
              from: parts.length, written: parts.filter(x => x.written).length };
+  }
+  // ---------------------------------------------------------------------------
+  // COVERAGE RECOVERY
+  //
+  // The review can name a required part the response has not addressed and offer
+  // a way back to it. Finding "somewhere to put it" must never mean taking over
+  // work the student has already done: a paragraph with a planned argument is
+  // theirs, and a paragraph with prose in it is theirs even if nothing has been
+  // declared about it. So this only ever labels a body that is BOTH unassigned
+  // and empty. When there is no such body it either offers to add one, saying so
+  // in the button, or simply navigates and changes nothing.
+  // ---------------------------------------------------------------------------
+  function esCoverPlan(d, area) {
+    const bodies = esBodyIndexes(d);
+    const already = bodies.find(k => d.paras[k].area === area);
+    if (already != null) return { act: "go", i: already, label: "Go to " + area };
+    const free = bodies.find(k => !d.paras[k].area && !esWordsOf(d.paras[k].text));
+    if (free != null) return { act: "assign", i: free, label: "Go to " + area };
+    const grow = esStructureForBodies(bodies.length + 1);
+    if (grow) return { act: "grow", key: grow.key, label: "Add a paragraph for " + area };
+    const unlabelled = bodies.find(k => !d.paras[k].area);
+    return { act: "go", i: unlabelled != null ? unlabelled : bodies[bodies.length - 1], label: "Go to " + area };
   }
   function esList(xs) {
     const a = (xs || []).map(x => String(x));
@@ -11624,11 +11737,16 @@ window.BUSCONTENT = {
   // so a question can add positions without this guessing at their meaning. A
   // position the student wrote themselves has no lean, so it is left alone.
   // ---------------------------------------------------------------------------
+  function esShapeKey(pos, n) {
+    return [pos.id, n.support, n.conditional, n.limitation].join(":");
+  }
   function esPositionTension(d) {
     if (!esIsJudgement()) return null;
     const pos = esPositionOf(d);
     if (!pos || pos.own || !pos.lean) return null;
-    const parts = esWorkingParts(d).filter(x => x.role_);
+    // distinct arguments, for the same reason the answer lists them once: a
+    // relationship argued in two paragraphs is one thing the response says
+    const parts = esDistinctParts(esWorkingParts(d)).filter(x => x.role_);
     if (parts.length < 2) return null;
     const n = { support: 0, conditional: 0, limitation: 0 };
     parts.forEach(x => { if (n[x.role_] != null) n[x.role_]++; });
@@ -11642,8 +11760,12 @@ window.BUSCONTENT = {
       ask = "Every argument you have chosen pulls the same way.";
     }
     if (!ask) return null;
-    if ((d.posSeenAt || 0) >= parts.length) return null;
-    return { ask: ask, label: pos.label, n: parts.length };
+    // Keyed to the SHAPE that was dismissed, not to how many arguments there were
+    // when it was. Swapping a support for a limitation leaves the count identical
+    // and changes everything the question is about, so a count would stay quiet
+    // exactly when it should speak.
+    if (d.posSeenShape === esShapeKey(pos, n)) return null;
+    return { ask: ask, label: pos.label, n: parts.length, shape: esShapeKey(pos, n) };
   }
   function esPositionTensionHTML(d) {
     const t = esPositionTension(d);
@@ -11666,7 +11788,7 @@ window.BUSCONTENT = {
   function esThesisDriftHTML(d) {
     const yours = (d.thesis || "").trim(); if (!yours) return "";
     const wa = esWorkingAnswer(d); if (!wa || wa.broad) return "";
-    if ((d.thesisSeenAt || 0) >= wa.from) return "";
+    if (d.thesisSeenText === wa.text) return "";
     return `<div class="es-drift">
       <div class="es-drifth">Your argument choices have moved on since you wrote your thesis</div>
       <div class="es-driftblk"><span class="es-corelbl">you wrote</span><p class="es-corep">${esc(yours)}</p></div>
@@ -11718,7 +11840,7 @@ window.BUSCONTENT = {
     if (th && save) save.onclick = () => {
       const was = d.thesis || "";
       d.thesis = th.value.trim();
-      const wa0 = esWorkingAnswer(d); d.thesisSeenAt = (wa0 && wa0.from) || 0;
+      const wa0 = esWorkingAnswer(d); d.thesisSeenText = (wa0 && wa0.text) || "";
       const i = d.paras.findIndex(pp => esIsIntro(pp));
       let seeded = false;
       if (i >= 0) {
@@ -11739,7 +11861,7 @@ window.BUSCONTENT = {
         : "Saved as your introduction's overall line. The introduction you have already written is untouched.");
     };
     const dk = host.querySelector("#esdriftkeep");
-    if (dk) dk.onclick = () => { const wa = esWorkingAnswer(d); d.thesisSeenAt = (wa && wa.from) || 0; esSaveDraft(); esRender(); };
+    if (dk) dk.onclick = () => { const wa = esWorkingAnswer(d); d.thesisSeenText = (wa && wa.text) || ""; esSaveDraft(); esRender(); };
     const dr = host.querySelector("#esdriftrevise");
     if (dr) dr.onclick = () => { const el = host.querySelector("#esthesis"); if (el) { el.focus(); el.selectionStart = el.value.length; } };
     const cmp = host.querySelector("#escompare");
@@ -11770,8 +11892,9 @@ window.BUSCONTENT = {
     return `<div class="es-startwrap">
       ${wa ? `<div class="es-wa">
         <div class="es-warow"><span class="es-corelbl">${judging ? "Your answer so far" : "Working answer"}</span>
-          ${wa.broad ? `<span class="es-wanote">this develops as you choose arguments</span>`
-            : `<span class="es-wanote">from ${wa.from} argument${wa.from === 1 ? "" : "s"} you have chosen${wa.written ? ", " + wa.written + " written" : ", none written yet"}</span>`}</div>
+          ${wa.broad && !wa.own ? `<span class="es-wanote">this develops as you choose arguments</span>`
+            : wa.broad ? `<span class="es-wanote">your ${wa.own === 1 ? "argument is" : wa.own + " arguments are"} in your own words, so this line stays broad</span>`
+            : `<span class="es-wanote">from ${wa.from} argument${wa.from === 1 ? "" : "s"} you have chosen${wa.written ? ", " + wa.written + " written" : ", none written yet"}${wa.own ? ", and " + wa.own + " of your own that this line does not put into words for you" : ""}</span>`}</div>
         <p class="es-watext">${esc(wa.text)}</p>
         ${judging && pos ? `<div class="es-wapos"><span class="es-corelbl">Your current judgement</span><span>${esc(pos.label)}</span>
           <button type="button" class="es-linkbtn" id="esposopen">Change</button></div>`
@@ -11809,7 +11932,7 @@ window.BUSCONTENT = {
       // Two paragraphs arguing the identical relationship is usually a slip, and
       // occasionally deliberate. Say so and let the student decide; blocking it
       // would be the app asserting that reuse is never legitimate.
-      const twin = chosen ? bodies.find(j => j < i && d.paras[j].argumentId === p.argumentId) : undefined;
+      const twin = chosen ? esTwinOf(d, i) : undefined;
       // Rich while deciding, compact once decided, and only one open at a time so
       // the page is a sequence of decisions rather than four panels stacked up.
       const firstUnchosen = bodies.find(j => !d.paras[j].argumentId);
@@ -11879,10 +12002,7 @@ window.BUSCONTENT = {
         <span class="es-planidle">not planned yet</span>
         <button type="button" class="es-linkbtn" data-esplanedit="${i}">Choose</button>
       </div>`;
-      const twinNote = (twin !== undefined && !ES.ui.twinOk[i]) ? `<div class="es-twin">
-        This is the same argument as ${esc(d.paras[twin].role)}. You can argue the same strategy twice if the point is genuinely different, but repeating the relationship narrows what your response covers.
-        <span class="es-twinbtns"><button type="button" class="es-linkbtn" data-estwinok="${i}">Keep it</button><button type="button" class="es-linkbtn" data-esplanedit="${i}">See other arguments</button></span>
-      </div>` : "";
+      const twinNote = chosen ? esTwinHTML(d, i) : "";
       return `<div class="es-plancard ${chosen ? "done" : ""}${open ? " open" : ""}">
         <div class="es-planh"><span class="es-plandot"></span><span class="es-plann">${esc(p.role)}</span>${area ? `<span class="es-planarea">${esc(area)}</span>` : ""}</div>
         ${body}${twinNote}${evRow}
@@ -11964,9 +12084,7 @@ window.BUSCONTENT = {
       esSaveDraft(); esRender();
       if (n) toast(n + " sentence" + (n === 1 ? "" : "s") + " used that evidence. Check " + (n === 1 ? "it" : "them") + ".");
     });
-    host.querySelectorAll("[data-estwinok]").forEach(b => b.onclick = () => {
-      ES.ui.twinOk[Number(b.dataset.estwinok)] = true; esRender();
-    });
+    esBindTwin(host);
     host.querySelectorAll("[data-eswhy]").forEach(b => b.onclick = () => {
       ES.ui.why = ES.ui.why === b.dataset.eswhy ? null : b.dataset.eswhy; esRender();
     });
@@ -11986,7 +12104,7 @@ window.BUSCONTENT = {
     if (pdef) pdef.onclick = () => { d.posDefer = true; ES.ui.posOpen = false; esSaveDraft(); esRender(); };
     const ptc = host.querySelector("#espostension"); if (ptc) ptc.onclick = () => { ES.ui.posOpen = true; esRender(); };
     const ptk = host.querySelector("#esposkeep");
-    if (ptk) ptk.onclick = () => { d.posSeenAt = esWorkingParts(d).filter(x => x.role_).length; esSaveDraft(); esRender(); };
+    if (ptk) ptk.onclick = () => { const t = esPositionTension(d); if (t) d.posSeenShape = t.shape; esSaveDraft(); esRender(); };
     const crit = host.querySelector("#escrit"); if (crit) crit.onclick = () => { ES.ui.critOpen = !ES.ui.critOpen; esRender(); };
     const st = host.querySelector("#esplanstruct");
     if (st) st.onclick = () => { const def = esStructureForBodies(esQuestionAreas().length); if (def) { esApplyStructure(def.key); esRender(); } };
@@ -12865,7 +12983,9 @@ window.BUSCONTENT = {
           // the button that was always there.
           return `<div class="es-cover missing"><span class="es-corelbl">Not yet addressed</span>
             <span class="es-wanote">Your response does not yet address ${esc(esList(missing))}, which the question names. Submitting now is likely to limit your mark substantially. You can submit anyway.</span>
-            <div class="es-coverbtns">${missing.map(a => `<button type="button" class="es-btn ghost sm" data-escover="${esc(a)}">Go to ${esc(a.toLowerCase())}</button>`).join("")}</div></div>`;
+            <div class="es-coverbtns">${missing.map(a => { const plan = esCoverPlan(d, a);
+              return `<button type="button" class="es-btn ghost sm" data-escover="${esc(a)}">${esc(plan.label.toLowerCase().replace(/^./, c => c.toUpperCase()))}</button>`;
+            }).join("")}</div></div>`;
         })()}
         <div class="es-completion">
           <p class="es-completemsg">${guided
@@ -12880,17 +13000,22 @@ window.BUSCONTENT = {
     </div></div></div>`;
     esBindWritingHead();
     host.querySelectorAll("[data-esrvedit]").forEach(b => b.onclick = () => esGoCoached(Number(b.dataset.esrvedit)));
-    // route to the paragraph that already covers this part, else to one that is
-    // free to take it. Never reassigns a paragraph that has been planned.
     host.querySelectorAll("[data-escover]").forEach(b => b.onclick = () => {
-      const a = b.dataset.escover, bodies = esBodyIndexes(d);
-      let i = bodies.find(k => d.paras[k].area === a);
-      if (i == null) i = bodies.find(k => !d.paras[k].area);
-      if (i == null) i = bodies.find(k => !esWordsOf(d.paras[k].text));
-      if (i == null) i = bodies[bodies.length - 1];
-      if (i == null) return;
-      if (!d.paras[i].area) { d.paras[i].area = a; esSaveDraft(); }
-      esGoCoached(i);
+      const a = b.dataset.escover;
+      const plan = esCoverPlan(d, a);
+      if (plan.act === "grow") {
+        esApplyStructure(plan.key);
+        const added = esBodyIndexes(d).find(k => !d.paras[k].area && !esWordsOf(d.paras[k].text));
+        if (added == null) return;
+        d.paras[added].area = a; esSaveDraft(); esGoCoached(added);
+        return;
+      }
+      if (plan.i == null) return;
+      if (plan.act === "assign") { d.paras[plan.i].area = a; esSaveDraft(); }
+      else if (!d.paras[plan.i].area) {
+        toast("Every paragraph is already spoken for, so nothing has been changed. Use Change beside an argument to cover " + a + ".");
+      }
+      esGoCoached(plan.i);
     });
     const back = $("#esrvback");
     if (back) back.onclick = () => esGoCoached(firstGap >= 0 ? firstGap : d.pos);

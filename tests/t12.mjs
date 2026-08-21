@@ -95,6 +95,31 @@ questions.forEach(q => {
 });
 console.log("  rendered " + rendered + " combinations; longest " + worst.words + " words at " + worst.n + " arguments");
 
+// ---- the same argument chosen twice is one thing the response says ----------
+// Subsets can never reach this state, and it is exactly what a real student did:
+// took the first option in two different paragraphs and got the phrase twice.
+questions.forEach(q => {
+  setQuestion(q);
+  const ids = q.pathways.map(x => x.id);
+  ids.forEach(id => {
+    const once = esWorkingAnswer(draft(q, [id]));
+    const twice = esWorkingAnswer(draft(q, [id, id]));
+    const thrice = esWorkingAnswer(draft(q, [id, id, id]));
+    ok(twice.text === once.text, q.id + "/" + id + ": arguing it twice says it once\n      " + twice.text);
+    ok(thrice.text === once.text, q.id + "/" + id + ": and three times says it once");
+    ok(twice.from === 1, q.id + "/" + id + ": and counts as one argument, not two: " + twice.from);
+    ok(!faults(twice.text, q, [id]).length, q.id + "/" + id + ": with no mechanical fault");
+  });
+  if (ids.length >= 2) {
+    const a = ids[0], b = ids[1];
+    ok(esWorkingAnswer(draft(q, [a, a, b])).text === esWorkingAnswer(draft(q, [a, b])).text,
+      q.id + ": a repeat among distinct arguments changes nothing");
+    ok(esWorkingAnswer(draft(q, [a, b, a])).text === esWorkingAnswer(draft(q, [a, b])).text,
+      q.id + ": wherever the repeat sits");
+    ok(esWorkingAnswer(draft(q, [a, a, b])).from === 2, q.id + ": counted as two arguments");
+  }
+});
+
 // ---- the qualifier appears exactly when something qualifies the judgement ----
 const hr = questions.find(q => (q.coreAnswer || {}).mode === "judgement");
 ok(!!hr, "a judgement question exists to test the qualifier against");
@@ -115,6 +140,8 @@ if (hr) {
   ok(has(sup.slice(0, 1).concat(lim.slice(0, 1))), "support plus limitation picks up the qualifier");
   ok(has(lim), "several limitations pick up the qualifier once");
   ok((esWorkingAnswer(draft(hr, lim)).text.split(q).length - 1) === 1, "several limitations do not repeat the qualifier");
+  ok(has([lim[0], lim[0]]), "the same limitation written out twice still qualifies the judgement");
+  ok((esWorkingAnswer(draft(hr, [lim[0], lim[0]])).text.split(q).length - 1) === 1, "and does not qualify it twice");
 
   // ---- judgement against argument shape: asks, never decides ----------------
   const pos = id => ({ position: id });
@@ -127,13 +154,23 @@ if (hr) {
   ok(T("conditional", sup.slice(0, 3)) !== null, "an it depends judgement where every argument pulls one way raises a question");
   ok(T("conditional", sup.slice(0, 1).concat(cond.slice(0, 1), lim.slice(0, 1))) === null, "a mixed set under a qualified judgement raises nothing");
   ok(T("high", one) === null, "one argument is never enough to question a judgement");
+  ok(T("high", [lim[0], lim[0]]) === null, "and neither is one argument written out twice");
+  ok(T("high", [lim[0], lim[0], lim[1]]) !== null, "two different limitations do question it");
   ok(T("own:I think they work", one.concat(twoLim)) === null, "a position the student wrote is left alone");
   ok(T(null, one.concat(twoLim)) === null, "no position means nothing to question");
   const t = T("high", one.concat(twoLim));
   ok(t && t.label && t.ask, "the question names the judgement and what is odd about the arguments");
   ok(t && !/\bwrong\b|\bshould\b|\bdowngrade\b/i.test(t.ask), "it does not tell the student the judgement is wrong");
-  ok(T("high", one.concat(twoLim), { posSeenAt: 3 }) === null, "dismissing it keeps it dismissed at the same argument count");
-  ok(T("high", one.concat(twoLim, cond.slice(0, 1)), { posSeenAt: 3 }) !== null, "it returns when the shape moves again");
+  const t0 = T("high", one.concat(twoLim));
+  ok(T("high", one.concat(twoLim), { posSeenShape: t0.shape }) === null, "dismissing it keeps that shape dismissed");
+  ok(T("high", one.concat(twoLim, cond.slice(0, 1)), { posSeenShape: t0.shape }) !== null, "it returns when the shape moves again");
+  // the reason the key is the shape and not a count: swapping one argument for
+  // another of a different kind leaves the count identical and changes the
+  // question entirely
+  const swapped = T("high", one.concat(lim.slice(0, 1), cond.slice(0, 1)), { posSeenShape: t0.shape });
+  ok(swapped !== null, "and returns when an argument is swapped for a different kind without the count moving");
+  ok(T("limited", sup.slice(0, 2), { posSeenShape: t0.shape }) !== null,
+    "a different judgement is never covered by another judgement's dismissal");
   const d = draft(hr, one.concat(twoLim), pos("high"));
   esPositionTension(d);
   ok(d.position === "high", "checking the tension never changes the student's judgement");

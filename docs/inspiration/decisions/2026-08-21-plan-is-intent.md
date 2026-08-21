@@ -72,7 +72,12 @@ downgrades, reorders or rewrites a judgement.
 
 - `checkWorkingAnswers()` in `build.js` refuses the build unless every `adds` is
   a complement phrase of the kind the question's `lead` demands, every pathway
-  contributes one, and every judgement position carries a `lean`.
+  contributes one, and every judgement position carries a `lean`. It enforces
+  **this application's authored composition pattern, not English grammar**. The
+  "lead ends in `by` therefore the complement is an `-ing` phrase" rule holds
+  because these question families chose that construction. A future family that
+  legitimately needs another form should change the schema, not reword valid
+  content to satisfy the validator.
 - `tests/t12.mjs` renders **3001 combinations** of chosen arguments through the
   shipped assembler and reads each result for mechanical faults.
 - `tests/ui25.js` asserts the wording, the deferral, the coverage warning and the

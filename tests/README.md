@@ -44,6 +44,25 @@ it is used; do not run `playwright install` in the hosted environment.
 | `ui16` | P1 reference area on TEEEC: every component, every rung, all four help needs |
 | `ui17` | the same reference area on TDECC |
 | `ui18` | the verification gate: unsourced evidence is withheld, and everything else keeps working |
+| `ui19` | Question Decode: anchors, kinds, and the panel while writing |
+| `ui20` | the guidance chain: pathway guide, then area guide, then the slot's own job |
+| `ui21` | the planning surface |
+| `ui22` | `fin-01`: a question that does not fix its parts |
+| `ui23` | `hr-01`: judgement mode, contribution roles, the conclusion |
+| `ui24` | progressive construction: the start surface, the working answer, thesis drift |
+| `ui25` | the working answer states intent; deciding as you go; coverage warns and routes |
+| `ui26` | coverage recovery at its edges: nothing student-made is ever taken over |
+| `ui27` | the writing route reaches parity with the planning surface |
+
+`t12` is not a browser suite. It lifts the shipped working-answer assembler out of
+`app.js` and renders **3001 combinations** of chosen arguments through it, reading
+each result for mechanical faults that only appear when authored fragments are
+joined. Subsets and repeats both, because a student can argue the same
+relationship twice.
+
+`bots/` is the simulated-student harness: three students defined as knowledge
+states rather than click scripts, walked through a causal and a judgement
+question. See `bots/README.md`. Run with `node tests/run.js bots`.
 
 `friction*.js` and `learning_p1.js` are measurement passes rather than assertions.
 They drive a realistic journey and print interaction counts; `shots_p1.js` captures

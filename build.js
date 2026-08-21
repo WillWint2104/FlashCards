@@ -100,6 +100,13 @@ if (anchorFaults.length) {
 // ---------------------------------------------------------------------------
 // THE WORKING ANSWER IS ASSEMBLED, SO ITS PARTS HAVE A GRAMMAR
 //
+// What follows enforces THIS APPLICATION'S AUTHORED COMPOSITION PATTERN. It is
+// not a grammar engine and does not claim to be one. English happily puts things
+// other than "-ing" phrases after "by"; the rule here holds because these
+// question families deliberately use that one construction. If a future question
+// family resists the convention, change the schema to describe what that family
+// actually does. Do not contort valid content to satisfy this file.
+//
 // The app joins `lead` + the chosen pathways' `adds` + `qualifier` into one
 // sentence a student reads as the answer they are building. Nothing at runtime
 // can tell whether the result parses, so the authoring convention has to be
@@ -181,6 +188,39 @@ function checkWorkingAnswers() {
   });
   return bad;
 }
+// ---------------------------------------------------------------------------
+// AUTHORED TEXT IS SHOWN VERBATIM
+//
+// Every string in essay-content.js reaches a student as written. A literal
+// "\\uXXXX" survives evaluation as six characters and is rendered as six
+// characters, so a pathway shipped as "Training \\u2192 productivity" reads
+// exactly that way on screen. Nothing at runtime can tell the difference between
+// that and an intentional string, so it is caught here.
+// ---------------------------------------------------------------------------
+function checkLiteralEscapes() {
+  const subs = essaySubjects();
+  if (!subs) return [essayLoadError];
+  const bad = [];
+  const walk = (v, where) => {
+    if (typeof v === "string") {
+      const m = v.match(/\\u[0-9a-fA-F]{4}|\\x[0-9a-fA-F]{2}/);
+      if (m) bad.push(`${where} ships the literal escape ${JSON.stringify(m[0])}, which a student reads as those characters: ${JSON.stringify(v.slice(0, 70))}`);
+      return;
+    }
+    if (Array.isArray(v)) { v.forEach((x, i) => walk(x, where + "[" + i + "]")); return; }
+    if (v && typeof v === "object") { Object.keys(v).forEach(k => walk(v[k], where + "." + k)); }
+  };
+  Object.keys(subs).forEach(key => (subs[key].questions || []).forEach(q => walk(q, `${key}/${q.id}`)));
+  Object.keys(subs).forEach(key => walk(subs[key].concepts || {}, `${key}/concepts`));
+  return bad;
+}
+const escapeFaults = checkLiteralEscapes();
+if (escapeFaults.length) {
+  console.error("BUILD REFUSED: authored text contains an escape a student would read literally.");
+  escapeFaults.forEach(o => console.error("  - " + o));
+  process.exit(1);
+}
+
 const waFaults = checkWorkingAnswers();
 if (waFaults.length) {
   console.error("BUILD REFUSED: the working answer would not assemble cleanly.");

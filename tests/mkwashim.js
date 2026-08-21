@@ -11,7 +11,7 @@ function grab(startMarker, endMarker) {
 }
 const parts = [
   grab("  function esWorkingParts(d) {", "  function esList(xs) {"),
-  grab("  function esPositionTension(d) {", "  function esPositionTensionHTML(d) {"),
+  grab("  function esShapeKey(pos, n) {", "  function esPositionTensionHTML(d) {"),
 ].join("\n");
 
 // The stubs the extracted code needs. Every one of them is a fact about the

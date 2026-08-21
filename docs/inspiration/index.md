@@ -7,6 +7,7 @@ applies. Read this first.
 | --- | --- | --- |
 | `briefs/2026-08-19-learning-architecture.md` | active | guided mode, concept layer, pathway layer, marking |
 | `briefs/2026-08-19-interface-optimisation.md` | active | guided mode, all screens |
+| `decisions/2026-08-21-simulated-students.md` | active | the test harness, how guided-mode work is accepted |
 | `decisions/2026-08-21-plan-is-intent.md` | active | the working answer, judgement positions, required coverage |
 | `decisions/2026-08-20-progressive-construction.md` | active | planning, the response map, the thesis |
 | `decisions/2026-08-20-decode-derives-not-duplicates.md` | active | question decoding, the question schema |
