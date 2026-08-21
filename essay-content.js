@@ -997,14 +997,18 @@ window.ESSAY = {
               { id: "conditions", label: "what it depends on",
                 note: "Most of these strategies work only if they are carried out well and suit the workforce. Where that is true, say so. Where your evidence is strong, do not invent a doubt to look balanced." }
             ],
+            // lean is the only part of a position the app reasons about, and it
+            // is used to ASK whether the judgement still fits the arguments
+            // chosen, never to change or rank it. Authored here so adding a
+            // position never leaves the app guessing from its label.
             positions: [
-              { id: "high", label: "Highly effective",
+              { id: "high", label: "Highly effective", lean: "positive",
                 note: "Take this if you can show large improvements against real measures and the limitations are minor." },
-              { id: "conditional", label: "Effective, but dependent on how they are carried out",
+              { id: "conditional", label: "Effective, but dependent on how they are carried out", lean: "qualified",
                 note: "Take this if the strategies work in principle and your evidence shows implementation deciding the outcome." },
-              { id: "moderate", label: "Moderately effective, with real limitations",
+              { id: "moderate", label: "Moderately effective, with real limitations", lean: "qualified",
                 note: "Take this if you can show genuine gains and genuine costs or failures beside them." },
-              { id: "limited", label: "Limited, except under particular conditions",
+              { id: "limited", label: "Limited, except under particular conditions", lean: "negative",
                 note: "Take this if your evidence suggests the strategies rarely deliver unless something specific is true." }
             ],
             explain: [

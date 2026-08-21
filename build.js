@@ -58,12 +58,17 @@ out = inlineScript(out, '<script src="app.js"></script>', app);
 // orphan an anchor, or make one ambiguous. The build checks both: every authored
 // anchor must occur EXACTLY ONCE in the question's own text.
 // ---------------------------------------------------------------------------
-function checkDecodeAnchors() {
+let essayLoadError = "";
+function essaySubjects() {
   const sandbox = { window: {} };
   const vm = require("vm");
   vm.createContext(sandbox);
-  try { vm.runInContext(essay, sandbox); } catch (e) { return ["essay-content.js did not evaluate: " + e.message]; }
-  const subs = (sandbox.window.ESSAY && sandbox.window.ESSAY.subjects) || {};
+  try { vm.runInContext(essay, sandbox); } catch (e) { essayLoadError = "essay-content.js did not evaluate: " + e.message; return null; }
+  return (sandbox.window.ESSAY && sandbox.window.ESSAY.subjects) || {};
+}
+function checkDecodeAnchors() {
+  const subs = essaySubjects();
+  if (!subs) return [essayLoadError];
   const bad = [];
   Object.keys(subs).forEach(key => {
     (subs[key].questions || []).forEach(q => {
@@ -89,6 +94,97 @@ const anchorFaults = checkDecodeAnchors();
 if (anchorFaults.length) {
   console.error("BUILD REFUSED: a decode highlight does not match its question.");
   anchorFaults.forEach(o => console.error("  - " + o));
+  process.exit(1);
+}
+
+// ---------------------------------------------------------------------------
+// THE WORKING ANSWER IS ASSEMBLED, SO ITS PARTS HAVE A GRAMMAR
+//
+// The app joins `lead` + the chosen pathways' `adds` + `qualifier` into one
+// sentence a student reads as the answer they are building. Nothing at runtime
+// can tell whether the result parses, so the authoring convention has to be
+// checked here rather than remembered: every add is a complement that follows
+// the lead, all of them the same grammatical kind, none of them carrying its own
+// conjunction or full stop. The gerund rule is derived from the lead itself, so
+// a question that ends its lead in "by" demands "-ing" phrases and one that ends
+// in "shaping" refuses them.
+// ---------------------------------------------------------------------------
+const ADDS_BANNED_FIRST = ["and", "but", "or", "so", "although", "though", "because",
+  "which", "that", "while", "whereas", "however", "by", "with", "the-", "to"];
+function checkWorkingAnswers() {
+  const subs = essaySubjects();
+  if (!subs) return [essayLoadError];
+  const bad = [];
+  Object.keys(subs).forEach(key => {
+    (subs[key].questions || []).forEach(q => {
+      const paths = q.pathways || [];
+      const ids = paths.map((p, i) => p.id || String(i));
+      const byId = {};
+      paths.forEach((p, i) => { byId[p.id || String(i)] = p; });
+      const w = q.workingAnswer;
+      const at = `${key}/${q.id}`;
+      const anyAdds = ids.some(id => byId[id].adds);
+      if (!w) {
+        if (anyAdds) bad.push(`${at} has pathway adds but no workingAnswer to assemble them into`);
+        return;
+      }
+      if (!w.base) bad.push(`${at} workingAnswer has no base, so an unplanned response has nothing to say`);
+      if (ids.length && !w.lead) bad.push(`${at} workingAnswer has no lead, so adds would be joined onto the base sentence`);
+      const lead = String(w.lead || w.base || "").trim();
+      const join = String(w.join || ", and").trim();
+      const needsGerund = /\bby$/i.test(lead) || /\bby$/i.test(join);
+      const seen = {};
+      ids.forEach(id => {
+        const a = byId[id].adds;
+        if (!a) { bad.push(`${at} pathway ${id} has no adds, so choosing it would leave the working answer unchanged`); return; }
+        const s = String(a).trim();
+        const where = `${at} adds ${JSON.stringify(s)}`;
+        if (s !== a) bad.push(`${where} has leading or trailing whitespace`);
+        if (s.length > 90) bad.push(`${where} is ${s.length} characters; keep it under 90 or the assembled sentence sprawls`);
+        if (/^[A-Z]/.test(s)) bad.push(`${where} starts with a capital; it continues the lead, it does not start a sentence`);
+        if (/[.,;:]$/.test(s)) bad.push(`${where} ends in punctuation; the join and the full stop are added for you`);
+        const first = s.split(/\s+/)[0].toLowerCase().replace(/[^a-z-]/g, "");
+        if (ADDS_BANNED_FIRST.indexOf(first) >= 0) bad.push(`${where} starts with ${JSON.stringify(first)}; the lead and join supply the connective`);
+        const isGerund = /ing$/.test(first);
+        if (needsGerund && !isGerund) bad.push(`${where} must be an "-ing" phrase: this question's lead or join ends in "by"`);
+        if (!needsGerund && isGerund) bad.push(`${where} is an "-ing" phrase but the lead does not end in "by"; the list would not parse`);
+        const k = s.toLowerCase();
+        if (seen[k]) bad.push(`${where} is a duplicate of pathway ${seen[k]}; two arguments would say the same thing`);
+        seen[k] = id;
+      });
+      const qual = w.qualifier;
+      if (qual) {
+        const mode = (q.coreAnswer || {}).mode || "causal";
+        if (mode !== "judgement") bad.push(`${at} has a workingAnswer qualifier but is not a judgement question; nothing would ever trigger it`);
+        if (/^[A-Z]/.test(qual)) bad.push(`${at} qualifier starts with a capital mid-sentence`);
+        if (/[.,;:]$/.test(qual)) bad.push(`${at} qualifier ends in punctuation`);
+        if (/^(and|but|,)/i.test(qual.trim())) bad.push(`${at} qualifier starts with its own connective; a comma is added for you`);
+        const roles = ids.map(id => ((byId[id].contribution || {}).role || ""));
+        if (!roles.some(r => r === "conditional" || r === "limitation")) {
+          bad.push(`${at} has a qualifier but no conditional or limitation pathway, so it can never appear`);
+        }
+      }
+      // The judgement-versus-arguments check reads lean, never the label text.
+      if (((q.coreAnswer || {}).mode) === "judgement") {
+        const LEANS = ["positive", "qualified", "negative"];
+        ((q.coreAnswer || {}).positions || []).forEach(p => {
+          if (LEANS.indexOf(p.lean) < 0) bad.push(`${at} position ${p.id} has lean ${JSON.stringify(p.lean || "")}, expected one of ${LEANS.join(", ")}`);
+        });
+        ids.forEach(id => {
+          const r = (byId[id].contribution || {}).role;
+          if (["support", "conditional", "limitation"].indexOf(r) < 0) {
+            bad.push(`${at} pathway ${id} has contribution role ${JSON.stringify(r || "")}; a judgement question needs one on every argument`);
+          }
+        });
+      }
+    });
+  });
+  return bad;
+}
+const waFaults = checkWorkingAnswers();
+if (waFaults.length) {
+  console.error("BUILD REFUSED: the working answer would not assemble cleanly.");
+  waFaults.forEach(o => console.error("  - " + o));
   process.exit(1);
 }
 

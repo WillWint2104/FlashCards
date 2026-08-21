@@ -772,11 +772,13 @@
     border-top:1px solid var(--line);font-size:13.5px;font-weight:700;color:var(--ink)}
   .es-cover{display:flex;gap:8px;align-items:center;flex-wrap:wrap;border:1.5px solid var(--line);
     border-radius:13px;padding:11px 15px}
-  .es-cover.missing{border-color:var(--gold-dk);background:var(--gold-soft)}
+  .es-cover.missing{border-color:var(--gold-dk);background:var(--gold-soft);
+    align-items:flex-start;flex-direction:column;gap:9px}
   .es-cover.done{border-color:var(--green-soft);background:#FBFEFC;font-size:13px;font-weight:600;color:var(--ink-2)}
   .es-covitem{font-size:12px;font-weight:700;color:var(--ink-2);background:var(--card);border:1.5px solid var(--line);
     border-radius:99px;padding:4px 11px}
   .es-covitem.on{border-color:var(--green);background:var(--green-soft);color:var(--green-dk)}
+  .es-coverbtns{display:flex;gap:8px;flex-wrap:wrap}
   .es-startrows{display:flex;flex-direction:column;gap:6px}
   .es-startrow{display:flex;gap:11px;align-items:center;width:100%;text-align:left;font:inherit;
     border:1.5px dashed var(--line);border-radius:12px;padding:10px 15px;background:none;cursor:pointer}
@@ -796,6 +798,7 @@
   .es-drift{border:1.5px solid var(--gold-dk);background:var(--gold-soft);border-radius:13px;padding:13px 16px;margin-top:13px}
   .es-drifth{font-family:var(--disp);font-weight:600;font-size:14.5px;color:var(--ink);margin-bottom:9px}
   .es-driftblk{margin-bottom:9px}
+  .es-drift .es-wanote{display:block;margin-top:6px}
   .es-restnote{font-size:12px;line-height:1.5;font-weight:600;color:var(--ink-2);margin-top:4px}
   /* the response map: what each section argues, and what it says */
   .es-mapwrap{display:flex;flex-direction:column}

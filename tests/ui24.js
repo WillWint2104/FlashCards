@@ -34,9 +34,9 @@ const wa = p => p.$eval('.es-watext',e=>e.textContent.trim()).catch(()=>'');
   console.log('2. the working answer starts broad and says so');
   const w0=await wa(p);
   ok(/can improve business performance\.$/.test(w0),'a broad opening claim: '+JSON.stringify(w0));
-  ok(/develops as you argue/i.test(await p.$eval('.es-wa',e=>e.innerText)),'labelled as provisional');
-  ok(/current answer/i.test(await p.$eval('.es-wa',e=>e.innerText)),'and as current, not final');
-  ok(!!(await p.$('#esposopen')),'a position can be taken now, or not');
+  ok(/develops as you choose arguments/i.test(await p.$eval('.es-wa',e=>e.innerText)),'labelled as provisional');
+  ok(/answer so far/i.test(await p.$eval('.es-wa',e=>e.innerText)),'and as so far, not final');
+  ok(!!(await p.$('#esposdefer')),'a position can be taken now, or deferred');
 
   console.log('3. it develops as arguments are chosen, not before');
   await p.click('#esplanall'); await p.waitForTimeout(350);
@@ -104,8 +104,8 @@ const wa = p => p.$eval('.es-watext',e=>e.textContent.trim()).catch(()=>'');
   console.log('   ',miss.slice(0,140));
   ok(/not yet addressed/i.test(miss),'at review, what is missing is named');
   ok(/e-marketing/i.test(miss)&&/physical evidence/i.test(miss),'all of it');
-  ok(/costs marks/i.test(miss),'with the consequence stated');
-  ok(/You can still submit/i.test(miss),'and it does not block them');
+  ok(/likely to limit your mark/i.test(miss),'with the consequence stated');
+  ok(/submit anyway/i.test(miss),'and it does not block them');
   ok(!!(await p.$('#essubmit')),'submit is still there');
   await p.screenshot({path:OUT+'shot-coverage-review.png'});
 

@@ -4766,6 +4766,10 @@
   function esWordsOf(t) { return String(t || "").trim().split(/\s+/).filter(Boolean).length; }
   function esResponseWords(d) { return (d.paras || []).reduce((n, pp) => n + esWordsOf(pp.text), 0); }
   function esPlanned(d) { const idx = esBodyIndexes(d); return idx.length > 0 && idx.every(i => !!d.paras[i].argumentId); }
+  // One argument is enough to have something to say overall. Waiting for a
+  // complete plan before the thesis box appears would put back the gate the
+  // progressive route exists to remove.
+  function esPartlyPlanned(d) { return esBodyIndexes(d).some(i => !!d.paras[i].argumentId); }
   // Every body argument the student has established, for the introduction to
   // signpost and for the conclusion to draw together.
   function esPlanRows(d) {
@@ -4817,18 +4821,25 @@
   // ---------------------------------------------------------------------------
   // THE WORKING ANSWER
   //
-  // The system's own understanding of what the response is arguing, rebuilt from
-  // the arguments in play. It is derived, not written: assembled from phrases the
-  // question authored, so it costs nothing and cannot drift from the student's
-  // choices. It is NOT the student's thesis. It never touches their prose.
+  // What the arguments the student has CHOSEN add up to, rebuilt as they choose
+  // them. It is derived, not written: assembled from phrases the question
+  // authored, so it costs nothing and cannot drift from the student's choices.
+  // It is NOT the student's thesis. It never touches their prose.
   //
-  // A paragraph that has been written counts; a paragraph that has only been
-  // planned counts as intent. Both contribute, and the second is marked.
+  // Its source of truth is the plan, so it states intent, not achievement. A
+  // student can select training raises productivity and then write a paragraph
+  // that establishes nothing of the kind, and this would not know. Every label
+  // on it therefore says "the arguments you have chosen", never "your
+  // paragraphs argue". When paragraph diagnosis lands (P2), the written half of
+  // each part can be sourced from what the diagnosis actually found, and only
+  // then may the wording claim the response establishes anything.
   // ---------------------------------------------------------------------------
   function esWorkingParts(d) {
     return esBodyIndexes(d).map(i => {
       const p = d.paras[i], path = esPathway(p);
       if (!path) return null;
+      // written is "there is prose here", NOT "this argument is established".
+      // Nothing reads this paragraph. Do not let a label imply otherwise.
       return { i: i, role: p.role, adds: path.adds || "", short: path.short || "",
                role_: (path.contribution || {}).role || "", written: esWordsOf(p.text) > 0 };
     }).filter(x => x && x.adds);
@@ -4850,6 +4861,11 @@
     }
     return { text: text.replace(/\s+/g, " ").trim() + ".", broad: false,
              from: parts.length, written: parts.filter(x => x.written).length };
+  }
+  function esList(xs) {
+    const a = (xs || []).map(x => String(x));
+    if (a.length <= 1) return a[0] || "";
+    return a.slice(0, -1).join(", ") + " and " + a[a.length - 1];
   }
   function esWrittenClaim(p) {
     const b = esBlocks(p)[0];
@@ -4889,21 +4905,31 @@
     </div>`;
   }
   // Two decisions, not one: what do I think, and what will I use to prove it.
-  // Offered before the body plan because the arguments are chosen to serve it,
-  // and skippable because a student may only find their position while writing.
+  // Offered before the body plan because the arguments are chosen to serve it.
+  //
+  // A position is a recommended orientation, never an entry requirement. A
+  // student who cannot yet evaluate the question is allowed to start body 1,
+  // learn something, build an argument and form the judgement afterwards, so
+  // "I will decide as I go" is a first-class answer that closes this panel
+  // rather than an unanswered question left sitting open above the plan.
   function esJudgementHTML(d) {
     if (!esIsJudgement()) return "";
     const core = esCoreAnswer();
     const chosen = esPositionOf(d);
-    const open = ES.ui.posOpen || !chosen;
-    if (!open) return `<div class="es-judge done">
+    const open = ES.ui.posOpen || (!chosen && !d.posDefer);
+    if (!open && chosen) return `<div class="es-judge done">
       <span class="es-corelbl">Your judgement</span>
       <span class="es-judgeline">${esc(chosen.label)}</span>
       <button type="button" class="es-linkbtn" id="esposopen">Change</button>
     </div>`;
+    if (!open) return `<div class="es-judge done">
+      <span class="es-corelbl">Your judgement</span>
+      <span class="es-judgeline">deciding as you write</span>
+      <button type="button" class="es-linkbtn" id="esposopen">Take a position</button>
+    </div>`;
     return `<div class="es-judge">
       <div class="es-judgeh">What do you think overall?</div>
-      <p class="es-plansub">${esc((core && core.judging) ? "You are judging " + core.judging + "." : "")} Take a position now if you have one. You can change it while you write, and a one-sided judgement is still a judgement.</p>
+      <p class="es-plansub">${esc((core && core.judging) ? "You are judging " + core.judging + "." : "")} Take a position now if you have one. If you do not yet, start writing and decide once you have an argument in front of you. You can change it either way, and a one-sided judgement is still a judgement.</p>
       ${esPositions().map(o => `<button type="button" class="es-pick ${(chosen && chosen.id === o.id) ? "on" : ""}" data-espos="${esc(o.id)}">
           <span class="es-pickrel">${esc(o.label)}</span>${o.note ? `<span class="es-picksub">${esc(o.note)}</span>` : ""}</button>`).join("")}
       <button type="button" class="es-pick own" data-esposown>Write my own position</button>
@@ -4913,11 +4939,63 @@
       </div>
       ${(core && (core.criteria || []).length) ? `<button type="button" class="es-linkbtn" id="escrit">${ES.ui.critOpen ? "Hide" : "What am I judging it against?"}</button>
         ${ES.ui.critOpen ? `<div class="es-corebody">${core.criteria.map(c => `<div class="es-drawer-sub">${esc(c.label)}</div><p class="es-corep">${esc(c.note)}</p>`).join("")}</div>` : ""}` : ""}
-      ${chosen ? `<div class="es-corebtns"><button type="button" class="es-btn sm" id="esposdone">That is my position</button></div>` : ""}
+      <div class="es-corebtns">
+        ${chosen ? `<button type="button" class="es-btn sm" id="esposdone">That is my position</button>` : ""}
+        ${chosen ? "" : `<button type="button" class="es-linkbtn" id="esposdefer">I will decide as I go</button>`}
+      </div>
     </div>`;
   }
-  // The thesis is written once the plan exists, so it can signpost an essay the
-  // student has actually decided on.
+  // ---------------------------------------------------------------------------
+  // JUDGEMENT AGAINST ARGUMENT SHAPE
+  //
+  // A position and the arguments chosen under it can disagree, and that is
+  // useful: it is the moment a student finds out what they actually think. What
+  // it is NOT is arithmetic. Three limitations do not make "highly effective"
+  // wrong, and this never downgrades a judgement, never reorders the positions
+  // and never marks anything. It asks one question, once, and the student
+  // answers it. Dismissal is remembered against the argument count, so it comes
+  // back only if the shape moves again.
+  //
+  // The trigger reads the authored `lean` on the position, not the label text,
+  // so a question can add positions without this guessing at their meaning. A
+  // position the student wrote themselves has no lean, so it is left alone.
+  // ---------------------------------------------------------------------------
+  function esPositionTension(d) {
+    if (!esIsJudgement()) return null;
+    const pos = esPositionOf(d);
+    if (!pos || pos.own || !pos.lean) return null;
+    const parts = esWorkingParts(d).filter(x => x.role_);
+    if (parts.length < 2) return null;
+    const n = { support: 0, conditional: 0, limitation: 0 };
+    parts.forEach(x => { if (n[x.role_] != null) n[x.role_]++; });
+    const qualifying = n.conditional + n.limitation;
+    let ask = "";
+    if (pos.lean === "positive" && qualifying > n.support) {
+      ask = "Most of the arguments you have chosen qualify that judgement or push against it.";
+    } else if (pos.lean === "negative" && n.support > qualifying) {
+      ask = "Most of the arguments you have chosen support what you are judging rather than limiting it.";
+    } else if (pos.lean === "qualified" && parts.length >= 3 && (n.support === parts.length || n.limitation === parts.length)) {
+      ask = "Every argument you have chosen pulls the same way.";
+    }
+    if (!ask) return null;
+    if ((d.posSeenAt || 0) >= parts.length) return null;
+    return { ask: ask, label: pos.label, n: parts.length };
+  }
+  function esPositionTensionHTML(d) {
+    const t = esPositionTension(d);
+    if (!t) return "";
+    return `<div class="es-drift tension">
+      <div class="es-drifth">Does your judgement still fit your arguments?</div>
+      <p class="es-corep">You said <b>${esc(t.label)}</b>. ${esc(t.ask)}</p>
+      <span class="es-wanote">A judgement is not a count of paragraphs, so this may be exactly right. It is worth knowing you can defend it.</span>
+      <div class="es-corebtns">
+        <button type="button" class="es-btn sm" id="espostension">Change my judgement</button>
+        <button type="button" class="es-linkbtn" id="esposkeep">It still fits</button>
+      </div>
+    </div>`;
+  }
+  // The thesis can be written as soon as there is one argument to write it about.
+  // It signposts what has been decided so far, not a finished design.
   // The working answer moves as arguments are added. The student's own thesis
   // sentence does not, and must not: it is theirs. When the two diverge, the
   // divergence is shown and the revision is left to them.
@@ -4926,9 +5004,10 @@
     const wa = esWorkingAnswer(d); if (!wa || wa.broad) return "";
     if ((d.thesisSeenAt || 0) >= wa.from) return "";
     return `<div class="es-drift">
-      <div class="es-drifth">Your response has developed since you wrote your thesis</div>
+      <div class="es-drifth">Your argument choices have moved on since you wrote your thesis</div>
       <div class="es-driftblk"><span class="es-corelbl">you wrote</span><p class="es-corep">${esc(yours)}</p></div>
-      <div class="es-driftblk"><span class="es-corelbl">your paragraphs now argue</span><p class="es-corep model">${esc(wa.text)}</p></div>
+      <div class="es-driftblk"><span class="es-corelbl">based on the arguments you have chosen</span><p class="es-corep model">${esc(wa.text)}</p>
+        <span class="es-wanote">this comes from the arguments you picked, not from reading your paragraphs</span></div>
       <div class="es-corebtns">
         <button type="button" class="es-btn sm" id="esdriftrevise">Revise my thesis</button>
         <button type="button" class="es-linkbtn" id="esdriftkeep">Mine still stands</button>
@@ -4936,14 +5015,14 @@
     </div>`;
   }
   function esThesisHTML(d) {
-    if (!esPlanned(d)) return "";
+    if (!esPartlyPlanned(d)) return "";
     const judging = esIsJudgement();
     const rows = judging ? esJudgementRows(d) : esPlanRows(d);
     const pos = esPositionOf(d);
     const core = esCoreAnswer();
     const yours = (d.thesis || "").trim();
     return `<div class="es-thesis">
-      <div class="es-planhh sm">Now turn your plan into an overall answer</div>
+      <div class="es-planhh sm">${esPlanned(d) ? "Now turn your plan into an overall answer" : "What is your overall answer so far?"}</div>
       ${judging && pos ? `<div class="es-thesispos"><span class="es-corelbl">Your judgement</span><span>${esc(pos.label)}</span></div>` : ""}
       <ul class="es-thesisplan">${rows.map(r => `<li><span class="es-tparea">${esc(r.area || r.role)}</span><span class="es-tpargs">${esc(r.argument)}${r.roleLabel ? `<span class="es-tprole ${esc(r.role)}">${esc(r.roleLabel)}</span>` : ""}</span></li>`).join("")}</ul>
       <label class="es-pinlabel" for="esthesis">write your thesis</label>
@@ -5026,12 +5105,13 @@
     const firstBody = esBodyIndexes(d)[0];
     return `<div class="es-startwrap">
       ${wa ? `<div class="es-wa">
-        <div class="es-warow"><span class="es-corelbl">${judging ? "Your current answer" : "Working answer"}</span>
-          ${wa.broad ? `<span class="es-wanote">this develops as you argue</span>` : `<span class="es-wanote">${wa.from} argument${wa.from === 1 ? "" : "s"} so far</span>`}</div>
+        <div class="es-warow"><span class="es-corelbl">${judging ? "Your answer so far" : "Working answer"}</span>
+          ${wa.broad ? `<span class="es-wanote">this develops as you choose arguments</span>`
+            : `<span class="es-wanote">from ${wa.from} argument${wa.from === 1 ? "" : "s"} you have chosen${wa.written ? ", " + wa.written + " written" : ", none written yet"}</span>`}</div>
         <p class="es-watext">${esc(wa.text)}</p>
         ${judging && pos ? `<div class="es-wapos"><span class="es-corelbl">Your current judgement</span><span>${esc(pos.label)}</span>
           <button type="button" class="es-linkbtn" id="esposopen">Change</button></div>`
-          : judging ? `<button type="button" class="es-linkbtn" id="esposopen">Take a position now</button><span class="es-wanote"> or decide as you write</span>` : ""}
+          : ""}
       </div>` : ""}
       ${req.length ? `<div class="es-cover">
         <span class="es-corelbl">Required in your response</span>
@@ -5160,6 +5240,7 @@
         </div>
         ${esCoreHTML(d)}
         ${(ES.ui.planAll || ES.ui.posOpen || (esIsJudgement() && !esPositionOf(d))) ? esJudgementHTML(d) : ""}
+        ${esPositionTensionHTML(d)}
         ${ES.ui.planAll ? `<div class="es-plancards">${cards}</div>` : esStartHTML(d)}
         ${ES.ui.planAll ? esThesisHTML(d) : ""}
         ${ES.ui.planAll ? `<div class="es-planfoot">
@@ -5237,6 +5318,11 @@
     };
     const pdone = host.querySelector("#esposdone"); if (pdone) pdone.onclick = () => { ES.ui.posOpen = false; esSaveDraft(); esRender(); };
     const popen = host.querySelector("#esposopen"); if (popen) popen.onclick = () => { ES.ui.posOpen = true; esRender(); };
+    const pdef = host.querySelector("#esposdefer");
+    if (pdef) pdef.onclick = () => { d.posDefer = true; ES.ui.posOpen = false; esSaveDraft(); esRender(); };
+    const ptc = host.querySelector("#espostension"); if (ptc) ptc.onclick = () => { ES.ui.posOpen = true; esRender(); };
+    const ptk = host.querySelector("#esposkeep");
+    if (ptk) ptk.onclick = () => { d.posSeenAt = esWorkingParts(d).filter(x => x.role_).length; esSaveDraft(); esRender(); };
     const crit = host.querySelector("#escrit"); if (crit) crit.onclick = () => { ES.ui.critOpen = !ES.ui.critOpen; esRender(); };
     const st = host.querySelector("#esplanstruct");
     if (st) st.onclick = () => { const def = esStructureForBodies(esQuestionAreas().length); if (def) { esApplyStructure(def.key); esRender(); } };
@@ -5390,7 +5476,7 @@
         <aside class="es-map">
           <div class="es-maph">My response<button type="button" class="es-mapall" id="esreview">read all</button></div>
           ${(() => { const wa = esWorkingAnswer(d); if (!wa) return "";
-            return `<button type="button" class="es-mapwa" id="esmapwa" title="What your response is arguing so far">
+            return `<button type="button" class="es-mapwa" id="esmapwa" title="What the arguments you have chosen add up to. It comes from your plan, not from reading your paragraphs.">
               <span class="es-corelbl">${esIsJudgement() ? "current answer" : "working answer"}</span>
               <span class="es-mapwatext">${esc(wa.text)}</span></button>`; })()}
           ${map}
@@ -6109,9 +6195,13 @@
           const missing = req.filter(a => !used[a]);
           if (!missing.length) return `<div class="es-cover done"><span class="es-corelbl">Required coverage</span>
             <span>all ${req.length} parts of the question are addressed</span></div>`;
+          // Checked hard here, and nowhere used to block writing. An incomplete
+          // response is still a response a student may deliberately want marked,
+          // so this names the cost and offers the way back; submitting anyway is
+          // the button that was always there.
           return `<div class="es-cover missing"><span class="es-corelbl">Not yet addressed</span>
-            ${missing.map(a => `<span class="es-covitem">${esc(a)}</span>`).join("")}
-            <span class="es-wanote">The question names ${missing.length === 1 ? "this" : "these"}, so leaving ${missing.length === 1 ? "it" : "them"} out costs marks. You can still submit.</span></div>`;
+            <span class="es-wanote">Your response does not yet address ${esc(esList(missing))}, which the question names. Submitting now is likely to limit your mark substantially. You can submit anyway.</span>
+            <div class="es-coverbtns">${missing.map(a => `<button type="button" class="es-btn ghost sm" data-escover="${esc(a)}">Go to ${esc(a.toLowerCase())}</button>`).join("")}</div></div>`;
         })()}
         <div class="es-completion">
           <p class="es-completemsg">${guided
@@ -6126,6 +6216,18 @@
     </div></div></div>`;
     esBindWritingHead();
     host.querySelectorAll("[data-esrvedit]").forEach(b => b.onclick = () => esGoCoached(Number(b.dataset.esrvedit)));
+    // route to the paragraph that already covers this part, else to one that is
+    // free to take it. Never reassigns a paragraph that has been planned.
+    host.querySelectorAll("[data-escover]").forEach(b => b.onclick = () => {
+      const a = b.dataset.escover, bodies = esBodyIndexes(d);
+      let i = bodies.find(k => d.paras[k].area === a);
+      if (i == null) i = bodies.find(k => !d.paras[k].area);
+      if (i == null) i = bodies.find(k => !esWordsOf(d.paras[k].text));
+      if (i == null) i = bodies[bodies.length - 1];
+      if (i == null) return;
+      if (!d.paras[i].area) { d.paras[i].area = a; esSaveDraft(); }
+      esGoCoached(i);
+    });
     const back = $("#esrvback");
     if (back) back.onclick = () => esGoCoached(firstGap >= 0 ? firstGap : d.pos);
     const sub = $("#essubmit"); if (sub) sub.onclick = () => esSubmitFull();
