@@ -329,6 +329,68 @@ function checkLearning() {
   });
   return bad;
 }
+// ---------------------------------------------------------------------------
+// CONTENT THAT EXISTS BUT CANNOT REACH THE STUDENT
+//
+// The support report answers "does this content exist". That is the wrong
+// question at the moment a student is writing: what matters is whether the
+// pathway they chose can deliver it. A concept authored in the pack and not
+// declared by the pathway that depends on it is invisible, and looked identical
+// to a concept nobody had written.
+//
+// Declaring a concept does not show it. It makes it eligible here.
+// ---------------------------------------------------------------------------
+const CONCEPT_KINDS = ["domain", "supporting"];
+function checkConceptRouting() {
+  const subs = essaySubjects();
+  if (!subs) return { faults: [essayLoadError], warnings: [] };
+  const faults = [], warnings = [];
+  Object.keys(subs).forEach(key => {
+    const store = subs[key].concepts || {};
+    const ordinary = ((subs[key].vocabulary || {}).ordinary) || [];
+    Object.keys(store).forEach(id => {
+      const c = store[id];
+      if (CONCEPT_KINDS.indexOf(c.kind) < 0) faults.push(`${key}/concepts/${id} has kind ${JSON.stringify(c.kind || "")}, expected one of ${CONCEPT_KINDS.join(", ")}`);
+      if (c.requiresTeaching === undefined) faults.push(`${key}/concepts/${id} does not say whether it requires teaching`);
+      if (!c.oneLine) faults.push(`${key}/concepts/${id} has no oneLine, so a pathway lesson could not render it without repeating itself`);
+      else if (c.oneLine.length > 150) faults.push(`${key}/concepts/${id} oneLine is ${c.oneLine.length} characters; it goes inline in a lesson`);
+      if (ordinary.indexOf(id) >= 0) faults.push(`${key}/concepts/${id} is also listed as ordinary language; it cannot be both`);
+    });
+    const referenced = {};
+    (subs[key].questions || []).forEach(q => (q.pathways || []).forEach(pw => {
+      const L = pw.learning; if (!L) return;
+      const at = `${key}/${q.id}/${pw.id}`;
+      const c = L.concepts;
+      if (!c) { faults.push(`${at} has a lesson but declares no concepts, so nothing it depends on is reachable from it`); return; }
+      ["primary", "supporting", "optional"].forEach(tier => {
+        (c[tier] || []).forEach(id => {
+          referenced[id] = true;
+          if (!store[id]) { faults.push(`${at} declares ${tier} concept ${JSON.stringify(id)}, which is not authored`); return; }
+          if (tier === "primary" && store[id].kind !== "domain") {
+            faults.push(`${at} has ${JSON.stringify(id)} as primary, but it is ${store[id].kind}; only a domain concept is something the argument cannot be understood without`);
+          }
+        });
+      });
+      if (!(c.primary || []).length) faults.push(`${at} declares no primary concept, so its lesson teaches nothing reusable`);
+    }));
+    // authored and never reachable: not a refusal, because a pack may be ahead
+    // of the pathways, but it is exactly the failure this file exists to surface
+    Object.keys(store).forEach(id => {
+      if (!referenced[id] && store[id].requiresTeaching === true) {
+        warnings.push(`${key}/concepts/${id} requires teaching and no pathway declares it, so no student can reach it`);
+      }
+    });
+  });
+  return { faults: faults, warnings: warnings };
+}
+const routing = checkConceptRouting();
+if (routing.faults.length) {
+  console.error("BUILD REFUSED: a pathway depends on teaching it cannot reach.");
+  routing.faults.forEach(o => console.error("  - " + o));
+  process.exit(1);
+}
+routing.warnings.forEach(w => console.warn("  note: " + w));
+
 const learningFaults = checkLearning();
 if (learningFaults.length) {
   console.error("BUILD REFUSED: a pathway lesson would not hold together.");

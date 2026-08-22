@@ -1,7 +1,7 @@
 ---
 title:   The pathway is the lesson
 date:    2026-08-22
-status:  accepted, not yet built
+status:  built and frozen
 governs: the Learn tool, the pathway cards, the evidence drawer, short answer
 ---
 

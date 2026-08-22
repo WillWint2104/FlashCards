@@ -56,6 +56,7 @@ it is used; do not run `playwright install` in the hosted environment.
 | `ui28` | causal wrong-turn recovery: backwards, valid alternative, and knowing nothing |
 | `ui29` | decision histories: A to B to A, own to authored to own, and growing the structure over existing prose |
 | `ui30` | the pathway lesson: one surface, optional, visual, applied, and always a way back to the paragraph |
+| `ui31` | the routing contract: concepts authored once, declared per pathway, and shown only where declared |
 
 `t12` is not a browser suite. It lifts the shipped working-answer assembler out of
 `app.js` and renders **3001 combinations** of chosen arguments through it, reading

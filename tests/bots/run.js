@@ -197,6 +197,27 @@ const RUNS = [
   ok(beforeLesson.length > 0,
     "including in the paragraphs it wrote before opening any lesson, from " + [...new Set(beforeLesson)].join(" and "));
 
+  // 8c-ii. the routing contract. A pathway that declares what it depends on can
+  //         be audited; one that does not is the finding, not a pass.
+  console.log("\n=== did the pathway deliver what it said it needed? ===");
+  [["zero", mkZero], ["partial", mkPartial], ["strong", mkStrong]].forEach(([n, r]) => {
+    r.trace.m.dependencies.forEach(d => {
+      console.log("  " + n.padEnd(8) + " " + d.role + ": " + (d.declared == null ? "nothing declared"
+        : d.given.map(g => g.id + " \u2190 " + g.from).join(", ") + (d.missing.length ? "  MISSING " + d.missing.join(", ") : "")));
+    });
+  });
+  const zeroDeps = mkZero.trace.m.dependencies.filter(d => d.declared != null);
+  ok(zeroDeps.length >= 2, "the zero knowledge student met at least two pathways that declare their dependencies: " + zeroDeps.length);
+  ok(zeroDeps.every(d => d.missing.length === 0),
+    "and was given every concept those pathways said they needed: " +
+    JSON.stringify(zeroDeps.flatMap(d => d.missing)));
+  const people = zeroDeps.find(d => d.given.some(g => g.id === "people"));
+  ok(!!people, "including the People pathway, whose concepts are authored once and reached from there");
+  ok(people && people.given.some(g => g.id === "training"),
+    "and training, which is shared rather than written for that pathway: " + JSON.stringify(people && people.given.map(g => g.id)));
+  ok(mkStrong.trace.m.dependencies.every(d => d.given.length === 0),
+    "the student who needed none of it was given none of it");
+
   // 8d. transfer. The same relationship, stated somewhere the app never mentioned,
   //     using only what the lesson showed, judged by the app's own checker.
   const tp = mkZero.trace.m.transfer;

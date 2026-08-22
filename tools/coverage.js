@@ -60,10 +60,41 @@ function explanatoryText(q, subject) {
   walk((subject && subject.concepts) || {}, ["explain"]);
   return out.join(" \n ").toLowerCase();
 }
+// Ordinary English used inside an argument is not a teaching dependency. It is
+// listed by an author, not guessed at, because an "explain everything
+// unexplained" target would otherwise push the pack towards a dictionary.
 function teachable(q, subject) {
   const text = explanatoryText(q, subject);
-  const vocab = vocabulary(q);
-  return { yes: vocab.filter(t => text.indexOf(t) >= 0), no: vocab.filter(t => text.indexOf(t) < 0) };
+  const ordinary = ((subject && subject.vocabulary && subject.vocabulary.ordinary) || []);
+  const vocab = vocabulary(q).filter(t => ordinary.indexOf(t) < 0);
+  return { yes: vocab.filter(t => text.indexOf(t) >= 0), no: vocab.filter(t => text.indexOf(t) < 0),
+           ordinary: vocabulary(q).filter(t => ordinary.indexOf(t) >= 0) };
+}
+
+// Three different failures that all look like "missing content" from outside.
+//   authored     does the concept exist in the pack at all
+//   declared     does this pathway say it depends on it
+//   reachable    both, so a student on this pathway can be given it
+function routing(q, subject) {
+  const store = (subject && subject.concepts) || {};
+  const rows = [];
+  (q.pathways || []).forEach(pw => {
+    const L = pw.learning;
+    if (!L) { rows.push({ id: pw.id, short: pw.short, declared: null }); return; }
+    const c = (L.concepts) || {};
+    const ids = [].concat(c.primary || [], c.supporting || [], c.optional || []);
+    rows.push({ id: pw.id, short: pw.short, declared: ids.length,
+                authored: ids.filter(x => store[x]).length,
+                reachable: ids.filter(x => store[x] && (store[x].oneLine || store[x].quick)).length });
+  });
+  const unreachable = Object.keys(store).filter(id => {
+    if (store[id].requiresTeaching !== true) return false;
+    return !(q.pathways || []).some(pw => {
+      const c = (pw.learning && pw.learning.concepts) || {};
+      return [].concat(c.primary || [], c.supporting || [], c.optional || []).indexOf(id) >= 0;
+    });
+  });
+  return { rows: rows, unreachable: unreachable };
 }
 
 // ---- what each pathway carries ----------------------------------------------
@@ -106,6 +137,8 @@ function questionRow(q, subject, evIndex) {
     evidenceLinked: linked,
     evidenceSourced: sourced,
     recovery: !!q.reasoning,
+    ordinary: t.ordinary,
+    routing: routing(q, subject),
   };
   row.readiness = readinessOf(row);
   return row;
@@ -155,10 +188,37 @@ function format(rows) {
     frac(r.laddersFull, r.pathways) + " | " + frac(r.evidenceSourced, r.pathways) + " | " +
     (r.recovery ? "yes" : "no") + " | " + r.readiness + " |"));
   out.push("");
+  out.push("## Can this pathway deliver what it depends on?");
+  out.push("");
+  out.push("Content existing somewhere in the pack is irrelevant to a student on a");
+  out.push("pathway that cannot surface it. A pathway with no declared dependencies");
+  out.push("has not said what it needs, so nothing can be routed to it.");
+  out.push("");
+  rows.forEach(r => {
+    const declared = r.routing.rows.filter(x => x.declared != null);
+    out.push("### `" + r.id + "`");
+    out.push("");
+    out.push("| pathway | concepts declared | authored | reachable here |");
+    out.push("| --- | --- | --- | --- |");
+    r.routing.rows.forEach(x => out.push("| `" + x.id + "` | " +
+      (x.declared == null ? "**none declared**" : x.declared) + " | " +
+      (x.declared == null ? "-" : x.authored) + " | " +
+      (x.declared == null ? "-" : x.reachable) + " |"));
+    out.push("");
+    if (r.routing.unreachable.length) {
+      out.push("Authored, requires teaching, and no pathway here declares it: " +
+        r.routing.unreachable.map(x => "`" + x + "`").join(", "));
+      out.push("");
+    }
+    out.push("Declared by " + declared.length + " of " + r.routing.rows.length + " pathways.");
+    out.push("");
+  });
   out.push("## Named in the interface, explained nowhere");
   out.push("");
-  out.push("Each of these is a word a student can be shown while nothing in the app");
-  out.push("can tell them what it means. They are the first thing to author.");
+  out.push("Words a student can be shown while nothing in the app can tell them what");
+  out.push("they mean. Ordinary English is excluded by the authored");
+  out.push("`vocabulary.ordinary` list rather than by guesswork, so this is a list of");
+  out.push("teaching dependencies and not of unfamiliar tokens.");
   out.push("");
   rows.forEach(r => {
     if (!r.unexplained.length) { out.push("- `" + r.id + "`: none"); return; }
@@ -174,7 +234,8 @@ function summary(rows) {
   const e = rows.reduce((n, r) => n + r.evidenceSourced, 0);
   const ready = rows.filter(r => r.readiness === "Learn & Build").length;
   const s = rows.reduce((n, r) => n + r.lessons, 0);
-  return "support: " + frac(s, p) + " pathways teach themselves, " + frac(l, p) + " carry a full ladder, " + frac(e, p) + " have sourced evidence, " +
+  const d = rows.reduce((n, r) => n + r.routing.rows.filter(x => x.declared != null).length, 0);
+  return "support: " + frac(d, p) + " pathways declare what they depend on, " + frac(s, p) + " teach themselves, " + frac(l, p) + " carry a full ladder, " + frac(e, p) + " have sourced evidence, " +
     c + " concepts are named but never explained, " + frac(ready, rows.length) + " questions are Learn & Build ready";
 }
 module.exports = { report, format, summary, teachable, vocabulary, termsOf, readinessOf, FULL_LADDER };

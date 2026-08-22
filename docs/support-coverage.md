@@ -8,16 +8,77 @@ A label that prints the word does not teach it.
 
 | question | mode | pathways | concepts explained | guidance | pathway lessons | full ladders | sourced evidence | wrong-turn recovery | readiness |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `mkt-01` | causal | 12 | 31/42 | 12/12 | 3/12 | 3/12 | 0/12 | yes | Guided practice |
-| `fin-01` | causal | 8 | 25/27 | 8/8 | 0/8 | 0/8 | 0/8 | yes | Guided practice |
-| `hr-01` | judgement | 8 | 18/24 | 8/8 | 0/8 | 0/8 | 0/8 | yes | Guided practice |
+| `mkt-01` | causal | 12 | 28/29 | 12/12 | 4/12 | 3/12 | 0/12 | yes | Guided practice |
+| `fin-01` | causal | 8 | 24/26 | 8/8 | 0/8 | 0/8 | 0/8 | yes | Guided practice |
+| `hr-01` | judgement | 8 | 13/16 | 8/8 | 0/8 | 0/8 | 0/8 | yes | Guided practice |
+
+## Can this pathway deliver what it depends on?
+
+Content existing somewhere in the pack is irrelevant to a student on a
+pathway that cannot surface it. A pathway with no declared dependencies
+has not said what it needs, so nothing can be routed to it.
+
+### `mkt-01`
+
+| pathway | concepts declared | authored | reachable here |
+| --- | --- | --- | --- |
+| `mkt01-em-digital` | **none declared** | - | - |
+| `mkt01-em-value` | **none declared** | - | - |
+| `mkt01-em-convenience` | **none declared** | - | - |
+| `mkt01-pe-service` | 3 | 3 | 3 |
+| `mkt01-pe-speed` | **none declared** | - | - |
+| `mkt01-pe-consistency` | **none declared** | - | - |
+| `mkt01-pr-convenience` | 2 | 2 | 2 |
+| `mkt01-pr-speed` | 1 | 1 | 1 |
+| `mkt01-pr-customisation` | 1 | 1 | 1 |
+| `mkt01-ph-servicescape` | **none declared** | - | - |
+| `mkt01-ph-segments` | **none declared** | - | - |
+| `mkt01-ph-selfservice` | **none declared** | - | - |
+
+Declared by 4 of 12 pathways.
+
+### `fin-01`
+
+| pathway | concepts declared | authored | reachable here |
+| --- | --- | --- | --- |
+| `fin01-cf-liquidity` | **none declared** | - | - |
+| `fin01-cf-discounts` | **none declared** | - | - |
+| `fin01-wc-control` | **none declared** | - | - |
+| `fin01-wc-leasing` | **none declared** | - | - |
+| `fin01-pm-cost` | **none declared** | - | - |
+| `fin01-pm-revenue` | **none declared** | - | - |
+| `fin01-gf-hedging` | **none declared** | - | - |
+| `fin01-gf-payment` | **none declared** | - | - |
+
+Authored, requires teaching, and no pathway here declares it: `processes`, `people`, `training`
+
+Declared by 0 of 8 pathways.
+
+### `hr-01`
+
+| pathway | concepts declared | authored | reachable here |
+| --- | --- | --- | --- |
+| `hr01-td-productivity` | **none declared** | - | - |
+| `hr01-td-retention` | **none declared** | - | - |
+| `hr01-rw-motivation` | **none declared** | - | - |
+| `hr01-rw-cost` | **none declared** | - | - |
+| `hr01-pf-accountability` | **none declared** | - | - |
+| `hr01-pf-trust` | **none declared** | - | - |
+| `hr01-jd-enrichment` | **none declared** | - | - |
+| `hr01-jd-flexibility` | **none declared** | - | - |
+
+Authored, requires teaching, and no pathway here declares it: `processes`, `people`, `training`
+
+Declared by 0 of 8 pathways.
 
 ## Named in the interface, explained nowhere
 
-Each of these is a word a student can be shown while nothing in the app
-can tell them what it means. They are the first thing to author.
+Words a student can be shown while nothing in the app can tell them what
+they mean. Ordinary English is excluded by the authored
+`vocabulary.ordinary` list rather than by guesswork, so this is a list of
+teaching dependencies and not of unfamiliar tokens.
 
-- `mkt-01` (11): `engagement`, `sensitivity`, `wanting`, `expecting`, `flexible`, `streamlined`, `customise`, `variations`, `judging`, `servicescape`, `preferring`
+- `mkt-01` (1): `sensitivity`
 - `fin-01` (2): `expenses`, `movement`
-- `hr-01` (6): `reads`, `surveillance`, `motivation`, `retention`, `flexible`, `arrangements`
+- `hr-01` (3): `surveillance`, `retention`, `arrangements`
 

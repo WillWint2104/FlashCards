@@ -50,6 +50,18 @@ class Ledger {
     return got;
   }
   size() { return this.terms.size; }
+  // A DECLARED instructional dependency, which is a different thing from a word
+  // the sentence happened to contain. It is acquired when the student is shown
+  // the concept's own reusable definition, not when the word appears.
+  acquireConcept(id, oneLine, text, source) {
+    if (this.terms.has("concept:" + id)) return false;
+    const probe = String(oneLine || "").toLowerCase().slice(0, 40);
+    if (!probe || String(text || "").toLowerCase().indexOf(probe) < 0) return false;
+    this.terms.add("concept:" + id);
+    this.sources["concept:" + id] = source;
+    return true;
+  }
+  knowsConcept(id) { return this.terms.has("concept:" + id); }
 }
 
 // The trajectory. Every entry is something that happened TO or BY the student,
@@ -75,7 +87,7 @@ class Trace {
     // where every concept the student used actually came from, so a paragraph
     // written with no lesson can be read as "the guided environment taught it"
     // rather than "the bot knew it already"
-    provenance: [], transfer: null };
+    provenance: [], transfer: null, dependencies: [] };
   }
   // the clock starts when the student reaches the question, not when a 1.6MB
   // test file finishes loading twice
@@ -110,6 +122,10 @@ class Trace {
         (this.m.lessonOpens ? " (" + this.m.lessonWords + " words of support read)" : ""),
       "  words before the check:      " + (this.m.wordsBeforeTry == null ? "-" : this.m.wordsBeforeTry),
       "  try: " + this.m.tryAttempts + " attempt(s), " + this.m.tryRepairs + " repaired, " + this.m.tryRight + " right",
+      ...this.m.dependencies.map(x => "  " + x.role + " depends on " +
+        (x.declared == null ? "(nothing declared)"
+          : x.declared + " concept(s): " + x.given.map(g => g.id + " from " + g.from).join(", ") +
+            (x.missing.length ? "  MISSING " + x.missing.join(", ") : ""))),
       ...this.m.provenance.map(x => "  knowledge used in " + x.role + ": " +
         (x.used.length ? x.used.map(u => u.term + " (" + (u.from || "NO PROVENANCE") + ")").join(", ") : "none")),
       ...(this.m.transfer ? ["  transfer probe: " + this.m.transfer.verdict + " \u2014 " + this.m.transfer.text] : []),

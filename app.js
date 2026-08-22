@@ -4755,6 +4755,22 @@
   // read a word, and a student who never opens this never meets any of it.
   // ---------------------------------------------------------------------------
   function esLearning(p) { const path = esPathway(p); return (path && path.learning) || null; }
+  // The concept store for the subject, and the pathway's declared dependencies
+  // on it. Referencing a concept does not show it: it makes it ELIGIBLE here.
+  // Primary concepts are what this argument cannot be understood without, so
+  // they are on the surface. Supporting ones sit behind "Still not clear?".
+  // Optional ones are never shown unasked and exist so the deeper material can
+  // reach them.
+  function esConceptStore() {
+    const sub = (window.ESSAY && window.ESSAY.subjects && window.ESSAY.subjects[ES.subject]) || null;
+    return (sub && sub.concepts) || {};
+  }
+  function esConceptsFor(p, tier) {
+    const L = esLearning(p);
+    const ids = (L && L.concepts && L.concepts[tier]) || [];
+    const store = esConceptStore();
+    return ids.map(id => Object.assign({ id: id }, store[id])).filter(c => c.oneLine || c.quick);
+  }
   // What the student was in the middle of writing, named the way they would say
   // it, so the lesson can hand them back to that and not to "the paragraph".
   const ES_SLOT_PHRASE = { explain: "explanation", define: "definition", topic: "topic sentence",
@@ -4792,7 +4808,10 @@
         <button type="button" class="es-jump ${jump === "connection" ? "on" : ""}" data-esjump="connection">the connection</button>
         <button type="button" class="es-jump ${jump === "example" ? "on" : ""}" data-esjump="example">an example</button>
       </div>
-      <p class="es-lessonp lead ${jump === "concept" ? "focus" : ""}">${esc(L.know)}</p>
+      <div class="es-conceptset ${jump === "concept" ? "focus" : ""}">
+        ${esConceptsFor(p, "primary").map(c => `<p class="es-concept"><b>${esc(c.title || c.id)}</b> \u2014 ${esc(c.oneLine || c.quick)}</p>`).join("")}
+        <p class="es-lessonp lead">${esc(L.know)}</p>
+      </div>
       ${(L.chain || []).length ? `<ol class="es-chain ${jump === "connection" ? "focus" : ""}">${L.chain.map((s, i) => `<li class="es-chainstep" style="animation-delay:${i * 130}ms">${esc(s)}</li>`).join("")}</ol>` : ""}
       ${L.try ? `<div class="es-lessonsec try">
         <div class="es-drawer-sub">check you have got it</div>
@@ -4817,6 +4836,9 @@
             <p class="es-lessonp">${esc(L.example.text)}</p>
             ${L.example.pattern ? `<p class="es-lessonnote">Notice: ${esc(L.example.pattern)}.</p>` : ""}
           </div>` : ""}
+          ${esConceptsFor(p, "supporting").map(c => `<div class="es-lessonsec">
+            <div class="es-drawer-sub">${esc(c.title || c.id)}</div>
+            <p class="es-lessonp">${esc(c.quick || c.oneLine)}</p></div>`).join("")}
           ${L.explore ? `<button type="button" class="es-linkbtn" id="eslessonexplore">${esc(L.explore.label)}</button>` : ""}` : ""}
       </div>
     </div>`;

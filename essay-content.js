@@ -130,8 +130,35 @@ window.ESSAY = {
       // wording, at two depths: enough to unblock, then enough to actually learn
       // it. A pathway points at one of these through concept.key, so the resource
       // travels with the argument and stays open while the paragraph is written.
+      // ---------------------------------------------------------------------
+      // WHAT COUNTS AS SOMETHING A STUDENT HAS TO BE TAUGHT
+      //
+      // A lexical audit cannot tell "servicescape" from "expecting". One is
+      // subject knowledge a student must be given; the other is ordinary English
+      // being used inside an argument. Classifying it here rather than inferring
+      // it stops an "explain everything unexplained" target from turning every
+      // lesson into a dictionary.
+      //
+      //   domain      subject knowledge. Must be teachable and must be reachable
+      //               from any pathway that depends on it.
+      //   supporting  business vocabulary worth a line where it is used, not a
+      //               lesson of its own.
+      //
+      // Ordinary language is listed in vocabulary.ordinary and never enters the
+      // learning system at all.
+      // ---------------------------------------------------------------------
+      vocabulary: {
+        ordinary: ["expecting", "wanting", "faster", "less", "more", "effort", "built", "found",
+          "early", "worse", "reads", "lower", "before", "result", "judging", "preferring",
+          "streamlined", "variations", "customise", "flexible", "standards", "personal"]
+      },
       concepts: {
         processes: {
+          kind: "domain",
+          requiresTeaching: true,
+          // the reusable one-line definition, for a pathway lesson to render
+          // without repeating it in every pathway that depends on it
+          oneLine: "the systems a customer moves through to get the service: ordering, paying, waiting, collecting.",
           title: "Processes in the marketing mix",
           syllabus: "Marketing \u00b7 marketing strategies \u00b7 people, processes and physical evidence",
           quick: "Processes are the systems a customer moves through to get the service: how an order is placed, paid for, prepared, handed over and fixed when it goes wrong. They are part of what the customer is buying, because for a service the experience of getting it cannot be separated from the thing itself.",
@@ -158,6 +185,90 @@ window.ESSAY = {
           ],
           example: "A hardware shop finds its main customers are tradespeople who arrive before seven in the morning and cannot wait. It adds a phone-ahead order and a collection bay at the front of the store. Nothing about the products changed; the sequence the customer moves through did, and it changed because of who the customer is.",
           related: ["people", "physical evidence", "place and distribution", "customer service"]
+        },
+        // Authored once, referenced by any pathway that depends on them. This is
+        // what makes the People pathway a test of the schema rather than a second
+        // Processes-shaped lesson: none of the content below is new to the app,
+        // it is the same kind of resource reached from a different argument.
+        people: {
+          kind: "domain",
+          requiresTeaching: true,
+          oneLine: "the staff a customer deals with, who are part of what a service customer is buying.",
+          title: "People in the marketing mix",
+          syllabus: "Marketing \u00b7 marketing strategies \u00b7 people, processes and physical evidence",
+          quick: "People are the staff who deliver a service. For a service the person and the product cannot be separated, so how staff behave, what they know and how consistent they are is part of what the customer pays for.",
+          readMore: [
+            "A service is produced at the moment it is consumed, and usually by a person. That makes the employee part of the offering rather than a cost behind it. Two businesses can sell the same thing and be judged differently entirely on who handed it over.",
+            "A target market changes people decisions because different customers want different things from the person serving them. Some want speed and no conversation. Some want advice and will wait for it. Some want the same experience in every store, which is a demand for consistency rather than for personality. The business responds by changing who it hires, what it trains them to do, and how tightly it standardises what they say and do."
+          ],
+          terms: [
+            { term: "people", meaning: "the staff involved in delivering a service, treated as part of the marketing mix rather than as an operating cost." },
+            { term: "inseparability", meaning: "a service is produced and consumed at the same moment, so the person delivering it cannot be separated from it." },
+            { term: "customer service", meaning: "the way a business treats customers before, during and after a sale." }
+          ],
+          confusions: [
+            "People is not staffing levels alone. How many staff are on is part of it; what they are trained to do is the larger part.",
+            "People is not processes. Who serves the customer is people; the sequence of steps they are serving them through is processes."
+          ],
+          example: "A garden centre serving hobby gardeners hires staff who can identify a plant from a photograph and will spend ten minutes doing it. A wholesale nursery serving landscapers hires staff who can load a truck quickly and say very little. Same product, opposite people decision, and the target market is the reason.",
+          related: ["processes", "physical evidence", "customer service"]
+        },
+        training: {
+          kind: "domain",
+          requiresTeaching: true,
+          oneLine: "teaching staff what to do and how to do it, so that what a customer receives does not depend on who is serving.",
+          title: "Training",
+          syllabus: "Marketing \u00b7 marketing strategies \u00b7 people, processes and physical evidence",
+          quick: "Training is how a business makes what its staff do predictable. It turns an intention about service into something that actually happens at every counter, on every shift, in every store.",
+          readMore: [
+            "Marketing decisions about people are delivered through training. A business can decide its target market wants unhurried advice, but that decision only reaches the customer if the staff know the range well enough to give it. Training is the mechanism between the marketing decision and the customer's experience.",
+            "The more a target market values consistency, the more tightly training is standardised. A customer who expects the same thing in every store is buying predictability, and predictability is produced by everyone being taught the same steps rather than by everyone being talented."
+          ],
+          terms: [
+            { term: "training", meaning: "structured teaching of the skills and procedures staff need to deliver the service as the business intends." },
+            { term: "standardisation", meaning: "making the same thing happen every time, in every location, regardless of who is on shift." }
+          ],
+          confusions: [
+            "Training is not motivation. Teaching someone the steps and making them want to take them are different problems with different strategies.",
+            "Saying staff are trained proves nothing. The answer has to say what they were trained to do and which customer expectation that serves."
+          ],
+          example: "A coffee chain whose customers expect the same drink in every city trains to a written recipe and times the shot. A single independent cafe whose customers come for the barista does not, because there nothing is meant to be identical.",
+          related: ["people", "service standards"]
+        },
+        serviceStandards: {
+          kind: "supporting",
+          requiresTeaching: "contextual",
+          oneLine: "the level of service a business commits to, written down so it can be trained for and checked.",
+          title: "Service standards",
+          quick: "A service standard is the business stating what a customer will get: how long a wait should be, how a complaint is handled, what a staff member says. It is what turns a service intention into something that can be taught and measured.",
+          terms: [
+            { term: "service standards", meaning: "the stated level of service a business commits to delivering, used to train staff and to check performance." }
+          ],
+          related: ["people", "training"]
+        },
+        servicescape: {
+          kind: "supporting",
+          requiresTeaching: "contextual",
+          // named in a pathway label and explained nowhere until now, which is
+          // exactly the gap the support report was reporting
+          oneLine: "the formal name for the physical surroundings a service is delivered in.",
+          title: "Servicescape",
+          quick: "Business Studies sometimes calls the physical surroundings of a service the servicescape: the layout, lighting, seating, signage and general condition of the place the service happens in. Understand the surroundings first; the word is only the label for them.",
+          terms: [
+            { term: "servicescape", meaning: "the physical environment in which a service is delivered, and the cues a customer reads from it." }
+          ],
+          related: ["physical evidence"]
+        },
+        customerEngagement: {
+          kind: "supporting",
+          requiresTeaching: "contextual",
+          oneLine: "how far customers actually interact with a business rather than only seeing its marketing.",
+          title: "Customer engagement",
+          quick: "Engagement is the difference between a customer seeing something and doing something: opening the app, joining the loyalty scheme, leaving a review. It matters in e-marketing because a channel that reaches people without moving them is not doing the work.",
+          terms: [
+            { term: "customer engagement", meaning: "the extent to which customers interact with a business through its channels rather than merely receiving its messages." }
+          ],
+          related: ["e-marketing"]
         }
       },
       questions: [
@@ -286,6 +397,35 @@ window.ESSAY = {
               short: "Expecting personal service → training and service standards",
               adds: "the training and service standards it sets for staff",
               meaning: "These customers judge the business on the person serving them, so that staff member is part of what is being bought.",
+              choiceMeaning: "Customers who judge the business on the person serving them can lead it to train staff to a set standard.",
+              learning: {
+                // Two domain concepts and one supporting term, none of them
+                // written for this pathway. Declaring them is what makes them
+                // reachable here; nothing is shown because it merely exists.
+                concepts: { primary: ["people", "training"], supporting: ["serviceStandards"], optional: [] },
+                know: "A decision about staff only reaches the customer through what those staff are taught to do.",
+                chain: ["customers judge the service on the person serving them", "the business decides what good service is here", "staff are trained to that standard", "what the customer gets stops depending on who is on shift"],
+                misconception: {
+                  head: "Two of the elements are easy to swap",
+                  a: { term: "People", line: "who serves the customer, and what they were taught to do." },
+                  b: { term: "Processes", line: "the sequence of steps they are serving them through." }
+                },
+                example: {
+                  context: "an optician",
+                  text: "An optician whose customers come for the eye test trains every branch to the same twenty minute examination. The lenses are the same everywhere; the reason people return is the person.",
+                  pattern: "the product did not change; what the staff were taught to do did"
+                },
+                try: {
+                  prompt: "Customers say the advice they get depends on which branch they visit. Which change most directly addresses that?",
+                  options: [
+                    { text: "Train every branch to the same service standard", right: true },
+                    { text: "Advertise the quality of the advice", repair: "Advertising is promotion. It tells customers what to expect; it does not change what they actually get from the person in front of them." },
+                    { text: "Open for longer hours", repair: "When a customer can come is closer to place. This argument is about who serves them and what that person was taught." }
+                  ],
+                  onRight: "Right. The inconsistency is in what staff were taught, so the fix is in training rather than in anything the customer can see."
+                },
+                explore: { concept: "people", label: "Read more about people in the marketing mix" }
+              },
               whatToProve: "customers expect to be dealt with personally \u2192 staff are part of the product \u2192 the business invests in training and service standards",
               commonMistake: "Saying good staff are important, which is true of every business, instead of saying what THIS target market expects that forced the investment.",
               concept: { topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
@@ -332,7 +472,8 @@ window.ESSAY = {
               meaning: "These customers treat the time and effort of ordering as a cost, so the business changes how ordering works to take steps out of it.",
               choiceMeaning: "Customers wanting an easier buying experience can lead a business to simplify ordering, payment or collection.",
               learning: {
-                know: "Processes are the systems a customer moves through to receive a product or service: ordering, paying, waiting, collecting. Changing a process changes what the customer has to do, not what they are buying.",
+                concepts: { primary: ["processes"], supporting: [], optional: ["servicescape"] },
+                know: "Changing a process changes what the customer has to do, not what they are buying.",
                 chain: ["customers value convenience", "the business simplifies ordering", "less time and effort to buy", "the experience suits this market better"],
                 misconception: {
                   head: "Two of the elements are easy to swap",
@@ -432,7 +573,8 @@ window.ESSAY = {
               meaning: "These customers are paying for turnaround, so the business reorganises what happens after payment to cut the wait.",
               choiceMeaning: "Customers who expect a short wait can lead a business to reorganise what happens after they have paid.",
               learning: {
-                know: "A process runs in steps, and some steps have to wait for the one before while others can run alongside. Cutting a wait usually means moving a step, not asking anyone to work harder.",
+                concepts: { primary: ["processes"], supporting: [], optional: [] },
+                know: "A process runs in steps, and some wait for the one before while others can run alongside. Cutting a wait usually means moving a step, not asking anyone to work harder.",
                 chain: ["customers count waiting as a cost", "steps are separated or run side by side", "the queue moves whether or not the order is ready", "the wait falls, especially at peak"],
                 misconception: {
                   head: "Two answers that sound the same and are not",
@@ -530,7 +672,8 @@ window.ESSAY = {
               meaning: "These customers expect to change what they order, so the process has to carry a non-standard order without errors.",
               choiceMeaning: "Customers who expect to change their order can lead a business to build ordering that carries variations without errors.",
               learning: {
-                know: "A process built for identical orders breaks as soon as orders differ. Carrying a variation means capturing it once, accurately, and holding it through every step that follows.",
+                concepts: { primary: ["processes"], supporting: [], optional: [] },
+                know: "A process built for identical orders breaks as soon as orders differ. Carrying a variation means capturing it once and holding it through every step that follows.",
                 chain: ["customers expect to change the order", "no two orders are identical", "the ordering system captures the variation", "the right order arrives without a correction"],
                 misconception: {
                   head: "Two arguments that look alike and are not",

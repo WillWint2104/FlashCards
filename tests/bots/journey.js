@@ -3,6 +3,14 @@
 // the student does: the profile's knowledge state does, and the app's response
 // to it does.
 const { termsOf, vocabulary, teachable, Ledger, Trace } = require("./lib");
+// what a pathway SAYS it depends on, which is the thing worth auditing. A word
+// the sentence happened to contain is not a teaching dependency.
+function declaredOf(q, id, store) {
+  const pw = (q.pathways || []).find(x => x.id === id);
+  const c = (pw && pw.learning && pw.learning.concepts) || null;
+  if (!c) return null;
+  return (c.primary || []).map(cid => ({ id: cid, oneLine: (store[cid] || {}).oneLine || "" }));
+}
 
 const wait = (p, ms) => p.waitForTimeout(ms);
 const has = async (p, sel) => !!(await p.$(sel));
@@ -21,11 +29,14 @@ async function openApp(p, T, subject, qre, structure) {
   await p.click("#esstart"); await wait(p, 700);
 }
 
-async function read(p, tr, led, vocab, sel, source) {
+async function read(p, tr, led, vocab, sel, source, declared) {
   const t = await txt(p, sel);
   if (!t) return [];
   const got = led.acquire(t, source, vocab);
   if (got.length) { tr.m.termsAcquired += got.length; tr.say("learn", "acquired " + got.join(", ") + " from " + source); }
+  (declared || []).forEach(c => {
+    if (led.acquireConcept(c.id, c.oneLine, t, source)) tr.say("learn", "was given the concept " + c.id + " from " + source);
+  });
   return got;
 }
 
@@ -169,7 +180,7 @@ async function runJourney(p, o) {
     tr._role = await txt(p, ".es-pararole");
     tr.say("arrive", tr._role);
 
-    let need = [], unexplained = [];
+    let need = [], unexplained = [], declared = null;
     const learnedHere = tr.m.lessonWords, wroteHere = tr.m.sentences;
     if (await has(p, ".es-setup")) {
       tr.m.stepsAppRequired++;
@@ -213,6 +224,7 @@ async function runJourney(p, o) {
         const all = path ? termsOf(path) : [];
         need = all.filter(t => teach.yes.indexOf(t) >= 0);
         unexplained = all.filter(t => teach.no.indexOf(t) >= 0);
+        declared = declaredOf(q, want, (subjectContent && subjectContent.concepts) || {});
         tr.say("select", "argument: " + (path ? path.short : want) + (path && path.contribution ? " [" + path.contribution.role + "]" : ""));
       }
       // the pathway lesson, if this student wants it and this pathway has one
@@ -230,7 +242,7 @@ async function runJourney(p, o) {
         const words = body.split(/\s+/).filter(Boolean).length;
         tr.m.lessonWords += words;
         tr.say("open", "the lesson for this argument, " + words + " words");
-        await read(p, tr, led, vocab, ".es-lesson", "the pathway lesson");
+        await read(p, tr, led, vocab, ".es-lesson", "the pathway lesson", declared);
         const steps = await allTxt(p, ".es-chainstep");
         if (steps.length) tr.say("see", steps.join(" \u2192 "));
         tr._chain = await allTxt(p, ".es-chainstep");
@@ -282,6 +294,19 @@ async function runJourney(p, o) {
       }
       const sw = await p.$("#esstartwriting");
       if (sw) { tr.m.stepsAppRequired++; await sw.click(); await wait(p, 420); }
+    }
+    // the audit that matters: did the student get what the pathway SAID it
+    // needed. A pathway that declares nothing cannot be audited, and that is
+    // itself the finding.
+    if (declared) {
+      const held = declared.filter(c => led.knowsConcept(c.id));
+      const missed = declared.filter(c => !led.knowsConcept(c.id));
+      tr.m.dependencies.push({ role: tr._role, declared: declared.length,
+        given: held.map(c => ({ id: c.id, from: led.sources["concept:" + c.id] })),
+        missing: missed.map(c => c.id) });
+      if (missed.length) tr.demand("this pathway depends on " + missed.map(c => c.id).join(", ") + " and the student was never given " + (missed.length === 1 ? "it" : "them"));
+    } else {
+      tr.m.dependencies.push({ role: tr._role, declared: null, given: [], missing: [] });
     }
     await writeParagraph(p, tr, led, vocab, prof, need, unexplained, cs);
     tr.m.rhythm.push({ learned: tr.m.lessonWords - learnedHere, wrote: tr.m.sentences - wroteHere });
