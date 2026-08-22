@@ -25,7 +25,8 @@ const pw = loadPlaywright();
 // exists, so existsSync alone would hand Playwright something it cannot launch.
 const HOSTED_CHROME = "/opt/pw-browsers/chromium";
 function isExecutableFile(f) {
-  try { return fs.statSync(f).isFile(); } catch (e) { return false; }
+  try { return fs.statSync(f).isFile() && (fs.accessSync(f, fs.constants.X_OK), true); }
+  catch (e) { return false; }
 }
 const EXECUTABLE = isExecutableFile(HOSTED_CHROME) ? HOSTED_CHROME : undefined;
 

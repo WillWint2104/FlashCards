@@ -64,7 +64,15 @@ function essaySubjects() {
   const vm = require("vm");
   vm.createContext(sandbox);
   try { vm.runInContext(essay, sandbox); } catch (e) { essayLoadError = "essay-content.js did not evaluate: " + e.message; return null; }
-  return (sandbox.window.ESSAY && sandbox.window.ESSAY.subjects) || {};
+  // Returning {} here would let every check below pass by looping over nothing.
+  // A file that evaluates but exports nothing is exactly the case the validators
+  // exist for, so it has to reach them as an error and not as an empty pack.
+  const subjects = sandbox.window.ESSAY && sandbox.window.ESSAY.subjects;
+  if (!subjects || typeof subjects !== "object" || Array.isArray(subjects) || !Object.keys(subjects).length) {
+    essayLoadError = "essay-content.js evaluated but exposed no window.ESSAY.subjects, so nothing could be checked";
+    return null;
+  }
+  return subjects;
 }
 function checkDecodeAnchors() {
   const subs = essaySubjects();

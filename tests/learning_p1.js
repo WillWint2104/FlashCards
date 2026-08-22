@@ -5,7 +5,7 @@ const { planAll } = require('./env');
 const PROFILE=process.argv[2]||'moderate';
 const PROFILES={ independent:{help:0,drawers:[]}, moderate:{help:2,drawers:['understand']},
                  high:{help:9,drawers:['understand','ideas','evidence']} };
-const P=PROFILES[PROFILE];
+const P=Object.prototype.hasOwnProperty.call(PROFILES,PROFILE)?PROFILES[PROFILE]:null;
 if(!P){
   console.error('unknown profile "'+PROFILE+'". Use one of: '+Object.keys(PROFILES).join(', '));
   process.exit(1);

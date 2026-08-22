@@ -18,7 +18,9 @@ const run = (cmd, args, label) => {
     // "10 failed", and a suite with 65 assertions can reach two digits.
     const m = last.match(/(\d+)\s+failed/);
     if (m) return Number(m[1]) === 0;
-    return !/fail/i.test(last);
+    // A suite that exits 0 having printed nothing has not passed, it has said
+    // nothing. The sentinel must not fall through to the no-failure-text branch.
+    return last !== "(no output)" && !/fail/i.test(last);
   } catch (e) {
     const out = String((e.stdout || "") + (e.stderr || "")).trim().split("\n").filter(Boolean);
     console.log(out.filter(l => /FAIL|failed|Error/.test(l)).slice(0, 3).join(" | ") || "FAILED");

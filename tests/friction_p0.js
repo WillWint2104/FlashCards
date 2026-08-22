@@ -61,7 +61,7 @@ const PROFILES = {
   moderate:    { helpPresses: 1, drawers: ['understand'], fillPointFirst: true, ownArgAt: -1 },
   high:        { helpPresses: 9, drawers: ['understand','vocabulary','evidence'], fillPointFirst: true, ownArgAt: -1 }
 };
-const P = PROFILES[PROFILE];
+const P = Object.prototype.hasOwnProperty.call(PROFILES, PROFILE) ? PROFILES[PROFILE] : null;
 if (!P) {
   console.error('unknown profile "' + PROFILE + '". Use one of: ' + Object.keys(PROFILES).join(', '));
   process.exit(1);
