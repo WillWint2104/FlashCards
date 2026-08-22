@@ -94,7 +94,17 @@ const rungs = p => p.$$eval('.es-rung',es=>es.map(e=>({n:e.querySelector('.es-ru
   ok(tools.some(t=>/Learn/.test(t.label)&&!t.off),'Learn is live: I do not understand the content');
   ok(tools.some(t=>/Arguments/.test(t.label)&&!t.off),'Arguments is live: I do not know what to argue');
   ok(tools.some(t=>/Evidence/.test(t.label)&&!t.off),'Evidence is live: I do not know what to use');
-  ok(!!(await p.$('#esmorehelp'))||true,'and help with this line stays under the line, not in the drawer');
+  // Not the button: by this point the ladder has been walked to its end, so
+  // #esmorehelp is legitimately gone. Assert what the message claims instead.
+  const helpPlace=await p.evaluate(()=>{
+    const btns=document.querySelector('.es-help .es-helpbtns');
+    if(!btns) return 'no per-line help block at all';
+    const box=btns.closest('.es-help');
+    if(box.closest('.es-drawer, .es-belt')) return 'help has moved into a drawer or the toolbelt';
+    const wrap=box.parentElement;
+    return (wrap && wrap.querySelector('.es-linerow')) ? '' : 'help is no longer beside the writing line';
+  });
+  ok(helpPlace==='','and help with this line stays under the line, not in the drawer: '+(helpPlace||'under the line'));
   const inDrawerHelp=await p.$$eval('.es-belt-b',es=>es.some(e=>/help/i.test(e.textContent)));
   ok(!inDrawerHelp,'help is deliberately not a tool');
 

@@ -186,6 +186,12 @@ broaden a constrained question.
 
 ## Data model, evolved rather than bolted on
 
+Proposed shape as of 2026-08-19. The shipped schema is `essay-content.js`, and
+several of these names changed on the way in (`exactStem` became `text`,
+`highlightedParts` became `decode.highlights`, `conceptRef` became `concept`).
+See `docs/inspiration/decisions/2026-08-22-pathway-done.md` for what a pathway
+actually carries now.
+
 ```
 question
   exactStem

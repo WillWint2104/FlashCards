@@ -16,12 +16,12 @@ async function openWith(p, area, argRe){
   await p.click('#esstart'); await p.waitForTimeout(550);
   await planAll(p);
   await p.$$eval('.es-plancard [data-esplanarea]',(es,a)=>{
-    const card=es[0].closest('.es-plancard');
+    const card=es[0]&&es[0].closest('.es-plancard'); if(!card) return;
     const t=[...card.querySelectorAll('[data-esplanarea]')].find(x=>x.textContent.trim()===a); t&&t.click();
   }, area);
   await p.waitForTimeout(300);
   const got=await p.$$eval('.es-plancard [data-esplanpick]',(es,r)=>{
-    const card=es[0].closest('.es-plancard');
+    const card=es[0]&&es[0].closest('.es-plancard'); if(!card) return null;
     const t=[...card.querySelectorAll('[data-esplanpick]')].find(x=>new RegExp(r,'i').test(x.textContent));
     if(t){t.click(); return t.textContent.trim();} return null;
   }, argRe.source);
@@ -51,17 +51,19 @@ async function openWith(p, area, argRe){
   a.guides.forEach(g=>console.log('     ',g.head.padEnd(17),g.job.slice(0,66)));
   ok(a.id==='mkt01-pr-convenience','the processes pathway is the one selected: '+a.id);
   ok(a.guides.length===5,'five components: '+a.guides.length);
-  ok(/what this target market will not spend/.test(a.guides[0].job),'the opening guide is the pathway’s own');
-  ok(/Name processes as the element/.test(a.guides[0].job),'naming the element it argues about');
-  ok(a.guides.every(g=>!GENERIC.test(g.job)),'and not one component falls back to scaffold language');
+  const a0=(a.guides[0]||{}).job||'';
+  ok(/what this target market will not spend/.test(a0),'the opening guide is the pathway’s own');
+  ok(/Name processes as the element/.test(a0),'naming the element it argues about');
+  ok(a.guides.length>0&&a.guides.every(g=>!GENERIC.test(g.job)),'and not one component falls back to scaffold language');
 
   console.log('2. a pathway with no guidance of its own falls to its AREA, not to scaffold');
   const c=await openWith(p,'e-marketing',/Convenience-oriented customers lead to marketing/);
   console.log('    id:',c.id);
   c.guides.forEach(g=>console.log('     ',g.head.padEnd(17),g.job.slice(0,66)));
   ok(c.id==='mkt01-em-convenience','the e-marketing pathway is the one selected: '+c.id);
-  ok(c.guides.every(g=>!GENERIC.test(g.job)),'no component is answered with "a strategy affecting an objective"');
-  ok(/digital marketing/i.test(c.guides[0].job),'the opening guide knows the area it is in: '+c.guides[0].job.slice(0,60));
+  const c0=(c.guides[0]||{}).job||'';
+  ok(c.guides.length>0&&c.guides.every(g=>!GENERIC.test(g.job)),'no component is answered with "a strategy affecting an objective"');
+  ok(/digital marketing/i.test(c0),'the opening guide knows the area it is in: '+c0.slice(0,60));
   const authored=await p.evaluate(()=>{
     const q=window.ESSAY.subjects.business_studies.questions.find(x=>x.id==='mkt-01');
     const path=q.pathways.find(x=>x.id==='mkt01-em-convenience');
@@ -77,7 +79,7 @@ async function openWith(p, area, argRe){
     return {pathway:path.guides.topic, area:(q.areas||{})['processes'].guides.topic};
   });
   ok(both.pathway!==both.area,'they are genuinely different strings');
-  ok(a.guides[0].job===both.pathway,'and the pathway one is what the student saw');
+  ok(a0===both.pathway,'and the pathway one is what the student saw');
 
   ok(calls===0,'no model calls: '+calls);
   console.log('pageerrors:',errs.join(' | ')||'none');

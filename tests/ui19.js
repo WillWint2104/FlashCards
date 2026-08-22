@@ -23,10 +23,10 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   const hl=await p.$$eval('.es-dec',es=>es.map(e=>({t:e.textContent.trim(),k:e.className.replace('es-dec','').trim()})));
   console.log('   ',JSON.stringify(hl.map(h=>h.t+'['+h.k+']')));
   ok(hl.length===6,'six pressable parts: '+hl.length);
-  ok(hl[0].t==='Explain'&&hl[0].k==='directive','the directive first: '+JSON.stringify(hl[0]));
+  ok(!!hl[0]&&hl[0].t==='Explain'&&hl[0].k==='directive','the directive first: '+JSON.stringify(hl[0]||null));
   ok(hl.filter(h=>h.k==='requiredArea').length===4,'and the four required areas');
-  ok(hl.map(h=>h.t).join('|')===stem.match(/Explain|target markets|e-marketing|people|processes|physical evidence/g).join('|'),
-     'in the order they appear in the question');
+  const order=stem.match(/Explain|target markets|e-marketing|people|processes|physical evidence/g)||[];
+  ok(order.length>0&&hl.map(h=>h.t).join('|')===order.join('|'),'in the order they appear in the question');
 
   console.log('2. nothing stands open');
   ok(await p.$eval('[data-esdecbox]',e=>e.hidden),'the panel is closed until asked for');

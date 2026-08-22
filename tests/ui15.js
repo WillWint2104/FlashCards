@@ -115,26 +115,30 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   ok(!(await p.$('.es-done')),'and the completion card steps aside');
 
   console.log('6. the word count knows about the whole response');
-  const wc=await p.$eval('.es-wordcount',e=>e.innerText.replace(/\s+/g,' '));
+  const wc=await p.$eval('.es-wordcount',e=>e.innerText.replace(/\s+/g,' ')).catch(()=>'');
   console.log('   ',JSON.stringify(wc));
   ok(/\d+ here/.test(wc)&&/\d+ in all/.test(wc),'both scales are shown: '+wc);
-  const nums=wc.match(/(\d+) here[\s\S]*?(\d+) in all/);
-  ok(Number(nums[2])>Number(nums[1]),'and the whole response is larger than the paragraph');
+  const nums=wc.match(/(\d+) here[\s\S]*?(\d+) in all/)||[];
+  ok(nums.length===3&&Number(nums[2])>Number(nums[1]),'and the whole response is larger than the paragraph: '+wc);
   const tip=await p.$eval('.es-wordcount',e=>e.getAttribute('title')||'');
   ok(/guide, not a limit/i.test(tip),'the target explains itself without standing on screen: '+JSON.stringify(tip.slice(0,50)));
 
   console.log('7. earlier writing is readable without leaving the sentence');
   const peeks=await p.$$eval('[data-espeek]',es=>es.length);
   ok(peeks>=2,'written sections can be opened from the map: '+peeks);
-  await p.$$eval('[data-espeek]',es=>es[0].click()); await p.waitForTimeout(300);
+  await p.$$eval('[data-espeek]',es=>{ es[0]&&es[0].click(); }); await p.waitForTimeout(300);
   const prev=await p.$eval('.es-mapprev',e=>e.textContent.trim());
   ok(/every marketing decision/.test(prev),'and the map shows what was actually written: '+prev.slice(0,44));
   // O1: the map no longer stands the argument under every row. What each section
   // argues is one click away, through the row itself or "read all".
   ok((await p.$$('.es-maparg')).length===0,'no argument text stands permanently in the map');
   ok(!!(await p.$('#esreview')),'and reading the whole response is offered from the map');
+  // Open a BODY row: the intro opened above has no argument line, so reading
+  // .es-maparg after it can only ever be empty, and length>=0 is true of every
+  // array. Body 1 argues /Digitally engaged/ (pinned at section 4).
+  await p.$$eval('[data-espeek]',es=>{ es[1]&&es[1].click(); }); await p.waitForTimeout(300);
   const openArg=await p.$$eval('.es-maparg',es=>es.map(e=>e.textContent.trim()));
-  ok(openArg.length>=0,'expanding a row is what reveals it: '+JSON.stringify(openArg.slice(0,1)));
+  ok(openArg.some(t=>/Digitally engaged/i.test(t)),'expanding a row is what reveals it: '+JSON.stringify(openArg.slice(0,2)));
   await p.screenshot({path:OUT+'shot-p0-map.png'});
 
   console.log('8. the whole response is read and submitted inside guided mode');

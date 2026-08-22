@@ -1460,7 +1460,7 @@ function normalizeReview(r) {
     });
     p.sentences = asArray(p.sentences).map(rawS => {
       const s = asObject(rawS);
-      s.issues = asArray(s.issues).slice(0, 3).map(rawIss => {
+      s.issues = asArray(s.issues).slice(0, 2).map(rawIss => {
         const iss = asObject(rawIss);
         iss.kind = iss.kind === "term" ? "term" : "fix";
         iss.severity = SEVS.includes(iss.severity) ? iss.severity : "should";

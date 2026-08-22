@@ -35,7 +35,11 @@ const store = (()=>{
     vm.runInContext(fs.readFileSync("essay-content.js","utf8"),s);
     process.stdout.write(JSON.stringify(s.window.ESSAY.subjects.business_studies.concepts));`],
     {cwd: require('path').resolve(__dirname,'..'), encoding:'utf8'});
-  return JSON.parse(out);
+  const parsed = JSON.parse(out);
+  for (const k of ['people','training','serviceStandards','processes']) {
+    if (!parsed[k]) { console.log('  FAIL: concept "'+k+'" is missing from essay-content.js'); process.exit(1); }
+  }
+  return parsed;
 })();
 
 (async()=>{

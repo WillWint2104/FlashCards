@@ -6,12 +6,25 @@ const ANSWER = `McDonalds targets convenience oriented customers, so its process
 The restaurants now have digital ordering kiosks. McDonalds is a large business.`;
 
 console.log('--- pass 1 cannot score (module-load assertion) ---');
-let threw=false;
-try { W.assertScoreFreeProbe; } catch(e){}
+// Exercise the shipped walk rather than restating what the schema happens to
+// contain. The old checks here could not fail: a property access cannot throw,
+// and comparing "there is a number" to "the word paragraph appears" is true for
+// any schema that has both, including one with a mark in it.
+ok(typeof W.assertScoreFree==='function','the score-free walk is exported');
+const clone=()=>JSON.parse(JSON.stringify(W.DIAG_TOOL.input_schema));
+const refuses=(mutate,why)=>{ const sc=clone(); mutate(sc); let m='';
+  try { W.assertScoreFree(sc); } catch(e){ m=String(e.message||e); }
+  ok(m.indexOf('could score')>=0, why+': '+(m||'DID NOT THROW')); };
+refuses(sc=>{ sc.properties.score={type:'number'}; },'a top-level numeric score is refused');
+refuses(sc=>{ sc.properties.tier={type:'integer'}; },'a numeric field under any other name is refused');
+refuses(sc=>{ sc.properties.evidence.items.properties.mark={type:'string'}; },'a mark-shaped property name is refused');
+refuses(sc=>{ sc.properties.evidence.items.properties.use.enum=['band 4'];},'a mark-like enum is refused');
+// and the shipped schema itself passes that same walk
+let live=''; try { W.assertScoreFree(clone()); } catch(e){ live=String(e.message||e); }
+ok(!live,'the shipped pass 1 schema passes its own walk: '+(live||'clean'));
 // the schema itself must contain no mark-shaped field
 const j=JSON.stringify(W.DIAG_TOOL.input_schema);
 ok(!/"(score|marks?|bands?|grade|total|points)"\s*:/.test(j),'no mark-shaped property in the pass 1 schema');
-ok(/"type":"number"/.test(j.replace(/\s/g,'')) === /paragraph/.test(j),'the only numbers are paragraph locators');
 const names=[]; (function walk(n){ if(!n||typeof n!=='object')return; if(n.properties) for(const k in n.properties){ names.push(k); walk(n.properties[k]); } if(n.items) walk(n.items); })(W.DIAG_TOOL.input_schema);
 ok(!names.some(k=>/ladder|example|rewrite|suggest|model|starter/i.test(k)),'no pass 1 field can hold a model sentence: '+names.join(','));
 
@@ -60,7 +73,16 @@ console.log('--- focus survives truncation by being early ---');
 const props=Object.keys(W.REVIEW_TOOL.input_schema.properties);
 ok(props.indexOf('focus')<props.indexOf('paragraphs') && props.indexOf('focus')<props.indexOf('rubric'),'focus is emitted before paragraphs and rubric: '+props.join(','));
 ok(W.REVIEW_TOOL.input_schema.properties.paragraphs.items.properties.sentences.maxItems===undefined,'sentences are never capped, the UI rebuilds the paragraph from them');
-ok(W.REVIEW_TOOL.input_schema.properties.paragraphs.items.properties.sentences.items.properties.issues.maxItems===2,'issues are capped');
+const CAP=W.REVIEW_TOOL.input_schema.properties.paragraphs.items.properties.sentences.items.properties.issues.maxItems;
+ok(CAP===2,'issues are capped in the schema: '+CAP);
+// and capped in code, because maxItems is guidance to the model, not a rule the
+// API enforces. Reading the constant alone left the two free to drift apart.
+const over=W.normalizeReview({marks:{total:10},paragraphs:[{name:'Body 1',sentences:[{text:'x',issues:[
+  {kind:'fix',severity:'should',head:'one',why:'w'},
+  {kind:'fix',severity:'should',head:'two',why:'w'},
+  {kind:'fix',severity:'should',head:'three',why:'w'}]}]}]});
+const kept=(((over.paragraphs||[])[0]||{}).sentences||[])[0];
+ok(!!kept&&kept.issues.length===CAP,'and capped in code to the same number: '+((kept&&kept.issues.length)||'no sentence'));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail?1:0);

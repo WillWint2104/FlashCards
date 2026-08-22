@@ -28,8 +28,13 @@ const many = { summary:'s', rubric:[], focus:{area:'A',paragraph:1,why:'w',quote
     sentences:[{text:'The kiosks came later.',issues:new Array(9).fill({kind:'fix',severity:'should',head:'h',why:'w',ladder:rung('x')})},
                {text:'McDonalds introduced mobile ordering through its app.',issues:[]}]}]};
 const r2 = W.finalize(many, 4, A, null, ['a','b','c','d'], false);
-ok(r2.paragraphs[0].reasons.length===3,'reasons capped at 3: '+r2.paragraphs[0].reasons.length);
-ok(r2.paragraphs[0].sentences[0].issues.length===3,'issues capped at 3: '+r2.paragraphs[0].sentences[0].issues.length);
+// Read both caps from the schema rather than repeating the numbers. t3 asserted
+// the schema said 2 while this asserted the code said 3, so each test agreed
+// with its own side and the divergence between them was invisible.
+const P=W.REVIEW_TOOL.input_schema.properties.paragraphs.items.properties;
+const CAP_REASONS=P.reasons.maxItems, CAP_ISSUES=P.sentences.items.properties.issues.maxItems;
+ok(r2.paragraphs[0].reasons.length===CAP_REASONS,'reasons capped in code at the schema number ('+CAP_REASONS+'): '+r2.paragraphs[0].reasons.length);
+ok(r2.paragraphs[0].sentences[0].issues.length===CAP_ISSUES,'issues capped in code at the schema number ('+CAP_ISSUES+'): '+r2.paragraphs[0].sentences[0].issues.length);
 ok(r2.paragraphs[0].sentences.length===2,'both sentences survive: '+r2.paragraphs[0].sentences.length);
 
 console.log('--- pass 1 stays off rather than taking the app down ---');

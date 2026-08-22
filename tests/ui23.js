@@ -64,8 +64,8 @@ async function open(p, re){
   ok(roles.length===2,'each option carries a contribution: '+roles.length);
   ok(roles.some(r=>/pushes against/i.test(r)),'including one that pushes against the judgement');
   const all=await p.evaluate(()=>{
-    const q=window.ESSAY.subjects.business_studies.questions.find(x=>x.id==='hr-01');
-    const c={}; q.pathways.forEach(x=>{c[x.contribution.role]=(c[x.contribution.role]||0)+1;}); return c;
+    const q=window.ESSAY.subjects.business_studies.questions.find(x=>x.id==='hr-01')||{pathways:[]};
+    const c={}; q.pathways.forEach(x=>{const r=(x.contribution||{}).role; if(r) c[r]=(c[r]||0)+1;}); return c;
   });
   console.log('   across the question:',JSON.stringify(all));
   ok(all.support&&all.conditional&&all.limitation,'all three kinds exist to argue with');

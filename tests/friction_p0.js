@@ -308,7 +308,7 @@ if (!P) {
       await shot('07-back-in-body3');
     }
     REC.sections.push({ section: sec, phase: 'written', density: await density(), own: await visibleOwnWriting() });
-    if (i < BODIES.length - 1 || true) await nextSection();
+    await nextSection();   // also after the LAST body: the conclusion follows
   }
 
   // ================================================================ CONCLUSION

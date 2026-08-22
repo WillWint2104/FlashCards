@@ -50,7 +50,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   ok(!!survivor && survivor.slot,'the UNCHANGED sentence kept its id and job: '+(survivor&&survivor.id)+' / '+(survivor&&survivor.slot));
   const changed = bag.find(x=>/directs its marketing/.test(x.text));
   ok(!!changed,'the edited sentence is present: '+(changed&&changed.id));
-  ok(changed.id!==survivor.id,'and the two are distinct blocks');
+  ok(!!changed&&!!survivor&&changed.id!==survivor.id,'and the two are distinct blocks');
 
   console.log('--- marking receives the sentence list ---');
   await p.click('#esmodeswitch'); await p.waitForTimeout(400);

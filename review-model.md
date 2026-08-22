@@ -287,7 +287,7 @@ Instrumentation, not student-facing.
 ```
 
 `grounded` below 0.6 means the marking drifted away from this student's text, and
-`gradeEssay()` logs a console warning rather than swallowing it.
+`gradeWritten()` (app.js) logs a console warning rather than swallowing it.
 
 ### Request fields (input)
 

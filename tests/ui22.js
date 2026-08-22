@@ -81,7 +81,7 @@ async function open(p, re){
 
   console.log('6. the rest of the stack works on it with no special casing');
   for (let n=0;n<4;n++){
-    const did=await p.$$eval('.es-plancard .es-areachip',es=>{const t=es.find(x=>!/on/.test(x.className)); if(t){t.click();return true;} return false;});
+    const did=await p.$$eval('.es-plancard .es-areachip',es=>{const t=es.find(x=>!x.classList.contains('on')); if(t){t.click();return true;} return false;});
     if(!did) break; await p.waitForTimeout(280);
     await p.$$eval('[data-esplanpick]',es=>{const t=es[0]; t&&t.click();}); await p.waitForTimeout(300);
   }

@@ -1,7 +1,7 @@
 ---
 title:   The pathway is the lesson
 date:    2026-08-22
-status:  active, proven on three pathways
+status:  active, lesson authored on 4 of 28 pathways, 3 of them with a full ladder
 governs: the Learn surface, pathway cards, the authoring schema
 implements: briefs/2026-08-22-pathway-learning.md
 ---
@@ -134,6 +134,10 @@ Coherent, and stated without reopening the lesson.
 
 ## The contract this joins
 
-`tools/coverage.js` now counts pathway lessons, and **Learn & Build readiness
-requires one on every pathway**. Today: 3 of 28. A question runs in the mode it
-is ready for and is never described as ready for one it is not.
+`tools/coverage.js` counts pathway lessons and full ladders as two separate
+measures, and **Learn & Build readiness requires both on every pathway**, plus
+sourced evidence and every named concept explained. Today 4 of 28 pathways carry
+a lesson and 3 of those also carry a full ladder: `mkt01-pe-service` has the
+lesson and no ladder. No question is Learn & Build ready yet. Do not restate a
+number here without naming which measure it counts; `docs/support-coverage.md`
+is generated and owns both.

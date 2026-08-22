@@ -28,7 +28,10 @@ const rungs = p => p.$$eval('.es-rung',es=>es.map(e=>({n:e.querySelector('.es-ru
   const evA = await p.$$eval('[data-esev]',es=>{ const t=es.find(x=>/App, loyalty/.test(x.textContent))||es[0]; t.click(); return t.querySelector('.es-pickrel').textContent.trim(); });
   await p.waitForTimeout(250);
   await p.click('#esstartwriting'); await p.waitForTimeout(400);
-  ok(true,'argument and evidence A selected: '+evA);
+  const argChip=await p.$eval('.es-chip-arg',e=>e.textContent.trim()).catch(()=>'');
+  const evChip=await p.$eval('.es-chip-ev',e=>e.textContent.trim()).catch(()=>'');
+  ok(/Digitally engaged/i.test(argChip)&&!(await p.$('.es-chip-ev.empty'))&&!!evChip,
+     'argument and evidence A selected: '+evA+' | '+argChip+' / '+evChip);
 
   console.log('3-4. reach Explain, L0 only');
   await p.click('#esnextguide'); await p.waitForTimeout(300);

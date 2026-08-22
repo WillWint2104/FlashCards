@@ -3,8 +3,13 @@
 const { chromium, T, OUT, BASE, fileUrl } = require('./env');
 const { planAll } = require('./env');
 const PROFILE=process.argv[2]||'moderate';
-const P={ independent:{help:0,drawers:[]}, moderate:{help:2,drawers:['understand']},
-          high:{help:9,drawers:['understand','ideas','evidence']} }[PROFILE];
+const PROFILES={ independent:{help:0,drawers:[]}, moderate:{help:2,drawers:['understand']},
+                 high:{help:9,drawers:['understand','ideas','evidence']} };
+const P=PROFILES[PROFILE];
+if(!P){
+  console.error('unknown profile "'+PROFILE+'". Use one of: '+Object.keys(PROFILES).join(', '));
+  process.exit(1);
+}
 const LINES=[
  "A target market that will not spend time or effort on ordering pushes a business to rebuild how an order is placed.",
  "Processes are the systems a customer moves through to obtain a service, including ordering, payment and collection.",

@@ -86,8 +86,9 @@ const wa = p => p.$eval('.es-watext',e=>e.textContent.trim()).catch(()=>'');
   await p.click('#esaccept'); await p.waitForTimeout(350);
   const prose=await p.$eval('.es-prose',e=>e.textContent);
   ok(/highly effective/.test(prose),'their sentence stands exactly as written');
-  const w3=await wa(p).catch(()=>'');
-  ok(true,'and the system keeps its own understanding separately');
+  const w3=(await wa(p))||await p.$eval('.es-mapwa',e=>e.innerText.replace(/\s+/g,' ')).catch(()=>'');
+  ok(!!w3&&!/highly effective/.test(w3)&&/raising productivity/.test(w3),
+     'and the system keeps its own understanding separately: '+w3.slice(0,90));
 
   console.log('7. required coverage is checked at review, never at the start');
   await open(p,/target markets affect/);

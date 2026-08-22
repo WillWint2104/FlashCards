@@ -1,8 +1,9 @@
 // The working answer is a sentence built out of authored fragments, so the risk
 // is not that a fragment is wrong but that a COMBINATION of them does not parse.
-// Eight pathways make 255 non-empty subsets, which is cheap enough to render all
-// of them and read every result mechanically. This runs the shipped assembler,
-// not a copy: tests/mkwashim.js lifts it out of app.js.
+// Twelve pathways make 4095 non-empty subsets, 3001 of them within the six
+// argument cap an essay could hold, which is cheap enough to render all of them
+// and read every result mechanically. This runs the shipped assembler, not a
+// copy: tests/mkwashim.js lifts it out of app.js.
 import { readFileSync } from "fs";
 import { createContext, runInContext } from "vm";
 import { setQuestion, esWorkingAnswer, esWorkingParts, esPositionTension } from "./wa.mjs";
@@ -24,8 +25,12 @@ function draft(q, ids, extra) {
     .concat([{ role: "Conclusion", text: "" }]);
   return Object.assign({ paras: paras }, extra || {});
 }
-// every non-empty subset, smallest first, capped at what an essay could hold
+// every non-empty subset, smallest first, capped at what an essay could hold.
+// The mask is 32-bit, so past SWEEP_LIMIT this would silently enumerate nothing
+// useful and the suite would report combinations it never rendered.
+const SWEEP_LIMIT = 16;
 function subsets(ids, max) {
+  if (ids.length > SWEEP_LIMIT) throw new Error('too many pathways for the exhaustive sweep: ' + ids.length + ' > ' + SWEEP_LIMIT);
   const out = [];
   for (let mask = 1; mask < (1 << ids.length); mask++) {
     const pick = ids.filter((_, i) => mask & (1 << i));

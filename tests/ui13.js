@@ -28,7 +28,8 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   ok(!!(await p.$('.es-setup')),'the paragraph asks for an argument before writing');
   const opts = await p.$$eval('.es-pick',es=>es.map(e=>e.textContent.trim().slice(0,60)));
   console.log('    options:', opts.slice(0,4).join(' | '));
-  ok(opts.length>=3,'several relationships offered: '+(opts.length-1));
+  const rel = opts.filter(o=>!/Write my own/i.test(o));
+  ok(rel.length>=2,'several relationships offered besides writing your own: '+rel.length);
   ok(opts.some(o=>/Write my own/i.test(o)),'writing your own is offered');
   const sub = await p.$eval('.es-setupsub',e=>e.textContent);
   ok(/relationship to argue, not a sentence/i.test(sub),'it says a relationship, not a sentence');
@@ -41,7 +42,10 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   console.log('    compatible evidence:', evs.join(' | '));
   ok(evs.length>0 && evs.length<=4,'only compatible items, not the whole bank: '+evs.length);
   ok(evs.some(e=>/App, loyalty/.test(e)),'and they are the right ones');
-  const pickedEv = await p.$$eval('[data-esev]',es=>{ es[0].click(); return es[0].querySelector('.es-pickrel').textContent.trim(); });
+  const pickedEv = await p.$$eval('[data-esev]',es=>{
+    if(!es[0]) return null;
+    es[0].click(); const r=es[0].querySelector('.es-pickrel'); return r?r.textContent.trim():null;
+  });
   await p.waitForTimeout(300);
   await p.click('#esstartwriting'); await p.waitForTimeout(400);
 
@@ -55,7 +59,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   ok(!!(await p.$('.es-rest')),'the rail is the resting state, not coach prose');
   const rail = await p.$eval('.es-cols',e=>e.textContent);   // argument and evidence are chips now
   ok(/Digitally engaged/.test(rail),'it shows the chosen argument');
-  ok(rail.indexOf(pickedEv)>=0,'and the evidence they actually chose: '+JSON.stringify(pickedEv));
+  ok(!!pickedEv&&rail.indexOf(pickedEv)>=0,'and the evidence they actually chose: '+JSON.stringify(pickedEv));
   ok(/This paragraph/.test(rail),'and where they are');
   await p.screenshot({path:OUT+'shot-phasec-rest.png'});
 

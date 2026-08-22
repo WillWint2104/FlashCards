@@ -61,7 +61,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
     console.log('    ancient history tools:', t2.map(x=>x.t+(x.off?' (off)':'')).join(' | '));
     const contentTools = t2.filter(x=>/Learn|Evidence|Vocabulary/.test(x.t));
     ok(contentTools.every(x=>x.off),'no authored content layer means those tools are disabled, not filled');
-    ok(t2.find(x=>/Structure/.test(x.t)).off===false,'Structure still works: it is derived, not authored');
+    ok((t2.find(x=>/Structure/.test(x.t))||{}).off===false,'Structure still works: it is derived, not authored');
     const body = await p2.$eval('#eshost',e=>e.textContent);
     ok(!/lorem|coming soon|not available yet/i.test(body),'and nothing shows filler text');
     await p2.close();

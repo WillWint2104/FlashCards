@@ -110,7 +110,11 @@ async function planAllBodies(p, n){
   const two=await claimed(p);
   ok(two.length===1,'body 2 claims one part, body 1 still claims none: '+JSON.stringify(two));
   // which part body 2 covers is the question's business, not this test's
-  const held=two[0].split('·')[0].trim().toLowerCase();
+  // An empty `held` is worse than a throw here: '' makes the find below match
+  // nothing and indexOf('')===0 true of every string, so three later assertions
+  // would pass vacuously. Report and stop instead.
+  const held=(two[0]||'').split('·')[0].trim().toLowerCase();
+  if(!held){ ok(false,'body 2 claims a named part, so coverage can be checked against it'); console.log(`\n${pass} passed, ${fail} failed`); await b.close(); process.exit(1); }
   await review(p);
   btns=await covBtns(p);
   console.log('   ',JSON.stringify(btns.map(x=>x.label)));

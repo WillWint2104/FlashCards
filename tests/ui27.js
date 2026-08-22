@@ -65,7 +65,7 @@ async function writeThrough(p, lines){
   await p.click('#esposdefer').catch(()=>{}); await p.waitForTimeout(350);
   await body(p,1);
   await p.$$eval('[data-essetuparea]',es=>es[0]&&es[0].click()); await p.waitForTimeout(320);
-  const first=await p.$$eval('[data-espath]',es=>es[0].dataset.espath);
+  const first=await p.$$eval('[data-espath]',es=>es[0]?es[0].dataset.espath:'');
   await p.$$eval('[data-espath]',es=>es[0]&&es[0].click()); await p.waitForTimeout(420);
   ok(!(await p.$('.es-twin')),'the first use of an argument is not a repeat');
   sw=await p.$('#esstartwriting'); if (sw) { await sw.click(); await p.waitForTimeout(400); }

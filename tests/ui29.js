@@ -59,6 +59,7 @@ async function write(p, line){ if (await p.$('#esline')) { await p.fill('#esline
   await go(p,'Body 1');
   await pickArea(p,0);
   const ids=await p.$$eval('[data-espath]',es=>es.map(e=>e.dataset.espath));
+  ok(ids.length>=2,'the area offers at least two arguments to switch between: '+ids.length);
   const A=ids[0], B=ids[1];
   await pickPath(p,A); await startWriting(p);
   await write(p,'Training raises productivity at McDonald’s.');

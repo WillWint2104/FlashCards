@@ -47,14 +47,17 @@ const REVIEW = {
   await p.fill('#esline','Target markets shape the mix.');
   await p.click('#esaccept'); await p.waitForTimeout(300);
   await nextSection(p);
+  const emptySlot = await p.$eval('.es-pararole',e=>e.textContent.trim()).catch(()=>'');
+  const emptyText = await p.$eval('#esline',e=>e.value).catch(()=>null);
   await nextSection(p);
-  const skipped = await p.$eval('.es-pararole',e=>e.textContent.trim());
+  const skipped = await p.$eval('.es-pararole',e=>e.textContent.trim()).catch(()=>'');
   await p.fill('#esline','Overall the target market drives the strategy.');
   await p.click('#esaccept'); await p.waitForTimeout(300);
   await p.waitForTimeout(150);
   await p.click('#esmodeswitch'); await p.waitForTimeout(350);
   await p.click('#essubmit'); await p.waitForTimeout(900);
-  ok(true,'wrote into slot 1 and slot 3, leaving slot 2 empty (now on '+skipped+')');
+  ok(!!skipped&&!!emptySlot&&skipped!==emptySlot&&emptyText==='',
+     'wrote into slot 1 and slot 3, leaving slot 2 empty (now on '+skipped+', skipped '+emptySlot+')');
 
   ok(sent && sent.requirements && sent.requirements.relationships.length>0,
      'the picked question\'s requirements reach the marker: '+JSON.stringify(sent&&sent.requirements&&sent.requirements.concepts));
@@ -65,9 +68,13 @@ const REVIEW = {
 
   // ---- revise must land on the paragraph the student actually wrote SECOND
   await p.click('#esrevise'); await p.waitForTimeout(400);
-  const v = await p.$eval('[data-esedit], #esline',e=>e.value) || (await p.$eval('.es-prose',e=>e.textContent));
-  ok(/Overall the target market/.test(v)||/Overall the target market/.test(await p.$eval('.es-prose',e=>e.textContent)),'revise lands on the right slot despite the empty middle');
-  const role = await p.$eval('.es-pararole',e=>e.textContent.trim());
+  // page.$eval REJECTS when the selector matches nothing, so the old `||`
+  // fallback could never run: a revise landing on a finished paragraph killed
+  // the suite instead of failing this line.
+  const v = (await p.$eval('[data-esedit], #esline',e=>e.value).catch(()=>'')) ||
+            (await p.$eval('.es-prose',e=>e.textContent).catch(()=>''));
+  ok(/Overall the target market/.test(v),'revise lands on the right slot despite the empty middle: '+String(v).slice(0,60));
+  const role = await p.$eval('.es-pararole',e=>e.textContent.trim()).catch(()=>'');
   ok(role===skipped,'and it is the slot the student wrote in, not the skipped one: landed on '+role+', skipped slot was '+skipped);
 
   console.log('pageerrors:', errs.join(' | ')||'none');

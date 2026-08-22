@@ -58,6 +58,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
 
   console.log('--- the shape is different for a different verb ---');
   const first = labels.join('|');
+  let differed=false;
   // walk to a later question with a different verb
   for (let i=0;i<4;i++){
     await p.fill('#ans','placeholder answer for walking forward');
@@ -67,9 +68,11 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
     if (!(await p.$('.ansshape'))) continue;
     const l=(await p.$$eval('.ansshape .es-skellabel',es=>es.map(e=>e.textContent.trim()))).join('|');
     const h=await p.$eval('.ansshape .es-skelh',e=>e.textContent.trim());
-    if (l!==first) { console.log('    later question:', h.slice(0,60), '->', l); ok(true,'a different verb produces a different shape'); break; }
-    if (i===3) ok(false,'every question got the same shape');
+    if (l!==first) { console.log('    later question:', h.slice(0,60), '->', l); differed=true; break; }
   }
+  // One verdict, outside the loop. Inside it, a final `continue` (no .ansshape at
+  // all) skipped both branches and the section recorded nothing either way.
+  ok(differed,'a different verb produces a different shape');
 
   console.log('pageerrors:', errs.join(' | ')||'none');
   ok(errs.length===0,'no page errors');

@@ -29,7 +29,7 @@ let r = await run(Object.assign({}, base, {marks:2, responseType:'short', stimul
 const p2 = r.seen[1].messages[0].content, p1 = r.seen[0].messages[0].content;
 ok(/RESPONSE TYPE: short answer, worth 2 marks/.test(p2),'pass 2 is told what it is marking');
 ok(/not a miniature essay/.test(p2),'and told not to mark it as one');
-ok(/directive verb is "Outline"/.test(p2),'the directive verb drives it: '+/directive verb is "([^"]+)"/.exec(p2)[1]);
+ok(/directive verb is "Outline"/.test(p2),'the directive verb drives it: '+((/directive verb is "([^"]+)"/.exec(p2)||[])[1]||'none'));
 ok(/roughly 2 distinct creditworthy things/.test(p2),'depth is set by the mark value');
 ok(/A stimulus was provided/.test(p2),'a stimulus is flagged so it must actually be used');
 ok(!/BAND EXPECTATIONS/.test(p2),'band expectations are not sent to a short answer');

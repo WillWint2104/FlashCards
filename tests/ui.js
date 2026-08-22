@@ -1,6 +1,5 @@
 // the plain build on purpose: this suite tests the shipped defaults
 const { chromium, P: T, OUT } = require('./env');
-const R='/home/user/FlashCards/';
 let pass=0, fail=0;
 const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 

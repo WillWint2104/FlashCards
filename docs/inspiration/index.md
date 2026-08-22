@@ -5,12 +5,12 @@ applies. Read this first.
 
 | Document | Status | Governs |
 | --- | --- | --- |
-| `briefs/2026-08-22-pathway-learning.md` | vertical slice built | the Learn tool, pathway cards, evidence, short answer |
+| `briefs/2026-08-22-pathway-learning.md` | built and frozen | the Learn tool, the pathway cards, the evidence drawer, short answer |
 | `briefs/2026-08-19-learning-architecture.md` | active | guided mode, concept layer, pathway layer, marking |
 | `briefs/2026-08-19-interface-optimisation.md` | active | guided mode, all screens |
 | `decisions/2026-08-22-pathway-done.md` | active | content production, the authoring queue, readiness |
 | `decisions/2026-08-22-concept-routing.md` | active | the concept store, pathway authoring, the support report |
-| `decisions/2026-08-22-pathway-is-the-lesson.md` | frozen, proven on four pathways | the Learn surface, pathway cards, authoring |
+| `decisions/2026-08-22-pathway-is-the-lesson.md` | active, lesson authored on 4 of 28 pathways, 3 of them with a full ladder | the Learn surface, pathway cards, authoring |
 | `decisions/2026-08-22-reasoning-direction.md` | active | own arguments, question authoring, the support contract |
 | `decisions/2026-08-21-simulated-students.md` | active | the test harness, how guided-mode work is accepted |
 | `decisions/2026-08-21-plan-is-intent.md` | active | the working answer, judgement positions, required coverage |

@@ -48,7 +48,7 @@ boot = """
   }catch(e){/* private mode: the app still runs, Test mode is just empty */}
 })();
 </script>
-""".replace("SEED", json.dumps(seed))
+""".replace("SEED", json.dumps(seed).replace("<", "\\u003c"))
 i = src.index("<script>\n// =")
 src = src[:i] + boot + src[i:]
 dest = os.path.join(OUT, "marginal-walkthrough.html")
