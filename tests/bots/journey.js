@@ -101,7 +101,7 @@ async function writeParagraph(p, tr, led, vocab, prof, need, unexplained, cs) {
     if (unexplained.length && !reportedGap) {
       reportedGap = true;
       unexplained.forEach(t => { if (tr.m.unexplained.indexOf(t) < 0) tr.m.unexplained.push(t); });
-      tr.say("gap", "this argument names " + unexplained.join(", ") + ", which nothing in the app explains");
+      tr.demand("the interface says " + unexplained.join(", ") + " and nothing explains " + (unexplained.length === 1 ? "it" : "them"));
     }
     const know = need.filter(t => led.knows(t));
     const line = compose(prof.style, know.length ? know : need.concat(unexplained), n, cs);
@@ -120,7 +120,8 @@ async function writeParagraph(p, tr, led, vocab, prof, need, unexplained, cs) {
     n++;
     if (await has(p, ".es-done")) { tr.m.paragraphs++; tr.say("complete", "paragraph complete after " + n + " sentences"); break; }
   }
-  if (ladderSeen) tr.m.ladderHere++; else tr.m.noLadderHere++;
+  if (ladderSeen) tr.m.ladderHere++;
+  else { tr.m.noLadderHere++; if (prof.usesHelp) tr.demand("this paragraph offered no help ladder at any sentence"); }
   tr.say("support", "help was offered at " + slotsWithLadder + " of " + slotsSeen + " sentences in this paragraph");
 }
 
@@ -181,7 +182,8 @@ async function runJourney(p, o) {
         // until the area is chosen, so read again now that there is
         await readMeanings();
       }
-      if (prof.writesOwnArgument) {
+      const ownRoute = typeof prof.writesOwnArgument === "function" ? prof.writesOwnArgument(q) : prof.writesOwnArgument;
+      if (ownRoute) {
         const offered = await p.$$eval("[data-espath]", es => es.map(e => e.dataset.espath));
         const own = prof.ownArgument(k, cs, q, used, offered);
         await p.click("[data-espathown]").catch(() => {}); await wait(p, 250);
@@ -204,6 +206,20 @@ async function runJourney(p, o) {
         unexplained = all.filter(t => teach.no.indexOf(t) >= 0);
         tr.say("select", "argument: " + (path ? path.short : want) + (path && path.contribution ? " [" + path.contribution.role + "]" : ""));
       }
+      const evText = await txt(p, ".es-setup");
+      if (/no verified evidence|waiting on a checked source|no evidence bank/i.test(evText)) {
+        tr.demand("evidence is asked for and none of it has a checked source");
+      }
+      // an argument the student stated themselves may be questioned here
+      const dir = await txt(p, ".es-drift.dir");
+      if (dir) {
+        tr.m.prompts++; tr.m.writePrompts++;
+        tr.say("prompt", dir.slice(0, 140));
+        const answer = prof.answerDirection ? prof.answerDirection(tr.m.prompts) : "keep";
+        await p.click(answer === "keep" ? "[data-esdirkeep]" : "[data-esdirfix]").catch(() => {});
+        await wait(p, 430);
+        tr.say("respond", answer === "keep" ? "kept the point as written" : "went back to revise it");
+      }
       const sw = await p.$("#esstartwriting");
       if (sw) { tr.m.stepsAppRequired++; await sw.click(); await wait(p, 420); }
     }
@@ -223,7 +239,7 @@ async function runJourney(p, o) {
       tr.m.mapVisits++;
       tr.say("open", "looked back at the response map");
       if (await has(p, ".es-drift.tension")) {
-        tr.m.prompts++;
+        tr.m.prompts++; tr.m.planPrompts++;
         tr.say("prompt", (await txt(p, ".es-drift.tension")).slice(0, 150));
         const answer = prof.answerTension(tr.m.prompts);
         await p.click(answer === "keep" ? "#esposkeep" : "#espostension").catch(() => {});
@@ -235,7 +251,7 @@ async function runJourney(p, o) {
           tr.say("judgement", "changed it to: " + prof.newPosition);
         }
       }
-      if (await has(p, ".es-drift:not(.tension)")) { tr.m.prompts++; tr.say("prompt", "thesis drift shown"); }
+      if (await has(p, ".es-drift:not(.tension):not(.dir)")) { tr.m.prompts++; tr.m.planPrompts++; tr.say("prompt", "thesis drift shown"); }
       const n = await p.$$eval(".es-startrow", es => es.filter(x => /Body/.test(x.textContent)).length).catch(() => 0);
       if (n) await p.$$eval(".es-startrow", (es, i) => { const t = es.filter(x => /Body/.test(x.textContent))[i]; t && t.click(); }, Math.min(k, n - 1));
       await wait(p, 500);

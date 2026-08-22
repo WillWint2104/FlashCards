@@ -53,12 +53,18 @@ it is used; do not run `playwright install` in the hosted environment.
 | `ui25` | the working answer states intent; deciding as you go; coverage warns and routes |
 | `ui26` | coverage recovery at its edges: nothing student-made is ever taken over |
 | `ui27` | the writing route reaches parity with the planning surface |
+| `ui28` | causal wrong-turn recovery: backwards, valid alternative, and knowing nothing |
+| `ui29` | decision histories: A to B to A, own to authored to own, and growing the structure over existing prose |
 
 `t12` is not a browser suite. It lifts the shipped working-answer assembler out of
 `app.js` and renders **3001 combinations** of chosen arguments through it, reading
 each result for mechanical faults that only appear when authored fragments are
 joined. Subsets and repeats both, because a student can argue the same
 relationship twice.
+
+`t13` covers the reasoning-direction check on its own, because its precision is
+the whole point: an argument nobody authored that runs the right way must produce
+exactly as much silence as one that was authored.
 
 `bots/` is the simulated-student harness: three students defined as knowledge
 states rather than click scripts, walked through a causal and a judgement
@@ -78,3 +84,10 @@ Suites that select evidence set a source on every bank item first, as an explici
 test fixture. Unsourced evidence is withheld from students by design (see
 `EVIDENCE-SOURCES.md`), and the suites supply sources rather than weakening the
 rule they are testing.
+
+## Support coverage
+
+`node tools/coverage.js` prints what the authored content can actually support,
+per question, and `node build.js` writes the same thing to
+`docs/support-coverage.md` on every build. It exists because the architecture can
+promise a student more than the content can deliver, and did.

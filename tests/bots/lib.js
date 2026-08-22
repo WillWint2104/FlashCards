@@ -25,52 +25,11 @@ function question(id) {
   return found;
 }
 
-const STOP = new Set(("the a an and or of to in on for by with its it their this that as at from is are be " +
-  "how what which where when why more less than into over under about through can could will would should " +
-  "business businesses staff people customers market markets thing things part parts way ways").split(" "));
-// The words a sentence has to contain to count as saying what the pathway says.
-// Taken from the pathway's own short form, so nothing is invented for the test.
-function termsOf(pathway) {
-  return String(pathway.short || pathway.relationship || "")
-    .replace(/[→>-]+/g, " ")
-    .toLowerCase().split(/[^a-z']+/)
-    .filter(w => w.length > 3 && !STOP.has(w));
-}
-function vocabulary(q) {
-  const all = new Set();
-  (q.pathways || []).forEach(p => termsOf(p).forEach(t => all.add(t)));
-  return [...all];
-}
+// The vocabulary a question shows, and which of it anything explains, come from
+// tools/coverage.js so the harness and the build's support report can never
+// disagree about what the content covers.
+const { termsOf, vocabulary, teachable } = require("../../tools/coverage.js");
 
-// A term is TEACHABLE if the app has somewhere that explains it, not merely
-// somewhere that prints it. A pathway's label prints "engagement"; nothing in the
-// app says what engagement is. The distinction matters: a student who cannot
-// acquire a term because no surface explains it has hit a content gap, and
-// counting that as the app refusing to help would blame the wrong thing.
-const EXPLAINS = ["meaning", "whatToProve", "commonMistake", "guides", "hint", "needs",
-  "direction", "frame", "starter", "example", "explain", "quick", "readMore", "confusions",
-  "note", "text", "job", "why", "use", "fact"];
-function explanatoryText(q, subjectContent) {
-  const out = [];
-  const walk = (v, keyChain) => {
-    if (v == null) return;
-    if (typeof v === "string") {
-      if (keyChain.some(k => EXPLAINS.indexOf(k) >= 0)) out.push(v);
-      return;
-    }
-    if (Array.isArray(v)) { v.forEach(x => walk(x, keyChain)); return; }
-    if (typeof v === "object") { Object.keys(v).forEach(k => walk(v[k], keyChain.concat(k))); }
-  };
-  walk(q, []);
-  // the concept resources behind the Learn tool belong to the subject, not the question
-  walk((subjectContent && subjectContent.concepts) || {}, ["explain"]);
-  return out.join(" \n ").toLowerCase();
-}
-function teachable(q, subjectContent) {
-  const text = explanatoryText(q, subjectContent);
-  const vocab = vocabulary(q);
-  return { yes: vocab.filter(t => text.indexOf(t) >= 0), no: vocab.filter(t => text.indexOf(t) < 0) };
-}
 function subjectOf(id) {
   const E = content();
   let found = null;
@@ -103,7 +62,13 @@ class Trace {
     stepsAppRequired: 0, ownArguments: 0, suppliedArguments: 0, mapVisits: 0,
     teachable: 0, unexplained: [], ladderHere: 0, noLadderHere: 0,
     // things only the APP decides, so an assertion about them can fail
-    verbatim: 0, altered: 0, answerMoved: false, coverageGaps: null, acknowledged: null };
+    verbatim: 0, altered: 0, answerMoved: false, coverageGaps: null, acknowledged: null,
+    // every time the app asked the student to understand something it cannot
+    // teach. For a question that is genuinely Learn & Build ready this is 0.
+    unsupported: 0, demands: [],
+    // where the app spoke matters: one of these only exists on the planning
+    // surface, the other reaches a student who never opens it
+    planPrompts: 0, writePrompts: 0 };
   }
   // the clock starts when the student reaches the question, not when a 1.6MB
   // test file finishes loading twice
@@ -111,6 +76,13 @@ class Trace {
   at() { return Date.now() - this.t0; }
   push(kind, detail) { this.events.push({ t: this.at(), kind, detail: String(detail || "") }); return this; }
   say(kind, detail) { return this.push(kind, detail); }
+  // the app asked for something it cannot supply
+  demand(what) {
+    this.m.unsupported++;
+    if (this.m.demands.indexOf(what) < 0) this.m.demands.push(what);
+    this.push("UNSUPPORTED_DEMAND", what);
+    return this;
+  }
   report() {
     const s = this.m.msToFirstSentence;
     const lines = this.events.map(e => "  " + String((e.t / 1000).toFixed(1) + "s").padStart(7) + "  " + e.kind.padEnd(14) + e.detail);
@@ -131,7 +103,10 @@ class Trace {
       "  arguments: supplied " + this.m.suppliedArguments + ", own " + this.m.ownArguments,
       "  sentences written:           " + this.m.sentences,
       "  paragraphs completed:        " + this.m.paragraphs,
-      "  prompts the app raised:      " + this.m.prompts,
+      "  prompts the app raised:      " + this.m.prompts +
+        " (" + this.m.writePrompts + " while writing, " + this.m.planPrompts + " on the planning surface)",
+      "  unsupported demands:         " + this.m.unsupported +
+        (this.m.demands.length ? " (" + this.m.demands.join("; ") + ")" : ""),
       "  wrote without a concept it",
       "  needed and could have been",
       "  taught:                      " + this.m.blocked,

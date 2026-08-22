@@ -85,10 +85,14 @@ const RUNS = [
 
   // 5. what only lives on the planning surface is only ever seen there. This is
   //    a fact about the app, and it is why the wrong-turn student had to look.
-  ok(hrStrong.trace.m.prompts === 0,
-    "a student who wrote straight through met none of the planning surface's prompts");
-  ok(hrWrong.trace.m.mapVisits > 0 && hrWrong.trace.m.prompts > 0,
-    "and the one that was asked had to go and look: " + hrWrong.trace.m.mapVisits + " visit(s)");
+  ok(hrStrong.trace.m.planPrompts === 0,
+    "a student who wrote straight through met none of the planning surface's prompts: " + hrStrong.trace.m.planPrompts);
+  ok(hrStrong.trace.m.writePrompts === 0,
+    "and nothing questioned an argument that named both ends and reached a degree: " + hrStrong.trace.m.writePrompts);
+  ok(hrWrong.trace.m.mapVisits > 0 && hrWrong.trace.m.planPrompts > 0,
+    "and the judgement question had to be gone and looked for: " + hrWrong.trace.m.mapVisits + " visit(s)");
+  ok(mkWrong.trace.m.writePrompts > 0,
+    "the causal wrong turn was caught where the student was, with no planning visit needed: " + mkWrong.trace.m.writePrompts);
 
   // 6. the three are genuinely different journeys, on both question kinds.
   //    Every term of the signature is something the APP produced in response to

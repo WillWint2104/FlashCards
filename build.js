@@ -221,6 +221,52 @@ if (escapeFaults.length) {
   process.exit(1);
 }
 
+// ---------------------------------------------------------------------------
+// A QUESTION THAT CANNOT NOTICE A WRONG TURN SHOULD SAY SO
+//
+// The reasoning block is what lets the app tell an argument running the wrong
+// way from one nobody happened to author. It is checked here because a typo in a
+// term list fails silently at runtime: the check simply never fires, and the
+// question looks fine.
+// ---------------------------------------------------------------------------
+function checkReasoning() {
+  const subs = essaySubjects();
+  if (!subs) return [essayLoadError];
+  const bad = [];
+  Object.keys(subs).forEach(key => (subs[key].questions || []).forEach(q => {
+    const r = q.reasoning;
+    const at = `${key}/${q.id}`;
+    if (!r) {
+      if ((q.pathways || []).length) bad.push(`${at} has pathways but no reasoning block, so nothing can notice an argument running the wrong way`);
+      return;
+    }
+    ["cause", "effect"].forEach(side => {
+      const s = r[side];
+      if (!s || !s.label) { bad.push(`${at} reasoning.${side} has no label to name it to the student`); return; }
+      const terms = s.terms || [];
+      if (terms.length < 4) bad.push(`${at} reasoning.${side} has only ${terms.length} terms; too few to recognise the side at all`);
+      terms.forEach(t => {
+        if (t !== String(t).toLowerCase()) bad.push(`${at} reasoning.${side} term ${JSON.stringify(t)} is not lowercase, and the text is lowercased before matching, so it can never match`);
+        if (/^\s|\s$/.test(t)) bad.push(`${at} reasoning.${side} term ${JSON.stringify(t)} has padding whitespace`);
+      });
+    });
+    const overlap = (r.cause && r.cause.terms || []).filter(t => (r.effect && r.effect.terms || []).indexOf(t) >= 0);
+    if (overlap.length) bad.push(`${at} reasoning has ${JSON.stringify(overlap)} on both ends of the relationship, so direction cannot be read`);
+    if (!r.forward) bad.push(`${at} reasoning has no forward line, so the student would be told they are wrong without being told what right looks like`);
+    if (!r.backward) bad.push(`${at} reasoning has no backward line to say what the point currently does instead`);
+    const mode = (q.coreAnswer || {}).mode || "causal";
+    if (r.degree && mode !== "judgement") bad.push(`${at} has a reasoning.degree but is not a judgement question, so it could never fire`);
+    if (!r.degree && mode === "judgement") bad.push(`${at} is a judgement question with no reasoning.degree, so a point that stops at "this helps" passes unremarked`);
+  }));
+  return bad;
+}
+const reasoningFaults = checkReasoning();
+if (reasoningFaults.length) {
+  console.error("BUILD REFUSED: a question cannot check the direction of its own argument.");
+  reasoningFaults.forEach(o => console.error("  - " + o));
+  process.exit(1);
+}
+
 const waFaults = checkWorkingAnswers();
 if (waFaults.length) {
   console.error("BUILD REFUSED: the working answer would not assemble cleanly.");
@@ -247,3 +293,10 @@ if (offences.length) {
 
 fs.writeFileSync(path.join(root, "marginal-preview.html"), out);
 console.log(`built marginal-preview.html (${out.length} bytes)`);
+
+// What the authored content can actually support, written out on every build so
+// the architecture cannot quietly outrun it again.
+const coverage = require("./tools/coverage.js");
+const covRows = coverage.report();
+fs.writeFileSync(path.join(root, "docs", "support-coverage.md"), coverage.format(covRows) + "\n");
+console.log(coverage.summary(covRows));

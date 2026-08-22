@@ -631,6 +631,26 @@ window.ESSAY = {
             lead: "Target markets affect the marketing strategies a business develops, by shaping",
             join: ", and"
           },
+          // The vocabulary of each end of the relationship, so the app can tell a
+          // point that runs the wrong way from one it simply did not write. These
+          // are FAMILIES of words, not a list of acceptable answers: an argument
+          // nobody authored passes as quietly as one that was.
+          reasoning: {
+            cause: {
+              label: "something about the target market",
+              terms: ["target market", "customers who", "customers want", "customers expect", "convenience",
+                "price sensitivity", "price sensitive", "time poor", "expectations", "segment", "segments",
+                "younger customers", "families", "demographic", "what customers value"]
+            },
+            effect: {
+              label: "a marketing decision",
+              terms: ["e-marketing", "digital marketing", "people", "processes", "physical evidence",
+                "marketing mix", "promotion", "service standards", "staffing", "ordering", "layout",
+                "the store", "training", "surroundings"]
+            },
+            forward: "The question asks you to explain how the target market shapes a marketing decision.",
+            backward: "Your point currently explains how the marketing decision shapes the target market."
+          },
           coreAnswer: {
             mode: "causal",
             pattern: "target-market characteristic \u2192 strategy change \u2192 what it achieves",
@@ -773,6 +793,22 @@ window.ESSAY = {
             base: "Financial strategies affect the objectives of financial management.",
             lead: "Financial strategies affect the objectives of financial management, by",
             join: ", and by"
+          },
+          reasoning: {
+            cause: {
+              label: "a financial strategy",
+              terms: ["cash flow management", "cash flow", "distribution of payments", "discount for early payment",
+                "factoring", "working capital management", "leasing", "sale and lease back", "inventory control",
+                "expense minimisation", "cost control", "cost controls", "cost centre", "hedging", "derivative",
+                "debt finance", "equity finance", "pricing"]
+            },
+            effect: {
+              label: "a financial objective",
+              terms: ["profitability", "liquidity", "efficiency", "growth", "solvency", "return on equity",
+                "working capital ratio", "current ratio", "gross profit ratio", "net profit ratio"]
+            },
+            forward: "The question asks you to explain how a strategy affects an objective.",
+            backward: "Your point currently explains how the objective influences the choice of strategy."
           },
           coreAnswer: {
             mode: "causal",
@@ -983,6 +1019,32 @@ window.ESSAY = {
             join: ", and by",
             // added only once an argument that qualifies the judgement is in play
             qualifier: "although how effective they are depends on how well they are carried out"
+          },
+          reasoning: {
+            cause: {
+              label: "a human resource strategy",
+              terms: ["training", "development", "rewards", "reward", "remuneration", "performance management",
+                "appraisal", "job design", "job enrichment", "job rotation", "flexible working",
+                "flexible arrangements", "leadership style"]
+            },
+            effect: {
+              label: "a measure of business performance",
+              terms: ["productivity", "turnover", "absenteeism", "disputation", "satisfaction", "output",
+                "retention", "business performance", "profitability", "quality"]
+            },
+            forward: "The question asks you to judge how far a strategy improves a measure of performance.",
+            backward: "Your point currently explains how the measure of performance shapes the strategy.",
+            // Evaluate asks how far. A point that stops at "this helps" has not
+            // reached the judgement the directive is asking for.
+            degree: {
+              ask: "This says the strategy helps. Evaluate asks how much, so your point needs to land somewhere on a scale.",
+              // both the adverb and the adjective, because students write either
+              terms: ["highly", "very", "largely", "significantly", "significant", "substantially", "substantial",
+                "considerably", "considerable", "moderately", "moderate", "somewhat", "slightly", "slight",
+                "marginally", "marginal", "limited", "little", "only where", "only when", "only if",
+                "effective", "ineffective", "strongly", "strong", "greatly", "great", "most", "least",
+                "far more", "far less", "rarely", "consistently outweigh"]
+            }
           },
           coreAnswer: {
             mode: "judgement",

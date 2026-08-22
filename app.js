@@ -4611,6 +4611,124 @@
       esRender();
     });
   }
+  // ---------------------------------------------------------------------------
+  // DOES THE ARGUMENT RUN THE WAY THE QUESTION ASKS?
+  //
+  // The app knows which argument a student SELECTED and, for a judgement, whether
+  // their arguments fit their position. It has never known whether an argument
+  // the student wrote themselves actually answers the question. A student who
+  // writes "profitability determines which cost control a business chooses" has
+  // an argument, and it runs backwards, and until now that read to the app
+  // exactly like knowing nothing.
+  //
+  // Three cases have to come apart, and only the middle one may speak:
+  //
+  //   knows nothing        names neither side of the relationship   SILENT
+  //   misconception        names both, running the wrong way        ASK
+  //   valid alternative    names both, running the right way, and   SILENT
+  //                        not in the authored menu
+  //
+  // The third is why this can never be an authored-answer matcher. It reads the
+  // question's own vocabulary for each side of the relationship and the ORDER
+  // and VERB between them. Nothing here compares against a pathway id, so an
+  // argument nobody thought of passes exactly as quietly as one that was.
+  //
+  // It is deliberately low-recall. A soft prompt that fires on a legitimate
+  // sentence is worse than one that misses, so every rule below is written to
+  // stay quiet unless the shape is unambiguous.
+  // ---------------------------------------------------------------------------
+  const ES_BACKWARD_VERB = /^(determines?|determined|decides?|dictates?|drives?|shapes?|influences?|governs?|controls?|explains?|is the reason)\b/;
+  const ES_FORWARD_VERB = /^(affects?|improves?|increases?|raises?|reduces?|lowers?|lifts?|changes?|damages?|weakens?|strengthens?)\b/;
+  // a subordinator after the verb means what follows is a condition, not the
+  // object: "liquidity improves WHEN a business manages its cash flow" is a
+  // perfectly good sentence and must never be flagged
+  const ES_SUBORD = /^(when|where|if|because|since|as|after|once|through|by|whenever|provided|unless)$/;
+  function esReasoningDef() { const q = esQuestionDef(); return (q && q.reasoning) || null; }
+  // longest term first, so "working capital ratio" is never swallowed by
+  // "working capital"
+  function esFindTerm(text, terms) {
+    let best = null;
+    (terms || []).slice().sort((a, b) => b.length - a.length).forEach(t => {
+      const at = text.indexOf(t);
+      if (at < 0) return;
+      if (!best || at < best.at) best = { at: at, term: t, end: at + t.length };
+    });
+    return best;
+  }
+  function esReasoningCheck(text, opts) {
+    const r = esReasoningDef();
+    const s = String(text || "").toLowerCase().replace(/[\u2019']/g, "'").replace(/\s+/g, " ").trim();
+    if (!r || s.split(" ").filter(Boolean).length < 4) return null;
+    const cause = esFindTerm(s, r.cause && r.cause.terms);
+    const effect = esFindTerm(s, r.effect && r.effect.terms);
+    // names neither side, or only one: this is not a direction problem, and
+    // saying anything about direction here would be answering a question the
+    // student has not asked yet
+    if (!cause || !effect) {
+      if (!(opts && opts.wantHalf)) return null;
+      if (cause && !effect) return { kind: "half", missing: r.effect.label, has: r.cause.label, text: s };
+      if (effect && !cause) return { kind: "half", missing: r.cause.label, has: r.effect.label, text: s };
+      return null;
+    }
+    if (cause.at < effect.at) return esReasoningDegree(s, r, opts);   // runs the right way
+    // the effect leads. That is only a fault when the effect is the SUBJECT of a
+    // verb whose object is the cause.
+    const head = s.slice(0, effect.at).replace(/^(a|an|the|this|that|good|strong|high|higher|better|poor|low)\s+/, "").trim();
+    if (head.split(" ").filter(Boolean).length > 2) return esReasoningDegree(s, r, opts);
+    const after = s.slice(effect.end).trim().split(" ").filter(Boolean);
+    let verbAt = -1;
+    for (let i = 0; i < Math.min(after.length, 4); i++) {
+      const w = after.slice(i).join(" ");
+      if (ES_BACKWARD_VERB.test(w) || ES_FORWARD_VERB.test(w)) { verbAt = i; break; }
+    }
+    if (verbAt < 0) return esReasoningDegree(s, r, opts);
+    const rest = after.slice(verbAt + 1);
+    for (let i = 0; i < rest.length; i++) {
+      if (ES_SUBORD.test(rest[i].replace(/[^a-z]/g, ""))) return esReasoningDegree(s, r, opts);
+      if (rest.slice(i).join(" ").indexOf(cause.term) === 0) {
+        return { kind: "backwards", cause: r.cause.label, effect: r.effect.label,
+                 ask: r.forward, saw: r.backward, text: s };
+      }
+    }
+    return esReasoningDegree(s, r, opts);
+  }
+  // A judgement question asks how far, not whether. An argument that reaches its
+  // measure and stops has not finished, and that is worth one quiet line.
+  function esReasoningDegree(s, r, opts) {
+    if (!esIsJudgement() || !r.degree || !(opts && opts.wantDegree)) return null;
+    if (esFindTerm(s, r.degree.terms)) return null;
+    return { kind: "degree", ask: r.degree.ask, text: s };
+  }
+  function esReasoningHTML(text, seen, opts) {
+    const c = esReasoningCheck(text, opts);
+    if (!c || seen === c.text) return "";
+    const body = c.kind === "backwards"
+      ? `<p class="es-corep">${esc(c.ask)}</p><p class="es-corep miss">${esc(c.saw)}</p>`
+      : c.kind === "half"
+      ? `<p class="es-corep">This names ${esc(c.has)} but not ${esc(c.missing)}. The relationship needs both ends.</p>`
+      : `<p class="es-corep">${esc(c.ask)}</p>`;
+    const head = c.kind === "backwards" ? "Check the direction of your argument"
+      : c.kind === "half" ? "Only one end of the relationship is here"
+      : "How far, not whether";
+    return `<div class="es-drift dir" data-esdirfor="${esc(c.text)}">
+      <div class="es-drifth">${esc(head)}</div>
+      ${body}
+      <div class="es-corebtns">
+        <button type="button" class="es-btn sm" data-esdirfix>Revise my point</button>
+        <button type="button" class="es-linkbtn" data-esdirkeep>Keep it</button>
+      </div>
+    </div>`;
+  }
+  // Acknowledgement belongs to the CLAIM that was acknowledged, never to the
+  // press that dismissed it. Change the claim and the question is a new one.
+  function esBindReasoning(host, p, field) {
+    const wrap = host.querySelector("[data-esdirfor]");
+    if (!wrap) return;
+    const keep = wrap.querySelector("[data-esdirkeep]");
+    if (keep) keep.onclick = () => { p.dirSeen = wrap.dataset.esdirfor; esSaveDraft(); esRender(); };
+    const fix = wrap.querySelector("[data-esdirfix]");
+    if (fix) fix.onclick = () => { const el = host.querySelector(field); if (el) { el.focus(); el.selectionStart = el.value.length; } };
+  }
   function esNeedsSetup(p) {
     if (!p) return false;
     // The introduction and the conclusion argue the whole response, not one
@@ -4682,6 +4800,7 @@
       ? `<p class="es-setupsub">No evidence bank has been written for this subject yet.</p>` : "";
     return `<div class="es-setup">
       ${esTwinHTML(ES.draft, ES.draft.paras.indexOf(p))}
+      ${p.ownArgument ? esReasoningHTML(p.ownArgument, p.dirSeen, { wantHalf: true, wantDegree: true }) : ""}
       <div class="es-setuph">Choose evidence that could support this argument</div>
       <p class="es-setupsub">Only evidence that supports what you chose. Picking one does not write anything: you still use it in your own words.</p>
       ${rows}${none}
@@ -4690,6 +4809,21 @@
         <button type="button" class="es-btn primary" id="esstartwriting">Start writing</button>
       </div>
     </div>`;
+  }
+  // Swap the direction card in place. It must never re-render the screen: the
+  // point field loses focus by the student clicking something else, and a full
+  // render at that moment detaches whatever they clicked.
+  function esRefreshDir(p) {
+    const host = document.getElementById("eshost"); if (!host) return;
+    const pin = host.querySelector(".es-pointpin"); if (!pin) return;
+    const old = pin.querySelector(".es-drift.dir");
+    const html = (esIsIntro(p) || esIsConcl(p)) ? "" : esReasoningHTML(p.point, p.dirSeen, { wantDegree: true });
+    if (!html) { if (old) old.remove(); return; }
+    const wrap = document.createElement("div");
+    wrap.innerHTML = html;
+    const fresh = wrap.firstElementChild; if (!fresh) return;
+    if (old) old.replaceWith(fresh); else pin.appendChild(fresh);
+    esBindReasoning(host, p, "#espoint");
   }
   // Replace just the setup card, keeping the point field and its cursor untouched.
   function esRefreshSetup(p) {
@@ -4718,6 +4852,7 @@
     });
     const own = host.querySelector("[data-espathown]");
     if (own) own.onclick = () => { const w = host.querySelector("[data-ownwrap]"); if (w) { w.hidden = false; const i = host.querySelector("#esownarg"); if (i) i.focus(); } };
+    esBindReasoning(host, p, "#esownarg");
     const ok = host.querySelector("#esownok");
     if (ok) ok.onclick = () => {
       const v = (host.querySelector("#esownarg").value || "").trim(); if (!v) return;
@@ -5607,6 +5742,7 @@
           ${(chipArg && !ES.ui.pointOpen && !inSetup) ? "" : `<div class="es-pointpin">
             <label class="es-pinlabel" for="espoint">your point for this paragraph <span class="es-opt">optional</span></label>
             <input id="espoint" class="es-pointin" value="${esc(p.point)}" placeholder="In one line, what does this ${esc(p.role.toLowerCase())} argue?">
+            ${(esIsIntro(p) || esIsConcl(p)) ? "" : esReasoningHTML(p.point, p.dirSeen, { wantDegree: true })}
           </div>`}
           ${inSetup ? esSetupHTML(p) : ""}
           ${inSetup ? "" : `<div class="es-flow">
@@ -5646,7 +5782,12 @@
     </div></div></div>`;
 
     esBindWritingHead();
-    const pt = $("#espoint"); if (pt) pt.oninput = () => {
+    esBindReasoning(host, p, "#espoint");
+    const pt = $("#espoint");
+    // checked when they stop typing, not on every keystroke, and never by
+    // re-rendering the screen out from under the next thing they press
+    if (pt) pt.onblur = () => { esSaveDraft(); esRefreshDir(p); };
+    if (pt) pt.oninput = () => {
       p.point = pt.value; esSaveDraft();
       // While the paragraph is still choosing, saying what it is about must narrow
       // the options AS IT IS TYPED. Only the card is replaced, so the cursor stays.

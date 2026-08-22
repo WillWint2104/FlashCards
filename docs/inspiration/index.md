@@ -5,8 +5,10 @@ applies. Read this first.
 
 | Document | Status | Governs |
 | --- | --- | --- |
+| `briefs/2026-08-22-pathway-learning.md` | accepted, not yet built | the Learn tool, pathway cards, evidence, short answer |
 | `briefs/2026-08-19-learning-architecture.md` | active | guided mode, concept layer, pathway layer, marking |
 | `briefs/2026-08-19-interface-optimisation.md` | active | guided mode, all screens |
+| `decisions/2026-08-22-reasoning-direction.md` | active | own arguments, question authoring, the support contract |
 | `decisions/2026-08-21-simulated-students.md` | active | the test harness, how guided-mode work is accepted |
 | `decisions/2026-08-21-plan-is-intent.md` | active | the working answer, judgement positions, required coverage |
 | `decisions/2026-08-20-progressive-construction.md` | active | planning, the response map, the thesis |

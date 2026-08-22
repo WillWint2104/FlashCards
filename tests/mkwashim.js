@@ -12,6 +12,7 @@ function grab(startMarker, endMarker) {
 const parts = [
   grab("  function esWorkingParts(d) {", "  function esList(xs) {"),
   grab("  function esShapeKey(pos, n) {", "  function esPositionTensionHTML(d) {"),
+  grab("  const ES_BACKWARD_VERB =", "  function esReasoningHTML("),
 ].join("\n");
 
 // The stubs the extracted code needs. Every one of them is a fact about the
@@ -31,5 +32,5 @@ function esPositionOf(d) {
 }
 `;
 fs.writeFileSync(path.join(__dirname, "wa.mjs"),
-  head + parts + "\nexport { esWorkingParts, esWorkingAnswer, esPositionTension };\n");
+  head + parts + "\nexport { esWorkingParts, esWorkingAnswer, esPositionTension, esReasoningCheck, esFindTerm };\n");
 console.log("working answer shim written");

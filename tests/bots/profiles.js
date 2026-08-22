@@ -37,10 +37,21 @@ const STRONG = {
       ? (q.pathways || []).filter(x => offered.indexOf(x.id) >= 0)
       : (q.pathways || []);
     const path = pool[k % Math.max(pool.length, 1)] || pool[0] || {};
+    // both ends named in the question's own vocabulary, because a student who
+    // knows the subject states a relationship, not half of one
+    const r = q.reasoning || {};
+    const hay = ((path.short || "") + " " + (path.relationship || "") + " " + (path.adds || "")).toLowerCase();
+    const pick = (side, fallback) => {
+      const list = ((r[side] || {}).terms) || [];
+      return list.find(x => hay.indexOf(x) >= 0) || list[0] || fallback;
+    };
     const t = termsOf(path);
-    const a = t[0] || "this", b = t[1] || "performance";
-    return { line: a.charAt(0).toUpperCase() + a.slice(1) + " changes " + b + " at " + cs + ", and I can show by how much.",
-             terms: t };
+    const a = pick("cause", t[0] || "this"), b = pick("effect", t[1] || "performance");
+    const judging = ((q.coreAnswer || {}).mode || "causal") === "judgement";
+    const line = judging
+      ? a.charAt(0).toUpperCase() + a.slice(1) + " raises " + b + " significantly at " + cs + ", where it is carried out well."
+      : a.charAt(0).toUpperCase() + a.slice(1) + " changes " + b + " at " + cs + ", and I can show by how much.";
+    return { line: line, terms: t };
   },
   pick(ids) { return ids[0]; },
   answerTension() { return "keep"; },
@@ -58,7 +69,20 @@ const WRONG = {
   readsMeanings: true,
   opensLearn: false,
   usesHelp: true,
-  writesOwnArgument: false,
+  // On a judgement question the wrong turn is a position its own arguments
+  // undercut. On a causal question there is no position to be wrong about, so
+  // the wrong turn is the relationship stated the wrong way round. Both are
+  // built from the question itself rather than hardcoded, so this student can
+  // take a wrong turn on any question.
+  writesOwnArgument(q) { return ((q.coreAnswer || {}).mode || "causal") !== "judgement"; },
+  ownArgument(k, cs, q) {
+    const r = q.reasoning || {};
+    const eff = ((r.effect || {}).terms || [])[k] || ((r.effect || {}).terms || [])[0] || "the objective";
+    const cau = ((r.cause || {}).terms || [])[k] || ((r.cause || {}).terms || [])[0] || "the strategy";
+    return { line: eff.charAt(0).toUpperCase() + eff.slice(1) + " determines the " + cau + " a business chooses at " + cs + ".",
+             terms: [] };
+  },
+  answerDirection(n) { return n === 1 ? "keep" : "revise"; },
   areaOrder: [1, 2, 3],            // straight past the area that would support them
   checksPlanAfter: [1, 2],
   pick(ids, k, q, used) {
