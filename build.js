@@ -565,7 +565,42 @@ const coverage = require("./tools/coverage.js");
 const covRows = coverage.report();
 const covText = coverage.format(covRows) + "\n";
 
-fs.writeFileSync(path.join(root, "marginal-preview.html"), out);
+// Stage both, then promote both. Writing 1.1MB straight to the real path means
+// an interrupted write leaves a TRUNCATED marginal-preview.html sitting there
+// looking like a build output, and a failure on the second write leaves the pair
+// half-updated: a new preview beside stale coverage. A rename within a directory
+// replaces the file in one step, so neither state is reachable.
+// Two renames cannot be one atomic step, so the guarantee is not "both or
+// neither in an instant" but "the previous pair, if the new pair cannot be
+// completed": the outgoing file is kept until every promotion has succeeded.
+const artefacts = [
+  { dir: root, name: "marginal-preview.html", text: out },
+  { dir: path.join(root, "docs"), name: "support-coverage.md", text: covText },
+].map(a => ({
+  text: a.text,
+  dest: path.join(a.dir, a.name),
+  tmp: path.join(a.dir, "." + a.name + ".tmp"),
+  prev: path.join(a.dir, "." + a.name + ".prev"),
+}));
+const drop = f => { try { fs.rmSync(f, { force: true }); } catch (e) { /* not there */ } };
+try {
+  // Stage first. A failure here has published nothing at all.
+  artefacts.forEach(a => fs.writeFileSync(a.tmp, a.text));
+  artefacts.forEach(a => {
+    // A destination that is not a plain file is a broken workspace, not
+    // something to move quietly aside: say so rather than deleting it.
+    if (fs.existsSync(a.dest) && !fs.statSync(a.dest).isFile()) throw new Error(a.dest + " exists and is not a file");
+    if (fs.existsSync(a.dest)) fs.renameSync(a.dest, a.prev);
+    fs.renameSync(a.tmp, a.dest);
+  });
+} catch (e) {
+  artefacts.forEach(a => {
+    drop(a.tmp);
+    if (fs.existsSync(a.prev)) { drop(a.dest); try { fs.renameSync(a.prev, a.dest); } catch (e2) { /* reported below */ } }
+  });
+  console.error("BUILD REFUSED: the artefacts could not be published, so the previous pair stands: " + e.message);
+  process.exit(1);
+}
+artefacts.forEach(a => drop(a.prev));
 console.log(`built marginal-preview.html (${out.length} characters)`);
-fs.writeFileSync(path.join(root, "docs", "support-coverage.md"), covText);
 console.log(coverage.summary(covRows));
