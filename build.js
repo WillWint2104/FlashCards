@@ -72,6 +72,18 @@ function essaySubjects() {
     essayLoadError = "essay-content.js evaluated but exposed no window.ESSAY.subjects, so nothing could be checked";
     return null;
   }
+  // Eight checks below iterate `(subs[key].questions || [])`. That default is
+  // there for a subject that deliberately ships none, but it cannot tell such a
+  // subject from one whose key was renamed or nulled, and in that case all eight
+  // check nothing at once and the build still writes output. A subject with no
+  // questions must SAY so, as an empty array.
+  const shapeFaults = [];
+  Object.keys(subjects).forEach(key => {
+    const q = subjects[key].questions;
+    if (q === undefined) shapeFaults.push(`subject ${key} has no questions key; a subject that ships none must say so as questions: []`);
+    else if (!Array.isArray(q)) shapeFaults.push(`subject ${key} has questions of type ${q === null ? "null" : typeof q}, expected an array`);
+  });
+  if (shapeFaults.length) { essayLoadError = shapeFaults.join("; "); return null; }
   return subjects;
 }
 function checkDecodeAnchors() {
@@ -84,12 +96,18 @@ function checkDecodeAnchors() {
       if (!hl.length) return;
       if (!q.text) { bad.push(`${key}/${q.id} has decode highlights but no question text`); return; }
       const areaIds = (((q.requirements || {}).requiredAreas) || []).map(a => a.id);
+      // Having no requiredAreas is legitimate on a question that fixes no parts
+      // (fin-01, hr-01). It is not legitimate on one whose own highlights tell the
+      // student which parts to cover: those parts would then be required nowhere.
+      if (hl.some(h => h.kind === "requiredArea") && !areaIds.length) {
+        bad.push(`${key}/${q.id} has requiredArea highlights but no requirements.requiredAreas, so the parts it tells the student to cover are required nowhere`);
+      }
       hl.forEach(h => {
         const n = String(q.text).split(String(h.anchor)).length - 1;
         if (n !== 1) bad.push(`${key}/${q.id} anchor ${JSON.stringify(h.anchor)} occurs ${n} times in the stem, expected exactly 1`);
         // A highlight POINTS AT a required area; it never creates one. A ref that
         // matches nothing means the presentation and the requirements have drifted.
-        if (h.kind === "requiredArea" && areaIds.length) {
+        if (h.kind === "requiredArea") {
           if (!h.ref) bad.push(`${key}/${q.id} highlight ${JSON.stringify(h.anchor)} is a requiredArea with no ref into requirements.requiredAreas`);
           else if (areaIds.indexOf(h.ref) < 0) bad.push(`${key}/${q.id} highlight ref ${JSON.stringify(h.ref)} is not one of requirements.requiredAreas [${areaIds.join(", ")}]`);
         }
@@ -276,6 +294,19 @@ function checkReasoning() {
   Object.keys(subs).forEach(key => (subs[key].questions || []).forEach(q => {
     const r = q.reasoning;
     const at = `${key}/${q.id}`;
+    // Absence of pathways is normal: 16 of 19 questions are practice stems with
+    // none, by design. What is not normal is a question with no pathways that
+    // still carries the content only a pathway delivers. In the shipped pack the
+    // two go together in 3 of 3 cases and apart in 16 of 16, so losing the
+    // pathways while that content remains is drift, not authoring.
+    if (!(q.pathways || []).length) {
+      const orphans = [];
+      if (q.workingAnswer) orphans.push("workingAnswer");
+      if (q.reasoning) orphans.push("reasoning");
+      if ((((q.requirements || {}).requiredAreas) || []).length) orphans.push("requirements.requiredAreas");
+      if ((((q.decode || {}).highlights) || []).length) orphans.push("decode.highlights");
+      if (orphans.length) bad.push(`${at} has no pathways but still carries ${orphans.join(", ")}, which only a pathway can deliver; either the pathways were lost or this content belongs to a different question`);
+    }
     if (!r) {
       if ((q.pathways || []).length) bad.push(`${at} has pathways but no reasoning block, so nothing can notice an argument running the wrong way`);
       return;
