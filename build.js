@@ -589,13 +589,15 @@ try {
   artefacts.forEach(a => {
     // A destination that is not a plain file is a broken workspace, not
     // something to move quietly aside: say so rather than deleting it.
-    // lstat, not stat: stat follows a symlink, so a link pointing at a regular
-    // file passed isFile() and the link itself was then renamed aside and
-    // dropped. Someone who symlinks an output has said where they want it, and
-    // silently replacing that with a real file is the same fault this line
-    // exists to prevent.
-    if (fs.existsSync(a.dest) && !fs.lstatSync(a.dest).isFile()) throw new Error(a.dest + " exists and is not a plain file (a symlink or directory is left alone)");
-    if (fs.existsSync(a.dest)) fs.renameSync(a.dest, a.prev);
+    // lstat rather than exists-then-stat, because BOTH of those follow a
+    // symlink and so miss one case each: stat let a link to a real file pass
+    // isFile(), and exists returns false for a DANGLING link, skipping the
+    // check entirely. lstat asks about the entry itself, and only ENOENT means
+    // there is nothing there.
+    let entry = null;
+    try { entry = fs.lstatSync(a.dest); } catch (err) { if (err.code !== "ENOENT") throw err; }
+    if (entry && !entry.isFile()) throw new Error(a.dest + " exists and is not a plain file (a symlink or directory is left alone)");
+    if (entry) fs.renameSync(a.dest, a.prev);
     fs.renameSync(a.tmp, a.dest);
   });
 } catch (e) {
