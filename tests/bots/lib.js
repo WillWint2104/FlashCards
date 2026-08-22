@@ -68,7 +68,10 @@ class Trace {
     unsupported: 0, demands: [],
     // where the app spoke matters: one of these only exists on the planning
     // surface, the other reaches a student who never opens it
-    planPrompts: 0, writePrompts: 0 };
+    planPrompts: 0, writePrompts: 0,
+    // the pathway lesson, and the rhythm between learning and using it
+    lessonOpens: 0, lessonWords: 0, rhythm: [],
+    tryAttempts: 0, tryRepairs: 0, tryRight: 0, learnMs: 0, writeMs: 0 };
   }
   // the clock starts when the student reaches the question, not when a 1.6MB
   // test file finishes loading twice
@@ -99,6 +102,14 @@ class Trace {
       "  the app's answer moved:      " + (this.m.answerMoved ? "yes" : "no"),
       "  learning surfaces opened:    " + this.m.surfacesOpened,
       "  looked at the response map:  " + this.m.mapVisits,
+      "  opened the pathway lesson:   " + this.m.lessonOpens +
+        (this.m.lessonOpens ? " (" + this.m.lessonWords + " words of support read)" : ""),
+      "  try: " + this.m.tryAttempts + " attempt(s), " + this.m.tryRepairs + " repaired, " + this.m.tryRight + " right",
+      "  learn then act, per paragraph: " + (this.m.rhythm.length
+        ? this.m.rhythm.map(r => r.learned + "w \u2192 " + r.wrote + " sentence" + (r.wrote === 1 ? "" : "s")).join(", ")
+        : "-"),
+      "  learning to writing:         " + (this.m.writeMs ? (this.m.learnMs / this.m.writeMs).toFixed(2) + " to 1" : "-") +
+        "  (" + Math.round(this.m.learnMs / 100) / 10 + "s learning, " + Math.round(this.m.writeMs / 100) / 10 + "s writing)",
       "  steps the app required:      " + this.m.stepsAppRequired,
       "  arguments: supplied " + this.m.suppliedArguments + ", own " + this.m.ownArguments,
       "  sentences written:           " + this.m.sentences,

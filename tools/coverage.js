@@ -81,6 +81,9 @@ function questionRow(q, subject, evIndex) {
   const paths = q.pathways || [];
   const t = teachable(q, subject);
   const withMeaning = paths.filter(p => String(p.meaning || "").trim()).length;
+  // a pathway is only supported for a student who knows nothing if choosing it
+  // opens something that teaches it
+  const lessons = paths.filter(p => p.learning && p.learning.know && (p.learning.chain || []).length && p.learning.try).length;
   const ladder = paths.map(p => Object.keys(p.help || {}).length);
   const full = ladder.filter(n => n >= FULL_LADDER).length;
   const some = ladder.filter(n => n > 0 && n < FULL_LADDER).length;
@@ -97,6 +100,7 @@ function questionRow(q, subject, evIndex) {
     conceptsExplained: t.yes.length,
     unexplained: t.no,
     guidance: withMeaning,
+    lessons: lessons,
     laddersFull: full,
     laddersPartial: some,
     evidenceLinked: linked,
@@ -112,6 +116,7 @@ function questionRow(q, subject, evIndex) {
 function readinessOf(r) {
   const guided = r.pathways > 0 && r.guidance === r.pathways;
   const learn = guided
+    && r.lessons === r.pathways
     && r.conceptsExplained === r.conceptsNamed
     && r.laddersFull === r.pathways
     && r.evidenceSourced === r.pathways
@@ -142,10 +147,11 @@ function format(rows) {
     "it is what the authored content currently supports.", "",
     "A concept counts as **explained** only where an explaining field mentions it.",
     "A label that prints the word does not teach it.", "",
-    "| question | mode | pathways | concepts explained | guidance | full ladders | sourced evidence | wrong-turn recovery | readiness |",
-    "| --- | --- | --- | --- | --- | --- | --- | --- | --- |"];
+    "| question | mode | pathways | concepts explained | guidance | pathway lessons | full ladders | sourced evidence | wrong-turn recovery | readiness |",
+    "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"];
   rows.forEach(r => out.push("| `" + r.id + "` | " + r.mode + " | " + r.pathways + " | " +
     frac(r.conceptsExplained, r.conceptsNamed) + " | " + frac(r.guidance, r.pathways) + " | " +
+    frac(r.lessons, r.pathways) + " | " +
     frac(r.laddersFull, r.pathways) + " | " + frac(r.evidenceSourced, r.pathways) + " | " +
     (r.recovery ? "yes" : "no") + " | " + r.readiness + " |"));
   out.push("");
@@ -167,7 +173,8 @@ function summary(rows) {
   const c = rows.reduce((n, r) => n + (r.conceptsNamed - r.conceptsExplained), 0);
   const e = rows.reduce((n, r) => n + r.evidenceSourced, 0);
   const ready = rows.filter(r => r.readiness === "Learn & Build").length;
-  return "support: " + frac(l, p) + " pathways carry a full ladder, " + frac(e, p) + " have sourced evidence, " +
+  const s = rows.reduce((n, r) => n + r.lessons, 0);
+  return "support: " + frac(s, p) + " pathways teach themselves, " + frac(l, p) + " carry a full ladder, " + frac(e, p) + " have sourced evidence, " +
     c + " concepts are named but never explained, " + frac(ready, rows.length) + " questions are Learn & Build ready";
 }
 module.exports = { report, format, summary, teachable, vocabulary, termsOf, readinessOf, FULL_LADDER };

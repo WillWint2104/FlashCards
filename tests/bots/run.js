@@ -7,7 +7,7 @@
 const { chromium, T, OUT } = require("../env");
 const { question, subjectOf } = require("./lib");
 const { runJourney } = require("./journey");
-const { ZERO, STRONG, WRONG } = require("./profiles");
+const { ZERO, STRONG, WRONG, PARTIAL } = require("./profiles");
 const fs = require("fs");
 
 let pass = 0, fail = 0;
@@ -18,7 +18,8 @@ const RUNS = [
   { prof: STRONG, qid: "hr-01",  qre: /Evaluate the effectiveness/, bodies: 2 },
   { prof: WRONG,  qid: "hr-01",  qre: /Evaluate the effectiveness/, bodies: 3 },
   { prof: WRONG,  qid: "mkt-01", qre: /target markets affect/,      bodies: 3 },
-  { prof: ZERO,   qid: "mkt-01", qre: /target markets affect/,      bodies: 3 },
+  { prof: ZERO,    qid: "mkt-01", qre: /target markets affect/,      bodies: 3 },
+  { prof: PARTIAL, qid: "mkt-01", qre: /target markets affect/,      bodies: 3 },
   { prof: STRONG, qid: "mkt-01", qre: /target markets affect/,      bodies: 2 },
 ];
 
@@ -42,6 +43,7 @@ const RUNS = [
   console.log("=== does the harness tell these students apart? ===");
   const hrZero = by["zero knowledge|hr-01"], hrStrong = by["strong independent|hr-01"], hrWrong = by["plausible wrong turn|hr-01"];
   const mkZero = by["zero knowledge|mkt-01"], mkStrong = by["strong independent|mkt-01"], mkWrong = by["plausible wrong turn|mkt-01"];
+  const mkPartial = by["partial knowledge|mkt-01"];
 
   // 1. nobody is ever refused. This is the claim "never blocked" actually makes:
   //    every student finished every paragraph they started and wrote real prose.
@@ -125,7 +127,44 @@ const RUNS = [
   ok(mkZero.trace.m.noLadderHere > 0, "and not offered in the same question where none is authored");
   ok(hrZero.trace.m.ladderHere === 0, "the judgement question offers none at all, which the harness reports rather than hides");
 
-  // 8. what the run measured about the content, reported and not asserted away
+  // 8. the pathway lesson. The design fails if all three are put through the same
+  //    surface, so this is the assertion that matters most about it.
+  console.log("\n=== the pathway lesson ===");
+  [["zero", mkZero], ["partial", mkPartial], ["strong", mkStrong]].forEach(([n, r]) => {
+    const m = r.trace.m;
+    console.log("  " + n.padEnd(8) + " opened " + m.lessonOpens + ", read " + m.lessonWords + " words, try " +
+      m.tryAttempts + " attempt(s) " + m.tryRepairs + " repaired, learning:writing " +
+      (m.writeMs ? (m.learnMs / m.writeMs).toFixed(2) : "0.00") + " to 1");
+  });
+  ok(mkStrong.trace.m.lessonOpens === 0, "the student who knew it never opened the lesson");
+  ok(mkStrong.trace.m.lessonWords === 0, "and read none of it: " + mkStrong.trace.m.lessonWords + " words");
+  ok(mkZero.trace.m.lessonOpens > 0, "the student who knew nothing did open it: " + mkZero.trace.m.lessonOpens);
+  ok(mkZero.trace.m.tryAttempts > 0, "and was asked to use what it read: " + mkZero.trace.m.tryAttempts + " attempt(s)");
+  ok(mkZero.trace.m.tryRepairs > 0, "got a wrong answer repaired rather than sent back to read");
+  ok(mkZero.trace.m.tryRight > 0, "and got there on the retry");
+  ok(mkPartial.trace.m.lessonOpens > 0 && mkPartial.trace.m.tryAttempts === 0,
+    "the partial learner read it and did not stop to be tested: " + mkPartial.trace.m.lessonOpens + " opens, " + mkPartial.trace.m.tryAttempts + " attempts");
+  ok(mkPartial.trace.m.lessonWords < mkZero.trace.m.lessonWords,
+    "and stopped short of the fuller resource the zero knowledge student needed: " + mkPartial.trace.m.lessonWords + " vs " + mkZero.trace.m.lessonWords + " words");
+  const three = [mkZero, mkPartial, mkStrong].map(r => r.trace.m.lessonWords);
+  ok(new Set(three).size === 3, "three students, three different amounts of support consumed: " + three.join(", "));
+  // the rhythm: a small amount of support, then a meaningful action, rather than
+  // a long read followed by a short write
+  const learnAct = mkZero.trace.m.rhythm.filter(r => r.learned > 0 && r.wrote > 0);
+  console.log("  zero rhythm    " + mkZero.trace.m.rhythm.map(r => r.learned + "w -> " + r.wrote + "s").join(", "));
+  console.log("  partial rhythm " + mkPartial.trace.m.rhythm.map(r => r.learned + "w -> " + r.wrote + "s").join(", "));
+  console.log("  strong rhythm  " + mkStrong.trace.m.rhythm.map(r => r.learned + "w -> " + r.wrote + "s").join(", "));
+  ok(learnAct.length > 0, "every paragraph the zero knowledge student learned in, it then wrote in");
+  ok(mkZero.trace.m.rhythm.some(r => r.learned === 0 && r.wrote > 0),
+    "and it wrote paragraphs it did not need to read for, so support is not a toll on every one");
+  ok(mkStrong.trace.m.rhythm.every(r => r.learned === 0),
+    "the strong student read nothing anywhere: " + JSON.stringify(mkStrong.trace.m.rhythm));
+  // reported, not asserted: the rhythm we want is small learn, meaningful action,
+  // small learn, meaningful action, and a number is the only way to see it drift
+  console.log("  learning-to-writing is reported, not gated. The shape to watch for is");
+  console.log("  a long read followed by a short write, repeated.");
+
+  // 9. what the run measured about the content, reported and not asserted away
   console.log("\n=== what the students could not learn ===");
   RUNS.forEach(r => {
     const res = by[r.prof.name + "|" + r.qid];

@@ -260,6 +260,82 @@ function checkReasoning() {
   }));
   return bad;
 }
+// ---------------------------------------------------------------------------
+// A LESSON THAT IS ONE SURFACE HAS TO BE AUTHORED AS ONE
+//
+// The student meets a single coherent thing about a single argument. What makes
+// that possible is that each part is small and does its own job, and the failure
+// mode is authors quietly making one part carry another's work: choiceMeaning
+// growing into a definition, "try" testing recall instead of application, a
+// worked example set in the same business the student is writing about.
+// ---------------------------------------------------------------------------
+function checkLearning() {
+  const subs = essaySubjects();
+  if (!subs) return [essayLoadError];
+  const bad = [];
+  Object.keys(subs).forEach(key => {
+    const concepts = subs[key].concepts || {};
+    (subs[key].questions || []).forEach(q => {
+      const cs = String(q.caseStudy || (q.topic === "Marketing" ? "McDonald" : "") || "").toLowerCase();
+      (q.pathways || []).forEach(pw => {
+        const at = `${key}/${q.id}/${pw.id}`;
+        const cm = pw.choiceMeaning;
+        if (cm) {
+          if (cm.length > 170) bad.push(`${at} choiceMeaning is ${cm.length} characters; it is there to tell this option from the others, not to teach it`);
+          if ((cm.match(/[.!?]/g) || []).length > 1) bad.push(`${at} choiceMeaning is more than one sentence; the depth belongs in learning`);
+        }
+        const L = pw.learning;
+        if (!L) return;
+        if (!cm) bad.push(`${at} has a learning block but no choiceMeaning, so meaning would have to serve both the choice and the lesson`);
+        if (!L.know) bad.push(`${at} learning has no know, which is the only part shown before the student decides to read on`);
+        else if (L.know.length > 340) bad.push(`${at} learning.know is ${L.know.length} characters; Know is what lets them continue, not the full teaching`);
+        const chain = L.chain || [];
+        if (chain.length < 3) bad.push(`${at} learning.chain has ${chain.length} steps; a relationship needs at least cause, mechanism and effect`);
+        chain.forEach(s => {
+          if (String(s).length > 80) bad.push(`${at} chain step ${JSON.stringify(String(s).slice(0, 40))} is too long to read as one step`);
+          if (/^[A-Z]/.test(s)) bad.push(`${at} chain step ${JSON.stringify(s)} starts with a capital; the steps are fragments in a chain, not sentences`);
+        });
+        const m = L.misconception;
+        if (m && (!m.head || !m.a || !m.b || !m.a.term || !m.b.term || !m.a.line || !m.b.line)) {
+          bad.push(`${at} misconception needs a head and two named sides; a contrast with one side is just another paragraph`);
+        }
+        const ex = L.example;
+        if (ex) {
+          if (!ex.context) bad.push(`${at} example has no context, so nothing tells the student it is deliberately somewhere else`);
+          if (cs && String(ex.text || "").toLowerCase().indexOf(cs) >= 0) {
+            bad.push(`${at} example is set in the same business the student is writing about, so the words transfer instead of the shape`);
+          }
+        }
+        const t = L.try;
+        if (!t) { bad.push(`${at} learning has no try, so nothing checks the student can use what they just read`); return; }
+        if (!t.prompt) bad.push(`${at} try has no prompt`);
+        if (/^what (is|are|does) .*(definition|mean)/i.test(t.prompt || "") || /\bdefine\b/i.test(t.prompt || "")) {
+          bad.push(`${at} try asks for a definition; it has to ask the student to USE the idea, not recall it`);
+        }
+        const opts = t.options || [];
+        if (opts.length < 3) bad.push(`${at} try offers ${opts.length} options; fewer than three makes it a guess`);
+        const rights = opts.filter(o => o.right);
+        if (rights.length !== 1) bad.push(`${at} try has ${rights.length} right options, expected exactly 1`);
+        opts.filter(o => !o.right).forEach(o => {
+          if (!o.repair) bad.push(`${at} try option ${JSON.stringify(String(o.text).slice(0, 34))} has no repair; a wrong answer must be met with a correction, not a retry`);
+          else if (o.repair.length > 220) bad.push(`${at} repair for ${JSON.stringify(String(o.text).slice(0, 24))} is ${o.repair.length} characters; a repair is one line, not the lesson again`);
+        });
+        if (!t.onRight) bad.push(`${at} try has no onRight, so a correct answer gets no confirmation of WHY it was right`);
+        if (L.explore && L.explore.concept && !concepts[L.explore.concept]) {
+          bad.push(`${at} explore points at concept ${JSON.stringify(L.explore.concept)}, which does not exist`);
+        }
+      });
+    });
+  });
+  return bad;
+}
+const learningFaults = checkLearning();
+if (learningFaults.length) {
+  console.error("BUILD REFUSED: a pathway lesson would not hold together.");
+  learningFaults.forEach(o => console.error("  - " + o));
+  process.exit(1);
+}
+
 const reasoningFaults = checkReasoning();
 if (reasoningFaults.length) {
   console.error("BUILD REFUSED: a question cannot check the direction of its own argument.");

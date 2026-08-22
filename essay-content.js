@@ -330,6 +330,33 @@ window.ESSAY = {
               short: "Wanting less effort → faster, more flexible ordering",
               adds: "how much effort ordering takes",
               meaning: "These customers treat the time and effort of ordering as a cost, so the business changes how ordering works to take steps out of it.",
+              choiceMeaning: "Customers wanting an easier buying experience can lead a business to simplify ordering, payment or collection.",
+              learning: {
+                know: "Processes are the systems a customer moves through to receive a product or service: ordering, paying, waiting, collecting. Changing a process changes what the customer has to do, not what they are buying.",
+                chain: ["customers value convenience", "the business simplifies ordering", "less time and effort to buy", "the experience suits this market better"],
+                misconception: {
+                  head: "Two of the elements are easy to swap",
+                  a: { term: "Processes", line: "the systems a customer moves through to buy." },
+                  b: { term: "People", line: "the staff who serve them while they do." }
+                },
+                example: {
+                  context: "a cinema",
+                  text: "A cinema that lets you choose your seat in the app has changed a process. The film is exactly the same.",
+                  pattern: "the thing being sold did not change; what the customer had to do to get it did"
+                },
+                // application, not recall: the student has to use the idea, and a
+                // wrong choice is repaired in one line rather than sent back to read
+                try: {
+                  prompt: "Customers say ordering takes too long. Which change most directly addresses that?",
+                  options: [
+                    { text: "Let customers order and pay in the app", right: true },
+                    { text: "Run a new advertising campaign", repair: "Advertising changes promotion, not what a customer has to do to buy. Look again at ordering, payment or collection." },
+                    { text: "Redesign the store so it looks smarter", repair: "How the place looks is physical evidence. This argument is about what the customer has to DO." }
+                  ],
+                  onRight: "Right. Ordering is a step the customer moves through, so changing it changes the process."
+                },
+                explore: { concept: "processes", label: "Read more about processes" }
+              },
               whatToProve: "customer expectation \u2192 the process change it forces \u2192 why the new process suits this market better",
               commonMistake: "Describing an app or a kiosk without explaining what it was about these customers that caused the process to change.",
               concept: { key: "processes", topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
@@ -403,6 +430,31 @@ window.ESSAY = {
               short: "Expecting speed → streamlined service and collection",
               adds: "how service and collection are organised",
               meaning: "These customers are paying for turnaround, so the business reorganises what happens after payment to cut the wait.",
+              choiceMeaning: "Customers who expect a short wait can lead a business to reorganise what happens after they have paid.",
+              learning: {
+                know: "A process runs in steps, and some steps have to wait for the one before while others can run alongside. Cutting a wait usually means moving a step, not asking anyone to work harder.",
+                chain: ["customers count waiting as a cost", "steps are separated or run side by side", "the queue moves whether or not the order is ready", "the wait falls, especially at peak"],
+                misconception: {
+                  head: "Two answers that sound the same and are not",
+                  a: { term: "Working faster", line: "the same steps, done more quickly. That is a people point." },
+                  b: { term: "Moving a step", line: "the queue no longer waits for it. That is a process point." }
+                },
+                example: {
+                  context: "an airport",
+                  text: "An airport that takes bags at a kerbside desk has moved a step out of the terminal queue. Nobody is walking any faster.",
+                  pattern: "the wait fell because a step left the queue, not because anyone sped up"
+                },
+                try: {
+                  prompt: "A queue builds because every order is only started once it has been taken. Which change most directly cuts the wait?",
+                  options: [
+                    { text: "Start the most common orders before they are ordered", right: true },
+                    { text: "Hire friendlier staff", repair: "Who serves the customer is a people point. This argument is about where a step sits in the process." },
+                    { text: "Put up a sign apologising for the wait", repair: "That changes what the customer sees while waiting, not how long they wait. Look at the order of the steps." }
+                  ],
+                  onRight: "Right. The step that caused the wait now happens before the queue reaches it."
+                },
+                explore: { concept: "processes", label: "Read more about processes" }
+              },
               whatToProve: "customers count waiting as a cost \u2192 steps are separated or run alongside each other \u2192 the wait falls, especially at peak",
               commonMistake: "Claiming the business is faster without naming which step was taken out of the queue.",
               concept: { key: "processes", topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
@@ -476,6 +528,31 @@ window.ESSAY = {
               short: "Wanting to customise → ordering built for variations",
               adds: "how the ordering system handles variations",
               meaning: "These customers expect to change what they order, so the process has to carry a non-standard order without errors.",
+              choiceMeaning: "Customers who expect to change their order can lead a business to build ordering that carries variations without errors.",
+              learning: {
+                know: "A process built for identical orders breaks as soon as orders differ. Carrying a variation means capturing it once, accurately, and holding it through every step that follows.",
+                chain: ["customers expect to change the order", "no two orders are identical", "the ordering system captures the variation", "the right order arrives without a correction"],
+                misconception: {
+                  head: "Two arguments that look alike and are not",
+                  a: { term: "More choice", line: "what is on offer. That is a product point." },
+                  b: { term: "Carrying the change", line: "whether the variation survives the process. That is this argument." }
+                },
+                example: {
+                  context: "a paint shop",
+                  text: "A paint shop that mixes to a code the customer chose has a process built for variation. The product is still paint.",
+                  pattern: "the range did not widen; the process learned to carry a change"
+                },
+                try: {
+                  prompt: "Customers keep receiving a different version of what they asked for. Which change most directly addresses that?",
+                  options: [
+                    { text: "Let customers enter the change themselves when they order", right: true },
+                    { text: "Add more items to the menu", repair: "More choice is a product point. The problem here is whether a change survives the process." },
+                    { text: "Train staff to apologise more quickly", repair: "That is what happens after the error. This argument is about the step where the change is captured." }
+                  ],
+                  onRight: "Right. Captured by the customer at the start, the variation does not have to survive being passed on."
+                },
+                explore: { concept: "processes", label: "Read more about processes" }
+              },
               whatToProve: "customers expect to change the order \u2192 no two orders are identical \u2192 the ordering system has to capture the variation accurately",
               commonMistake: "Arguing about choice on the menu, which is a product point, instead of about how the process carries a non-standard order.",
               concept: { key: "processes", topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },

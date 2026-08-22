@@ -64,6 +64,7 @@ function compose(kind, terms, n, cs) {
 // are recorded separately: the app running out of help for something it does
 // explain, and the app having no explanation of the concept at all.
 async function writeParagraph(p, tr, led, vocab, prof, need, unexplained, cs) {
+  const wroteFrom = Date.now();
   let n = 0, learnOpened = false, reportedGap = false, reportedStuck = false;
   // an observation, not an interaction: was help available anywhere in this
   // paragraph, whether or not this student happened to need it. Asked at every
@@ -120,6 +121,7 @@ async function writeParagraph(p, tr, led, vocab, prof, need, unexplained, cs) {
     n++;
     if (await has(p, ".es-done")) { tr.m.paragraphs++; tr.say("complete", "paragraph complete after " + n + " sentences"); break; }
   }
+  tr.m.writeMs += Date.now() - wroteFrom;
   if (ladderSeen) tr.m.ladderHere++;
   else { tr.m.noLadderHere++; if (prof.usesHelp) tr.demand("this paragraph offered no help ladder at any sentence"); }
   tr.say("support", "help was offered at " + slotsWithLadder + " of " + slotsSeen + " sentences in this paragraph");
@@ -162,6 +164,7 @@ async function runJourney(p, o) {
     tr.say("arrive", await txt(p, ".es-pararole"));
 
     let need = [], unexplained = [];
+    const learnedHere = tr.m.lessonWords, wroteHere = tr.m.sentences;
     if (await has(p, ".es-setup")) {
       tr.m.stepsAppRequired++;
       const readMeanings = async () => {
@@ -206,6 +209,44 @@ async function runJourney(p, o) {
         unexplained = all.filter(t => teach.no.indexOf(t) >= 0);
         tr.say("select", "argument: " + (path ? path.short : want) + (path && path.contribution ? " [" + path.contribution.role + "]" : ""));
       }
+      // the pathway lesson, if this student wants it and this pathway has one
+      if (prof.opensLesson && await has(p, "#eslessonopen")) {
+        const t0 = Date.now();
+        await p.click("#eslessonopen"); await wait(p, 480);
+        tr.m.lessonOpens++;
+        const body = await txt(p, ".es-lesson");
+        const words = body.split(/\s+/).filter(Boolean).length;
+        tr.m.lessonWords += words;
+        tr.say("open", "the lesson for this argument, " + words + " words");
+        await read(p, tr, led, vocab, ".es-lesson", "the pathway lesson");
+        const steps = await allTxt(p, ".es-chainstep");
+        if (steps.length) tr.say("see", steps.join(" \u2192 "));
+        if (prof.opensExplore && await has(p, "#eslessonexplore")) {
+          await p.click("#eslessonexplore"); await wait(p, 460);
+          const more = await txt(p, ".es-drawer");
+          tr.m.lessonWords += more.split(/\s+/).filter(Boolean).length;
+          tr.say("open", "explore, the fuller resource, a further " + more.split(/\s+/).filter(Boolean).length + " words");
+          await read(p, tr, led, vocab, ".es-drawer", "explore");
+          await p.click("#eslessonexplore").catch(() => {}); await wait(p, 320);
+        }
+        for (const i of (prof.tryOrder || [])) {
+          if (!(await has(p, "[data-estry]"))) break;
+          await p.$$eval("[data-estry]", (es, k) => { const t = es[k]; t && t.click(); }, i);
+          await wait(p, 430);
+          tr.m.tryAttempts++;
+          if (await has(p, ".es-tryright")) { tr.m.tryRight++; tr.say("try", "right: " + (await txt(p, ".es-tryright")).slice(0, 76)); break; }
+          const rep = await txt(p, ".es-tryrepair");
+          if (rep) {
+            tr.m.tryRepairs++;
+            tr.say("try", "repaired: " + rep.slice(0, 76));
+            await p.click("#estryagain").catch(() => {}); await wait(p, 380);
+          }
+        }
+        await p.$$eval("[data-eslessonuse]", es => { const t = es[es.length - 1]; t && t.click(); }).catch(() => {});
+        await wait(p, 520);
+        tr.m.learnMs += Date.now() - t0;
+        tr.say("respond", "took it back to the paragraph");
+      }
       const evText = await txt(p, ".es-setup");
       if (/no verified evidence|waiting on a checked source|no evidence bank/i.test(evText)) {
         tr.demand("evidence is asked for and none of it has a checked source");
@@ -224,6 +265,7 @@ async function runJourney(p, o) {
       if (sw) { tr.m.stepsAppRequired++; await sw.click(); await wait(p, 420); }
     }
     await writeParagraph(p, tr, led, vocab, prof, need, unexplained, cs);
+    tr.m.rhythm.push({ learned: tr.m.lessonWords - learnedHere, wrote: tr.m.sentences - wroteHere });
     const wa = await txt(p, ".es-mapwatext");
     if (wa) {
       tr.say("answer", "working answer: " + wa);

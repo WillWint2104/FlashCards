@@ -800,6 +800,45 @@
   .es-drifth{font-family:var(--disp);font-weight:600;font-size:14.5px;color:var(--ink);margin-bottom:9px}
   .es-driftblk{margin-bottom:9px}
   .es-drift .es-wanote{display:block;margin-top:6px}
+  /* the pathway lesson: one surface about one argument */
+  .es-lesson{display:flex;flex-direction:column;gap:15px}
+  .es-lessonh{display:flex;align-items:flex-start;justify-content:space-between;gap:15px;flex-wrap:wrap;
+    border-bottom:1.5px solid var(--line);padding-bottom:13px}
+  .es-lessonhead{display:flex;flex-direction:column;gap:3px;min-width:0}
+  .es-lessonarg{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--ink)}
+  .es-lessonsec{display:flex;flex-direction:column;gap:7px}
+  .es-lessonp{font-size:14px;line-height:1.62;color:var(--ink);margin:0}
+  .es-lessonnote{font-size:12.5px;line-height:1.55;font-weight:600;color:var(--ink-3);margin:0}
+  /* the relationship, one step at a time */
+  .es-chain{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0}
+  .es-chainstep{position:relative;font-size:13.5px;line-height:1.5;font-weight:600;color:var(--ink);
+    border:1.5px solid var(--green-soft);background:#FBFEFC;border-radius:11px;padding:9px 14px;
+    opacity:0;animation:eschain .34s ease forwards}
+  .es-chainstep+.es-chainstep{margin-top:20px}
+  .es-chainstep+.es-chainstep::before{content:"";position:absolute;left:24px;top:-17px;width:1.5px;height:14px;
+    background:var(--green)}
+  .es-chainstep+.es-chainstep::after{content:"";position:absolute;left:20.5px;top:-7px;width:8px;height:8px;
+    border-right:1.5px solid var(--green);border-bottom:1.5px solid var(--green);transform:rotate(45deg)}
+  @keyframes eschain{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.es-chainstep{opacity:1;animation:none}}
+  .es-contrast{border:1.5px solid var(--line);border-radius:13px;padding:12px 15px;display:flex;
+    flex-direction:column;gap:7px}
+  .es-contrasth{font-size:12px;font-weight:700;letter-spacing:.02em;text-transform:lowercase;color:var(--ink-3)}
+  .es-contrastrow{display:flex;gap:10px;align-items:baseline;font-size:13.5px;line-height:1.5}
+  .es-contrastrow b{color:var(--ink);min-width:132px}
+  .es-contrastrow span{color:var(--ink-2)}
+  .es-tryopts{display:flex;flex-direction:column;gap:8px}
+  .es-try{text-align:left;font:inherit;font-size:13.5px;font-weight:600;color:var(--ink);cursor:pointer;
+    border:1.5px solid var(--line);border-radius:12px;padding:10px 15px;background:var(--card)}
+  .es-try:hover:not(:disabled){border-color:var(--green)}
+  .es-try:disabled{cursor:default}
+  .es-try.right{border-color:var(--green);background:var(--green-soft);color:var(--green-dk)}
+  .es-try.wrong{border-color:var(--gold-dk);background:var(--gold-soft)}
+  .es-tryright,.es-tryrepair{display:flex;flex-direction:column;gap:9px;align-items:flex-start;margin-top:4px;
+    border-radius:12px;padding:11px 15px}
+  .es-tryright{border:1.5px solid var(--green);background:var(--green-soft)}
+  .es-tryrepair{border:1.5px solid var(--gold-dk);background:var(--gold-soft)}
+  .es-lessonfoot{display:flex;gap:15px;align-items:center;border-top:1.5px solid var(--line);padding-top:12px}
   .es-restnote{font-size:12px;line-height:1.5;font-weight:600;color:var(--ink-2);margin-top:4px}
   /* the response map: what each section argues, and what it says */
   .es-mapwrap{display:flex;flex-direction:column}

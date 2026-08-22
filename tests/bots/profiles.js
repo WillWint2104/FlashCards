@@ -9,6 +9,9 @@ const ZERO = {
   canJudge: false,                 // cannot evaluate a question they do not understand
   readsMeanings: true,             // will read what an option means before choosing it
   opensLearn: true,                // will go looking when that is not enough
+  opensLesson: true,               // and will read the lesson about the argument it chose
+  opensExplore: true,              // and the fuller resource under it, still not understanding
+  tryOrder: [1, 0],                // tries a plausible wrong answer, then the right one
   usesHelp: true,                  // and will climb the help ladder rather than guess
   writesOwnArgument: false,
   checksPlanAfter: [],
@@ -24,6 +27,7 @@ const STRONG = {
   canJudge: true, position: "Effective, but dependent",
   readsMeanings: false,            // needs no explanation of terms it already holds
   opensLearn: false,
+  opensLesson: false,              // and no lesson about an argument it could have written
   usesHelp: false,
   writesOwnArgument: true,
   checksPlanAfter: [],
@@ -93,4 +97,22 @@ const WRONG = {
   },
   answerTension(n) { return n === 1 ? "keep" : "change"; },
 };
-module.exports = { ZERO, STRONG, WRONG };
+// Knows roughly half the content. Reads what an option means, glances at the
+// lesson, does not stop for the check, and writes. The profile that matters most,
+// because it is the one a real student is likeliest to be.
+const PARTIAL = {
+  name: "partial knowledge",
+  style: "plain",
+  knowsAll: false, knowsSome: true,
+  canJudge: true, position: "Effective, but dependent",
+  readsMeanings: true,
+  opensLearn: false,               // does not go looking in the generic drawer
+  opensLesson: true,               // but will read the one about this argument
+  tryOrder: [],                    // and does not stop to be tested
+  usesHelp: true,
+  writesOwnArgument: false,
+  checksPlanAfter: [],
+  pick(ids, k, q, used) { return ids.find(id => used.indexOf(id) < 0) || ids[0]; },
+  answerTension() { return "keep"; },
+};
+module.exports = { ZERO, STRONG, WRONG, PARTIAL };

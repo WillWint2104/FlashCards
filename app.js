@@ -3226,11 +3226,11 @@
   function esStructureLabel(key) { return esStructureDef(key).label; }
 
   const ES = { subject: null, code: "", demo: false, screen: "setup", draft: null, list: [], form: null, pending: false,
-    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, planAll: false, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false },  // transient guided-view state, reset on paragraph change
+    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, planAll: false, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false, tryPick: null },  // transient guided-view state, reset on paragraph change
     hint: { open: false, tab: "know" },          // study hints: persists across paragraphs on purpose
     quiz: { revealed: false, peeked: false, attempt: "", result: null } };
   const ES_KEY = "marginal.essay.v1";
-  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, planAll: false, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false }; }
+  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, planAll: false, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false, tryPick: null }; }
   // peeked persists for the whole attempt: revealing once disqualifies mastery even
   // if the answer is hidden again before checking. Cleared only on a new attempt.
   function esResetQuiz() { ES.quiz = { revealed: false, peeked: false, attempt: "", result: null }; }
@@ -4738,9 +4738,76 @@
     if (!esPathwaysFor(p).length) return false;                 // nothing authored to choose from
     return !esBlocks(p).length;                                  // already writing: do not interrupt
   }
+  // ---------------------------------------------------------------------------
+  // THE PATHWAY IS THE LESSON
+  //
+  // A student who has chosen "convenience → processes" does not need a definition
+  // drawer, then a relationship drawer, then a misconception drawer, then an
+  // example drawer, then a quiz. That is the authoring architecture, and exposing
+  // it to a student is what makes learning feel like leaving the essay.
+  //
+  // Underneath, everything stays modular. On screen it is one surface about one
+  // argument: what you need to know, what the relationship looks like, one thing
+  // to try, and a way back into the paragraph from anywhere on it.
+  //
+  // Know, See and Try are DEPTHS, not stages. Nothing is gated behind them: the
+  // way back into the writing is at the top of the surface before the student has
+  // read a word, and a student who never opens this never meets any of it.
+  // ---------------------------------------------------------------------------
+  function esLearning(p) { const path = esPathway(p); return (path && path.learning) || null; }
+  function esChoiceMeaning(o) { return (o && (o.choiceMeaning || o.meaning)) || ""; }
+  function esLessonHTML(p) {
+    const path = esPathway(p), L = esLearning(p);
+    if (!L) return "";
+    const pick = ES.ui.tryPick;
+    const opts = (L.try && L.try.options) || [];
+    const opt = pick == null ? null : opts[pick];
+    const right = !!(opt && opt.right);
+    const use = t => `<button type="button" class="es-btn primary sm" data-eslessonuse>${esc(t)}</button>`;
+    return `<div class="es-lesson">
+      <div class="es-lessonh">
+        <div class="es-lessonhead">
+          <span class="es-corelbl">understand this argument</span>
+          <span class="es-lessonarg">${esc(path.short || path.relationship)}</span>
+        </div>
+        ${use("Use this in my paragraph")}
+      </div>
+      <div class="es-lessonsec">
+        <div class="es-drawer-sub">know</div>
+        <p class="es-lessonp">${esc(L.know)}</p>
+      </div>
+      ${(L.chain || []).length ? `<div class="es-lessonsec">
+        <div class="es-drawer-sub">see</div>
+        <ol class="es-chain">${L.chain.map((s, i) => `<li class="es-chainstep" style="animation-delay:${i * 130}ms">${esc(s)}</li>`).join("")}</ol>
+      </div>` : ""}
+      ${L.misconception ? `<div class="es-contrast">
+        <div class="es-contrasth">${esc(L.misconception.head)}</div>
+        <div class="es-contrastrow"><b>${esc(L.misconception.a.term)}</b><span>${esc(L.misconception.a.line)}</span></div>
+        <div class="es-contrastrow"><b>${esc(L.misconception.b.term)}</b><span>${esc(L.misconception.b.line)}</span></div>
+      </div>` : ""}
+      ${L.example ? `<div class="es-lessonsec">
+        <div class="es-drawer-sub">the same shape, ${esc(L.example.context)}</div>
+        <p class="es-lessonp">${esc(L.example.text)}</p>
+        ${L.example.pattern ? `<p class="es-lessonnote">Notice: ${esc(L.example.pattern)}.</p>` : ""}
+      </div>` : ""}
+      ${L.try ? `<div class="es-lessonsec try">
+        <div class="es-drawer-sub">try</div>
+        <p class="es-lessonp">${esc(L.try.prompt)}</p>
+        <div class="es-tryopts">${opts.map((o, i) => `<button type="button" class="es-try ${pick === i ? (o.right ? "right" : "wrong") : ""}" data-estry="${i}"${right ? " disabled" : ""}>${esc(o.text)}</button>`).join("")}</div>
+        ${right ? `<div class="es-tryright"><p class="es-lessonp">${esc(L.try.onRight)}</p>${use("Now use it in my paragraph")}</div>` : ""}
+        ${(opt && !right) ? `<div class="es-tryrepair"><p class="es-lessonp">${esc(opt.repair)}</p>
+          <button type="button" class="es-linkbtn" id="estryagain">Try again</button></div>` : ""}
+      </div>` : ""}
+      <div class="es-lessonfoot">
+        ${L.explore ? `<button type="button" class="es-linkbtn" id="eslessonexplore">${esc(L.explore.label)}</button>` : ""}
+        <button type="button" class="es-linkbtn" id="eslessonback">Back</button>
+      </div>
+    </div>`;
+  }
   // ---- the setup card: argument first, then evidence, then writing -----------
   function esSetupHTML(p) {
     const stage = ES.ui.setupStage || (p.argumentId ? "evidence" : "argument");
+    if (stage === "lesson") return esLessonHTML(p);
     if (stage === "argument") {
       const required = esAreasRequired();
       const areas = esQuestionAreas();
@@ -4766,7 +4833,7 @@
         ${opts.map(o => `<button type="button" class="es-pick" data-espath="${esc(o.id)}">
           ${o.short ? `<span class="es-pickshort">${esc(o.short)}</span>` : ""}
           <span class="es-pickrel">${esc(o.relationship)}</span>
-          ${o.meaning ? `<span class="es-picksub">${esc(o.meaning)}</span>` : ""}</button>`).join("")}
+          ${esChoiceMeaning(o) ? `<span class="es-picksub">${esc(esChoiceMeaning(o))}</span>` : ""}</button>`).join("")}
         <button type="button" class="es-pick own" data-espathown>Write my own argument</button>
         <div class="es-ownwrap" data-ownwrap hidden>
           <input id="esownarg" class="es-input" placeholder="In one line, the relationship you want to argue">
@@ -4806,6 +4873,7 @@
       ${rows}${none}
       <div class="es-setupbtns">
         <button type="button" class="es-linkbtn" id="esbackarg">Change the argument</button>
+        ${esLearning(p) ? `<button type="button" class="es-btn" id="eslessonopen">Understand this argument</button>` : ""}
         <button type="button" class="es-btn primary" id="esstartwriting">Start writing</button>
       </div>
     </div>`;
@@ -4877,6 +4945,23 @@
       if (!n) toast("Removed. Nothing you have written rested on it.");
     });
     const back = host.querySelector("#esbackarg"); if (back) back.onclick = () => { ES.ui.setupStage = "argument"; esRender(); };
+    const lo = host.querySelector("#eslessonopen");
+    if (lo) lo.onclick = () => { ES.ui.setupStage = "lesson"; ES.ui.tryPick = null; esRender(); };
+    // every route out of the lesson goes back to the paragraph, never to a menu
+    host.querySelectorAll("[data-eslessonuse]").forEach(b => b.onclick = () => {
+      p.setupDone = true; ES.ui.setupStage = null; ES.ui.tryPick = null; esSaveDraft(); esRender();
+    });
+    host.querySelectorAll("[data-estry]").forEach(b => b.onclick = () => {
+      ES.ui.tryPick = Number(b.dataset.estry); esRender();
+    });
+    const again = host.querySelector("#estryagain");
+    if (again) again.onclick = () => { ES.ui.tryPick = null; esRender(); };
+    const lb = host.querySelector("#eslessonback");
+    if (lb) lb.onclick = () => { ES.ui.setupStage = p.setupDone ? null : "evidence"; ES.ui.tryPick = null; esRender(); };
+    // Explore is secondary: it opens the fuller resource beside the lesson rather
+    // than replacing it, so the student never loses their place
+    const lx = host.querySelector("#eslessonexplore");
+    if (lx) lx.onclick = () => { ES.ui.tool = ES.ui.tool === "understand" ? null : "understand"; esRender(); };
     const go = host.querySelector("#esstartwriting"); if (go) go.onclick = () => { p.setupDone = true; ES.ui.setupStage = null; esSaveDraft(); esRender(); };
   }
   // ---- the resting right rail: what this paragraph is arguing, and where it is
@@ -5434,7 +5519,7 @@
               <button type="button" class="es-pick ${p.argumentId === o.id ? "on" : ""}" data-esplanpick="${i}|${esc(o.id)}">
                 ${o.short ? `<span class="es-pickshort">${esc(o.short)}</span>${(judgeMode && o.contribution) ? `<span class="es-tprole ${esc(o.contribution.role)}">${esc(ES_ROLES[o.contribution.role] || "")}</span>` : ""}` : ""}
                 <span class="es-pickrel">${esc(o.relationship)}</span>
-                ${o.meaning ? `<span class="es-picksub">${esc(o.meaning)}</span>` : ""}
+                ${esChoiceMeaning(o) ? `<span class="es-picksub">${esc(esChoiceMeaning(o))}</span>` : ""}
               </button>
               ${deeper ? `<button type="button" class="es-why ${why ? "on" : ""}" data-eswhy="${esc(o.id)}" aria-expanded="${why}">${why ? "Hide" : "Why?"}</button>` : ""}
               ${why ? `<div class="es-whybox">
@@ -5666,6 +5751,7 @@
         ${chipEv.length ? chipEv.map(e => `<button type="button" class="es-chip-ev" data-esrestchange="evidence" title="Change your evidence">${esIcon("search")}<span>${esc(e.label)}</span></button>`).join("")
                   : `<button type="button" class="es-chip-ev empty" data-esrestchange="evidence">${esIcon("search")}<span>evidence</span></button>`}
         ${(p.point || "").trim() ? `<span class="es-chip-note" title="your note for this paragraph">${esc(p.point)}</span>` : ""}
+        ${esLearning(p) ? `<button type="button" class="es-chip-more" data-eslessonchip title="what this argument means, and one thing to try">understand this argument</button>` : ""}
         <button type="button" class="es-chip-more" id="espointtoggle" title="a note for this paragraph">${ES.ui.pointOpen ? "hide note" : "note"}</button>
       </div>`;
     const words = esWordsOf(p.text);
@@ -5877,6 +5963,8 @@
     const prev = $("#esprev"); if (prev) prev.onclick = () => { d.pos = Math.max(0, d.pos - 1); ES.ui.editBlock = null; esResetCoachUI(); esSaveDraft(); esRender(); };
     const nxt = $("#esnext"); if (nxt) nxt.onclick = () => { d.pos = Math.min(total - 1, d.pos + 1); ES.ui.editBlock = null; esResetCoachUI(); esSaveDraft(); esRender(); };
     const ask = $("#esask"); if (ask) ask.onclick = () => esGetFeedback(d.pos);
+    const lchip = $("[data-eslessonchip]");
+    if (lchip) lchip.onclick = () => { ES.ui.setupStage = "lesson"; ES.ui.tryPick = null; esRender(); };
     const ptog = $("#espointtoggle"); if (ptog) ptog.onclick = () => { ES.ui.pointOpen = !ES.ui.pointOpen; esRender(); const el = $("#espoint"); if (el) el.focus(); };
     const rv = $("#esreview"); if (rv) rv.onclick = () => { ES.screen = "review"; esSaveDraft(); esRender(); };
     const mw = $("#esmapwa"); if (mw) mw.onclick = () => { ES.ui.planAll = false; ES.screen = "plan"; esSaveDraft(); esRender(); };
