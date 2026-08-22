@@ -333,3 +333,141 @@ re-pasted, marking still runs the old Economics prompt.
 
 Cloudflare -> Workers -> `marginal-grader` -> Edit code -> paste the current
 `proxy/worker.js` -> Deploy. No new secrets.
+# Batch 4: study hints, the content layer, and the case study bank
+
+Answers the problem that practice alone cannot solve: a student who does not yet
+know the content cannot improve by attempting questions. Still behind `essayMode`.
+
+## The content layer (`business-content.js`)
+
+`window.BUSCONTENT` carries core information for EVERY HSC Business Studies
+syllabus dot point, structured straight from the NESA Stage 6 syllabus: four
+topics, 17 sections, 83 dot points. Each dot point has:
+
+- `what` the definition or description, written so a student can learn from it
+- `why` why it matters to a business, which is the cause and effect a marker wants
+- `terms` the syllabus terms to use when writing about it
+- `exam` how it is usually tested, including the directive verbs
+
+The dot point strings are kept verbatim from the syllabus, so the content joins
+back to the syllabus structure exactly.
+
+## The McDonald's case study bank
+
+`window.BUSCONTENT.evidence` holds 58 pieces of McDonald's evidence keyed by topic
+and section, each with the evidence itself and a `use` line saying which
+relationship it proves and how to link it back to the question.
+
+Accuracy rules, because a student will repeat this in an exam:
+- Only long-standing, general, uncontroversial characteristics are asserted.
+- No invented statistics, dollar figures, store counts, dates or quotations.
+- Anything carrying a specific is flagged `verify`, and the widget shows a "check
+  a current figure yourself" badge on it.
+
+## The hints widget
+
+A floating button on both writing screens opens a panel with three tabs. All three
+are rendered once and flipped with the hidden attribute, so switching tabs never
+rebuilds the panel.
+
+- **Know** the core content for the topic this essay sits in, so a student can
+  learn the material at the moment they need it. The topic is resolved from the
+  picked question, or from keywords in the question, or the student chooses it.
+- **Plan** the paragraph angles for this essay. The student selects their angles
+  and **locks them in**. Once locked, every paragraph shows the same locked plan,
+  which is what keeps a long response consistent across sections. The plan lives on
+  the draft, so it survives navigation, saving and reopening. It can be unlocked.
+- **Evidence** the McDonald's bank for this topic, with the how to use it line.
+
+## Walkthrough checklist
+
+- [ ] A "hints" button floats on the coached practice and full attempt screens.
+- [ ] Know resolves the topic from the question and lists that topic's syllabus
+      sections; opening one shows learnable content per dot point.
+- [ ] Plan offers the angles, the lock button is disabled until something is
+      picked, and locking shows the numbered plan.
+- [ ] Move to the next paragraph: the plan is still locked and still shown.
+- [ ] Evidence lists McDonald's items, with a "check a current figure yourself"
+      badge on anything carrying a specific.
+# Batch 5: line-by-line guidance in the typing box
+
+Direct, per-sentence guidance docked under the paragraph you are writing.
+
+## What it does
+
+After Get feedback, up to five of YOUR OWN sentences are listed under the typing
+box, weakest first. Each row carries:
+
+- a severity (loses marks / lifts the band / polish)
+- the sentence itself, quoted back
+- a DIRECT diagnosis of the fault, stated not asked ("this describes what happened
+  instead of explaining why it matters")
+- a CONTENT-FREE frame with blanks to type over
+
+Clicking "show me this line" selects that exact sentence inside the textarea, so
+the box itself shows which line is meant.
+
+## Why the guidance is not written for you
+
+Suggest-never-substitute still holds. The coach is now direct about WHAT is wrong
+with a specific sentence, but it still never writes the improved sentence. That is
+enforced in code at both ends, not merely asked for in the prompt. A frame is
+rejected unless it:
+
+- contains blanks (`____`),
+- stays short (at most 12 non-blank words), and
+- uses ONLY structural words. The words around the blanks are checked against a
+  fixed connective vocabulary, so a frame like "Factoring improves liquidity
+  because ____" is dropped: it hands over half the sentence.
+
+Rejected lines are dropped rather than shown, so the failure direction is losing a
+hint, never leaking an answer.
+
+Note: markup cannot be rendered inside a `<textarea>`, so the guidance is docked
+directly beneath it and uses text selection to point at the line, rather than
+overlaying highlights on the box.
+
+## Worker re-paste (your step) REQUIRED for this batch
+
+The coach tool schema and system prompt changed: `submit_coaching` now returns a
+`lines` array. Until you re-paste `proxy/worker.js`, coaching falls back to the
+labelled demo, which carries demo lines so the feature is still walkable.
+
+Cloudflare -> Workers -> `marginal-grader` -> Edit code -> paste the current
+`proxy/worker.js` -> Deploy. No new secrets.
+
+---
+
+# Task 1: the marking rebuild
+
+Marking is now two passes, the payload carries what the question actually
+requires, and feedback ends with one place to go back and rewrite. Full detail,
+the enforcement layer and the walkthrough checklist are in **`MARKING.md`**.
+
+## What changed in essay mode
+
+- **Submit now marks.** A full attempt is sent for real marking and comes back
+  with a mark, one named improvement area quoted from the student's own writing,
+  and a **Revise this paragraph** button that opens the coached screen on that
+  paragraph with the marker's line selected.
+- **A marks field** in setup, default 20, so the mark that comes back means
+  something. Starting from one of our practice questions also brings that
+  question's requirements and mark value with it.
+- The review opens **above** essay mode now, not behind it, and toasts are visible
+  over both. Those were pre-existing layering bugs found while walking this.
+
+## What is gated
+
+`CONFIG.essayMarking` in `index.html`, `false` on main. `?essaymark=1` turns it on
+for one person, and `?essaydemo=1` includes it. With the switch off, Submit saves
+the draft exactly as before and says marking is not switched on yet.
+
+## Worker re-paste (your step) REQUIRED for this batch
+
+Cloudflare, Workers, `marginal-grader`, Edit code, paste the current
+`proxy/worker.js`, Deploy. No new secrets.
+
+Marking makes two upstream calls per submission now instead of one, so it costs
+more and takes longer. Merging the client before the paste is safe: the old worker
+ignores the new fields and the app derives its own focus, so the revise cycle
+works either way, it just will not be two-pass until the paste lands.

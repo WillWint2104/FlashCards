@@ -232,7 +232,88 @@ redeploy `proxy/worker.js` in Cloudflare for it to take effect.
 
 ---
 
-## 6. Deferred to later build steps
+## 6. Additions from the marking rebuild (Task 1)
+
+Every field below is **additive**. The rendered contract of §1 is unchanged, so an
+older client renders a new review and a newer client renders an old one. Full
+rationale and the walkthrough checklist are in `MARKING.md`.
+
+### `focus` (required from the rebuilt worker)
+
+Where the student goes back and rewrites first. Exactly one place.
+
+```json
+{ "area": "Explanation", "paragraph": 2, "index": 1, "sentence": 0,
+  "why": "Your processes paragraph identifies mobile ordering but does not explain why the target market caused it.",
+  "quote": "The business introduced mobile ordering through its app." }
+```
+
+- `paragraph` is 1-based and numbers the paragraphs the worker was **sent**.
+- `index` is the same thing 0-based, derived in code and clamped to a paragraph
+  that exists.
+- `sentence` is the index of the sentence the quote sits in, or `null`.
+- `quote` is snapped to the student's literal characters, or blanked.
+- The model emits `focus` **before** `paragraphs`, so the one field the student
+  acts on survives a truncation that still parses.
+- An older worker omits it. `rvEnsureFocus()` in the app derives one from the
+  worst open issue, so the review always has somewhere to send the student.
+
+### `credited`
+
+Valid arguments the student made that our authored pathways did not anticipate.
+Empty unless a pathway list was actually supplied with the request.
+
+```json
+[{ "paragraph": 3, "argument": "the servicescape itself carries the target market",
+   "quote": "The restaurants now have digital ordering kiosks." }]
+```
+
+### `diagnosis`
+
+The verified pass-1 output, passed through so the UI can show what the marker
+actually saw without pass 2 spending output tokens on it. Every row carries a
+quote that has been checked against the student's response; rows that failed were
+dropped before this was assembled. `planVsResponse` is present here but is never
+rendered into the marking prompt.
+
+### `checks`
+
+Instrumentation, not student-facing.
+
+```json
+{ "passes": 2, "sentences": 6, "sentencesVerified": 6, "sentencesUnplaced": 0,
+  "grounded": 1, "focusQuoted": true, "prose": { "quoted": 3, "unquoted": 1 },
+  "diagnosis": { "kept": 11, "dropped": 2 } }
+```
+
+`grounded` below 0.6 means the marking drifted away from this student's text, and
+`gradeWritten()` (app.js) logs a console warning rather than swallowing it.
+
+### Request fields (input)
+
+Added to the marking request, all optional:
+`subject`, `criteria`, `bands`, `bandsSource`, `topic`, `requirements`
+(`concepts` / `relationships` / `accomplish` / `syllabus`), `rubric`, `plan`,
+`validContent`. `plan` and `validContent` reach **pass 1 only**; see `MARKING.md`.
+
+### Honest marking, extended (§4 still holds)
+
+- `marks` is validated at the door; a bad value is a 400, never a review of `NaN`.
+- Paragraph maxima are reconciled to the question's mark value, preserving the
+  marker's proportion, so a mis-split denominator can no longer turn an imperfect
+  response into full marks.
+- The rubric is rebuilt against the criterion names that were asked for, its
+  maxima sum to the question and its marks sum to the total. `rvCheckMarks()` in
+  the app should now never warn.
+- `sentences[].text` is snapped to the student's literal characters, so the
+  paragraph read back in the review is what they typed.
+- Schema `maxItems` is guidance to the model, not enforced by the API, so
+  `reasons` and `issues` are capped in code as well. Sentences are never capped:
+  the review rebuilds the paragraph out of them.
+
+---
+
+## 7. Deferred to later build steps
 
 - Review shell, paragraph view, issue walkthrough, ladder/practice UI (steps 2-5).
 - Clickable key-term popover and the deferred source link (step 6).
