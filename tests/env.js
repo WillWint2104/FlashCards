@@ -21,8 +21,13 @@ function loadPlaywright() {
 const pw = loadPlaywright();
 
 // The hosted environment pre-installs Chromium and asks that it not be re-fetched.
+// It has to be a file (or a symlink to one): a stale directory left at that path
+// exists, so existsSync alone would hand Playwright something it cannot launch.
 const HOSTED_CHROME = "/opt/pw-browsers/chromium";
-const EXECUTABLE = fs.existsSync(HOSTED_CHROME) ? HOSTED_CHROME : undefined;
+function isExecutableFile(f) {
+  try { return fs.statSync(f).isFile(); } catch (e) { return false; }
+}
+const EXECUTABLE = isExecutableFile(HOSTED_CHROME) ? HOSTED_CHROME : undefined;
 
 const chromium = {
   launch: (opts) => pw.chromium.launch(Object.assign({}, EXECUTABLE ? { executablePath: EXECUTABLE } : {}, opts || {})),

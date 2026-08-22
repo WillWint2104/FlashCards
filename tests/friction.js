@@ -55,14 +55,21 @@ const CONCL = [
 ];
 
 // ---------------------------------------------------------------- profiles
-const P = {
+const PROFILES = {
   independent: { helpPresses: 0, drawers: [], fillPointFirst: false, ownArgAt: 3 },
   moderate:    { helpPresses: 1, drawers: ['understand'], fillPointFirst: true, ownArgAt: -1 },
   high:        { helpPresses: 9, drawers: ['understand','vocabulary','evidence'], fillPointFirst: true, ownArgAt: -1 }
-}[PROFILE];
+};
+const P = PROFILES[PROFILE];
+if (!P) {
+  console.error('unknown profile "' + PROFILE + '". Use one of: ' + Object.keys(PROFILES).join(', '));
+  process.exit(1);
+}
 
 (async () => {
-  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+  // env.js picks the hosted Chromium only when it is actually there, so this
+  // still runs from a clone on a machine that has its own browser.
+  const b = await chromium.launch();
   const ctx = await b.newContext({ viewport: { width: 1500, height: 1000 }, deviceScaleFactor: 1 });
   await ctx.addInitScript(() => {
     window.__M = { clicks: 0, keys: 0, renders: 0, marks: [] };

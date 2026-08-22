@@ -20,6 +20,9 @@ const MODEL = "claude-sonnet-4-6"; // sharper essay feedback; swap to "claude-ha
 // rather spend the latency.
 const DIAG_MODEL = "claude-haiku-4-5-20251001";
 const DIAG_MAX_TOKENS = 3000;
+// Pass 1 is optional, so it is allowed to be slow but never allowed to hold the
+// whole request open. Past this, the marker runs on the writing alone.
+const DIAG_TIMEOUT_MS = 20000;
 // COACHING (essay practice) runs on the cheaper, faster Haiku. Marking above is
 // left on its current model on purpose. Output is capped short (suggestions only).
 const COACH_MODEL = "claude-haiku-4-5-20251001"; // dated pin: the alias claude-haiku-4-5 is rejected on this account
@@ -1071,13 +1074,31 @@ function planProse(pl) {
   return [pl.argument].concat(asArray(pl.paragraphs).map(x => asObject(x).point || "")).filter(Boolean).join(" ");
 }
 
+// A timeout the worker cannot fail to start on. AbortSignal.timeout is present in
+// workerd, but this file is pasted into a dashboard by hand, so an older runtime
+// must degrade to "no timeout" rather than throw at the call site.
+function timeoutSignal(ms) {
+  try {
+    if (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function") return AbortSignal.timeout(ms);
+    if (typeof AbortController === "function") {
+      const c = new AbortController();
+      setTimeout(() => c.abort(), ms);
+      return c.signal;
+    }
+  } catch (e) { /* fall through: slow is better than broken */ }
+  return undefined;
+}
+
 // Pass 1. Never fatal: if the diagnosis fails, times out or returns nothing, the
-// worker marks from the writing alone rather than failing the whole request.
+// worker marks from the writing alone rather than failing the whole request. The
+// abort is what makes "times out" true: without it a stalled pass 1 would hold
+// pass 2 open behind it and the student would see nothing at all.
 async function diagnose(f, env) {
   if (!DIAG_SAFE) return null;
   try {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
+      signal: timeoutSignal(DIAG_TIMEOUT_MS),
       headers: { "content-type": "application/json", "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({
         model: DIAG_MODEL,

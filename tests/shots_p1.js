@@ -1,7 +1,7 @@
 const { chromium, T, OUT, BASE, fileUrl } = require('./env');
 const { planAll } = require('./env');
 (async()=>{
-  const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium'});
+  const b=await chromium.launch();
   const p=await (await b.newContext({viewport:{width:1500,height:1180},deviceScaleFactor:2})).newPage();
   await p.route(/workers\.dev/, r=>r.abort());
   await p.goto(T); await p.waitForTimeout(700);

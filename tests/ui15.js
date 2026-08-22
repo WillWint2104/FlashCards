@@ -5,7 +5,7 @@ const { planAll } = require('./env');
 const { nextSection, prevSection } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 (async()=>{
-  const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium'});
+  const b=await chromium.launch();
   const ctx=await b.newContext({viewport:{width:1500,height:1000},deviceScaleFactor:2});
   await ctx.addInitScript(()=>{window.__C=0;addEventListener('click',()=>window.__C++,true);});
   const p=await ctx.newPage();

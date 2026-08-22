@@ -37,7 +37,7 @@ const REVIEW = (marks) => ({
 });
 
 (async()=>{
-  const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium'});
+  const b=await chromium.launch();
   const ctx=await b.newContext({viewport:{width:1280,height:960}});
   const p=await ctx.newPage();
   const errs=[]; p.on('pageerror',e=>errs.push(String(e).slice(0,200)));

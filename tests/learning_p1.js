@@ -13,7 +13,7 @@ const LINES=[
  "The result is that this target market spends less effort to buy and the business keeps them, although the work of ordering has been shifted onto the customer.",
  "This shows that identifying a convenience-driven target market is what led the business to change its processes."];
 (async()=>{
-  const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium'});
+  const b=await chromium.launch();
   const ctx=await b.newContext({viewport:{width:1500,height:1000}});
   await ctx.addInitScript(()=>{window.__C=0;addEventListener('click',()=>window.__C++,true);});
   const p=await ctx.newPage();

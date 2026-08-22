@@ -1,7 +1,7 @@
 const { chromium, T, OUT, BASE, fileUrl } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 (async()=>{
-  const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium'});
+  const b=await chromium.launch();
   const p=await (await b.newContext({viewport:{width:1280,height:1100},deviceScaleFactor:2})).newPage();
   const errs=[]; p.on('pageerror',e=>errs.push(String(e).slice(0,200)));
   await p.route(/workers\.dev/, r=>r.abort());

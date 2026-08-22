@@ -16,7 +16,7 @@ const SHORT = ans => ({
 });
 
 (async()=>{
-  const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium'});
+  const b=await chromium.launch();
   const p=await (await b.newContext({viewport:{width:1280,height:1000},deviceScaleFactor:2})).newPage();
   const errs=[]; p.on('pageerror',e=>errs.push(String(e).slice(0,220)));
   let sent=null;

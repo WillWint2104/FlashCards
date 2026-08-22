@@ -1,7 +1,7 @@
 // Probe pass: the questions the click counts cannot answer. Changes nothing.
 const { chromium, T, OUT, BASE, fileUrl } = require('./env');
 (async () => {
-  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+  const b = await chromium.launch();
   const p = await (await b.newContext({ viewport: { width: 1500, height: 1000 } })).newPage();
   const errs = []; p.on('pageerror', e => errs.push(String(e).slice(0, 200)));
   await p.route(/workers\.dev/, r => r.abort());

@@ -222,6 +222,38 @@ if (escapeFaults.length) {
 }
 
 // ---------------------------------------------------------------------------
+// THE STEM IN FRONT OF THE STUDENT IS THE QUESTION
+//
+// A question that fixes its parts teaches, decodes and marks against those
+// parts. If the stem is a broader paraphrase, the student is shown one task and
+// held to another, and nothing at runtime can notice: both halves are internally
+// consistent. So the check is that the stem NAMES what the question requires,
+// and that no two questions ship the same stem text as an alias of each other.
+// See docs/inspiration/decisions/2026-08-19-canonical-stem.md.
+// ---------------------------------------------------------------------------
+function checkCanonicalStems() {
+  const subs = essaySubjects();
+  if (!subs) return [essayLoadError];
+  const bad = [], seen = {};
+  const norm = t => String(t || "").toLowerCase().replace(/[\u2019']/g, "'").replace(/\s+/g, " ").trim();
+  Object.keys(subs).forEach(key => (subs[key].questions || []).forEach(q => {
+    const where = `${key}/${q.id}`;
+    const stem = norm(q.text);
+    if (!stem) { bad.push(`${where} has no stem text`); return; }
+    if (seen[stem]) bad.push(`${where} ships the same stem as ${seen[stem]}. Two questions with one stem is an alias, and the canonical-stem rule forbids it: give the broader wording its own id and its own authored content.`);
+    else seen[stem] = where;
+    const areas = ((q.requirements || {}).requiredAreas) || [];
+    areas.forEach(a => {
+      const label = norm(a.label || a.id);
+      if (label && stem.indexOf(label) < 0) {
+        bad.push(`${where} requires the part "${a.label || a.id}" but its own stem never names it: ${JSON.stringify(q.text)}. Either the stem is a broader paraphrase of the paper question, or the part should not be required.`);
+      }
+    });
+  }));
+  return bad;
+}
+
+// ---------------------------------------------------------------------------
 // A QUESTION THAT CANNOT NOTICE A WRONG TURN SHOULD SAY SO
 //
 // The reasoning block is what lets the app tell an argument running the wrong
@@ -437,6 +469,13 @@ const learningFaults = checkLearning();
 if (learningFaults.length) {
   console.error("BUILD REFUSED: a pathway lesson would not hold together.");
   learningFaults.forEach(o => console.error("  - " + o));
+  process.exit(1);
+}
+
+const stemFaults = checkCanonicalStems();
+if (stemFaults.length) {
+  console.error("BUILD REFUSED: a question would be taught against a stem the student is not being shown.");
+  stemFaults.forEach(o => console.error("  - " + o));
   process.exit(1);
 }
 

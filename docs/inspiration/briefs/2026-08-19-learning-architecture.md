@@ -172,11 +172,17 @@ sentence. The relaxation applies to the learning layers, on explicit request.
 
 All question decoding, plain-English explanation, thesis guidance and comparison
 answers must use the **exact live exam stem** as canonical, never a generic
-matched practice-question text. `mkt-01.text` is currently the broader
-"Explain how target markets influence the development of marketing strategies",
-while its requirements and pathways are built around the four-part paper
-question. Without this rule the new layer could quietly broaden a constrained
-question.
+matched practice-question text. Without this rule the new layer could quietly
+broaden a constrained question.
+
+> **Resolved since this brief was written.** At the time, `mkt-01.text` was the
+> broader "Explain how target markets influence the development of marketing
+> strategies" while its requirements and pathways were built around the four-part
+> paper question. `mkt-01.text` is now the exact paper stem, "Explain how target
+> markets affect e-marketing, people, processes and physical evidence", and the
+> broader wording became `mkt-04`, a separate question with no authored pathways.
+> See `docs/inspiration/decisions/2026-08-19-canonical-stem.md`, which is the
+> authority; this paragraph is kept for the reasoning, not the current state.
 
 ## Data model, evolved rather than bolted on
 

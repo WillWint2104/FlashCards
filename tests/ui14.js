@@ -4,7 +4,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
 const rungs = p => p.$$eval('.es-rung',es=>es.map(e=>({n:e.querySelector('.es-rungn').textContent.trim(),
   lbl:e.querySelector('.es-runglbl').textContent.trim(), txt:e.querySelector('.es-rungtext').textContent.trim(), kind:e.className})));
 (async()=>{
-  const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium'});
+  const b=await chromium.launch();
   const p=await (await b.newContext({viewport:{width:1500,height:1080},deviceScaleFactor:2})).newPage();
   const errs=[]; p.on('pageerror',e=>errs.push(String(e).slice(0,220)));
   let calls=0; await p.route(/workers\.dev/, r=>{ calls++; r.abort(); });

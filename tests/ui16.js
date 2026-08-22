@@ -7,7 +7,7 @@ const rungs = p => p.$$eval('.es-rung',es=>es.map(e=>({n:e.querySelector('.es-ru
   lbl:e.querySelector('.es-runglbl').textContent.trim(), txt:e.querySelector('.es-rungtext').textContent.trim(),
   kind:(e.className.match(/es-rung (\w+)/)||[])[1]||''})));
 (async()=>{
-  const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium'});
+  const b=await chromium.launch();
   const ctx=await b.newContext({viewport:{width:1500,height:1000},deviceScaleFactor:2});
   await ctx.addInitScript(()=>{window.__C=0;addEventListener('click',()=>window.__C++,true);});
   const p=await ctx.newPage();

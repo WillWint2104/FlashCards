@@ -19,7 +19,7 @@ const REVIEW = {
 };
 
 (async()=>{
-  const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium'});
+  const b=await chromium.launch();
   const p=await (await b.newContext({viewport:{width:1280,height:960}})).newPage();
   const errs=[]; p.on('pageerror',e=>errs.push(String(e).slice(0,200)));
   let sent=null;

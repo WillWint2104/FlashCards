@@ -2,7 +2,7 @@
 const { chromium, P: T, OUT } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 (async()=>{
-  const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium'});
+  const b=await chromium.launch();
   const p=await (await b.newContext({viewport:{width:1440,height:1000}})).newPage();
   const errs=[]; p.on('pageerror',e=>errs.push(String(e).slice(0,220)));
   let sent=null;

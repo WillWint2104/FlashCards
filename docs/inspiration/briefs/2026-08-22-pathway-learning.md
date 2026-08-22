@@ -93,9 +93,14 @@ not only the content.
 - **Every learning interaction ends in a bridge back to the task.** Not *Close*
   but *Use this in my paragraph*, *Choose my argument*, *Back to my explanation*.
   The student should always know why they just learned that.
-- **We teach the answer; they construct the response.** Pathway learning may say
-  what the relationship is. It may never supply the prose. The writing ladder
-  remains the only thing that helps with sentences.
+- **We teach the reasoning; they construct the response.** Pathway learning may
+  say what the relationship is and why it holds. It never volunteers the prose
+  for the sentence in front of the student, and it never writes into the draft.
+  The writing ladder remains the only thing that helps with sentences. This is
+  narrower than, and consistent with,
+  `docs/inspiration/decisions/2026-08-19-model-answers-on-request.md`: an
+  authored model paragraph may still be shown when a student explicitly asks to
+  see one, on its own surface, never inserted and never unrequested.
 - **Selections are provisional.** *Try this argument*, never *Lock in*. A student
   who learns the pathway and decides they understand the other one better should
   switch without losing what they wrote.
