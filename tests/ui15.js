@@ -120,7 +120,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   ok(/\d+ here/.test(wc)&&/\d+ in all/.test(wc),'both scales are shown: '+wc);
   const nums=wc.match(/(\d+) here[\s\S]*?(\d+) in all/)||[];
   ok(nums.length===3&&Number(nums[2])>Number(nums[1]),'and the whole response is larger than the paragraph: '+wc);
-  const tip=await p.$eval('.es-wordcount',e=>e.getAttribute('title')||'');
+  const tip=await p.$eval('.es-wordcount',e=>e.getAttribute('title')||'').catch(()=>'');
   ok(/guide, not a limit/i.test(tip),'the target explains itself without standing on screen: '+JSON.stringify(tip.slice(0,50)));
 
   console.log('7. earlier writing is readable without leaving the sentence');

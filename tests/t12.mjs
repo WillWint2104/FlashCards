@@ -1,9 +1,10 @@
 // The working answer is a sentence built out of authored fragments, so the risk
 // is not that a fragment is wrong but that a COMBINATION of them does not parse.
-// Twelve pathways make 4095 non-empty subsets, 3001 of them within the six
-// argument cap an essay could hold, which is cheap enough to render all of them
-// and read every result mechanically. This runs the shipped assembler, not a
-// copy: tests/mkwashim.js lifts it out of app.js.
+// Twelve pathways make 4095 non-empty subsets, 2509 of them within the six
+// argument cap an essay could hold; the two eight-pathway questions add 246
+// each, so a run renders 3001 in all. Cheap enough to render every one and read
+// the result mechanically. This runs the shipped assembler, not a copy:
+// tests/mkwashim.js lifts it out of app.js.
 import { readFileSync } from "fs";
 import { createContext, runInContext } from "vm";
 import { setQuestion, esWorkingAnswer, esWorkingParts, esPositionTension } from "./wa.mjs";
