@@ -102,6 +102,15 @@ const store = (()=>{
   ok(!/staff are part of what a service customer is buying/i.test(await text(p,'.es-lesson')),
     'and the People concepts are not dragged along with it');
 
+  console.log('5b. an unreviewed pathway offers nothing, and claims nothing');
+  await open(p); await body(p,1);
+  const ids=await p.$$eval('[data-espath]',es=>es.map(e=>e.dataset.espath));
+  await p.$$eval('[data-espath]',es=>es[0]&&es[0].click()); await p.waitForTimeout(460);
+  ok(!(await p.$('#eslessonopen')),'no lesson is offered for '+ids[0]+', which is unreviewed');
+  ok(!!(await p.$('#esstartwriting')),'and writing is unaffected');
+  const said=await text(p,'.es-setup');
+  ok(!/unreviewed|incomplete|not yet/i.test(said),'the student is never told the content is unfinished: '+said.slice(0,70));
+
   console.log('6. a student who needs none of it is given none of it');
   await open(p); await body(p,2);
   await p.$$eval('[data-espath]',es=>{const t=es.find(x=>/pe-service/.test(x.dataset.espath)); t&&t.click();});

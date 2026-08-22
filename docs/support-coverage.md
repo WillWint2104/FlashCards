@@ -15,61 +15,71 @@ A label that prints the word does not teach it.
 ## Can this pathway deliver what it depends on?
 
 Content existing somewhere in the pack is irrelevant to a student on a
-pathway that cannot surface it. A pathway with no declared dependencies
-has not said what it needs, so nothing can be routed to it.
+pathway that cannot surface it. The chain runs:
+
+| stage | question | measured by |
+| --- | --- | --- |
+| **declared** | do we know what this pathway depends on | this table |
+| **authored** | is there material that teaches it | this table |
+| **reachable** | can this pathway surface that material | this table |
+| **delivered** | did the canonical novice journey actually get it | `tests/bots` |
+| **applied** | did the learner then use it | `tests/bots`, the transfer probe |
+
+`unreviewed` means nobody has yet decided what the pathway depends on.
+It is never a claim that it depends on nothing.
 
 ### `mkt-01`
 
-| pathway | concepts declared | authored | reachable here |
-| --- | --- | --- | --- |
-| `mkt01-em-digital` | **none declared** | - | - |
-| `mkt01-em-value` | **none declared** | - | - |
-| `mkt01-em-convenience` | **none declared** | - | - |
-| `mkt01-pe-service` | 3 | 3 | 3 |
-| `mkt01-pe-speed` | **none declared** | - | - |
-| `mkt01-pe-consistency` | **none declared** | - | - |
-| `mkt01-pr-convenience` | 2 | 2 | 2 |
-| `mkt01-pr-speed` | 1 | 1 | 1 |
-| `mkt01-pr-customisation` | 1 | 1 | 1 |
-| `mkt01-ph-servicescape` | **none declared** | - | - |
-| `mkt01-ph-segments` | **none declared** | - | - |
-| `mkt01-ph-selfservice` | **none declared** | - | - |
+| pathway | state | concepts declared | authored | reachable here |
+| --- | --- | --- | --- | --- |
+| `mkt01-em-digital` | unreviewed | - | - | - |
+| `mkt01-em-value` | unreviewed | - | - | - |
+| `mkt01-em-convenience` | unreviewed | - | - | - |
+| `mkt01-pe-service` | authored | 3 | 3 | 3 |
+| `mkt01-pe-speed` | unreviewed | - | - | - |
+| `mkt01-pe-consistency` | unreviewed | - | - | - |
+| `mkt01-pr-convenience` | authored | 2 | 2 | 2 |
+| `mkt01-pr-speed` | authored | 1 | 1 | 1 |
+| `mkt01-pr-customisation` | authored | 1 | 1 | 1 |
+| `mkt01-ph-servicescape` | unreviewed | - | - | - |
+| `mkt01-ph-segments` | unreviewed | - | - | - |
+| `mkt01-ph-selfservice` | unreviewed | - | - | - |
 
-Declared by 4 of 12 pathways.
+Reviewed: 4 of 12. Authored lessons: 4.
 
 ### `fin-01`
 
-| pathway | concepts declared | authored | reachable here |
-| --- | --- | --- | --- |
-| `fin01-cf-liquidity` | **none declared** | - | - |
-| `fin01-cf-discounts` | **none declared** | - | - |
-| `fin01-wc-control` | **none declared** | - | - |
-| `fin01-wc-leasing` | **none declared** | - | - |
-| `fin01-pm-cost` | **none declared** | - | - |
-| `fin01-pm-revenue` | **none declared** | - | - |
-| `fin01-gf-hedging` | **none declared** | - | - |
-| `fin01-gf-payment` | **none declared** | - | - |
+| pathway | state | concepts declared | authored | reachable here |
+| --- | --- | --- | --- | --- |
+| `fin01-cf-liquidity` | unreviewed | - | - | - |
+| `fin01-cf-discounts` | unreviewed | - | - | - |
+| `fin01-wc-control` | unreviewed | - | - | - |
+| `fin01-wc-leasing` | unreviewed | - | - | - |
+| `fin01-pm-cost` | unreviewed | - | - | - |
+| `fin01-pm-revenue` | unreviewed | - | - | - |
+| `fin01-gf-hedging` | unreviewed | - | - | - |
+| `fin01-gf-payment` | unreviewed | - | - | - |
 
 Authored, requires teaching, and no pathway here declares it: `processes`, `people`, `training`
 
-Declared by 0 of 8 pathways.
+Reviewed: 0 of 8. Authored lessons: 0.
 
 ### `hr-01`
 
-| pathway | concepts declared | authored | reachable here |
-| --- | --- | --- | --- |
-| `hr01-td-productivity` | **none declared** | - | - |
-| `hr01-td-retention` | **none declared** | - | - |
-| `hr01-rw-motivation` | **none declared** | - | - |
-| `hr01-rw-cost` | **none declared** | - | - |
-| `hr01-pf-accountability` | **none declared** | - | - |
-| `hr01-pf-trust` | **none declared** | - | - |
-| `hr01-jd-enrichment` | **none declared** | - | - |
-| `hr01-jd-flexibility` | **none declared** | - | - |
+| pathway | state | concepts declared | authored | reachable here |
+| --- | --- | --- | --- | --- |
+| `hr01-td-productivity` | unreviewed | - | - | - |
+| `hr01-td-retention` | unreviewed | - | - | - |
+| `hr01-rw-motivation` | unreviewed | - | - | - |
+| `hr01-rw-cost` | unreviewed | - | - | - |
+| `hr01-pf-accountability` | unreviewed | - | - | - |
+| `hr01-pf-trust` | unreviewed | - | - | - |
+| `hr01-jd-enrichment` | unreviewed | - | - | - |
+| `hr01-jd-flexibility` | unreviewed | - | - | - |
 
 Authored, requires teaching, and no pathway here declares it: `processes`, `people`, `training`
 
-Declared by 0 of 8 pathways.
+Reviewed: 0 of 8. Authored lessons: 0.
 
 ## Named in the interface, explained nowhere
 

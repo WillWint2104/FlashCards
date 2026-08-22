@@ -4754,7 +4754,14 @@
   // way back into the writing is at the top of the surface before the student has
   // read a word, and a student who never opens this never meets any of it.
   // ---------------------------------------------------------------------------
-  function esLearning(p) { const path = esPathway(p); return (path && path.learning) || null; }
+  // A pathway carries a learning STATE, and only one of the three is a lesson.
+  // "unreviewed" means nobody has yet decided what this argument depends on; it
+  // is never a claim that it depends on nothing, and it shows a student nothing.
+  function esLearning(p) {
+    const path = esPathway(p);
+    const L = (path && path.learning) || null;
+    return (L && L.status === "authored") ? L : null;
+  }
   // The concept store for the subject, and the pathway's declared dependencies
   // on it. Referencing a concept does not show it: it makes it ELIGIBLE here.
   // Primary concepts are what this argument cannot be understood without, so

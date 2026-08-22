@@ -89,6 +89,9 @@ rule they are testing.
 
 ## Support coverage
 
+`node build.js --strict-learning` refuses a build while any pathway is still
+`unreviewed`. Ordinary builds print one summary line instead.
+
 `node tools/coverage.js` prints what the authored content can actually support,
 per question, and `node build.js` writes the same thing to
 `docs/support-coverage.md` on every build. It exists because the architecture can

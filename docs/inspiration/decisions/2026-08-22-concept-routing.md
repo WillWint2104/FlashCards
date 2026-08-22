@@ -21,6 +21,33 @@ content":
 | **declared** | does this pathway say it depends on it |
 | **reachable** | both, so a student on this pathway can be given it |
 
+## Three states, so "not yet looked at" is not mistaken for "needs nothing"
+
+Every pathway ends in one of three states. Without this, a pathway nobody has
+reviewed and a pathway genuinely needing no extra concepts are indistinguishable,
+which at a hundred pathways is dangerous.
+
+```
+learning: { status: "authored", concepts: { primary: [...], ... } }
+learning: { status: "none-required", reason: "..." }
+learning: { status: "unreviewed" }
+```
+
+`unreviewed` is a **state, not a claim**. It shows a student nothing, and it puts
+the pathway in an authoring queue rather than quietly passing.
+
+An ordinary build says this once:
+
+```
+note: learning coverage 4/28 reviewed; 24 pathways unreviewed
+      (listed in docs/support-coverage.md)
+```
+
+Twenty-four warnings a build is how developers learn to ignore warnings. The ids
+live in the report, where they are a queue. `node build.js --strict-learning`
+turns the queue into a failure, for content validation rather than for every
+local build.
+
 ## The contract
 
 A pathway declares its dependencies. Declaring one does **not** show it: it makes
@@ -75,6 +102,34 @@ strong   Body 2: nothing declared, and nothing given
 `training` is reached from the People pathway and is not written for it.
 `servicescape` is declared `optional` by a Processes pathway and never appears on
 it. A student who pressed *Start writing* is given none of it.
+
+## Readiness controls what is offered, never what a student is told
+
+The report complains to the author. A student on an unreviewed pathway is never
+shown "learning support incomplete": they are shown a pathway with no lesson,
+which is what the app looked like before any of this existed. Readiness gates
+which **modes** a question can be published in, and nothing else.
+
+## The maturity chain
+
+| stage | question | measured by |
+| --- | --- | --- |
+| **declared** | do we know what this pathway depends on | the build |
+| **authored** | is there material that teaches it | the build |
+| **reachable** | can this pathway surface that material | the build |
+| **delivered** | did the canonical novice journey actually get it | the bots |
+| **applied** | did the learner then use it | the bots, the transfer probe |
+
+`reachable` is not `delivered`. A pathway can declare `training`, have it
+authored and be able to render it, and a student can still reach the writing line
+without it.
+
+## A primary dependency has to earn its place
+
+Five or six primary concepts on one pathway is an authoring smell: either the
+argument is too big or some of it belongs in `supporting`. The report flags a
+count of five or more for a human to look at rather than refusing it, because the
+judgement is editorial.
 
 ## The three questions the report now answers separately
 

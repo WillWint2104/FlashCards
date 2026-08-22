@@ -80,17 +80,18 @@ function routing(q, subject) {
   const rows = [];
   (q.pathways || []).forEach(pw => {
     const L = pw.learning;
-    if (!L) { rows.push({ id: pw.id, short: pw.short, declared: null }); return; }
+    const st = (L || {}).status || "unreviewed";
+    if (st !== "authored") { rows.push({ id: pw.id, short: pw.short, declared: null, status: st }); return; }
     const c = (L.concepts) || {};
     const ids = [].concat(c.primary || [], c.supporting || [], c.optional || []);
-    rows.push({ id: pw.id, short: pw.short, declared: ids.length,
+    rows.push({ id: pw.id, short: pw.short, status: st, declared: ids.length,
                 authored: ids.filter(x => store[x]).length,
                 reachable: ids.filter(x => store[x] && (store[x].oneLine || store[x].quick)).length });
   });
   const unreachable = Object.keys(store).filter(id => {
     if (store[id].requiresTeaching !== true) return false;
     return !(q.pathways || []).some(pw => {
-      const c = (pw.learning && pw.learning.concepts) || {};
+      const c = (pw.learning && pw.learning.status === "authored" && pw.learning.concepts) || {};
       return [].concat(c.primary || [], c.supporting || [], c.optional || []).indexOf(id) >= 0;
     });
   });
@@ -114,7 +115,12 @@ function questionRow(q, subject, evIndex) {
   const withMeaning = paths.filter(p => String(p.meaning || "").trim()).length;
   // a pathway is only supported for a student who knows nothing if choosing it
   // opens something that teaches it
-  const lessons = paths.filter(p => p.learning && p.learning.know && (p.learning.chain || []).length && p.learning.try).length;
+  const lessons = paths.filter(p => (p.learning || {}).status === "authored").length;
+  const reviewed = paths.filter(p => ["authored", "none-required"].indexOf((p.learning || {}).status) >= 0).length;
+  // A pathway leaning on five or six primary concepts is an authoring smell:
+  // either the argument is too big or some of it belongs in supporting.
+  const heavy = paths.filter(p => (((p.learning || {}).concepts || {}).primary || []).length >= 5)
+    .map(p => p.id + " (" + ((p.learning.concepts.primary || []).length) + ")");
   const ladder = paths.map(p => Object.keys(p.help || {}).length);
   const full = ladder.filter(n => n >= FULL_LADDER).length;
   const some = ladder.filter(n => n > 0 && n < FULL_LADDER).length;
@@ -132,6 +138,8 @@ function questionRow(q, subject, evIndex) {
     unexplained: t.no,
     guidance: withMeaning,
     lessons: lessons,
+    reviewed: reviewed,
+    heavy: heavy,
     laddersFull: full,
     laddersPartial: some,
     evidenceLinked: linked,
@@ -191,26 +199,37 @@ function format(rows) {
   out.push("## Can this pathway deliver what it depends on?");
   out.push("");
   out.push("Content existing somewhere in the pack is irrelevant to a student on a");
-  out.push("pathway that cannot surface it. A pathway with no declared dependencies");
-  out.push("has not said what it needs, so nothing can be routed to it.");
+  out.push("pathway that cannot surface it. The chain runs:");
+  out.push("");
+  out.push("| stage | question | measured by |");
+  out.push("| --- | --- | --- |");
+  out.push("| **declared** | do we know what this pathway depends on | this table |");
+  out.push("| **authored** | is there material that teaches it | this table |");
+  out.push("| **reachable** | can this pathway surface that material | this table |");
+  out.push("| **delivered** | did the canonical novice journey actually get it | `tests/bots` |");
+  out.push("| **applied** | did the learner then use it | `tests/bots`, the transfer probe |");
+  out.push("");
+  out.push("`unreviewed` means nobody has yet decided what the pathway depends on.");
+  out.push("It is never a claim that it depends on nothing.");
   out.push("");
   rows.forEach(r => {
     const declared = r.routing.rows.filter(x => x.declared != null);
     out.push("### `" + r.id + "`");
     out.push("");
-    out.push("| pathway | concepts declared | authored | reachable here |");
-    out.push("| --- | --- | --- | --- |");
-    r.routing.rows.forEach(x => out.push("| `" + x.id + "` | " +
-      (x.declared == null ? "**none declared**" : x.declared) + " | " +
+    out.push("| pathway | state | concepts declared | authored | reachable here |");
+    out.push("| --- | --- | --- | --- | --- |");
+    r.routing.rows.forEach(x => out.push("| `" + x.id + "` | " + x.status + " | " +
+      (x.declared == null ? "-" : x.declared) + " | " +
       (x.declared == null ? "-" : x.authored) + " | " +
       (x.declared == null ? "-" : x.reachable) + " |"));
     out.push("");
+    if (r.heavy.length) { out.push("High primary dependency count, worth a human look: " + r.heavy.join(", ")); out.push(""); }
     if (r.routing.unreachable.length) {
       out.push("Authored, requires teaching, and no pathway here declares it: " +
         r.routing.unreachable.map(x => "`" + x + "`").join(", "));
       out.push("");
     }
-    out.push("Declared by " + declared.length + " of " + r.routing.rows.length + " pathways.");
+    out.push("Reviewed: " + r.reviewed + " of " + r.routing.rows.length + ". Authored lessons: " + declared.length + ".");
     out.push("");
   });
   out.push("## Named in the interface, explained nowhere");
@@ -234,8 +253,8 @@ function summary(rows) {
   const e = rows.reduce((n, r) => n + r.evidenceSourced, 0);
   const ready = rows.filter(r => r.readiness === "Learn & Build").length;
   const s = rows.reduce((n, r) => n + r.lessons, 0);
-  const d = rows.reduce((n, r) => n + r.routing.rows.filter(x => x.declared != null).length, 0);
-  return "support: " + frac(d, p) + " pathways declare what they depend on, " + frac(s, p) + " teach themselves, " + frac(l, p) + " carry a full ladder, " + frac(e, p) + " have sourced evidence, " +
+  const d = rows.reduce((n, r) => n + r.reviewed, 0);
+  return "support: " + frac(d, p) + " pathways reviewed, " + frac(s, p) + " teach themselves, " + frac(l, p) + " carry a full ladder, " + frac(e, p) + " have sourced evidence, " +
     c + " concepts are named but never explained, " + frac(ready, rows.length) + " questions are Learn & Build ready";
 }
 module.exports = { report, format, summary, teachable, vocabulary, termsOf, readinessOf, FULL_LADDER };

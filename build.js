@@ -285,7 +285,7 @@ function checkLearning() {
           if ((cm.match(/[.!?]/g) || []).length > 1) bad.push(`${at} choiceMeaning is more than one sentence; the depth belongs in learning`);
         }
         const L = pw.learning;
-        if (!L) return;
+        if (!L || L.status !== "authored") return;
         if (!cm) bad.push(`${at} has a learning block but no choiceMeaning, so meaning would have to serve both the choice and the lesson`);
         if (!L.know) bad.push(`${at} learning has no know, which is the only part shown before the student decides to read on`);
         else if (L.know.length > 340) bad.push(`${at} learning.know is ${L.know.length} characters; Know is what lets them continue, not the full teaching`);
@@ -341,6 +341,7 @@ function checkLearning() {
 // Declaring a concept does not show it. It makes it eligible here.
 // ---------------------------------------------------------------------------
 const CONCEPT_KINDS = ["domain", "supporting"];
+const LEARNING_STATES = ["authored", "none-required", "unreviewed"];
 function checkConceptRouting() {
   const subs = essaySubjects();
   if (!subs) return { faults: [essayLoadError], warnings: [] };
@@ -358,10 +359,29 @@ function checkConceptRouting() {
     });
     const referenced = {};
     (subs[key].questions || []).forEach(q => (q.pathways || []).forEach(pw => {
-      const L = pw.learning; if (!L) return;
+      const L = pw.learning;
       const at = `${key}/${q.id}/${pw.id}`;
+      // Every pathway ends up in one of three states. "unreviewed" is a state,
+      // not a claim that the pathway depends on nothing: without it those two
+      // cases are indistinguishable, and at a hundred pathways that is
+      // dangerous.
+      if (!L) { faults.push(`${at} has no learning status; every pathway must be authored, none-required or unreviewed`); return; }
+      if (LEARNING_STATES.indexOf(L.status) < 0) {
+        faults.push(`${at} has learning status ${JSON.stringify(L.status || "")}, expected one of ${LEARNING_STATES.join(", ")}`); return;
+      }
+      if (L.status === "unreviewed") {
+        const extra = Object.keys(L).filter(k => k !== "status");
+        if (extra.length) faults.push(`${at} is unreviewed but also carries ${extra.join(", ")}; review it or leave it empty`);
+        return;
+      }
+      if (L.status === "none-required") {
+        if (!L.reason) faults.push(`${at} says none-required without a reason, which is the only thing that makes it reviewable`);
+        const extra = Object.keys(L).filter(k => k !== "status" && k !== "reason");
+        if (extra.length) faults.push(`${at} says none-required but carries ${extra.join(", ")}`);
+        return;
+      }
       const c = L.concepts;
-      if (!c) { faults.push(`${at} has a lesson but declares no concepts, so nothing it depends on is reachable from it`); return; }
+      if (!c) { faults.push(`${at} is authored but declares no concepts, so nothing it depends on is reachable from it`); return; }
       ["primary", "supporting", "optional"].forEach(tier => {
         (c[tier] || []).forEach(id => {
           referenced[id] = true;
@@ -390,6 +410,28 @@ if (routing.faults.length) {
   process.exit(1);
 }
 routing.warnings.forEach(w => console.warn("  note: " + w));
+const reviewed = countReviewed();
+if (reviewed.unreviewed) {
+  console.warn(`  note: learning coverage ${reviewed.done}/${reviewed.total} reviewed; ${reviewed.unreviewed} pathways unreviewed (listed in docs/support-coverage.md)`);
+  // Ordinary builds stay quiet enough to be read. A content-validation run can
+  // make the queue a failure instead.
+  if (process.argv.indexOf("--strict-learning") >= 0) {
+    console.error("BUILD REFUSED (--strict-learning): a pathway is still unreviewed.");
+    reviewed.ids.forEach(id => console.error("  - " + id));
+    process.exit(1);
+  }
+}
+function countReviewed() {
+  const subs = essaySubjects() || {};
+  let total = 0, done = 0; const ids = [];
+  Object.keys(subs).forEach(key => (subs[key].questions || []).forEach(q => (q.pathways || []).forEach(pw => {
+    total++;
+    const st = (pw.learning || {}).status;
+    if (st === "authored" || st === "none-required") done++;
+    else ids.push(`${key}/${q.id}/${pw.id}`);
+  })));
+  return { total: total, done: done, unreviewed: total - done, ids: ids };
+}
 
 const learningFaults = checkLearning();
 if (learningFaults.length) {
