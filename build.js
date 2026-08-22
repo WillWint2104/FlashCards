@@ -78,10 +78,18 @@ function essaySubjects() {
   // check nothing at once and the build still writes output. A subject with no
   // questions must SAY so, as an empty array.
   const shapeFaults = [];
+  const typeOf = v => (v === null ? "null" : Array.isArray(v) ? "array" : typeof v);
   Object.keys(subjects).forEach(key => {
-    const q = subjects[key].questions;
+    const sub = subjects[key];
+    // The subject itself first: reading .questions off a null would throw a bare
+    // TypeError here, which is the one failure this function exists to replace.
+    if (!sub || typeof sub !== "object" || Array.isArray(sub)) {
+      shapeFaults.push(`subject ${key} is ${typeOf(sub)}, expected an object`);
+      return;
+    }
+    const q = sub.questions;
     if (q === undefined) shapeFaults.push(`subject ${key} has no questions key; a subject that ships none must say so as questions: []`);
-    else if (!Array.isArray(q)) shapeFaults.push(`subject ${key} has questions of type ${q === null ? "null" : typeof q}, expected an array`);
+    else if (!Array.isArray(q)) shapeFaults.push(`subject ${key} has questions of type ${typeOf(q)}, expected an array`);
   });
   if (shapeFaults.length) { essayLoadError = shapeFaults.join("; "); return null; }
   return subjects;
@@ -549,12 +557,15 @@ if (offences.length) {
   process.exit(1);
 }
 
-fs.writeFileSync(path.join(root, "marginal-preview.html"), out);
-console.log(`built marginal-preview.html (${out.length} bytes)`);
-
-// What the authored content can actually support, written out on every build so
-// the architecture cannot quietly outrun it again.
+// What the authored content can actually support. Computed BEFORE anything is
+// written: this used to run after the preview was already on disk, so a failure
+// here exited non-zero having already shipped an artefact from a failed build.
+// Nothing below may fail; everything that can fail happens above it.
 const coverage = require("./tools/coverage.js");
 const covRows = coverage.report();
-fs.writeFileSync(path.join(root, "docs", "support-coverage.md"), coverage.format(covRows) + "\n");
+const covText = coverage.format(covRows) + "\n";
+
+fs.writeFileSync(path.join(root, "marginal-preview.html"), out);
+console.log(`built marginal-preview.html (${out.length} characters)`);
+fs.writeFileSync(path.join(root, "docs", "support-coverage.md"), covText);
 console.log(coverage.summary(covRows));
