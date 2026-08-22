@@ -589,7 +589,12 @@ try {
   artefacts.forEach(a => {
     // A destination that is not a plain file is a broken workspace, not
     // something to move quietly aside: say so rather than deleting it.
-    if (fs.existsSync(a.dest) && !fs.statSync(a.dest).isFile()) throw new Error(a.dest + " exists and is not a file");
+    // lstat, not stat: stat follows a symlink, so a link pointing at a regular
+    // file passed isFile() and the link itself was then renamed aside and
+    // dropped. Someone who symlinks an output has said where they want it, and
+    // silently replacing that with a real file is the same fault this line
+    // exists to prevent.
+    if (fs.existsSync(a.dest) && !fs.lstatSync(a.dest).isFile()) throw new Error(a.dest + " exists and is not a plain file (a symlink or directory is left alone)");
     if (fs.existsSync(a.dest)) fs.renameSync(a.dest, a.prev);
     fs.renameSync(a.tmp, a.dest);
   });
