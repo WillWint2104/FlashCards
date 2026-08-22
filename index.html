@@ -802,9 +802,23 @@
   .es-drift .es-wanote{display:block;margin-top:6px}
   /* the pathway lesson: one surface about one argument */
   .es-lesson{display:flex;flex-direction:column;gap:15px}
-  .es-lessonh{display:flex;align-items:flex-start;justify-content:space-between;gap:15px;flex-wrap:wrap;
-    border-bottom:1.5px solid var(--line);padding-bottom:13px}
-  .es-lessonhead{display:flex;flex-direction:column;gap:3px;min-width:0}
+  .es-lessonctx{display:flex;align-items:flex-start;justify-content:space-between;gap:15px;flex-wrap:wrap;
+    border:1.5px solid var(--line);border-radius:13px;padding:11px 15px;background:var(--paper);
+    position:sticky;top:4px;z-index:2}
+  .es-lessonctxl{display:flex;flex-direction:column;gap:3px;min-width:0}
+  .es-lessonwas{font-size:12px;line-height:1.5;font-style:italic;color:var(--ink-3);
+    display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+  .es-lessonjump{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .es-jump{font:inherit;font-size:12px;font-weight:700;color:var(--ink-2);cursor:pointer;
+    border:1.5px solid var(--line);border-radius:99px;padding:4px 12px;background:var(--card)}
+  .es-jump:hover{border-color:var(--green)}
+  .es-jump.on{border-color:var(--green);background:var(--green-soft);color:var(--green-dk)}
+  .es-lessonp.lead{font-size:15px;line-height:1.65}
+  .es-lessonp.focus,.es-chain.focus,.es-lessonsec.focus{outline:2px solid var(--green);outline-offset:6px;
+    border-radius:8px}
+  .es-lessonmore{display:flex;flex-direction:column;gap:13px;align-items:flex-start;
+    border-top:1.5px solid var(--line);padding-top:12px}
+  .es-tryrighth{font-family:var(--disp);font-weight:600;font-size:14.5px;color:var(--green-dk)}
   .es-lessonarg{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--ink)}
   .es-lessonsec{display:flex;flex-direction:column;gap:7px}
   .es-lessonp{font-size:14px;line-height:1.62;color:var(--ink);margin:0}
@@ -838,7 +852,7 @@
     border-radius:12px;padding:11px 15px}
   .es-tryright{border:1.5px solid var(--green);background:var(--green-soft)}
   .es-tryrepair{border:1.5px solid var(--gold-dk);background:var(--gold-soft)}
-  .es-lessonfoot{display:flex;gap:15px;align-items:center;border-top:1.5px solid var(--line);padding-top:12px}
+
   .es-restnote{font-size:12px;line-height:1.5;font-weight:600;color:var(--ink-2);margin-top:4px}
   /* the response map: what each section argues, and what it says */
   .es-mapwrap{display:flex;flex-direction:column}

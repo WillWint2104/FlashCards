@@ -65,6 +65,7 @@ function compose(kind, terms, n, cs) {
 // explain, and the app having no explanation of the concept at all.
 async function writeParagraph(p, tr, led, vocab, prof, need, unexplained, cs) {
   const wroteFrom = Date.now();
+  const used = [], usedFrom = [];
   let n = 0, learnOpened = false, reportedGap = false, reportedStuck = false;
   // an observation, not an interaction: was help available anywhere in this
   // paragraph, whether or not this student happened to need it. Asked at every
@@ -106,6 +107,9 @@ async function writeParagraph(p, tr, led, vocab, prof, need, unexplained, cs) {
     }
     const know = need.filter(t => led.knows(t));
     const line = compose(prof.style, know.length ? know : need.concat(unexplained), n, cs);
+    need.concat(unexplained).forEach(t => {
+      if (used.indexOf(t) < 0) { used.push(t); usedFrom.push({ term: t, from: led.sources[t] || null }); }
+    });
     await p.fill("#esline", line);
     await p.click("#esaccept").catch(() => {});
     await wait(p, 380);
@@ -122,6 +126,7 @@ async function writeParagraph(p, tr, led, vocab, prof, need, unexplained, cs) {
     if (await has(p, ".es-done")) { tr.m.paragraphs++; tr.say("complete", "paragraph complete after " + n + " sentences"); break; }
   }
   tr.m.writeMs += Date.now() - wroteFrom;
+  tr.m.provenance.push({ role: tr._role || "a paragraph", used: usedFrom });
   if (ladderSeen) tr.m.ladderHere++;
   else { tr.m.noLadderHere++; if (prof.usesHelp) tr.demand("this paragraph offered no help ladder at any sentence"); }
   tr.say("support", "help was offered at " + slotsWithLadder + " of " + slotsSeen + " sentences in this paragraph");
@@ -161,7 +166,8 @@ async function runJourney(p, o) {
       else await p.$$eval(".es-startrow", (es, i) => { const t = es.filter(x => /Body/.test(x.textContent))[i]; t && t.click(); }, k);
     }
     await wait(p, 600);
-    tr.say("arrive", await txt(p, ".es-pararole"));
+    tr._role = await txt(p, ".es-pararole");
+    tr.say("arrive", tr._role);
 
     let need = [], unexplained = [];
     const learnedHere = tr.m.lessonWords, wroteHere = tr.m.sentences;
@@ -214,6 +220,12 @@ async function runJourney(p, o) {
         const t0 = Date.now();
         await p.click("#eslessonopen"); await wait(p, 480);
         tr.m.lessonOpens++;
+        tr.m.wordsBeforeTry = await p.evaluate(() => {
+          const t = document.querySelector(".es-lessonsec.try"); if (!t) return null;
+          let n = 0;
+          for (const el of document.querySelectorAll(".es-lesson > *")) { if (el === t) break; n += el.innerText.trim().split(/\s+/).filter(Boolean).length; }
+          return n;
+        }).catch(() => null);
         const body = await txt(p, ".es-lesson");
         const words = body.split(/\s+/).filter(Boolean).length;
         tr.m.lessonWords += words;
@@ -221,6 +233,13 @@ async function runJourney(p, o) {
         await read(p, tr, led, vocab, ".es-lesson", "the pathway lesson");
         const steps = await allTxt(p, ".es-chainstep");
         if (steps.length) tr.say("see", steps.join(" \u2192 "));
+        tr._chain = await allTxt(p, ".es-chainstep");
+        if (prof.opensExplore && await has(p, "#eslessonmore")) {
+          await p.click("#eslessonmore"); await wait(p, 420);
+          tr.say("open", "the deeper material under the lesson");
+          const ctxLabel = await txt(p, ".es-lessonmore .es-drawer-sub");
+          tr._exampleContext = (ctxLabel.split(",").pop() || "").trim().toLowerCase();
+        }
         if (prof.opensExplore && await has(p, "#eslessonexplore")) {
           await p.click("#eslessonexplore"); await wait(p, 460);
           const more = await txt(p, ".es-drawer");
@@ -276,6 +295,21 @@ async function runJourney(p, o) {
 
     // a student who never looks back at the response map never meets anything
     // that only lives on the planning surface
+    if (prof.transferProbe && tr._chain && tr._chain.length >= 2 && !tr.m.transfer) {
+      const opens = tr.m.lessonOpens;
+      const line = "At " + (tr._exampleContext || "a cinema") + ", " + tr._chain[0] + ", so " + tr._chain[1] + ".";
+      const tog = await p.$("#espointtoggle"); if (tog) { await tog.click(); await wait(p, 340); }
+      if (await has(p, "#espoint")) {
+        await p.fill("#espoint", line);
+        await p.$eval("#espoint", e => e.blur()); await wait(p, 600);
+        const flagged = await txt(p, ".es-drift.dir");
+        tr.m.transfer = { text: line, verdict: flagged ? "the app questioned it: " + flagged.slice(0, 70) : "stated coherently somewhere new",
+                          ok: !flagged, reopened: tr.m.lessonOpens !== opens };
+        tr.say("transfer", tr.m.transfer.verdict);
+        await p.fill("#espoint", "");
+        await p.$eval("#espoint", e => e.blur()); await wait(p, 420);
+      }
+    }
     if (prof.checksPlanAfter && prof.checksPlanAfter.indexOf(k) >= 0) {
       await p.click(".es-mapwa").catch(() => {}); await wait(p, 520);
       tr.m.mapVisits++;

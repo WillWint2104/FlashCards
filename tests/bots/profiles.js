@@ -11,6 +11,7 @@ const ZERO = {
   opensLearn: true,                // will go looking when that is not enough
   opensLesson: true,               // and will read the lesson about the argument it chose
   opensExplore: true,              // and the fuller resource under it, still not understanding
+  transferProbe: true,             // then states the same relationship somewhere new
   tryOrder: [1, 0],                // tries a plausible wrong answer, then the right one
   usesHelp: true,                  // and will climb the help ladder rather than guess
   writesOwnArgument: false,

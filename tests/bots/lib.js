@@ -71,7 +71,11 @@ class Trace {
     planPrompts: 0, writePrompts: 0,
     // the pathway lesson, and the rhythm between learning and using it
     lessonOpens: 0, lessonWords: 0, rhythm: [],
-    tryAttempts: 0, tryRepairs: 0, tryRight: 0, learnMs: 0, writeMs: 0 };
+    tryAttempts: 0, tryRepairs: 0, tryRight: 0, learnMs: 0, writeMs: 0, wordsBeforeTry: null,
+    // where every concept the student used actually came from, so a paragraph
+    // written with no lesson can be read as "the guided environment taught it"
+    // rather than "the bot knew it already"
+    provenance: [], transfer: null };
   }
   // the clock starts when the student reaches the question, not when a 1.6MB
   // test file finishes loading twice
@@ -104,7 +108,11 @@ class Trace {
       "  looked at the response map:  " + this.m.mapVisits,
       "  opened the pathway lesson:   " + this.m.lessonOpens +
         (this.m.lessonOpens ? " (" + this.m.lessonWords + " words of support read)" : ""),
+      "  words before the check:      " + (this.m.wordsBeforeTry == null ? "-" : this.m.wordsBeforeTry),
       "  try: " + this.m.tryAttempts + " attempt(s), " + this.m.tryRepairs + " repaired, " + this.m.tryRight + " right",
+      ...this.m.provenance.map(x => "  knowledge used in " + x.role + ": " +
+        (x.used.length ? x.used.map(u => u.term + " (" + (u.from || "NO PROVENANCE") + ")").join(", ") : "none")),
+      ...(this.m.transfer ? ["  transfer probe: " + this.m.transfer.verdict + " \u2014 " + this.m.transfer.text] : []),
       "  learn then act, per paragraph: " + (this.m.rhythm.length
         ? this.m.rhythm.map(r => r.learned + "w \u2192 " + r.wrote + " sentence" + (r.wrote === 1 ? "" : "s")).join(", ")
         : "-"),

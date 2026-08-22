@@ -164,6 +164,48 @@ const RUNS = [
   console.log("  learning-to-writing is reported, not gated. The shape to watch for is");
   console.log("  a long read followed by a short write, repeated.");
 
+  // 8b. the reading before the next action, which is the number that matters
+  ok(mkZero.trace.m.wordsBeforeTry > 0 && mkZero.trace.m.wordsBeforeTry <= 150,
+    "the student reaches something to do after " + mkZero.trace.m.wordsBeforeTry + " words, not after the whole resource");
+
+  // 8c. where every concept came from. A paragraph written with no lesson is only
+  //     good news if the guided environment taught what it used; if a concept has
+  //     no provenance, the novice is drawing on knowledge it was never given.
+  console.log("\n=== where the zero-knowledge student's concepts came from ===");
+  mkZero.trace.m.provenance.forEach(x => {
+    console.log("  " + x.role + ": " + (x.used.length
+      ? x.used.map(u => u.term + " \u2014 " + (u.from || "NO PROVENANCE")).join(", ") : "none"));
+  });
+  // An orphan is a concept the paragraph needed and the student was never given.
+  // There are two kinds and they call for different work, so they are counted
+  // apart rather than summed into one number.
+  const orphans = [...new Set(mkZero.trace.m.provenance.flatMap(x => x.used.filter(u => !u.from).map(u => u.term)))];
+  const unteachable = orphans.filter(t => mkZero.teach.no.indexOf(t) >= 0);
+  const notSurfaced = orphans.filter(t => mkZero.teach.yes.indexOf(t) >= 0);
+  console.log("  nothing in the app explains these:      " + (unteachable.join(", ") || "none"));
+  console.log("  the app explains these but never here:  " + (notSurfaced.join(", ") || "none"));
+  // every orphan must have been REPORTED at the time, not discovered afterwards
+  const flagged = mkZero.trace.events.filter(e => e.kind === "stuck" || e.kind === "UNSUPPORTED_DEMAND")
+    .map(e => e.detail).join(" ");
+  const silent = orphans.filter(t => flagged.indexOf(t) < 0);
+  ok(silent.length === 0, "nothing was used unaccounted for and unreported: " + JSON.stringify(silent));
+  ok(notSurfaced.length === 0 || mkZero.trace.m.blocked > 0,
+    "a concept the app can teach but did not surface here is reported as a gap, not passed over: " + JSON.stringify(notSurfaced));
+  const taught = mkZero.trace.m.provenance.flatMap(x => x.used.filter(u => u.from));
+  ok(taught.length > 0, "and the concepts it did use, it was given: " + taught.length);
+  const beforeLesson = mkZero.trace.m.provenance.slice(0, 2).flatMap(x => x.used.filter(u => u.from).map(u => u.from));
+  ok(beforeLesson.length > 0,
+    "including in the paragraphs it wrote before opening any lesson, from " + [...new Set(beforeLesson)].join(" and "));
+
+  // 8d. transfer. The same relationship, stated somewhere the app never mentioned,
+  //     using only what the lesson showed, judged by the app's own checker.
+  const tp = mkZero.trace.m.transfer;
+  console.log("\n=== transfer ===");
+  console.log("  " + (tp ? tp.text : "(not run)"));
+  ok(!!tp, "the transfer probe ran");
+  ok(tp && tp.ok, "the relationship holds in a context the app never taught: " + (tp && tp.verdict));
+  ok(tp && !tp.reopened, "and the student did not have to reopen the lesson to state it");
+
   // 9. what the run measured about the content, reported and not asserted away
   console.log("\n=== what the students could not learn ===");
   RUNS.forEach(r => {

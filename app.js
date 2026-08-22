@@ -3226,11 +3226,11 @@
   function esStructureLabel(key) { return esStructureDef(key).label; }
 
   const ES = { subject: null, code: "", demo: false, screen: "setup", draft: null, list: [], form: null, pending: false,
-    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, planAll: false, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false, tryPick: null },  // transient guided-view state, reset on paragraph change
+    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, planAll: false, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false, tryPick: null, lessonMore: false, lessonJump: null },  // transient guided-view state, reset on paragraph change
     hint: { open: false, tab: "know" },          // study hints: persists across paragraphs on purpose
     quiz: { revealed: false, peeked: false, attempt: "", result: null } };
   const ES_KEY = "marginal.essay.v1";
-  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, planAll: false, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false, tryPick: null }; }
+  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, planAll: false, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false, tryPick: null, lessonMore: false, lessonJump: null }; }
   // peeked persists for the whole attempt: revealing once disqualifies mastery even
   // if the answer is hidden again before checking. Cleared only on a new attempt.
   function esResetQuiz() { ES.quiz = { revealed: false, peeked: false, attempt: "", result: null }; }
@@ -4755,6 +4755,15 @@
   // read a word, and a student who never opens this never meets any of it.
   // ---------------------------------------------------------------------------
   function esLearning(p) { const path = esPathway(p); return (path && path.learning) || null; }
+  // What the student was in the middle of writing, named the way they would say
+  // it, so the lesson can hand them back to that and not to "the paragraph".
+  const ES_SLOT_PHRASE = { explain: "explanation", define: "definition", topic: "topic sentence",
+    demonstrate: "knowledge", connect: "connection", analysis: "analysis", point: "point",
+    evidence: "evidence", effect: "effect", link: "link", cs: "case study" };
+  function esSlotPhrase(p) {
+    const s = esStepDef(p);
+    return (s && (ES_SLOT_PHRASE[s.key] || s.label)) || "paragraph";
+  }
   function esChoiceMeaning(o) { return (o && (o.choiceMeaning || o.meaning)) || ""; }
   function esLessonHTML(p) {
     const path = esPathway(p), L = esLearning(p);
@@ -4763,44 +4772,52 @@
     const opts = (L.try && L.try.options) || [];
     const opt = pick == null ? null : opts[pick];
     const right = !!(opt && opt.right);
+    const where = esSlotPhrase(p);
+    const blocks = esBlocks(p).filter(b => String(b.text || "").trim());
+    const last = blocks.length ? blocks[blocks.length - 1].text.trim() : "";
+    const jump = ES.ui.lessonJump;
+    const more = ES.ui.lessonMore || jump === "example";
     const use = t => `<button type="button" class="es-btn primary sm" data-eslessonuse>${esc(t)}</button>`;
     return `<div class="es-lesson">
-      <div class="es-lessonh">
-        <div class="es-lessonhead">
-          <span class="es-corelbl">understand this argument</span>
+      <div class="es-lessonctx">
+        <div class="es-lessonctxl">
+          <span class="es-corelbl">${esc(p.role)}${path.area ? " \u00b7 " + esc(path.area) : ""}</span>
           <span class="es-lessonarg">${esc(path.short || path.relationship)}</span>
+          ${last ? `<span class="es-lessonwas">you were writing: \u201c${esc(last.length > 96 ? last.slice(0, 96) + "\u2026" : last)}\u201d</span>` : ""}
         </div>
-        ${use("Use this in my paragraph")}
+        <button type="button" class="es-linkbtn" data-eslessonuse>\u2190 Return to my ${esc(where)}</button>
       </div>
-      <div class="es-lessonsec">
-        <div class="es-drawer-sub">know</div>
-        <p class="es-lessonp">${esc(L.know)}</p>
+      <div class="es-lessonjump"><span class="es-wanote">need help with</span>
+        <button type="button" class="es-jump ${jump === "concept" ? "on" : ""}" data-esjump="concept">the concept</button>
+        <button type="button" class="es-jump ${jump === "connection" ? "on" : ""}" data-esjump="connection">the connection</button>
+        <button type="button" class="es-jump ${jump === "example" ? "on" : ""}" data-esjump="example">an example</button>
       </div>
-      ${(L.chain || []).length ? `<div class="es-lessonsec">
-        <div class="es-drawer-sub">see</div>
-        <ol class="es-chain">${L.chain.map((s, i) => `<li class="es-chainstep" style="animation-delay:${i * 130}ms">${esc(s)}</li>`).join("")}</ol>
-      </div>` : ""}
-      ${L.misconception ? `<div class="es-contrast">
-        <div class="es-contrasth">${esc(L.misconception.head)}</div>
-        <div class="es-contrastrow"><b>${esc(L.misconception.a.term)}</b><span>${esc(L.misconception.a.line)}</span></div>
-        <div class="es-contrastrow"><b>${esc(L.misconception.b.term)}</b><span>${esc(L.misconception.b.line)}</span></div>
-      </div>` : ""}
-      ${L.example ? `<div class="es-lessonsec">
-        <div class="es-drawer-sub">the same shape, ${esc(L.example.context)}</div>
-        <p class="es-lessonp">${esc(L.example.text)}</p>
-        ${L.example.pattern ? `<p class="es-lessonnote">Notice: ${esc(L.example.pattern)}.</p>` : ""}
-      </div>` : ""}
+      <p class="es-lessonp lead ${jump === "concept" ? "focus" : ""}">${esc(L.know)}</p>
+      ${(L.chain || []).length ? `<ol class="es-chain ${jump === "connection" ? "focus" : ""}">${L.chain.map((s, i) => `<li class="es-chainstep" style="animation-delay:${i * 130}ms">${esc(s)}</li>`).join("")}</ol>` : ""}
       ${L.try ? `<div class="es-lessonsec try">
-        <div class="es-drawer-sub">try</div>
+        <div class="es-drawer-sub">check you have got it</div>
         <p class="es-lessonp">${esc(L.try.prompt)}</p>
         <div class="es-tryopts">${opts.map((o, i) => `<button type="button" class="es-try ${pick === i ? (o.right ? "right" : "wrong") : ""}" data-estry="${i}"${right ? " disabled" : ""}>${esc(o.text)}</button>`).join("")}</div>
-        ${right ? `<div class="es-tryright"><p class="es-lessonp">${esc(L.try.onRight)}</p>${use("Now use it in my paragraph")}</div>` : ""}
+        ${right ? `<div class="es-tryright">
+          <div class="es-tryrighth">You have got the relationship</div>
+          <p class="es-lessonp">${esc(L.try.onRight)}</p>${use("Use this in my " + where + " \u2192")}</div>` : ""}
         ${(opt && !right) ? `<div class="es-tryrepair"><p class="es-lessonp">${esc(opt.repair)}</p>
           <button type="button" class="es-linkbtn" id="estryagain">Try again</button></div>` : ""}
       </div>` : ""}
-      <div class="es-lessonfoot">
-        ${L.explore ? `<button type="button" class="es-linkbtn" id="eslessonexplore">${esc(L.explore.label)}</button>` : ""}
-        <button type="button" class="es-linkbtn" id="eslessonback">Back</button>
+      <div class="es-lessonmore${more ? " open" : ""}">
+        <button type="button" class="es-linkbtn" id="eslessonmore">${more ? "Hide" : "Still not clear?"}</button>
+        ${more ? `
+          ${L.misconception ? `<div class="es-contrast">
+            <div class="es-contrasth">${esc(L.misconception.head)}</div>
+            <div class="es-contrastrow"><b>${esc(L.misconception.a.term)}</b><span>${esc(L.misconception.a.line)}</span></div>
+            <div class="es-contrastrow"><b>${esc(L.misconception.b.term)}</b><span>${esc(L.misconception.b.line)}</span></div>
+          </div>` : ""}
+          ${L.example ? `<div class="es-lessonsec ${jump === "example" ? "focus" : ""}">
+            <div class="es-drawer-sub">the same shape, ${esc(L.example.context)}</div>
+            <p class="es-lessonp">${esc(L.example.text)}</p>
+            ${L.example.pattern ? `<p class="es-lessonnote">Notice: ${esc(L.example.pattern)}.</p>` : ""}
+          </div>` : ""}
+          ${L.explore ? `<button type="button" class="es-linkbtn" id="eslessonexplore">${esc(L.explore.label)}</button>` : ""}` : ""}
       </div>
     </div>`;
   }
@@ -4949,15 +4966,23 @@
     if (lo) lo.onclick = () => { ES.ui.setupStage = "lesson"; ES.ui.tryPick = null; esRender(); };
     // every route out of the lesson goes back to the paragraph, never to a menu
     host.querySelectorAll("[data-eslessonuse]").forEach(b => b.onclick = () => {
-      p.setupDone = true; ES.ui.setupStage = null; ES.ui.tryPick = null; esSaveDraft(); esRender();
+      p.setupDone = true; ES.ui.setupStage = null; ES.ui.tryPick = null;
+      ES.ui.lessonJump = null; ES.ui.lessonMore = false; esSaveDraft(); esRender();
     });
     host.querySelectorAll("[data-estry]").forEach(b => b.onclick = () => {
       ES.ui.tryPick = Number(b.dataset.estry); esRender();
     });
     const again = host.querySelector("#estryagain");
     if (again) again.onclick = () => { ES.ui.tryPick = null; esRender(); };
-    const lb = host.querySelector("#eslessonback");
-    if (lb) lb.onclick = () => { ES.ui.setupStage = p.setupDone ? null : "evidence"; ES.ui.tryPick = null; esRender(); };
+    const lm = host.querySelector("#eslessonmore");
+    if (lm) lm.onclick = () => { ES.ui.lessonMore = !ES.ui.lessonMore; ES.ui.lessonJump = null; esRender(); };
+    // shortcuts into the same page, for a student coming back to one part of it
+    host.querySelectorAll("[data-esjump]").forEach(b => b.onclick = () => {
+      const k = b.dataset.esjump;
+      ES.ui.lessonJump = ES.ui.lessonJump === k ? null : k;
+      if (ES.ui.lessonJump === "example") ES.ui.lessonMore = true;
+      esRender();
+    });
     // Explore is secondary: it opens the fuller resource beside the lesson rather
     // than replacing it, so the student never loses their place
     const lx = host.querySelector("#eslessonexplore");
