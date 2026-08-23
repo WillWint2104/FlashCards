@@ -11779,6 +11779,17 @@ window.BUSCONTENT = {
     opts = opts || {};
     ES.demo = !!opts.demo;
     ES.subject = opts.subject || subjectForCode(currentClassCode());
+    // A class code that routes nowhere used to leave the subject unset, which was
+    // harmless while two subjects were offered and the picker could be used to
+    // choose one. With a single active subject the picker has nothing to choose
+    // BETWEEN, so an unrouted student would be left with no suggested questions and
+    // no way to ask for any. Default to the only active subject instead. An
+    // explicitly requested subject is never overridden, so the demo route still
+    // opens the subject it names.
+    if (!ES.subject) {
+      const active = esSubjectsList();
+      if (active.length === 1) ES.subject = active[0].key;
+    }
     ES.code = opts.code || currentClassCode() || (ES.demo ? "11Anc1" : "");
     ES.form = null; ES.draft = null; ES.screen = "setup"; ES.pending = false;
     esLoadList();
@@ -11837,10 +11848,15 @@ window.BUSCONTENT = {
     // Optional subject picker: any login can load a subject's question bank and
     // paragraph scaffold, defaulting to the subject routed from their class code.
     const subjectList = esSubjectsList();
-    const subjectPicker = subjectList.length > 1 ? `
+    // Offered when there is a choice to make, and ALSO when the current subject is
+    // not among the choices: a student sitting on a legacy subject, or on none,
+    // needs a way out even where only one subject is active.
+    const strandedSubject = subjectList.length > 0 && !subjectList.some(s => s.key === ES.subject);
+    const subjectPicker = (subjectList.length > 1 || strandedSubject) ? `
       <div class="es-field">
         <label class="es-label" for="essubject">Subject</label>
-        <select id="essubject" class="es-input es-select">${subjectList.map(s =>
+        <select id="essubject" class="es-input es-select">${
+          (strandedSubject ? [{ key: ES.subject || "", label: esSubjectLabel() || "Choose a subject" }] : []).concat(subjectList).map(s =>
           `<option value="${esc(s.key)}" ${s.key === ES.subject ? "selected" : ""}>${esc(s.label)}</option>`).join("")}</select>
       </div>` : "";
     // Paragraph-structure picker (e.g. Business Studies TEEEC vs TDECC), only when
