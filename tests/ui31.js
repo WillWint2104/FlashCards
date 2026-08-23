@@ -124,6 +124,10 @@ const store = (()=>{
 
   console.log('5b. an unreviewed pathway offers nothing, and claims nothing');
   await openUnreviewed(p); await body(p,1);
+  // fin-01 does not fix its parts, so there is nothing to choose between until an
+  // area is picked. mkt-01 needs no equivalent step because its requiredAreas
+  // assign each body an area already.
+  await p.$$eval('[data-essetuparea]',es=>es[0]&&es[0].click()); await p.waitForTimeout(420);
   const ids=await p.$$eval('[data-espath]',es=>es.map(e=>e.dataset.espath));
   await p.$$eval('[data-espath]',es=>es[0]&&es[0].click()); await p.waitForTimeout(460);
   ok(ids.length>0,'the unreviewed question offered pathways to choose from: '+ids.length);
