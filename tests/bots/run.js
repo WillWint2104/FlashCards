@@ -123,9 +123,16 @@ const RUNS = [
   console.log("  paragraphs offering a help ladder: mkt-01 " + mkZero.trace.m.ladderHere + "/" +
     (mkZero.trace.m.ladderHere + mkZero.trace.m.noLadderHere) + ", hr-01 " + hrZero.trace.m.ladderHere + "/" +
     (hrZero.trace.m.ladderHere + hrZero.trace.m.noLadderHere));
-  ok(mkZero.trace.m.ladderHere > 0, "a ladder was offered where one is authored (mkt-01 processes)");
-  ok(mkZero.trace.m.noLadderHere > 0, "and not offered in the same question where none is authored");
+  ok(mkZero.trace.m.ladderHere > 0, "a ladder was offered where one is authored (mkt-01)");
+  // This used to read noLadderHere > 0 on mkt-01, because mkt-01 carried authored
+  // and unauthored areas at once and the contrast lived inside it. Every mkt-01
+  // pathway carries a ladder now, so that assertion could only pass while the
+  // question was unfinished: it measured a content gap rather than a rule. The
+  // rule is that a ladder appears where it is authored and nowhere else, and the
+  // contrast now runs between questions rather than within one.
+  ok(mkZero.trace.m.noLadderHere === 0, "and every paragraph in that question offered one, now they are all authored");
   ok(hrZero.trace.m.ladderHere === 0, "the judgement question offers none at all, which the harness reports rather than hides");
+  ok(hrZero.trace.m.noLadderHere > 0, "and the harness saw its paragraphs and found none, rather than seeing nothing: " + hrZero.trace.m.noLadderHere);
 
   // 8. the pathway lesson. The design fails if all three are put through the same
   //    surface, so this is the assertion that matters most about it.
@@ -155,8 +162,15 @@ const RUNS = [
   console.log("  partial rhythm " + mkPartial.trace.m.rhythm.map(r => r.learned + "w -> " + r.wrote + "s").join(", "));
   console.log("  strong rhythm  " + mkStrong.trace.m.rhythm.map(r => r.learned + "w -> " + r.wrote + "s").join(", "));
   ok(learnAct.length > 0, "every paragraph the zero knowledge student learned in, it then wrote in");
-  ok(mkZero.trace.m.rhythm.some(r => r.learned === 0 && r.wrote > 0),
-    "and it wrote paragraphs it did not need to read for, so support is not a toll on every one");
+  // Asserted of the STRONG learner, not the zero-knowledge one. The zero-knowledge
+  // profile opens a lesson whenever the app offers one, so this only ever passed
+  // while some mkt-01 pathways had no lesson to offer. That made a content gap
+  // look like proof that support is optional. The learner who actually
+  // demonstrates it is the one that declines support and still writes.
+  ok(mkStrong.trace.m.rhythm.some(r => r.learned === 0 && r.wrote > 0),
+    "a student who wants none of it writes without reading, so support is not a toll on every one");
+  ok(mkStrong.trace.m.lessonOpens === 0,
+    "and that student opened nothing at all: " + mkStrong.trace.m.lessonOpens);
   ok(mkStrong.trace.m.rhythm.every(r => r.learned === 0),
     "the strong student read nothing anywhere: " + JSON.stringify(mkStrong.trace.m.rhythm));
   // reported, not asserted: the rhythm we want is small learn, meaningful action,

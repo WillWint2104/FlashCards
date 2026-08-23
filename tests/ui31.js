@@ -20,6 +20,22 @@ async function open(p){
   await p.$$eval('.es-qchip',es=>{const t=es.find(x=>/target markets affect/i.test(x.textContent));t&&t.click();});
   await p.click('#esstart'); await p.waitForTimeout(700);
 }
+// Same route, on a question whose pathways are still unreviewed. mkt-01 used to
+// carry both authored and unreviewed pathways, so the withholding rule could be
+// observed inside it. Every mkt-01 pathway is authored now, which is the point of
+// that work, so the probe moves to a question that still shows the other state.
+// The rule under test is unchanged: an unreviewed pathway offers nothing and says
+// nothing about being unfinished.
+async function openUnreviewed(p){
+  await p.goto(T); await p.waitForTimeout(650);
+  await p.evaluate(()=>localStorage.removeItem('marginal.essay.v1'));
+  await p.goto(T); await p.waitForTimeout(650);
+  await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
+  await p.waitForTimeout(400);
+  await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);
+  await p.$$eval('.es-qchip',es=>{const t=es.find(x=>/financial strategies/i.test(x.textContent));t&&t.click();});
+  await p.click('#esstart'); await p.waitForTimeout(700);
+}
 const text=(p,sel)=>p.$eval(sel,e=>e.innerText.replace(/\s+/g,' ').trim()).catch(()=>'');
 const all=(p,sel)=>p.$$eval(sel,es=>es.map(e=>e.innerText.replace(/\s+/g,' ').trim())).catch(()=>[]);
 async function body(p,n){
@@ -107,13 +123,20 @@ const store = (()=>{
     'and the People concepts are not dragged along with it');
 
   console.log('5b. an unreviewed pathway offers nothing, and claims nothing');
-  await open(p); await body(p,1);
+  await openUnreviewed(p); await body(p,1);
   const ids=await p.$$eval('[data-espath]',es=>es.map(e=>e.dataset.espath));
   await p.$$eval('[data-espath]',es=>es[0]&&es[0].click()); await p.waitForTimeout(460);
+  ok(ids.length>0,'the unreviewed question offered pathways to choose from: '+ids.length);
   ok(!(await p.$('#eslessonopen')),'no lesson is offered for '+ids[0]+', which is unreviewed');
   ok(!!(await p.$('#esstartwriting')),'and writing is unaffected');
   const said=await text(p,'.es-setup');
   ok(!/unreviewed|incomplete|not yet/i.test(said),'the student is never told the content is unfinished: '+said.slice(0,70));
+
+  console.log('5c. and the rule is two-sided: where it IS authored, it is offered');
+  await open(p); await body(p,1);
+  const mids=await p.$$eval('[data-espath]',es=>es.map(e=>e.dataset.espath));
+  await p.$$eval('[data-espath]',es=>es[0]&&es[0].click()); await p.waitForTimeout(460);
+  ok(!!(await p.$('#eslessonopen')),'a lesson IS offered for '+mids[0]+', which is authored');
 
   console.log('6. a student who needs none of it is given none of it');
   await open(p); await body(p,2);
