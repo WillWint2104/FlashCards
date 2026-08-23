@@ -8,7 +8,11 @@ source:  Business Studies textbook, financial management strategies chapter (hel
 
 Notes taken from the source, in original wording. The source is not committed.
 
-## Definition
+Provenance markers, per `README.md`: **SOURCE** is what the textbook establishes,
+**DERIVED** is connective reasoning supplied here over its premises, **USE** is
+what the relationship teaches.
+
+## Concepts (SOURCE)
 
 **Cash flow** is the movement of cash into and out of a business over a period.
 A cash flow problem exists when more goes out than comes in, or when money must
@@ -18,7 +22,7 @@ to outflow in *timing*, not only in total, is the whole task.
 Three named strategies: **distribution of payments**, **discounts for early
 payment**, **factoring**.
 
-## Explanation
+## Explanation (SOURCE)
 
 **Why timing is the problem.** A business can be profitable and still fail,
 because profit is recorded when a sale is made and cash arrives when the
@@ -103,7 +107,42 @@ been financed by the smaller ones. The source records large businesses
 abandoning such programs under public pressure, which makes this a genuine CSR
 point inside a finance topic.
 
-## Relationships to other concepts
+## Load-bearing derived claims (DERIVED)
+
+```
+SOURCE  Factoring is selling accounts receivable at a discount to a finance company.
+        The chapter lists among its advantages that factoring is not a loan, so the
+        business takes on no debt and pays no interest.
+DERIVED Because it is a sale of an asset rather than a borrowing, it raises liquidity
+        without raising gearing. A business too geared to borrow can still convert
+        receivables into cash.
+USE     A causal pathway for fin-01 that reaches the solvency objective from a cash
+        flow strategy, which is the kind of cross-objective link that lifts an answer
+        above description.
+```
+
+```
+SOURCE  Discounts for early payment and factoring both bring cash in sooner at a cost
+        to margin. Distribution of payments spreads outflows so peaks do not
+        coincide.
+DERIVED Both of the first two pull future cash forward. Where the underlying inflow
+        is insufficient rather than merely late, they buy time, cost margin, and
+        leave the next period worse.
+USE     The test that separates a real answer from a list of three strategies, and
+        the judgement step for an "evaluate" command word.
+```
+
+```
+SOURCE  A large business extended supplier payment terms to ninety days to manage its
+        own cash flow, with small suppliers able to be paid earlier only by accepting
+        a discount. Public pressure led to the programs being scrapped.
+DERIVED Improving your cash flow can worsen someone else's. The larger business's
+        liquidity was financed by its smaller suppliers.
+USE     A genuine ethics point inside a finance topic, usable where a question asks
+        for stakeholder impact or ethical responsibility.
+```
+
+## Relationships and mechanisms (DERIVED unless marked)
 
 Cash flow management is a **cause** acting on the financial objectives, and it
 acts most directly on **liquidity**. Its distinguishing feature is that two of
@@ -131,7 +170,7 @@ Cash flow management also links to:
 - **operations**, since inventory ties up cash and JIT frees it
 - **marketing**, since credit terms are part of what is being sold
 
-## Terminology
+## Terminology (SOURCE)
 
 - **cash flow** — movement of cash in and out over a period
 - **cash inflow** — sales, receipts from accounts receivable, commissions, asset
@@ -172,7 +211,7 @@ Cash flow management also links to:
 - **An overdraft is a symptom, not a strategy.** It covers a temporary shortfall
   at a cost. Persistent reliance on one is the signal of a structural problem.
 
-## Worked example, structurally
+## Instructional implications (USE)
 
 1. name the cash flow problem precisely, including its timing: what has to be
    paid, and when the money for it arrives
@@ -195,7 +234,7 @@ short-term finance including overdrafts and trade credit; efficiency ratios such
 as accounts receivable turnover; ethical financial behaviour and treatment of
 suppliers; inventory management in operations.
 
-## What the source does not give us
+## Source gaps
 
 - The three strategies are given as advantage and disadvantage tables with no
   basis for choosing between them, and no statement of which business condition

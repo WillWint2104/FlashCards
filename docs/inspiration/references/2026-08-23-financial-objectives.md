@@ -8,7 +8,11 @@ source:  Business Studies textbook, role of financial management chapter (held b
 
 Notes taken from the source, in original wording. The source is not committed.
 
-## Definition
+Provenance markers, per `README.md`: **SOURCE** is what the textbook establishes,
+**DERIVED** is connective reasoning supplied here over its premises, **USE** is
+what the relationship teaches.
+
+## Concepts (SOURCE)
 
 Five objectives of financial management:
 
@@ -23,7 +27,7 @@ Five objectives of financial management:
 Financial management's job is to decide how best to achieve them: identifying
 and evaluating alternative courses of action and recommending one.
 
-## Explanation
+## Explanation (SOURCE)
 
 **Profitability** is maximising profit. Achieving it means monitoring four
 things: revenue and pricing policy, costs and expenses, inventory levels, and
@@ -88,7 +92,33 @@ financial manager's job is to assess achievement across all five and satisfy as
 many as possible, which is an explicit statement that they cannot all be
 maximised at once.
 
-## Relationships to other concepts
+## Load-bearing derived claims (DERIVED)
+
+```
+SOURCE  Five objectives are defined. One conflict is stated, growth against
+        short-term profitability, and the section closes by saying the manager must
+        satisfy as many goals as possible.
+DERIVED That closing line concedes the objectives compete, and the rest of the
+        conflicts follow from the definitions given: liquidity against profitability
+        because idle cash is a stated cost, efficiency against liquidity because
+        current assets are what liquidity is made of, solvency against growth because
+        debt-funded growth raises the very gearing that measures solvency.
+USE     Gives fin-01 its judgement step. Every financial decision has a counterparty
+        objective, and naming it is what carries the marks.
+```
+
+```
+SOURCE  Efficiency is defined as achieving maximum profit with the lowest possible
+        level of assets. Liquidity is defined as meeting commitments within twelve
+        months, with both shortfall and excess idle cash costing profitability.
+DERIVED Efficiency is a ratio, not cost cutting: two businesses with identical profit
+        differ in efficiency if one needed twice the assets. And liquidity is a target
+        range rather than a maximum.
+USE     Two misconception checks that decide whether a student can use the objectives
+        at all, since both terms have misleading everyday senses.
+```
+
+## Relationships and mechanisms (DERIVED unless marked)
 
 These five are the **effect** end of every financial management argument. The
 strategies — cash flow management, working capital management, profitability
@@ -123,7 +153,7 @@ Financial objectives also connect out: efficiency depends on operations
 marketing (pricing and revenue), and growth depends on human resources
 (capability to run a larger business).
 
-## Terminology
+## Terminology (SOURCE)
 
 - **profitability** — the excess of revenue or income over expenses or costs, and
   the ability to maximise it
@@ -164,7 +194,7 @@ marketing (pricing and revenue), and growth depends on human resources
   many as possible. An answer that treats them as independent targets has missed
   the topic.
 
-## Worked example, structurally
+## Instructional implications (USE)
 
 1. name the objective, and use its precise definition rather than its everyday
    sense
@@ -186,7 +216,7 @@ sources of finance, debt and equity; the strategic role of financial management;
 influences on financial management; interdependence with operations, marketing
 and human resources.
 
-## What the source does not give us
+## Source gaps
 
 - Only one of the five conflicts is stated: growth against short-term profit.
   Liquidity against profitability, efficiency against liquidity and solvency

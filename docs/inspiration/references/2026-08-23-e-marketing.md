@@ -8,13 +8,17 @@ source:  Business Studies textbook, marketing strategies chapter (held by Will, 
 
 Notes taken from the source, in original wording. The source is not committed.
 
-## Definition
+Provenance markers, per `README.md`: **SOURCE** is what the textbook establishes,
+**DERIVED** is connective reasoning supplied here over its premises, **USE** is
+what the relationship teaches.
+
+## Concepts (SOURCE)
 
 E-marketing is the practice of using the internet to carry out marketing
 activities. It is a strategy, not a channel: the decision is not "should we have
 a website" but which marketing work the business moves online and why.
 
-## Explanation
+## Explanation (SOURCE)
 
 The source lists six technologies. They are worth keeping distinct because each
 one does a different marketing job, and a student who treats them as
@@ -49,7 +53,42 @@ media presence, in a market where the large majority of consumers shop online.
 The stated risk is that customers wanting online convenience buy from overseas
 retailers and bypass local businesses entirely.
 
-## Relationships to other concepts
+## Load-bearing derived claims (DERIVED)
+
+```
+SOURCE  Six e-marketing technologies are catalogued: web pages, podcasts, electronic
+        messages, blogs, location-based marketing, social media advertising.
+DERIVED Each does a different marketing job, so the choice of channel follows from a
+        target market characteristic: a narrow self-selected interest group points to
+        podcasts, an existing opted-in base to electronic messages, a researching
+        customer to web pages and blogs, a proximate impulsive purchase to
+        location-based marketing.
+USE     Converts a catalogue into a decision, which is what mkt-01 asks for. A
+        student naming "social media" in general has not chosen anything.
+```
+
+```
+SOURCE  The main disadvantage of social media advertising is that marketers do not
+        control what consumers write. Its main advantages include cheap reach and
+        customers redistributing the message themselves.
+DERIVED Those are the same property. A business cannot take the reach without taking
+        the loss of control.
+USE     Turns a description into an evaluation in one sentence, and it is the step
+        that lets an "explain" answer reach toward assessment.
+```
+
+```
+SOURCE  E-marketing is defined as using the internet to perform marketing
+        activities, and the chapter criticises retailers who offer information with
+        no ability to buy.
+DERIVED E-marketing becomes the process when the transaction is online, becomes the
+        physical evidence when the site is the only premises seen, and reshapes the
+        people element when interaction moves to messages answered out of hours.
+USE     The strongest available answer to how the four mkt-01 elements hold together
+        for one target market.
+```
+
+## Relationships and mechanisms (DERIVED unless marked)
 
 `mkt-01` asks how the target market affects e-marketing, so again the causal
 direction is the thing to author:
@@ -75,7 +114,7 @@ them:
 That interlock is the strongest available answer to "how do these four elements
 hold together for one target market", and the source never states it.
 
-## Terminology
+## Terminology (SOURCE)
 
 - **e-marketing (electronic marketing)** — using the internet to perform
   marketing activities. Internet marketing, web marketing and online marketing
@@ -113,7 +152,7 @@ hold together for one target market", and the source never states it.
   targets by current position, which only pays off where proximity changes the
   purchase decision.
 
-## Worked example, structurally
+## Instructional implications (USE)
 
 1. name the target market characteristic that makes an online channel the right
    one
@@ -132,7 +171,7 @@ Promotion and the promotion mix, place and distribution, the three extra Ps,
 market segmentation, technology as an influence on marketing, global marketing,
 consumer laws on privacy and truth in advertising.
 
-## What the source does not give us
+## Source gaps
 
 - No causal link from target market to channel choice. The technologies are
   catalogued, not chosen.

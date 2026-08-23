@@ -8,7 +8,11 @@ source:  Business Studies textbook, financial management strategies chapter (hel
 
 Notes taken from the source, in original wording. The source is not committed.
 
-## Definition
+Provenance markers, per `README.md`: **SOURCE** is what the textbook establishes,
+**DERIVED** is connective reasoning supplied here over its premises, **USE** is
+what the relationship teaches.
+
+## Concepts (SOURCE)
 
 **Profitability management** is controlling both sides of profit: the business's
 costs and its revenue. It splits into:
@@ -21,7 +25,7 @@ costs and its revenue. It splits into:
 Accurate and current financial data is the precondition for any of it, since
 every control here depends on knowing a number.
 
-## Explanation
+## Explanation (SOURCE)
 
 **Fixed and variable costs.** Fixed costs do not depend on the level of activity
 and must be paid whatever happens: salaries, depreciation, insurance, lease. They
@@ -99,7 +103,39 @@ produced. Reducing quantity at an unchanged price is a price rise expressed
 through the product rather than the ticket. Recognising that as a pricing
 decision is a strong observation for an essay.
 
-## Relationships to other concepts
+## Load-bearing derived claims (DERIVED)
+
+```
+SOURCE  Fixed costs do not change with the level of activity and must be paid
+        regardless. Variable costs move directly with activity.
+DERIVED A business with high fixed costs cannot shrink its cost base when volume
+        falls, so it must protect volume; a business whose costs are mostly variable
+        can shrink with demand. That is the reason the distinction is taught and the
+        chapter never states it.
+USE     Gives a student something specific to say about why a business cut price to
+        hold volume, instead of classifying costs and stopping.
+```
+
+```
+SOURCE  Overpricing fails to attract buyers; underpricing may bring higher sales and
+        still result in cash shortfalls and low profits.
+DERIVED Revenue is not cash and volume is not profit, so the pricing error runs in
+        both directions by different routes.
+USE     The two-sided structure that makes pricing examinable, and a link back to cash
+        flow management from the revenue side.
+```
+
+```
+SOURCE  A reported case describes manufacturers facing rising input, labour and
+        energy costs and choosing between raising prices, reducing product sizes, or
+        cutting the range produced.
+DERIVED Reducing quantity at an unchanged price is a price rise expressed through the
+        product rather than the ticket.
+USE     A strong observation for an essay, and a reminder that pricing policy includes
+        moves that do not change the price.
+```
+
+## Relationships and mechanisms (DERIVED unless marked)
 
 Profitability management is a **cause** acting on the financial objectives, most
 directly on **profitability**, and its distinguishing feature is that it is the
@@ -125,7 +161,7 @@ the clearest statement in the course that the functions are interdependent. A
 fin-01 paragraph that runs from a pricing decision to a profitability outcome is
 using that interdependence exactly as intended.
 
-## Terminology
+## Terminology (SOURCE)
 
 - **profitability management** — control of both costs and revenue
 - **fixed cost** — a cost that does not change with the level of activity
@@ -165,7 +201,7 @@ using that interdependence exactly as intended.
   still fail on both profit and cash.
 - **Reducing product size is a price change.** Same money, less product.
 
-## Worked example, structurally
+## Instructional implications (USE)
 
 1. name the cost or revenue lever precisely: which cost, which price, which line
    of the sales mix
@@ -188,7 +224,7 @@ break-even analysis and cost-volume-profit; budgets; cash flow and working
 capital management; pricing methods and the marketing mix; cost leadership as a
 business strategy; operations cost control and economies of scale.
 
-## What the source does not give us
+## Source gaps
 
 - No statement of the consequence of the fixed and variable split, which is that
   high fixed costs make a business fragile when volume falls. The distinction is

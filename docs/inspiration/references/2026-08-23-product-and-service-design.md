@@ -8,14 +8,18 @@ source:  Business Studies textbook, operations strategies chapter (held by Will,
 
 Notes taken from the source, in original wording. The source is not committed.
 
-## Definition
+Provenance markers, per `README.md`: **SOURCE** is what the textbook establishes,
+**DERIVED** is connective reasoning supplied here over its premises, **USE** is
+what the relationship teaches.
+
+## Concepts (SOURCE)
 
 Designing and developing new goods and services is an operations strategy
 because the design, development, launch and sale of new products is how a
 business grows and gains competitive advantage. It is the one operations
 strategy that decides *what* is produced rather than how well.
 
-## Explanation
+## Explanation (SOURCE)
 
 **Two approaches, and the difference is where the idea comes from.**
 
@@ -82,7 +86,39 @@ that when the service is delivered the customer knows they were specifically
 catered for. Implicit satisfaction is an outcome of a design decision, not of
 staff being nice.
 
-## Relationships to other concepts
+## Load-bearing derived claims (DERIVED)
+
+```
+SOURCE  Stage two of the design process is where quality parameters are decided.
+        Quality assurance elsewhere is defined around right first time.
+DERIVED Quality parameters are set at design, not at inspection, so quality control
+        checks against a standard this process already chose.
+USE     Connects design to quality management with a mechanism rather than a mention,
+        and explains what right first time means in practice.
+```
+
+```
+SOURCE  Four factors run through design: quality, supply chain management, output
+        capacity and cost.
+DERIVED Those four factors are the other operations topics appearing as design
+        constraints, so design is a cause of the other strategies rather than a peer.
+        A design commits the business to a supply chain, a capacity, a quality
+        standard and a cost structure before anything is made.
+USE     Gives the paragraph its analysis step: the design is the moment the
+        business's options narrow, and naming what narrowed is the analysis.
+```
+
+```
+SOURCE  Implicit service is the feeling of being looked after, and the chapter says
+        the skill, time and expertise must be embedded so the customer knows they
+        were catered for.
+DERIVED Implicit satisfaction is the outcome of a design decision, not of staff being
+        pleasant.
+USE     A misconception check, and the link to the people element of the extended
+        marketing mix.
+```
+
+## Relationships and mechanisms (DERIVED unless marked)
 
 This strategy is unusual in the syllabus because it is a **cause of the other
 strategies** rather than a peer of them. A design decision commits the business
@@ -111,7 +147,7 @@ Technology-driven design is where this topic meets leading edge technology and
 research and development. Consumer-driven design is where it meets market
 research and target markets.
 
-## Terminology
+## Terminology (SOURCE)
 
 - **product design and development** — creating new goods and services for the
   operations process
@@ -154,7 +190,7 @@ research and target markets.
   staffing outcome. The source is explicit that implicit service is embedded in
   the design.
 
-## Worked example, structurally
+## Instructional implications (USE)
 
 1. name the product or service and which approach produced it, consumer-driven
    or technology-driven
@@ -177,7 +213,7 @@ technology and R&D; cost and the four performance objectives design constrains;
 market research and target markets; the extended marketing mix, particularly
 people, processes and physical evidence.
 
-## What the source does not give us
+## Source gaps
 
 - No trade-off between the two approaches. Both are described and neither is
   costed, so there is no basis for saying which suits which business.

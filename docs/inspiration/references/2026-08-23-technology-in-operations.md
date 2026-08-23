@@ -8,7 +8,11 @@ source:  Business Studies textbook, operations strategies chapter (held by Will,
 
 Notes taken from the source, in original wording. The source is not committed.
 
-## Definition
+Provenance markers, per `README.md`: **SOURCE** is what the textbook establishes,
+**DERIVED** is connective reasoning supplied here over its premises, **USE** is
+what the relationship teaches.
+
+## Concepts (SOURCE)
 
 **Leading edge technology** is the most advanced or innovative technology
 available at a point in time.
@@ -24,7 +28,7 @@ Technology in operations is classified two ways: by whether it acts on inputs,
 transformation processes or outputs, or by whether it makes managerial and
 administrative work run more smoothly.
 
-## Explanation
+## Explanation (SOURCE)
 
 **Leading edge.** A business adopting the best available technology can
 differentiate its operations process: produce faster, hit higher standards,
@@ -59,7 +63,37 @@ E-procurement is not possible without the IT link. Six Sigma needs statistical
 measurement of a process. Established technology is infrastructure, not
 advantage.
 
-## Relationships to other concepts
+## Load-bearing derived claims (DERIVED)
+
+```
+SOURCE  Leading edge technology is the most advanced at a point in time; established
+        technology is what is already developed, widely used and accepted.
+DERIVED Leading edge converts into established by being successful. So an advantage
+        won through technology decays on a schedule set by competitors' adoption, and
+        differentiation through technology is a commitment to keep buying.
+USE     The trade-off the section omits entirely, and the step that makes a technology
+        paragraph an argument rather than a list of benefits.
+```
+
+```
+SOURCE  Bleeding edge technology is defined in a single aside as so new that
+        unreliability is a real risk to the adopter. The term is never used again.
+DERIVED It names the cost of leading edge adoption that the rest of the section
+        leaves out, so leading edge is the newest rather than the most suitable.
+USE     A misconception check against "leading edge means better", and the risk half
+        of the leading-versus-established choice.
+```
+
+```
+SOURCE  Established technologies listed include barcoding and point-of-sale data for
+        inventory, CAD/CAM/CIM, IT for logistics and demand analysis.
+DERIVED Established technology is infrastructure rather than advantage: JIT, quality
+        measurement and e-procurement are not executable without it.
+USE     Explains why a business invests in technology that gives it no edge, which is
+        otherwise hard for a student to justify.
+```
+
+## Relationships and mechanisms (DERIVED unless marked)
 
 Technology is a **cause** acting on performance objectives, and it is the only
 operations strategy that acts on almost all of them at once, which is exactly
@@ -89,7 +123,7 @@ The bill for technology falls due in human resources, which is where it connects
 to overcoming resistance to change: new equipment requires retraining, may make
 existing skills redundant, and often forces a plant layout to be rebuilt.
 
-## Terminology
+## Terminology (SOURCE)
 
 - **leading edge technology** — the most advanced or innovative at a point in
   time; also called cutting edge
@@ -125,7 +159,7 @@ existing skills redundant, and often forces a plant layout to be rebuilt.
   leading edge once. "Is this leading edge?" is a question about a date, not
   about a device.
 
-## Worked example, structurally
+## Instructional implications (USE)
 
 1. name the technology and classify it, leading edge or established, and say why
    the classification holds at this date
@@ -150,7 +184,7 @@ including retraining and plant layout; inventory management and quality
 management, both of which depend on established technology to run; e-commerce
 and e-procurement; technology as an influence on operations.
 
-## What the source does not give us
+## Source gaps
 
 - No trade-off between leading edge and established. Both sections describe
   benefits and neither describes a cost, so there is nothing to choose between.

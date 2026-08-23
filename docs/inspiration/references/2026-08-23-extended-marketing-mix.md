@@ -8,7 +8,11 @@ source:  Business Studies textbook, marketing strategies chapter (held by Will, 
 
 Notes taken from the source, in original wording. The source is not committed.
 
-## Definition
+Provenance markers, per `README.md`: **SOURCE** is what the textbook establishes,
+**DERIVED** is connective reasoning supplied here over its premises, **USE** is
+what the relationship teaches.
+
+## Concepts (SOURCE)
 
 The four Ps were written for goods. As services grew into most of the economy,
 three more were added for the parts of a purchase a customer experiences rather
@@ -24,7 +28,7 @@ together are the extended marketing mix.
   the business: premises, fit-out, signage, uniforms, brochures, the website,
   and the visible reviews of other customers.
 
-## Explanation
+## Explanation (SOURCE)
 
 The reason these three exist as separate elements is that a service cannot be
 inspected before purchase. A customer buying a jacket can hold it. A customer
@@ -60,7 +64,43 @@ physical evidence strategy rather than a promotion one.
 These three connect marketing to operations and human resources more tightly
 than the original four, which is the interdependence point examiners like.
 
-## Relationships to other concepts
+## Load-bearing derived claims (DERIVED)
+
+```
+SOURCE  People, processes and physical evidence are each defined and illustrated.
+        The chapter says the three extra Ps connect marketing to human resources and
+        operations.
+DERIVED The causal step from target market to each element is never run. It has to
+        be: because customers buy on trust with no way to sample, physical evidence
+        carries the whole quality signal; because customers expect to self-serve,
+        processes move online and physical evidence shifts from premises to
+        interface.
+USE     Supplies the mechanism for three of the four mkt-01 required areas.
+```
+
+```
+SOURCE  A franchise case is used to illustrate processes, describing systemisation
+        so every site delivers a consistent service. A separate passage says people
+        are the human face of the business and should be trained and motivated.
+DERIVED People and processes constrain each other. The more systemised the process,
+        the less discretion frontline staff have. A franchise buys consistency by
+        removing individual judgement; a consultancy earns its value by preserving
+        it. Which one a business picks is set by its target market.
+USE     A trade-off inside the extended mix, which the source presents as purely
+        additive. Gives an "explain" answer a limitation without leaving the topic.
+```
+
+```
+SOURCE  Physical evidence is defined to include the state of a website or online
+        presence, and reviews on independent sites.
+DERIVED When the process is digital the interface is the physical evidence, so the
+        same design decision serves both. This is the one pair a student can safely
+        say pulls together rather than apart.
+USE     The safe reinforcing pair, useful where a student has been taught that
+        everything trades off.
+```
+
+## Relationships and mechanisms (DERIVED unless marked)
 
 This is the part the source states least and `mkt-01` needs most. The question
 is *how target markets affect* these strategies, so every note here has to run
@@ -93,7 +133,7 @@ The three also constrain each other:
   digital, the interface *is* the physical evidence. The same design decision
   serves both, which is the one pair students can safely say pulls together.
 
-## Terminology
+## Terminology (SOURCE)
 
 - **extended marketing mix** — the original four Ps plus people, processes and
   physical evidence
@@ -129,7 +169,7 @@ The three also constrain each other:
 - **These are not services-only.** Goods carry a service component around them,
   such as after-sales support, so the three Ps apply to a retailer too.
 
-## Worked example, structurally
+## Instructional implications (USE)
 
 For an "explain how target markets affect ..." question, the paragraph shape
 that earns the marks:
@@ -151,7 +191,7 @@ Market segmentation and target market, the four Ps, positioning and
 differentiation, customer service in operations, quality of service as a
 performance objective, e-marketing.
 
-## What the source does not give us
+## Source gaps
 
 - No stated causal direction from target market to strategy. Every element is
   described on its own terms and the connective work is left undone. That

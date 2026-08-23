@@ -8,7 +8,11 @@ source:  Business Studies textbook, operations strategies chapter (held by Will,
 
 Notes taken from the source, in original wording. The source is not committed.
 
-## Definition
+Provenance markers, per `README.md`: **SOURCE** is what the textbook establishes,
+**DERIVED** is connective reasoning supplied here over its premises, **USE** is
+what the relationship teaches.
+
+## Concepts (SOURCE)
 
 **Inventory** (stock) is the quantity of raw materials, work in progress and
 finished goods a business holds at a point in time. **Inventory management** is
@@ -19,7 +23,7 @@ Every business holds some stock. The strategy question is never whether to hold
 stock but how much, and that question is a trade-off with an answer that differs
 by business.
 
-## Explanation
+## Explanation (SOURCE)
 
 **Why hold stock.** Holding stock is fundamentally a risk reduction strategy. It
 lets the business meet demand the moment it appears, which keeps the customer
@@ -78,7 +82,39 @@ stop the line when a defect appears, so the defect is corrected before it
 propagates). Lean arose where demand was too low for economies of scale to pay,
 which is the condition that makes it a strategy rather than a default.
 
-## Relationships to other concepts
+## Load-bearing derived claims (DERIVED)
+
+```
+SOURCE  Two lists are given, the advantages of holding stock and the disadvantages,
+        and JIT is described as removing holding, insurance, shrinkage and
+        obsolescence cost while requiring flexible processing and reliable supplier
+        deliveries.
+DERIVED The lists are one trade-off. Holding stock buys dependability and speed with
+        cost and flexibility; JIT buys those back and transfers the risk of a supply
+        failure to a supplier the manager does not control.
+USE     The strongest available limitation step for an ops-01 paragraph, because the
+        trade is structural rather than incidental.
+```
+
+```
+SOURCE  The chapter states plainly that JIT is not an inventory valuation technique
+        and that a business can use LIFO or FIFO while running JIT.
+DERIVED Nothing further; this one is the source's own, and it is recorded here
+        because it is the confusion students arrive with.
+USE     A misconception check that can quote the source rather than reason from it.
+```
+
+```
+SOURCE  The valuation method changes reported cost of goods sold and closing stock
+        value, so two businesses performing equally can report different profits.
+DERIVED Inventory is therefore the one operations strategy whose effect appears
+        directly in the financial statements, which lets a student link operations
+        and financial management with content rather than with a gesture.
+USE     A cross-topic pathway: operations decision -> reported profit -> financial
+        objective.
+```
+
+## Relationships and mechanisms (DERIVED unless marked)
 
 Inventory management is a **cause** acting on performance objectives, and it is
 the clearest example in the syllabus of one strategy moving several objectives
@@ -102,7 +138,7 @@ operations strategy: the valuation method changes reported gross profit, and
 stock is a current asset that affects liquidity. A student can legitimately use
 inventory to link operations and financial management, which examiners reward.
 
-## Terminology
+## Terminology (SOURCE)
 
 - **inventory / stock** — raw materials, work in progress and finished goods
   held at a point in time
@@ -141,7 +177,7 @@ inventory to link operations and financial management, which examiners reward.
   lost sales. Whether it is worth its cost depends on how much a lost sale costs
   this particular business.
 
-## Worked example, structurally
+## Instructional implications (USE)
 
 1. name the inventory approach the business uses
 2. name the performance objective it is chosen to serve
@@ -160,7 +196,7 @@ chain management and supplier reliability, quality management (jidoka is a
 quality practice inside a lean system), technology (inventory control software
 is what makes JIT executable), gross profit and cost of goods sold, liquidity.
 
-## What the source does not give us
+## Source gaps
 
 - The advantages and disadvantages of holding stock are given as two lists and
   never resolved into a trade-off. Nothing says which business should choose

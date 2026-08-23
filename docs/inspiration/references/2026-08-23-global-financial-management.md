@@ -8,7 +8,11 @@ source:  Business Studies textbook, financial management strategies chapter (hel
 
 Notes taken from the source, in original wording. The source is not committed.
 
-## Definition
+Provenance markers, per `README.md`: **SOURCE** is what the textbook establishes,
+**DERIVED** is connective reasoning supplied here over its premises, **USE** is
+what the relationship teaches.
+
+## Concepts (SOURCE)
 
 Global financial management is managing the additional financial risks a
 business takes on when it transacts across borders. The syllabus names five:
@@ -23,7 +27,7 @@ The framing sentence worth keeping is the source's own: the financial risks of
 global expansion are greater than domestic ones, and taking them is necessary for
 the strategy to be implemented. Risk here is not a mistake, it is a price.
 
-## Explanation
+## Explanation (SOURCE)
 
 **Exchange rates.** Every country uses its own currency domestically, so a
 cross-border transaction requires one currency to be converted into another. The
@@ -131,7 +135,43 @@ up the benefit of a favourable move. And the warning attached is the one student
 never include: **derivatives used unwisely can be as dangerous as the risks they
 are meant to protect against.**
 
-## Relationships to other concepts
+## Load-bearing derived claims (DERIVED)
+
+```
+SOURCE  Hedging is compared to fixing the interest rate on a loan: certainty and the
+        ability to plan, with the disadvantage of not benefiting if rates fall. The
+        chapter also warns that derivatives used unwisely can be as dangerous as the
+        risks they protect against.
+DERIVED The analogy contains the trade-off and the section never states it. Hedging
+        does not make a business more profitable, it makes it more predictable, and a
+        business that hedges every exposure gives up the gains with the losses.
+USE     Whether to hedge depends on whether the business can survive the bad outcome,
+        not on which outcome is likelier. That is a genuine judgement for "assess" and
+        "evaluate", and it keeps the answer out of hindsight.
+```
+
+```
+SOURCE  Australian rates have tended to sit above those of some other countries, so
+        borrowing overseas can look cheaper; but adverse currency movement can
+        eliminate the advantage and cheap rates may end up costing more.
+DERIVED Interest rate risk and exchange rate risk are the same risk wearing two hats
+        once a business borrows in a currency it does not earn in.
+USE     Lets a student treat two syllabus dot points as one mechanism rather than two
+        separate paragraphs.
+```
+
+```
+SOURCE  Four payment methods are ranked by credit risk to the exporter, from payment
+        in advance through letter of credit and bill of exchange to clean payment.
+DERIVED They differ in liquidity timing as much as in credit risk: payment in advance
+        brings cash in before the goods leave, clean payment brings it long after the
+        cost was incurred. The working capital cycle of an exporter is set by the
+        payment method its customers will accept.
+USE     Connects global financial management to working capital, so a student can
+        carry one business through two strategies.
+```
+
+## Relationships and mechanisms (DERIVED unless marked)
 
 Global financial management is a **cause** acting on financial objectives, and
 it is different in kind from the other three strategies. Cash flow, working
@@ -165,7 +205,7 @@ subsidiaries and global sourcing put costs in the currency where revenue is
 earned), and to fin-03, since exchange rates and interest rates are the two
 external influences on financial management that a business can only respond to.
 
-## Terminology
+## Terminology (SOURCE)
 
 - **foreign exchange market (forex)** — where currencies are traded and their
   relative prices set
@@ -211,7 +251,7 @@ external influences on financial management that a business can only respond to.
   Ordering them by exporter risk is the point, and knowing that clean payment is
   riskiest and payment in advance safest is worth marks on its own.
 
-## Worked example, structurally
+## Instructional implications (USE)
 
 1. name the exposure precisely: which currency, on which side of the transaction,
    over what period
@@ -233,7 +273,7 @@ factors and global sourcing in operations; global marketing; cash flow
 management and the working capital cycle of an exporter; risk and financial
 management's strategic role.
 
-## What the source does not give us
+## Source gaps
 
 - No cost of hedging is stated other than the loan analogy. The forgone upside is
   never named as a cost, so hedging reads as free protection.

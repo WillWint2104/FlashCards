@@ -8,7 +8,11 @@ source:  Business Studies textbook, marketing process and marketing strategies c
 
 Notes taken from the source, in original wording. The source is not committed.
 
-## Definition
+Provenance markers, per `README.md`: **SOURCE** is what the textbook establishes,
+**DERIVED** is connective reasoning supplied here over its premises, **USE** is
+what the relationship teaches.
+
+## Concepts (SOURCE)
 
 A **target market** is the group of present and potential customers a business
 intends to sell to. Its members share characteristics such as age, income,
@@ -21,7 +25,7 @@ and students use them as though they are.
 
 A **segmentation variable** is the characteristic used to do the dividing.
 
-## Explanation
+## Explanation (SOURCE)
 
 A business identifies a target market so it can point its marketing at a group
 rather than at everybody. What that buys, in the source's terms:
@@ -75,7 +79,44 @@ business exactly which group a price promotion or a redesign is aimed at.
 Benefits sought is the single most productive variable for essay work, because
 it hands the student a causal step for free.
 
-## Relationships to other concepts
+## Load-bearing derived claims (DERIVED)
+
+```
+SOURCE  A rebranding case describes a business moving from customers in their
+        thirties and forties to a younger segment, and changing product design,
+        celebrity endorsement, designer collaborations and positioning to match.
+DERIVED The causal direction mkt-01 asks about appears in the chapter only inside
+        that case: a target market characteristic causes each element of the mix to
+        take the form it takes. It is never stated as a principle.
+USE     The spine of mkt-01. Without it a student writes a target market and a
+        strategy side by side and never connects them, which is the most common
+        failure on this question.
+```
+
+```
+SOURCE  The chapter treats each element of the mix in its own section.
+DERIVED One target market characteristic pulls all four elements the same way. A
+        business serving price-sensitive self-serving customers ends up with cheap
+        measurable channels, minimal staffed interaction, a stripped standardised
+        process and reassuring low-cost physical evidence. A luxury segment inverts
+        all four. Neither business chose those four things separately.
+USE     The consistency step that makes a four-part answer cohere rather than read as
+        four separate paragraphs. Worth its own marks in the accomplish list.
+```
+
+```
+SOURCE  Demographic variables are described as the most widely used because they are
+        the easiest to measure.
+DERIVED Ease of collection is a reason for their popularity, not for their
+        usefulness. Behavioural variables, especially benefits sought, hand the
+        student a causal step for free because they name what the customer wants from
+        the product.
+USE     Steers a student away from "young people" toward a market description that
+        carries a consequence, which is the difference between a label and an
+        argument.
+```
+
+## Relationships and mechanisms (DERIVED unless marked)
 
 Target market is the **cause** end of every marketing argument. Segmentation
 variables, the marketing mix and the extended mix are all downstream of it. That
@@ -107,7 +148,7 @@ never independent choices. This is the strongest available answer to "why does
 the target market affect the strategies" and it is stated in a case study rather
 than in the explanation, so a student is unlikely to find it.
 
-## Terminology
+## Terminology (SOURCE)
 
 - **target market** — the group of present and potential customers a business
   intends to sell to
@@ -152,7 +193,7 @@ than in the explanation, so a student is unlikely to find it.
   needs and commits to scale. Treating it as what a business does before it
   learns about segmentation misreads it.
 
-## Worked example, structurally
+## Instructional implications (USE)
 
 1. name the segmentation variable the business used and the segment it selected
 2. state the characteristic of that segment that matters, in terms of what the
@@ -175,7 +216,7 @@ objectives), the four Ps, people / processes / physical evidence, e-marketing,
 positioning and differentiation, consumer laws, factors influencing customer
 choice.
 
-## What the source does not give us
+## Source gaps
 
 - The causal direction is never stated as a principle. It is visible only inside
   one rebranding case study, and only to a reader already looking for it.

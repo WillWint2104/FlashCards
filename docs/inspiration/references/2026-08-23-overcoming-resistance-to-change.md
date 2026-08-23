@@ -8,7 +8,11 @@ source:  Business Studies textbook, operations strategies chapter (held by Will,
 
 Notes taken from the source, in original wording. The source is not committed.
 
-## Definition
+Provenance markers, per `README.md`: **SOURCE** is what the textbook establishes,
+**DERIVED** is connective reasoning supplied here over its premises, **USE** is
+what the relationship teaches.
+
+## Concepts (SOURCE)
 
 Operations strategies mostly describe something a business does. This one
 describes something that stops it. **Resistance to change** is what a business
@@ -23,7 +27,7 @@ new technology) or internal (staff initiative, available technology, innovation
 in goods or services). External change is the kind a business must adapt to, and
 adaptation may require significant internal realignment.
 
-## Explanation
+## Explanation (SOURCE)
 
 The reason change is resisted is worth stating in the source's own economic
 terms, because it is a better explanation than "people don't like change":
@@ -79,7 +83,41 @@ as it can of what is changing, when, how and why. That is worth authoring as the
 concrete answer to "how is inertia overcome", because otherwise students have a
 problem with no solution.
 
-## Relationships to other concepts
+## Load-bearing derived claims (DERIVED)
+
+```
+SOURCE  Resistance has two sources, financial cost and inertia. The financial costs
+        are equipment, redundancy, retraining and plant layout reorganisation.
+DERIVED This topic is the precondition of every other operations strategy, not a peer
+        of them. Nothing in the chapter can be adopted without paying these costs and
+        meeting this resistance.
+USE     The answer to why a business does not simply adopt the best strategy, and the
+        natural source of the limitation step in an ops-01 paragraph without needing
+        a separate paragraph of its own.
+```
+
+```
+SOURCE  Costs of a plant layout change include downtime transferring to new
+        machinery, testing its capacity, and lost productivity while staff learn.
+DERIVED The cost of a layout change is mostly not the construction. It is downtime
+        and the learning curve.
+USE     A specific, non-obvious cost a student can name, which is worth more than
+        "it is expensive".
+```
+
+```
+SOURCE  Inertia is defined as psychological resistance arising from uncertainty and
+        fear of the unknown, intensified where jobs or careers feel threatened. The
+        only management response offered is a quoted consultant's question about
+        communicating what, when, how and why.
+DERIVED Inertia is a rational response to a personal risk the business is asking
+        someone else to carry, so framing it as an attitude problem produces answers
+        that propose no workable solution.
+USE     Reframes the topic so a student can propose consultation, phased change or
+        redeployment instead of asserting that staff should accept change.
+```
+
+## Relationships and mechanisms (DERIVED unless marked)
 
 This topic is the **precondition** of every other operations strategy, and that
 is the framing worth teaching. A business cannot adopt JIT, install leading edge
@@ -104,7 +142,7 @@ decision making, communication, training as a way of removing the fear rather
 than only the skill gap, and redundancy handled well or badly. A student can use
 this topic to link operations and HRM legitimately, which examiners reward.
 
-## Terminology
+## Terminology (SOURCE)
 
 - **resistance to change** — opposition to change within a business, financial
   or psychological
@@ -143,7 +181,7 @@ this topic to link operations and HRM legitimately, which examiners reward.
 - **Overcoming resistance is a strategy, not a preamble.** It is examinable in
   its own right, and it is the answer to why a good strategy is not adopted.
 
-## Worked example, structurally
+## Instructional implications (USE)
 
 1. name the change the business is attempting and the operations strategy behind
    it
@@ -167,7 +205,7 @@ training and development, participation and redundancy; the legal influence on
 operations through redundancy entitlements; liquidity and the lease against buy
 decision; performance objectives as what the spending is meant to buy.
 
-## What the source does not give us
+## Source gaps
 
 - Almost nothing on *overcoming* the resistance, despite that being the name of
   the topic. The costs and the causes are set out; the strategies for managing

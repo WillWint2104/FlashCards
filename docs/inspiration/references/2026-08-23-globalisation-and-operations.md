@@ -8,7 +8,11 @@ source:  Business Studies textbook, influences on operations chapter (held by Wi
 
 Notes taken from the source, in original wording. The source is not committed.
 
-## Definition
+Provenance markers, per `README.md`: **SOURCE** is what the textbook establishes,
+**DERIVED** is connective reasoning supplied here over its premises, **USE** is
+what the relationship teaches.
+
+## Concepts (SOURCE)
 
 **Globalisation** is the removal of barriers to trade between nations. It is
 characterised by increasing integration between national economies and by a high
@@ -20,7 +24,7 @@ is not only goods crossing borders. It is *production factors* crossing borders,
 and that is why it reaches the operations function rather than only the sales
 figures.
 
-## Explanation
+## Explanation (SOURCE)
 
 **Opportunity and threat in the same sentence.** Globalisation gives a business
 market opportunities in other nations and gives other nations opportunities in
@@ -81,7 +85,34 @@ cost and which is placed for speed.
 That is the single most useful idea in this chapter for essay work, and it is
 never stated as a principle.
 
-## Relationships to other concepts
+## Load-bearing derived claims (DERIVED)
+
+```
+SOURCE  Two case studies sit on adjacent pages. One business designs in one country,
+        manufactures where labour is cheapest, and takes the economies of scale. The
+        other keeps most production close to its main market, moves stock globally
+        within 48 hours, needs no local warehousing, and its founder names production
+        proximity and quick logistics as the reason. The chapter states that it does
+        not mass produce and so forgoes economies of scale others realise.
+DERIVED These are opposite answers to the same question and the chapter never
+        compares them. The choice is not global against domestic. It is which stage
+        of the process is placed for cost and which is placed for speed: the second
+        business still sources fabric globally while keeping assembly close.
+USE     The spine of ops-02. Gives a student two configurations to compare rather
+        than a single narrative in which globalisation means offshoring.
+```
+
+```
+SOURCE  Globalisation provides market opportunities into other nations and from
+        them, and a competitor applying cost leadership can undercut and dominate.
+DERIVED Globalisation is symmetrical. Every advantage it offers is offered to
+        competitors on the same terms, so a business that only takes the cost saving
+        ends up competing on the one dimension where someone will always be cheaper.
+USE     The assessment step for ops-02: say what globalisation did to the business as
+        well as for it.
+```
+
+## Relationships and mechanisms (DERIVED unless marked)
 
 Globalisation is an **influence**, not a strategy: it changes the conditions the
 operations manager works in, and the strategies are the response. Keeping that
@@ -113,7 +144,7 @@ assessment has a clean shape: globalisation lowers cost and raises the standard
 of competition simultaneously, so a business that only takes the cost saving
 ends up competing on the one dimension where someone will always be cheaper.
 
-## Terminology
+## Terminology (SOURCE)
 
 - **globalisation** — the removal of barriers to trade between nations
 - **economic integration** — national economies becoming more interdependent
@@ -150,7 +181,7 @@ ends up competing on the one dimension where someone will always be cheaper.
   moves the business's own operations there. A business can do either without
   the other.
 
-## Worked example, structurally
+## Instructional implications (USE)
 
 1. name the aspect of globalisation acting on the business: an open market, a
    supplier pool, a competitor entering, a mobile technology
@@ -173,7 +204,7 @@ quality management and international standards; technology as an influence;
 cost leadership and differentiation; exchange rates; global markets in
 marketing.
 
-## What the source does not give us
+## Source gaps
 
 - The two configurations, cost-and-scale against proximity-and-speed, are given
   in two adjacent case studies and never compared. The comparison is the topic.

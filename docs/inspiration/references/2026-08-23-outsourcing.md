@@ -8,7 +8,11 @@ source:  Business Studies textbook, operations strategies chapter (held by Will,
 
 Notes taken from the source, in original wording. The source is not committed.
 
-## Definition
+Provenance markers, per `README.md`: **SOURCE** is what the textbook establishes,
+**DERIVED** is connective reasoning supplied here over its premises, **USE** is
+what the relationship teaches.
+
+## Concepts (SOURCE)
 
 **Outsourcing** is using external providers to perform business activities. The
 theory behind it: a provider that specialises in one function performs it more
@@ -33,7 +37,7 @@ Two axes classify any arrangement:
 The two axes are independent, which is the point of the classification: a
 business can have an offshore captive centre or an onshore third-party vendor.
 
-## Explanation
+## Explanation (SOURCE)
 
 **The decision.** Four things have to be settled, in order:
 
@@ -104,7 +108,40 @@ Point 4 is the one students skip and the one that determines whether it works.
 - *IT cost.* Adapting systems to the vendor takes money and time, which can
   cancel the short-term financial advantage.
 
-## Relationships to other concepts
+## Load-bearing derived claims (DERIVED)
+
+```
+SOURCE  Flexibility appears among the advantages of outsourcing. Separately, the
+        chapter states that the vendor relationship typically lasts three to five
+        years and that businesses over-focus on the decision and under-plan the
+        relationship.
+DERIVED Outsourcing is sold as flexibility and contracted as commitment. Which one it
+        turns out to be depends on contract length against how fast the market moves.
+USE     The sharpest evaluation line available on this topic, and one a student can
+        apply to any outsourcing case by asking what the contract locked in.
+```
+
+```
+SOURCE  A case describes a business with call centres in three countries that was
+        disrupted in all of them at once and had to retrain and recruit some two
+        thousand domestic staff.
+DERIVED Geographic spread is not diversification when the shock is global. A business
+        that dismantled domestic capability has to rebuild it at the worst moment.
+USE     The concentration-risk argument, with a documented instance behind it. Note
+        the figures themselves are company-reported and are not evidence.
+```
+
+```
+SOURCE  A vendor breached a product specification written into a service level
+        agreement. Elsewhere the chapter says a third party can be a screen behind
+        which a business hides a breach, with no legal responsibility attaching.
+DERIVED Legal responsibility can be contracted away; reputational and ethical
+        responsibility cannot, because customers attribute the defect to the brand.
+USE     The crossover into ops-03, and the reason an SLA is a remedy after the fact
+        rather than a guarantee.
+```
+
+## Relationships and mechanisms (DERIVED unless marked)
 
 Outsourcing is a **cause** acting on performance objectives, and it is the
 strategy where the trade-off is most visible because it is fundamentally a
@@ -136,7 +173,7 @@ the uncomfortable observation that the consumers who criticise it are frequently
 the ones buying the cheaper product it produces. That tension is exactly what a
 "to what extent" question is looking for.
 
-## Terminology
+## Terminology (SOURCE)
 
 - **outsourcing** — using external providers to perform business activities
 - **business process outsourcing (BPO)** — the general term for outsourcing a
@@ -183,7 +220,7 @@ the ones buying the cheaper product it produces. That tension is exactly what a
   actionable after the fact. The lead-in-toys example is a vendor breaching a
   specification that was written down.
 
-## Worked example, structurally
+## Instructional implications (USE)
 
 1. name what is outsourced and to whom, using the axes: onshore or offshore,
    captive or third party
@@ -204,7 +241,7 @@ dependability; global sourcing and supply chain management; global factors in
 operations; corporate social responsibility and the employment consequences of
 relocation; human resources and redundancy; cost leadership as a strategic role.
 
-## What the source does not give us
+## Source gaps
 
 - Advantages and disadvantages are given as two long lists with no weighing
   between them, and no statement of the condition under which a business should

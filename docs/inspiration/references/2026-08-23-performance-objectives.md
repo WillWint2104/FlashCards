@@ -8,7 +8,11 @@ source:  Business Studies textbook, operations strategies chapter (held by Will,
 
 Notes taken from the source, in original wording. The source is not committed.
 
-## Definition
+Provenance markers, per `README.md`: **SOURCE** is what the textbook establishes,
+**DERIVED** is connective reasoning supplied here over its premises, **USE** is
+what the relationship teaches.
+
+## Concepts (SOURCE)
 
 Performance objectives are the goals a business sets for the parts of its
 transformation process it has decided matter. There are six: quality, speed,
@@ -16,7 +20,7 @@ dependability, flexibility, customisation and cost. Each is expressed as a targe
 and measured against it, which is what makes them usable as KPIs rather than
 aspirations.
 
-## Explanation
+## Explanation (SOURCE)
 
 Each objective names a different thing an operation can be good at.
 
@@ -36,7 +40,41 @@ second is the one students misread. A cheap plastic toy that meets its own low
 specification has *high* conformance quality. Conformance measures consistency
 against a standard, not the height of the standard.
 
-## Relationships to other concepts
+## Load-bearing derived claims (DERIVED)
+
+```
+SOURCE  Six performance objectives are defined and measured: quality, speed,
+        dependability, flexibility, customisation, cost. The chapter concedes in a
+        closing sentence that a business allocates resources to whichever objective
+        best serves profitability, and notes in one aside that full customisation
+        costs more than standardised production.
+DERIVED The objectives compete, and every interesting question about them follows
+        from that. Customisation, speed, flexibility and quality of design are each
+        bought with cost; speed and flexibility are the one pair that reinforce.
+USE     The trade-off is the step that separates a band 4 answer from a band 6 one on
+        ops-01. A paragraph naming a strategy and an objective has explained; one
+        naming what the choice cost against a competing objective has assessed.
+```
+
+```
+SOURCE  Quality splits into design, conformance and service.
+DERIVED Conformance measures consistency against a standard, not the height of the
+        standard, so a cheap item meeting its own low specification has high
+        conformance quality.
+USE     A misconception check, and the reason "improve quality" is not a usable
+        answer until a student says which of the three they mean.
+```
+
+```
+SOURCE  The chapter defines the objectives; later sections define the operations
+        strategies. The two are never connected.
+DERIVED Strategies are the cause end and objectives are the effect end of every
+        operations argument.
+USE     The shape a reasoning block for ops-01 should encode: strategy vocabulary on
+        the cause side, objective vocabulary on the effect side.
+```
+
+## Relationships and mechanisms (DERIVED unless marked)
 
 This is the part the source states least and the part the app needs most.
 
@@ -68,7 +106,7 @@ outsourcing — are the **cause** end. That is the shape `ops-01` asks for, and 
 is what a `reasoning` block for this question should encode: strategy vocabulary
 on the cause side, objective vocabulary on the effect side.
 
-## Terminology
+## Terminology (SOURCE)
 
 - **performance objective** — a goal set for an aspect of the transformation process
 - **quality of design** — how good the specification is
@@ -99,7 +137,7 @@ on the cause side, objective vocabulary on the effect side.
   after the other choices. It is a target with its own KPIs, and choosing it as
   the priority is a strategic position, not an absence of one.
 
-## Worked example, structurally
+## Instructional implications (USE)
 
 The shape that makes a paragraph work here:
 
@@ -119,7 +157,7 @@ Operations strategies (each is a cause acting on one or more of these objectives
 cost leadership and differentiation as the strategic role, KPIs, transformation
 processes, capacity.
 
-## What the source does not give us
+## Source gaps
 
 - No stated tensions between objectives, beyond one aside about the cost of
   customisation and one closing sentence about allocating resources.

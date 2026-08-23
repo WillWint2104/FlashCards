@@ -8,7 +8,11 @@ source:  Business Studies textbook, operations strategies chapter (held by Will,
 
 Notes taken from the source, in original wording. The source is not committed.
 
-## Definition
+Provenance markers, per `README.md`: **SOURCE** is what the textbook establishes,
+**DERIVED** is connective reasoning supplied here over its premises, **USE** is
+what the relationship teaches.
+
+## Concepts (SOURCE)
 
 **Quality** is the degree of excellence of a product and its fitness for a
 stated purpose. **Quality management** is the set of processes a business uses
@@ -23,7 +27,7 @@ Three approaches, and the difference between them is *when* they act:
 - **quality improvement (QI)** — continuous improvement and total quality
   management, aimed at the process itself rather than the output. Ongoing.
 
-## Explanation
+## Explanation (SOURCE)
 
 **Quality control.** The business defines standards and applies them across its
 products and processes, designs tests against those standards, sets targets, and
@@ -75,7 +79,41 @@ students describe the belts and miss it: **it looks for sources of variation and
 either eliminates them or brings them under control.** Variation is the target,
 not defect count. Defects are the symptom.
 
-## Relationships to other concepts
+## Load-bearing derived claims (DERIVED)
+
+```
+SOURCE  Three approaches are listed as contemporary options: quality control by
+        inspection, quality assurance by certified system, quality improvement by
+        continuous improvement and total quality management.
+DERIVED They differ in when they act and in what they cost. QC is cheap to start and
+        never lowers the defect rate, only catches defects. QA is expensive to
+        establish, cheap to run, and transfers credibility to buyers who cannot
+        inspect. QI is the only one that changes the process and the only one that
+        needs a culture rather than a procedure, which is why it fails most often.
+USE     Gives a student a basis for choosing between the three, which the source does
+        not, and so converts three headings into an argument.
+```
+
+```
+SOURCE  A quoted manager says the method looks for sources of variation and either
+        eliminates them or brings them under control. The explanation itself
+        describes belts, training and the DMAIC cycle.
+DERIVED Variation is the target and defects are the symptom.
+USE     The mechanism step for any quality paragraph. Naming what inconsistency was
+        removed beats naming what defect was found.
+```
+
+```
+SOURCE  Cost reductions are attributed to quality programs. No establishment cost is
+        given anywhere in the section.
+DERIVED Quality management costs before it saves: inspection is labour, certification
+        is fee and compliance, Six Sigma is training and a team not making anything.
+        A business chooses it when the cost of a defect reaching a customer exceeds
+        the cost of preventing it, which does not hold everywhere.
+USE     The limitation step, and the answer to why not every business runs Six Sigma.
+```
+
+## Relationships and mechanisms (DERIVED unless marked)
 
 Quality management is a **cause** acting on performance objectives, and unlike
 inventory it acts on several of them in the same direction, which makes it the
@@ -112,7 +150,7 @@ on staff raising issues, and jidoka gives any worker authority to halt
 production. Both are HR conditions, not operations ones. A quality strategy in a
 business whose staff are afraid to report problems does not work.
 
-## Terminology
+## Terminology (SOURCE)
 
 - **quality** — degree of excellence and fitness for a stated purpose
 - **quality management** — processes ensuring consistency, reliability, safety
@@ -157,7 +195,7 @@ business whose staff are afraid to report problems does not work.
 - **Quality management applies to services.** Every worked example students meet
   is a factory, so they arrive at a service question with nothing to say.
 
-## Worked example, structurally
+## Instructional implications (USE)
 
 1. name the quality approach and which of the three families it belongs to
 2. name the performance objective it serves, in the objective's own vocabulary
@@ -177,7 +215,7 @@ and jidoka; continuous improvement as a change management idea; globalisation
 and the reason universal standards exist; human resources and the culture
 required for staff-driven improvement; KPIs and defect rate as a measure.
 
-## What the source does not give us
+## Source gaps
 
 - No cost side. Quality management is presented as producing savings, with no
   account of the investment required or the businesses for which it does not

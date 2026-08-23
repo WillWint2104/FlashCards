@@ -8,7 +8,11 @@ source:  Business Studies textbook, operations strategies chapter (held by Will,
 
 Notes taken from the source, in original wording. The source is not committed.
 
-## Definition
+Provenance markers, per `README.md`: **SOURCE** is what the textbook establishes,
+**DERIVED** is connective reasoning supplied here over its premises, **USE** is
+what the relationship teaches.
+
+## Concepts (SOURCE)
 
 Four global factors present opportunities to an operations manager:
 
@@ -21,7 +25,7 @@ Together they are how globalisation reaches the operations function, which makes
 this note serve both ops-01 (as a strategy) and ops-02 (as the impact of
 globalisation).
 
-## Explanation
+## Explanation (SOURCE)
 
 **Global sourcing.** Purchasing supplies or services without being constrained
 by location. As an operations strategy it is broader than the supply chain
@@ -77,7 +81,31 @@ as such: R&D should contribute more to Australian business decision making than
 it currently does, with cuts to the incentive scheme a concern and Australian
 investment below Europe, China, the United States, South Korea and Japan.
 
-## Relationships to other concepts
+## Load-bearing derived claims (DERIVED)
+
+```
+SOURCE  Four global factors are presented as opportunities: global sourcing,
+        economies of scale, scanning and learning, research and development. Only
+        global sourcing is given challenges.
+DERIVED Two of the four lower cost and two raise capability; and two produce
+        advantages that decay. Scanning is available to competitors so it yields
+        parity rather than advantage, and scale is matched by any rival with the same
+        volume. R&D is the only one that can produce something not simply copied.
+USE     Gives ops-02 its structure, and gives an assessment its durability test:
+        is this advantage one a competitor can take by doing the same thing.
+```
+
+```
+SOURCE  Economies of scale mean cost per unit falls as volume rises, and become a
+        global factor because one nation's population caps volume.
+DERIVED Scale buys cost with flexibility, because high-volume standardised production
+        is the least adaptable configuration available. Scale and customisation are
+        close to opposites, which is what mass customisation exists to reconcile.
+USE     The counterweight the section never provides, and the reason a business might
+        rationally decline the scale available to it.
+```
+
+## Relationships and mechanisms (DERIVED unless marked)
 
 The four factors are not parallel. Two lower cost, two raise capability, and
 saying which is which is the structure of a good ops-02 answer:
@@ -112,7 +140,7 @@ the R&D standard a business must meet. It also lengthens supply lines, exposes
 the business to foreign currency and foreign regulation, hands competitors the
 same access, and makes the whole operation more complex to manage.
 
-## Terminology
+## Terminology (SOURCE)
 
 - **global sourcing** — sourcing supplies or services without being constrained
   by location
@@ -152,7 +180,7 @@ same access, and makes the whole operation more complex to manage.
   it first. Answers that treat globalisation as a menu the business chooses from
   have taken half the question.
 
-## Worked example, structurally
+## Instructional implications (USE)
 
 1. name the global factor and what the business actually did
 2. name the performance objective, and be precise about which
@@ -174,7 +202,7 @@ cost, quality and flexibility; globalisation as an influence on operations;
 exchange rates and the financial influences on a business; global markets in
 marketing.
 
-## What the source does not give us
+## Source gaps
 
 - No trade-offs at all. Four factors are presented as four opportunities, and
   only global sourcing is given challenges.

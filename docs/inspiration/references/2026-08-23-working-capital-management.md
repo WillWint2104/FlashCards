@@ -8,7 +8,11 @@ source:  Business Studies textbook, financial management strategies chapter (hel
 
 Notes taken from the source, in original wording. The source is not committed.
 
-## Definition
+Provenance markers, per `README.md`: **SOURCE** is what the textbook establishes,
+**DERIVED** is connective reasoning supplied here over its premises, **USE** is
+what the relationship teaches.
+
+## Concepts (SOURCE)
 
 **Working capital** is the funds available for a business's short-term financial
 commitments. **Net working capital** is current assets minus current
@@ -26,7 +30,7 @@ The syllabus splits it three ways:
 - **control of current liabilities** — payables, loans, overdrafts
 - **strategies** — leasing, sale and lease-back
 
-## Explanation
+## Explanation (SOURCE)
 
 **Why short-term liquidity matters.** Enough of it lets a business take profit
 opportunities when they appear, meet obligations, pay creditors early enough to
@@ -133,7 +137,43 @@ capital advantages:
 and then leasing it back under fixed payments for a period. The business keeps
 using the asset and converts it into cash.
 
-## Relationships to other concepts
+## Load-bearing derived claims (DERIVED)
+
+```
+SOURCE  Efficiency is achieving maximum profit from the lowest possible level of
+        assets. Excess working capital means assets earning less than they cost to
+        finance; insufficient working capital means shortages and forced borrowing.
+DERIVED Current assets are assets, so every gain in efficiency thins the liquidity
+        buffer and every increase in the buffer worsens efficiency. Working capital
+        management is the name for choosing a point on that line.
+USE     The structural tension of the topic, and the reason a recommendation has to
+        name a position rather than an improvement.
+```
+
+```
+SOURCE  A figure caption compares two businesses: a food outlet whose cycle from
+        stock to cash is short and needs little working capital, and a manufacturer
+        whose cycle runs through raw materials, work in progress, finished goods and
+        credit sales and needs much more.
+DERIVED The length of the working capital cycle is what sets how much working capital
+        a business needs. That is a better answer than any ratio, because it is
+        specific to the business.
+USE     Lets a student justify a strategy against a named business rather than in
+        general: a control right for a ninety-day cycle is unnecessary at ten days.
+```
+
+```
+SOURCE  Leasing spreads payments over years instead of one large outflow and gives
+        access to assets the business could not afford to buy. Sale and lease-back
+        sells an owned asset and leases it back.
+DERIVED Both obtain the use of an asset, or cash for one, without borrowing, so both
+        raise liquidity without raising gearing. For an already-geared business that
+        is the difference between an available strategy and an unavailable one.
+USE     The same solvency link as factoring, arriving from the asset side, which lets
+        a fin-01 answer connect two strategies through one objective.
+```
+
+## Relationships and mechanisms (DERIVED unless marked)
 
 Working capital management is a **cause** acting on the financial objectives, and
 it is the strategy that touches the most of them at once.
@@ -166,7 +206,7 @@ seen twice), marketing (credit terms are part of the offer to customers), and
 ethics (delaying payment to suppliers is a liquidity strategy whose cost falls on
 smaller businesses).
 
-## Terminology
+## Terminology (SOURCE)
 
 - **working capital** — funds available for short-term financial commitments
 - **net working capital** — current assets minus current liabilities
@@ -218,7 +258,7 @@ smaller businesses).
 - **The current ratio is a measure, not a strategy.** It reports the position the
   strategies produced.
 
-## Worked example, structurally
+## Instructional implications (USE)
 
 1. name the working capital position: which current asset or liability is the
    problem, and what the cycle length is
@@ -241,7 +281,7 @@ solvency; cash flow management and factoring, which act on the same receivables;
 the current ratio and other liquidity ratios; sources of short-term finance;
 inventory management in operations; ethical treatment of suppliers.
 
-## What the source does not give us
+## Source gaps
 
 - The efficiency against liquidity trade is the structural tension of the whole
   topic and is never stated, though both objectives are defined in the course and

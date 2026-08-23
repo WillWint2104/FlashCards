@@ -8,7 +8,11 @@ source:  Business Studies textbook, operations strategies chapter (held by Will,
 
 Notes taken from the source, in original wording. The source is not committed.
 
-## Definition
+Provenance markers, per `README.md`: **SOURCE** is what the textbook establishes,
+**DERIVED** is connective reasoning supplied here over its premises, **USE** is
+what the relationship teaches.
+
+## Concepts (SOURCE)
 
 **Supply chain management** is integrating and managing the flow of supplies
 across inputs, transformation and outputs so the business meets customer needs.
@@ -23,7 +27,7 @@ Doing that exposes the whole chain, including the suppliers, energy, labour and
 distribution a forward-looking view leaves out. It is a systems view, and it is
 what a strategy has to be built on.
 
-## Explanation
+## Explanation (SOURCE)
 
 **Logistics** is distribution plus everything that supports it: transport and
 the choice of mode, storage, warehousing and distribution centres, materials
@@ -101,7 +105,41 @@ measured in months. Lean, low-inventory chains work beautifully while demand is
 predictable and fail visibly the moment it is not. That is the trade-off global
 sourcing makes, stated as a real consequence rather than a bullet.
 
-## Relationships to other concepts
+## Load-bearing derived claims (DERIVED)
+
+```
+SOURCE  Global sourcing is given benefits (cost, expertise, technology, resources)
+        and challenges (relocation, higher logistics cost, differing regulation,
+        complexity). Separately, a reproduced news article states that local supply
+        chains are far more responsive and that imported product returns in months
+        rather than days.
+DERIVED That responsiveness difference is the trade the two lists are actually
+        describing: global sourcing buys cost with dependability and with speed of
+        recovery when demand moves unexpectedly.
+USE     Converts a benefits-and-challenges list into a judgement, and gives an
+        "assess" answer its condition: how predictable is this business's demand.
+```
+
+```
+SOURCE  JIT requires supplier deliveries received reliably at the appointed time
+        (stated in the inventory section). Supplier reliability is a supply chain
+        property (stated here).
+DERIVED Supply chain management is what makes JIT possible or impossible.
+USE     A student arguing for JIT without addressing supplier reliability has not
+        finished the argument. Useful as a completeness check in guidance.
+```
+
+```
+SOURCE  Inventory and quality decisions sit inside the business; supplier
+        reliability, transport mode and regulation sit outside it.
+DERIVED Supply chain management is the operations strategy whose levers are mostly
+        held by other businesses, so its risk is held by parties the manager can only
+        choose, contract with and monitor.
+USE     The distinguishing point that explains why it is a strategy rather than an
+        administrative task, and where the limitation step comes from.
+```
+
+## Relationships and mechanisms (DERIVED unless marked)
 
 Supply chain management is a **cause** acting on performance objectives, and its
 distinctive feature is that most of the levers are *outside the business*.
@@ -128,7 +166,7 @@ to finance, since warehousing and distribution centres are capital and holding
 cost; and to the legal and environmental influences on operations, through
 dangerous goods regulation and the emissions of long transport chains.
 
-## Terminology
+## Terminology (SOURCE)
 
 - **supply chain management (SCM)** — integrating and managing the flow of
   supplies across inputs, transformation and outputs
@@ -175,7 +213,7 @@ dangerous goods regulation and the emissions of long transport chains.
   offset by higher logistics, storage, distribution, compliance and complexity
   costs. An answer that compares only unit prices has not compared the options.
 
-## Worked example, structurally
+## Instructional implications (USE)
 
 1. name the supply chain decision precisely: which mode, which supplier
    location, which facility, which ordering system
@@ -199,7 +237,7 @@ operations; outsourcing; place and distribution in the marketing mix; legal
 regulation of dangerous goods; environmental sustainability and transport
 emissions.
 
-## What the source does not give us
+## Source gaps
 
 - No link from any supply chain decision to a named performance objective,
   though both are defined in the same chapter.

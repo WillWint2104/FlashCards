@@ -8,7 +8,11 @@ source:  Business Studies textbook, influences on operations chapter (held by Wi
 
 Notes taken from the source, in original wording. The source is not committed.
 
-## Definition
+Provenance markers, per `README.md`: **SOURCE** is what the textbook establishes,
+**DERIVED** is connective reasoning supplied here over its premises, **USE** is
+what the relationship teaches.
+
+## Concepts (SOURCE)
 
 **Corporate social responsibility (CSR)** is open and accountable business
 action based on respect for people, community and the broader environment. Its
@@ -22,7 +26,7 @@ access to those resources for future generations.
 profitability, social impact and environmental impact, weighed together. CSR
 means the driver of decision making is not profitability alone.
 
-## Explanation
+## Explanation (SOURCE)
 
 **Environmental sustainability has three parts**, and naming all three is worth
 marks because students usually give one:
@@ -121,7 +125,46 @@ Note the two conditions hidden in that argument: it depends on customers
 *finding out*, and it pays *over the long run*. Both are places the argument can
 fail, and naming them is what turns a description into an evaluation.
 
-## Relationships to other concepts
+## Load-bearing derived claims (DERIVED)
+
+```
+SOURCE  Offshore outsourcing takes advantage of regulatory difference: lower tax,
+        lower labour standards, weaker environmental and intellectual property rules.
+        The chapter states that using a third party can be a screen behind which a
+        business hides, that a breach abroad becomes the contractor's with no legal
+        responsibility attaching, and that businesses have been exposed for not
+        calling out contractors who broke local labour law.
+DERIVED Legal responsibility can be contracted away. Ethical and reputational
+        responsibility cannot, because customers attribute the harm to the brand.
+USE     The strongest CSR argument in the course and the natural spine of ops-03.
+        Also the test for whether a business went beyond compliance: could it have
+        done less and still been legal.
+```
+
+```
+SOURCE  CSR is a key concern in operations because a business must know how its
+        inputs are sourced, shape processes to minimise damage and waste, and recruit
+        inclusively. Every treatment in the chapter runs this direction, CSR as an
+        influence on operations.
+DERIVED ops-03 asks the reverse, so each strategy has to be run as a cause: global
+        sourcing can lower standards by design, JIT reduces obsolescence but can
+        raise transport emissions, quality management removes scrap, technology cuts
+        energy per unit and creates the redundancies, and design commits most of a
+        product's environmental impact before production starts.
+USE     Without this reversal a student answers ops-03 with an ops-01 paragraph.
+```
+
+```
+SOURCE  Socially responsible behaviour costs money in the short term and often turns
+        out to be in the business's interest in the long run, because customers
+        eventually identify who is acting responsibly.
+DERIVED That argument rests on two conditions never named as conditions: customers
+        have to find out, and the horizon has to be long. Both are places it fails.
+USE     Converts the business case for CSR from an assertion into something a student
+        can evaluate.
+```
+
+## Relationships and mechanisms (DERIVED unless marked)
 
 CSR is an **influence** on operations, and ops-03 asks the reverse: how
 operations strategies affect CSR. That direction is unusual and needs stating,
@@ -148,7 +191,7 @@ reduction lowers **cost**, so some CSR is free; but higher input standards, fair
 trade sourcing and emissions abatement raise cost, so some is not. An answer that
 claims CSR always pays or always costs is wrong in the same way both times.
 
-## Terminology
+## Terminology (SOURCE)
 
 - **corporate social responsibility (CSR)** — open and accountable action based
   on respect for people, community and environment, going beyond compliance
@@ -202,7 +245,7 @@ claims CSR always pays or always costs is wrong in the same way both times.
   higher input standards do not. Which one applies depends on the specific
   practice.
 
-## Worked example, structurally
+## Instructional implications (USE)
 
 1. name the operations decision, precisely: a sourcing standard, a process
    change, a design choice, a technology
@@ -224,7 +267,7 @@ and supplier auditing; quality management and waste; government policy and legal
 regulation as influences; stakeholder expectations; ethical business behaviour in
 marketing, finance and human resources.
 
-## What the source does not give us
+## Source gaps
 
 - Nothing running in the ops-03 direction. Every treatment here is CSR as an
   influence on operations. Nothing asks how an operations strategy changes CSR
