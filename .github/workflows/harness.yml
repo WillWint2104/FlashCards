@@ -1,0 +1,44 @@
+# The 45-suite harness, on every pull request.
+#
+# Until now Actions ran stylelint and nothing else, so every check that actually
+# exercises the app ran only where someone remembered to run it. Four regressions
+# in a single authoring session were caught locally by suites a pull request never
+# saw: a supporting concept used where only a domain concept is allowed, learning
+# blocks that would have made one field serve two purposes, a subject filter that
+# removed the only way to choose a subject, and a test probe that inspected an
+# empty list and would have passed while checking nothing.
+#
+# The harness needs three things a default runner does not have: Chromium, a
+# python3 for the walkthrough fixture builder, and enough time. It is slower than
+# a lint job by design, because it drives a real browser through the student
+# journeys.
+name: harness
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  harness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      # Chromium only. The suites never touch the other engines, and installing
+      # all three roughly triples the step for nothing.
+      - run: npx playwright install --with-deps chromium
+      # The build is a gate in its own right: it refuses on a content fault and
+      # publishes nothing, so a failure here is a real finding rather than noise.
+      - run: node build.js
+      # The pair must be reproducible. A build that differs from the committed
+      # artefact means the two can drift, and the preview a reviewer reads would
+      # stop being the thing the tests ran against.
+      - name: the committed build matches a fresh one
+        run: git diff --exit-code -- marginal-preview.html docs/support-coverage.md
+      - run: node tests/run.js
