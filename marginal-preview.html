@@ -3529,7 +3529,8 @@ window.CONTENT.charts = {
 </script>
 <script>
 // =============================================================================
-// Marginal — essay practice content (HSC Ancient History, Year 11).
+// Marginal, essay practice content. business_studies is the active product;
+// ancient_history is legacy scope and is excluded from launch readiness.
 //
 // ORIGINAL questions and scaffolding written for this app in the HSC genre.
 // Nothing here is reproduced from NESA papers, marking guidelines or any
@@ -3542,12 +3543,19 @@ window.CONTENT.charts = {
 // =============================================================================
 window.ESSAY = {
   // Subjects keyed by the value the client subject map resolves a class code to.
-  // Only ancient_history ships today; the shape is ready for more.
+  // ancient_history is legacy scope; business_studies is the active product.
   subjects: {
     ancient_history: {
       key: "ancient_history",
       label: "Ancient History",
       stage: "Year 11",
+      // Legacy scope. The subject is no longer taught, so it is not part of the
+      // active product: it is excluded from launch-readiness reporting and from
+      // the student subject picker, and its questions are not being authored.
+      // Kept rather than deleted so it can be revived, and because the shipped
+      // worked examples are still authored against it.
+      status: "legacy",
+      activeProduct: false,
       // Marked against THIS subject's dimensions, never another's. Original wording.
       markingCriteria: [
         "historical argument and judgement",
@@ -3799,6 +3807,99 @@ window.ESSAY = {
             { term: "customer engagement", meaning: "the extent to which customers interact with a business through its channels rather than merely receiving its messages." }
           ],
           related: ["e-marketing"]
+        },
+        eMarketing: {
+          kind: "domain",
+          requiresTeaching: true,
+          oneLine: "using the internet to carry out marketing activities, chosen as a strategy rather than added as a channel.",
+          title: "E-marketing",
+          syllabus: "Marketing \u00b7 marketing strategies \u00b7 e-marketing",
+          quick: "E-marketing is doing marketing work through the internet. The decision is not whether to be online but which marketing job moves online and why, because each digital channel does something different.",
+          readMore: [
+            "The channels are not interchangeable. A web page is the surface the business fully controls, and it does depth rather than reach. Electronic messages reach people who already have a relationship with the business. Social advertising buys cheap reach and hands the business's message to people who will pass it on or argue with it. Location-based marketing only pays where being nearby changes the decision. Choosing between them is the strategy; listing them is not.",
+            "Two properties separate e-marketing from other promotion. It is measurable, because reach and frequency can be counted rather than estimated, which turns spending into something that can be judged against a target. And it trades control for participation: the same customers who spread a message for nothing also decide what is said about the business, and a business cannot take the first without the second.",
+            "A target market changes e-marketing because the channel has to be where those customers already are, and has to match how they decide. Customers who research before buying need depth. Customers who decide in the moment need to be reached at the moment. Customers who buy on price need an offer put in front of them repeatedly at low cost."
+          ],
+          terms: [
+            { term: "e-marketing", meaning: "the practice of using the internet to perform marketing activities." },
+            { term: "reach", meaning: "the number of people exposed to an advertisement's message." },
+            { term: "frequency", meaning: "the average number of times one person is exposed to it." },
+            { term: "social media advertising", meaning: "advertising through social platforms to deliver targeted messages, cheap and measurable, at the cost of controlling the response." }
+          ],
+          confusions: [
+            "E-marketing is not promotion moved online. When the transaction happens in the app the app is also the process, and when the site is the only premises the customer sees it is also the physical evidence.",
+            "Having a website is not e-marketing. Presence without a reason for the customer to act is not a strategy.",
+            "Reach is not frequency. Reach counts people, frequency counts exposures per person, and a campaign can be strong on one and weak on the other."
+          ],
+          example: "A specialist running shop and a supermarket both sell socks. The running shop advertises on a podcast for marathon runners, because the audience has already declared the interest. The supermarket does not, because its customers are not defined by an interest and the audience is too narrow to matter. Same product, different channel, and the target market is the reason.",
+          related: ["customer engagement", "promotion", "processes", "physical evidence"]
+        },
+        priceSensitivity: {
+          kind: "supporting",
+          requiresTeaching: "contextual",
+          oneLine: "how far a group of customers changes what it buys when the price changes.",
+          title: "Price sensitivity",
+          quick: "A price-sensitive customer will switch, delay or buy less when a price rises, and will respond quickly when it falls. It is a behavioural characteristic of a segment, not a fact about the product, so the same price can be sensitive for one market and irrelevant to another.",
+          terms: [
+            { term: "price sensitivity", meaning: "the degree to which demand from a group of customers responds to a change in price." },
+            { term: "behavioural segmentation", meaning: "dividing a market by the customer's relationship to the product, including loyalty, usage rate and price sensitivity." }
+          ],
+          confusions: [
+            "Price sensitivity is not low income. It is about the relationship to the product: a wealthy customer can be highly price sensitive on something they consider a commodity.",
+            "A price-sensitive market is not simply a cheap market. It is one where a price change moves behaviour, which is why offers and loyalty schemes work there and brand messages often do not."
+          ],
+          example: "Two cafes raise their coffee by fifty cents. The one beside a station loses customers to the shop next door, because those customers buy on habit and price. The one inside a hotel loses nobody, because its customers are not choosing on price at that moment. Same rise, opposite result.",
+          related: ["e-marketing", "promotion", "market segmentation"]
+        },
+        physicalEvidence: {
+          kind: "domain",
+          requiresTeaching: true,
+          oneLine: "everything a customer can see while dealing with a business, which is what they judge an unseen service by.",
+          title: "Physical evidence in the marketing mix",
+          syllabus: "Marketing \u00b7 marketing strategies \u00b7 people, processes and physical evidence",
+          quick: "Physical evidence is what the customer sees: the premises, the fit-out, signage, uniforms, packaging, the website, and the reviews other customers left. It matters because a service cannot be inspected before it is bought, so the customer judges it from what is visible.",
+          readMore: [
+            "A customer buying a good can hold it. A customer buying a service is buying a promise, and has to judge that promise from proxies. Physical evidence is exactly those proxies, which is why it is a marketing decision rather than decoration.",
+            "It is not only physical. A site that is easy to navigate, with clear contact details and a checkout that feels safe, is physical evidence in the same way a clean shopfront is. So are the reviews a business encourages customers to leave, which is why asking for a review is a physical evidence decision rather than a promotion one.",
+            "A target market changes physical evidence because different customers read different things from the same room. A market that expects expertise reads unhurried space and visible qualifications. A market that expects speed reads clear signage and short sightlines. A market positioned as luxury reads expense, and the expense is the message rather than a side effect."
+          ],
+          terms: [
+            { term: "physical evidence", meaning: "everything the customer sees when interacting with a business, physical or digital." },
+            { term: "intangible", meaning: "a product that cannot be held or inspected before purchase, so it is judged by proxies." },
+            { term: "servicescape", meaning: "the designed physical environment a service is delivered in." }
+          ],
+          confusions: [
+            "Physical evidence is not place. Place asks how the product reaches the customer; physical evidence asks what the customer concludes from what they can see.",
+            "Physical evidence is not only the building. The website, the confirmation email and the review page all count, and limiting it to the shopfront loses half of it.",
+            "Physical evidence is not a description of the premises. It is what the customer infers from them, and an answer that stops at the description has not made the argument."
+          ],
+          example: "A law firm and a barber both put their qualifications on the wall. The law firm does it because a client cannot judge legal advice until long after paying for it. The barber does not need to, because the customer can see the result in a mirror before they leave. The less a customer can verify, the harder the physical evidence has to work.",
+          related: ["servicescape", "people", "processes", "market segmentation"]
+        },
+        marketSegmentation: {
+          kind: "domain",
+          requiresTeaching: true,
+          oneLine: "dividing a total market into groups that share a characteristic, then choosing one to sell to.",
+          title: "Market segmentation and target markets",
+          syllabus: "Marketing \u00b7 marketing strategies \u00b7 market segmentation",
+          quick: "Segmentation is the dividing; the target market is the segment chosen. The two are not the same word, and the whole point of dividing is that a strategy can then follow from what that group in particular wants.",
+          readMore: [
+            "Markets are divided on four kinds of variable: demographic features such as age and income, geographic location, psychographic characteristics such as lifestyle and motive, and behavioural characteristics such as loyalty, usage rate and price sensitivity. Demographic variables are the most used because they are the easiest to measure, which is a reason for their popularity rather than for their usefulness.",
+            "A segment description is only worth writing if a strategy follows from it. Young people is not a target market for the purpose of an answer, because nothing follows. Customers who expect to buy without speaking to anyone is, because four strategies follow immediately.",
+            "One target market pulls every element of the mix in the same direction, which is why the elements are consistent with each other rather than chosen separately. Change the target market and the product, price, promotion, channel, staffing and surroundings all have to move together."
+          ],
+          terms: [
+            { term: "market segmentation", meaning: "subdividing the total market into groups sharing one or more characteristics." },
+            { term: "target market", meaning: "the group of present and potential customers a business intends to sell to." },
+            { term: "segmentation variable", meaning: "the characteristic used to do the dividing." },
+            { term: "niche market", meaning: "a narrowly selected segment; a segment within a segment." }
+          ],
+          confusions: [
+            "Segmentation is not the target market. Segmentation is the dividing, the target market is the segment chosen, and using them interchangeably loses the step in between.",
+            "A niche is not simply a small market. It is defined by narrowness of need rather than by number of customers, and it can be more profitable than a mass market."
+          ],
+          example: "A cinema runs the same film at a parent-and-baby session with the lights up and the sound down, and at a late screening with reserved seating and a bar. One film, two segments, and almost every element of the offer differs because what each group needs from the visit differs.",
+          related: ["physical evidence", "price sensitivity", "people", "processes"]
         }
       },
       questions: [
@@ -3864,11 +3965,40 @@ window.ESSAY = {
               short: "Digital engagement → digital marketing",
               adds: "the digital channels it markets through",
               meaning: "These customers already spend their attention on digital channels, so that is where the business has to buy it.",
+              choiceMeaning: "Customers who already spend their time on digital channels can lead a business to move its promotion to where that attention is.",
               whatToProve: "customers are already on digital channels \u2192 the business moves its promotion there \u2192 why that reaches them better than the alternative",
               commonMistake: "Listing the business's digital channels without saying what it is about these customers that made digital the right choice.",
-              // Not yet reviewed for what it depends on. A state, not a claim that it
-              // depends on nothing: see decisions/2026-08-22-concept-routing.md.
-              learning: { status: "unreviewed" },
+              learning: {
+                status: "authored",
+                concepts: { primary: ["eMarketing"], supporting: ["customerEngagement"], optional: [] },
+                know: "A channel is chosen because the customers are already in it, not because the business likes it.",
+                chain: [
+                  "these customers already spend their attention on digital channels",
+                  "attention is what promotion has to buy",
+                  "the business moves its promotion to where that attention already is",
+                  "the same spend reaches more of the people it is meant for"
+                ],
+                misconception: {
+                  head: "Two ways to write about a digital channel",
+                  a: { term: "Listing the channels", line: "the business has an app, a page and a feed. True, and it says nothing about why." },
+                  b: { term: "Naming the reason", line: "these customers are already there, so that is where the promotion had to go." }
+                },
+                example: {
+                  context: "a hardware chain",
+                  text: "A hardware chain selling to tradespeople advertises on a trade podcast rather than in a Sunday magazine. The listeners already work in the trade, so almost nothing is spent reaching people who will never buy.",
+                  pattern: "the channel was chosen from where the customers already were, not from what was available"
+                },
+                try: {
+                  prompt: "A business says it moved its promotion online because online is cheaper. What is missing from that argument?",
+                  options: [
+                    { text: "Why these particular customers are reachable there", right: true },
+                    { text: "How much cheaper it was", repair: "A cost saving explains the budget, not the strategy. The question asks how the target market affects e-marketing, so the answer has to start with the customers." },
+                    { text: "Which platform it used", repair: "Naming the platform is still listing a channel. The argument needs the characteristic of the market that made a digital channel the right one." }
+                  ],
+                  onRight: "Right. Cheapness is a reason to prefer a channel; being where the customers already are is the reason it works."
+                },
+                explore: { concept: "eMarketing", label: "Read more about e-marketing" }
+              },
               concept: { topic: "marketing", section: "marketing strategies", point: "e-marketing" },
               evidence: ["App, loyalty rewards and mobile ordering", "Promotion mix from advertising to sponsorship"],
               guides: {
@@ -3885,6 +4015,78 @@ window.ESSAY = {
               // simply does not appear.
               // ------------------------------------------------------------
               help: {
+                topic: {
+                  "hint": "What is it about these customers, rather than about the business, that starts this paragraph?",
+                  "needs": "Open by naming the customer habit as a habit, and name e-marketing as the element it acts on.",
+                  "direction": {
+                    "type": "reasoningDirection",
+                    "text": "Make the customers the subject of your first sentence. If the sentence starts with the business, the paragraph will describe channels instead of explaining why they were chosen."
+                  },
+                  "starter": {
+                    "type": "sentenceStarter",
+                    "text": "A target market that already spends its attention on digital channels pushes a business to"
+                  },
+                  "example": {
+                    "type": "differentContextExample",
+                    "context": "a music venue and its audience",
+                    "text": "An audience that finds out what is on by scrolling rather than by walking past pushes the venue to move its listings to where that scrolling happens.",
+                    "pattern": "the customer habit named first, then the element it acts on"
+                  }
+                },
+                define: {
+                  "hint": "What counts as e-marketing, beyond having a website?",
+                  "needs": "Show what e-marketing is, and make clear it is a choice of channel rather than a presence.",
+                  "direction": {
+                    "type": "reasoningDirection",
+                    "text": "Define e-marketing as using the internet to do marketing work, then narrow it to the channel you are about to argue for. Defining the internet is not defining e-marketing."
+                  },
+                  "starter": {
+                    "type": "sentenceStarter",
+                    "text": "E-marketing is using the internet to carry out marketing activities, and the channel that matters here is"
+                  },
+                  "example": {
+                    "type": "differentContextExample",
+                    "context": "a travel agency",
+                    "text": "E-marketing is using the internet to do marketing work, and for this agency the channel that matters is the emailed itinerary that arrives before the trip.",
+                    "pattern": "define the element, then narrow to the channel in scope"
+                  }
+                },
+                effect: {
+                  "hint": "What is now true for the business that was not true before?",
+                  "needs": "State the result for the business, in terms of reaching this market rather than in terms of general popularity.",
+                  "direction": {
+                    "type": "reasoningDirection",
+                    "text": "Name the gain as reach or response among these customers specifically. A gain that would be true for any business is not evidence that the target market caused anything."
+                  },
+                  "starter": {
+                    "type": "sentenceStarter",
+                    "text": "As a result, more of the people this business is actually trying to reach"
+                  },
+                  "example": {
+                    "type": "differentContextExample",
+                    "context": "a bicycle repair shop",
+                    "text": "As a result, almost everyone who sees the offer is within riding distance of the workshop, which was not true of the leaflets it used to print.",
+                    "pattern": "the gain stated in terms of this market, not in general"
+                  }
+                },
+                link: {
+                  "hint": "The question asks how the target market affects e-marketing. Have you said so?",
+                  "needs": "Close by returning to the target market and saying it was the cause of the channel decision.",
+                  "direction": {
+                    "type": "reasoningDirection",
+                    "text": "Finish on the market, not on the channel. The last sentence should make clear the channel followed from who the customers are, so the paragraph answers the question rather than describing a tool."
+                  },
+                  "starter": {
+                    "type": "sentenceStarter",
+                    "text": "The digital channel was chosen because of who these customers are, since"
+                  },
+                  "example": {
+                    "type": "differentContextExample",
+                    "context": "a school uniform supplier",
+                    "text": "The online fitting guide exists because these customers are parents buying in a hurry, not because online guides are fashionable.",
+                    "pattern": "return to the market and name it as the cause"
+                  }
+                },
                 explain: {
                   hint: "Think about where this target market spends its time, and how a business can reach them there.",
                   needs: "Show the cause and effect between the target market's digital behaviour and the business's choice of marketing channel. The customer habit is the cause.",
@@ -3905,13 +4107,152 @@ window.ESSAY = {
               short: "Price sensitivity → digital offers and loyalty",
               adds: "the offers and loyalty schemes it runs digitally",
               meaning: "These customers decide on price, and digital channels are the cheapest way to put an offer in front of them again and again.",
+              choiceMeaning: "Customers who decide on price can lead a business to deliver its offers through a channel cheap enough to use again and again.",
               whatToProve: "customers respond to price \u2192 the business needs a cheap and repeatable way to reach them with offers \u2192 digital promotions and loyalty schemes become the tool",
               commonMistake: "Arguing that discounts attract customers, which is a pricing point, rather than arguing why the offer is delivered digitally.",
-              // Not yet reviewed for what it depends on. A state, not a claim that it
-              // depends on nothing: see decisions/2026-08-22-concept-routing.md.
-              learning: { status: "unreviewed" },
+              learning: {
+                status: "authored",
+                concepts: { primary: ["eMarketing"], supporting: ["priceSensitivity"], optional: [] },
+                know: "A price-sensitive market has to be reached again and again, and the cost of reaching them repeatedly is what decides the channel.",
+                chain: [
+                  "these customers decide on price",
+                  "an offer only works if it arrives when they are deciding",
+                  "reaching them repeatedly has to be cheap enough to keep doing",
+                  "digital offers and a loyalty scheme become the tool"
+                ],
+                misconception: {
+                  head: "Two arguments that both mention price",
+                  a: { term: "The discount attracts them", line: "why a low price works. That is a pricing argument." },
+                  b: { term: "The offer is delivered digitally", line: "why the offer arrives through this channel and not a printed one. That is this argument." }
+                },
+                example: {
+                  context: "a supermarket",
+                  text: "A supermarket that once printed a weekly catalogue now sends the same offers to an app. The discounts did not change. What changed is that a fresh offer can be sent on a slow Tuesday for almost nothing.",
+                  pattern: "the price strategy stayed the same; the cost of repeating it fell"
+                },
+                try: {
+                  prompt: "Which sentence argues e-marketing rather than pricing?",
+                  options: [
+                    { text: "Because these customers respond to offers, the business needs a channel it can afford to use every week", right: true },
+                    { text: "Because these customers respond to offers, the business keeps its prices low", repair: "That is a pricing decision. The question is about e-marketing, so the argument has to reach the channel the offer travels through." },
+                    { text: "Because these customers respond to offers, the business advertises its low prices widely", repair: "Close, but advertising widely is promotion in general. The e-marketing point is that a digital channel can repeat the offer cheaply." }
+                  ],
+                  onRight: "Right. The market sets the need for repetition, and repetition is what makes the digital channel the answer."
+                },
+                explore: { concept: "priceSensitivity", label: "Read more about price sensitivity" }
+              },
               concept: { topic: "marketing", section: "marketing strategies", point: "promotion" },
               evidence: ["App, loyalty rewards and mobile ordering", "Price points from value range to McCafe"],
+              help: {
+                topic: {
+  "hint": "What is it about these customers that makes an offer work at all?",
+  "needs": "Open by naming price sensitivity as the market characteristic, and name e-marketing as the element.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Say that this market decides on price, then say you are arguing about how the offer reaches them. Naming the discount is not naming the channel."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "A target market that decides largely on price pushes a business to"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a discount airline",
+    "text": "A market that will change dates to save twenty dollars pushes the airline to find a way of putting fares in front of people every week.",
+    "pattern": "the price behaviour named, then the channel it forces"
+  }
+},
+                define: {
+  "hint": "What is price sensitivity, in this market's behaviour rather than in their income?",
+  "needs": "Define price sensitivity as responsiveness to a price change, and connect it to why offers have to repeat.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Define the behaviour, not the customer's wealth. Then say what it means for the business: an offer that arrives once is missed, so the channel has to be repeatable."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "Price sensitivity means demand from this group moves when the price does, which means"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a stationery retailer",
+    "text": "Price sensitivity means these buyers switch when the price moves, so a single catalogue in January cannot do the work.",
+    "pattern": "define the behaviour, then draw out what it demands of the channel"
+  }
+},
+                explain: {
+  "hint": "Why does the cost of sending the offer matter as much as the offer itself?",
+  "needs": "Establish the causal step from price-sensitive customers to a cheap, repeatable digital channel.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Trace it: this group responds to offers, an offer only works if it arrives at the moment of deciding, so it must be sent often, and sending often is only affordable digitally. The affordability of repetition is the mechanism."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "Because this market responds to price rather than to reputation, the business needs a way of reaching them repeatedly that"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a takeaway pizza shop",
+    "text": "Because these customers choose on the night, the shop needs to reach them on the night, and a text costs almost nothing to send while a printed flyer does not.",
+    "pattern": "the behaviour, the need to repeat, then the cost of repeating"
+  }
+},
+                example: {
+  "hint": "What is the business actually doing that puts an offer in front of them again?",
+  "needs": "Use the evidence to show the offer being delivered digitally. The fact first, then what it demonstrates.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "State what the business runs, then say what it lets the business do that a printed alternative would not. If your sentence only mentions the discount, you are arguing pricing rather than e-marketing."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "The business runs its offers through a digital channel, which means"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a garden centre",
+    "text": "The centre sends its members a different offer each week, which means an offer can follow the weather rather than a print deadline.",
+    "pattern": "the fact, then what the channel makes possible"
+  }
+},
+                effect: {
+  "hint": "What does the business get back from delivering offers this way?",
+  "needs": "State the result in terms of repeat purchase or response from this market.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Name the gain as customers returning or responding, not as sales in general. Tie it to the group you named at the start."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "As a result, customers who buy on price are given a reason to come back, because"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a car wash",
+    "text": "As a result, the customers most likely to try the cheaper place down the road are the ones being given a reason not to.",
+    "pattern": "the gain named for the group the paragraph is about"
+  }
+},
+                link: {
+  "hint": "Does your last sentence still know which market this was about?",
+  "needs": "Close by naming price sensitivity as the cause of the digital channel choice.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "End on the market. Say that a market deciding on price is what made a cheap repeatable channel necessary, so the examiner can see the causal chain closing."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "The business markets this way because its customers decide on price, and"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a phone repair kiosk",
+    "text": "The weekly offer exists because these customers will shop around, not because messaging is modern.",
+    "pattern": "return to the market characteristic as the cause"
+  }
+},
+              },
               guides: {
                 explain: "Explain why a target market that weighs price closely would push the business towards discounting and loyalty offers delivered digitally.",
                 example: "Apply the evidence you selected, stating the fact before what it shows.",
@@ -3921,13 +4262,152 @@ window.ESSAY = {
               short: "Wanting to act at once → marketing inside the ordering channel",
               adds: "where its marketing sits relative to ordering",
               meaning: "These customers want to act on an offer immediately, so the marketing has to sit inside the channel they already order through.",
+              choiceMeaning: "Customers who want to act on an offer straight away can lead a business to put its marketing where the order is placed.",
               whatToProve: "customers want to act with the least effort \u2192 marketing has to sit where the order is placed \u2192 the ordering channel becomes a promotion channel",
               commonMistake: "Describing the app as convenient to order with, which is a processes argument, instead of arguing that it is where the marketing reaches them.",
-              // Not yet reviewed for what it depends on. A state, not a claim that it
-              // depends on nothing: see decisions/2026-08-22-concept-routing.md.
-              learning: { status: "unreviewed" },
+              learning: {
+                status: "authored",
+                concepts: { primary: ["eMarketing"], supporting: ["customerEngagement"], optional: ["processes"] },
+                know: "Marketing placed where the order is already being taken removes the gap between wanting something and buying it.",
+                chain: [
+                  "these customers want to act with the least effort",
+                  "every step between the offer and the order loses some of them",
+                  "the marketing is put inside the channel they already order through",
+                  "the offer and the purchase become the same action"
+                ],
+                misconception: {
+                  head: "The same app, two different arguments",
+                  a: { term: "The app is easy to order with", line: "what the customer has to do to buy. That is a processes point." },
+                  b: { term: "The offer appears in the app", line: "where the marketing reaches them. That is the e-marketing point." }
+                },
+                example: {
+                  context: "a taxi app",
+                  text: "A taxi app that shows a discount on the screen where you book has put the promotion inside the ordering step. The same discount on a billboard would need the customer to remember it and open the app later.",
+                  pattern: "the offer moved to the moment of ordering, so nothing had to be remembered"
+                },
+                try: {
+                  prompt: "A business argues its app helps customers order in fewer taps. Which question turns that into an e-marketing argument?",
+                  options: [
+                    { text: "Where does the customer meet the offer?", right: true },
+                    { text: "How many taps does it take?", repair: "That measures the process. The e-marketing argument is about where the marketing sits, not how short the sequence is." },
+                    { text: "How fast is the delivery?", repair: "Speed of delivery is closer to place and processes. This argument is about the offer reaching the customer at the point of ordering." }
+                  ],
+                  onRight: "Right. Once the offer appears where the order is placed, the marketing is doing its work inside the ordering channel."
+                },
+                explore: { concept: "eMarketing", label: "Read more about e-marketing" }
+              },
               concept: { topic: "marketing", section: "marketing strategies", point: "e-marketing" },
               evidence: ["App, loyalty rewards and mobile ordering"],
+              help: {
+                topic: {
+  "hint": "What do these customers want to do the moment they see an offer?",
+  "needs": "Open by naming the wish to act immediately, and name e-marketing as the element.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Start with the customer's impatience, then say you are arguing about where the marketing sits. Do not open with the app."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "A target market that wants to act on an offer the moment it appears pushes a business to"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a ticketing service",
+    "text": "An audience that decides to go on the day pushes the service to put the offer on the same screen as the seat map.",
+    "pattern": "the impatience named, then the placement it forces"
+  }
+},
+                define: {
+  "hint": "What does it mean to market inside an ordering channel?",
+  "needs": "Define e-marketing, then narrow it to marketing placed at the point of ordering.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Define e-marketing as doing marketing work through the internet, then make the specific move: the ordering channel is being used as a promotion channel. That second sentence is the one that earns the mark."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "E-marketing is doing marketing through the internet, and here the ordering channel is also being used to"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a hotel booking site",
+    "text": "E-marketing is marketing carried out online, and here the booking page is also the place the upgrade is offered.",
+    "pattern": "define the element, then name the specific placement"
+  }
+},
+                explain: {
+  "hint": "What happens to a customer between seeing an offer and acting on it?",
+  "needs": "Establish that each step between offer and purchase loses customers, so removing the gap is the mechanism.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Trace it: these customers want least effort, every step between seeing and buying loses some of them, so the offer is placed where the order is already happening and the two become one action. The lost step is the mechanism."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "Because this market acts on impulse and dislikes effort, an offer placed anywhere else would"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a food delivery service",
+    "text": "Because a hungry customer will not remember a billboard an hour later, the offer has to appear on the screen where the order is already being placed.",
+    "pattern": "the impatience, the step that would be lost, then the placement"
+  }
+},
+                example: {
+  "hint": "Where exactly does the customer meet the offer?",
+  "needs": "Use the evidence to show marketing sitting inside the ordering channel. Fact first, then what it shows.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "State what appears where, then say what the customer does not have to do as a result. If your sentence is about the app being easy to use, you have written a processes point instead."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "The offer appears in the same place the order is placed, so the customer does not have to"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a cinema chain",
+    "text": "The discount appears on the seat selection screen, so nobody has to remember a code from an email they read yesterday.",
+    "pattern": "the placement, then the step the customer is spared"
+  }
+},
+                effect: {
+  "hint": "What changes for the business once the offer and the order are the same action?",
+  "needs": "State the result as conversion or immediate purchase among this market.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Name the gain as more of those who see the offer acting on it. Avoid claiming the business simply sells more, which would be true of any promotion anywhere."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "As a result, a larger share of the customers who see the offer"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a car park operator",
+    "text": "As a result, the season pass is bought while the driver is standing at the machine, rather than considered and forgotten.",
+    "pattern": "the gain stated as acting rather than as selling"
+  }
+},
+                link: {
+  "hint": "Has your final sentence come back to the customers?",
+  "needs": "Close by naming the wish for immediacy as the cause of where the marketing sits.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Finish on the market. The last sentence should say the placement follows from customers who want to act at once, so the paragraph answers how the target market affects e-marketing."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "The marketing sits inside the ordering channel because these customers want to act at once, and"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a laundry service",
+    "text": "The offer sits on the collection screen because these customers decide while they are already there, not because the screen had space.",
+    "pattern": "return to the market characteristic as the cause"
+  }
+},
+              },
               guides: {
                 explain: "Explain why customers who value convenience make it worth marketing inside the same app they order in." } },
 
@@ -3970,6 +4450,116 @@ window.ESSAY = {
               commonMistake: "Saying good staff are important, which is true of every business, instead of saying what THIS target market expects that forced the investment.",
               concept: { topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
               evidence: ["Intensive distribution and standardised service"],
+              help: {
+                topic: {
+  "hint": "What is this customer buying besides the thing they take away?",
+  "needs": "Open by naming what these customers judge the business on, and name people as the element.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Make the customer's judgement the subject. Say they judge the business on the person serving them, then say you are arguing about people rather than about the product."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "A target market that judges a business on the person serving it pushes that business to"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a garden centre and hobby gardeners",
+    "text": "Customers who come for advice as much as for plants push the centre to think carefully about who is on the floor.",
+    "pattern": "what the customer judges on, then the element it acts on"
+  }
+},
+                define: {
+  "hint": "Why are staff part of the marketing mix rather than a cost behind it?",
+  "needs": "Define people as the staff who deliver the service, and say why they cannot be separated from it.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Define people as part of what is being bought, not as the workforce. The reason is that a service is produced at the moment it is consumed, so the person and the product arrive together."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "People in the marketing mix are the staff who deliver the service, and because a service is produced as it is consumed"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a hairdresser",
+    "text": "People are the staff delivering the service, and since the cut happens as the customer sits there, the stylist is part of what was bought.",
+    "pattern": "define the element, then say why it cannot be separated"
+  }
+},
+                explain: {
+  "hint": "Why does a business chasing this group need more than good intentions from staff?",
+  "needs": "Establish that meeting this expectation requires a defined standard and training to it, not simply hiring pleasant people.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Trace it: these customers judge on the person, individuals differ, so the business writes down what good service is here and trains everyone to it. The written standard is what turns an intention into a result."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "Because this market judges the business on the person in front of them, the business has to"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "an optician",
+    "text": "Because customers return for the eye test rather than the frames, every branch is trained to the same twenty minute examination.",
+    "pattern": "the judgement, the problem of variation, then the standard and training"
+  }
+},
+                example: {
+  "hint": "What does the business actually do about what its staff know or say?",
+  "needs": "Use the evidence to show a decision about staff. The fact first, then what it shows about the market.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "State what the business does with its people, then say what it tells you about the customers. If your sentence is about uniforms or signage, you have written physical evidence instead."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "The business trains its staff to a set standard, which shows that"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a bank branch",
+    "text": "Every teller is trained to ask the same two questions before a transfer, which shows the customers are buying reassurance as much as the transaction.",
+    "pattern": "the staffing decision, then what it demonstrates about the market"
+  }
+},
+                effect: {
+  "hint": "What does the customer now get that they would not otherwise?",
+  "needs": "State the result as what the customer receives stopping depending on who serves them.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Name the gain as consistency of the interaction for this market. Avoid saying staff morale improved, which is a human resources outcome rather than a marketing one."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "As a result, what the customer receives no longer depends on"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a veterinary practice",
+    "text": "As a result, an owner gets the same careful explanation whichever vet is on that afternoon.",
+    "pattern": "the gain stated as what the customer receives"
+  }
+},
+                link: {
+  "hint": "Does your last sentence name the market again?",
+  "needs": "Close by naming the customers' judgement as the cause of the people decision.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "End on the market. Say the training exists because of who these customers are and what they judge on, so the causal chain is visible."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "The business invests in its staff this way because these customers judge it on them, and"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a bookshop",
+    "text": "The staff are trained to recommend rather than to shelve because these customers came in to be advised.",
+    "pattern": "return to the market and name it as the cause"
+  }
+},
+              },
               guides: {
                 explain: "Explain why what this target market expects of an interaction changes how staff are trained and what they are asked to do.",
                 example: "Apply the evidence you selected. Say what it shows about the people element specifically." } },
@@ -3978,13 +4568,152 @@ window.ESSAY = {
               short: "Expecting speed → staffing and rostering",
               adds: "how it staffs and rosters for demand",
               meaning: "These customers count waiting as a cost, so the business has to have the right number of staff on at the right hour.",
+              choiceMeaning: "Customers who will not wait can lead a business to change how many staff it has on, and at which hours.",
               whatToProve: "customers will not wait \u2192 service capacity has to match demand hour by hour \u2192 staffing and rostering change",
               commonMistake: "Arguing about the ordering system, which is processes, rather than about the people who have to be there to deliver it.",
-              // Not yet reviewed for what it depends on. A state, not a claim that it
-              // depends on nothing: see decisions/2026-08-22-concept-routing.md.
-              learning: { status: "unreviewed" },
+              learning: {
+                status: "authored",
+                concepts: { primary: ["people"], supporting: ["serviceStandards"], optional: ["processes"] },
+                know: "Service capacity is people multiplied by hours, so a market that will not wait is really a rostering decision.",
+                chain: [
+                  "these customers count waiting as a cost",
+                  "demand is not spread evenly across the day",
+                  "staff numbers have to rise and fall with it",
+                  "the wait stays short at the hour it would otherwise be longest"
+                ],
+                misconception: {
+                  head: "Two ways to shorten a wait",
+                  a: { term: "Changing the system", line: "moving or removing a step. That is a processes point." },
+                  b: { term: "Changing who is there", line: "more staff on at the hour the queue builds. That is a people point." }
+                },
+                example: {
+                  context: "a pharmacy",
+                  text: "A pharmacy near a hospital puts two extra staff on between four and six, when prescriptions arrive in a rush. The dispensing procedure is identical all day; only the number of people doing it changes.",
+                  pattern: "nothing about the process changed; the staffing was matched to the hour"
+                },
+                try: {
+                  prompt: "Queues build every lunchtime and at no other time. Which change is a people argument?",
+                  options: [
+                    { text: "Roster more staff onto the busiest hour", right: true },
+                    { text: "Let customers order ahead on an app", repair: "That moves a step out of the queue, which is a processes argument. Useful, but not about the people delivering the service." },
+                    { text: "Add clearer signage above the counter", repair: "What the customer can see is physical evidence. This argument is about who is there to serve them." }
+                  ],
+                  onRight: "Right. The demand moves by the hour, so the answer is who is on shift at that hour."
+                },
+                explore: { concept: "people", label: "Read more about people in the marketing mix" }
+              },
               concept: { topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
               evidence: ["Intensive distribution and standardised service"],
+              help: {
+                topic: {
+  "hint": "What does this customer count as part of the price?",
+  "needs": "Open by naming waiting as a cost to these customers, and name people as the element you are arguing about.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Make waiting the thing the customer is paying. Then say you are arguing about staffing rather than about the ordering system, because those are two different answers."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "A target market that counts waiting as part of the cost of buying pushes a business to"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a walk-in clinic",
+    "text": "Patients who came because there was no appointment needed push the clinic to think about how many nurses are on at four o'clock.",
+    "pattern": "waiting named as a cost, then staffing as the element"
+  }
+},
+                define: {
+  "hint": "What are you actually calling people here?",
+  "needs": "Define people as the staff delivering the service, and connect it to service capacity at a given hour.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Define people, then make the specific move: how many staff are on determines how much service exists in that hour. Capacity is the bridge between the element and the wait."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "People are the staff who deliver the service, and how many are on shift decides"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a ferry terminal",
+    "text": "People are the staff delivering the service, and the number at the gate decides how many passengers can board before the sailing.",
+    "pattern": "define the element, then connect it to capacity"
+  }
+},
+                explain: {
+  "hint": "Why is rostering the answer rather than asking staff to hurry?",
+  "needs": "Establish that demand is uneven, so capacity has to move with it rather than staff working harder.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Trace it: this market will not wait, demand is not spread evenly through the day, so staff numbers have to rise and fall with it. Say clearly that asking the same people to move faster is not the same as putting more of them on."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "Because this market treats waiting as a cost and demand arrives in bursts, the business has to"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a museum cafe",
+    "text": "Because visitors all arrive when the tour ends, the cafe puts three extra staff on for that hour rather than asking two people to serve faster.",
+    "pattern": "the expectation, the unevenness, then matching staff to the hour"
+  }
+},
+                example: {
+  "hint": "What does the business do about who is on, and when?",
+  "needs": "Use the evidence to show a staffing or rostering decision. The fact, then what it demonstrates.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "State what the business does with staff numbers or shifts, then say what it shows about the customers. If your sentence is about ordering channels, you have written a processes point."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "The business staffs its busiest periods differently, which shows that"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a swimming pool",
+    "text": "Extra lifeguards are rostered for the after-school hours, which shows the centre knows exactly when its customers arrive and will not make them queue.",
+    "pattern": "the staffing decision, then what it shows about the market"
+  }
+},
+                effect: {
+  "hint": "What is different for the customer at the hour it matters?",
+  "needs": "State the result as a shorter wait at peak, for this market.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Name the gain at the moment it counts. A wait that is short at ten in the morning and long at midday has not met this market's expectation, so say when the gain lands."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "As a result, the wait stays short at exactly the time it would otherwise"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a pharmacy",
+    "text": "As a result, the queue at five o'clock moves at the same rate as the queue at eleven.",
+    "pattern": "the gain located at the peak rather than in general"
+  }
+},
+                link: {
+  "hint": "Has the paragraph come back to the customers?",
+  "needs": "Close by naming the expectation of speed as the cause of the staffing decision.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Finish on the market. Say the rostering follows from customers who will not wait, so the paragraph answers how the target market affects people rather than describing a roster."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "The business staffs this way because these customers will not wait, and"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a ski hire shop",
+    "text": "The extra fitters exist because these customers have a lift pass ticking, not because the shop likes a full roster.",
+    "pattern": "return to the market characteristic as the cause"
+  }
+},
+              },
               guides: {
                 explain: "Explain the link between what the target market will wait for and how the business staffs its service." } },
             { id: "mkt01-pe-consistency", area: "people",
@@ -3992,13 +4721,152 @@ window.ESSAY = {
               short: "Expecting consistency → standardised training",
               adds: "how consistently it trains staff across the network",
               meaning: "These customers are buying predictability, so what the staff do has to be the same in every store.",
+              choiceMeaning: "Customers who expect the same experience everywhere can lead a business to train every store to one service standard.",
               whatToProve: "customers are buying predictability \u2192 variation between staff breaks it \u2192 training and service standards are standardised",
               commonMistake: "Describing standard uniforms, signage or layout, which is physical evidence, rather than what the staff are trained to do.",
-              // Not yet reviewed for what it depends on. A state, not a claim that it
-              // depends on nothing: see decisions/2026-08-22-concept-routing.md.
-              learning: { status: "unreviewed" },
+              learning: {
+                status: "authored",
+                concepts: { primary: ["people", "training"], supporting: ["serviceStandards"], optional: [] },
+                know: "Consistency is not a quality of a person; it is what a written standard plus training produces across many people.",
+                chain: [
+                  "these customers are buying predictability",
+                  "left alone, every member of staff does the job slightly differently",
+                  "the business writes down what good service is and trains everyone to it",
+                  "what the customer gets stops depending on which store or which shift"
+                ],
+                misconception: {
+                  head: "Two things that both look like sameness",
+                  a: { term: "Everything looks the same", line: "uniforms, signage, layout. That is physical evidence." },
+                  b: { term: "Everyone does the same", line: "what staff are trained to say and do. That is people." }
+                },
+                example: {
+                  context: "a hotel group",
+                  text: "A hotel group trains every front desk to offer the same three things at check-in, in the same order. The buildings look nothing alike, and a guest still recognises the brand the moment someone speaks to them.",
+                  pattern: "the surroundings varied; what the staff were trained to do did not"
+                },
+                try: {
+                  prompt: "Customers say the experience differs between branches even though the branches look identical. What does that point to?",
+                  options: [
+                    { text: "Staff are not working to a common service standard", right: true },
+                    { text: "The branches need refurbishing", repair: "The branches already look identical, so the difference the customer noticed is not in what they can see." },
+                    { text: "The product range differs between branches", repair: "Possible, but the complaint is about the experience rather than what is on sale. Look at what staff do." }
+                  ],
+                  onRight: "Right. When the surroundings match and the experience does not, the variation is in what the staff were taught."
+                },
+                explore: { concept: "serviceStandards", label: "Read more about service standards" }
+              },
               concept: { topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
               evidence: ["Standardisation with local customisation", "Intensive distribution and standardised service"],
+              help: {
+                topic: {
+  "hint": "What exactly are these customers buying when they choose a familiar business?",
+  "needs": "Open by naming predictability as what this market wants, and name people as the element.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Say the customers are buying predictability, then say you are arguing about what staff do rather than about what the place looks like. Those are two different elements and only one is people."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "A target market that expects the same experience wherever it goes pushes a business to"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a car rental firm",
+    "text": "Customers who pick up in a different city each month push the firm to make the counter behave identically in all of them.",
+    "pattern": "predictability named, then staff as the element"
+  }
+},
+                define: {
+  "hint": "What is a service standard, as distinct from a rule for staff?",
+  "needs": "Define people, and define a service standard as the written description of what good service is here.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Define people as part of the offering, then define the service standard as what the business has decided good service looks like. The standard is the thing training delivers, so define it before you use it."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "People are the staff delivering the service, and a service standard is"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a fast rail operator",
+    "text": "People are the staff delivering the service, and the service standard is the announcement every guard makes, in the same words, before every stop.",
+    "pattern": "define the element, then define the standard it is measured against"
+  }
+},
+                explain: {
+  "hint": "Why does consistency need to be written down rather than hoped for?",
+  "needs": "Establish that individual variation is the default, so a common standard plus training is what removes it.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Trace it: this market is buying predictability, staff left to themselves each do the job slightly differently, so the business writes the standard down and trains everyone to it. Name variation as the problem being solved."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "Because this market is buying predictability and no two people work identically, the business has to"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a physiotherapy chain",
+    "text": "Because a patient moving between clinics expects the same programme, every practitioner is trained to the same assessment rather than to their own preference.",
+    "pattern": "the expectation, variation as the problem, then the standard"
+  }
+},
+                example: {
+  "hint": "What does the business do to make one store behave like another?",
+  "needs": "Use the evidence to show standardised training or a common service standard. The fact, then what it shows.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "State what is standardised about the staff, then say what the customer gets from it. If your sentence names uniforms, signage or layout, you have moved into physical evidence."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "The business trains staff across its network to the same standard, which means"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a driving school",
+    "text": "Every instructor teaches the same sequence of lessons, which means a learner who changes instructor does not start again.",
+    "pattern": "what is standardised, then what the customer gets from it"
+  }
+},
+                effect: {
+  "hint": "What can this customer now assume before they walk in?",
+  "needs": "State the result as the customer being able to predict the experience.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Name the gain as predictability the customer can rely on across locations or visits. That is what this market was buying, so the effect should be the thing they came for."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "As a result, a customer arriving anywhere in the network can expect"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a chain of dental practices",
+    "text": "As a result, a patient moving cities can expect the same explanation before the same procedure.",
+    "pattern": "the gain named as the predictability the market wanted"
+  }
+},
+                link: {
+  "hint": "Does the paragraph close on the customers or on the training?",
+  "needs": "Close by naming the expectation of consistency as the cause of the training decision.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "End on the market. Say the standardised training exists because these customers expect the same experience everywhere, so the examiner sees the market causing the strategy."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "Staff are trained this way because these customers expect the same experience everywhere, and"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a hotel group",
+    "text": "The scripted welcome exists because these guests chose the brand to avoid surprises, not because head office enjoys writing scripts.",
+    "pattern": "return to the market characteristic as the cause"
+  }
+},
+              },
               guides: {
                 explain: "Explain why an expectation of consistency forces the business to standardise what its people do." } },
 
@@ -4321,13 +5189,152 @@ window.ESSAY = {
               short: "Judging by surroundings → a designed servicescape",
               adds: "how deliberately its surroundings are designed",
               meaning: "These customers cannot test the service before buying it, so they judge it by the room, and the room has to be designed.",
+              choiceMeaning: "Customers who cannot test a service before buying it can lead a business to design what they can see instead.",
               whatToProve: "the service is intangible \u2192 customers judge it by what they can see \u2192 the setting is designed rather than left to chance",
               commonMistake: "Listing what the premises look like without saying what the customer concludes from it.",
-              // Not yet reviewed for what it depends on. A state, not a claim that it
-              // depends on nothing: see decisions/2026-08-22-concept-routing.md.
-              learning: { status: "unreviewed" },
+              learning: {
+                status: "authored",
+                concepts: { primary: ["physicalEvidence"], supporting: ["servicescape"], optional: [] },
+                know: "A customer who cannot test a service before buying it reads the room instead, so the room is an argument the business is making.",
+                chain: [
+                  "the service cannot be inspected before it is bought",
+                  "the customer still has to decide whether to trust it",
+                  "they judge it from what they can see",
+                  "the setting is designed to say what the business cannot prove yet"
+                ],
+                misconception: {
+                  head: "Describing a room, and using one",
+                  a: { term: "What the place looks like", line: "wooden floors, warm lighting, plants. A description." },
+                  b: { term: "What the customer concludes", line: "this place is careful, so the service probably is too. An argument." }
+                },
+                example: {
+                  context: "a dental practice",
+                  text: "A dental practice keeps its waiting room spotless because a patient cannot judge the dentistry until it is over. The floor is not the service. It is the only evidence available before the service starts.",
+                  pattern: "the surroundings were doing the work of a guarantee the customer could not otherwise get"
+                },
+                try: {
+                  prompt: "Which sentence uses physical evidence rather than describing premises?",
+                  options: [
+                    { text: "The spotless counters tell a customer who cannot inspect the kitchen that the food is handled carefully", right: true },
+                    { text: "The store has spotless counters and bright lighting", repair: "That is a description. It becomes physical evidence when you say what the customer concludes from it." },
+                    { text: "The store is in a convenient location", repair: "Where the store is sits closer to place. Physical evidence is what the customer sees once they are there." }
+                  ],
+                  onRight: "Right. The detail is only evidence once you say what it lets the customer infer."
+                },
+                explore: { concept: "physicalEvidence", label: "Read more about physical evidence" }
+              },
               concept: { topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
               evidence: ["Standardisation with local customisation", "Segments served by Happy Meal and McCafe"],
+              help: {
+                topic: {
+  "hint": "What can this customer not check before they pay?",
+  "needs": "Open by naming what the customer cannot verify in advance, and name physical evidence as the element.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Start with what the customer cannot test. That is what makes the surroundings do work, and it is the reason this paragraph is about physical evidence rather than about decoration."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "A target market that cannot judge the service until after buying it pushes a business to"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "an accountancy practice",
+    "text": "Clients who cannot tell good advice from bad until a return is filed push the practice to make its office say something first.",
+    "pattern": "what cannot be verified, then the element that stands in for it"
+  }
+},
+                define: {
+  "hint": "What counts as physical evidence, and what does not?",
+  "needs": "Define physical evidence as everything the customer sees, and note that it includes digital surroundings.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Define it as what the customer can see while dealing with the business, then widen it deliberately: the site and the reviews count too. A definition limited to the building will cost you half the element."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "Physical evidence is everything the customer sees when dealing with a business, which includes"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a removals company",
+    "text": "Physical evidence is everything the customer sees, which here means the trucks, the uniforms and the quote form as much as the depot.",
+    "pattern": "define the element, then widen it past the building"
+  }
+},
+                explain: {
+  "hint": "Why do the surroundings have to be designed rather than simply tidy?",
+  "needs": "Establish that the customer infers the quality of the unseen service from the visible setting, so the setting is an argument.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Trace it: the service is intangible, the customer still has to decide whether to trust it, so they read the room, so the room is designed to say what the business cannot yet prove. Name the inference the customer makes."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "Because this market cannot inspect the service beforehand, what they can see has to"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a childcare centre",
+    "text": "Because a parent cannot watch the whole day, the sightlines, the displayed rosters and the state of the yard are read as evidence of how the day is run.",
+    "pattern": "the intangibility, the inference, then the design decision"
+  }
+},
+                example: {
+  "hint": "What is in the setting, and what does the customer conclude from it?",
+  "needs": "Use the evidence to name something visible, then say what it demonstrates. Two moves, in that order.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Give the detail first and the inference second. A sentence that stops at the description has not used physical evidence; it has described a room."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "The customer sees a deliberately consistent setting, which tells them that"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a specialist bakery",
+    "text": "The open kitchen behind the counter lets a customer watch the bread being shaped, which tells them the claim about baking on site is true.",
+    "pattern": "the visible detail, then what the customer concludes"
+  }
+},
+                effect: {
+  "hint": "What does the business get from the customer's conclusion?",
+  "needs": "State the result as trust or willingness to buy from this market before the service is experienced.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Name the gain as the customer being willing to commit before they can verify. That is the specific work physical evidence does, and it is stronger than saying the business looks professional."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "As a result, a customer who cannot yet judge the service is willing to"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a wedding venue",
+    "text": "As a result, a couple books a date eighteen months out on the strength of a walk through the room.",
+    "pattern": "the gain named as commitment before verification"
+  }
+},
+                link: {
+  "hint": "Does the last sentence say why this market in particular?",
+  "needs": "Close by naming the customers' inability to verify as the cause of the designed setting.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "End on the market. Say the setting is designed because these customers judge on what they can see, so the paragraph answers the question rather than praising the premises."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "The setting is designed this way because these customers judge the service by it, and"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a physiotherapy clinic",
+    "text": "The treatment rooms look the way they do because a new patient has nothing else to go on, not because the fit-out budget allowed it.",
+    "pattern": "return to the market characteristic as the cause"
+  }
+},
+              },
               guides: {
                 explain: "Explain why what this target market reads into a physical space causes the business to design that space deliberately.",
                 example: "Apply the evidence you selected, stating the fact before what it shows about physical evidence." } },
@@ -4336,13 +5343,152 @@ window.ESSAY = {
               short: "Serving several segments → a setting for each",
               adds: "how the space is divided between segments",
               meaning: "More than one group is being served and they do not want the same surroundings, so the space is divided between them.",
+              choiceMeaning: "Serving more than one group of customers can lead a business to divide its space so each group gets its own setting.",
               whatToProve: "more than one segment is served \u2192 one setting cannot suit both \u2192 the space is divided so each gets its own",
               commonMistake: "Naming the segments and the products built for them, which is segmentation, without ever getting to the physical space.",
-              // Not yet reviewed for what it depends on. A state, not a claim that it
-              // depends on nothing: see decisions/2026-08-22-concept-routing.md.
-              learning: { status: "unreviewed" },
+              learning: {
+                status: "authored",
+                concepts: { primary: ["physicalEvidence", "marketSegmentation"], supporting: ["servicescape"], optional: [] },
+                know: "One building can serve two markets only if it is divided, because the surroundings one segment wants are the surroundings another will avoid.",
+                chain: [
+                  "more than one segment is being served",
+                  "what each wants from the space is different, and sometimes opposite",
+                  "one undivided setting suits neither well",
+                  "the space is separated so each segment gets surroundings built for it"
+                ],
+                misconception: {
+                  head: "Two halves of the same case, and only one is this argument",
+                  a: { term: "Naming the segments", line: "families, students, commuters, and the products built for each. That is segmentation." },
+                  b: { term: "Dividing the space", line: "what each of those groups gets to sit in. That is physical evidence." }
+                },
+                example: {
+                  context: "a library",
+                  text: "A library puts a children's area with low shelves and noise at one end and silent study desks at the other. Both groups are members of the same library, and neither would tolerate the other's room.",
+                  pattern: "the segments were already known; the building was divided so each could be served at once"
+                },
+                try: {
+                  prompt: "A business names its two customer groups and the products for each, then stops. What has it left out of a physical evidence argument?",
+                  options: [
+                    { text: "What each group can see and sit in while they are there", right: true },
+                    { text: "How much each group spends", repair: "Spending tells you which segment matters commercially. It does not say anything about the surroundings each is given." },
+                    { text: "How the products are priced", repair: "That is a pricing argument. Physical evidence is about the space the two groups occupy." }
+                  ],
+                  onRight: "Right. Segmentation names the groups; physical evidence is what the space does about them."
+                },
+                explore: { concept: "marketSegmentation", label: "Read more about market segmentation" }
+              },
               concept: { topic: "marketing", section: "marketing strategies", point: "market segmentation" },
               evidence: ["Segments served by Happy Meal and McCafe"],
+              help: {
+                topic: {
+  "hint": "How many different groups are being served in the same building?",
+  "needs": "Open by naming that more than one segment is served, and name physical evidence as the element.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Say there is more than one group and that they want different things from the space. Then say you are arguing about the space, not about the products built for each group."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "A business serving more than one segment in the same space is pushed to"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a public library",
+    "text": "A library serving toddlers and postgraduate students is pushed to decide what happens at each end of the building.",
+    "pattern": "the several segments named, then the space as the element"
+  }
+},
+                define: {
+  "hint": "What is a segment, and what is physical evidence?",
+  "needs": "Define market segmentation briefly, then define physical evidence, so the paragraph can join them.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "You need both definitions because the argument sits between them. Define the segments as groups sharing a characteristic, then define physical evidence as what each group sees, and the join is the point of the paragraph."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "Market segments are groups of customers sharing a characteristic, and physical evidence is"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a leisure centre",
+    "text": "Segments are groups sharing a characteristic, and physical evidence is what each of those groups sees when they arrive.",
+    "pattern": "define both, so the argument can join them"
+  }
+},
+                explain: {
+  "hint": "Why can one setting not serve both groups at once?",
+  "needs": "Establish that the surroundings one segment wants are ones another would avoid, so the space has to be divided.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Trace it: two segments are served, what each wants from the space differs and sometimes conflicts, so one undivided setting suits neither, so the space is separated. Name the conflict, because it is what forces the division."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "Because these groups want opposite things from the same space, the business has to"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a garden centre with a cafe",
+    "text": "Because browsers want to linger and trade buyers want to load and leave, the trade counter was put on a separate entrance.",
+    "pattern": "the two groups, the conflict, then the division"
+  }
+},
+                example: {
+  "hint": "How is the space actually divided?",
+  "needs": "Use the evidence to show different settings for different segments. The fact, then what it shows.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Name the division, then say which group each part is for. If your sentence names the products each segment buys and never reaches the space, you have written segmentation instead of physical evidence."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "The business gives each group a different setting, so that"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "an airport",
+    "text": "The quiet lounge and the family play area sit at opposite ends of the pier, so neither group has to tolerate the other.",
+    "pattern": "the division, then the group each part serves"
+  }
+},
+                effect: {
+  "hint": "What does dividing the space let the business do?",
+  "needs": "State the result as serving both segments well at the same time without either being driven away.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Name the gain as keeping both groups. The alternative is a compromise setting that suits neither, so say that is what has been avoided."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "As a result, the business can serve both groups at once without"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a bookshop with a coffee counter",
+    "text": "As a result, the shop keeps the customer who wants forty quiet minutes and the one who wants a coffee and a chat.",
+    "pattern": "the gain named as keeping both groups"
+  }
+},
+                link: {
+  "hint": "Does the last sentence explain why the space is divided at all?",
+  "needs": "Close by naming the multiple segments as the cause of the divided setting.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "End on the market. Say the division exists because more than one group is being served, so the examiner sees the segments causing the physical decision."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "The space is divided because the business serves more than one segment, and"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a swimming pool",
+    "text": "The lanes and the shallow end are separated because the club swimmers and the learners were never going to share water happily.",
+    "pattern": "return to the segments as the cause"
+  }
+},
+              },
               guides: {
                 explain: "Explain why serving more than one segment forces the physical setting to differ between them." } },
             { id: "mkt01-ph-selfservice", area: "physical evidence",
@@ -4350,13 +5496,152 @@ window.ESSAY = {
               short: "Preferring self-service → self-explaining surroundings",
               adds: "how far the surroundings explain themselves",
               meaning: "These customers would rather use a machine than ask someone, so what they can see has to explain itself.",
+              choiceMeaning: "Customers who would rather not ask for help can lead a business to make its surroundings explain themselves.",
               whatToProve: "customers prefer to serve themselves \u2192 the surroundings have to do the explaining \u2192 screens, signage and layout are built to be self-explanatory",
               commonMistake: "Arguing that self-service is faster, which is a processes point, rather than about what the customer sees and touches.",
-              // Not yet reviewed for what it depends on. A state, not a claim that it
-              // depends on nothing: see decisions/2026-08-22-concept-routing.md.
-              learning: { status: "unreviewed" },
+              learning: {
+                status: "authored",
+                concepts: { primary: ["physicalEvidence"], supporting: ["servicescape"], optional: ["processes"] },
+                know: "When nobody is going to explain it, everything the customer needs to know has to be visible.",
+                chain: [
+                  "these customers would rather use a machine than ask a person",
+                  "no one is going to talk them through it",
+                  "the screens, signs and layout have to carry the explaining",
+                  "the customer finishes without help and without feeling stuck"
+                ],
+                misconception: {
+                  head: "Two arguments about the same kiosk",
+                  a: { term: "Self-service is faster", line: "how long the transaction takes. That is a processes point." },
+                  b: { term: "Self-service explains itself", line: "what the customer can see and work out unaided. That is physical evidence." }
+                },
+                example: {
+                  context: "a car park",
+                  text: "A car park with no attendant paints the bay numbers large enough to read from the machine, because the driver has to type one in with nobody to ask. The lettering is not decoration; it is the only instruction available.",
+                  pattern: "removing the person meant the surroundings had to answer the question the person would have"
+                },
+                try: {
+                  prompt: "A self-service screen is quick to use but customers keep asking staff for help. Which reading is a physical evidence problem?",
+                  options: [
+                    { text: "The screen does not make clear what to do next", right: true },
+                    { text: "The screen takes too many steps", repair: "Number of steps is the process. Here the customers are getting stuck rather than getting bored." },
+                    { text: "There are not enough screens", repair: "That is a capacity point. It would shorten a queue, not stop people needing to ask what to do." }
+                  ],
+                  onRight: "Right. If the customer has to ask, the surroundings have not done the explaining self-service depends on."
+                },
+                explore: { concept: "physicalEvidence", label: "Read more about physical evidence" }
+              },
               concept: { topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
               evidence: ["App, loyalty rewards and mobile ordering", "Intensive distribution and standardised service"],
+              help: {
+                topic: {
+  "hint": "What would this customer rather not have to do?",
+  "needs": "Open by naming the preference for serving themselves, and name physical evidence as the element.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Say these customers would rather not ask. Then say you are arguing about what they can see, not about how long the transaction takes, because speed is a different element."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "A target market that would rather use a machine than ask a person pushes a business to"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a self-storage facility",
+    "text": "Customers who want to come at ten at night, with nobody on site, push the operator to make every sign answer a question.",
+    "pattern": "the preference named, then the surroundings as the element"
+  }
+},
+                define: {
+  "hint": "What is doing the explaining when nobody is there?",
+  "needs": "Define physical evidence as everything the customer sees, and include screens, signage and layout.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Define the element, then name the parts that matter here: screens, signs and the arrangement of the space. Those are the things that have to speak when no member of staff will."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "Physical evidence is everything the customer sees, and here that means the screens, signs and layout that"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a train station",
+    "text": "Physical evidence is everything the traveller sees, which here means the platform numbers, the departure board and the floor markings.",
+    "pattern": "define the element, then name the parts carrying the explanation"
+  }
+},
+                explain: {
+  "hint": "What has to change once there is nobody to ask?",
+  "needs": "Establish that removing the person transfers the explaining to what the customer can see.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Trace it: these customers prefer to serve themselves, so nobody talks them through it, so the surroundings have to carry the instruction that a person would have given. The transfer of the explanation is the mechanism."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "Because this market would rather not ask for help, the surroundings have to"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a petrol station",
+    "text": "Because drivers pay at the pump rather than inside, the numbering and the prompts on the pump have to answer every question the attendant used to.",
+    "pattern": "the preference, the missing person, then what the surroundings must carry"
+  }
+},
+                example: {
+  "hint": "What can the customer see that tells them what to do next?",
+  "needs": "Use the evidence to show surroundings built to be self-explanatory. The fact, then what it shows.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Name what the customer sees, then say what it lets them do unaided. If your sentence is about self-service being quicker, you have written a processes point instead."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "The customer is given surroundings that explain themselves, so that"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a hospital outpatient department",
+    "text": "The colour-coded floor lines run from the entrance to each clinic, so a patient finds the right door without stopping at a desk.",
+    "pattern": "what is visible, then what it lets the customer do alone"
+  }
+},
+                effect: {
+  "hint": "What is the customer now able to do without help?",
+  "needs": "State the result as the customer completing the transaction unaided and without hesitating.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "Name the gain as finishing without needing to ask. If customers still ask, the surroundings have not done the job, so the effect should be the absence of that question."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "As a result, a customer can complete the whole thing without having to"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a laundrette",
+    "text": "As a result, a first-time customer loads, pays and starts a machine without looking round for someone to ask.",
+    "pattern": "the gain named as completing it unaided"
+  }
+},
+                link: {
+  "hint": "Has the paragraph returned to the customers?",
+  "needs": "Close by naming the preference for self-service as the cause of the self-explaining surroundings.",
+  "direction": {
+    "type": "reasoningDirection",
+    "text": "End on the market. Say the surroundings were built this way because these customers prefer not to ask, so the causal chain from market to strategy is complete."
+  },
+  "starter": {
+    "type": "sentenceStarter",
+    "text": "The surroundings explain themselves because these customers prefer not to ask, and"
+  },
+  "example": {
+    "type": "differentContextExample",
+    "context": "a car park",
+    "text": "The oversized bay numbers exist because there is nobody in a booth to tell you which one you are in.",
+    "pattern": "return to the market characteristic as the cause"
+  }
+},
+              },
               guides: {
                 explain: "Explain why a preference for serving themselves changes what the business puts in front of the customer." } }
           ],
@@ -10281,6 +11566,11 @@ window.BUSCONTENT = {
     const subs = (window.ESSAY && window.ESSAY.subjects) || {};
     return Object.keys(subs)
       .filter(k => { const s = subs[k]; return s && ((Array.isArray(s.questions) && s.questions.length) || s.scaffolds); })
+      // A legacy subject still HAS questions, so shipping questions is not enough
+      // to earn a place in the picker. Offering one would hand a student a subject
+      // with no pathways, no plans and no marking criteria behind it.
+      // Selecting it directly still works, so the demo route is unaffected.
+      .filter(k => subs[k].activeProduct !== false)
       .map(k => ({ key: k, label: subs[k].label || k }));
   }
   // A model's short label (e.g. "teeec" -> "TEEEC") from the subject's scaffolds.

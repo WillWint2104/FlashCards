@@ -3202,6 +3202,11 @@
     const subs = (window.ESSAY && window.ESSAY.subjects) || {};
     return Object.keys(subs)
       .filter(k => { const s = subs[k]; return s && ((Array.isArray(s.questions) && s.questions.length) || s.scaffolds); })
+      // A legacy subject still HAS questions, so shipping questions is not enough
+      // to earn a place in the picker. Offering one would hand a student a subject
+      // with no pathways, no plans and no marking criteria behind it.
+      // Selecting it directly still works, so the demo route is unaffected.
+      .filter(k => subs[k].activeProduct !== false)
       .map(k => ({ key: k, label: subs[k].label || k }));
   }
   // A model's short label (e.g. "teeec" -> "TEEEC") from the subject's scaffolds.
