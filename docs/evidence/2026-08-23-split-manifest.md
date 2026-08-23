@@ -803,3 +803,130 @@ opened. The `candidate-primary` URLs already gathered are recorded in
 4. Rewrite the 20 live pathway links per the migration mapping above.
 5. Review `mcd-hrm-15` before it is carried across at all.
 6. Only then verify, in queue order, in an environment that can open sources.
+---
+
+# Addendum: three destinations, roles, and the removal test
+
+Supersedes the two-way `move to Learn` / `keep` handling used in the tables
+above. The tables stay accurate; this section redirects where each item goes.
+
+## The question the evidence drawer answers
+
+> What can I truthfully say McDonald's did, experienced, reported or achieved?
+
+A claim that does not answer that question is not evidence, whatever else it is.
+Keeping such claims in the bank makes it look fuller and makes "evidence" mean
+less.
+
+## The removal test
+
+For every proposed atomic item:
+
+> Remove the words "McDonald's" from the claim. Is the proposition still
+> essentially the same?
+
+If yes, it is not McDonald's evidence. It is either a general relationship or an
+industry condition, and it has a different destination.
+
+Worked example, from `mcd-fin-01`:
+
+```
+"McDonald's uses franchising, which allows rapid expansion."
+
+fact                  McDonald's uses franchising.          -> Evidence, once sourced
+derived relationship  franchising can support expansion.    -> Learn
+```
+
+The first fails the removal test in the right direction: without the name, the
+claim is empty. The second passes it, which is exactly why it is not evidence.
+
+## Three destinations
+
+| claim type | destination | example |
+| --- | --- | --- |
+| general concept or causal relationship | **Learn** | finance approval can constrain marketing expenditure |
+| industry-level fact or condition | **Industry context** | fast food businesses can experience high employee turnover |
+| specific verified McDonald's fact | **McDonald's evidence** | McDonald's reported X result, or adopted Y practice |
+
+Industry context is a new third category, not a second-class evidence tier. It
+situates an argument and cannot carry it. It still requires a source, because an
+unsourced industry claim is no safer than an unsourced case-study claim; it is
+simply presented as what it is.
+
+Revised destinations for the 22 items previously marked "move to Learn":
+
+| destination | approximate count | character |
+| --- | --- | --- |
+| Learn | 14 | causal relationships and definitions: finance funds other functions, the four Vs, inputs classification, interdependence at a launch, tax deductibility of interest, benchmarking definitions |
+| Industry context | 8 | conditions of the fast food or retail industry: turnover norms, typical dispute subjects, dispute escalation practice, thin restaurant margins as an industry characteristic |
+| McDonald's evidence | 0 | none of the 22 survives the removal test |
+
+## Role on every atomic item
+
+Every proposed record carries a `role`, replacing the informal "class" column:
+
+```
+role: capability   what McDonald's does, offers or operates
+role: outcome      a result, a figure that moved, a reported effect
+role: cost         a documented cost, trade-off, limitation or risk
+role: context      an industry or regulatory condition, sourced, and not a McDonald's claim
+```
+
+`role` is stored on the record rather than inferred, so downstream checks can
+read it.
+
+## Readiness check for judgement pathways
+
+The marketing audit found a bank that can explain and cannot evaluate. `role`
+makes that checkable rather than a matter of opinion.
+
+Proposed rule for the coverage report:
+
+| pathway's question command | evidence roles required |
+| --- | --- |
+| Explain, Describe, Outline | one or more `capability` |
+| Analyse | `capability` plus at least one of `outcome` or `cost` |
+| Assess, Evaluate, To what extent | `capability` plus at least one `outcome` **or** `cost` |
+
+A judgement pathway whose evidence is `capability + capability + capability`
+counts as **weak**, not as covered. Under the current bank that flags most of
+`hr-01` and, once `mkt-02` and `mkt-03` have pathways, most of those too, which
+is the correct result: they are weak, and the report should say so rather than
+count links.
+
+This is a change to `tools/coverage.js` on the migration branch, not now.
+
+## mcd-hrm-15: remove the link, do not replace it
+
+`mcd-hrm-15` ("Workplace disputes in fast food") is attached to
+`hr-01/hr01-pf-trust`. Under the removal test every one of its three claims
+passes, which means none is about McDonald's:
+
+- disputes in fast food typically concern rostering, unpaid overtime, breaks and
+  penalty rates
+- disputes escalate through internal grievance, then union, then tribunal
+- large scale industrial action is uncommon in the industry
+
+**Migration action: remove the link now.** `hr01-pf-trust` is left with no
+case-study evidence until a genuine McDonald's record exists. It keeps every
+other layer, and the picker already withholds unsourced items rather than showing
+a warning, so a student sees a pathway with no evidence rather than a pathway
+with a false case study.
+
+The three claims move to Industry context if a reliable source is found, and are
+dropped if not. An honest gap is better than a false case study, and the record
+is not preserved merely because it is currently linked.
+
+## What the bank should feel like
+
+Scarce and trustworthy. Three tightly relevant McDonald's facts on a pathway,
+each sourced, each connected to that pathway, at least one carrying an outcome or
+a cost, beats eight vague items of which several are business theory.
+
+The architecture the split produces:
+
+```
+Learn              teaches the argument
+Industry context   situates it
+McDonald's evidence proves the case
+```
