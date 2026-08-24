@@ -4,8 +4,18 @@
 //   authored    -> esLearning() returns the learning object
 //
 // Tested against a fixture the test owns, so finishing a real question cannot
-// break it and cannot silently empty it. The UI half of the same contract is
-// ui32.js; this half proves the rule, that one proves the student sees it.
+// break it and cannot silently empty it.
+//
+// THIS TEST IS HALF OF THE CONTRACT. It is deliberately coupled to the
+// implementation, reading the real esLearning out of app.js and refusing to run
+// if the rule stops being a status comparison. That makes it a tripwire for
+// implementation drift, and it makes it a bad sole definition of the contract:
+// a test shaped like the code cannot notice that the code is wrong.
+//
+// ui32.js is the other half, and it owes nothing to the implementation: it drives
+// a browser and asks what the student can see. Neither replaces the other. If one
+// of them ever looks redundant, it is the pair that is doing the work, not either
+// alone, and deleting either leaves the rule half-tested.
 import { setPathways, esLearning } from "./out/learn-shim.mjs";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);

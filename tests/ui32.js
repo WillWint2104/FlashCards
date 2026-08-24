@@ -8,9 +8,15 @@
 //   authored    -> the control is offered.
 //
 // Driven from a fixture this test owns, injected at runtime, so finishing a real
-// question cannot break it and cannot silently empty it. ui31 keeps the same
-// contract as an end-to-end journey through the real content; this one keeps it
-// where nothing else can move it.
+// question cannot break it and cannot silently empty it.
+//
+// THIS TEST IS HALF OF THE CONTRACT. t14.mjs is the other half: it reads the real
+// rule out of app.js and trips when the implementation drifts. This half knows
+// nothing about the implementation and asks only what the student can see, which
+// is the half that can still fail when the code is self-consistently wrong.
+//
+// ui31 keeps the same contract as an end-to-end journey through real content.
+// Three tests, three different ways to be wrong.
 const { chromium, P } = require('./env');
 const { WITHHOLDING_FIXTURE } = require('./fixtures/withholding.js');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };

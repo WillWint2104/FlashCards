@@ -33,6 +33,18 @@ jobs:
       # Chromium only. The suites never touch the other engines, and installing
       # all three roughly triples the step for nothing.
       - run: npx playwright install --with-deps chromium
+      # Fail fast, and legibly. A runner without a usable browser produces the
+      # same symptom as a broken app: every ui suite times out waiting for a
+      # locator. That cost real time to diagnose once already, so prove the
+      # browser launches BEFORE the suites run and say so plainly if it does not.
+      - name: the browser actually launches
+        run: |
+          node -e '
+            const pw = require("playwright");
+            pw.chromium.launch()
+              .then(async b => { await b.close(); console.log("chromium launches, version " + require("playwright/package.json").version); })
+              .catch(e => { console.error("CHROMIUM COULD NOT LAUNCH. The suites below would all time out for this reason, not because the app is broken.\n" + e.message); process.exit(1); });
+          '
       # The build is a gate in its own right: it refuses on a content fault and
       # publishes nothing, so a failure here is a real finding rather than noise.
       - run: node build.js
