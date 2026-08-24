@@ -11,9 +11,27 @@ put in an answer they will be marked on. So:
 > marked on it.
 
 This is enforced in code, not by convention. `esEvidenceUsable(e)` is true only when
-`e.source` is a non-empty string, and every route into the picker goes through it:
-the plan screen chips, the paragraph setup card, and the Evidence drawer. There is
-no flag that turns it off.
+**both** `e.source` and `e.checked` are non-empty once trimmed, and every route into
+the picker goes through it: the plan screen chips, the paragraph setup card, and the
+Evidence drawer. There is no flag that turns it off.
+
+Both halves, because finding a source and confirming it are different acts:
+
+| field | what it records |
+| --- | --- |
+| `source` | WHERE the claim can be checked, in words a teacher could follow |
+| `checked` | the date someone actually did check it |
+
+A source without a checked date is the most dangerous state this bank can hold. It
+looks complete, it reads as authoritative, and nobody has opened it. A located
+`sourceUrl` is weaker still and counts for nothing on its own.
+
+For the McDonald's confirmations that means: entering the candidate URL changes
+nothing, entering the source without checking it changes nothing, and only
+completing the check makes the evidence appear.
+
+The contract is tested twice: `tests/t15.mjs` drives the real rule pulled out of
+`app.js`, and `tests/ui33.js` checks what a student can actually see.
 
 What a student sees while an item is withheld:
 
@@ -46,6 +64,10 @@ item, record:
 | `source` | the reference in words, as a student could cite or a teacher could check |
 | `sourceUrl` | where it can be confirmed, if there is a stable public page |
 | `checked` | the date it was last confirmed, `YYYY-MM-DD` |
+
+`source` and `checked` are both required before an item becomes visible.
+`sourceUrl` is a convenience for whoever checks it next and publishes nothing by
+itself.
 
 A source is only good enough if someone can confirm the **claim in `fact`**, not
 merely the general topic. If part of an item is checkable and part is not, split

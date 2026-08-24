@@ -9,7 +9,7 @@ async function run(sourced){
   const errs=[]; p.on('pageerror',e=>errs.push(String(e).slice(0,200)));
   let calls=0; await p.route(/workers\.dev/, r=>{calls++;r.abort();});
   await p.goto(T); await p.waitForTimeout(700);
-  if (sourced) await p.evaluate(()=>{ window.BUSCONTENT.evidence.marketing.forEach(e=>{e.source='test fixture source';}); });
+  if (sourced) await p.evaluate(()=>{ window.BUSCONTENT.evidence.marketing.forEach(e=>{e.source='test fixture source'; e.checked='2026-08-19';}); });
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await p.waitForTimeout(400);
   await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);

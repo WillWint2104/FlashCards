@@ -9,7 +9,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   let calls=0; await p.route(/workers\.dev/, r=>{calls++;r.abort();});
   await p.goto(T); await p.waitForTimeout(800);
   await p.evaluate(()=>{ Object.keys((window.BUSCONTENT||{}).evidence||{}).forEach(k=>
-    window.BUSCONTENT.evidence[k].forEach(e=>{ e.source='test fixture source'; })); });
+    window.BUSCONTENT.evidence[k].forEach(e=>{ e.source='test fixture source'; e.checked='2026-08-19'; })); });
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await p.waitForTimeout(400);
   await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);

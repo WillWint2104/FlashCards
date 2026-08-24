@@ -40,6 +40,7 @@ const built = [
   run("node", ["mkblockshim.js"], "blocks"),
   run("node", ["mkwashim.js"], "wa"),
   run("node", ["mklearnshim.js"], "learn"),
+  run("node", ["mkevidenceshim.js"], "evid"),
   run("python3", ["mkwalk.py"], "walk"),
 ];
 if (built.some(x => !x)) {
@@ -47,8 +48,8 @@ if (built.some(x => !x)) {
   process.exit(1);
 }
 
-const WORKER = ["t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10", "t11", "t12", "t13", "t14", "t16"];
-const UI = ["ui", "ui2", "ui3", "ui5", "ui6", "ui7", "ui8", "ui9", "ui10", "ui12", "ui13", "ui14", "ui15", "ui16", "ui17", "ui18", "ui19", "ui20", "ui21", "ui22", "ui23", "ui24", "ui25", "ui26", "ui27", "ui28", "ui29", "ui30", "ui31", "ui32", "ui34", "ui35", "ui36", "ui37"];
+const WORKER = ["t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10", "t11", "t12", "t13", "t14", "t15", "t16"];
+const UI = ["ui", "ui2", "ui3", "ui5", "ui6", "ui7", "ui8", "ui9", "ui10", "ui12", "ui13", "ui14", "ui15", "ui16", "ui17", "ui18", "ui19", "ui20", "ui21", "ui22", "ui23", "ui24", "ui25", "ui26", "ui27", "ui28", "ui29", "ui30", "ui31", "ui32", "ui33", "ui34", "ui35", "ui36", "ui37"];
 // The simulated students. Slower than a ui suite and reporting a trajectory
 // rather than a pass count, so it runs last and only when asked for, or as part
 // of a full run.
