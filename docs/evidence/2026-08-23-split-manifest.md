@@ -930,3 +930,36 @@ Learn              teaches the argument
 Industry context   situates it
 McDonald's evidence proves the case
 ```
+---
+
+# Addendum: what the publication gate does and does not check
+
+Recorded here rather than on the frozen contract branch, because it is a decision
+about the evidence content pass rather than about the gate.
+
+The gate in `esEvidenceUsable` now requires **both** `source` and `checked` to be
+non-empty once trimmed. What it does not do is check that `checked` is a *date*.
+A value of `yes` or `soon` would satisfy it.
+
+That is deliberate and it is the right boundary for a publication gate: its job is
+to refuse anything where verification was not recorded, not to adjudicate the
+quality of the record. Widening it into format validation would put schema rules
+inside a safety check that has to stay small enough to reason about.
+
+**Where the format belongs instead.** If `checked` should be an ISO date, or
+should grow into a structured verification record, enforce it in the content
+validator during the evidence pass, alongside the other build-time refusals.
+`build.js` already refuses to publish on a content fault, which is the natural
+home for a rule about the shape of authored data.
+
+So the split stays:
+
+| layer | asks |
+| --- | --- |
+| `build.js` validator | is this record well formed |
+| `esEvidenceUsable` | was verification recorded at all |
+| `t15` / `ui33` | does the rule hold, and does the student see the result |
+
+Nothing to do now. This exists so that whoever runs the evidence pass does not
+either assume `checked` is validated as a date, or widen the frozen gate to make
+it so.
