@@ -4461,13 +4461,13 @@
     const host = document.getElementById("eshost"); if (!host) return;
     host.querySelectorAll("[data-estool]").forEach(b => b.onclick = () => {
       const key = b.dataset.estool;
-      if (ES.ui.tool === key) { ES.ui.tool = null; esRenderKeepingPlace(p); return; }
+      if (ES.ui.tool === key) { ES.ui.tool = null; esRenderKeepingPlace(p); esFocusComposer(); return; }
       esCaptureContext(p);
       ES.ui.tool = key; ES.ui.readMore = false;
       esRenderKeepingPlace(p);
     });
     const x = host.querySelector("#esdrawerx");
-    if (x) x.onclick = () => { ES.ui.tool = null; esRenderKeepingPlace(p); };
+    if (x) x.onclick = () => { ES.ui.tool = null; esRenderKeepingPlace(p); esFocusComposer(); };
     const ea = host.querySelector("#esevall");
     if (ea) ea.onclick = () => { ES.ui.evAll = !ES.ui.evAll; esRenderKeepingPlace(p); };
     const mr = host.querySelector("#esmoreread");
@@ -4524,6 +4524,15 @@
   // A tool opening or closing must not cost the student their place. The targeted
   // swap is the whole job on the writing screen; the full render is the fallback
   // for any screen that has no side column to swap.
+  // Closing a tool hands the student back to the sentence they were writing.
+  // The caret is already where they left it, so this only moves focus; opening
+  // a tool deliberately leaves focus on the drawer so it stays keyboard-reachable.
+  function esFocusComposer() {
+    const line = document.getElementById("esline"); if (!line) return;
+    const s = line.selectionStart, e = line.selectionEnd;
+    line.focus({ preventScroll: true });
+    if (s != null) { try { line.setSelectionRange(s, e); } catch (err) { /* older browsers */ } }
+  }
   function esRenderKeepingPlace(p) {
     if (esSwapSide(p)) return;
     const keep = ES.ui.ctx;
@@ -6024,7 +6033,7 @@
     // Escape closes whatever is open and returns the student to their sentence.
     const scrimEl = host.querySelector(".es-scrim");
     if (scrimEl) scrimEl.onkeydown = e => {
-      if (e.key === "Escape" && ES.ui.tool) { e.preventDefault(); e.stopPropagation(); ES.ui.tool = null; esRenderKeepingPlace(p); }
+      if (e.key === "Escape" && ES.ui.tool) { e.preventDefault(); e.stopPropagation(); ES.ui.tool = null; esRenderKeepingPlace(p); esFocusComposer(); }
     };
     const line = $("#esline"), accept = $("#esaccept");
     if (line && accept) {
