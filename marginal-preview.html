@@ -12785,6 +12785,7 @@ window.BUSCONTENT = {
         <ol class="es-struct">${d.steps.map((st, i) => `<li class="${i < d.at ? "done" : i === d.at ? "now" : ""}"><b>${esc(st.label)}</b><span>${esc(st.job)}</span></li>`).join("")}</ol>`;
     }
     return `<aside class="es-drawer" role="dialog" aria-label="${esc(tool.label)}">
+      ${esDecodeBox(esQuestionDef())}
       <div class="es-drawer-top">${esIcon(tool.icon)}<span class="es-drawer-title">${esc(tool.label)}</span>
         <button type="button" class="es-drawer-x" id="esdrawerx" aria-label="Close and return to your sentence">${esIcon("close")}</button></div>
       <div class="es-drawer-body">${body}</div>
@@ -12848,8 +12849,47 @@ window.BUSCONTENT = {
     next.querySelectorAll("button:not([type])").forEach(b => b.type = "button");
     esBindToolbelt(p);
   }
-  // A tool opening or closing must not cost the student their place.
+  // Everything a tool toggle actually changes lives in ONE column: the drawer
+  // replaces the rest panel and the belt marks which tool is lit. Rebuilding the
+  // whole workspace to express that cost the student more than it looked like.
+  // The textarea was destroyed and its value written back with `.value =`, which
+  // never enters the undo stack, so opening a tool mid-sentence silently ended
+  // the student's ability to undo. The card also re-ran its entry animation, so
+  // the composer sat at opacity 0 for a moment and the page showed through it.
+  //
+  // Bound handlers read ES.ui at click time, so the belt only needs its lit class
+  // updating, not replacing. Nothing outside this column is touched, which is why
+  // no capture-and-restore is needed on this path: the caret was never disturbed.
+  function esBindSide(p) {
+    const host = document.getElementById("eshost"); if (!host) return;
+    const rp = host.querySelector("#esrestplan");
+    if (rp) rp.onclick = () => { ES.screen = "plan"; esSaveDraft(); esRender(); };
+    const rj = host.querySelector("#esrejudge");
+    if (rj) rj.onclick = () => { ES.ui.posOpen = true; ES.screen = "plan"; esSaveDraft(); esRender(); };
+    esBindToolbelt(p);
+    esBindDecode();
+  }
+  function esSwapSide(p) {
+    const host = document.getElementById("eshost"); if (!host) return false;
+    const cols = host.querySelector(".es-cols"); if (!cols) return false;
+    const side = cols.querySelector(":scope > .es-drawer, :scope > .es-rest");
+    if (!side) return false;
+    const holder = document.createElement("div");
+    holder.innerHTML = ES.ui.tool ? esDrawerHTML(p) : esRestHTML(p);
+    const next = holder.firstElementChild; if (!next) return false;
+    side.replaceWith(next);
+    cols.classList.toggle("withdrawer", !!ES.ui.tool);
+    next.querySelectorAll("button:not([type])").forEach(b => b.type = "button");
+    host.querySelectorAll("[data-estool]").forEach(b =>
+      b.classList.toggle("on", b.dataset.estool === ES.ui.tool));
+    esBindSide(p);
+    return true;
+  }
+  // A tool opening or closing must not cost the student their place. The targeted
+  // swap is the whole job on the writing screen; the full render is the fallback
+  // for any screen that has no side column to swap.
   function esRenderKeepingPlace(p) {
+    if (esSwapSide(p)) return;
     const keep = ES.ui.ctx;
     esRender();
     if (keep) { ES.ui.ctx = keep; esRestoreContext(); }
@@ -14413,16 +14453,16 @@ window.BUSCONTENT = {
       else { ES.screen = "review"; esSaveDraft(); esRender(); }
     };
     const dc = $("#esdonecheck"); if (dc) dc.onclick = () => esGetFeedback(d.pos);
-    const rp = $("#esrestplan"); if (rp) rp.onclick = () => { ES.screen = "plan"; esSaveDraft(); esRender(); };
     // Finding, after writing four paragraphs, that the evidence supports a
     // different judgement is good evaluation, not a mistake to be prevented.
-    const rj = $("#esrejudge"); if (rj) rj.onclick = () => { ES.ui.posOpen = true; ES.screen = "plan"; esSaveDraft(); esRender(); };
+    // Bound through the same function the targeted swap uses, so the two paths
+    // cannot drift into binding different things.
+    esBindSide(p);
     host.querySelectorAll("[data-espeek]").forEach(b => b.onclick = () => {
       const i = Number(b.dataset.espeek);
       ES.ui.mapOpen[i] = !ES.ui.mapOpen[i]; esRender();
     });
     const qz = $("#esquizlink"); if (qz) qz.onclick = () => { ES.screen = "quiz"; esResetQuiz(); esRender(); };
-    esBindToolbelt(p);
     esBindSetup(p);
     host.querySelectorAll("[data-esrestchange]").forEach(b => b.onclick = () => {
       ES.ui.setupStage = b.dataset.esrestchange; ES.ui.tool = null; esRender();
