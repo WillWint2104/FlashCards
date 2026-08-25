@@ -4475,6 +4475,20 @@
   // Bound handlers read ES.ui at click time, so the belt only needs its lit class
   // updating, not replacing. Nothing outside this column is touched, which is why
   // no capture-and-restore is needed on this path: the caret was never disturbed.
+  // The drawer opens below the question and the toolbelt, so a viewport-relative
+  // ceiling alone can still push its footer and close control off a short screen,
+  // leaving the student to scroll the whole page to reach them. Cap it at the room
+  // it actually has instead. Only a ceiling is set, so a short entry keeps its own
+  // height and gains no empty space and no scrollbar.
+  function esFitDrawer() {
+    const d = document.querySelector(".es-drawer"); if (!d) return;
+    // Below the three-column width the drawer is a fixed overlay already bounded
+    // by top and bottom, so it needs no measured cap.
+    if (getComputedStyle(d).position === "fixed") { d.style.removeProperty("max-height"); return; }
+    const top = d.getBoundingClientRect().top;
+    const room = window.innerHeight - top - 16;
+    d.style.maxHeight = Math.round(Math.max(220, room)) + "px";
+  }
   function esBindSide(p) {
     const host = document.getElementById("eshost"); if (!host) return;
     const rp = host.querySelector("#esrestplan");
@@ -4483,6 +4497,11 @@
     if (rj) rj.onclick = () => { ES.ui.posOpen = true; ES.screen = "plan"; esSaveDraft(); esRender(); };
     esBindToolbelt(p);
     esBindDecode();
+    esFitDrawer();
+    if (!ES.ui.fitBound) {
+      ES.ui.fitBound = true;
+      window.addEventListener("resize", esFitDrawer);
+    }
   }
   function esSwapSide(p) {
     const host = document.getElementById("eshost"); if (!host) return false;

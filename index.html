@@ -532,18 +532,22 @@
   .es-belt-b.on{background:var(--green-soft);border-color:var(--green);color:var(--green-dk)}
   .es-belt-b[disabled]{opacity:.42;cursor:default}
   .es-ico{width:15px;height:15px;flex:none}
-  .es-drawer{border:1.5px solid var(--line);border-radius:16px;background:var(--card);display:flex;flex-direction:column;max-height:min(72vh,760px);position:sticky;top:8px}
-  .es-drawer-top{display:flex;align-items:center;gap:9px;padding:13px 15px;border-bottom:1px solid var(--line)}
+  /* A fixed-height shell: header and footer hold their place, only the content
+     body scrolls. The ceiling here is the fallback; the drawer is also capped at
+     the room it actually has, since it starts below the question and the toolbelt
+     and a viewport-relative cap alone can push its footer off a short screen. */
+  .es-drawer{border:1.5px solid var(--line);border-radius:16px;background:var(--card);display:flex;flex-direction:column;max-height:min(72vh,760px);position:sticky;top:8px;overflow:hidden}
+  .es-drawer-top{display:flex;align-items:center;gap:9px;padding:13px 15px;border-bottom:1px solid var(--line);flex:0 0 auto}
   .es-drawer-title{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--ink)}
   .es-drawer-x{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--ink-2);padding:4px;display:grid;place-items:center}
   .es-drawer-x:hover{color:var(--ink)}
-  .es-drawer-body{padding:14px 15px;overflow:auto}
+  .es-drawer-body{padding:14px 15px;overflow-y:auto;flex:1 1 auto;min-height:0}
   .es-drawer-sub{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
   .es-drawer-h{font-family:var(--disp);font-weight:600;font-size:14.5px;color:var(--ink);margin:3px 0 7px}
   .es-drawer-p{font-size:13.5px;line-height:1.6;color:var(--ink);margin-bottom:9px}
   .es-drawer-note{font-size:12.5px;line-height:1.5;color:var(--ink-2);font-weight:600;margin-bottom:8px}
   .es-drawer-none{font-size:13px;color:var(--ink-2);font-weight:600}
-  .es-drawer-foot{padding:10px 15px;border-top:1px solid var(--line);font-size:11.5px;color:var(--ink-3);font-weight:600}
+  .es-drawer-foot{padding:10px 15px;border-top:1px solid var(--line);font-size:11.5px;color:var(--ink-3);font-weight:600;flex:0 0 auto}
   .es-drawer-foot kbd{font:inherit;border:1px solid var(--line);border-radius:5px;padding:0 5px}
   .es-terms{display:flex;gap:6px;flex-wrap:wrap}
   .es-term{font-size:12px;font-weight:700;color:var(--ink);background:var(--green-soft);border-radius:99px;padding:4px 10px}
@@ -650,6 +654,7 @@
   .es-decx:hover{color:var(--ink);background:var(--green-soft)}
   .es-decx .es-ico{width:15px;height:15px}
   .es-rest .es-decbox{margin:0 0 4px;padding:13px 34px 13px 14px}
+  .es-drawer > .es-decbox{margin:0;border-width:0 0 1.5px;border-radius:15px 15px 0 0;flex:0 1 auto;overflow-y:auto;max-height:min(40vh,300px)}
   .es-rest .es-decp{font-size:13px}
   .es-rest .es-dech{font-size:13.5px}
   /* the planning surface: rich while deciding, compact once decided */
