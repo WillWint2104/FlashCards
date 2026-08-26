@@ -653,6 +653,17 @@
     padding:4px;border-radius:8px;display:flex}
   .es-decx:hover{color:var(--ink);background:var(--green-soft)}
   .es-decx .es-ico{width:15px;height:15px}
+  /* Learn: the opening line reads as the opening without becoming a heading, because
+     an extracted sentence is not an authored definition and must not claim to be. */
+  .es-learn-lede{font-weight:600}
+  /* The row list is the primary content on the first screen here, not a reference
+     list at the foot of a scroll, so it loses the section rule and gains a little air. */
+  .es-gloss.surface{margin-top:10px;padding-top:0;border-top:none}
+  .es-gloss.surface dd{margin:2px 0 11px}
+  /* The chain was written for the full-width lesson; in a 310px drawer track it needs
+     to be tighter. Scoped so the lesson rendering is untouched. */
+  .es-drawer .es-chain{margin:2px 0 0}
+  .es-drawer .es-chainstep{font-size:13px}
   .es-rest .es-decbox{margin:0 0 4px;padding:13px 34px 13px 14px}
   .es-drawer > .es-decbox{margin:0;border-width:0 0 1.5px;border-radius:15px 15px 0 0;flex:0 1 auto;overflow-y:auto;max-height:min(40vh,300px)}
   .es-rest .es-decp{font-size:13px}

@@ -653,6 +653,17 @@
     padding:4px;border-radius:8px;display:flex}
   .es-decx:hover{color:var(--ink);background:var(--green-soft)}
   .es-decx .es-ico{width:15px;height:15px}
+  /* Learn: the opening line reads as the opening without becoming a heading, because
+     an extracted sentence is not an authored definition and must not claim to be. */
+  .es-learn-lede{font-weight:600}
+  /* The row list is the primary content on the first screen here, not a reference
+     list at the foot of a scroll, so it loses the section rule and gains a little air. */
+  .es-gloss.surface{margin-top:10px;padding-top:0;border-top:none}
+  .es-gloss.surface dd{margin:2px 0 11px}
+  /* The chain was written for the full-width lesson; in a 310px drawer track it needs
+     to be tighter. Scoped so the lesson rendering is untouched. */
+  .es-drawer .es-chain{margin:2px 0 0}
+  .es-drawer .es-chainstep{font-size:13px}
   .es-rest .es-decbox{margin:0 0 4px;padding:13px 34px 13px 14px}
   .es-drawer > .es-decbox{margin:0;border-width:0 0 1.5px;border-radius:15px 15px 0 0;flex:0 1 auto;overflow-y:auto;max-height:min(40vh,300px)}
   .es-rest .es-decp{font-size:13px}
@@ -11324,23 +11335,189 @@ window.BUSCONTENT = {
     const key = path && path.concept && path.concept.key;
     return (key && bank[key]) || null;
   }
-  function esToolUnderstand(p) {
-    const c = esConceptFor(p);
-    if (c) return {
-      kind: "concept", title: c.title, topic: c.syllabus || "",
-      quick: c.quick, terms: (c.terms || []).map(t => t.term || t),
-      glossary: (c.terms || []).filter(t => t && t.meaning),
-      confusions: c.confusions || [], example: c.example || "", related: c.related || [],
-      more: (c.readMore || []).join("\n\n") || null,
+  // ---- Learn: render the shape the author already wrote --------------------
+  //
+  // Almost every Learn target is a syllabus point, not one of the six authored
+  // concepts: only three pathways carry a concept key and all three name the same
+  // one. So the fallback is the surface nearly every student meets, and it arrives
+  // as a single block of prose, median 93 words and up to 320.
+  //
+  // The prose is not undifferentiated, though. Where an author wrote a set of named
+  // parts they wrote them as "Quality is fitness for purpose...", one sentence per
+  // part, and the point's own title often names the parts after a dash. That is a
+  // structure the renderer can show rather than a structure it has to invent.
+  //
+  // The rule that keeps this honest: nothing is written here, nothing is paraphrased,
+  // and no bare term is ever paired with generated prose. A sentence becomes a row
+  // only when its opening words are a name the author themselves used, and the row
+  // body is the rest of that sentence verbatim. When the prose does not carry a
+  // shape, no shape is shown.
+
+  // The forms an author uses to define something. Frozen deliberately: a looser test
+  // starts turning ordinary sentences into rows and claiming they are definitions.
+  const ES_DEFVERB = /^(?:is|are|means|refers to|covers|includes|involves|comes from|converts?|decides|measures|ensures|records|communicates|divides|accepts?|removes?|protects?|shows|attracts|builds|widens|manages|puts|sets|requires|both)\b/i;
+  // Openings that are a back-reference rather than a name, so they can never be a label.
+  const ES_ANAPHOR = /^(?:Second|First|Third|Then|Much|Most|In|On|At|By|Its|It|They|These|This|Both|Each|Some|Many)\b/;
+  // Syllabus phrasing wrapped around the concept itself, stripped only for matching.
+  const ES_ROLEPREFIX = /^(?:strategic role of|types of|objectives of|factors influencing|influence of|limitations of|ethical issues related to|overcoming|identifying|establishing|developing|interdependence with|role of)\s+/i;
+  const ES_STOPWORD = /^(?:the|a|an|of|and|or|in|to|for|with|its|it|this|these|other|key)$/;
+
+  function esLearnStem(w) {
+    return String(w).toLowerCase().replace(/[^a-z]/g, "")
+      .replace(/ies$/, "y").replace(/(ing|es|s)$/, "");
+  }
+  function esLearnKey(phrase) {
+    return String(phrase).replace(ES_ROLEPREFIX, "").split(/\s+/)
+      .map(w => w.replace(/[^A-Za-z]/g, "")).filter(w => w && !ES_STOPWORD.test(w.toLowerCase()))
+      .map(esLearnStem).filter(Boolean);
+  }
+  function esLearnSentences(text) {
+    return String(text || "").replace(/\s+/g, " ").trim()
+      .split(/(?<=[.?!])\s+(?=[A-Z(])/).filter(Boolean);
+  }
+  // A sentence yields a candidate row when it opens on a short noun phrase followed
+  // by one of the defining verbs. The label is the author's words; so is the body.
+  function esLearnCandidate(sentence, maxTokens) {
+    const words = sentence.split(" ");
+    for (let k = 1; k <= Math.min(maxTokens, words.length - 1); k++) {
+      const rest = words.slice(k).join(" ");
+      if (!ES_DEFVERB.test(rest)) continue;
+      let label = words.slice(0, k).join(" ");
+      if (/[,;].*[^,;]$/.test(label)) return null;
+      if (ES_ANAPHOR.test(label)) return null;
+      label = label.replace(/^(?:The|A|An)\s+/, "").replace(/[,;]$/, "");
+      if (!label) return null;
+      return { label: label, meaning: rest, words: sentence.split(" ").length };
+    }
+    return null;
+  }
+  function esLearnWords(t) { return String(t || "").trim().split(/\s+/).filter(Boolean).length; }
+
+  // Read a syllabus point's own prose for the shape its author gave it.
+  function esLearnShape(pt) {
+    const raw = String(pt.point || "");
+    const split = raw.split(/\s+[-\u2013\u2014]\s+/);
+    const head = (split[0] || "").trim();
+    // The part of the title after the dash names the constituents. Today it is
+    // deleted; it is the author's own enumeration and it is what stops a partial
+    // set of rows from reading as the complete list.
+    const named = split.slice(1).join(" - ").trim();
+    const namedItems = named ? (named.indexOf(",") >= 0 ? named.split(/,\s*/) : [named])
+      .map(x => x.trim()).filter(Boolean) : [];
+    const sentences = esLearnSentences(pt.what);
+    const headKey = esLearnKey(head).join(" ");
+    const headItems = namedItems.length >= 2;
+
+    // The opening line. It carries no heading anywhere it is rendered, because an
+    // extracted sentence is not an authored definition and must not claim to be.
+    let lede = "", used = -1;
+    if (sentences.length) {
+      const c0 = esLearnCandidate(sentences[0], 10);
+      if (c0) {
+        const lk = esLearnKey(c0.label), hk = esLearnKey(head);
+        const sub = lk.length && lk.every(w => hk.indexOf(w) >= 0);
+        const sup = hk.length && hk.every(w => lk.indexOf(w) >= 0);
+        // When the title itself enumerates, a sentence that defines only one of the
+        // items is that item's row, not the meaning of the whole point.
+        const onlyOne = headItems && namedItems.some(it =>
+          esLearnKey(it).join(" ") === lk.join(" "));
+        if ((sub || sup) && !onlyOne && lk.length) { lede = sentences[0]; used = 0; }
+      }
+    }
+
+    // The rows. A candidate is admitted only when its label is a name the author
+    // used: an item from the title, one of the point's terms, or the point itself.
+    const allowed = namedItems.concat(pt.terms || []).concat([head])
+      .map(x => esLearnKey(x).join(" ")).filter(Boolean);
+    const rows = [], rest = [];
+    sentences.forEach((sent, i) => {
+      if (i === used) return;
+      const cand = esLearnCandidate(sent, 6);
+      const key = cand ? esLearnKey(cand.label).join(" ") : "";
+      const ok = key && allowed.some(a => a === key || a.endsWith(" " + key) || key.endsWith(" " + a));
+      if (ok) rows.push(cand); else rest.push(sent);
+    });
+    // One row is not a decomposition. Put it back rather than show a list of one.
+    if (rows.length < 2) {
+      const back = rows.splice(0, rows.length).map(r => sentences.find(x => x.indexOf(r.label) === 0) || "");
+      back.filter(Boolean).forEach(x => rest.push(x));
+    }
+
+    // Budget. The authored enumeration is never cut in half, so a title that names
+    // six parts gets room for six; anything else stops at a readable handful.
+    const suffixSet = headItems && rows.length >= 2 &&
+      rows.every(r => namedItems.some(it => esLearnKey(it).join(" ") === esLearnKey(r.label).join(" ")));
+    const maxRows = suffixSet ? 8 : 6, maxWords = suffixSet ? 130 : 90;
+    const parts = []; let spent = 0;
+    for (const r of rows) {
+      if (parts.length >= maxRows) { rest.push(r.label + " " + r.meaning); continue; }
+      if (parts.length >= 2 && spent + r.words > maxWords) { rest.push(r.label + " " + r.meaning); continue; }
+      parts.push({ label: r.label, meaning: r.meaning }); spent += r.words;
+    }
+
+    // Nothing was found. Rather than leave a title and a link, open with the prose
+    // itself and put the remainder behind the same control.
+    let floor = "";
+    if (!lede && !parts.length) {
+      floor = sentences.slice(0, 2).join(" ");
+      rest.length = 0; sentences.slice(2).forEach(x => rest.push(x));
+    }
+    const showNamed = namedItems.length >= 2 &&
+      !namedItems.every(it => parts.some(pp => esLearnKey(pp.label).join(" ") === esLearnKey(it).join(" ")));
+    // The opening sentence sometimes counts the parts ("there are four elements").
+    // If the rows cannot show that many and the title carries no list to correct it,
+    // a partial set would read as the whole set, so it goes behind the control.
+    const claim = (lede.match(/\b(two|three|four|five|six|seven|eight)\b/i) || [])[1];
+    const claimed = claim ? { two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8 }[claim.toLowerCase()] : 0;
+    if (claimed && parts.length && parts.length !== claimed && !showNamed) {
+      parts.splice(0, parts.length).forEach(pp => rest.push(pp.label + " " + pp.meaning));
+    }
+    return {
+      title: head || String(pt.point || "").trim(),
+      named: showNamed ? named : "",
+      lede: lede, parts: parts, floor: floor, rest: rest,
     };
+  }
+
+  // The one thing in the data that genuinely ties a concept to the student's own
+  // argument. Absent until an argument is chosen, and absent entirely on questions
+  // with no authored pathways, where nothing generic stands in for it.
+  function esLearnChain(p) {
+    const path = esPathway(p);
+    const w = path && path.whatToProve;
+    return w ? String(w).split(/\s*\u2192\s*/).map(x => x.trim()).filter(Boolean) : [];
+  }
+
+  function esToolUnderstand(p) {
+    const path = esPathway(p);
+    const watch = [];
+    if (path && path.commonMistake) watch.push({ label: "common mistake", text: path.commonMistake });
+    const c = esConceptFor(p);
+    if (c) {
+      (c.confusions || []).forEach(x => watch.push({ label: "easy to get wrong", text: x }));
+      return {
+        kind: "concept", title: c.title, topic: c.syllabus || "", named: "",
+        lede: c.oneLine || "", floor: "",
+        // The defined terms are the parts of the concept, so they belong on the
+        // surface rather than 381 words down inside Read more.
+        parts: (c.terms || []).filter(t => t && t.meaning).map(t => ({ label: t.term, meaning: t.meaning })),
+        chain: esLearnChain(p), watch: watch,
+        rest: c.quick ? [c.quick] : [],
+        readMore: c.readMore || [], example: c.example || "", related: c.related || [],
+        why: "", exam: "",
+      };
+    }
     const hit = esSectionFor(p); if (!hit) return null;
     const pt = esBestPoint(p, hit); if (!pt) return null;
+    const shape = esLearnShape(pt);
     return {
-      title: String(pt.point || hit.section.name).replace(/\s+[-\u2013\u2014]\s+.*$/, "").trim(),
+      kind: "point", title: shape.title,
       topic: hit.topic.label + " \u00b7 " + hit.section.name,
-      quick: pt.what,
-      terms: pt.terms || [],
-      more: [pt.why, pt.exam].filter(Boolean).join("\n\n") || null,
+      named: shape.named, lede: shape.lede, floor: shape.floor, parts: shape.parts,
+      chain: esLearnChain(p), watch: watch, rest: shape.rest,
+      // The point's terms are bare strings with no authored meaning, so they are not
+      // rendered here. Vocabulary already offers the same list, one click away.
+      readMore: [], example: "", related: [], why: pt.why || "", exam: pt.exam || "",
     };
   }
   // Terms for the point being written, then the rest of the section behind them, so
@@ -11423,19 +11600,31 @@ window.BUSCONTENT = {
     let body = "";
     if (!d) body = `<p class="es-drawer-none">Nothing has been written for this part of the question yet.</p>`;
     else if (key === "understand") {
-      const gloss = (d.glossary && d.glossary.length)
-        ? `<dl class="es-gloss">${d.glossary.map(t => `<dt>${esc(t.term)}</dt><dd>${esc(t.meaning)}</dd>`).join("")}</dl>` : "";
-      const confuse = (d.confusions && d.confusions.length)
-        ? `<div class="es-drawer-block"><div class="es-drawer-sub">easy to get wrong</div>${d.confusions.map(x => `<p class="es-drawer-p">${esc(x)}</p>`).join("")}</div>` : "";
-      const conex = d.example
-        ? `<div class="es-drawer-block"><div class="es-drawer-sub">a simple example</div><p class="es-drawer-p">${esc(d.example)}</p></div>` : "";
-      const rel = (d.related && d.related.length) ? `<p class="es-drawer-note">Sits next to: ${d.related.map(esc).join(", ")}.</p>` : "";
-      const deep = gloss + confuse + conex + rel;
-      body = `<div class="es-drawer-sub">${esc(d.topic)}</div><h4 class="es-drawer-h">${esc(d.title)}</h4>
-        <p class="es-drawer-p">${esc(d.quick)}</p>
-        ${(d.terms && d.terms.length) ? `<div class="es-terms">${d.terms.slice(0, 8).map(t => `<span class="es-term">${esc(t)}</span>`).join("")}</div>` : ""}
-        ${(d.more || deep) ? `<button type="button" class="es-linkbtn" id="esmoreread">${ES.ui.readMore ? "Show less" : "Read more"}</button>
-          <div class="es-drawer-more"${ES.ui.readMore ? "" : " hidden"}>${(d.more || "").split("\n\n").filter(Boolean).map(x => `<p class="es-drawer-p">${esc(x)}</p>`).join("")}${deep}</div>` : ""}`;
+      const para = x => `<p class="es-drawer-p">${esc(x)}</p>`;
+      const block = (label, inner) => `<div class="es-drawer-block"><div class="es-drawer-sub">${esc(label)}</div>${inner}</div>`;
+      // What a student cannot use before they know the concept: a warning about a
+      // mistake they have not made yet, and the long prose. Both sit one press away.
+      const watch = (d.watch || []).map(w => block(w.label, para(w.text))).join("");
+      const overflow = (d.rest || []).map(para).join("");
+      const more = (d.readMore || []).map(para).join("");
+      const why = d.why ? para(d.why) : "";
+      const exam = d.exam ? block("in the exam", para(d.exam)) : "";
+      const conex = d.example ? block("a simple example", para(d.example)) : "";
+      const rel = (d.related && d.related.length)
+        ? `<p class="es-drawer-note">Sits next to: ${d.related.map(esc).join(", ")}.</p>` : "";
+      const deep = watch + overflow + more + why + exam + conex + rel;
+      body = `${d.topic ? `<div class="es-drawer-sub">${esc(d.topic)}</div>` : ""}
+        <h4 class="es-drawer-h">${esc(d.title)}</h4>
+        ${d.named ? `<p class="es-drawer-note">${esc(d.named)}</p>` : ""}
+        ${d.lede ? `<p class="es-drawer-p es-learn-lede">${esc(d.lede)}</p>` : ""}
+        ${d.floor ? para(d.floor) : ""}
+        ${(d.parts && d.parts.length) ? `<dl class="es-gloss surface">${d.parts.map(x =>
+          `<dt>${esc(x.label)}</dt><dd>${esc(x.meaning)}</dd>`).join("")}</dl>` : ""}
+        ${(d.chain && d.chain.length) ? block("what you would need to show",
+          `<ol class="es-chain">${d.chain.map((x, i) =>
+            `<li class="es-chainstep" style="animation-delay:${i * 130}ms">${esc(x)}</li>`).join("")}</ol>`) : ""}
+        ${deep ? `<button type="button" class="es-linkbtn" id="esmoreread">${ES.ui.readMore ? "Show less" : "Read more"}</button>
+          <div class="es-drawer-more"${ES.ui.readMore ? "" : " hidden"}>${deep}</div>` : ""}`;
     } else if (key === "vocabulary") {
       body = `<h4 class="es-drawer-h">${esc(d.title)}</h4><p class="es-drawer-note">Terms that fit what you are writing now. You still choose which to use.</p>
         <div class="es-terms">${d.terms.map(t => `<span class="es-term">${esc(t)}</span>`).join("")}</div>`;
