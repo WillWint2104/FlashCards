@@ -91,7 +91,11 @@ const reachLast = p => p.evaluate(() => {
         ok(g.drawer.top >= 0, `${at} ${stage}: the drawer starts on screen: ${g.drawer.top}`);
         ok(g.foot.bottom <= g.vh && g.foot.top >= 0,
           `${at} ${stage}: the footer is readable without scrolling the page: ${g.foot.top}-${g.foot.bottom} in ${g.vh}`);
-        ok(g.scrollH > g.clientH, `${at} ${stage}: the long entry scrolls inside the body rather than overflowing it`);
+        // Not "it must scroll": the longest entry is no longer a wall of prose, so at a
+        // tall viewport it legitimately fits. The contract is two sided - a scrollbar
+        // appears only once the drawer is out of room, and nothing is ever clipped.
+        ok(g.scrollH <= g.clientH + 1 || g.drawer.bottom >= g.vh - 20,
+          `${at} ${stage}: a scrollbar only once the drawer is out of room: ${g.scrollH} into ${g.clientH}`);
         ok(g.foot.bottom <= g.drawer.bottom + 1, `${at} ${stage}: the footer is inside the drawer, not below it`);
         ok(await reachLast(p) === 'reachable', `${at} ${stage}: the last control can be pressed: ${await reachLast(p)}`);
       }

@@ -113,7 +113,9 @@ const rungs = p => p.$$eval('.es-rung',es=>es.map(e=>({n:e.querySelector('.es-ru
   const title=await p.$eval('.es-drawer-h',e=>e.textContent.trim());
   const quick=await p.$eval('.es-drawer-p',e=>e.textContent.trim());
   ok(/Processes/i.test(title),'it opens on the concept behind the paragraph: '+title);
-  ok(quick.length>120&&quick.length<520,'quick explanation is enough to unblock, not a chapter: '+quick.length+' chars');
+  ok(quick.length>40&&quick.length<260,'it opens on one short explanation, not a chapter: '+quick.length+' chars');
+  const surfaceRows=await p.$$eval('.es-gloss.surface dt',es=>es.length);
+  ok(surfaceRows>=3,'and the parts of the concept are on the surface, not buried behind Read more: '+surfaceRows);
   ok(!!(await p.$('#esmoreread')),'and there is a deeper read behind it');
   await p.click('#esmoreread'); await p.waitForTimeout(250);
   const deep=await p.$eval('.es-drawer-more',e=>e.innerText);
