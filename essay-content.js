@@ -275,7 +275,7 @@ window.ESSAY = {
         { id: "ops-01", command: "How can", qtype: "A", qtypeLabel: "relationship",
           text: "How can operations strategies contribute to the achievement of performance objectives?",
           topic: "Operations", term1: "Operations strategies", term2: "Performance objectives",
-          plan: ["Technology to speed and cost", "Inventory management to dependability and cost", "Quality management to quality", "Supply chain management to speed and dependability"],
+          plan: ["Technology to speed and cost", "Inventory management to dependability and cost", "Quality management to quality", "Supply chain management to dependability and cost"],
           argument: "Operations strategies influence business performance by changing the quality, speed, dependability, flexibility, customisation and cost of outputs." },
         { id: "ops-02", command: "Assess", qtype: "B", qtypeLabel: "judgement",
           text: "Assess the impact of globalisation on operations management.",
