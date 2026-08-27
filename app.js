@@ -4240,6 +4240,98 @@
     const key = path && path.concept && path.concept.key;
     return (key && bank[key]) || null;
   }
+  // ===========================================================================
+  // THE LEARNING CENTRE
+  //
+  // The drawer answers "remind me what this means while I am writing". It is
+  // 330px beside the composer and it should stay that way. This answers the
+  // other question, "I do not know this, teach me enough that I can continue",
+  // and it needs room the drawer does not have.
+  //
+  // It mounts in its own host at the end of <body>, NOT inside #eshost. That is
+  // not a stylistic choice: esSwapSide replaces a direct child of .es-cols on
+  // every tool press, so anything of ours living in there would be destroyed
+  // and rebound constantly. Outside #eshost the composer underneath cannot be
+  // touched by us at all, which is what makes the D1 and D2 guarantees hold by
+  // construction rather than by care.
+  // ===========================================================================
+
+  // The six objectives the Operations question is about, as the syllabus names
+  // them. Used only to read authored plan lines, never to assert anything.
+  const ES_OBJECTIVES = ["quality", "speed", "dependability", "flexibility", "customisation", "cost"];
+
+  // The other syllabus points in the same section: on the Operations question
+  // that is exactly the list of strategy families, already authored.
+  function eslSiblings(p) {
+    const hit = esSectionFor(p); if (!hit) return [];
+    const here = esBestPoint(p, hit);
+    return (hit.section.points || []).filter(pt => pt !== here).map(pt => {
+      const shape = esLearnShape(pt);
+      return { point: pt, title: shape.title, lede: shape.lede || shape.floor, named: shape.named, parts: shape.parts };
+    });
+  }
+
+  // An authored plan line reads "Technology to speed and cost". It names a
+  // pairing the author is prepared to stand behind, so the pairing itself is
+  // authored. What is NOT authored is the mechanism between the two, and that
+  // is where a renderer starts inventing if it is allowed to.
+  //
+  // So this returns the pairing and, separately, whatever the strategy's own
+  // text actually says about that objective, quoted whole and never summarised.
+  // The inventory line is the case that proves why: the authored sentence
+  // mentioning dependability says JIT DEPENDS ON a dependable supply chain, the
+  // opposite direction to the one a keyword match would imply. Quoting the
+  // sentence lets the student read the real direction. Paraphrasing it, or
+  // drawing an arrow from it, would teach the reverse of what the author wrote.
+  function eslLinks(p) {
+    const q = esQuestionDef(); if (!q || !(q.plan || []).length) return [];
+    const sibs = eslSiblings(p);
+    const hit = esSectionFor(p);
+    const all = hit ? (hit.section.points || []) : [];
+    return q.plan.map(line => {
+      const m = String(line).split(/\s+to\s+/i);
+      if (m.length < 2) return null;
+      const strategy = m[0].trim();
+      const objectives = m[1].split(/\s*(?:,|and)\s*/).map(x => x.trim().toLowerCase())
+        .filter(x => ES_OBJECTIVES.indexOf(x) >= 0);
+      if (!objectives.length) return null;
+      const key = strategy.toLowerCase();
+      const pt = all.find(x => String(x.point || "").toLowerCase().indexOf(key) === 0);
+      const sib = sibs.find(x => x.title.toLowerCase() === key);
+      const says = [], seen = [];
+      if (pt) {
+        const sentences = esLearnSentences(pt.what).concat(esLearnSentences(pt.why));
+        objectives.forEach(o => {
+          const stem = o === "customisation" ? "customis" : o === "dependability" ? "dependab" : o;
+          const hitS = sentences.find(x => {
+            const low = x.toLowerCase();
+            if (low.indexOf(stem) < 0) return false;
+            // A sentence saying the strategy DEPENDS ON the objective is evidence of
+            // the opposite direction to the one the argument runs in. The inventory
+            // line is the case in point: "JIT depends on reliable suppliers and a
+            // dependable supply chain" would otherwise be quoted as though holding
+            // stock produced dependability, teaching the relationship backwards.
+            if (/\b(depends? on|relies on|relying on|requires)\b/.test(low)) return false;
+            return seen.indexOf(x) < 0;
+          });
+          if (hitS) { seen.push(hitS); says.push({ objective: o, text: hitS }); }
+        });
+      }
+      return { line: String(line), strategy: strategy, objectives: objectives,
+        lede: sib ? sib.lede : "", says: says, point: pt || null };
+    }).filter(Boolean);
+  }
+
+  // The objective rows, authored, from the point the question is about.
+  function eslObjectives(p) {
+    const hit = esSectionFor(p); if (!hit) return null;
+    const pt = esBestPoint(p, hit); if (!pt) return null;
+    const shape = esLearnShape(pt);
+    return { title: shape.title, lede: shape.lede, parts: shape.parts, why: pt.why || "" };
+  }
+
+  function eslOpen() { return !!(ES.centre && ES.centre.open); }
+
   // ---- Learn: render the shape the author already wrote --------------------
   //
   // Almost every Learn target is a syllabus point, not one of the six authored
@@ -4581,6 +4673,7 @@
       ${esDecodeBox(esQuestionDef())}
       <div class="es-drawer-top">${esIcon(tool.icon)}<span class="es-drawer-title">${esc(tool.label)}</span>
         <button type="button" class="es-drawer-x" id="esdrawerx" aria-label="Close and return to your sentence">${esIcon("close")}</button></div>
+      ${key === "understand" && d ? `<div class="es-drawer-open"><button type="button" class="es-linkbtn" id="eslopen">Open learning centre ↗</button></div>` : ""}
       <div class="es-drawer-body">${body}</div>
       <div class="es-drawer-foot">Close to go straight back to the word you were on. <kbd>Esc</kbd></div>
     </aside>`;
@@ -4667,6 +4760,108 @@
     const room = window.innerHeight - top - 16;
     d.style.maxHeight = Math.round(Math.max(220, room)) + "px";
   }
+  // ---- the centre's own surface ---------------------------------------------
+  function eslCardHTML(id, title, body, on) {
+    return `<button type="button" class="esl-card ${on ? "on" : ""}" data-eslroute="${esc(id)}">
+      <span class="esl-cardt">${esc(title)}</span>
+      ${body ? `<span class="esl-cardb">${esc(body)}</span>` : ""}</button>`;
+  }
+  function eslBodyHTML(p) {
+    const q = esQuestionDef() || {};
+    const route = (ES.centre && ES.centre.route) || "choose";
+    const t1 = q.term1 || "the first idea", t2 = q.term2 || "the second idea";
+    if (route === "strategies") {
+      const sibs = eslSiblings(p);
+      if (!sibs.length) return `<p class="esl-none">Nothing has been written for the other parts of this topic yet.</p>`;
+      return `<p class="esl-lede">${esc(t1)} are the things a business can actually change. These are the ones this topic covers.</p>
+        <div class="esl-grid">${sibs.map(x => `<div class="esl-tile">
+          <div class="esl-tilet">${esc(x.title)}</div>
+          ${x.lede ? `<p class="esl-tileb">${esc(x.lede)}</p>` : ""}
+          ${x.named ? `<p class="esl-tilen">${esc(x.named)}</p>` : ""}</div>`).join("")}</div>`;
+    }
+    if (route === "objectives") {
+      const o = eslObjectives(p);
+      if (!o) return `<p class="esl-none">Nothing has been written for this part of the question yet.</p>`;
+      return `${o.lede ? `<p class="esl-lede">${esc(o.lede)}</p>` : ""}
+        <div class="esl-grid six">${o.parts.map(x => `<div class="esl-tile">
+          <div class="esl-tilet">${esc(x.label)}</div>
+          <p class="esl-tileb">${esc(x.meaning)}</p></div>`).join("")}</div>
+        ${o.why ? `<div class="esl-sec"><div class="esl-sech">They pull against each other</div>
+          <p class="esl-p">${esc(o.why)}</p></div>` : ""}`;
+    }
+    if (route === "connect") {
+      const links = eslLinks(p);
+      if (!links.length) return `<p class="esl-none">No relationships have been written for this question yet.</p>`;
+      return `<p class="esl-lede">${esc(t1)} are actions a business takes. ${esc(t2)} are what it is trying to improve. Each argument below joins one to the other.</p>
+        ${links.map(L => `<div class="esl-link">
+          <div class="esl-chain">
+            <span class="esl-node">${esc(L.strategy)}</span>
+            <span class="esl-arrow">↓</span>
+            <span class="esl-mid">changes how operations works</span>
+            <span class="esl-arrow">↓</span>
+            <span class="esl-node">${esc(L.objectives.join(" and "))}</span>
+          </div>
+          ${L.says.length ? `<div class="esl-says">
+            <div class="esl-sech">what the topic says about ${esc(L.says.map(x => x.objective).join(" and "))}</div>
+            ${L.says.map(x => `<p class="esl-quote">${esc(x.text)}</p>`).join("")}</div>`
+            : `<p class="esl-gap">Nothing has been written yet about how ${esc(L.strategy.toLowerCase())} affects ${esc(L.objectives.join(" or "))}, so nothing is shown here.</p>`}
+        </div>`).join("")}`;
+    }
+    const o = eslObjectives(p), sibs = eslSiblings(p);
+    return `<p class="esl-lede">What do you want to learn?</p>
+      <div class="esl-grid three">
+        ${eslCardHTML("strategies", t1, sibs.length ? sibs.slice(0, 4).map(x => x.title).join(", ") + (sibs.length > 4 ? "…" : "") : "", false)}
+        ${eslCardHTML("objectives", t2, o && o.lede ? o.lede : "", false)}
+        ${eslCardHTML("connect", "How they connect", q.argument || "", false)}
+      </div>`;
+  }
+  function eslHTML(p) {
+    const q = esQuestionDef() || {};
+    const route = (ES.centre && ES.centre.route) || "choose";
+    const step = esStepDef(p), guide = step ? esGuideFor(p, step) : null;
+    const tab = (id, label) => `<button type="button" class="esl-tab ${route === id ? "on" : ""}" data-eslroute="${id}">${esc(label)}</button>`;
+    return `<div class="esl-panel ${ES.centre && ES.centre.dock === "left" ? "left" : ""}" role="dialog" aria-label="Learning centre">
+      <div class="esl-head">
+        <h2 class="esl-title" id="esltitle" tabindex="-1">Learning centre</h2>
+        <button type="button" class="esl-dock" id="esldock" aria-label="Move to the other side">⇄</button>
+        <button type="button" class="esl-x" id="eslx" aria-label="Close">${esIcon("close")}</button>
+      </div>
+      <p class="esl-q">${esc(q.text || (ES.draft && ES.draft.question) || "")}</p>
+      <div class="esl-tabs">${tab("choose", "Start here")}${tab("strategies", q.term1 || "the first idea")}${tab("objectives", q.term2 || "the second idea")}${tab("connect", "How they connect")}</div>
+      <div class="esl-body">${eslBodyHTML(p)}</div>
+      <div class="esl-foot">
+        ${guide ? `<span class="esl-footg"><b>${esc(guide.head || "")}</b> ${esc(guide.job || "")}</span>` : ""}
+        <button type="button" class="es-btn primary sm" id="eslback">Back to your sentence</button>
+      </div>
+    </div>`;
+  }
+  // Mount at the end of <body>, never inside #eshost. Nothing here can be seen
+  // by esSwapSide, so the composer underneath keeps its node identity, its text,
+  // its caret and its undo history whatever the centre does.
+  function eslMount(p) {
+    let host = document.getElementById("eslhost");
+    if (!host) { host = document.createElement("div"); host.id = "eslhost"; document.body.appendChild(host); }
+    host.innerHTML = eslHTML(p);
+    eslBind(p);
+    const t = document.getElementById("esltitle"); if (t) t.focus();
+  }
+  function eslUnmount() {
+    const host = document.getElementById("eslhost"); if (host) host.remove();
+    if (ES.centre) ES.centre.open = false;
+  }
+  function eslBind(p) {
+    const host = document.getElementById("eslhost"); if (!host) return;
+    host.querySelectorAll("[data-eslroute]").forEach(b => b.onclick = () => {
+      ES.centre.route = b.dataset.eslroute;
+      // Only the centre re-renders. esRender is never called from in here.
+      eslMount(p);
+    });
+    const x = host.querySelector("#eslx"); if (x) x.onclick = () => { eslUnmount(); esFocusComposer(); };
+    const back = host.querySelector("#eslback"); if (back) back.onclick = () => { eslUnmount(); esFocusComposer(); };
+    const dk = host.querySelector("#esldock");
+    if (dk) dk.onclick = () => { ES.centre.dock = ES.centre.dock === "left" ? "right" : "left"; eslMount(p); };
+    host.onkeydown = e => { if (e.key === "Escape") { e.preventDefault(); eslUnmount(); esFocusComposer(); } };
+  }
   function esBindSide(p) {
     const host = document.getElementById("eshost"); if (!host) return;
     const rp = host.querySelector("#esrestplan");
@@ -4675,6 +4870,12 @@
     if (rj) rj.onclick = () => { ES.ui.posOpen = true; ES.screen = "plan"; esSaveDraft(); esRender(); };
     esBindToolbelt(p);
     esBindDecode();
+    const lo = host.querySelector("#eslopen");
+    if (lo) lo.onclick = () => {
+      ES.centre = ES.centre || { route: "choose", dock: "right" };
+      ES.centre.open = true;
+      eslMount(p);
+    };
     esFitDrawer();
     if (!ES.ui.fitBound) {
       ES.ui.fitBound = true;
