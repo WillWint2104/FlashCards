@@ -4332,6 +4332,21 @@
 
   function eslOpen() { return !!(ES.centre && ES.centre.open); }
 
+  // The two sides of the question, named. An authored question says so itself; a
+  // typed one is named from the syllabus section and the point it resolved to,
+  // which is authored text either way. Never a placeholder: "the first idea" tells
+  // a student nothing about what is behind the tab.
+  function eslSides(p) {
+    const q = esQuestionDef() || {};
+    const hit = esSectionFor(p);
+    const pt = hit ? esBestPoint(p, hit) : null;
+    const cap = t => { t = String(t || "").trim(); return t ? t.charAt(0).toUpperCase() + t.slice(1) : ""; };
+    return {
+      first: q.term1 || cap(hit && hit.section.name) || "",
+      second: q.term2 || cap(pt ? esLearnShape(pt).title : "") || "",
+    };
+  }
+
   // ---- Learn: render the shape the author already wrote --------------------
   //
   // Almost every Learn target is a syllabus point, not one of the six authored
@@ -4769,7 +4784,7 @@
   function eslBodyHTML(p) {
     const q = esQuestionDef() || {};
     const route = (ES.centre && ES.centre.route) || "choose";
-    const t1 = q.term1 || "the first idea", t2 = q.term2 || "the second idea";
+    const sides = eslSides(p), t1 = sides.first, t2 = sides.second;
     if (route === "strategies") {
       const sibs = eslSiblings(p);
       if (!sibs.length) return `<p class="esl-none">Nothing has been written for the other parts of this topic yet.</p>`;
@@ -4791,7 +4806,7 @@
     }
     if (route === "connect") {
       const links = eslLinks(p);
-      if (!links.length) return `<p class="esl-none">No relationships have been written for this question yet.</p>`;
+      if (!links.length) return "";
       return `<p class="esl-lede">${esc(t1)} are actions a business takes. ${esc(t2)} are what it is trying to improve. Each argument below joins one to the other.</p>
         ${links.map(L => `<div class="esl-link">
           <div class="esl-chain">
@@ -4804,22 +4819,25 @@
           ${L.says.length ? `<div class="esl-says">
             <div class="esl-sech">what the topic says about ${esc(L.says.map(x => x.objective).join(" and "))}</div>
             ${L.says.map(x => `<p class="esl-quote">${esc(x.text)}</p>`).join("")}</div>`
-            : `<p class="esl-gap">Nothing has been written yet about how ${esc(L.strategy.toLowerCase())} affects ${esc(L.objectives.join(" or "))}, so nothing is shown here.</p>`}
+            : ""}
         </div>`).join("")}`;
     }
     const o = eslObjectives(p), sibs = eslSiblings(p);
     return `<p class="esl-lede">What do you want to learn?</p>
       <div class="esl-grid three">
-        ${eslCardHTML("strategies", t1, sibs.length ? sibs.slice(0, 4).map(x => x.title).join(", ") + (sibs.length > 4 ? "…" : "") : "", false)}
-        ${eslCardHTML("objectives", t2, o && o.lede ? o.lede : "", false)}
-        ${eslCardHTML("connect", "How they connect", q.argument || "", false)}
+        ${sides.first ? eslCardHTML("strategies", sides.first, sibs.length ? sibs.slice(0, 4).map(x => x.title).join(", ") + (sibs.length > 4 ? "…" : "") : "", false) : ""}
+        ${sides.second ? eslCardHTML("objectives", sides.second, o && o.lede ? o.lede : "", false) : ""}
+        ${eslLinks(p).length ? eslCardHTML("connect", "How they connect", q.argument || "", false) : ""}
       </div>`;
   }
   function eslHTML(p) {
     const q = esQuestionDef() || {};
     const route = (ES.centre && ES.centre.route) || "choose";
-    const step = esStepDef(p), guide = step ? esGuideFor(p, step) : null;
+    const step = esStepDef(p), guide = step ? esGuideFor(p, step) : null, sides = eslSides(p);
     const tab = (id, label) => `<button type="button" class="esl-tab ${route === id ? "on" : ""}" data-eslroute="${id}">${esc(label)}</button>`;
+    // Absence is absence. A question with no authored relationships simply has no
+    // third route, rather than a line telling the student the app is unfinished.
+    const hasLinks = eslLinks(p).length > 0;
     return `<div class="esl-panel ${ES.centre && ES.centre.dock === "left" ? "left" : ""}" role="dialog" aria-label="Learning centre">
       <div class="esl-head">
         <h2 class="esl-title" id="esltitle" tabindex="-1">Learning centre</h2>
@@ -4827,7 +4845,7 @@
         <button type="button" class="esl-x" id="eslx" aria-label="Close">${esIcon("close")}</button>
       </div>
       <p class="esl-q">${esc(q.text || (ES.draft && ES.draft.question) || "")}</p>
-      <div class="esl-tabs">${tab("choose", "Start here")}${tab("strategies", q.term1 || "the first idea")}${tab("objectives", q.term2 || "the second idea")}${tab("connect", "How they connect")}</div>
+      <div class="esl-tabs">${tab("choose", "Start here")}${sides.first ? tab("strategies", sides.first) : ""}${sides.second ? tab("objectives", sides.second) : ""}${hasLinks ? tab("connect", "How they connect") : ""}</div>
       <div class="esl-body">${eslBodyHTML(p)}</div>
       <div class="esl-foot">
         ${guide ? `<span class="esl-footg"><b>${esc(guide.head || "")}</b> ${esc(guide.job || "")}</span>` : ""}
@@ -4841,12 +4859,18 @@
   function eslMount(p) {
     let host = document.getElementById("eslhost");
     if (!host) { host = document.createElement("div"); host.id = "eslhost"; document.body.appendChild(host); }
+    // A CSS layout state, not a re-render: the writing workspace contracts by the
+    // panel's width so both stay fully visible. Below the width where they cannot
+    // both fit, the stylesheet drops back to an overlay.
+    document.body.classList.add("esl-open");
+    document.body.classList.toggle("esl-left", (ES.centre && ES.centre.dock) === "left");
     host.innerHTML = eslHTML(p);
     eslBind(p);
     const t = document.getElementById("esltitle"); if (t) t.focus();
   }
   function eslUnmount() {
     const host = document.getElementById("eslhost"); if (host) host.remove();
+    document.body.classList.remove("esl-open", "esl-left");
     if (ES.centre) ES.centre.open = false;
   }
   function eslBind(p) {
@@ -4874,6 +4898,9 @@
     if (lo) lo.onclick = () => {
       ES.centre = ES.centre || { route: "choose", dock: "right" };
       ES.centre.open = true;
+      // The drawer steps aside for the centre: a side swap, never a full render, so
+      // the composer keeps its node, its text, its caret and its undo history.
+      ES.ui.tool = null; esRenderKeepingPlace(p);
       eslMount(p);
     };
     esFitDrawer();

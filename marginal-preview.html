@@ -661,10 +661,22 @@
      not take pointer events; only the panel does, so the essay stays visible
      and the student can see they have not lost their place. */
   #eslhost{position:fixed;inset:0;z-index:200;pointer-events:none}
-  .esl-panel{position:absolute;top:24px;bottom:24px;right:24px;width:min(880px,calc(100vw - 380px));
+  .esl-panel{position:absolute;top:16px;bottom:16px;right:16px;width:var(--esl-w);
     pointer-events:auto;background:var(--card);border:1.5px solid var(--line);border-radius:18px;
     box-shadow:0 24px 70px rgba(28,40,40,.30);display:flex;flex-direction:column;overflow:hidden}
-  .esl-panel.left{right:auto;left:24px}
+  .esl-panel.left{right:auto;left:16px}
+  /* The centre sits BESIDE the writing, not over it. The scrim is the essay's own
+     scroll container, so giving it padding on the panel's side contracts the
+     workspace and leaves both fully visible. It is a class on body and nothing is
+     rebuilt, so the composer keeps its node, caret, scroll and undo history. */
+  :root{--esl-w:min(440px,38vw)}
+  body.esl-open .es-scrim{padding-right:calc(var(--esl-w) + 30px)}
+  body.esl-open.esl-left .es-scrim{padding-right:16px;padding-left:calc(var(--esl-w) + 30px)}
+  /* The workspace gives up its third column while the centre is open, rather than
+     clipping it. The node stays in the DOM, only hidden, so esSwapSide still finds
+     the side column it swaps and the tool path is unaffected. */
+  body.esl-open .es-cols{grid-template-columns:210px minmax(0,1fr)}
+  body.esl-open .es-cols > .es-rest,body.esl-open .es-cols > .es-drawer{display:none}
   .esl-head{display:flex;align-items:center;gap:10px;padding:15px 18px;border-bottom:1px solid var(--line);flex:0 0 auto}
   .esl-title{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--ink);margin:0;flex:1}
   .esl-title:focus-visible{outline:2px solid var(--green);outline-offset:3px;border-radius:5px}
@@ -709,12 +721,18 @@
   /* Where nothing is authored, the absence is stated rather than filled. */
   .esl-gap{font-size:12.5px;line-height:1.55;color:var(--ink-3);font-weight:600;margin:11px 0 0}
   .esl-foot{display:flex;align-items:center;gap:14px;padding:12px 18px;border-top:1px solid var(--line);flex:0 0 auto}
-  .esl-footg{font-size:12px;color:var(--ink-2);font-weight:600;flex:1;min-width:0}
+  .esl-footg{font-size:12px;color:var(--ink-2);font-weight:600;flex:1;min-width:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .esl-footg b{color:var(--ink-3);font-size:10.5px;letter-spacing:.06em}
   /* The expand action sits outside the drawer's scrolling body on purpose, so it
      is always reachable and cannot alter what the D4 height cap measures. */
   .es-drawer-open{padding:9px 15px;border-bottom:1px solid var(--line);flex:0 0 auto}
-  @media(max-width:900px){.esl-panel{left:16px;right:16px;width:auto}}
+  /* Below the width where a contracted workspace and the panel cannot both work,
+     the panel goes back to being an overlay and the workspace takes its width back. */
+  @media(max-width:1180px){
+    body.esl-open .es-scrim,body.esl-open.esl-left .es-scrim{padding-right:16px;padding-left:16px}
+    .esl-panel,.esl-panel.left{left:16px;right:16px;width:auto}
+  }
   .es-learn-lede{font-weight:600}
   /* The row list is the primary content on the first screen here, not a reference
      list at the foot of a scroll, so it loses the section rule and gains a little air. */
@@ -11487,6 +11505,21 @@ window.BUSCONTENT = {
 
   function eslOpen() { return !!(ES.centre && ES.centre.open); }
 
+  // The two sides of the question, named. An authored question says so itself; a
+  // typed one is named from the syllabus section and the point it resolved to,
+  // which is authored text either way. Never a placeholder: "the first idea" tells
+  // a student nothing about what is behind the tab.
+  function eslSides(p) {
+    const q = esQuestionDef() || {};
+    const hit = esSectionFor(p);
+    const pt = hit ? esBestPoint(p, hit) : null;
+    const cap = t => { t = String(t || "").trim(); return t ? t.charAt(0).toUpperCase() + t.slice(1) : ""; };
+    return {
+      first: q.term1 || cap(hit && hit.section.name) || "",
+      second: q.term2 || cap(pt ? esLearnShape(pt).title : "") || "",
+    };
+  }
+
   // ---- Learn: render the shape the author already wrote --------------------
   //
   // Almost every Learn target is a syllabus point, not one of the six authored
@@ -11924,7 +11957,7 @@ window.BUSCONTENT = {
   function eslBodyHTML(p) {
     const q = esQuestionDef() || {};
     const route = (ES.centre && ES.centre.route) || "choose";
-    const t1 = q.term1 || "the first idea", t2 = q.term2 || "the second idea";
+    const sides = eslSides(p), t1 = sides.first, t2 = sides.second;
     if (route === "strategies") {
       const sibs = eslSiblings(p);
       if (!sibs.length) return `<p class="esl-none">Nothing has been written for the other parts of this topic yet.</p>`;
@@ -11946,7 +11979,7 @@ window.BUSCONTENT = {
     }
     if (route === "connect") {
       const links = eslLinks(p);
-      if (!links.length) return `<p class="esl-none">No relationships have been written for this question yet.</p>`;
+      if (!links.length) return "";
       return `<p class="esl-lede">${esc(t1)} are actions a business takes. ${esc(t2)} are what it is trying to improve. Each argument below joins one to the other.</p>
         ${links.map(L => `<div class="esl-link">
           <div class="esl-chain">
@@ -11959,22 +11992,25 @@ window.BUSCONTENT = {
           ${L.says.length ? `<div class="esl-says">
             <div class="esl-sech">what the topic says about ${esc(L.says.map(x => x.objective).join(" and "))}</div>
             ${L.says.map(x => `<p class="esl-quote">${esc(x.text)}</p>`).join("")}</div>`
-            : `<p class="esl-gap">Nothing has been written yet about how ${esc(L.strategy.toLowerCase())} affects ${esc(L.objectives.join(" or "))}, so nothing is shown here.</p>`}
+            : ""}
         </div>`).join("")}`;
     }
     const o = eslObjectives(p), sibs = eslSiblings(p);
     return `<p class="esl-lede">What do you want to learn?</p>
       <div class="esl-grid three">
-        ${eslCardHTML("strategies", t1, sibs.length ? sibs.slice(0, 4).map(x => x.title).join(", ") + (sibs.length > 4 ? "…" : "") : "", false)}
-        ${eslCardHTML("objectives", t2, o && o.lede ? o.lede : "", false)}
-        ${eslCardHTML("connect", "How they connect", q.argument || "", false)}
+        ${sides.first ? eslCardHTML("strategies", sides.first, sibs.length ? sibs.slice(0, 4).map(x => x.title).join(", ") + (sibs.length > 4 ? "…" : "") : "", false) : ""}
+        ${sides.second ? eslCardHTML("objectives", sides.second, o && o.lede ? o.lede : "", false) : ""}
+        ${eslLinks(p).length ? eslCardHTML("connect", "How they connect", q.argument || "", false) : ""}
       </div>`;
   }
   function eslHTML(p) {
     const q = esQuestionDef() || {};
     const route = (ES.centre && ES.centre.route) || "choose";
-    const step = esStepDef(p), guide = step ? esGuideFor(p, step) : null;
+    const step = esStepDef(p), guide = step ? esGuideFor(p, step) : null, sides = eslSides(p);
     const tab = (id, label) => `<button type="button" class="esl-tab ${route === id ? "on" : ""}" data-eslroute="${id}">${esc(label)}</button>`;
+    // Absence is absence. A question with no authored relationships simply has no
+    // third route, rather than a line telling the student the app is unfinished.
+    const hasLinks = eslLinks(p).length > 0;
     return `<div class="esl-panel ${ES.centre && ES.centre.dock === "left" ? "left" : ""}" role="dialog" aria-label="Learning centre">
       <div class="esl-head">
         <h2 class="esl-title" id="esltitle" tabindex="-1">Learning centre</h2>
@@ -11982,7 +12018,7 @@ window.BUSCONTENT = {
         <button type="button" class="esl-x" id="eslx" aria-label="Close">${esIcon("close")}</button>
       </div>
       <p class="esl-q">${esc(q.text || (ES.draft && ES.draft.question) || "")}</p>
-      <div class="esl-tabs">${tab("choose", "Start here")}${tab("strategies", q.term1 || "the first idea")}${tab("objectives", q.term2 || "the second idea")}${tab("connect", "How they connect")}</div>
+      <div class="esl-tabs">${tab("choose", "Start here")}${sides.first ? tab("strategies", sides.first) : ""}${sides.second ? tab("objectives", sides.second) : ""}${hasLinks ? tab("connect", "How they connect") : ""}</div>
       <div class="esl-body">${eslBodyHTML(p)}</div>
       <div class="esl-foot">
         ${guide ? `<span class="esl-footg"><b>${esc(guide.head || "")}</b> ${esc(guide.job || "")}</span>` : ""}
@@ -11996,12 +12032,18 @@ window.BUSCONTENT = {
   function eslMount(p) {
     let host = document.getElementById("eslhost");
     if (!host) { host = document.createElement("div"); host.id = "eslhost"; document.body.appendChild(host); }
+    // A CSS layout state, not a re-render: the writing workspace contracts by the
+    // panel's width so both stay fully visible. Below the width where they cannot
+    // both fit, the stylesheet drops back to an overlay.
+    document.body.classList.add("esl-open");
+    document.body.classList.toggle("esl-left", (ES.centre && ES.centre.dock) === "left");
     host.innerHTML = eslHTML(p);
     eslBind(p);
     const t = document.getElementById("esltitle"); if (t) t.focus();
   }
   function eslUnmount() {
     const host = document.getElementById("eslhost"); if (host) host.remove();
+    document.body.classList.remove("esl-open", "esl-left");
     if (ES.centre) ES.centre.open = false;
   }
   function eslBind(p) {
@@ -12029,6 +12071,9 @@ window.BUSCONTENT = {
     if (lo) lo.onclick = () => {
       ES.centre = ES.centre || { route: "choose", dock: "right" };
       ES.centre.open = true;
+      // The drawer steps aside for the centre: a side swap, never a full render, so
+      // the composer keeps its node, its text, its caret and its undo history.
+      ES.ui.tool = null; esRenderKeepingPlace(p);
       eslMount(p);
     };
     esFitDrawer();

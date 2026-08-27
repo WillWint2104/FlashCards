@@ -661,10 +661,22 @@
      not take pointer events; only the panel does, so the essay stays visible
      and the student can see they have not lost their place. */
   #eslhost{position:fixed;inset:0;z-index:200;pointer-events:none}
-  .esl-panel{position:absolute;top:24px;bottom:24px;right:24px;width:min(880px,calc(100vw - 380px));
+  .esl-panel{position:absolute;top:16px;bottom:16px;right:16px;width:var(--esl-w);
     pointer-events:auto;background:var(--card);border:1.5px solid var(--line);border-radius:18px;
     box-shadow:0 24px 70px rgba(28,40,40,.30);display:flex;flex-direction:column;overflow:hidden}
-  .esl-panel.left{right:auto;left:24px}
+  .esl-panel.left{right:auto;left:16px}
+  /* The centre sits BESIDE the writing, not over it. The scrim is the essay's own
+     scroll container, so giving it padding on the panel's side contracts the
+     workspace and leaves both fully visible. It is a class on body and nothing is
+     rebuilt, so the composer keeps its node, caret, scroll and undo history. */
+  :root{--esl-w:min(440px,38vw)}
+  body.esl-open .es-scrim{padding-right:calc(var(--esl-w) + 30px)}
+  body.esl-open.esl-left .es-scrim{padding-right:16px;padding-left:calc(var(--esl-w) + 30px)}
+  /* The workspace gives up its third column while the centre is open, rather than
+     clipping it. The node stays in the DOM, only hidden, so esSwapSide still finds
+     the side column it swaps and the tool path is unaffected. */
+  body.esl-open .es-cols{grid-template-columns:210px minmax(0,1fr)}
+  body.esl-open .es-cols > .es-rest,body.esl-open .es-cols > .es-drawer{display:none}
   .esl-head{display:flex;align-items:center;gap:10px;padding:15px 18px;border-bottom:1px solid var(--line);flex:0 0 auto}
   .esl-title{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--ink);margin:0;flex:1}
   .esl-title:focus-visible{outline:2px solid var(--green);outline-offset:3px;border-radius:5px}
@@ -709,12 +721,18 @@
   /* Where nothing is authored, the absence is stated rather than filled. */
   .esl-gap{font-size:12.5px;line-height:1.55;color:var(--ink-3);font-weight:600;margin:11px 0 0}
   .esl-foot{display:flex;align-items:center;gap:14px;padding:12px 18px;border-top:1px solid var(--line);flex:0 0 auto}
-  .esl-footg{font-size:12px;color:var(--ink-2);font-weight:600;flex:1;min-width:0}
+  .esl-footg{font-size:12px;color:var(--ink-2);font-weight:600;flex:1;min-width:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .esl-footg b{color:var(--ink-3);font-size:10.5px;letter-spacing:.06em}
   /* The expand action sits outside the drawer's scrolling body on purpose, so it
      is always reachable and cannot alter what the D4 height cap measures. */
   .es-drawer-open{padding:9px 15px;border-bottom:1px solid var(--line);flex:0 0 auto}
-  @media(max-width:900px){.esl-panel{left:16px;right:16px;width:auto}}
+  /* Below the width where a contracted workspace and the panel cannot both work,
+     the panel goes back to being an overlay and the workspace takes its width back. */
+  @media(max-width:1180px){
+    body.esl-open .es-scrim,body.esl-open.esl-left .es-scrim{padding-right:16px;padding-left:16px}
+    .esl-panel,.esl-panel.left{left:16px;right:16px;width:auto}
+  }
   .es-learn-lede{font-weight:600}
   /* The row list is the primary content on the first screen here, not a reference
      list at the foot of a scroll, so it loses the section rule and gains a little air. */
