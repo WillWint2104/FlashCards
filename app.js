@@ -6213,6 +6213,18 @@
     };
     const line = $("#esline"), accept = $("#esaccept");
     if (line && accept) {
+      // Some controls take the student off the writing screen entirely: choosing an
+      // argument, picking evidence. The sentence they were part way through lives
+      // only in this textarea, so it is carried on ES.ui.ctx and handed back when
+      // the composer returns to the same paragraph and the same step. Anything else
+      // would be resurrecting a sentence into a place it was not written for.
+      const c = ES.ui.ctx;
+      if (c && c.text && !line.value && ES.draft && c.paragraph === ES.draft.pos
+          && c.slot === ((esStepDef(p) || {}).key || null)) {
+        line.value = c.text;
+        try { line.setSelectionRange(c.selStart, c.selEnd); } catch (e) { /* older browsers */ }
+        ES.ui.ctx = null;
+      }
       const same = $("#essamestep");
       const sync = () => {
         const has = !!line.value.trim();
@@ -6265,7 +6277,14 @@
     const ask = $("#esask"); if (ask) ask.onclick = () => esGetFeedback(d.pos);
     const lchip = $("[data-eslessonchip]");
     if (lchip) lchip.onclick = () => { ES.ui.setupStage = "lesson"; ES.ui.tryPick = null; esRender(); };
-    const ptog = $("#espointtoggle"); if (ptog) ptog.onclick = () => { ES.ui.pointOpen = !ES.ui.pointOpen; esRender(); const el = $("#espoint"); if (el) el.focus(); };
+    // These two rebuild the composer, because both change what is around it: the
+    // point pin appears, or the setup stage opens. The sentence being typed lives
+    // only in the textarea, so a bare render silently deleted it mid-word. Capture
+    // and restore the way the tool path already does.
+    const ptog = $("#espointtoggle"); if (ptog) ptog.onclick = () => {
+      esCaptureContext(p); ES.ui.pointOpen = !ES.ui.pointOpen; esRender(); esRestoreContext();
+      const el = $("#espoint"); if (el) el.focus();
+    };
     const rv = $("#esreview"); if (rv) rv.onclick = () => { ES.screen = "review"; esSaveDraft(); esRender(); };
     const mw = $("#esmapwa"); if (mw) mw.onclick = () => { ES.ui.planAll = false; ES.screen = "plan"; esSaveDraft(); esRender(); };
     const ml = $("#esmoreline"); if (ml) ml.onclick = () => { ES.ui.moreLine = true; esRender(); };
@@ -6286,7 +6305,9 @@
     const qz = $("#esquizlink"); if (qz) qz.onclick = () => { ES.screen = "quiz"; esResetQuiz(); esRender(); };
     esBindSetup(p);
     host.querySelectorAll("[data-esrestchange]").forEach(b => b.onclick = () => {
+      esCaptureContext(p);
       ES.ui.setupStage = b.dataset.esrestchange; ES.ui.tool = null; esRender();
+      esRestoreContext();
     });
     esBindLines();
     esBindSeqNudge(p);
