@@ -1775,11 +1775,28 @@ window.ESSAY = {
       evidence:  { tier1: "This is supported by ____, which shows ____.",
                    tier2: [ { type: "named source", frame: "According to ____, ____, which suggests ____." },
                             { type: "specific detail", frame: "The detail that ____ shows ____." } ] },
+      // Which directive family a question belongs to. The command is authored on
+      // every question; coreAnswer.mode is not, so the command is what decides.
+      directiveFamilies: {
+        judgement: ["evaluate", "assess", "to what extent", "discuss", "critically"],
+        causal: ["explain", "how can", "how do", "how does", "describe", "outline", "analyse", "account for", "examine"]
+      },
       link:      { tier1: "Therefore, ____ was a key method because ____.",
                    tier2: [ { type: "answer the question", frame: "This shows that ____, which directly addresses ____." },
                             { type: "weigh it", frame: "This mattered more than ____ because ____." } ] },
+      // The shape of a thesis follows the directive. An Explain or How question wants
+      // a causal line; an Evaluate or Assess question wants a weighed one. Offering
+      // judgement frames for a How question teaches the wrong sentence, so the
+      // families are separated and the directive chooses. Content free either way.
       thesis:    { tier1: "____ can be assessed by weighing ____ against ____.",
-                   tier2: [ { type: "line of argument", frame: "While ____, ultimately ____ because ____." } ] },
+                   tier2: [ { type: "line of argument", frame: "While ____, ultimately ____ because ____." } ],
+                   byFamily: {
+                     causal: { tier1: "____ can contribute to ____ by ____.",
+                               tier2: [ { type: "through what", frame: "____ influences ____ mainly through ____." },
+                                        { type: "name the ways", frame: "____ affects ____ through ____ and ____." } ] },
+                     judgement: { tier1: "____ can be assessed by weighing ____ against ____.",
+                               tier2: [ { type: "line of argument", frame: "While ____, ultimately ____ because ____." },
+                                        { type: "degree", frame: "____ is effective to a ____ degree because ____, although ____." } ] } } },
       methods:   { tier1: "This will be shown through ____ and ____.",
                    tier2: [ { type: "signpost", frame: "By examining ____ and ____, this essay will argue ____." } ] },
       restate:   { tier1: "Overall, ____ shows that ____.",

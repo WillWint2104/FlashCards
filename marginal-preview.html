@@ -5441,11 +5441,28 @@ window.ESSAY = {
       evidence:  { tier1: "This is supported by ____, which shows ____.",
                    tier2: [ { type: "named source", frame: "According to ____, ____, which suggests ____." },
                             { type: "specific detail", frame: "The detail that ____ shows ____." } ] },
+      // Which directive family a question belongs to. The command is authored on
+      // every question; coreAnswer.mode is not, so the command is what decides.
+      directiveFamilies: {
+        judgement: ["evaluate", "assess", "to what extent", "discuss", "critically"],
+        causal: ["explain", "how can", "how do", "how does", "describe", "outline", "analyse", "account for", "examine"]
+      },
       link:      { tier1: "Therefore, ____ was a key method because ____.",
                    tier2: [ { type: "answer the question", frame: "This shows that ____, which directly addresses ____." },
                             { type: "weigh it", frame: "This mattered more than ____ because ____." } ] },
+      // The shape of a thesis follows the directive. An Explain or How question wants
+      // a causal line; an Evaluate or Assess question wants a weighed one. Offering
+      // judgement frames for a How question teaches the wrong sentence, so the
+      // families are separated and the directive chooses. Content free either way.
       thesis:    { tier1: "____ can be assessed by weighing ____ against ____.",
-                   tier2: [ { type: "line of argument", frame: "While ____, ultimately ____ because ____." } ] },
+                   tier2: [ { type: "line of argument", frame: "While ____, ultimately ____ because ____." } ],
+                   byFamily: {
+                     causal: { tier1: "____ can contribute to ____ by ____.",
+                               tier2: [ { type: "through what", frame: "____ influences ____ mainly through ____." },
+                                        { type: "name the ways", frame: "____ affects ____ through ____ and ____." } ] },
+                     judgement: { tier1: "____ can be assessed by weighing ____ against ____.",
+                               tier2: [ { type: "line of argument", frame: "While ____, ultimately ____ because ____." },
+                                        { type: "degree", frame: "____ is effective to a ____ degree because ____, although ____." } ] } } },
       methods:   { tier1: "This will be shown through ____ and ____.",
                    tier2: [ { type: "signpost", frame: "By examining ____ and ____, this essay will argue ____." } ] },
       restate:   { tier1: "Overall, ____ shows that ____.",
@@ -10479,6 +10496,26 @@ window.BUSCONTENT = {
     if (scaf && scaf.templates && scaf.templates[key]) return scaf.templates[key];
     return (window.ESSAY && window.ESSAY.slots && window.ESSAY.slots.templates && window.ESSAY.slots.templates[key]) || null;
   }
+  // Which family of sentence the question's directive calls for. Falls back to
+  // causal, which is the larger family and the safer default: a causal frame on a
+  // judgement question is merely unhelpful, while a judgement frame on a How
+  // question teaches a student to weigh something the question never asked about.
+  function esDirectiveFamily() {
+    const q = esQuestionDef();
+    const cmd = String((q && q.command) || "").trim().toLowerCase();
+    const fams = ((window.ESSAY && window.ESSAY.slots && window.ESSAY.slots.templates) || {}).directiveFamilies || {};
+    for (const name of Object.keys(fams)) {
+      if ((fams[name] || []).some(x => cmd === x || cmd.indexOf(x) === 0)) return name;
+    }
+    return "causal";
+  }
+  // The frames for a slot, after the directive has chosen the family.
+  function esShapesFor(key) {
+    const t = slotTemplates(key) || {};
+    const fam = t.byFamily && t.byFamily[esDirectiveFamily()];
+    const use = fam || t;
+    return [use.tier1].concat((use.tier2 || []).map(x => x.frame)).filter(Boolean);
+  }
   function esBagKey() { return ES.subject + "|" + ES.code; }
   const ES_DRAFT_CAP = 24; // keep a manageable set of saved essays; drop the oldest beyond this
   function esReadStore() { try { return JSON.parse(store.getItem(ES_KEY) || "{}") || {}; } catch (e) { return {}; } }
@@ -11907,6 +11944,7 @@ window.BUSCONTENT = {
         <p class="es-drawer-note">Evidence is supplied. What it proves is still yours to explain.</p>`;
     } else if (key === "structure") {
       body = `<h4 class="es-drawer-h">${esc(d.role)}</h4>
+        <button type="button" class="es-linkbtn" id="esrestplan">Open the plan</button>
         ${d.current ? `<p class="es-drawer-p"><b>Right now:</b> ${esc(d.current.job)}</p>` : ""}
         <ol class="es-struct">${d.steps.map((st, i) => `<li class="${i < d.at ? "done" : i === d.at ? "now" : ""}"><b>${esc(st.label)}</b><span>${esc(st.job)}</span></li>`).join("")}</ol>`;
     }
@@ -12741,6 +12779,15 @@ window.BUSCONTENT = {
       const rows = (judging ? esJudgementRows(d) : esPlanRows(d)).filter(r => r.argument || r.words);
       const intro = esIsIntro(p);
       const pos = esPositionOf(d);
+      // Body paragraphs rest empty: everything the rail used to hold for them is a
+      // tool one press away. The introduction and the conclusion keep theirs,
+      // because it carries the judgement the student took and what their paragraphs
+      // established, and neither has another home. Emptying it there would remove
+      // the only view of it, which is a capability loss rather than a tidy up.
+      if (!ES.ui.tool && !intro && !judging) {
+        const box0 = esDecodeBox(esQuestionDef());
+        return `<aside class="es-rest quiet${box0 ? "" : " empty"}">${box0}</aside>`;
+      }
       return `<aside class="es-rest">
         ${esDecodeBox(esQuestionDef())}
         <div data-esrestprogress>
@@ -13591,11 +13638,11 @@ window.BUSCONTENT = {
             <span class="es-parameta">${words} words${target ? " \u00b7 ~" + esc(String(target)) : ""}</span>
             ${(() => { const st = esStepDef(p), all = slotsForRole(p.role);
               const i = all.findIndex(x => st && x.key === st.key);
-              return st ? `<span class="es-parastage">${esc(st.label)} ${i + 1}/${all.length}</span>` : ""; })()}
+              return st ? `<span class="es-parastage">${i + 1}/${all.length}</span>` : ""; })()}
             <button type="button" class="es-mapall" id="esreview">read all</button>
           </div>
           ${inSetup ? "" : chips}
-          ${(chipArg && !ES.ui.pointOpen && !inSetup) ? "" : `<div class="es-pointpin">
+          ${(esIsIntro(p) || esIsConcl(p) || (chipArg && !ES.ui.pointOpen && !inSetup)) ? "" : `<div class="es-pointpin">
             <label class="es-pinlabel" for="espoint">your point for this paragraph</label>
             <input id="espoint" class="es-pointin" value="${esc(p.point)}" placeholder="In one line, what does this ${esc(p.role.toLowerCase())} argue?">
             ${(esIsIntro(p) || esIsConcl(p)) ? "" : esReasoningHTML(p.point, p.dirSeen, { wantDegree: true })}
@@ -13622,8 +13669,7 @@ window.BUSCONTENT = {
                   // the grammar of the sentence, which is a different thing from the
                   // instruction telling the student what it has to say.
                   const st = esStepDef(p); if (!st) return "";
-                  const t = slotTemplates(st.key) || {};
-                  const all = [t.tier1].concat((t.tier2 || []).map(x => x.frame)).filter(Boolean);
+                  const all = esShapesFor(st.key);
                   if (!all.length) return "";
                   const open = !!ES.ui.shapeOpen;
                   return `<button type="button" class="es-linkbtn es-shapebtn" id="esshape" aria-expanded="${open}">${open ? "Hide sentence shape" : "Show sentence shape"}</button>

@@ -1,3 +1,4 @@
+const { openMap } = require('./env');
 // P0 acceptance: plan first, no repeated setup, persistent map, completion state,
 // whole-response word count, review-and-submit inside guided mode.
 const { chromium, T, OUT, BASE, fileUrl } = require('./env');
@@ -175,7 +176,8 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   ok(!/Argument changed/.test(why),'and never claims the argument moved');
 
   console.log('10. the conclusion is given the arguments it has to draw together');
-  await p.$$eval('[data-esgo]',es=>{const t=es.find(x=>/Conclusion/.test(x.textContent));t&&t.click();}); await p.waitForTimeout(400);
+  await openMap(p);
+  await p.$$eval('.es-mapitem',es=>{const t=es.find(x=>/Conclusion/.test(x.textContent));t&&t.click();}); await p.waitForTimeout(400);
   ok(!(await p.$('.es-setup')),'the conclusion is never asked to choose a body pathway');
   const clbl=await p.$eval('.es-rest .es-restlbl',e=>e.textContent.trim());
   ok(/Arguments you established/i.test(clbl),'it is shown what it has to synthesise: '+clbl);

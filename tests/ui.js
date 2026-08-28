@@ -62,7 +62,6 @@ const REVIEW = (marks) => ({
   ok(!!(await p.$('#esline')),'the composer opens');
 
   // ---- write a plan point + text on paragraph 1, then go to full attempt
-  await p.fill('#espoint','Target markets shape every element of the mix.');
   await p.fill('#esline','Target markets shape every element of the marketing mix.');
   await p.click('#esaccept'); await p.waitForTimeout(300);
   await p.click('#esmodeswitch'); await p.waitForTimeout(400);
