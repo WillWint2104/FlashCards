@@ -37,10 +37,15 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
     const l=document.querySelector('#esline').getBoundingClientRect();
     const g=document.querySelector('.es-guide').getBoundingClientRect();
     const pr=document.querySelector('.es-prose').getBoundingClientRect();
-    return {lineTop:l.top,guideTop:g.top,proseTop:pr.top,gap:g.top-l.bottom};
+    return {lineTop:l.top,guideTop:g.top,guideBottom:g.bottom,proseTop:pr.top,gap:g.top-l.bottom};
   });
-  ok(geo.guideTop>geo.lineTop,'guide is under the active line');
-  ok(geo.gap<40,'and immediately under it: '+Math.round(geo.gap)+'px');
+  // The instruction leads the writing now. The intent this block always protected
+  // is that the guide travels with the cursor rather than drifting to the bottom of
+  // the answer; only the side of the box it sits on has changed.
+  ok(geo.guideTop<geo.lineTop,'the instruction comes before the writing box');
+  ok(geo.lineTop-geo.guideBottom<60,'and is bound to it, not floating: '+Math.round(geo.lineTop-geo.guideBottom)+'px');
+  const oneJob = await p.$$eval('.es-guidejob',es=>es.length);
+  ok(oneJob===1,'there is exactly one active instruction, not a copy underneath: '+oneJob);
   ok(geo.proseTop<geo.lineTop,'with the prose above the line');
 
   console.log('--- another sentence at this stage keeps the step ---');

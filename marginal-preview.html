@@ -1038,9 +1038,15 @@
   .es-editrow{margin:8px 0}
   .es-linebtns{display:flex;gap:10px;align-items:center;margin-top:7px}
   .es-del{color:var(--coral-dk)}
-  .es-guide{margin-top:10px;border-left:3px solid var(--green);padding:2px 0 2px 13px}
+  .es-guide{margin:0 0 12px;border-left:3px solid var(--green);padding:2px 0 2px 13px}
   .es-guideh{font-family:var(--disp);font-weight:600;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--green-dk)}
-  .es-guidejob{font-size:14.5px;line-height:1.55;color:var(--ink);margin-top:3px}
+  /* The instruction now leads the writing rather than trailing it, so it is the
+     largest text in the composer. Nothing else here is 17px at 700. */
+  .es-guidejob{font-size:17px;font-weight:700;line-height:1.5;color:var(--ink);margin-top:3px}
+  .es-shapebtn{margin-top:7px;display:inline-block}
+  .es-shapes{margin-top:7px;display:flex;flex-direction:column;gap:5px}
+  .es-shape{font-size:13.5px;line-height:1.6;color:var(--ink-2);margin:0;
+    background:var(--bg);border-radius:8px;padding:7px 10px}
   .es-guidectx{font-size:12.5px;color:var(--ink-2);font-weight:600;margin-top:4px}
   .es-help{margin-top:12px}
   .es-rung{display:flex;gap:11px;align-items:flex-start;border:1.5px solid var(--line);border-radius:12px;padding:10px 13px;margin-bottom:8px;background:#FBFDFD}
@@ -13601,7 +13607,6 @@ window.BUSCONTENT = {
             ${editing != null ? help : ""}
             ${editing != null ? "" : complete ? doneCard : `
             <div class="es-active">
-              <textarea id="esline" class="es-input es-linebox" rows="2" placeholder="Type your next sentence..."></textarea>
               <div class="es-guide">
                 <div class="es-guidetop">
                   <span class="es-guideh">${esc(guide.head)}</span>
@@ -13612,7 +13617,21 @@ window.BUSCONTENT = {
                   </span>
                 </div>
                 <div class="es-guidejob">${esc(guide.job)}</div>
+                ${(() => {
+                  // The shapes are authored per stage and are content free. They teach
+                  // the grammar of the sentence, which is a different thing from the
+                  // instruction telling the student what it has to say.
+                  const st = esStepDef(p); if (!st) return "";
+                  const t = slotTemplates(st.key) || {};
+                  const all = [t.tier1].concat((t.tier2 || []).map(x => x.frame)).filter(Boolean);
+                  if (!all.length) return "";
+                  const open = !!ES.ui.shapeOpen;
+                  return `<button type="button" class="es-linkbtn es-shapebtn" id="esshape" aria-expanded="${open}">${open ? "Hide sentence shape" : "Show sentence shape"}</button>
+                    ${open ? `<div class="es-shapes">${all.map(x =>
+                      `<p class="es-shape">${esc(x).replace(/_{2,}/g, '<span class="es-blank">____</span>')}</p>`).join("")}</div>` : ""}`;
+                })()}
               </div>
+              <textarea id="esline" class="es-input es-linebox" rows="2" placeholder="Type your next sentence..."></textarea>
               ${help}
               <div class="es-linerow">
                 <button type="button" class="es-btn primary" id="esaccept" disabled>Add this sentence</button>
@@ -13745,6 +13764,12 @@ window.BUSCONTENT = {
     // point pin appears, or the setup stage opens. The sentence being typed lives
     // only in the textarea, so a bare render silently deleted it mid-word. Capture
     // and restore the way the tool path already does.
+    // Toggling the shape rebuilds the composer, so the sentence in progress is
+    // carried the way every other rebuilding control now carries it.
+    const sh = $("#esshape");
+    if (sh) sh.onclick = () => {
+      esCaptureContext(p); ES.ui.shapeOpen = !ES.ui.shapeOpen; esRender(); esRestoreContext();
+    };
     const mp = $("#esmappop");
     if (mp) mp.onclick = () => {
       ES.ui.mapPop = !ES.ui.mapPop;

@@ -6392,7 +6392,6 @@
             ${editing != null ? help : ""}
             ${editing != null ? "" : complete ? doneCard : `
             <div class="es-active">
-              <textarea id="esline" class="es-input es-linebox" rows="2" placeholder="Type your next sentence..."></textarea>
               <div class="es-guide">
                 <div class="es-guidetop">
                   <span class="es-guideh">${esc(guide.head)}</span>
@@ -6403,7 +6402,21 @@
                   </span>
                 </div>
                 <div class="es-guidejob">${esc(guide.job)}</div>
+                ${(() => {
+                  // The shapes are authored per stage and are content free. They teach
+                  // the grammar of the sentence, which is a different thing from the
+                  // instruction telling the student what it has to say.
+                  const st = esStepDef(p); if (!st) return "";
+                  const t = slotTemplates(st.key) || {};
+                  const all = [t.tier1].concat((t.tier2 || []).map(x => x.frame)).filter(Boolean);
+                  if (!all.length) return "";
+                  const open = !!ES.ui.shapeOpen;
+                  return `<button type="button" class="es-linkbtn es-shapebtn" id="esshape" aria-expanded="${open}">${open ? "Hide sentence shape" : "Show sentence shape"}</button>
+                    ${open ? `<div class="es-shapes">${all.map(x =>
+                      `<p class="es-shape">${esc(x).replace(/_{2,}/g, '<span class="es-blank">____</span>')}</p>`).join("")}</div>` : ""}`;
+                })()}
               </div>
+              <textarea id="esline" class="es-input es-linebox" rows="2" placeholder="Type your next sentence..."></textarea>
               ${help}
               <div class="es-linerow">
                 <button type="button" class="es-btn primary" id="esaccept" disabled>Add this sentence</button>
@@ -6536,6 +6549,12 @@
     // point pin appears, or the setup stage opens. The sentence being typed lives
     // only in the textarea, so a bare render silently deleted it mid-word. Capture
     // and restore the way the tool path already does.
+    // Toggling the shape rebuilds the composer, so the sentence in progress is
+    // carried the way every other rebuilding control now carries it.
+    const sh = $("#esshape");
+    if (sh) sh.onclick = () => {
+      esCaptureContext(p); ES.ui.shapeOpen = !ES.ui.shapeOpen; esRender(); esRestoreContext();
+    };
     const mp = $("#esmappop");
     if (mp) mp.onclick = () => {
       ES.ui.mapPop = !ES.ui.mapPop;
