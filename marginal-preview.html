@@ -12779,15 +12779,6 @@ window.BUSCONTENT = {
       const rows = (judging ? esJudgementRows(d) : esPlanRows(d)).filter(r => r.argument || r.words);
       const intro = esIsIntro(p);
       const pos = esPositionOf(d);
-      // Body paragraphs rest empty: everything the rail used to hold for them is a
-      // tool one press away. The introduction and the conclusion keep theirs,
-      // because it carries the judgement the student took and what their paragraphs
-      // established, and neither has another home. Emptying it there would remove
-      // the only view of it, which is a capability loss rather than a tidy up.
-      if (!ES.ui.tool && !intro && !judging) {
-        const box0 = esDecodeBox(esQuestionDef());
-        return `<aside class="es-rest quiet${box0 ? "" : " empty"}">${box0}</aside>`;
-      }
       return `<aside class="es-rest">
         ${esDecodeBox(esQuestionDef())}
         <div data-esrestprogress>
