@@ -1,3 +1,4 @@
+const { openMap } = require('./env');
 // Decision histories, not final states.
 //
 // Students do not arrive at a set of choices, they arrive at a sequence of them,
@@ -23,7 +24,7 @@ const wa=p=>p.$eval('.es-mapwatext',e=>e.textContent.trim()).catch(()=>p.$eval('
 // The start surface is where the app states all three together.
 const map=p=>p.$$eval('.es-mapitem',es=>es.map(e=>e.innerText.replace(/\s+/g,' ').trim())).catch(()=>[]);
 async function sections(p){
-  if (!(await p.$('.es-startrow'))) { await p.click('.es-mapwa').catch(()=>{}); await p.waitForTimeout(520); }
+  if (!(await p.$('.es-startrow'))) { await openMap(p); await p.click('.es-mapwa').catch(()=>{}); await p.waitForTimeout(520); }
   const rows = await p.$$eval('.es-startrow',es=>es.map(e=>e.innerText.replace(/\s+/g,' ').trim())).catch(()=>[]);
   return rows;
 }

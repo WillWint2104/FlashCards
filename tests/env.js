@@ -41,9 +41,18 @@ const WALK = path.join(OUT, "marginal-walkthrough.html");
 const PLAIN = path.join(OUT, "test.html");
 // Move to the next section the way a student does: through the response map, or
 // the completion card when the paragraph is finished.
+// The response map is a popover now, not a standing column, so reaching another
+// section takes the step a student takes: open it, then pick.
+async function openMap(page) {
+  const shown = await page.$eval(".es-map", e => !e.hasAttribute("hidden")).catch(() => false);
+  if (shown) return;
+  const b = await page.$("#esmappop");
+  if (b) { await b.click(); await page.waitForTimeout(220); }
+}
 async function nextSection(page) {
   const done = await page.$("#esdonenext");
   if (done) { await done.click(); await page.waitForTimeout(420); return; }
+  await openMap(page);
   await page.$$eval(".es-mapitem", es => {
     const i = es.findIndex(e => /(^|\s)on(\s|$)/.test(e.className));
     const t = es[i + 1] || es[0]; t && t.click();
@@ -51,6 +60,7 @@ async function nextSection(page) {
   await page.waitForTimeout(420);
 }
 async function prevSection(page) {
+  await openMap(page);
   await page.$$eval(".es-mapitem", es => {
     const i = es.findIndex(e => /(^|\s)on(\s|$)/.test(e.className));
     const t = es[Math.max(0, i - 1)]; t && t.click();
@@ -66,7 +76,7 @@ async function planAll(page) {
 }
 
 module.exports = {
-  nextSection, prevSection, planAll,
+  nextSection, prevSection, planAll, openMap,
   chromium, ROOT, OUT, BASE: OUT,
   WALK, T: url(WALK),
   PLAIN, P: url(PLAIN),

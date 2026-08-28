@@ -3,6 +3,7 @@
 // the student does: the profile's knowledge state does, and the app's response
 // to it does.
 const { termsOf, vocabulary, teachable, Ledger, Trace } = require("./lib");
+const { openMap } = require("../env");
 // what a pathway SAYS it depends on, which is the thing worth auditing. A word
 // the sentence happened to contain is not a teaching dependency.
 function declaredOf(q, id, store) {
@@ -336,7 +337,7 @@ async function runJourney(p, o) {
       }
     }
     if (prof.checksPlanAfter && prof.checksPlanAfter.indexOf(k) >= 0) {
-      await p.click(".es-mapwa").catch(() => {}); await wait(p, 520);
+      await openMap(p); await p.click(".es-mapwa").catch(() => {}); await wait(p, 520);
       tr.m.mapVisits++;
       tr.say("open", "looked back at the response map");
       if (await has(p, ".es-drift.tension")) {

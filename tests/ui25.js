@@ -1,3 +1,4 @@
+const { openMap } = require('./env');
 // The consolidation pass on progressive construction. Four things this proves:
 // the working answer describes CHOICES and never claims the prose establishes
 // them; a judgement is an orientation a student may defer; required coverage
@@ -48,7 +49,7 @@ async function plan(p, area, id){
   console.log('2. a deferred judgement does not block the writing');
   await p.click('#esstartbody'); await p.waitForTimeout(500);
   ok(!!(await p.$('#esline'))||!!(await p.$('.es-setup')),'body 1 opens with no position taken');
-  await p.click('.es-mapwa'); await p.waitForTimeout(450);
+  await openMap(p); await p.click('.es-mapwa'); await p.waitForTimeout(450);
   ok(!!(await p.$('.es-judge.done')),'and the deferral survives the trip');
 
   console.log('3. the working answer says where it comes from');
@@ -66,7 +67,7 @@ async function plan(p, area, id){
   await p.waitForTimeout(450);
   await p.fill('#esline','Training raises productivity at McDonald’s.');
   await p.click('#esaccept'); await p.waitForTimeout(400);
-  await p.click('.es-mapwa'); await p.waitForTimeout(450);
+  await openMap(p); await p.click('.es-mapwa'); await p.waitForTimeout(450);
   const note2=await text(p,'.es-wa');
   ok(/1 written/i.test(note2),'it now reports one written: '+note2.slice(0,120));
   ok(/from 1 argument you have chosen/i.test(note2),'still sourced from the choice');

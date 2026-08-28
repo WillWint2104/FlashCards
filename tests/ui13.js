@@ -60,7 +60,10 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   const rail = await p.$eval('.es-cols',e=>e.textContent);   // argument and evidence are chips now
   ok(/Digitally engaged/.test(rail),'it shows the chosen argument');
   ok(!!pickedEv&&rail.indexOf(pickedEv)>=0,'and the evidence they actually chose: '+JSON.stringify(pickedEv));
-  ok(/This paragraph/.test(rail),'and where they are');
+  // Where they are is now the compact stage line above the writing, not a heading
+  // in the rail: "topic 1/5" rather than "This paragraph".
+  const stage = await p.$eval('.es-parastage', e => e.textContent.trim()).catch(() => '');
+  ok(/\d+\s*\/\s*\d+/.test(stage), 'and where they are: ' + JSON.stringify(stage));
   await p.screenshot({path:OUT+'shot-phasec-rest.png'});
 
   console.log('--- the guide changed because of the choice ---');

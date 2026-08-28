@@ -2,6 +2,7 @@
 // and it had none of the things the planning surface had: it offered every
 // relationship in the question at once, it never said which required part the
 // paragraph was answering, and it repeated an argument without a word.
+const { openMap } = require('./env');
 const { chromium, T, OUT } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 async function open(p, re){
@@ -113,6 +114,7 @@ async function writeThrough(p, lines){
   await p.click('[data-espathown]'); await p.waitForTimeout(250);
   await p.fill('#esownarg','Training pays for itself within a year at a high turnover site.');
   await p.click('#esownok'); await p.waitForTimeout(450);
+  await openMap(p);
   await p.click('.es-mapwa').catch(()=>{}); await p.waitForTimeout(500);
   const note=await text(p,'.es-wa');
   console.log('   ',note.slice(0,150));
