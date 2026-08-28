@@ -4318,7 +4318,7 @@
         });
       }
       return { line: String(line), strategy: strategy, objectives: objectives,
-        lede: sib ? sib.lede : "", says: says, point: pt || null };
+        mechanism: "", lede: sib ? sib.lede : "", says: says, point: pt || null };
     }).filter(Boolean);
   }
 
@@ -4337,14 +4337,25 @@
   // which is authored text either way. Never a placeholder: "the first idea" tells
   // a student nothing about what is behind the tab.
   function eslSides(p) {
-    const q = esQuestionDef() || {};
+    const q = esQuestionDef();
     const hit = esSectionFor(p);
     const pt = hit ? esBestPoint(p, hit) : null;
     const cap = t => { t = String(t || "").trim(); return t ? t.charAt(0).toUpperCase() + t.slice(1) : ""; };
-    return {
-      first: q.term1 || cap(hit && hit.section.name) || "",
-      second: q.term2 || cap(pt ? esLearnShape(pt).title : "") || "",
-    };
+    // An authored question names its own two sides. A typed one does not, and the
+    // nearest syllabus section is NOT the other half of the student's question:
+    // offering it as one turns "here is what your question means" into "here is
+    // some nearby content", which is the thing this surface exists to stop doing.
+    if (q && (q.term1 || q.term2)) return { first: q.term1 || "", second: q.term2 || "", known: true };
+    return { first: "", second: cap(pt ? esLearnShape(pt).title : ""), known: false };
+  }
+
+  // What the directive asks for. Authored on three questions; where it is not, the
+  // route does not exist rather than being filled with a general gloss of the verb.
+  function eslDirective() {
+    const q = esQuestionDef(); if (!q) return null;
+    const dec = q.decode && q.decode.verbMeaning ? q.decode.verbMeaning : "";
+    if (!dec) return null;
+    return { command: String(q.command || "").trim(), meaning: dec };
   }
 
   // ---- Learn: render the shape the author already wrote --------------------
@@ -4804,6 +4815,12 @@
         ${o.why ? `<div class="esl-sec"><div class="esl-sech">They pull against each other</div>
           <p class="esl-p">${esc(o.why)}</p></div>` : ""}`;
     }
+    if (route === "directive") {
+      const d = eslDirective();
+      if (!d) return "";
+      return `<p class="esl-lede">What ${esc(d.command.toLowerCase())} asks you to do</p>
+        <p class="esl-p">${esc(d.meaning)}</p>`;
+    }
     if (route === "connect") {
       const links = eslLinks(p);
       if (!links.length) return "";
@@ -4811,23 +4828,23 @@
         ${links.map(L => `<div class="esl-link">
           <div class="esl-chain">
             <span class="esl-node">${esc(L.strategy)}</span>
-            <span class="esl-arrow">↓</span>
-            <span class="esl-mid">changes how operations works</span>
+            ${L.mechanism ? `<span class="esl-arrow">↓</span><span class="esl-mid">${esc(L.mechanism)}</span>` : ""}
             <span class="esl-arrow">↓</span>
             <span class="esl-node">${esc(L.objectives.join(" and "))}</span>
           </div>
-          ${L.says.length ? `<div class="esl-says">
-            <div class="esl-sech">what the topic says about ${esc(L.says.map(x => x.objective).join(" and "))}</div>
-            ${L.says.map(x => `<p class="esl-quote">${esc(x.text)}</p>`).join("")}</div>`
-            : ""}
+          ${L.says.length ? `<details class="esl-more">
+            <summary>See why</summary>
+            ${L.says.map(x => `<div class="esl-sech">what the topic says about ${esc(x.objective)}</div>
+              <p class="esl-quote">${esc(x.text)}</p>`).join("")}</details>` : ""}
         </div>`).join("")}`;
     }
     const o = eslObjectives(p), sibs = eslSiblings(p);
     return `<p class="esl-lede">What do you want to learn?</p>
       <div class="esl-grid three">
-        ${sides.first ? eslCardHTML("strategies", sides.first, sibs.length ? sibs.slice(0, 4).map(x => x.title).join(", ") + (sibs.length > 4 ? "…" : "") : "", false) : ""}
+        ${sides.first ? eslCardHTML("strategies", sides.first, sibs.length ? "Includes " + sibs.slice(0, 4).map(x => x.title).join(", ") + (sibs.length > 4 ? " and more" : "") : "", false) : ""}
         ${sides.second ? eslCardHTML("objectives", sides.second, o && o.lede ? o.lede : "", false) : ""}
         ${eslLinks(p).length ? eslCardHTML("connect", "How they connect", q.argument || "", false) : ""}
+        ${eslDirective() ? eslCardHTML("directive", `What "${eslDirective().command.toLowerCase()}" means`, eslDirective().meaning, false) : ""}
       </div>`;
   }
   function eslHTML(p) {
@@ -4837,7 +4854,7 @@
     const tab = (id, label) => `<button type="button" class="esl-tab ${route === id ? "on" : ""}" data-eslroute="${id}">${esc(label)}</button>`;
     // Absence is absence. A question with no authored relationships simply has no
     // third route, rather than a line telling the student the app is unfinished.
-    const hasLinks = eslLinks(p).length > 0;
+    const hasLinks = eslLinks(p).length > 0, dir = eslDirective();
     return `<div class="esl-panel ${ES.centre && ES.centre.dock === "left" ? "left" : ""}" role="dialog" aria-label="Learning centre">
       <div class="esl-head">
         <h2 class="esl-title" id="esltitle" tabindex="-1">Learning centre</h2>
@@ -4845,7 +4862,7 @@
         <button type="button" class="esl-x" id="eslx" aria-label="Close">${esIcon("close")}</button>
       </div>
       <p class="esl-q">${esc(q.text || (ES.draft && ES.draft.question) || "")}</p>
-      <div class="esl-tabs">${tab("choose", "Start here")}${sides.first ? tab("strategies", sides.first) : ""}${sides.second ? tab("objectives", sides.second) : ""}${hasLinks ? tab("connect", "How they connect") : ""}</div>
+      <div class="esl-tabs">${tab("choose", "Start here")}${sides.first ? tab("strategies", sides.first) : ""}${sides.second ? tab("objectives", sides.second) : ""}${hasLinks ? tab("connect", "How they connect") : ""}${dir ? tab("directive", `What "${dir.command.toLowerCase()}" means`) : ""}</div>
       <div class="esl-body">${eslBodyHTML(p)}</div>
       <div class="esl-foot">
         ${guide ? `<span class="esl-footg"><b>${esc(guide.head || "")}</b> ${esc(guide.job || "")}</span>` : ""}
