@@ -6359,7 +6359,7 @@
       ${esToolbeltHTML(p)}
       <div class="es-cols ${ES.ui.tool ? "withdrawer" : ""}">
         <aside class="es-map" ${ES.ui.mapPop ? "" : "hidden"}>
-          <div class="es-maph">My response<button type="button" class="es-mapall" id="esreview">read all</button></div>
+          <div class="es-maph">My response</div>
           ${(() => { const wa = esWorkingAnswer(d); if (!wa) return "";
             return `<button type="button" class="es-mapwa" id="esmapwa" title="What the arguments you have chosen add up to. It comes from your plan, not from reading your paragraphs.">
               <span class="es-corelbl">${esIsJudgement() ? "current answer" : "working answer"}</span>
@@ -6377,6 +6377,7 @@
             ${(() => { const st = esStepDef(p), all = slotsForRole(p.role);
               const i = all.findIndex(x => st && x.key === st.key);
               return st ? `<span class="es-parastage">${esc(st.label)} ${i + 1}/${all.length}</span>` : ""; })()}
+            <button type="button" class="es-mapall" id="esreview">read all</button>
           </div>
           ${inSetup ? "" : chips}
           ${(chipArg && !ES.ui.pointOpen && !inSetup) ? "" : `<div class="es-pointpin">
