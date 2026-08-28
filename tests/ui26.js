@@ -1,3 +1,4 @@
+const { openMap } = require('./env');
 // Coverage recovery, at its edges. The review may name a required part the
 // response has not addressed and offer a way back to it. The thing that must
 // never happen is the coverage checker quietly taking over work the student has
@@ -22,7 +23,7 @@ const claimed = p => p.$$eval('.es-covitem.on',es=>es.map(e=>e.innerText.replace
 const sections = p => p.$$eval('.es-startrow',es=>es.map(e=>e.innerText.replace(/\s+/g,' ').trim()));
 const covBtns = p => p.$$eval('[data-escover]',es=>es.map(e=>({label:e.textContent.trim(),area:e.dataset.escover})));
 const rvSecs = p => p.$$eval('.es-rvsec',es=>es.map(e=>e.innerText.replace(/\s+/g,' ').trim()));
-async function toStart(p){ const m=await p.$('.es-mapwa'); if (m) { await m.click(); await p.waitForTimeout(450); } }
+async function toStart(p){ await openMap(p); const m=await p.$('.es-mapwa'); if (m) { await m.click(); await p.waitForTimeout(450); } }
 // read all lives in the composer, so from the start surface step into a
 // paragraph first rather than silently doing nothing
 async function review(p){
