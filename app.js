@@ -5560,10 +5560,12 @@
     // Argument and evidence live in the chips above the writing now, so the
     // resting rail is what the chips cannot carry: where this paragraph is up to.
     // When a drawer opens it becomes information-rich; at rest it recedes.
-    return `<aside class="es-rest quiet">
-      ${esDecodeBox(esQuestionDef())}
-      <div data-esrestprogress>${where}</div>
-    </aside>`;
+    // The stage list now sits above the writing as one compact line, so at rest
+    // this rail carries only the decoder. With no decoder authored it holds
+    // nothing, and a column holding nothing should not occupy the screen. The node
+    // stays in the DOM either way, because esSwapSide swaps it on every tool press.
+    const box = esDecodeBox(esQuestionDef());
+    return `<aside class="es-rest quiet${box ? "" : " empty"}">${box}</aside>`;
   }
   // ===========================================================================
   // THE RESPONSE PLAN
@@ -6356,7 +6358,7 @@
       ${esWritingHead(sc, "Guided", "full attempt", "full", !inSetup)}
       ${esToolbeltHTML(p)}
       <div class="es-cols ${ES.ui.tool ? "withdrawer" : ""}">
-        <aside class="es-map">
+        <aside class="es-map" ${ES.ui.mapPop ? "" : "hidden"}>
           <div class="es-maph">My response<button type="button" class="es-mapall" id="esreview">read all</button></div>
           ${(() => { const wa = esWorkingAnswer(d); if (!wa) return "";
             return `<button type="button" class="es-mapwa" id="esmapwa" title="What the arguments you have chosen add up to. It comes from your plan, not from reading your paragraphs.">
@@ -6368,10 +6370,17 @@
           </div>
         </aside>
         <div class="es-compose">
-          <div class="es-parahead"><span class="es-pararole">${esc(p.role)}</span></div>
+          <div class="es-parahead">
+            <button type="button" class="es-parapick" id="esmappop" aria-expanded="${ES.ui.mapPop ? "true" : "false"}">
+              <span class="es-pararole">${esc(p.role)}</span><span class="es-parachev">\u25be</span></button>
+            <span class="es-parameta">${words} words${target ? " \u00b7 ~" + esc(String(target)) : ""}</span>
+            ${(() => { const st = esStepDef(p), all = slotsForRole(p.role);
+              const i = all.findIndex(x => st && x.key === st.key);
+              return st ? `<span class="es-parastage">${esc(st.label)} ${i + 1}/${all.length}</span>` : ""; })()}
+          </div>
           ${inSetup ? "" : chips}
           ${(chipArg && !ES.ui.pointOpen && !inSetup) ? "" : `<div class="es-pointpin">
-            <label class="es-pinlabel" for="espoint">your point for this paragraph <span class="es-opt">optional</span></label>
+            <label class="es-pinlabel" for="espoint">your point for this paragraph</label>
             <input id="espoint" class="es-pointin" value="${esc(p.point)}" placeholder="In one line, what does this ${esc(p.role.toLowerCase())} argue?">
             ${(esIsIntro(p) || esIsConcl(p)) ? "" : esReasoningHTML(p.point, p.dirSeen, { wantDegree: true })}
           </div>`}
@@ -6526,6 +6535,15 @@
     // point pin appears, or the setup stage opens. The sentence being typed lives
     // only in the textarea, so a bare render silently deleted it mid-word. Capture
     // and restore the way the tool path already does.
+    const mp = $("#esmappop");
+    if (mp) mp.onclick = () => {
+      ES.ui.mapPop = !ES.ui.mapPop;
+      const aside = host.querySelector(".es-map");
+      if (aside) aside.hidden = !ES.ui.mapPop;
+      mp.setAttribute("aria-expanded", ES.ui.mapPop ? "true" : "false");
+      const cols = host.querySelector(".es-cols");
+      if (cols) cols.classList.toggle("mapopen", !!ES.ui.mapPop);
+    };
     const ptog = $("#espointtoggle"); if (ptog) ptog.onclick = () => {
       esCaptureContext(p); ES.ui.pointOpen = !ES.ui.pointOpen; esRender(); esRestoreContext();
       const el = $("#espoint"); if (el) el.focus();

@@ -589,11 +589,27 @@
   .es-checkline .es-linkbtn{font-size:12px;margin-left:7px}
 
   /* ===== The sentence composer: the scaffold travels with the cursor ===== */
-  .es-cols{display:grid;grid-template-columns:230px minmax(650px,1fr) 340px;gap:20px;align-items:start;margin-top:14px}
+  .es-cols{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:start;margin-top:14px}
+  .es-cols.withdrawer{grid-template-columns:minmax(0,1fr) 340px}
+  /* The response map is a popover now. It keeps its place in the grid only while open. */
+  .es-cols>.es-map[hidden]{display:none}
+  .es-cols.mapopen{grid-template-columns:230px minmax(0,1fr) auto}
+  .es-cols.mapopen.withdrawer{grid-template-columns:230px minmax(0,1fr) 340px}
+  .es-rest.quiet.empty{display:none}
+  /* Long lines are hard to write into as well as to read. */
+  .es-compose{max-width:960px}
+  /* One line above the writing carries what the two columns used to: which section,
+     how much is written, and which stage this sentence is at. */
+  .es-parapick{display:inline-flex;align-items:center;gap:6px;font:inherit;background:none;
+    border:1.5px solid transparent;border-radius:9px;padding:3px 8px;margin-left:-8px;cursor:pointer}
+  .es-parapick:hover{border-color:var(--line);background:var(--card)}
+  .es-parachev{color:var(--ink-3);font-size:11px}
+  .es-parameta,.es-parastage{font-size:12px;font-weight:600;color:var(--ink-3)}
+  .es-parastage{color:var(--green-dk)}
   /* Below the width where all three fit, the drawer OVERLAYS. The composer never
      shrinks to make room for a resource: the writing is the product. */
   @media(max-width:1320px){
-    .es-cols{grid-template-columns:230px minmax(560px,1fr)}
+    .es-cols,.es-cols.mapopen{grid-template-columns:minmax(0,1fr)}
     .es-cols.withdrawer .es-drawer{position:fixed;right:16px;top:76px;bottom:16px;width:min(390px,86vw);z-index:130;max-height:none;box-shadow:0 20px 60px rgba(28,40,40,.28)}
   }
   .es-map{position:sticky;top:8px;display:flex;flex-direction:column;gap:3px}
@@ -675,7 +691,12 @@
   /* The workspace gives up its third column while the centre is open, rather than
      clipping it. The node stays in the DOM, only hidden, so esSwapSide still finds
      the side column it swaps and the tool path is unaffected. */
-  body.esl-open .es-cols{grid-template-columns:210px minmax(0,1fr)}
+  /* With the map now a popover, the composer is the first grid child, so the
+     contracted state is a single column. The earlier rule sized the composer as
+     though it were still the navigation track. */
+  body.esl-open .es-cols,body.esl-open .es-cols.mapopen,
+  body.esl-open .es-cols.withdrawer{grid-template-columns:minmax(0,1fr)}
+  body.esl-open .es-cols > .es-map,
   body.esl-open .es-cols > .es-rest,body.esl-open .es-cols > .es-drawer{display:none}
   .esl-head{display:flex;align-items:center;gap:10px;padding:15px 18px;border-bottom:1px solid var(--line);flex:0 0 auto}
   .esl-title{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--ink);margin:0;flex:1}
@@ -1002,11 +1023,17 @@
   .es-prog.now .es-progdot{background:var(--green);box-shadow:0 0 0 3px rgba(28,196,125,.25)}
   .es-flow{border:1.5px solid var(--line);border-radius:16px;background:var(--card);padding:18px 20px}
   .es-prose{font-size:16.5px;line-height:1.85;color:var(--ink)}
-  .es-prose.empty{color:var(--ink-3);font-style:italic;font-size:15px}
+  /* "Your paragraph builds here, one sentence at a time" described a mechanism the
+     student watches happen on the next press, directly above the box that already
+     says "Type your next sentence". Two strings for one action; the node stays so
+     nothing that reads .es-prose breaks. */
+  .es-prose.empty{display:none}
   .es-said{border-radius:4px;cursor:pointer;transition:background .12s}
   .es-said:hover{background:var(--gold-soft);box-shadow:0 0 0 2px var(--gold-soft)}
   .es-active{margin-top:14px}
-  .es-linebox{width:100%;font-size:16.5px;line-height:1.7;resize:vertical;min-height:62px}
+  /* The writing is the task, so it gets the vertical space the scaffolding used to.
+     It still grows with the student's sentence. */
+  .es-linebox{width:100%;font-size:16.5px;line-height:1.7;resize:vertical;min-height:200px}
   .es-editrow{margin:8px 0}
   .es-linebtns{display:flex;gap:10px;align-items:center;margin-top:7px}
   .es-del{color:var(--coral-dk)}
