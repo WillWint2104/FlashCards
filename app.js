@@ -4769,7 +4769,7 @@
       const key = b.dataset.estool;
       if (ES.ui.tool === key) { ES.ui.tool = null; esRenderKeepingPlace(p); esFocusComposer(); return; }
       esCaptureContext(p);
-      ES.ui.tool = key; ES.ui.readMore = false; ES.ui.ctxOpen = false;
+      ES.ui.tool = key; ES.ui.readMore = false; ES.ui.contextView = null;
       esRenderKeepingPlace(p);
     });
     const x = host.querySelector("#esdrawerx");
@@ -4947,7 +4947,7 @@
       ES.centre.open = true;
       // The drawer steps aside for the centre: a side swap, never a full render, so
       // the composer keeps its node, its text, its caret and its undo history.
-      ES.ui.tool = null; ES.ui.ctxOpen = false; esRenderKeepingPlace(p);
+      ES.ui.tool = null; ES.ui.contextView = null; esRenderKeepingPlace(p);
       eslMount(p);
     };
     esFitDrawer();
@@ -4969,7 +4969,7 @@
     // context panel stacked in a single column grid, because nothing told the grid
     // it now had two children.
     cols.classList.toggle("withdrawer", !!ES.ui.tool);
-    cols.classList.toggle("withctx", !ES.ui.tool && !!ES.ui.ctxOpen);
+    cols.classList.toggle("withctx", !ES.ui.tool && !!ES.ui.contextView);
     next.querySelectorAll("button:not([type])").forEach(b => b.type = "button");
     host.querySelectorAll("[data-estool]").forEach(b =>
       b.classList.toggle("on", b.dataset.estool === ES.ui.tool));
@@ -5560,7 +5560,8 @@
       // the chips live on the question stem and this is the panel they open. An
       // aside with nothing in it takes no width, so the decoder costs nothing until
       // a word is pressed.
-      if (!ES.ui.tool && !ES.ui.ctxOpen) return `<aside class="es-rest quiet empty"></aside>`;
+      // The rail renders the view that was asked for, and nothing when none was.
+      if (!ES.ui.tool && !ES.ui.contextView) return `<aside class="es-rest quiet empty"></aside>`;
       const judging = esIsJudgement();
       const rows = (judging ? esJudgementRows(d) : esPlanRows(d)).filter(r => r.argument || r.words);
       const intro = esIsIntro(p);
@@ -6397,7 +6398,7 @@
             whenever the argument picker was showing. */ ""}
       ${esWritingHead(sc, "Guided", "full attempt", "full", true)}
       ${esToolbeltHTML(p)}
-      <div class="es-cols ${ES.ui.tool ? "withdrawer" : ES.ui.ctxOpen ? "withctx" : esDecodeOf(esQuestionDef()) ? "withdec" : ""}">
+      <div class="es-cols ${ES.ui.tool ? "withdrawer" : ES.ui.contextView ? "withctx" : esDecodeOf(esQuestionDef()) ? "withdec" : ""}">
         ${esDecodeHost(esQuestionDef())}
         <aside class="es-map" ${ES.ui.mapPop ? "" : "hidden"}>
           <div class="es-maph">My response</div>
@@ -6419,7 +6420,7 @@
               const i = all.findIndex(x => st && x.key === st.key);
               return ""; })()}
             <span class="es-headacts">
-              ${(esIsIntro(p) || esIsConcl(p)) ? `<button type="button" class="es-linkbtn es-ctxbtn" id="esctx">${esIsConcl(p) ? "Review my arguments" : "View plan"}</button>` : ""}
+              ${(esIsIntro(p) || esIsConcl(p)) ? `<button type="button" class="es-linkbtn es-ctxbtn" id="esctx" data-esctxview="${esIsConcl(p) ? "judgement" : "plan"}" aria-expanded="${ES.ui.contextView ? "true" : "false"}">${esIsConcl(p) ? "Review my arguments" : "View plan"}</button>` : ""}
               <button type="button" class="es-mapall" id="esreview">read all</button>
             </span>
           </div>
@@ -6596,8 +6597,9 @@
     // carried the way every other rebuilding control now carries it.
     const cx = $("#esctx");
     if (cx) cx.onclick = () => {
-      ES.ui.ctxOpen = !ES.ui.ctxOpen;
-      if (ES.ui.ctxOpen) ES.ui.tool = null;
+      const want = esIsConcl(p) ? "judgement" : "plan";
+      ES.ui.contextView = ES.ui.contextView === want ? null : want;
+      if (ES.ui.contextView) ES.ui.tool = null;
       esRenderKeepingPlace(p);
     };
     const sh = $("#esshape");

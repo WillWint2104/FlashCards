@@ -87,6 +87,14 @@ const chips = p => p.$$eval('[data-esdecode],[data-esdecopen]', es => es.length)
         ok(await hosts(p) <= 1, `${label} + context: still one panel: ${await hosts(p)}`);
         const gridCols = await p.$eval('.es-cols', e => getComputedStyle(e).gridTemplateColumns.split(' ').length);
         ok(gridCols === 2, `${label} + context: the grid actually has two columns: ${gridCols}`);
+        // The control selects a NAMED view. It must open the view it names, not
+        // whichever surface happens to hold something plan shaped.
+        const named = await p.$eval('#esctx', e => e.dataset.esctxview);
+        const want = /Conclusion/i.test(role) ? 'judgement' : 'plan';
+        ok(named === want, `${label} + context: the control names the view it selects: ${named}`);
+        const showed = await p.$eval('.es-rest', e => e.innerText).catch(() => '');
+        const proof = want === 'judgement' ? /judgement|established|paragraphs/i : /plan|signpost|argue/i;
+        ok(proof.test(showed), `${label} + context: and the rail shows that view, not another one`);
         await cx.click().catch(() => {}); await p.waitForTimeout(350);
       }
 
