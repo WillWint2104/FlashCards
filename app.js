@@ -5544,7 +5544,14 @@
     // draws together arguments that have already been made. Both read the same
     // rows; neither is asked to choose a body relationship of its own.
     if (esIsIntro(p) || esIsConcl(p)) {
-      if (!ES.ui.tool) return `<aside class="es-rest quiet empty"></aside>`;
+      // Empty of everything the student did not ask for, but NOT of the decoder:
+      // the chips live on the question stem and this is the panel they open. An
+      // aside with nothing in it takes no width, so the decoder costs nothing until
+      // a word is pressed.
+      if (!ES.ui.tool) {
+        const box0 = esDecodeBox(esQuestionDef());
+        return `<aside class="es-rest quiet${box0 ? "" : " empty"}">${box0}</aside>`;
+      }
       const judging = esIsJudgement();
       const rows = (judging ? esJudgementRows(d) : esPlanRows(d)).filter(r => r.argument || r.words);
       const intro = esIsIntro(p);

@@ -95,6 +95,7 @@ async function open(p, re){
   await p.click('#esplango'); await p.waitForTimeout(500);
   await p.$$eval('[data-esgo]',es=>{const t=es.find(x=>/Conclusion/.test(x.textContent));t&&t.click();});
   await p.waitForTimeout(450);
+  await p.click('#esctx').catch(()=>{}); await p.waitForTimeout(350);
   const rail=await p.$eval('.es-rest',e=>e.innerText.replace(/\s+/g,' '));
   console.log('   ',rail.slice(0,220));
   ok(/your judgement/i.test(rail),'the conclusion is shown the judgement the student took');

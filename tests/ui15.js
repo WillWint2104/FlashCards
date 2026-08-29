@@ -80,6 +80,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   console.log('3. the introduction reads the plan and is never asked for a pathway');
   ok(!(await p.$('.es-setup')),'no argument picker on the introduction');
   ok(!!(await p.$('#esline')),'it opens straight on the writing line');
+  await p.click('#esctx').catch(()=>{}); await p.waitForTimeout(350);
   const railh=await p.$eval('.es-rest .es-restlbl',e=>e.textContent.trim());
   ok(/Your plan/i.test(railh),'the rail shows the plan: '+railh);
   const planRows=await p.$$eval('.es-planlarg',es=>es.map(e=>e.textContent.trim().slice(0,34)));
@@ -179,6 +180,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   await openMap(p);
   await p.$$eval('.es-mapitem',es=>{const t=es.find(x=>/Conclusion/.test(x.textContent));t&&t.click();}); await p.waitForTimeout(400);
   ok(!(await p.$('.es-setup')),'the conclusion is never asked to choose a body pathway');
+  await p.click('#esctx').catch(()=>{}); await p.waitForTimeout(350);
   const clbl=await p.$eval('.es-rest .es-restlbl',e=>e.textContent.trim());
   ok(/Arguments you established/i.test(clbl),'it is shown what it has to synthesise: '+clbl);
   const crows=await p.$$eval('.es-planlarg',es=>es.map(e=>e.textContent.trim()));
