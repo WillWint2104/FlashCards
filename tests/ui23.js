@@ -95,7 +95,10 @@ async function open(p, re){
   await p.click('#esplango'); await p.waitForTimeout(500);
   await p.$$eval('[data-esgo]',es=>{const t=es.find(x=>/Conclusion/.test(x.textContent));t&&t.click();});
   await p.waitForTimeout(450);
-  await p.click('#esctx').catch(()=>{}); await p.waitForTimeout(350);
+  // No catch: if the contextual control is missing or unusable, that is the defect
+  // this block exists to notice, not something to step over.
+  await p.click('#esctx'); await p.waitForTimeout(350);
+  ok(!!(await p.$('.es-rest')),'the conclusion context opened before its content is read');
   const rail=await p.$eval('.es-rest',e=>e.innerText.replace(/\s+/g,' '));
   console.log('   ',rail.slice(0,220));
   ok(/your judgement/i.test(rail),'the conclusion is shown the judgement the student took');

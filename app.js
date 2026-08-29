@@ -3709,7 +3709,7 @@
       <div class="es-decrow">
         <button type="button" class="es-decchip" data-esdecopen="plain">Plain English</button>
         <button type="button" class="es-decchip" data-esdecopen="verb">What does ${esc(verb.toLowerCase())} mean?</button>
-        <button type="button" class="es-decchip" data-esdecopen="cover">${esAreasRequired(q) ? "What must I cover?" : "What does my answer have to do?"}</button>
+        <button type="button" class="es-decchip" data-esdecopen="cover">${esRequiredAreas(q).length ? "What must I cover?" : "What does my answer have to do?"}</button>
         <span class="es-dechint">or press any highlighted words above</span>
       </div>`;
   }
@@ -4989,7 +4989,12 @@
     if (s != null) { try { line.setSelectionRange(s, e); } catch (err) { /* older browsers */ } }
   }
   function esRenderKeepingPlace(p) {
-    if (esSwapSide(p)) return;
+    // A successful swap leaves the composer standing, so anything captured for it
+    // was never needed and must not outlive the swap. Left set, it is restored into
+    // the next empty input: accept a sentence at the same stage and the text comes
+    // back, ready to be added a second time. The capture exists only for the paths
+    // that genuinely replace the composer, which is the full render below.
+    if (esSwapSide(p)) { ES.ui.ctx = null; return; }
     const keep = ES.ui.ctx;
     esRender();
     if (keep) { ES.ui.ctx = keep; esRestoreContext(); }

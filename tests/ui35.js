@@ -39,7 +39,10 @@ async function openTool(p, c, tool) {
   const b = await p.$(`[data-estool="${tool}"]:not([disabled])`);
   if (!b) return false;
   await b.click(); await p.waitForTimeout(380);
-  return true;
+  // A click can land while the drawer fails to render. Returning true there sends
+  // the geometry reads into a null and kills the run before its summary, so the
+  // suite reports a crash rather than a failure.
+  return !!(await p.$('.es-drawer')) && !!(await p.$('.es-drawer-body')) && !!(await p.$('.es-drawer-foot'));
 }
 
 const geom = p => p.evaluate(() => {
