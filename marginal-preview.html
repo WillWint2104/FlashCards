@@ -600,8 +600,14 @@
   .es-cols.mapopen.withdrawer{grid-template-columns:230px minmax(0,1fr) 340px}
   .es-rest.quiet.empty{display:none}
   /* Long lines are hard to write into as well as to read. */
+  /* The shell takes the width so no column stands empty, but the card inside it is
+     capped at the width that still fits once a tool or the context panel is open.
+     That keeps the older promise this file already made: the writing is the
+     product, and it does not reflow to make room for a resource. Only the
+     learning centre, which the student opens deliberately to stop writing and
+     read, is allowed to narrow it. */
   .es-compose{max-width:none;min-width:0}
-  .es-compose>*{max-width:1080px;margin-left:auto;margin-right:auto}
+  .es-compose>*{max-width:940px;margin-left:auto;margin-right:auto}
   /* One line above the writing carries what the two columns used to: which section,
      how much is written, and which stage this sentence is at. */
   .es-parapick{display:inline-flex;align-items:center;gap:6px;font:inherit;background:none;

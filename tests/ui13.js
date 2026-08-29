@@ -62,7 +62,8 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   ok(!!pickedEv&&rail.indexOf(pickedEv)>=0,'and the evidence they actually chose: '+JSON.stringify(pickedEv));
   // Where they are is now the compact stage line above the writing, not a heading
   // in the rail: "topic 1/5" rather than "This paragraph".
-  const stage = await p.$eval('.es-parastage', e => e.textContent.trim()).catch(() => '');
+  // Stage progress is owned by the composer header, which carries the stepper.
+  const stage = await p.$eval('.es-stepn', e => e.textContent.trim()).catch(() => '');
   ok(/\d+\s*\/\s*\d+/.test(stage), 'and where they are: ' + JSON.stringify(stage));
   await p.screenshot({path:OUT+'shot-phasec-rest.png'});
 
@@ -72,12 +73,18 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   ok(/highly engaged with digital|digital channels|relationship/i.test(guide),'the guide is the authored pathway guide, not the generic job');
 
   console.log('--- opening a tool does not shift the page ---');
-  const w0 = await p.$eval('.es-compose',e=>Math.round(e.getBoundingClientRect().width));
-  const x0 = await p.$eval('.es-compose',e=>Math.round(e.getBoundingClientRect().left));
+  // The shell now takes the whole column so nothing stands empty, and the card is
+  // centred inside it, so opening a tool re-centres the card. What must not change
+  // is its WIDTH: the student's text does not reflow to make room for a resource,
+  // which is the promise this assertion was written to protect. The card is capped
+  // at the width that still fits with a tool open, so it never rewraps.
+  const w0 = await p.$eval('.es-flow',e=>Math.round(e.getBoundingClientRect().width));
+  const t0 = await p.$eval('#esline',e=>Math.round(e.getBoundingClientRect().width));
   await p.click('[data-estool="evidence"]'); await p.waitForTimeout(350);
-  const w1 = await p.$eval('.es-compose',e=>Math.round(e.getBoundingClientRect().width));
-  const x1 = await p.$eval('.es-compose',e=>Math.round(e.getBoundingClientRect().left));
-  ok(w0===w1 && x0===x1,'the writing column does not move: '+x0+'/'+w0+' -> '+x1+'/'+w1);
+  const w1 = await p.$eval('.es-flow',e=>Math.round(e.getBoundingClientRect().width));
+  const t1 = await p.$eval('#esline',e=>Math.round(e.getBoundingClientRect().width));
+  ok(w0===w1,'the writing card keeps its width when a tool opens: '+w0+' -> '+w1);
+  ok(t0===t1,'so the sentence being written never rewraps: '+t0+' -> '+t1);
   const drawer = await p.$eval('.es-drawer-body',e=>e.textContent);
   ok(/Your evidence/.test(drawer),'the Evidence drawer separates what is selected');
   await p.screenshot({path:OUT+'shot-phasec-drawer.png'});
