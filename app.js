@@ -4761,7 +4761,7 @@
       const key = b.dataset.estool;
       if (ES.ui.tool === key) { ES.ui.tool = null; esRenderKeepingPlace(p); esFocusComposer(); return; }
       esCaptureContext(p);
-      ES.ui.tool = key; ES.ui.readMore = false;
+      ES.ui.tool = key; ES.ui.readMore = false; ES.ui.ctxOpen = false;
       esRenderKeepingPlace(p);
     });
     const x = host.querySelector("#esdrawerx");
@@ -4939,7 +4939,7 @@
       ES.centre.open = true;
       // The drawer steps aside for the centre: a side swap, never a full render, so
       // the composer keeps its node, its text, its caret and its undo history.
-      ES.ui.tool = null; esRenderKeepingPlace(p);
+      ES.ui.tool = null; ES.ui.ctxOpen = false; esRenderKeepingPlace(p);
       eslMount(p);
     };
     esFitDrawer();
@@ -5548,7 +5548,7 @@
       // the chips live on the question stem and this is the panel they open. An
       // aside with nothing in it takes no width, so the decoder costs nothing until
       // a word is pressed.
-      if (!ES.ui.tool) {
+      if (!ES.ui.tool && !ES.ui.ctxOpen) {
         const box0 = esDecodeBox(esQuestionDef());
         return `<aside class="es-rest quiet${box0 ? "" : " empty"}">${box0}</aside>`;
       }
@@ -6583,7 +6583,9 @@
     // carried the way every other rebuilding control now carries it.
     const cx = $("#esctx");
     if (cx) cx.onclick = () => {
-      esCaptureContext(p); ES.ui.tool = "ideas"; esRenderKeepingPlace(p);
+      ES.ui.ctxOpen = !ES.ui.ctxOpen;
+      if (ES.ui.ctxOpen) ES.ui.tool = null;
+      esRenderKeepingPlace(p);
     };
     const sh = $("#esshape");
     if (sh) sh.onclick = () => {
