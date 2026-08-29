@@ -5204,7 +5204,7 @@ window.ESSAY = {
         teeec: {
           label: "TEEEC", expansion: "Topic, Explain, Example, Effect, Concluding link",
           body: [
-            { key: "topic",   label: "topic",           job: "state the relationship this paragraph argues, a strategy affecting an objective" },
+            { key: "topic",   label: "topic",           job: "show the relationship this paragraph will explain" },
             { key: "explain", label: "explanation",     job: "explain how the strategy works, using business terminology" },
             { key: "example", label: "example",         job: "apply a real case study or business example" },
             { key: "effect",  label: "effect",          job: "explain the effect on the objective and why it matters to the business" },
@@ -5224,7 +5224,7 @@ window.ESSAY = {
         tdecc: {
           label: "TDECC", expansion: "Topic, Demonstrate knowledge, Explain, Case study, Connect",
           body: [
-            { key: "topic",   label: "topic",                job: "state the relationship this paragraph argues, a strategy affecting an objective" },
+            { key: "topic",   label: "topic",                job: "show the relationship this paragraph will explain" },
             { key: "define",  label: "demonstrate knowledge", job: "show what the syllabus concept is and what it covers, in business terminology" },
             { key: "explain", label: "explain",              job: "make the causal reasoning explicit: what causes what, and why" },
             { key: "example", label: "case study",           job: "apply your selected evidence as proof, not as a mention" },
@@ -5457,12 +5457,17 @@ window.ESSAY = {
       thesis:    { tier1: "____ can be assessed by weighing ____ against ____.",
                    tier2: [ { type: "line of argument", frame: "While ____, ultimately ____ because ____." } ],
                    byFamily: {
-                     causal: { tier1: "____ can contribute to ____ by ____.",
-                               tier2: [ { type: "through what", frame: "____ influences ____ mainly through ____." },
-                                        { type: "name the ways", frame: "____ affects ____ through ____ and ____." } ] },
-                     judgement: { tier1: "____ can be assessed by weighing ____ against ____.",
+                     // A thesis answers the whole question and says where the
+                     // response is going. A body topic sentence states one
+                     // relationship. Sharing frames between them teaches a student
+                     // to write a paragraph opener where an essay opener belongs,
+                     // so these signpost and the topic frames do not.
+                     causal: { tier1: "Overall, ____ can contribute to ____ through ____ and ____.",
+                               tier2: [ { type: "signpost the ways", frame: "____ affects ____ in several ways, most importantly ____ and ____." },
+                                        { type: "name the strongest", frame: "____ shapes ____ most through ____, and to a lesser extent through ____." } ] },
+                     judgement: { tier1: "Overall, ____ is ____ because ____, although ____.",
                                tier2: [ { type: "line of argument", frame: "While ____, ultimately ____ because ____." },
-                                        { type: "degree", frame: "____ is effective to a ____ degree because ____, although ____." } ] } } },
+                                        { type: "weigh two sides", frame: "____ can be assessed by weighing ____ against ____, and on balance ____." } ] } } },
       methods:   { tier1: "This will be shown through ____ and ____.",
                    tier2: [ { type: "signpost", frame: "By examining ____ and ____, this essay will argue ____." } ] },
       restate:   { tier1: "Overall, ____ shows that ____.",
@@ -11907,6 +11912,7 @@ window.BUSCONTENT = {
       if (d.kind === "plan") {
         body = `<h4 class="es-drawer-h">What your response argues</h4>
           <p class="es-drawer-note">The arguments you planned, in order. This section draws on them rather than adding a new one.</p>
+          <button type="button" class="es-linkbtn" id="esrestplan">Open the plan</button>
           ${d.rows.map(r => `<div class="es-idea on"><b>${esc(r.role)}</b><span>${esc(r.argument)}</span></div>`).join("")}`;
       } else if (d.kind === "pathways") {
         body = `<h4 class="es-drawer-h">What you could argue here</h4>
@@ -12775,6 +12781,7 @@ window.BUSCONTENT = {
     // draws together arguments that have already been made. Both read the same
     // rows; neither is asked to choose a body relationship of its own.
     if (esIsIntro(p) || esIsConcl(p)) {
+      if (!ES.ui.tool) return `<aside class="es-rest quiet empty"></aside>`;
       const judging = esIsJudgement();
       const rows = (judging ? esJudgementRows(d) : esPlanRows(d)).filter(r => r.argument || r.words);
       const intro = esIsIntro(p);
@@ -13552,7 +13559,7 @@ window.BUSCONTENT = {
                   : `<button type="button" class="es-chip-ev empty" data-esrestchange="evidence">${esIcon("search")}<span>evidence</span></button>`}
         ${(p.point || "").trim() ? `<span class="es-chip-note" title="your note for this paragraph">${esc(p.point)}</span>` : ""}
         ${esLearning(p) ? `<button type="button" class="es-chip-more" data-eslessonchip title="what this argument means, and one thing to try">understand this argument</button>` : ""}
-        <button type="button" class="es-chip-more" id="espointtoggle" title="a note for this paragraph">${ES.ui.pointOpen ? "hide note" : "note"}</button>
+        <button type="button" class="es-chip-more" id="espointtoggle" title="a one line note of what this paragraph argues">${ES.ui.pointOpen ? "hide my point" : "edit my point"}</button>
       </div>`;
     const words = esWordsOf(p.text);
     const whole = esResponseWords(d);
@@ -13630,6 +13637,7 @@ window.BUSCONTENT = {
             ${(() => { const st = esStepDef(p), all = slotsForRole(p.role);
               const i = all.findIndex(x => st && x.key === st.key);
               return st ? `<span class="es-parastage">${i + 1}/${all.length}</span>` : ""; })()}
+            ${(esIsIntro(p) || esIsConcl(p)) ? `<button type="button" class="es-linkbtn es-ctxbtn" id="esctx">${esIsConcl(p) ? "Review my arguments" : "View plan"}</button>` : ""}
             <button type="button" class="es-mapall" id="esreview">read all</button>
           </div>
           ${inSetup ? "" : chips}
@@ -13672,7 +13680,7 @@ window.BUSCONTENT = {
               ${help}
               <div class="es-linerow">
                 <button type="button" class="es-btn primary" id="esaccept" disabled>Add this sentence</button>
-                <button type="button" class="es-linkbtn es-whenwriting" id="essamestep" hidden>stay at this stage</button>
+                <button type="button" class="es-linkbtn es-whenwriting" id="essamestep" hidden>add another at this stage</button>
               </div>
             </div>`}
           </div>`}
@@ -13782,7 +13790,7 @@ window.BUSCONTENT = {
     if (ss) ss.onclick = () => {
       ES.ui.stayStep = !ES.ui.stayStep;
       ss.classList.toggle("armed", ES.ui.stayStep);
-      ss.textContent = ES.ui.stayStep ? "staying at this stage" : "stay at this stage";
+      ss.textContent = ES.ui.stayStep ? "staying at this stage" : "add another at this stage";
       const el = $("#esline"); if (el) el.focus();
     };
     const ng = $("#esnextguide"); if (ng) ng.onclick = () => { p.step = Math.min(si + 1, steps.length - 1); esSaveDraft(); esRender(); };
@@ -13803,6 +13811,10 @@ window.BUSCONTENT = {
     // and restore the way the tool path already does.
     // Toggling the shape rebuilds the composer, so the sentence in progress is
     // carried the way every other rebuilding control now carries it.
+    const cx = $("#esctx");
+    if (cx) cx.onclick = () => {
+      esCaptureContext(p); ES.ui.tool = "ideas"; esRenderKeepingPlace(p);
+    };
     const sh = $("#esshape");
     if (sh) sh.onclick = () => {
       esCaptureContext(p); ES.ui.shapeOpen = !ES.ui.shapeOpen; esRender(); esRestoreContext();

@@ -4675,6 +4675,7 @@
       if (d.kind === "plan") {
         body = `<h4 class="es-drawer-h">What your response argues</h4>
           <p class="es-drawer-note">The arguments you planned, in order. This section draws on them rather than adding a new one.</p>
+          <button type="button" class="es-linkbtn" id="esrestplan">Open the plan</button>
           ${d.rows.map(r => `<div class="es-idea on"><b>${esc(r.role)}</b><span>${esc(r.argument)}</span></div>`).join("")}`;
       } else if (d.kind === "pathways") {
         body = `<h4 class="es-drawer-h">What you could argue here</h4>
@@ -5543,6 +5544,7 @@
     // draws together arguments that have already been made. Both read the same
     // rows; neither is asked to choose a body relationship of its own.
     if (esIsIntro(p) || esIsConcl(p)) {
+      if (!ES.ui.tool) return `<aside class="es-rest quiet empty"></aside>`;
       const judging = esIsJudgement();
       const rows = (judging ? esJudgementRows(d) : esPlanRows(d)).filter(r => r.argument || r.words);
       const intro = esIsIntro(p);
@@ -6320,7 +6322,7 @@
                   : `<button type="button" class="es-chip-ev empty" data-esrestchange="evidence">${esIcon("search")}<span>evidence</span></button>`}
         ${(p.point || "").trim() ? `<span class="es-chip-note" title="your note for this paragraph">${esc(p.point)}</span>` : ""}
         ${esLearning(p) ? `<button type="button" class="es-chip-more" data-eslessonchip title="what this argument means, and one thing to try">understand this argument</button>` : ""}
-        <button type="button" class="es-chip-more" id="espointtoggle" title="a note for this paragraph">${ES.ui.pointOpen ? "hide note" : "note"}</button>
+        <button type="button" class="es-chip-more" id="espointtoggle" title="a one line note of what this paragraph argues">${ES.ui.pointOpen ? "hide my point" : "edit my point"}</button>
       </div>`;
     const words = esWordsOf(p.text);
     const whole = esResponseWords(d);
@@ -6398,6 +6400,7 @@
             ${(() => { const st = esStepDef(p), all = slotsForRole(p.role);
               const i = all.findIndex(x => st && x.key === st.key);
               return st ? `<span class="es-parastage">${i + 1}/${all.length}</span>` : ""; })()}
+            ${(esIsIntro(p) || esIsConcl(p)) ? `<button type="button" class="es-linkbtn es-ctxbtn" id="esctx">${esIsConcl(p) ? "Review my arguments" : "View plan"}</button>` : ""}
             <button type="button" class="es-mapall" id="esreview">read all</button>
           </div>
           ${inSetup ? "" : chips}
@@ -6440,7 +6443,7 @@
               ${help}
               <div class="es-linerow">
                 <button type="button" class="es-btn primary" id="esaccept" disabled>Add this sentence</button>
-                <button type="button" class="es-linkbtn es-whenwriting" id="essamestep" hidden>stay at this stage</button>
+                <button type="button" class="es-linkbtn es-whenwriting" id="essamestep" hidden>add another at this stage</button>
               </div>
             </div>`}
           </div>`}
@@ -6550,7 +6553,7 @@
     if (ss) ss.onclick = () => {
       ES.ui.stayStep = !ES.ui.stayStep;
       ss.classList.toggle("armed", ES.ui.stayStep);
-      ss.textContent = ES.ui.stayStep ? "staying at this stage" : "stay at this stage";
+      ss.textContent = ES.ui.stayStep ? "staying at this stage" : "add another at this stage";
       const el = $("#esline"); if (el) el.focus();
     };
     const ng = $("#esnextguide"); if (ng) ng.onclick = () => { p.step = Math.min(si + 1, steps.length - 1); esSaveDraft(); esRender(); };
@@ -6571,6 +6574,10 @@
     // and restore the way the tool path already does.
     // Toggling the shape rebuilds the composer, so the sentence in progress is
     // carried the way every other rebuilding control now carries it.
+    const cx = $("#esctx");
+    if (cx) cx.onclick = () => {
+      esCaptureContext(p); ES.ui.tool = "ideas"; esRenderKeepingPlace(p);
+    };
     const sh = $("#esshape");
     if (sh) sh.onclick = () => {
       esCaptureContext(p); ES.ui.shapeOpen = !ES.ui.shapeOpen; esRender(); esRestoreContext();

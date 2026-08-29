@@ -1538,7 +1538,7 @@ window.ESSAY = {
         teeec: {
           label: "TEEEC", expansion: "Topic, Explain, Example, Effect, Concluding link",
           body: [
-            { key: "topic",   label: "topic",           job: "state the relationship this paragraph argues, a strategy affecting an objective" },
+            { key: "topic",   label: "topic",           job: "show the relationship this paragraph will explain" },
             { key: "explain", label: "explanation",     job: "explain how the strategy works, using business terminology" },
             { key: "example", label: "example",         job: "apply a real case study or business example" },
             { key: "effect",  label: "effect",          job: "explain the effect on the objective and why it matters to the business" },
@@ -1558,7 +1558,7 @@ window.ESSAY = {
         tdecc: {
           label: "TDECC", expansion: "Topic, Demonstrate knowledge, Explain, Case study, Connect",
           body: [
-            { key: "topic",   label: "topic",                job: "state the relationship this paragraph argues, a strategy affecting an objective" },
+            { key: "topic",   label: "topic",                job: "show the relationship this paragraph will explain" },
             { key: "define",  label: "demonstrate knowledge", job: "show what the syllabus concept is and what it covers, in business terminology" },
             { key: "explain", label: "explain",              job: "make the causal reasoning explicit: what causes what, and why" },
             { key: "example", label: "case study",           job: "apply your selected evidence as proof, not as a mention" },
@@ -1791,12 +1791,17 @@ window.ESSAY = {
       thesis:    { tier1: "____ can be assessed by weighing ____ against ____.",
                    tier2: [ { type: "line of argument", frame: "While ____, ultimately ____ because ____." } ],
                    byFamily: {
-                     causal: { tier1: "____ can contribute to ____ by ____.",
-                               tier2: [ { type: "through what", frame: "____ influences ____ mainly through ____." },
-                                        { type: "name the ways", frame: "____ affects ____ through ____ and ____." } ] },
-                     judgement: { tier1: "____ can be assessed by weighing ____ against ____.",
+                     // A thesis answers the whole question and says where the
+                     // response is going. A body topic sentence states one
+                     // relationship. Sharing frames between them teaches a student
+                     // to write a paragraph opener where an essay opener belongs,
+                     // so these signpost and the topic frames do not.
+                     causal: { tier1: "Overall, ____ can contribute to ____ through ____ and ____.",
+                               tier2: [ { type: "signpost the ways", frame: "____ affects ____ in several ways, most importantly ____ and ____." },
+                                        { type: "name the strongest", frame: "____ shapes ____ most through ____, and to a lesser extent through ____." } ] },
+                     judgement: { tier1: "Overall, ____ is ____ because ____, although ____.",
                                tier2: [ { type: "line of argument", frame: "While ____, ultimately ____ because ____." },
-                                        { type: "degree", frame: "____ is effective to a ____ degree because ____, although ____." } ] } } },
+                                        { type: "weigh two sides", frame: "____ can be assessed by weighing ____ against ____, and on balance ____." } ] } } },
       methods:   { tier1: "This will be shown through ____ and ____.",
                    tier2: [ { type: "signpost", frame: "By examining ____ and ____, this essay will argue ____." } ] },
       restate:   { tier1: "Overall, ____ shows that ____.",
