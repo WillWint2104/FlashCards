@@ -1,0 +1,114 @@
+// The context carry contract, both directions.
+//
+// Some controls take the student off the writing screen entirely, so the sentence
+// in progress is captured and handed back when the composer returns. Some controls
+// leave the composer standing, and there the capture must not survive: left set, it
+// is restored into the next empty input, and an accepted sentence comes back ready
+// to be added a second time.
+//
+// Both halves are one contract and neither can be tested without the other: clearing
+// the capture too eagerly loses the student's words, and clearing it too late
+// duplicates them. 47 suites, the role-by-mode matrix and a six area walkthrough all
+// missed the duplication, because it only appears after ACCEPTING at the same stage.
+const { chromium, T, OUT } = require('./env');
+let pass = 0, fail = 0;
+const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  FAIL:', m); } };
+const val = p => p.$eval('#esline', e => e.value).catch(() => null);
+const prose = p => p.$eval('.es-prose', e => e.textContent).catch(() => '');
+const countIn = (hay, needle) => hay.split(needle).length - 1;
+
+async function toWriting(p) {
+  await p.goto(T); await p.waitForTimeout(500);
+  await p.evaluate(() => localStorage.removeItem('marginal.essay.v1'));
+  await p.goto(T); await p.waitForTimeout(700);
+  await p.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
+  await p.waitForTimeout(400);
+  await p.selectOption('#essubject', 'business_studies').catch(() => {});
+  await p.$$eval('.es-qchip', es => { const t = es.find(x => /target markets affect/i.test(x.textContent)); t && t.click(); });
+  await p.click('#esstart'); await p.waitForTimeout(700);
+  if (await p.$('.es-startrow')) await p.$$eval('.es-startrow', es => { const t = es.filter(x => /Body/.test(x.textContent))[0]; t && t.click(); });
+  await p.waitForTimeout(600);
+  await p.$$eval('[data-espath]', es => es[0] && es[0].click()); await p.waitForTimeout(500);
+  const sw = await p.$('#esstartwriting'); if (sw) { await sw.click(); await p.waitForTimeout(700); }
+}
+
+(async () => {
+  const b = await chromium.launch();
+  const p = await (await b.newContext({ viewport: { width: 1500, height: 1050 } })).newPage();
+  const errs = []; p.on('pageerror', e => errs.push(String(e).slice(0, 200)));
+  await p.route(/workers\.dev/, r => r.abort());
+
+  const SENT = 'Digitally engaged customers spend their attention on social platforms.';
+
+  console.log('1. a control that leaves the composer standing must not outlive itself');
+  await toWriting(p);
+  await p.click('#esline'); await p.keyboard.type(SENT);
+  // Opening a tool captures. Closing it swaps the side back in place, which is the
+  // path on which the capture is not needed and must be dropped.
+  await p.click('[data-estool="structure"]'); await p.waitForTimeout(380);
+  ok((await val(p)) === SENT, 'the sentence survives a tool opening');
+  await p.keyboard.press('Escape'); await p.waitForTimeout(350);
+  ok((await val(p)) === SENT, 'and survives it closing');
+
+  // Stay at this stage, so accepting does not advance the slot. This is the exact
+  // sequence the duplication needed: same paragraph, same slot, empty input.
+  const same = await p.$('#essamestep');
+  if (same) { await same.click(); await p.waitForTimeout(250); }
+  await p.click('#esaccept'); await p.waitForTimeout(650);
+  const after = await val(p);
+  ok(after === '', 'accepting at the same stage leaves the input empty: ' + JSON.stringify((after || '').slice(0, 40)));
+  const text = await prose(p);
+  ok(countIn(text, SENT) === 1, 'and the sentence is in the paragraph exactly once: ' + countIn(text, SENT));
+
+  console.log('2. a control that replaces the composer must hand the sentence back');
+  await toWriting(p);
+  const PART = 'Customers who are online a lot see more of the brand';
+  await p.click('#esline'); await p.keyboard.type(PART);
+  const chip = await p.$('[data-esrestchange]');
+  if (!chip) { ok(false, 'the argument chip is reachable'); }
+  else {
+    await chip.click(); await p.waitForTimeout(450);
+    ok((await val(p)) === null, 'the composer really does leave the screen on this path');
+    await p.$$eval('[data-espath]', es => es[0] && es[0].click()); await p.waitForTimeout(420);
+    const sw = await p.$('#esstartwriting'); if (sw) { await sw.click(); await p.waitForTimeout(650); }
+    ok((await val(p)) === PART, 'the unfinished sentence comes back: ' + JSON.stringify((await val(p) || '').slice(0, 40)));
+  }
+
+  console.log('3. and it comes back once, not on every later render');
+  // Clear it by hand. If the capture were still held, the next render would put it
+  // back, which is the same defect wearing different clothes.
+  await p.$eval('#esline', e => { e.value = ''; e.dispatchEvent(new Event('input', { bubbles: true })); });
+  const chip2 = await p.$('[data-esrestchange]');
+  if (chip2) {
+    await chip2.click(); await p.waitForTimeout(420);
+    await p.$$eval('[data-espath]', es => es[0] && es[0].click()); await p.waitForTimeout(400);
+    const sw2 = await p.$('#esstartwriting'); if (sw2) { await sw2.click(); await p.waitForTimeout(650); }
+    const again = await val(p);
+    ok(again === '', 'a consumed capture is not restored a second time: ' + JSON.stringify((again || '').slice(0, 40)));
+  }
+
+  console.log('4. the last stage has nowhere to advance to, and still must not duplicate');
+  await toWriting(p);
+  await p.click('#esline'); await p.keyboard.type(SENT);
+  // Walk to the final step, where accepting cannot move the slot on.
+  for (let i = 0; i < 8; i++) {
+    const next = await p.$('#esnextguide:not([disabled])');
+    if (!next) break;
+    await next.click(); await p.waitForTimeout(220);
+  }
+  await p.click('[data-estool="structure"]'); await p.waitForTimeout(350);
+  await p.keyboard.press('Escape'); await p.waitForTimeout(320);
+  const line = await val(p);
+  if (line) {
+    await p.click('#esaccept'); await p.waitForTimeout(650);
+    const last = await val(p);
+    ok(last === '', 'accepting at the final stage leaves the input empty: ' + JSON.stringify((last || '').slice(0, 40)));
+    const t2 = await prose(p);
+    ok(countIn(t2, SENT) <= 1, 'and does not double the sentence: ' + countIn(t2, SENT));
+  }
+
+  console.log('\npageerrors:', errs.length ? errs.join(' | ') : 'none');
+  ok(errs.length === 0, 'no page errors');
+  console.log(`\n${pass} passed, ${fail} failed`);
+  await b.close(); process.exit(fail ? 1 : 0);
+})();
