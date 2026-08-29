@@ -4957,7 +4957,11 @@
     holder.innerHTML = ES.ui.tool ? esDrawerHTML(p) : esRestHTML(p);
     const next = holder.firstElementChild; if (!next) return false;
     side.replaceWith(next);
+    // The swap owns the layout state too. Toggling only the drawer class left the
+    // context panel stacked in a single column grid, because nothing told the grid
+    // it now had two children.
     cols.classList.toggle("withdrawer", !!ES.ui.tool);
+    cols.classList.toggle("withctx", !ES.ui.tool && !!ES.ui.ctxOpen);
     next.querySelectorAll("button:not([type])").forEach(b => b.type = "button");
     host.querySelectorAll("[data-estool]").forEach(b =>
       b.classList.toggle("on", b.dataset.estool === ES.ui.tool));
@@ -6387,7 +6391,7 @@
     <div class="es-scrim"><div class="es-shell"><div class="es-wrap es-canvas">
       ${esWritingHead(sc, "Guided", "full attempt", "full", !inSetup)}
       ${esToolbeltHTML(p)}
-      <div class="es-cols ${ES.ui.tool ? "withdrawer" : ""}">
+      <div class="es-cols ${ES.ui.tool ? "withdrawer" : ES.ui.ctxOpen ? "withctx" : ""}">
         <aside class="es-map" ${ES.ui.mapPop ? "" : "hidden"}>
           <div class="es-maph">My response</div>
           ${(() => { const wa = esWorkingAnswer(d); if (!wa) return "";
@@ -6406,9 +6410,11 @@
             <span class="es-parameta">${words} words${target ? " \u00b7 ~" + esc(String(target)) : ""}</span>
             ${(() => { const st = esStepDef(p), all = slotsForRole(p.role);
               const i = all.findIndex(x => st && x.key === st.key);
-              return st ? `<span class="es-parastage">${i + 1}/${all.length}</span>` : ""; })()}
-            ${(esIsIntro(p) || esIsConcl(p)) ? `<button type="button" class="es-linkbtn es-ctxbtn" id="esctx">${esIsConcl(p) ? "Review my arguments" : "View plan"}</button>` : ""}
-            <button type="button" class="es-mapall" id="esreview">read all</button>
+              return ""; })()}
+            <span class="es-headacts">
+              ${(esIsIntro(p) || esIsConcl(p)) ? `<button type="button" class="es-linkbtn es-ctxbtn" id="esctx">${esIsConcl(p) ? "Review my arguments" : "View plan"}</button>` : ""}
+              <button type="button" class="es-mapall" id="esreview">read all</button>
+            </span>
           </div>
           ${inSetup ? "" : chips}
           ${(esIsIntro(p) || esIsConcl(p) || (chipArg && !ES.ui.pointOpen && !inSetup)) ? "" : `<div class="es-pointpin">

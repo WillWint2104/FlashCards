@@ -589,15 +589,19 @@
   .es-checkline .es-linkbtn{font-size:12px;margin-left:7px}
 
   /* ===== The sentence composer: the scaffold travels with the cursor ===== */
-  .es-cols{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:start;margin-top:14px}
+  /* Three states, not one grid with hidden children. Closed support gives its
+     space back to the writing; open support takes exactly what it needs. */
+  .es-cols{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;align-items:start;margin-top:14px}
   .es-cols.withdrawer{grid-template-columns:minmax(0,1fr) 340px}
+  .es-cols.withctx{grid-template-columns:minmax(0,1fr) clamp(300px,26vw,390px)}
   /* The response map is a popover now. It keeps its place in the grid only while open. */
   .es-cols>.es-map[hidden]{display:none}
   .es-cols.mapopen{grid-template-columns:230px minmax(0,1fr) auto}
   .es-cols.mapopen.withdrawer{grid-template-columns:230px minmax(0,1fr) 340px}
   .es-rest.quiet.empty{display:none}
   /* Long lines are hard to write into as well as to read. */
-  .es-compose{max-width:960px}
+  .es-compose{max-width:none;min-width:0}
+  .es-compose>*{max-width:1080px;margin-left:auto;margin-right:auto}
   /* One line above the writing carries what the two columns used to: which section,
      how much is written, and which stage this sentence is at. */
   .es-parapick{display:inline-flex;align-items:center;gap:6px;font:inherit;background:none;
@@ -605,7 +609,7 @@
   .es-parapick:hover{border-color:var(--line);background:var(--card)}
   .es-parachev{color:var(--ink-3);font-size:11px}
   .es-parameta,.es-parastage{font-size:12px;font-weight:600;color:var(--ink-3)}
-  .es-parahead .es-mapall{margin-left:auto}
+  .es-parahead .es-headacts{margin-left:auto;display:flex;align-items:baseline;gap:12px}
   .es-parastage{color:var(--green-dk)}
   /* Below the width where all three fit, the drawer OVERLAYS. The composer never
      shrinks to make room for a resource: the writing is the product. */
@@ -686,7 +690,7 @@
      scroll container, so giving it padding on the panel's side contracts the
      workspace and leaves both fully visible. It is a class on body and nothing is
      rebuilt, so the composer keeps its node, caret, scroll and undo history. */
-  :root{--esl-w:min(440px,38vw)}
+  :root{--esl-w:clamp(420px,42vw,660px)}
   body.esl-open .es-scrim{padding-right:calc(var(--esl-w) + 30px)}
   body.esl-open.esl-left .es-scrim{padding-right:16px;padding-left:calc(var(--esl-w) + 30px)}
   /* The workspace gives up its third column while the centre is open, rather than
