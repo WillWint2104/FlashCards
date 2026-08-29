@@ -53,6 +53,7 @@ async function toWriting(p) {
   // Stay at this stage, so accepting does not advance the slot. This is the exact
   // sequence the duplication needed: same paragraph, same slot, empty input.
   const same = await p.$('#essamestep');
+  ok(!!same, 'the same stage control is reachable, without it this is not a same stage test');
   if (same) { await same.click(); await p.waitForTimeout(250); }
   await p.click('#esaccept'); await p.waitForTimeout(650);
   const after = await val(p);
@@ -79,7 +80,8 @@ async function toWriting(p) {
   // back, which is the same defect wearing different clothes.
   await p.$eval('#esline', e => { e.value = ''; e.dispatchEvent(new Event('input', { bubbles: true })); });
   const chip2 = await p.$('[data-esrestchange]');
-  if (chip2) {
+  if (!chip2) { ok(false, 'the argument chip is reachable for the second round trip'); }
+  else {
     await chip2.click(); await p.waitForTimeout(420);
     await p.$$eval('[data-espath]', es => es[0] && es[0].click()); await p.waitForTimeout(400);
     const sw2 = await p.$('#esstartwriting'); if (sw2) { await sw2.click(); await p.waitForTimeout(650); }
@@ -89,23 +91,29 @@ async function toWriting(p) {
 
   console.log('4. the last stage has nowhere to advance to, and still must not duplicate');
   await toWriting(p);
-  await p.click('#esline'); await p.keyboard.type(SENT);
-  // Walk to the final step, where accepting cannot move the slot on.
+  // Walk to the final step first. Advancing a step clears the composer, so a sentence
+  // typed before the walk is gone by the time it arrives, and the scenario would be
+  // measuring an empty box rather than the stage it names.
   for (let i = 0; i < 8; i++) {
     const next = await p.$('#esnextguide:not([disabled])');
     if (!next) break;
-    await next.click(); await p.waitForTimeout(220);
+    await next.click(); await p.waitForTimeout(240);
   }
+  const atEnd = await p.$('#esnextguide:not([disabled])');
+  ok(!atEnd, 'the walk reaches a stage with nothing left to advance to');
+  await p.click('#esline'); await p.keyboard.type(SENT);
   await p.click('[data-estool="structure"]'); await p.waitForTimeout(350);
   await p.keyboard.press('Escape'); await p.waitForTimeout(320);
   const line = await val(p);
-  if (line) {
-    await p.click('#esaccept'); await p.waitForTimeout(650);
-    const last = await val(p);
-    ok(last === '', 'accepting at the final stage leaves the input empty: ' + JSON.stringify((last || '').slice(0, 40)));
-    const t2 = await prose(p);
-    ok(countIn(t2, SENT) <= 1, 'and does not double the sentence: ' + countIn(t2, SENT));
-  }
+  // An empty composer here is one of the defects this suite exists to catch, so it
+  // has to be a failure and not a reason to skip the rest of the scenario.
+  ok(line === SENT, 'the sentence is still in the composer at the final stage: ' + JSON.stringify((line || '').slice(0, 40)));
+  await p.click('#esaccept'); await p.waitForTimeout(650);
+  const last = await val(p);
+  ok(last === '', 'accepting at the final stage leaves the input empty: ' + JSON.stringify((last || '').slice(0, 40)));
+  const t2 = await prose(p);
+  // Not "no more than once": losing the sentence altogether is a failure too.
+  ok(countIn(t2, SENT) === 1, 'and the sentence is in the paragraph exactly once: ' + countIn(t2, SENT));
 
   console.log('\npageerrors:', errs.length ? errs.join(' | ') : 'none');
   ok(errs.length === 0, 'no page errors');
