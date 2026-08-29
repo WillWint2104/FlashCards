@@ -3717,6 +3717,15 @@
   // sentence being written moves. While writing it goes into the right rail,
   // which is otherwise nearly empty, and the composer never shifts. Everywhere
   // else it expands under the question, where there is nothing to displace.
+  // The canonical decoder host. The chips live on the question stem and this is the
+  // panel they open, so it must exist wherever the chips do, independently of which
+  // support surface happens to be on screen. The writing screen renders it as a
+  // stable child of the columns; every other screen renders it under the stem. One
+  // host per screen, chosen by the screen, never by whatever container exists.
+  function esDecodeHost(q) {
+    const box = esDecodeBox(q);
+    return `<div class="es-dechost${box ? "" : " empty"}" data-esdechost>${box}</div>`;
+  }
   function esDecodeBox(q) {
     const dec = esDecodeOf(q); if (!dec) return "";
     const verb = (q.command || "the directive").trim();
@@ -3785,7 +3794,7 @@
         <div class="es-qbar-main">
           <div class="es-qbar-mode">${esc(modeLabel)}</div>
           <div class="es-qbar-q">${qdec ? esDecodeStem(ES.draft.question, qdec.highlights) : esc(ES.draft.question)}</div>
-          ${qdec ? esDecodeChips(qdef) + (boxElsewhere ? "" : esDecodeBox(qdef)) : ""}
+          ${qdec ? esDecodeChips(qdef) + (boxElsewhere ? "" : esDecodeHost(qdef)) : ""}
         </div>
         ${ES.draft.topic ? `<span class="es-restag">${esc(ES.draft.topic)}</span>` : ""}
       </div>`;
@@ -4718,7 +4727,6 @@
         <ol class="es-struct">${d.steps.map((st, i) => `<li class="${i < d.at ? "done" : i === d.at ? "now" : ""}"><b>${esc(st.label)}</b><span>${esc(st.job)}</span></li>`).join("")}</ol>`;
     }
     return `<aside class="es-drawer" role="dialog" aria-label="${esc(tool.label)}">
-      ${esDecodeBox(esQuestionDef())}
       <div class="es-drawer-top">${esIcon(tool.icon)}<span class="es-drawer-title">${esc(tool.label)}</span>
         <button type="button" class="es-drawer-x" id="esdrawerx" aria-label="Close and return to your sentence">${esIcon("close")}</button></div>
       ${key === "understand" && d ? `<div class="es-drawer-open"><button type="button" class="es-linkbtn" id="eslopen">Open learning centre ↗</button></div>` : ""}
@@ -5552,16 +5560,12 @@
       // the chips live on the question stem and this is the panel they open. An
       // aside with nothing in it takes no width, so the decoder costs nothing until
       // a word is pressed.
-      if (!ES.ui.tool && !ES.ui.ctxOpen) {
-        const box0 = esDecodeBox(esQuestionDef());
-        return `<aside class="es-rest quiet${box0 ? "" : " empty"}">${box0}</aside>`;
-      }
+      if (!ES.ui.tool && !ES.ui.ctxOpen) return `<aside class="es-rest quiet empty"></aside>`;
       const judging = esIsJudgement();
       const rows = (judging ? esJudgementRows(d) : esPlanRows(d)).filter(r => r.argument || r.words);
       const intro = esIsIntro(p);
       const pos = esPositionOf(d);
       return `<aside class="es-rest">
-        ${esDecodeBox(esQuestionDef())}
         <div data-esrestprogress>
         <div class="es-resth">${esc(p.role)}</div>
         ${(judging && pos) ? `<div class="es-restblk">
@@ -5598,8 +5602,7 @@
     // this rail carries only the decoder. With no decoder authored it holds
     // nothing, and a column holding nothing should not occupy the screen. The node
     // stays in the DOM either way, because esSwapSide swaps it on every tool press.
-    const box = esDecodeBox(esQuestionDef());
-    return `<aside class="es-rest quiet${box ? "" : " empty"}">${box}</aside>`;
+    return `<aside class="es-rest quiet empty"></aside>`;
   }
   // ===========================================================================
   // THE RESPONSE PLAN
@@ -6389,9 +6392,13 @@
 
     host.innerHTML = `
     <div class="es-scrim"><div class="es-shell"><div class="es-wrap es-canvas">
-      ${esWritingHead(sc, "Guided", "full attempt", "full", !inSetup)}
+      ${/* The writing screen owns the host itself, in the columns below, in every
+            state including setup. The old flag made the stem render a second one
+            whenever the argument picker was showing. */ ""}
+      ${esWritingHead(sc, "Guided", "full attempt", "full", true)}
       ${esToolbeltHTML(p)}
-      <div class="es-cols ${ES.ui.tool ? "withdrawer" : ES.ui.ctxOpen ? "withctx" : ""}">
+      <div class="es-cols ${ES.ui.tool ? "withdrawer" : ES.ui.ctxOpen ? "withctx" : esDecodeOf(esQuestionDef()) ? "withdec" : ""}">
+        ${esDecodeHost(esQuestionDef())}
         <aside class="es-map" ${ES.ui.mapPop ? "" : "hidden"}>
           <div class="es-maph">My response</div>
           ${(() => { const wa = esWorkingAnswer(d); if (!wa) return "";

@@ -594,6 +594,14 @@
   .es-cols{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;align-items:start;margin-top:14px}
   .es-cols.withdrawer{grid-template-columns:minmax(0,1fr) 340px}
   .es-cols.withctx{grid-template-columns:minmax(0,1fr) clamp(300px,26vw,390px)}
+  /* The decoder host is a permanent child of the columns, placed in the support
+     track. It costs nothing until a stem word is pressed, and because it is not the
+     node esSwapSide replaces, opening or closing a tool cannot take it away. */
+  .es-cols.withdec{grid-template-columns:minmax(0,1fr) 340px}
+  .es-cols>.es-dechost{grid-column:2}
+  .es-cols{grid-auto-flow:row}
+  .es-cols>.es-dechost.empty{display:none}
+  .es-cols:not(.withdec):not(.withdrawer):not(.withctx)>.es-dechost{display:none}
   /* The response map is a popover now. It keeps its place in the grid only while open. */
   .es-cols>.es-map[hidden]{display:none}
   .es-cols.mapopen{grid-template-columns:230px minmax(0,1fr) auto}
