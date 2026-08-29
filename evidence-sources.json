@@ -1,0 +1,416 @@
+{
+  "operations": [
+    {
+      "label": "Standardised production system",
+      "section": "role of operations management",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Interdependence at a menu launch",
+      "section": "role of operations management",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "A good and a service in one transaction",
+      "section": "role of operations management",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Global menu localisation",
+      "section": "influences",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Packaging waste, the law and voluntary action",
+      "section": "influences",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Inputs, transformed and transforming",
+      "section": "operations processes",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Volume, variety, variation and visibility",
+      "section": "operations processes",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Technology, task design and process layout",
+      "section": "operations processes",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Outputs, order accuracy and service time",
+      "section": "operations processes",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Approved suppliers and distribution centres",
+      "section": "operations strategies",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Frozen stock, FIFO and made to order",
+      "section": "operations strategies",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Quality control, assurance and improvement",
+      "section": "operations strategies",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Performance objectives on the restaurant floor",
+      "section": "operations strategies",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Kiosks and the app beside the grill",
+      "section": "operations strategies",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Outsourcing, and why franchising is not outsourcing",
+      "section": "operations strategies",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Resistance when kiosks and table service arrived",
+      "section": "operations strategies",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Global scale, menu trials and test kitchens",
+      "section": "operations strategies",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    }
+  ],
+  "marketing": [
+    {
+      "label": "Golden Arches global branding",
+      "section": "role of marketing",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Economic and sociocultural influences on customer choice",
+      "section": "influences on marketing",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Kilojoule labelling and advertising to children",
+      "section": "influences on marketing",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Consumer law and advertising claims",
+      "section": "influences on marketing",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Big Mac in the maturity stage",
+      "section": "marketing process",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Test restaurants and customer feedback surveys",
+      "section": "marketing process",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Segments served by Happy Meal and McCafe",
+      "section": "marketing strategies",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Promotion mix from advertising to sponsorship",
+      "section": "marketing strategies",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Price points from value range to McCafe",
+      "section": "marketing strategies",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Intensive distribution and standardised service",
+      "section": "marketing strategies",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Standardisation with local customisation",
+      "section": "marketing strategies",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "App, loyalty rewards and mobile ordering",
+      "section": "marketing strategies",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    }
+  ],
+  "finance": [
+    {
+      "label": "Franchising funds network growth",
+      "section": "role of financial management",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Finance funds every other function",
+      "section": "role of financial management",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Listed parent using retained profits and borrowing",
+      "section": "influences on financial management",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Australian company under ASIC and company tax",
+      "section": "influences on financial management",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Interest rates, overseas funds and the economic outlook",
+      "section": "influences on financial management",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Immediate cash sales, almost no customer receivables",
+      "section": "processes of financial management",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Two levels of margin, restaurant and corporation",
+      "section": "processes of financial management",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Choosing debt or equity for expansion",
+      "section": "processes of financial management",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Consolidated global reports and one-off gains",
+      "section": "processes of financial management",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Audited accounts and disclosure in a listed group",
+      "section": "processes of financial management",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Standardisation as cost control, marketing as revenue control",
+      "section": "financial management strategies",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Property, leasing and working capital",
+      "section": "financial management strategies",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Exchange rate exposure and hedging",
+      "section": "financial management strategies",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    }
+  ],
+  "human_resources": [
+    {
+      "label": "Franchise model splits HR responsibility",
+      "section": "role of human resource management",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Outsourcing and use of contractors",
+      "section": "role of human resource management",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "National Employment Standards and the award set the floor",
+      "section": "key influences",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Work health and safety in the restaurant",
+      "section": "key influences",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Technology and changing work patterns",
+      "section": "key influences",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Standardised acquisition and development",
+      "section": "processes of human resource management",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Maintenance through rostering and grievance handling",
+      "section": "processes of human resource management",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Separation in a young casual workforce",
+      "section": "processes of human resource management",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Leadership style on a shift",
+      "section": "strategies in human resource management",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Job design using specific tasks",
+      "section": "strategies in human resource management",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Internal recruitment and promotion pathway",
+      "section": "strategies in human resource management",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Performance management against set standards",
+      "section": "strategies in human resource management",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Monetary and non monetary rewards",
+      "section": "strategies in human resource management",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Global staffing with local employees",
+      "section": "strategies in human resource management",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Workplace disputes in fast food",
+      "section": "strategies in human resource management",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    },
+    {
+      "label": "Turnover and benchmarking across stores",
+      "section": "effectiveness of human resource management",
+      "source": "",
+      "sourceUrl": "",
+      "checked": ""
+    }
+  ]
+}

@@ -3,3 +3,10 @@ node_modules/
 *.log
 .DS_Store
 .claude/
+tests/out/
+tests/worker.mjs
+tests/blocks.mjs
+tests/wa.mjs
+
+# inspiration mockups are committed; generated app screenshots are not
+docs/inspiration/**/*.tmp

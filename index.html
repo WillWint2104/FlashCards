@@ -131,7 +131,7 @@
   .term{color:var(--blue-dk);font-weight:800;border-bottom:2px dotted var(--blue);cursor:pointer}
   .pop{position:absolute;z-index:50;max-width:300px;background:var(--ink);color:#EFF5F5;border-radius:14px;padding:12px 15px;font-size:13.5px;box-shadow:0 12px 30px rgba(27,42,41,.3)}
   .pop b{font-family:var(--disp);display:block;margin-bottom:3px;color:#fff;text-transform:capitalize}
-  .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;font-weight:700;font-size:14px;padding:11px 20px;border-radius:99px;z-index:60}
+  .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;font-weight:700;font-size:14px;padding:11px 20px;border-radius:99px;z-index:200}
 
   .nav{display:flex;gap:6px;background:#E2EAEA;border-radius:99px;padding:5px;width:max-content;margin-bottom:20px}
   .navtab{font-family:var(--disp);font-weight:600;font-size:14px;border:none;background:none;color:var(--ink-2);padding:8px 22px;border-radius:99px}
@@ -399,7 +399,7 @@
   .concept::before{content:"Concept · ";font-family:var(--disp);letter-spacing:.05em;text-transform:uppercase;font-size:10.5px;color:var(--blue-dk)}
 
   /* ===== Long-response review mode (namespaced rv- to avoid collisions) ===== */
-  .rv-scrim{position:fixed;inset:0;background:rgba(28,40,40,.42);display:flex;align-items:flex-start;justify-content:center;padding:26px 16px;overflow:auto;z-index:100}
+  .rv-scrim{position:fixed;inset:0;background:rgba(28,40,40,.42);display:flex;align-items:flex-start;justify-content:center;padding:26px 16px;overflow:auto;z-index:150}
   .rv-blur{filter:blur(3px)}
   .rv-modal{width:100%;max-width:1040px;background:var(--card);border-radius:22px;box-shadow:0 24px 60px rgba(28,40,40,.28);overflow:hidden;animation:rvpop .25s cubic-bezier(.35,.65,.25,1)}
   @keyframes rvpop{from{opacity:0;transform:translateY(12px) scale(.99)}to{opacity:1;transform:none}}
@@ -470,7 +470,7 @@
   .rv-pill.w{background:var(--coral-soft);color:var(--coral-dk)}
 
   /* context overlay (question / stimulus) */
-  .rv-ctxscrim{position:fixed;inset:0;background:rgba(28,40,40,.5);display:none;align-items:center;justify-content:center;z-index:120;padding:20px}
+  .rv-ctxscrim{position:fixed;inset:0;background:rgba(28,40,40,.5);display:none;align-items:center;justify-content:center;z-index:160;padding:20px}
   .rv-ctxscrim.show{display:flex}
   .rv-ctxcard{position:relative;background:#fff;border-radius:20px;max-width:620px;width:100%;max-height:80vh;overflow:auto;padding:24px 26px;box-shadow:0 24px 60px rgba(28,40,40,.3)}
   .rv-ctxx{position:absolute;top:14px;right:16px;border:1.5px solid var(--line);background:#fff;border-radius:50%;width:30px;height:30px;cursor:pointer;color:var(--ink-2)}
@@ -496,6 +496,606 @@
   .rv-misschip.crit:hover{background:var(--coral-soft)}
   .rv-misschip:active{transform:translateY(1px);box-shadow:none}
   .rv-missx{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;background:var(--gold-dk);color:#fff;font-size:11px;font-weight:800;flex:none}
+  /* ===== Phase C: argument and evidence as paragraph context ===== */
+  .es-setup{border:1.5px solid var(--green);border-radius:16px;background:var(--card);padding:18px 20px}
+  .es-setuph{font-family:var(--disp);font-weight:600;font-size:17px;color:var(--ink)}
+  .es-setupsub{font-size:13px;line-height:1.55;color:var(--ink-2);font-weight:600;margin:5px 0 13px}
+  .es-pick{display:block;width:100%;text-align:left;font:inherit;background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer}
+  .es-pick:hover{border-color:var(--green);background:var(--green-soft)}
+  .es-pick.on{border-color:var(--green);background:var(--green-soft)}
+  .es-pick.own{border-style:dashed;font-weight:700;color:var(--ink-2)}
+  .es-pickrel{display:block;font-size:13px;line-height:1.45;color:var(--ink-2);font-weight:600}
+  .es-picksub{display:block;font-size:12.5px;line-height:1.5;color:var(--ink-2);font-weight:600;margin-top:4px}
+  .es-ownwrap{display:flex;gap:9px;align-items:center;margin-top:9px}
+  .es-ownwrap .es-input{flex:1}
+  .es-setupbtns{display:flex;gap:14px;align-items:center;margin-top:14px}
+  .es-argchanged{border:1.5px solid var(--gold-dk);background:var(--gold-soft);border-radius:12px;padding:10px 13px;margin-bottom:12px;font-size:13px;line-height:1.55;color:var(--ink)}
+  .es-rest{border:1.5px solid var(--line);border-radius:16px;background:var(--card);padding:15px 16px;position:sticky;top:8px;display:flex;flex-direction:column;gap:15px}
+  .es-resth{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--ink)}
+  .es-restblk{display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+  .es-restlbl{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+  .es-restval{font-size:13.5px;line-height:1.5;color:var(--ink);font-weight:700}
+  .es-restown{font-size:11px;font-weight:800;color:var(--green-dk);background:var(--green-soft);border-radius:99px;padding:2px 7px}
+  .es-restnone{font-size:13px;color:var(--ink-3);font-weight:600;font-style:italic}
+  .es-reststeps{list-style:none;display:flex;flex-direction:column;gap:5px;margin-top:2px}
+  .es-reststeps li{font-size:12.5px;font-weight:700;color:var(--ink-3);display:flex;align-items:center;gap:8px}
+  .es-reststeps li::before{content:"";width:8px;height:8px;border-radius:50%;border:2px solid var(--ink-3);flex:none}
+  .es-reststeps li.done{color:var(--ink-2)}
+  .es-reststeps li.done::before{background:var(--green);border-color:var(--green)}
+  .es-reststeps li.now{color:var(--ink)}
+  .es-reststeps li.now::before{background:var(--green);border-color:var(--green);box-shadow:0 0 0 3px rgba(28,196,125,.25)}
+
+  /* ===== The toolbelt: information comes to the writing, never the reverse ===== */
+  .es-belt{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px}
+  .es-belt-b{display:inline-flex;align-items:center;gap:7px;font:inherit;font-weight:700;font-size:12.5px;color:var(--ink-2);background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:6px 13px;cursor:pointer}
+  .es-belt-b:hover:not([disabled]){border-color:var(--green);color:var(--ink)}
+  .es-belt-b.on{background:var(--green-soft);border-color:var(--green);color:var(--green-dk)}
+  .es-belt-b[disabled]{opacity:.42;cursor:default}
+  .es-ico{width:15px;height:15px;flex:none}
+  /* A fixed-height shell: header and footer hold their place, only the content
+     body scrolls. The ceiling here is the fallback; the drawer is also capped at
+     the room it actually has, since it starts below the question and the toolbelt
+     and a viewport-relative cap alone can push its footer off a short screen. */
+  .es-drawer{border:1.5px solid var(--line);border-radius:16px;background:var(--card);display:flex;flex-direction:column;max-height:min(72vh,760px);position:sticky;top:8px;overflow:hidden}
+  .es-drawer-top{display:flex;align-items:center;gap:9px;padding:13px 15px;border-bottom:1px solid var(--line);flex:0 0 auto}
+  .es-drawer-title{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--ink)}
+  .es-drawer-x{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--ink-2);padding:4px;display:grid;place-items:center}
+  .es-drawer-x:hover{color:var(--ink)}
+  .es-drawer-body{padding:14px 15px;overflow-y:auto;flex:1 1 auto;min-height:0}
+  .es-drawer-sub{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+  .es-drawer-h{font-family:var(--disp);font-weight:600;font-size:14.5px;color:var(--ink);margin:3px 0 7px}
+  .es-drawer-p{font-size:13.5px;line-height:1.6;color:var(--ink);margin-bottom:9px}
+  .es-drawer-note{font-size:12.5px;line-height:1.5;color:var(--ink-2);font-weight:600;margin-bottom:8px}
+  .es-drawer-none{font-size:13px;color:var(--ink-2);font-weight:600}
+  .es-drawer-foot{padding:10px 15px;border-top:1px solid var(--line);font-size:11.5px;color:var(--ink-3);font-weight:600;flex:0 0 auto}
+  .es-drawer-foot kbd{font:inherit;border:1px solid var(--line);border-radius:5px;padding:0 5px}
+  .es-terms{display:flex;gap:6px;flex-wrap:wrap}
+  .es-term{font-size:12px;font-weight:700;color:var(--ink);background:var(--green-soft);border-radius:99px;padding:4px 10px}
+  .es-idea{font-size:13.5px;line-height:1.55;color:var(--ink);border:1.5px solid var(--line);border-radius:11px;padding:9px 12px;margin-bottom:7px}
+  .es-idea.on{border-color:var(--green);background:var(--green-soft)}
+  .es-ev{border:1.5px solid var(--line);border-radius:11px;padding:10px 12px;margin-bottom:8px}
+  .es-evh{font-family:var(--disp);font-weight:600;font-size:13px;color:var(--green-dk);margin-bottom:4px}
+  .es-evflag{display:inline-block;font-size:11px;font-weight:800;color:var(--gold-dk);background:var(--gold-soft);border-radius:99px;padding:3px 9px}
+  /* Learn: the concept behind the paragraph, at two depths */
+  .es-drawer-block{margin-top:12px;padding-top:11px;border-top:1px solid var(--line)}
+  .es-gloss{margin-top:12px;padding-top:11px;border-top:1px solid var(--line)}
+  .es-gloss dt{font-size:12.5px;font-weight:800;color:var(--ink)}
+  .es-gloss dd{font-size:12.5px;line-height:1.55;font-weight:600;color:var(--ink-2);margin:2px 0 9px}
+  /* Arguments: what each pathway actually means */
+  .es-idea b{display:block;font-size:13.5px;font-weight:700;color:var(--ink)}
+  .es-idea span{display:block;font-size:12.5px;line-height:1.55;font-weight:600;color:var(--ink-2);margin-top:3px}
+  .es-ideatag{color:var(--green-dk)!important;font-weight:800!important;font-size:11.5px!important}
+  /* Evidence: what it is, what it proves here, and what it cannot prove */
+  .es-evwhy{font-size:12.5px;line-height:1.55;font-weight:600;color:var(--ink);margin-top:6px}
+  .es-evlimit{display:block;font-size:12px;line-height:1.5;font-weight:600;color:var(--gold-dk);margin-top:6px}
+  .es-evsrc{font-size:11.5px;font-weight:600;color:var(--ink-3);margin-top:7px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  /* choosing evidence: adding is a click, removing says so */
+  .es-pickwrap{margin-bottom:8px}
+  .es-pickwrap .es-pick{margin-bottom:0}
+  .es-pickwrap.on .es-pick{border-color:var(--green);background:var(--green-soft);cursor:default;opacity:1}
+  .es-pickon{display:flex;gap:12px;align-items:center;padding:6px 14px 0}
+  .es-pickchosen{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--green-dk)}
+  /* the direction rung reads as guidance, never as a sentence to lift */
+  .es-rung.direction{border-color:var(--line);background:#FBFDFD}
+  .es-rungtext.direction{font-style:normal;color:var(--ink-2);font-weight:600}
+
+  .es-struct{list-style:none;counter-reset:st}
+  .es-struct li{display:flex;flex-direction:column;gap:1px;border-left:3px solid var(--line);padding:5px 0 9px 11px;font-size:13px;color:var(--ink-2)}
+  .es-struct li.done{border-color:var(--green)}
+  .es-struct li.now{border-color:var(--green);color:var(--ink)}
+  .es-struct li b{font-family:var(--disp);font-weight:600;font-size:12.5px;color:var(--ink)}
+  .es-said.flagged{background:var(--gold-soft);box-shadow:0 0 0 2px var(--gold-soft)}
+  .es-checkline{display:block;font-size:12px;font-weight:700;color:var(--gold-dk);margin:5px 0 9px}
+  .es-checkline .es-linkbtn{font-size:12px;margin-left:7px}
+
+  /* ===== The sentence composer: the scaffold travels with the cursor ===== */
+  /* Three states, not one grid with hidden children. Closed support gives its
+     space back to the writing; open support takes exactly what it needs. */
+  .es-cols{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;align-items:start;margin-top:14px}
+  .es-cols.withdrawer{grid-template-columns:minmax(0,1fr) 340px}
+  .es-cols.withctx{grid-template-columns:minmax(0,1fr) clamp(300px,26vw,390px)}
+  /* The decoder host is a permanent child of the columns, placed in the support
+     track. It costs nothing until a stem word is pressed, and because it is not the
+     node esSwapSide replaces, opening or closing a tool cannot take it away. */
+  .es-cols.withdec{grid-template-columns:minmax(0,1fr) 340px}
+  .es-cols>.es-dechost{grid-column:2}
+  .es-cols{grid-auto-flow:row}
+  .es-cols>.es-dechost.empty{display:none}
+  .es-cols:not(.withdec):not(.withdrawer):not(.withctx)>.es-dechost{display:none}
+  /* The response map is a popover now. It keeps its place in the grid only while open. */
+  .es-cols>.es-map[hidden]{display:none}
+  .es-cols.mapopen{grid-template-columns:230px minmax(0,1fr) auto}
+  .es-cols.mapopen.withdrawer{grid-template-columns:230px minmax(0,1fr) 340px}
+  .es-rest.quiet.empty{display:none}
+  /* Long lines are hard to write into as well as to read. */
+  /* The shell takes the width so no column stands empty, but the card inside it is
+     capped at the width that still fits once a tool or the context panel is open.
+     That keeps the older promise this file already made: the writing is the
+     product, and it does not reflow to make room for a resource. Only the
+     learning centre, which the student opens deliberately to stop writing and
+     read, is allowed to narrow it. */
+  .es-compose{max-width:none;min-width:0}
+  .es-compose>*{max-width:940px;margin-left:auto;margin-right:auto}
+  /* One line above the writing carries what the two columns used to: which section,
+     how much is written, and which stage this sentence is at. */
+  .es-parapick{display:inline-flex;align-items:center;gap:6px;font:inherit;background:none;
+    border:1.5px solid transparent;border-radius:9px;padding:3px 8px;margin-left:-8px;cursor:pointer}
+  .es-parapick:hover{border-color:var(--line);background:var(--card)}
+  .es-parachev{color:var(--ink-3);font-size:11px}
+  .es-parameta,.es-parastage{font-size:12px;font-weight:600;color:var(--ink-3)}
+  .es-parahead .es-headacts{margin-left:auto;display:flex;align-items:baseline;gap:12px}
+  .es-parastage{color:var(--green-dk)}
+  /* Below the width where all three fit, the drawer OVERLAYS. The composer never
+     shrinks to make room for a resource: the writing is the product. */
+  @media(max-width:1320px){
+    .es-cols,.es-cols.mapopen{grid-template-columns:minmax(0,1fr)}
+    .es-cols.withdrawer .es-drawer{position:fixed;right:16px;top:76px;bottom:16px;width:min(390px,86vw);z-index:130;max-height:none;box-shadow:0 20px 60px rgba(28,40,40,.28)}
+  }
+  .es-map{position:sticky;top:8px;display:flex;flex-direction:column;gap:3px}
+  .es-maph{font-family:var(--disp);font-weight:600;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:5px}
+  .es-mapitem{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:none;border:none;border-radius:9px;padding:7px 9px;cursor:pointer;font:inherit;font-size:13px;font-weight:700;color:var(--ink-2)}
+  .es-mapitem:hover{background:var(--green-soft)}
+  .es-mapitem.on{background:var(--green-soft);color:var(--ink)}
+  .es-mapitem.done{color:var(--ink)}
+  .es-mapdot{width:9px;height:9px;border-radius:50%;border:2px solid var(--ink-3);flex:none}
+  .es-mapitem.done .es-mapdot{background:var(--green);border-color:var(--green)}
+  .es-mapitem.on .es-mapdot{background:var(--green);border-color:var(--green);box-shadow:0 0 0 3px rgba(28,196,125,.25)}
+  .es-wordcount{margin-top:14px;padding-top:11px;border-top:1px solid var(--line);font-size:11.5px;font-weight:700;color:var(--ink-3);display:flex;flex-direction:column;gap:2px;cursor:default}
+  .es-wordcount b{color:var(--ink-2)}
+  .es-wctarget{color:var(--ink-3);font-weight:600}
+  /* O1: the writing state. Chips carry context; the paragraph carries the eye. */
+  .es-chips{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin:2px 0 12px}
+  .es-chip-arg,.es-chip-ev{display:inline-flex;align-items:center;gap:6px;max-width:min(38ch,100%);font:inherit;
+    font-size:12.5px;font-weight:700;color:var(--ink);background:var(--green-soft);border:1.5px solid transparent;
+    border-radius:99px;padding:5px 12px;cursor:pointer;text-align:left}
+  .es-chip-ev{background:var(--card);border-color:var(--line);color:var(--ink-2)}
+  .es-chip-arg:hover,.es-chip-ev:hover{border-color:var(--green)}
+  .es-chip-arg span,.es-chip-ev span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .es-chip-arg .es-ico,.es-chip-ev .es-ico{width:14px;height:14px;flex:none;opacity:.75}
+  .es-chip-arg.empty,.es-chip-ev.empty{background:none;border-style:dashed;border-color:var(--line);color:var(--ink-3);font-weight:600}
+  .es-chip-note{font-size:12px;font-weight:600;color:var(--ink-3);max-width:30ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .es-chip-more{font:inherit;font-size:11.5px;font-weight:700;color:var(--ink-3);background:none;border:none;cursor:pointer;padding:4px 2px}
+  .es-chip-more:hover{color:var(--green-dk)}
+  .es-linkbtn.armed{color:var(--green-dk);font-weight:800}
+  .es-helpask{font:inherit;font-size:12.5px;font-weight:700;color:var(--ink-2);background:var(--card);
+    border:1.5px solid var(--line);border-radius:99px;padding:5px 14px;cursor:pointer}
+  .es-helpask:hover{border-color:var(--green);color:var(--green-dk)}
+  .es-helpask.on{color:var(--green-dk);border-color:var(--green-soft);background:var(--green-soft)}
+  /* decoding the question: light emphasis on the stem, nothing standing open */
+  .es-qbar-main{min-width:0;flex:1}
+  .es-dec{font:inherit;font-size:inherit;font-weight:inherit;color:inherit;background:none;border:none;padding:0 1px;
+    cursor:pointer;border-bottom:2px dotted var(--ink-3);border-radius:2px}
+  .es-dec:hover{border-bottom-color:var(--green);background:var(--green-soft)}
+  .es-dec.on{background:var(--green-soft);border-bottom-color:var(--green);color:var(--green-dk)}
+  .es-dec.verb{border-bottom-style:solid;border-bottom-color:var(--green)}
+  .es-decrow{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:9px}
+  .es-decchip{font:inherit;font-size:12px;font-weight:700;color:var(--ink-2);background:var(--card);
+    border:1.5px solid var(--line);border-radius:99px;padding:4px 12px;cursor:pointer}
+  .es-decchip:hover{border-color:var(--green);color:var(--green-dk)}
+  .es-decchip.on{border-color:var(--green);background:var(--green-soft);color:var(--green-dk)}
+  .es-dechint{font-size:11.5px;font-weight:600;color:var(--ink-3)}
+  .es-decbox{position:relative;margin-top:10px;border:1.5px solid var(--green-soft);background:#FBFEFC;
+    border-radius:13px;padding:13px 40px 13px 15px}
+  .es-dech{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--ink);display:flex;gap:9px;
+    align-items:baseline;flex-wrap:wrap;margin-bottom:5px}
+  .es-deckind{font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3)}
+  .es-decp{font-size:13.5px;line-height:1.6;font-weight:600;color:var(--ink-2);margin-bottom:6px}
+  .es-decp b{color:var(--ink)}
+  .es-declist{margin:5px 0 0 17px;display:flex;flex-direction:column;gap:4px}
+  .es-declist li{font-size:13px;line-height:1.55;font-weight:600;color:var(--ink-2)}
+  .es-decnote{font-size:12px;line-height:1.5;font-weight:600;color:var(--ink-3);margin-top:8px}
+  .es-decx{position:absolute;top:9px;right:9px;background:none;border:none;cursor:pointer;color:var(--ink-3);
+    padding:4px;border-radius:8px;display:flex}
+  .es-decx:hover{color:var(--ink);background:var(--green-soft)}
+  .es-decx .es-ico{width:15px;height:15px}
+  /* Learn: the opening line reads as the opening without becoming a heading, because
+     an extracted sentence is not an authored definition and must not claim to be. */
+  /* ---- the learning centre -------------------------------------------------
+     Its own host at the end of body, never inside #eshost, so the composer
+     underneath keeps its node identity whatever happens in here. The host does
+     not take pointer events; only the panel does, so the essay stays visible
+     and the student can see they have not lost their place. */
+  #eslhost{position:fixed;inset:0;z-index:200;pointer-events:none}
+  .esl-panel{position:absolute;top:16px;bottom:16px;right:16px;width:var(--esl-w);
+    pointer-events:auto;background:var(--card);border:1.5px solid var(--line);border-radius:18px;
+    box-shadow:0 24px 70px rgba(28,40,40,.30);display:flex;flex-direction:column;overflow:hidden}
+  .esl-panel.left{right:auto;left:16px}
+  /* The centre sits BESIDE the writing, not over it. The scrim is the essay's own
+     scroll container, so giving it padding on the panel's side contracts the
+     workspace and leaves both fully visible. It is a class on body and nothing is
+     rebuilt, so the composer keeps its node, caret, scroll and undo history. */
+  :root{--esl-w:clamp(420px,42vw,660px)}
+  body.esl-open .es-scrim{padding-right:calc(var(--esl-w) + 30px)}
+  body.esl-open.esl-left .es-scrim{padding-right:16px;padding-left:calc(var(--esl-w) + 30px)}
+  /* The workspace gives up its third column while the centre is open, rather than
+     clipping it. The node stays in the DOM, only hidden, so esSwapSide still finds
+     the side column it swaps and the tool path is unaffected. */
+  /* With the map now a popover, the composer is the first grid child, so the
+     contracted state is a single column. The earlier rule sized the composer as
+     though it were still the navigation track. */
+  body.esl-open .es-cols,body.esl-open .es-cols.mapopen,
+  body.esl-open .es-cols.withdrawer{grid-template-columns:minmax(0,1fr)}
+  body.esl-open .es-cols > .es-map,
+  body.esl-open .es-cols > .es-rest,body.esl-open .es-cols > .es-drawer{display:none}
+  .esl-head{display:flex;align-items:center;gap:10px;padding:15px 18px;border-bottom:1px solid var(--line);flex:0 0 auto}
+  .esl-title{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--ink);margin:0;flex:1}
+  .esl-title:focus-visible{outline:2px solid var(--green);outline-offset:3px;border-radius:5px}
+  .esl-dock,.esl-x{background:none;border:none;cursor:pointer;color:var(--ink-2);padding:5px;
+    display:grid;place-items:center;border-radius:8px;font-size:15px}
+  .esl-dock:hover,.esl-x:hover{color:var(--ink);background:var(--green-soft)}
+  .esl-q{margin:0;padding:12px 18px;font-size:13.5px;font-weight:600;color:var(--ink-2);
+    border-bottom:1px solid var(--line);flex:0 0 auto}
+  .esl-tabs{display:flex;gap:4px;padding:11px 18px 0;flex:0 0 auto;flex-wrap:wrap}
+  .esl-tab{font:inherit;font-size:12.5px;font-weight:700;color:var(--ink-2);background:none;
+    border:1.5px solid transparent;border-radius:99px;padding:6px 13px;cursor:pointer}
+  .esl-tab:hover{color:var(--ink);background:var(--green-soft)}
+  .esl-tab.on{background:var(--green-soft);border-color:var(--green);color:var(--green-dk)}
+  .esl-body{flex:1 1 auto;min-height:0;overflow-y:auto;padding:16px 18px 20px}
+  .esl-lede{font-size:15.5px;line-height:1.6;font-weight:600;color:var(--ink);margin:0 0 14px}
+  .esl-p{font-size:14px;line-height:1.65;color:var(--ink);margin:0}
+  .esl-none{font-size:13.5px;font-weight:600;color:var(--ink-2)}
+  .esl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:11px}
+  .esl-grid.six{grid-template-columns:repeat(auto-fit,minmax(215px,1fr))}
+  .esl-grid.three{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+  .esl-tile{border:1.5px solid var(--line);border-radius:13px;padding:13px 14px;background:var(--card)}
+  .esl-tilet{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--ink);margin-bottom:5px}
+  .esl-tileb{font-size:13px;line-height:1.55;color:var(--ink-2);margin:0}
+  .esl-tilen{font-size:11.5px;line-height:1.5;color:var(--ink-3);margin:6px 0 0;font-weight:600}
+  .esl-card{display:flex;flex-direction:column;gap:6px;text-align:left;font:inherit;cursor:pointer;
+    border:1.5px solid var(--line);border-radius:14px;padding:15px 16px;background:var(--card)}
+  .esl-card:hover{border-color:var(--green)}
+  .esl-cardt{font-family:var(--disp);font-weight:600;font-size:15px;color:var(--ink)}
+  .esl-cardb{font-size:12.5px;line-height:1.5;color:var(--ink-2)}
+  .esl-sec{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+  .esl-sech{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--ink-3);margin-bottom:6px}
+  .esl-link{border:1.5px solid var(--line);border-radius:14px;padding:15px 16px;margin-bottom:12px}
+  .esl-chain{display:flex;flex-direction:column;align-items:flex-start;gap:3px}
+  .esl-node{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--ink);
+    background:var(--green-soft);border-radius:9px;padding:6px 11px}
+  .esl-mid{font-size:12.5px;font-weight:600;color:var(--ink-3);padding:0 11px}
+  .esl-arrow{color:var(--green);font-size:13px;line-height:1;padding-left:15px}
+  .esl-more{margin-top:12px;padding-top:11px;border-top:1px solid var(--line)}
+  .esl-more>summary{font-size:12.5px;font-weight:700;color:var(--green-dk);cursor:pointer;
+    list-style:none;padding:2px 0}
+  .esl-more>summary::-webkit-details-marker{display:none}
+  .esl-more>summary::before{content:"› ";display:inline-block;transition:transform .12s}
+  .esl-more[open]>summary::before{content:"⌄ "}
+  .esl-more>summary:hover{color:var(--ink)}
+  .esl-more .esl-sech{margin-top:10px}
+  .esl-says{margin-top:12px;padding-top:11px;border-top:1px solid var(--line)}
+  .esl-quote{font-size:13px;line-height:1.6;color:var(--ink);margin:0 0 7px;
+    border-left:2.5px solid var(--green-soft);padding-left:11px}
+  /* Where nothing is authored, the absence is stated rather than filled. */
+  .esl-gap{font-size:12.5px;line-height:1.55;color:var(--ink-3);font-weight:600;margin:11px 0 0}
+  .esl-foot{display:flex;align-items:center;gap:14px;padding:12px 18px;border-top:1px solid var(--line);flex:0 0 auto}
+  .esl-footg{font-size:12px;color:var(--ink-2);font-weight:600;flex:1;min-width:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .esl-footg b{color:var(--ink-3);font-size:10.5px;letter-spacing:.06em}
+  /* The expand action sits outside the drawer's scrolling body on purpose, so it
+     is always reachable and cannot alter what the D4 height cap measures. */
+  .es-drawer-open{padding:9px 15px;border-bottom:1px solid var(--line);flex:0 0 auto}
+  /* Below the width where a contracted workspace and the panel cannot both work,
+     the panel goes back to being an overlay and the workspace takes its width back. */
+  @media(max-width:1180px){
+    body.esl-open .es-scrim,body.esl-open.esl-left .es-scrim{padding-right:16px;padding-left:16px}
+    .esl-panel,.esl-panel.left{left:16px;right:16px;width:auto}
+  }
+  .es-learn-lede{font-weight:600}
+  /* The row list is the primary content on the first screen here, not a reference
+     list at the foot of a scroll, so it loses the section rule and gains a little air. */
+  .es-gloss.surface{margin-top:10px;padding-top:0;border-top:none}
+  .es-gloss.surface dd{margin:2px 0 11px}
+  /* The chain was written for the full-width lesson; in a 310px drawer track it needs
+     to be tighter. Scoped so the lesson rendering is untouched. */
+  .es-drawer .es-chain{margin:2px 0 0}
+  .es-drawer .es-chainstep{font-size:13px}
+  .es-rest .es-decbox{margin:0 0 4px;padding:13px 34px 13px 14px}
+  .es-drawer > .es-decbox{margin:0;border-width:0 0 1.5px;border-radius:15px 15px 0 0;flex:0 1 auto;overflow-y:auto;max-height:min(40vh,300px)}
+  .es-rest .es-decp{font-size:13px}
+  .es-rest .es-dech{font-size:13.5px}
+  /* the planning surface: rich while deciding, compact once decided */
+  .es-core{border:1.5px solid var(--line);border-radius:14px;background:none;padding:10px 15px}
+  .es-core.open{border-color:var(--green-soft);background:#FBFEFC}
+  .es-corerow{display:flex;gap:13px;align-items:baseline;flex-wrap:wrap}
+  .es-corelbl{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+  .es-corepat{font-size:13.5px;font-weight:700;color:var(--green-dk);flex:1;min-width:0}
+  /* judgement questions: a position, and what each argument does for it */
+  .es-judge{border:1.5px solid var(--green);border-radius:16px;background:var(--card);padding:15px 18px}
+  .es-judge.done{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;border-color:var(--line);padding:10px 15px}
+  .es-judgeh{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--ink)}
+  .es-judgeline{font-size:14px;font-weight:700;color:var(--ink);flex:1;min-width:0}
+  .es-tprole{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+    border-radius:99px;padding:2px 9px;margin-left:8px;white-space:nowrap}
+  .es-tprole.support{color:var(--green-dk);background:var(--green-soft)}
+  .es-tprole.conditional{color:var(--gold-dk);background:var(--gold-soft)}
+  .es-tprole.limitation{color:var(--ink-2);background:#EEF2F2}
+  .es-tpargs{flex:1;min-width:0}
+  .es-thesispos{display:flex;gap:11px;align-items:baseline;flex-wrap:wrap;margin:10px 0 4px;
+    padding:9px 13px;border-radius:11px;background:var(--green-soft);font-size:13.5px;font-weight:700;color:var(--ink)}
+  .es-coreh{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--ink)}
+  .es-corerel{font-size:15px;line-height:1.6;font-weight:700;color:var(--ink);margin:7px 0 13px}
+  .es-corebtns{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .es-corebody{margin-top:13px;padding-top:12px;border-top:1px solid var(--line)}
+  .es-corep{font-size:13.5px;line-height:1.65;font-weight:600;color:var(--ink-2);margin-bottom:9px}
+  .es-corep.chain{color:var(--ink);font-weight:700}
+  .es-corep.miss{color:var(--gold-dk)}
+  .es-corep.model{color:var(--ink);font-weight:700}
+  /* why an argument is an argument */
+  .es-optwrap{margin-bottom:7px}
+  .es-optwrap .es-pick{margin-bottom:0}
+  .es-why{font:inherit;font-size:11.5px;font-weight:700;color:var(--ink-3);background:none;border:none;
+    cursor:pointer;padding:4px 6px;margin-left:2px}
+  .es-why:hover,.es-why.on{color:var(--green-dk)}
+  .es-whybox{border-left:2px solid var(--green-soft);margin:6px 0 4px 13px;padding:4px 0 4px 13px}
+  /* the thesis, written once the plan exists */
+  .es-thesis{border:1.5px solid var(--line);border-radius:16px;background:var(--card);padding:15px 18px;margin-top:4px}
+  .es-planhh.sm{font-size:16px}
+  .es-thesisplan{list-style:none;display:flex;flex-direction:column;gap:5px;margin:11px 0 14px}
+  .es-thesisplan li{font-size:13px;line-height:1.5;font-weight:700;color:var(--ink);display:flex;gap:9px}
+  .es-tparea{font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--green-dk);
+    min-width:120px;flex:none;padding-top:2px}
+  .es-thesisguide{font-size:12.5px;line-height:1.55;font-weight:600;color:var(--ink-2);margin:7px 0 12px}
+  .es-compare{margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}
+  .es-cmpblk{margin-bottom:12px}
+  .es-cmplist{margin:5px 0 0 17px;display:flex;flex-direction:column;gap:4px}
+  .es-cmplist li{font-size:13px;line-height:1.55;font-weight:600;color:var(--ink-2)}
+  /* the guide: a short title, the step position, one instruction */
+  .es-guidetop{display:flex;align-items:center;gap:10px}
+  .es-steps{display:inline-flex;align-items:center;gap:2px;margin-left:auto}
+  .es-step{font:inherit;font-size:15px;line-height:1;font-weight:700;color:var(--ink-3);background:none;border:none;
+    border-radius:7px;padding:3px 7px;cursor:pointer}
+  .es-step:hover:not(:disabled){color:var(--green-dk);background:var(--green-soft)}
+  .es-step:disabled{opacity:.35;cursor:default}
+  .es-stepn{font-size:11px;font-weight:700;color:var(--ink-3);min-width:26px;text-align:center}
+  /* read the whole response belongs where reading happens */
+  .es-maph{display:flex;align-items:center;gap:8px}
+  .es-mapall{margin-left:auto;font:inherit;font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+    color:var(--ink-3);background:none;border:none;cursor:pointer;padding:2px 4px}
+  .es-mapall:hover{color:var(--green-dk)}
+  /* the rail recedes at rest and comes forward when a drawer is open */
+  .es-rest.quiet{border-color:transparent;background:none;padding:15px 4px}
+
+  /* the response plan: the whole essay decided once, before the introduction */
+  .es-planwrap{display:flex;flex-direction:column;gap:14px;max-width:960px;margin:0 auto}
+  .es-planhh{font-family:var(--disp);font-weight:600;font-size:20px;color:var(--ink)}
+  .es-plansub{font-size:13.5px;line-height:1.6;color:var(--ink-2);font-weight:600;margin-top:5px}
+  .es-plannote{margin-top:10px;font-size:12.5px;font-weight:700;color:var(--ink-2);background:var(--green-soft);border-radius:10px;padding:8px 12px;display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+  .es-plancards{display:flex;flex-direction:column;gap:10px}
+  .es-planrow{display:flex;gap:11px;align-items:center;border:1.5px dashed var(--line);border-radius:12px;padding:10px 15px}
+  .es-planidle{font-size:12.5px;font-weight:600;font-style:italic;color:var(--ink-3);flex:1}
+  .es-plancard{border:1.5px solid var(--line);border-radius:16px;background:var(--card);padding:15px 17px}
+  .es-plancard.done{border-color:var(--green-soft);background:#FCFEFD}
+  .es-planh{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+  .es-plandot{width:9px;height:9px;border-radius:50%;border:2px solid var(--ink-3);flex:none}
+  .es-plancard.done .es-plandot{background:var(--green);border-color:var(--green)}
+  .es-plann{font-family:var(--disp);font-weight:600;font-size:14.5px;color:var(--ink)}
+  .es-planarea{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--green-dk);background:var(--green-soft);border-radius:99px;padding:3px 9px}
+  .es-planareas{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:11px}
+  .es-areachip{font:inherit;font-size:12.5px;font-weight:700;color:var(--ink-2);background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:5px 12px;cursor:pointer}
+  .es-areachip:hover{border-color:var(--green)}
+  .es-areachip.on{border-color:var(--green);background:var(--green-soft);color:var(--ink)}
+  .es-planask{font-size:12.5px;font-weight:700;color:var(--ink-2);margin-bottom:8px}
+  .es-areaused{font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--green-dk);
+    background:var(--green-soft);border-radius:99px;padding:2px 7px;margin-left:8px}
+  .es-planopts .es-pick{margin-bottom:7px}
+  .es-planshort{font-size:15px;line-height:1.45;font-weight:700;color:var(--green-dk);margin-bottom:3px}
+  .es-planval{font-size:13.5px;line-height:1.5;color:var(--ink-2);font-weight:600}
+  .es-planmeaning{font-size:12.5px;line-height:1.55;font-weight:600;color:var(--ink-3);margin-top:4px}
+  .es-pickshort{display:block;font-size:14px;line-height:1.4;font-weight:700;color:var(--green-dk);margin-bottom:2px}
+  .es-planev{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:11px;padding-top:11px;border-top:1px solid var(--line)}
+  .es-planevlbl{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+  .es-evchip{font:inherit;font-size:12.5px;font-weight:700;color:var(--ink-2);background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:5px 12px;cursor:pointer}
+  .es-evchip:hover{border-color:var(--green)}
+  .es-evchip.on{border-color:var(--green);background:var(--green-soft);color:var(--ink)}
+  .es-planevnote{font-size:12px;font-weight:600;color:var(--ink-3)}
+  .es-planfoot{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding-top:4px}
+  .es-planstate{font-size:12.5px;font-weight:600;color:var(--ink-2)}
+  /* the plan, read from the introduction and the conclusion */
+  .es-planlist{list-style:none;display:flex;flex-direction:column;gap:7px;counter-reset:pl;width:100%}
+  .es-planjump{display:flex;flex-direction:column;gap:2px;width:100%;text-align:left;font:inherit;background:none;border:none;border-left:2px solid var(--green-soft);padding:2px 0 2px 10px;cursor:pointer}
+  .es-planjump:hover{border-left-color:var(--green)}
+  .es-planlrole{font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3)}
+  .es-planlarg{font-size:13px;line-height:1.45;font-weight:700;color:var(--ink)}
+  .es-planlw{font-size:11.5px;font-weight:700;color:var(--green-dk)}
+  .es-planlw.muted{color:var(--ink-3);font-weight:600}
+  .es-planlwrote{font-size:13px;line-height:1.5;font-weight:700;color:var(--ink)}
+  .es-planlarg.planned{font-size:11.5px;font-weight:600;color:var(--ink-3);font-style:italic}
+  .es-twin{margin-top:11px;border:1.5px solid var(--gold-dk);background:var(--gold-soft);border-radius:12px;
+    padding:10px 13px;font-size:12.5px;line-height:1.55;font-weight:600;color:var(--ink)}
+  .es-twinbtns{display:flex;gap:14px;margin-top:7px}
+  /* the working answer: the system's understanding, never the student's prose */
+  .es-startwrap{display:flex;flex-direction:column;gap:14px}
+  .es-wa{border:1.5px solid var(--green);border-radius:16px;background:var(--card);padding:14px 17px}
+  .es-warow{display:flex;gap:11px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px}
+  .es-wanote{font-size:11.5px;font-weight:600;color:var(--ink-3)}
+  .es-watext{font-size:15px;line-height:1.6;font-weight:700;color:var(--ink)}
+  .es-wapos{display:flex;gap:11px;align-items:baseline;flex-wrap:wrap;margin-top:10px;padding-top:10px;
+    border-top:1px solid var(--line);font-size:13.5px;font-weight:700;color:var(--ink)}
+  .es-cover{display:flex;gap:8px;align-items:center;flex-wrap:wrap;border:1.5px solid var(--line);
+    border-radius:13px;padding:11px 15px}
+  .es-cover.missing{border-color:var(--gold-dk);background:var(--gold-soft);
+    align-items:flex-start;flex-direction:column;gap:9px}
+  .es-cover.done{border-color:var(--green-soft);background:#FBFEFC;font-size:13px;font-weight:600;color:var(--ink-2)}
+  .es-covitem{font-size:12px;font-weight:700;color:var(--ink-2);background:var(--card);border:1.5px solid var(--line);
+    border-radius:99px;padding:4px 11px}
+  .es-covitem.on{border-color:var(--green);background:var(--green-soft);color:var(--green-dk)}
+  .es-areachip.fixed{cursor:default;opacity:.85}
+  .es-coverbtns{display:flex;gap:8px;flex-wrap:wrap}
+  .es-startrows{display:flex;flex-direction:column;gap:6px}
+  .es-startrow{display:flex;gap:11px;align-items:center;width:100%;text-align:left;font:inherit;
+    border:1.5px dashed var(--line);border-radius:12px;padding:10px 15px;background:none;cursor:pointer}
+  .es-startrow:hover{border-color:var(--green)}
+  .es-startrow.planned,.es-startrow.written{border-style:solid}
+  .es-startrow.written{background:#FBFEFC}
+  .es-startrow.written .es-plandot,.es-startrow.planned .es-plandot{background:var(--green);border-color:var(--green)}
+  .es-startwhat{flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--ink-2);overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap}
+  .es-startstate{font-size:11.5px;font-weight:700;color:var(--ink-3)}
+  .es-startbtns{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding-top:2px}
+  .es-mapwa{display:flex;flex-direction:column;gap:3px;width:100%;text-align:left;font:inherit;background:var(--bg);
+    border:none;border-radius:11px;padding:9px 11px;margin-bottom:8px;cursor:pointer}
+  .es-mapwa:hover{background:var(--green-soft)}
+  .es-mapwatext{font-size:12px;line-height:1.5;font-weight:600;color:var(--ink-2);
+    display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+  .es-drift{border:1.5px solid var(--gold-dk);background:var(--gold-soft);border-radius:13px;padding:13px 16px;margin-top:13px}
+  .es-drifth{font-family:var(--disp);font-weight:600;font-size:14.5px;color:var(--ink);margin-bottom:9px}
+  .es-driftblk{margin-bottom:9px}
+  .es-drift .es-wanote{display:block;margin-top:6px}
+  /* the pathway lesson: one surface about one argument */
+  .es-lesson{display:flex;flex-direction:column;gap:15px}
+  .es-lessonctx{display:flex;align-items:flex-start;justify-content:space-between;gap:15px;flex-wrap:wrap;
+    border:1.5px solid var(--line);border-radius:13px;padding:11px 15px;background:var(--paper);
+    position:sticky;top:4px;z-index:2}
+  .es-lessonctxl{display:flex;flex-direction:column;gap:3px;min-width:0}
+  .es-lessonwas{font-size:12px;line-height:1.5;font-style:italic;color:var(--ink-3);
+    display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+  .es-lessonjump{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .es-jump{font:inherit;font-size:12px;font-weight:700;color:var(--ink-2);cursor:pointer;
+    border:1.5px solid var(--line);border-radius:99px;padding:4px 12px;background:var(--card)}
+  .es-jump:hover{border-color:var(--green)}
+  .es-jump.on{border-color:var(--green);background:var(--green-soft);color:var(--green-dk)}
+  .es-lessonp.lead{font-size:15px;line-height:1.65}
+  .es-conceptset{display:flex;flex-direction:column;gap:9px}
+  .es-concept{font-size:14px;line-height:1.6;color:var(--ink-2);margin:0}
+  .es-concept b{color:var(--ink)}
+  .es-conceptset.focus,.es-chain.focus,.es-lessonsec.focus{outline:2px solid var(--green);outline-offset:6px;
+    border-radius:8px}
+  .es-lessonmore{display:flex;flex-direction:column;gap:13px;align-items:flex-start;
+    border-top:1.5px solid var(--line);padding-top:12px}
+  .es-tryrighth{font-family:var(--disp);font-weight:600;font-size:14.5px;color:var(--green-dk)}
+  .es-lessonarg{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--ink)}
+  .es-lessonsec{display:flex;flex-direction:column;gap:7px}
+  .es-lessonp{font-size:14px;line-height:1.62;color:var(--ink);margin:0}
+  .es-lessonnote{font-size:12.5px;line-height:1.55;font-weight:600;color:var(--ink-3);margin:0}
+  /* the relationship, one step at a time */
+  .es-chain{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0}
+  .es-chainstep{position:relative;font-size:13.5px;line-height:1.5;font-weight:600;color:var(--ink);
+    border:1.5px solid var(--green-soft);background:#FBFEFC;border-radius:11px;padding:9px 14px;
+    opacity:0;animation:eschain .34s ease forwards}
+  .es-chainstep+.es-chainstep{margin-top:20px}
+  .es-chainstep+.es-chainstep::before{content:"";position:absolute;left:24px;top:-17px;width:1.5px;height:14px;
+    background:var(--green)}
+  .es-chainstep+.es-chainstep::after{content:"";position:absolute;left:20.5px;top:-7px;width:8px;height:8px;
+    border-right:1.5px solid var(--green);border-bottom:1.5px solid var(--green);transform:rotate(45deg)}
+  @keyframes eschain{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.es-chainstep{opacity:1;animation:none}}
+  .es-contrast{border:1.5px solid var(--line);border-radius:13px;padding:12px 15px;display:flex;
+    flex-direction:column;gap:7px}
+  .es-contrasth{font-size:12px;font-weight:700;letter-spacing:.02em;text-transform:lowercase;color:var(--ink-3)}
+  .es-contrastrow{display:flex;gap:10px;align-items:baseline;font-size:13.5px;line-height:1.5}
+  .es-contrastrow b{color:var(--ink);min-width:132px}
+  .es-contrastrow span{color:var(--ink-2)}
+  .es-tryopts{display:flex;flex-direction:column;gap:8px}
+  .es-try{text-align:left;font:inherit;font-size:13.5px;font-weight:600;color:var(--ink);cursor:pointer;
+    border:1.5px solid var(--line);border-radius:12px;padding:10px 15px;background:var(--card)}
+  .es-try:hover:not(:disabled){border-color:var(--green)}
+  .es-try:disabled{cursor:default}
+  .es-try.right{border-color:var(--green);background:var(--green-soft);color:var(--green-dk)}
+  .es-try.wrong{border-color:var(--gold-dk);background:var(--gold-soft)}
+  .es-tryright,.es-tryrepair{display:flex;flex-direction:column;gap:9px;align-items:flex-start;margin-top:4px;
+    border-radius:12px;padding:11px 15px}
+  .es-tryright{border:1.5px solid var(--green);background:var(--green-soft)}
+  .es-tryrepair{border:1.5px solid var(--gold-dk);background:var(--gold-soft)}
+
+  .es-restnote{font-size:12px;line-height:1.5;font-weight:600;color:var(--ink-2);margin-top:4px}
+  /* the response map: what each section argues, and what it says */
+  .es-mapwrap{display:flex;flex-direction:column}
+  .es-maprow{display:flex;align-items:flex-start;gap:2px}
+  .es-mapitem{align-items:flex-start}
+  .es-maptext{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .es-maparg{font-size:11.5px;line-height:1.4;font-weight:600;color:var(--ink-2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .es-mapdot{margin-top:4px}
+  .es-mappeek{font:inherit;font-size:10.5px;font-weight:800;color:var(--ink-3);background:none;border:none;border-radius:7px;padding:6px 5px;cursor:pointer;flex:none}
+  .es-mappeek:hover{color:var(--green-dk);background:var(--green-soft)}
+  .es-mappeek.on{color:var(--green-dk)}
+  .es-mapprev{font-size:12px;line-height:1.6;color:var(--ink-2);font-weight:600;background:var(--bg);border-radius:10px;padding:9px 11px;margin:2px 0 6px 9px;max-height:190px;overflow:auto}
+  /* a finished paragraph is a state, not an empty box under the last label */
+  .es-done{border:1.5px solid var(--green);border-radius:14px;background:var(--green-soft);padding:14px 16px;margin-top:12px}
+  .es-doneh{display:flex;align-items:center;gap:9px;font-family:var(--disp);font-weight:600;font-size:15.5px;color:var(--ink)}
+  .es-donetick{display:flex;color:var(--green-dk)}
+  .es-donetick .es-ico{width:17px;height:17px}
+  .es-donew{margin-left:auto;font-size:12px;font-weight:700;color:var(--green-dk)}
+  .es-donesub{font-size:12.5px;line-height:1.55;font-weight:600;color:var(--ink-2);margin:6px 0 12px}
+  .es-donebtns{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  /* reading the whole response, without leaving guided practice */
+  .es-rvwrap{display:flex;flex-direction:column;gap:14px;max-width:820px;margin:0 auto}
+  .es-rvh{font-family:var(--disp);font-weight:600;font-size:20px;color:var(--ink)}
+  .es-rvsub{font-size:13px;line-height:1.55;color:var(--ink-2);font-weight:600;margin-top:5px}
+  .es-rvsec{border:1.5px solid var(--line);border-radius:16px;background:var(--card);padding:14px 18px}
+  .es-rvsec.empty{border-style:dashed;background:none}
+  .es-rvsech{display:flex;align-items:baseline;gap:11px;flex-wrap:wrap;margin-bottom:8px}
+  .es-rvrole{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--ink)}
+  .es-rvarg{font-size:12px;font-weight:700;color:var(--green-dk);background:var(--green-soft);border-radius:99px;padding:3px 10px;max-width:min(46ch,100%);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .es-rvw{font-size:11.5px;font-weight:700;color:var(--ink-3);margin-left:auto}
+  .es-rvtext{font-size:15px;line-height:1.75;color:var(--ink);font-weight:600}
+  .es-rvempty{font-size:13px;font-weight:600;color:var(--ink-3);font-style:italic}
+
+  .es-compose{min-width:0}
+  .es-parahead{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:10px}
+  .es-progrow{display:flex;gap:12px;flex-wrap:wrap}
+  .es-prog{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-3)}
+  .es-prog.done{color:var(--green-dk)}
+  .es-prog.now{color:var(--ink)}
+  .es-progdot{width:7px;height:7px;border-radius:50%;background:var(--line)}
+  .es-prog.done .es-progdot{background:var(--green)}
+  .es-prog.now .es-progdot{background:var(--green);box-shadow:0 0 0 3px rgba(28,196,125,.25)}
+  .es-flow{border:1.5px solid var(--line);border-radius:16px;background:var(--card);padding:18px 20px}
+  .es-prose{font-size:16.5px;line-height:1.85;color:var(--ink)}
+  /* "Your paragraph builds here, one sentence at a time" described a mechanism the
+     student watches happen on the next press, directly above the box that already
+     says "Type your next sentence". Two strings for one action; the node stays so
+     nothing that reads .es-prose breaks. */
+  .es-prose.empty{display:none}
+  .es-said{border-radius:4px;cursor:pointer;transition:background .12s}
+  .es-said:hover{background:var(--gold-soft);box-shadow:0 0 0 2px var(--gold-soft)}
+  .es-active{margin-top:14px}
+  /* The writing is the task, so it gets the vertical space the scaffolding used to.
+     It still grows with the student's sentence. */
+  .es-linebox{width:100%;font-size:16.5px;line-height:1.7;resize:vertical;min-height:200px}
+  .es-editrow{margin:8px 0}
+  .es-linebtns{display:flex;gap:10px;align-items:center;margin-top:7px}
+  .es-del{color:var(--coral-dk)}
+  .es-guide{margin:0 0 12px;border-left:3px solid var(--green);padding:2px 0 2px 13px}
+  .es-guideh{font-family:var(--disp);font-weight:600;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--green-dk)}
+  /* The instruction now leads the writing rather than trailing it, so it is the
+     largest text in the composer. Nothing else here is 17px at 700. */
+  .es-guidejob{font-size:17px;font-weight:700;line-height:1.5;color:var(--ink);margin-top:3px}
+  .es-shapebtn{margin-top:7px;display:inline-block}
+  .es-shapes{margin-top:7px;display:flex;flex-direction:column;gap:5px}
+  .es-shape{font-size:13.5px;line-height:1.6;color:var(--ink-2);margin:0;
+    background:var(--bg);border-radius:8px;padding:7px 10px}
+  .es-guidectx{font-size:12.5px;color:var(--ink-2);font-weight:600;margin-top:4px}
+  .es-help{margin-top:12px}
+  .es-rung{display:flex;gap:11px;align-items:flex-start;border:1.5px solid var(--line);border-radius:12px;padding:10px 13px;margin-bottom:8px;background:#FBFDFD}
+  .es-rungn{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--green);color:#fff;font-size:11.5px;font-weight:800;flex:none;margin-top:1px}
+  .es-runglbl{font-family:var(--disp);font-weight:600;font-size:12px;color:var(--ink-2)}
+  .es-rungtext{font-size:14px;line-height:1.6;color:var(--ink);margin-top:2px}
+  .es-rungtext.frame,.es-rungtext.starter{font-style:italic;font-size:15px;line-height:1.7}
+  .es-rungtext.example{font-size:14.5px;line-height:1.7;color:var(--ink)}
+  .es-hole{display:inline-block;font-style:normal;font-size:12px;font-weight:700;color:var(--ink-2);background:var(--gold-soft);border-radius:5px;padding:1px 7px;margin:0 2px}
+  .es-rungctx{font-size:11px;font-weight:800;color:var(--ink-3);text-transform:none;letter-spacing:0}
+  .es-rung.example{border-color:var(--green)}
+  .es-helpend{font-size:12.5px;font-weight:700;color:var(--ink-2)}
+  .es-rungnote{font-size:12px;font-weight:700;color:var(--green-dk);margin-top:5px}
+  .es-helpbtns{display:flex;gap:11px;align-items:center;flex-wrap:wrap}
+  .es-linerow{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:16px}
+  .es-linerow .es-spacer{flex:1}
+  .es-linerow .es-linkbtn[disabled]{opacity:.4;pointer-events:none}
+  .es-btn.sm{padding:7px 13px;font-size:13px}
+  /* Narrower still: the response map collapses first, the composer stays readable. */
+  @media(max-width:1000px){.es-cols{grid-template-columns:minmax(0,1fr)}.es-map{position:static;flex-direction:row;flex-wrap:wrap}.es-margin{order:3}}
+
+  /* ===== Marking rebuild: where to start, and the way back into writing ===== */
+  .rv-focus{border:1.5px solid var(--green);border-radius:16px;background:var(--green-soft);padding:14px 16px;margin-bottom:16px}
+  .rv-focushead{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .rv-focustag{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:var(--green-dk);border-radius:999px;padding:3px 9px}
+  .rv-focusarea{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--ink)}
+  .rv-focuswhy{font-size:13.5px;line-height:1.55;color:var(--ink);margin-top:8px}
+  .rv-focusquote{font-size:13px;line-height:1.55;color:var(--ink);margin-top:7px;padding-left:11px;border-left:3px solid var(--green);font-style:italic}
+  .rv-focusrow{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}
+  .rv-credited{font-size:12.5px;line-height:1.5;color:var(--ink);margin-top:10px;padding-top:9px;border-top:1px solid rgba(28,196,125,.35)}
+  .rv-credited b{color:var(--green-dk)}
   .rv-scorecard{margin-top:16px;border:1.5px solid var(--line);border-radius:16px;padding:16px 18px;background:#fff}
   .rv-screasons{margin-top:6px}
   .rv-statusrow{width:100%;display:flex;align-items:center;gap:11px;text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;font-family:var(--body)}
@@ -559,7 +1159,7 @@
   .lzhint{font-size:13px;color:var(--ink-2);font-weight:700}
   .lzexp-t{font-family:var(--disp);font-weight:600;font-size:14.5px;color:var(--blue-dk);margin-bottom:4px}
   .lzexp-b{font-size:13.5px;line-height:1.6;color:var(--ink)}
-  .lzbigscrim{position:fixed;inset:0;background:rgba(28,40,40,.6);display:none;align-items:center;justify-content:center;z-index:140;padding:24px}
+  .lzbigscrim{position:fixed;inset:0;background:rgba(28,40,40,.6);display:none;align-items:center;justify-content:center;z-index:170;padding:24px}
   .lzbigscrim.show{display:flex}
   .lzbigcard{position:relative;background:#fff;border-radius:20px;max-width:1000px;width:100%;max-height:88vh;overflow:auto;padding:26px}
   .lzbiggrid{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start}
@@ -659,6 +1259,8 @@
   .es-shell{width:100%;max-width:760px}
   .es-wrap{background:var(--card);border-radius:22px;box-shadow:0 24px 60px rgba(28,40,40,.28);padding:22px clamp(18px,3vw,30px) 28px;animation:rvpop .22s cubic-bezier(.35,.65,.25,1)}
   .es-shell:has(.es-wide){max-width:1040px}
+  /* the composer takes the canvas: the writing has to be the dominant thing on screen */
+  .es-shell:has(.es-canvas){max-width:min(1480px,94vw)}
   .es-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
   .es-brand{font-family:var(--disp);font-weight:600;font-size:15px;color:var(--ink);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .es-subj{font-size:12.5px;font-weight:700;color:var(--ink-2)}
@@ -753,6 +1355,18 @@
   .es-completion{margin-top:14px;border:1.5px solid var(--green);background:var(--card);border-radius:16px;padding:14px 18px}
   .es-completemsg{font-size:13.5px;color:var(--ink);font-weight:700;line-height:1.5;margin-bottom:12px}
   .es-completion .es-actions{margin-top:0}
+  .es-marks{max-width:120px}
+  .es-marked{display:block}
+  .es-markhead{display:flex;align-items:baseline;gap:10px}
+  .es-markscore{font-family:var(--disp);font-weight:700;font-size:30px;color:var(--green-dk);line-height:1}
+  .es-markscore small{font-size:16px;color:var(--ink-3);font-weight:600}
+  .es-markwhat{font-size:12.5px;color:var(--ink-2);font-weight:700}
+  .es-markfocus{margin-top:12px;border-top:1px solid var(--line);padding-top:12px}
+  .es-markarea{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-family:var(--disp);font-weight:600;font-size:15px;color:var(--ink)}
+  .es-marktag{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:var(--green-dk);border-radius:999px;padding:3px 9px}
+  .es-markwhy{font-size:13.5px;line-height:1.55;color:var(--ink);margin-top:8px}
+  .es-markquote{font-size:13px;line-height:1.55;color:var(--ink);margin-top:7px;padding-left:11px;border-left:3px solid var(--green);font-style:italic}
+  .es-marked .es-actions{margin-top:14px}
   .es-submittedh{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--green-dk);margin-bottom:6px}
 
   /* ===== Batch 2: missing-element cards, ghost frames, polish reveal, quiz ===== */
@@ -772,16 +1386,28 @@
   /* ordered skeleton (writing column): solid = present, dashed = missing gap */
   .es-skelhost:empty{display:none}
   .es-skel{margin-top:12px;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--card)}
-  .es-skelh{font-family:var(--disp);font-weight:600;font-size:12px;color:var(--ink-2);line-height:1.55;margin-bottom:11px}
-  .es-skelrow{border-radius:10px;padding:9px 12px;margin-bottom:8px}
+  .es-skelh{font-family:var(--disp);font-weight:600;font-size:12.5px;color:var(--ink);line-height:1.55;margin-bottom:11px}
+  .es-skelrow{border-radius:10px;padding:9px 12px;margin-bottom:8px;border:1.5px solid var(--line)}
   .es-skelrow:last-child{margin-bottom:0}
-  .es-skelrow.have{border:1.5px solid var(--line);background:#FBFBFB;display:flex;align-items:baseline;gap:9px}
+  .es-skelrow.have{background:#FBFBFB}
+  .es-skeltop{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
   .es-skellabel{font-family:var(--disp);font-weight:700;font-size:12.5px;color:var(--green-dk)}
-  .es-skellabel::before{content:"\2713 ";color:var(--green)}
+  .es-skelrow.have .es-skellabel::before{content:"\2713 ";color:var(--green)}
   .es-skelhave{font-size:12.5px;color:var(--ink-3);font-weight:600}
-  .es-skelrow.gap{border:1.5px dashed var(--green);background:#FAFCFC}
+  /* the JOB this sentence has to do: the guidance itself, so it reads at full strength */
+  .es-skeljob{font-size:13.5px;line-height:1.55;color:var(--ink);margin-top:3px}
+  .es-skelrow.have .es-skeljob{color:var(--ink-2)}
+  .es-skelask{font:inherit;font-weight:700;font-size:11.5px;color:var(--ink-2);background:none;border:none;padding:0;margin-left:auto;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+  .es-skelask:hover{color:var(--green-dk)}
+  .es-skelframes{margin-top:9px;padding-top:9px;border-top:1px dashed var(--line)}
+  .es-skelnote{font-size:11.5px;color:var(--ink-2);font-weight:600;margin-top:7px}
+  .es-skel.graded .es-skelrow.gap{border:1.5px dashed var(--green);background:#FAFCFC}
   .es-skelgaplabel{font-family:var(--disp);font-weight:600;font-size:11px;color:var(--ink-3);text-transform:lowercase;margin-bottom:6px}
-  .es-skelframe{font-size:14px;color:var(--ink-2);font-style:italic;line-height:1.7}
+  .es-skelframe{font-size:14px;color:var(--ink);font-style:italic;line-height:1.7}
+  /* the answer shape shown on a study card or inside a paper, outside essay mode */
+  .ansshape{margin-top:14px}
+  .ansshape .es-skelrow.gap{border:1.5px solid var(--line);background:#FBFDFD}
+  .ansshape .es-skelnote{margin-top:10px;padding-top:9px;border-top:1px dashed var(--line)}
   .es-skelchips{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
   .es-skelchip{font:inherit;font-weight:700;font-size:11.5px;color:var(--ink-2);background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:3px 10px;cursor:pointer}
   .es-skelchip.on{color:var(--green-dk);border-color:var(--green);background:var(--green-soft)}
@@ -816,7 +1442,120 @@
   .es-exsub{font-size:11px;color:var(--ink-3);font-weight:700;margin:1px 0 6px}
   .es-exph{font-size:11px;color:var(--ink-2);font-weight:600;line-height:1.45;background:#FBFBFB;border:1px dashed var(--line);border-radius:8px;padding:5px 8px;margin:0 0 7px}
   .es-extext{font-size:13px;color:var(--ink);font-weight:600;line-height:1.6}
+  /* ---- study hints widget (essay writing screens) ---- */
+  .es-hintfab{position:fixed;right:22px;bottom:22px;z-index:60;font:inherit;font-weight:800;font-size:13px;letter-spacing:.2px;color:#fff;background:var(--green);border:none;border-radius:99px;padding:12px 20px;cursor:pointer;box-shadow:0 6px 18px rgba(20,60,50,.28)}
+  .es-hintfab:hover{filter:brightness(1.06)}
+  .es-hintpanel{position:fixed;right:22px;bottom:74px;z-index:60;width:min(430px,calc(100vw - 44px));max-height:min(70vh,620px);overflow:auto;background:#fff;border:1.5px solid var(--line);border-radius:16px;box-shadow:0 14px 40px rgba(20,40,40,.22)}
+  .es-hinttabs{display:flex;gap:4px;position:sticky;top:0;background:#fff;border-bottom:1.5px solid var(--line);padding:10px 12px 0}
+  .es-hinttab{font:inherit;font-weight:700;font-size:12.5px;color:var(--ink-3);background:none;border:none;border-bottom:2.5px solid transparent;padding:6px 12px 8px;cursor:pointer}
+  .es-hinttab.on{color:var(--green-dk);border-bottom-color:var(--green)}
+  .es-hinttab:hover{color:var(--ink)}
+  .es-hintbody{padding:14px 16px 18px}
+  .es-hintlead{font-size:13px;color:var(--ink-2);font-weight:600;line-height:1.55;margin:0 0 12px}
+  .es-hintsec{border:1.5px solid var(--line);border-radius:11px;margin-bottom:8px;background:#FAFCFC}
+  .es-hintsec>summary{cursor:pointer;padding:9px 12px;font-family:var(--disp);font-weight:700;font-size:13px;color:var(--green-dk)}
+  .es-hintpt{border-top:1px solid var(--line);padding:10px 12px}
+  .es-hintpth{font-weight:800;font-size:12.5px;color:var(--ink);margin-bottom:5px;line-height:1.4}
+  .es-hintwhat{font-size:13px;color:var(--ink);line-height:1.6;margin:0 0 6px}
+  .es-hintwhy{font-size:12.5px;color:var(--ink-2);line-height:1.55;margin:0 0 6px}
+  .es-hintexam{font-size:12px;color:var(--ink-3);line-height:1.5;margin:6px 0 0}
+  .es-hintterms{display:flex;gap:5px;flex-wrap:wrap;margin:6px 0}
+  .es-hintterm{font-size:11px;font-weight:700;color:var(--green-dk);background:var(--green-soft);border-radius:99px;padding:3px 9px}
+  .es-hintpicks,.es-hintopts{display:flex;flex-direction:column;gap:7px;margin-bottom:12px}
+  .es-hintpick,.es-hintopt{font:inherit;font-weight:600;font-size:13px;text-align:left;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;cursor:pointer;line-height:1.45}
+  .es-hintpick:hover,.es-hintopt:hover{border-color:var(--green)}
+  .es-hintopt.on{border-color:var(--green);background:var(--green-soft);color:var(--green-dk);font-weight:700}
+  .es-hintopt.on::before{content:"\2713  ";font-weight:800}
+  .es-hintlockrow{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:10px}
+  .es-hintlocked{margin:0 0 10px;padding-left:20px}
+  .es-hintlocked li{font-size:13px;color:var(--ink);font-weight:600;line-height:1.5;margin-bottom:5px}
+  .es-hintev{border:1.5px solid var(--line);border-left:4px solid var(--green);border-radius:11px;padding:10px 12px;margin-bottom:9px;background:#fff}
+  .es-hintevh{font-family:var(--disp);font-weight:700;font-size:12.5px;color:var(--green-dk);margin-bottom:5px;display:flex;gap:7px;align-items:baseline;flex-wrap:wrap}
+  .es-hintcheck{font-family:var(--ui,inherit);font-size:10.5px;font-weight:700;color:var(--ink-3);background:#FAFCFC;border:1px dashed var(--line);border-radius:99px;padding:2px 7px}
+  .es-hintevf{font-size:12.5px;color:var(--ink);line-height:1.55;margin:0 0 5px}
+  .es-hintevu{font-size:12px;color:var(--ink-2);line-height:1.5;margin:0}
+  @media(max-width:760px){.es-hintpanel{right:12px;left:12px;width:auto;bottom:66px}.es-hintfab{right:12px;bottom:12px}}
+  /* ---- line-by-line guidance under the typing box ---- */
+  .es-linehost:empty{display:none}
+  .es-lines{margin-top:12px;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--card)}
+  .es-linesh{font-family:var(--disp);font-weight:600;font-size:11.5px;color:var(--ink-3);text-transform:lowercase;margin-bottom:9px}
+  .es-line{border-left:4px solid var(--line);border-radius:8px;padding:8px 11px;margin-bottom:9px;background:#FAFCFC}
+  .es-line:last-child{margin-bottom:0}
+  .es-line.critical{border-left-color:var(--coral,#d1495b)}
+  .es-line.should{border-left-color:var(--green)}
+  .es-line.optional{border-left-color:var(--ink-3)}
+  .es-line.on{background:var(--green-soft);border-left-color:var(--green)}
+  .es-linetop{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+  .es-linesev{font-family:var(--disp);font-weight:700;font-size:10.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.4px}
+  .es-linefind{font:inherit;font-weight:700;font-size:11.5px;color:var(--green-dk);background:none;border:none;padding:0;cursor:pointer;text-decoration:underline}
+  .es-linequote{font-size:12.5px;color:var(--ink-3);font-style:italic;line-height:1.5;margin-bottom:5px}
+  .es-lineissue{font-size:13.5px;color:var(--ink);font-weight:600;line-height:1.55;margin-bottom:6px}
+  .es-linefix{font-size:14px;color:var(--ink-2);font-style:italic;line-height:1.7}
+  .es-linefixh{display:block;font-family:var(--disp);font-style:normal;font-weight:600;font-size:10.5px;color:var(--ink-3);text-transform:lowercase;margin-bottom:2px}
   @media(max-width:760px){.es-coachcols{flex-direction:column}.es-margin{flex:1 1 auto;max-width:none;position:static}}
+  /* ---- Practice exam (past paper) mode ---- */
+  .exam-list{margin:18px 0 6px}
+  .exam-listh{font-family:var(--disp);font-weight:700;font-size:14px;color:var(--ink-2);margin:0 0 8px}
+  .exam-hint{margin:14px 0 0;font-size:13px;color:var(--ink-2);font-weight:600}
+  .exam-empty{margin:18px 0;border:1.5px dashed var(--line);border-radius:14px;padding:22px;background:#FAFCFC;text-align:center}
+  .exam-empty p{color:var(--ink-2);line-height:1.6;margin:0 auto 12px;max-width:52ch}
+  .exam-emptyh{font-family:var(--disp);font-weight:700;font-size:16px;color:var(--ink)}
+  .exam-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border:1.5px solid var(--line);border-left:4px solid var(--green);border-radius:12px;padding:11px 14px;margin-bottom:9px;background:#fff}
+  .exam-rowmain{display:flex;flex-direction:column;gap:2px;min-width:180px}
+  .exam-rowname{font-weight:700;color:var(--ink)}
+  .exam-rowmeta{font-size:12.5px;color:var(--ink-3);font-weight:600}
+  .exam-rowacts{display:flex;gap:8px}
+  .exam-bar{display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid var(--line);margin-bottom:14px}
+  .exam-bar .x{background:none;border:none;font-size:20px;cursor:pointer;color:var(--ink-2);line-height:1}
+  .exam-bar .lbl{font-weight:700;color:var(--ink)}
+  .exam-progress{margin-left:auto;font-size:12.5px;color:var(--ink-3);font-weight:700}
+  .exam-wrap{max-width:760px;margin:0 auto}
+  .exam-sectionintro{border:1.5px solid var(--line);border-radius:16px;padding:22px;background:#fff;text-align:center}
+  .exam-sec{font-family:var(--disp);font-weight:800;font-size:18px;color:var(--green-dk);margin-bottom:6px}
+  .exam-sec.small{font-size:12.5px;color:var(--ink-3);text-align:left;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px}
+  .exam-instr{color:var(--ink-2);font-weight:600;line-height:1.5;margin:0 0 6px}
+  .exam-meta{font-size:12.5px;color:var(--ink-3);font-weight:700;margin:0 0 14px}
+  .exam-q{border:1.5px solid var(--line);border-radius:16px;padding:20px;background:#fff}
+  .exam-qhead{font-family:var(--disp);font-weight:700;font-size:12.5px;color:var(--ink-3);margin-bottom:10px}
+  .exam-prompt{font-size:17px;font-weight:600;color:var(--ink);line-height:1.5;margin-bottom:14px}
+  .exam-source{border:1.5px solid var(--line);border-radius:12px;background:#FAFCFC;padding:12px 14px;margin-bottom:14px}
+  .exam-srclbl{font-family:var(--disp);font-weight:700;font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+  .exam-srcbody{font-size:14px;color:var(--ink);line-height:1.6}
+  .exam-srccap{font-weight:700;margin:0 0 6px}
+  .exam-srcimg{max-width:100%;border-radius:8px;margin-top:6px}
+  .exam-srcimg{cursor:zoom-in}
+  .exam-lightbox{position:fixed;inset:0;z-index:9999;background:rgba(20,28,28,.92);display:flex;align-items:center;justify-content:center;padding:24px;cursor:zoom-out}
+  .exam-lightbox img{max-width:100%;max-height:100%;background:#fff;border-radius:8px;padding:10px}
+  .exam-lbclose{position:absolute;top:16px;right:18px;font:inherit;font-weight:700;font-size:13px;color:#fff;background:rgba(255,255,255,.16);border:1.5px solid rgba(255,255,255,.5);border-radius:99px;padding:6px 14px;cursor:pointer}
+  .exam-choices{display:flex;flex-direction:column;gap:10px;margin-top:6px;text-align:left}
+  .exam-choice{display:flex;flex-direction:column;gap:4px;font:inherit;text-align:left;border:1.5px solid var(--line);border-left:4px solid var(--green);border-radius:12px;padding:12px 14px;background:#fff;cursor:pointer}
+  .exam-choice:hover{border-color:var(--green);background:#FAFCFC}
+  .exam-choicelbl{font-family:var(--disp);font-weight:800;font-size:12.5px;color:var(--green-dk);text-transform:uppercase;letter-spacing:.4px}
+  .exam-choicetext{font-size:14.5px;color:var(--ink);font-weight:600;line-height:1.5}
+  .exam-picks{display:flex;flex-direction:column;gap:8px;margin:6px 0 14px}
+  .exam-pick{display:flex;gap:11px;align-items:flex-start;border:1.5px solid var(--line);border-radius:11px;padding:11px 13px;background:#fff;cursor:pointer}
+  .exam-pick:hover{border-color:var(--green)}
+  .exam-pick input{margin-top:3px;width:17px;height:17px;accent-color:var(--green);cursor:pointer;flex:none}
+  .exam-pick:has(input:checked){border-color:var(--green);background:#FAFCFC}
+  .exam-pickmain{display:flex;flex-direction:column;gap:2px}
+  .exam-pickname{font-weight:700;color:var(--ink);font-size:14px}
+  .exam-pickmeta{font-size:12.5px;color:var(--ink-3);font-weight:600}
+  .exam-pickrow{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px}
+  .exam-pickbtns{display:flex;gap:8px;flex-wrap:wrap}
+  .exam-acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .exam-points{display:flex;flex-direction:column;gap:8px;margin:4px 0 10px}
+  .exam-pt{display:flex;gap:9px;align-items:flex-start;font-size:14px;line-height:1.5}
+  .exam-pt .exam-ptmark{font-weight:800;flex:none;width:18px;text-align:center}
+  .exam-pt.hit .exam-ptmark{color:var(--green)}
+  .exam-pt.miss .exam-ptmark{color:var(--coral,#d1495b)}
+  .exam-pt.hit .exam-ptbody{color:var(--ink-2)}
+  .exam-pt.miss .exam-ptbody{color:var(--ink);font-weight:600}
+  .exam-pthint{display:block;font-size:12.5px;color:var(--ink-3);font-weight:500;margin-top:2px}
+  .exam-results{margin:14px 0;text-align:left}
+  .exam-ressec{border:1.5px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:10px;background:#fff}
+  .exam-ressech{font-family:var(--disp);font-weight:700;color:var(--green-dk);display:flex;justify-content:space-between;margin-bottom:6px}
+  .exam-resq{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--ink-2);padding:3px 0}
+  .exam-resm{font-weight:800;color:var(--ink);white-space:nowrap}
 </style>
 </head>
 <body>
@@ -833,6 +1572,7 @@
     endpoint: "https://marginal-grader.williamwinter2104.workers.dev/",  // Cloudflare Worker URL for AI essay marking
     code: "12Ec126",  // class code — must match the worker's CLASS_CODE secret exactly (case-sensitive)
     reviewMode: false,  // PROMOTION SWITCH for guided review mode. false = students get the simple result sheet. Set true to give every student the paragraph-by-paragraph review after marking. Add ?review=1 to the URL to try it without enabling it for everyone.
+    essayMarking: false,  // PROMOTION SWITCH for sending a full essay attempt to the AI marker. false = Submit saves the draft and says marking is not switched on yet. Set true to give every student real marking on a full attempt. Add ?essaymark=1 to the URL to try it without enabling it for everyone (?essaydemo=1 includes it).
     essayMode: true,  // PROMOTION SWITCH for essay practice mode (coached writing + full attempt). false = students never see it. Set true to switch it on for everyone whose class code maps to a known subject. Add ?essay=1 to try it without enabling it for everyone, or ?essaydemo=1 to walk all three screens on an Ancient History context with the labelled demo coaching fallback.
     textbookUrl: "",  // optional: deep link to your class's licensed textbook copy,
                       // e.g. "https://your-lms.school/riley-2026.pdf#page={page}" —
@@ -849,6 +1589,7 @@
 </script>
 <script src="content.js"></script>
 <script src="essay-content.js"></script>
+<script src="business-content.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 </body>
