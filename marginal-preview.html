@@ -593,6 +593,13 @@
      space back to the writing; open support takes exactly what it needs. */
   .es-cols{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;align-items:start;margin-top:14px}
   .es-cols.withdrawer{grid-template-columns:minmax(0,1fr) 340px}
+  /* Notes is a permanent column on desktop and never a consequence of anything
+     else being open, so its presence cannot move the writing. */
+  .es-cols.withnotes{grid-template-columns:minmax(0,1fr) 320px}
+  .es-cols.withnotes.withdrawer{grid-template-columns:minmax(0,1fr) 340px 320px}
+  .es-cols.withnotes.withctx{grid-template-columns:minmax(0,1fr) clamp(300px,26vw,390px) 320px}
+  .es-cols.withnotes.withdec{grid-template-columns:minmax(0,1fr) 340px 320px}
+  .es-cols > .es-notes{grid-column:-2}
   .es-cols.withctx{grid-template-columns:minmax(0,1fr) clamp(300px,26vw,390px)}
   /* The decoder host is a permanent child of the columns, placed in the support
      track. It costs nothing until a stem word is pressed, and because it is not the
@@ -609,10 +616,36 @@
      a popover: out of flow, over the page, gone when it closes, and the grid never
      hears about it. If a `.es-cols.mapopen` column rule ever comes back, that is
      the navigation becoming furniture again. */
-  .es-cols{position:relative}
-  .es-cols > .es-map{position:absolute;top:0;left:0;z-index:20;width:250px;
+  /* A menu hangs off the control that opens it. It used to be a 230px grid column,
+     so choosing where to go moved the writing 130px right first; then it was a
+     popover anchored to the workspace origin, which put it over the word count.
+     It now sits directly under its own button, out of flow, and the grid never
+     hears about it either way. */
+  .es-parahead{position:relative}
+  .es-parahead > .es-map{position:absolute;top:calc(100% + 6px);left:0;z-index:30;width:252px;
     background:var(--card);border:1.5px solid var(--line);border-radius:14px;
-    box-shadow:0 18px 46px rgba(28,40,40,.22);padding:8px;max-height:70vh;overflow:auto}
+    box-shadow:0 18px 46px rgba(28,40,40,.22);padding:8px;max-height:min(60vh,420px);overflow:auto}
+
+  /* NOTES. Its own column, and its one job is notes: no navigation, no plan, no
+     tools, no learning. The old rail failed because several owners shared one
+     container and fought over it. This one has a single owner. */
+  .es-notes{background:var(--card);border:1.5px solid var(--line);border-radius:14px;
+    padding:12px;display:flex;flex-direction:column;gap:9px;align-self:start;position:sticky;top:78px;
+    max-height:calc(100vh - 96px)}
+  .es-notesh{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);font-weight:700}
+  .es-notenew{width:100%;font:inherit;font-size:13.5px;line-height:1.5;border:1.5px solid var(--line);
+    border-radius:10px;padding:8px 10px;resize:vertical;min-height:64px;background:var(--bg);color:var(--ink)}
+  .es-notenew:focus{outline:none;border-color:var(--green)}
+  .es-notelist{display:flex;flex-direction:column;gap:8px;overflow:auto;min-height:0}
+  .es-note{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--bg)}
+  .es-notetext{font-size:13.5px;line-height:1.55;color:var(--ink);white-space:pre-wrap;word-break:break-word}
+  .es-noteacts{display:flex;gap:10px;margin-top:6px}
+  .es-noteact{background:none;border:none;padding:0;cursor:pointer;font:inherit;font-size:12px;color:var(--ink-2);text-decoration:underline}
+  .es-noteact:hover{color:var(--green)}
+  .es-noteedit{width:100%;font:inherit;font-size:13.5px;line-height:1.5;border:1.5px solid var(--green);
+    border-radius:8px;padding:6px 8px;resize:vertical;min-height:56px;background:var(--card);color:var(--ink)}
+  .es-noteempty{font-size:13px;color:var(--ink-2);line-height:1.55}
+  .es-notesbtn{display:none}
   .es-rest.quiet.empty{display:none}
   /* Long lines are hard to write into as well as to read. */
   /* The shell takes the width so no column stands empty, but the card inside it is
@@ -719,8 +752,36 @@
      round. The workspace underneath is not touched at all, so there is nothing
      to reflow, nothing to move and nothing to rebuild. */
   #eslhost.on{pointer-events:auto;background:rgba(28,40,40,.42)}
-  .esl-panel{position:absolute;inset:5vh 5vw;top:5vh;bottom:5vh;left:5vw;right:5vw;width:auto;
-    max-width:1180px;margin:0 auto;border-radius:16px}
+  .esl-panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:min(1200px,90vw);height:min(860px,90vh);max-width:none;bottom:auto;right:auto;border-radius:16px}
+  /* Learning on the left, notes on the right, and nothing else in either. */
+  .esl-body{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;min-height:0;flex:1;overflow:hidden}
+  .esl-main{overflow:auto;min-width:0;padding-right:2px}
+  .esl-notes{border-left:1px solid var(--line);padding-left:16px;display:flex;flex-direction:column;gap:9px;min-height:0}
+  /* internal navigation, not another modal */
+  .esl-back{background:none;border:none;cursor:pointer;font:inherit;font-size:13.5px;color:var(--ink-2);
+    padding:0;margin-bottom:10px;text-decoration:underline}
+  .esl-back:hover{color:var(--green)}
+  .esl-l1{font-family:var(--disp);font-size:19px;font-weight:600;color:var(--ink);margin:0 0 6px}
+  .esl-glance{background:var(--green-soft);border-radius:12px;padding:12px 14px;margin-bottom:14px}
+  .esl-keys{margin:8px 0 0;padding-left:18px}
+  .esl-keys li{font-size:14px;line-height:1.6;color:var(--ink);margin-bottom:3px}
+  .esl-layer{border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden}
+  .esl-layerh{width:100%;text-align:left;background:none;border:none;cursor:pointer;font:inherit;
+    font-size:14.5px;font-weight:700;color:var(--ink);padding:11px 14px;display:flex;justify-content:space-between;gap:10px}
+  .esl-layerh:hover{background:var(--green-soft)}
+  .esl-layerb{padding:0 14px 13px;font-size:14px;line-height:1.65;color:var(--ink)}
+  .esl-flow{display:flex;flex-direction:column;gap:2px;margin:10px 0;font-size:13.5px}
+  .esl-flownode{background:var(--green-soft);border-radius:8px;padding:7px 11px;color:var(--ink);font-weight:600;align-self:flex-start}
+  .esl-flowarrow{color:var(--ink-2);padding-left:12px}
+  .esl-tile.can{cursor:pointer;text-align:left;font:inherit;width:100%}
+  .esl-tile.can:hover{border-color:var(--green);background:var(--green-soft)}
+  .esl-tilego{display:block;margin-top:8px;font-size:12.5px;font-weight:700;color:var(--green-dk)}
+  .esl-pick{width:100%;text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:12px;
+    padding:12px 14px;cursor:pointer;font:inherit;margin-bottom:8px;display:block}
+  .esl-pick:hover{border-color:var(--green);background:var(--green-soft)}
+  .esl-pickt{font-weight:700;font-size:15px;color:var(--ink);display:block}
+  .esl-picks{font-size:13px;color:var(--ink-2);display:block;margin-top:3px;line-height:1.5}
   /* The workspace gives up its third column while the centre is open, rather than
      clipping it. The node stays in the DOM, only hidden, so esSwapSide still finds
      the side column it swaps and the tool path is unaffected. */
@@ -791,7 +852,9 @@
   /* Below the width where a contracted workspace and the panel cannot both work,
      the panel goes back to being an overlay and the workspace takes its width back. */
   @media(max-width:1180px){
-    .esl-panel,.esl-panel.left{left:12px;right:12px;top:12px;bottom:12px;width:auto}
+    .esl-panel,.esl-panel.left{left:12px;right:12px;top:12px;bottom:12px;width:auto;height:auto;transform:none;max-width:none}
+    .esl-body{grid-template-columns:minmax(0,1fr)}
+    .esl-notes{border-left:none;border-top:1px solid var(--line);padding-left:0;padding-top:12px}
   }
   .es-learn-lede{font-weight:600}
   /* The row list is the primary content on the first screen here, not a reference
@@ -1096,6 +1159,15 @@
   .es-linerow .es-linkbtn[disabled]{opacity:.4;pointer-events:none}
   .es-btn.sm{padding:7px 13px;font-size:13px}
   /* Narrower still: the response map collapses first, the composer stays readable. */
+  @media(max-width:1180px){
+    .es-cols.withnotes,.es-cols.withnotes.withdrawer,.es-cols.withnotes.withctx,
+    .es-cols.withnotes.withdec{grid-template-columns:minmax(0,1fr)}
+    .es-notes{position:fixed;top:0;right:0;bottom:0;width:min(360px,86vw);z-index:140;
+      border-radius:0;border-left:1.5px solid var(--line);max-height:none;
+      box-shadow:-18px 0 46px rgba(28,40,40,.18);transform:translateX(100%);transition:transform .18s ease}
+    body.es-notesopen .es-notes{transform:translateX(0)}
+    .es-notesbtn{display:inline-flex}
+  }
   @media(max-width:1000px){.es-cols{grid-template-columns:minmax(0,1fr)}.es-map{position:static;flex-direction:row;flex-wrap:wrap}.es-margin{order:3}}
 
   /* ===== Marking rebuild: where to start, and the way back into writing ===== */
@@ -1281,10 +1353,10 @@
   /* The header is the application's, so it stays put and reads as one: full
      bleed, sticky, its contents centred on the same column as the page body.
      No wrapper element, so every screen that renders .es-top gets it. */
-  .es-wrap > *{max-width:min(1180px,94vw);margin-left:auto;margin-right:auto}
+  .es-wrap > *{max-width:min(1420px,96vw);margin-left:auto;margin-right:auto}
   .es-wrap > .es-top{max-width:none;position:sticky;top:0;z-index:6;background:var(--card);
     border-bottom:1px solid var(--line);margin-bottom:20px;
-    padding:13px max(clamp(16px,3vw,28px),calc((100% - min(1180px,94vw))/2))}
+    padding:13px max(clamp(16px,3vw,28px),calc((100% - min(1420px,96vw))/2))}
   .es-shell:has(.es-wide){max-width:1040px}
   /* the composer takes the canvas: the writing has to be the dominant thing on screen */
   .es-shell:has(.es-canvas){max-width:min(1480px,94vw)}
@@ -1440,6 +1512,10 @@
   .es-skelchip.on{color:var(--green-dk);border-color:var(--green);background:var(--green-soft)}
   .es-skelchip:hover{border-color:var(--green)}
   .es-blank{font-style:normal;font-weight:800;color:var(--green-dk);letter-spacing:1px}
+  /* A slot says what belongs in it. An anonymous blank made the student guess the
+     role as well as the content, and in the walkthrough that produced an answer
+     entered at the wrong stage. Sentence case, the one green accent. */
+  .es-shape .es-hole{background:var(--green-soft);color:var(--green-dk);font-size:12.5px;font-weight:700}
   /* polish reveal */
   .es-polish{margin-top:6px;border-top:1px solid var(--line);padding-top:10px}
   .es-polishtoggle{background:none;border:none;font-family:var(--disp);font-weight:600;font-size:12.5px;color:var(--ink-2);cursor:pointer;padding:2px 0}
@@ -5290,14 +5366,14 @@ window.ESSAY = {
             { key: "link",    label: "concluding link", job: "link back to the question with a clear judgement" }
           ],
           templates: {
-            topic:   { tier1: "____ can affect ____ because ____.",
-                       tier2: [ { type: "cause and effect", frame: "____ influences ____ by ____." } ] },
-            explain: { tier1: "This works because ____ leads to ____.",
-                       tier2: [ { type: "mechanism", frame: "By ____, the business is able to ____, which changes ____." } ] },
-            example: { tier1: "For example, a business could ____, which shows ____." },
-            effect:  { tier1: "As a result, ____ improves ____, which matters because ____.",
-                       tier2: [ { type: "trade-off", frame: "This improves ____, although it can reduce ____." } ] },
-            link:    { tier1: "Therefore, ____ affects ____, which addresses the question because ____." }
+            topic:   { tier1: "[strategy] can affect [objective] because [main relationship].",
+                       tier2: [ { type: "cause and effect", frame: "[strategy] influences [objective] by [how it works]." } ] },
+            explain: { tier1: "This works because [what the strategy changes] leads to [the effect on the objective].",
+                       tier2: [ { type: "mechanism", frame: "By [what the business does], the business is able to [what that makes possible], which changes [the objective]." } ] },
+            example: { tier1: "For example, [business] could [specific action], which shows [connection to the argument]." },
+            effect:  { tier1: "As a result, [strategy] improves [objective], which matters because [why it matters to the business].",
+                       tier2: [ { type: "trade-off", frame: "This improves [objective], although it can reduce [the objective it trades against]." } ] },
+            link:    { tier1: "Therefore, [strategy] affects [objective], which addresses the question because [link to the question]." }
           }
         },
         tdecc: {
@@ -5310,13 +5386,13 @@ window.ESSAY = {
             { key: "link",    label: "connect",              job: "return to the question and say what the example has demonstrated" }
           ],
           templates: {
-            topic:   { tier1: "____ can affect ____ because ____." },
-            define:  { tier1: "____ refers to ____.",
-                       tier2: [ { type: "define then apply", frame: "____ is ____, which allows a business to ____." } ] },
-            explain: { tier1: "This happens because ____ leads to ____.",
-                       tier2: [ { type: "cause and effect", frame: "Because ____, a business ____, which changes ____." } ] },
-            example: { tier1: "For example, a business could ____, which shows ____." },
-            link:    { tier1: "Therefore, ____ affects ____, which addresses the question because ____." }
+            topic:   { tier1: "[strategy] can affect [objective] because [main relationship]." },
+            define:  { tier1: "[concept] refers to [meaning in your own words].",
+                       tier2: [ { type: "define then apply", frame: "[concept] is [meaning], which allows a business to [what it makes possible]." } ] },
+            explain: { tier1: "This happens because [cause] leads to [effect].",
+                       tier2: [ { type: "cause and effect", frame: "Because [cause], a business [what it does], which changes [the outcome]." } ] },
+            example: { tier1: "For example, [business] could [specific action], which shows [connection to the argument]." },
+            link:    { tier1: "Therefore, [strategy] affects [objective], which addresses the question because [link to the question]." }
           }
         }
       },
@@ -5510,49 +5586,49 @@ window.ESSAY = {
       ]
     },
     templates: {
-      point:     { tier1: "____ was a key way that ____.",
-                   tier2: [ { type: "claim", frame: "One way ____ can be seen is through ____." },
-                            { type: "contrast", frame: "While ____, this paragraph argues that ____." } ] },
-      analysis:  { tier1: "This demonstrates that ____ because ____.",
-                   tier2: [ { type: "significance", frame: "This was significant because it allowed ____ to ____, which shows ____." },
-                            { type: "appearance and reality", frame: "This created the impression of ____ while in reality ____, revealing ____." },
-                            { type: "cause and effect", frame: "By doing this, ____ led to ____." } ] },
-      evidence:  { tier1: "This is supported by ____, which shows ____.",
-                   tier2: [ { type: "named source", frame: "According to ____, ____, which suggests ____." },
-                            { type: "specific detail", frame: "The detail that ____ shows ____." } ] },
+      point:     { tier1: "[method or factor] was a key way that [what it achieved].",
+                   tier2: [ { type: "claim", frame: "One way [the main idea] can be seen is through [specific method or factor]." },
+                            { type: "contrast", frame: "While [the other view], this paragraph argues that [your claim]." } ] },
+      analysis:  { tier1: "This demonstrates that [what it shows] because [reason].",
+                   tier2: [ { type: "significance", frame: "This was significant because it allowed [who or what] to [do what], which shows [what it demonstrates]." },
+                            { type: "appearance and reality", frame: "This created the impression of [the appearance] while in reality [the reality], revealing [what that tells us]." },
+                            { type: "cause and effect", frame: "By doing this, [cause] led to [effect]." } ] },
+      evidence:  { tier1: "This is supported by [specific evidence], which shows [connection to the argument].",
+                   tier2: [ { type: "named source", frame: "According to [source], [what it states], which suggests [what it implies]." },
+                            { type: "specific detail", frame: "The detail that [specific detail] shows [what it demonstrates]." } ] },
       // Which directive family a question belongs to. The command is authored on
       // every question; coreAnswer.mode is not, so the command is what decides.
       directiveFamilies: {
         judgement: ["evaluate", "assess", "to what extent", "discuss", "critically"],
         causal: ["explain", "how can", "how do", "how does", "describe", "outline", "analyse", "account for", "examine"]
       },
-      link:      { tier1: "Therefore, ____ was a key method because ____.",
-                   tier2: [ { type: "answer the question", frame: "This shows that ____, which directly addresses ____." },
-                            { type: "weigh it", frame: "This mattered more than ____ because ____." } ] },
+      link:      { tier1: "Therefore, [method or factor] was a key method because [reason].",
+                   tier2: [ { type: "answer the question", frame: "This shows that [your claim], which directly addresses [the question]." },
+                            { type: "weigh it", frame: "This mattered more than [the alternative] because [reason]." } ] },
       // The shape of a thesis follows the directive. An Explain or How question wants
       // a causal line; an Evaluate or Assess question wants a weighed one. Offering
       // judgement frames for a How question teaches the wrong sentence, so the
       // families are separated and the directive chooses. Content free either way.
-      thesis:    { tier1: "____ can be assessed by weighing ____ against ____.",
-                   tier2: [ { type: "line of argument", frame: "While ____, ultimately ____ because ____." } ],
+      thesis:    { tier1: "[the subject of the question] can be assessed by weighing [one side] against [the other side].",
+                   tier2: [ { type: "line of argument", frame: "While [the other side], ultimately [your position] because [main reason]." } ],
                    byFamily: {
                      // A thesis answers the whole question and says where the
                      // response is going. A body topic sentence states one
                      // relationship. Sharing frames between them teaches a student
                      // to write a paragraph opener where an essay opener belongs,
                      // so these signpost and the topic frames do not.
-                     causal: { tier1: "Overall, ____ can contribute to ____ through ____ and ____.",
-                               tier2: [ { type: "signpost the ways", frame: "____ affects ____ in several ways, most importantly ____ and ____." },
-                                        { type: "name the strongest", frame: "____ shapes ____ most through ____, and to a lesser extent through ____." } ] },
-                     judgement: { tier1: "Overall, ____ is ____ because ____, although ____.",
-                               tier2: [ { type: "line of argument", frame: "While ____, ultimately ____ because ____." },
-                                        { type: "weigh two sides", frame: "____ can be assessed by weighing ____ against ____, and on balance ____." } ] } } },
-      methods:   { tier1: "This will be shown through ____ and ____.",
-                   tier2: [ { type: "signpost", frame: "By examining ____ and ____, this essay will argue ____." } ] },
-      restate:   { tier1: "Overall, ____ shows that ____.",
-                   tier2: [ { type: "draw together", frame: "Taken together, ____ and ____ reveal ____." } ] },
-      judgement: { tier1: "On balance, ____ was ____ because ____.",
-                   tier2: [ { type: "weighed judgement", frame: "Although ____, on balance ____ because ____." } ] }
+                     causal: { tier1: "Overall, [concept from the question] can contribute to [result from the question] through [argument 1] and [argument 2].",
+                               tier2: [ { type: "signpost the ways", frame: "[concept from the question] affects [result from the question] in several ways, most importantly [argument 1] and [argument 2]." },
+                                        { type: "name the strongest", frame: "[concept from the question] shapes [result from the question] most through [strongest argument], and to a lesser extent through [weaker argument]." } ] },
+                     judgement: { tier1: "Overall, [the subject of the question] is [your judgement] because [main reason], although [the qualification].",
+                               tier2: [ { type: "line of argument", frame: "While [the other side], ultimately [your position] because [main reason]." },
+                                        { type: "weigh two sides", frame: "[the subject of the question] can be assessed by weighing [one side] against [the other side], and on balance [your judgement]." } ] } } },
+      methods:   { tier1: "This will be shown through [first argument] and [second argument].",
+                   tier2: [ { type: "signpost", frame: "By examining [first argument] and [second argument], this essay will argue [your position]." } ] },
+      restate:   { tier1: "Overall, [what you examined] shows that [your conclusion].",
+                   tier2: [ { type: "draw together", frame: "Taken together, [argument 1] and [argument 2] reveal [your conclusion]." } ] },
+      judgement: { tier1: "On balance, [the subject of the question] was [your judgement] because [main reason].",
+                   tier2: [ { type: "weighed judgement", frame: "Although [the qualification], on balance [your judgement] because [main reason]." } ] }
     },
     // Worked examples for the optional "see a worked example" reference. These are
     // FIXED, pre-written (never generated, so no invented history), and ALWAYS on a
@@ -5617,7 +5693,7 @@ window.ESSAY = {
     // usually miss in the demo; the app falls back to the paragraph's first sentences.
     lines: [
       { quote: "", issue: "This sentence describes what happened instead of explaining why it matters.", fix: "This shows ____ because ____.", severity: "critical" },
-      { quote: "", issue: "There is a claim here with no evidence attached to it.", fix: "This is supported by ____, which shows ____.", severity: "should" },
+      { quote: "", issue: "There is a claim here with no evidence attached to it.", fix: "This is supported by [specific evidence], which shows [connection to the argument].", severity: "should" },
       { quote: "", issue: "This sentence never links back to the question.", fix: "Therefore ____, which addresses ____.", severity: "should" }
     ]
   }
@@ -10608,6 +10684,97 @@ window.BUSCONTENT = {
     const all = esReadStore(); const bag = all[esBagKey()];
     ES.list = esRecent(bag && Array.isArray(bag.drafts) ? bag.drafts : []);
   }
+  // ---- MY NOTES ---------------------------------------------------------
+  // One collection per attempt, living on the draft, so it persists with
+  // everything else and survives moving between sections, opening the Learning
+  // Centre and closing it again. The page pane and the Centre's pane are two
+  // views of this array, never two stores.
+  //
+  // There is deliberately no "insert into the essay". The workflow is learn,
+  // note, return, and then say it in your own words: a control that pasted a
+  // note into the response would remove the only step in that sequence where
+  // the student has to do the thinking.
+  function esNotes() {
+    if (!ES.draft) return [];
+    if (!Array.isArray(ES.draft.notes)) ES.draft.notes = [];
+    return ES.draft.notes;
+  }
+  function esNoteAdd(text) {
+    const t = String(text || "").trim(); if (!t) return null;
+    const n = { id: "n" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), text: t, at: new Date().toISOString() };
+    esNotes().unshift(n); esSaveDraft(); return n;
+  }
+  function esNoteUpdate(id, text) {
+    const n = esNotes().find(x => x.id === id); if (!n) return;
+    const t = String(text || "").trim();
+    if (!t) return esNoteDelete(id);
+    n.text = t; esSaveDraft();
+  }
+  function esNoteDelete(id) {
+    const list = esNotes(); const i = list.findIndex(x => x.id === id);
+    if (i >= 0) { list.splice(i, 1); esSaveDraft(); }
+  }
+  // The list only. Re-rendered on its own when a note changes, so nothing else
+  // on either surface is touched.
+  function esNotesListHTML() {
+    const list = esNotes();
+    if (!list.length) return `<p class="es-noteempty">Nothing yet. Notes you take while learning stay here while you write.</p>`;
+    return list.map(n => ES.ui.noteEdit === n.id
+      ? `<div class="es-note" data-esnote="${esc(n.id)}">
+           <textarea class="es-noteedit" data-esnoteedit="${esc(n.id)}">${esc(n.text)}</textarea>
+           <div class="es-noteacts">
+             <button type="button" class="es-noteact" data-esnotesave="${esc(n.id)}">save</button>
+             <button type="button" class="es-noteact" data-esnotecancel="1">cancel</button>
+           </div>
+         </div>`
+      : `<div class="es-note" data-esnote="${esc(n.id)}">
+           <div class="es-notetext">${esc(n.text)}</div>
+           <div class="es-noteacts">
+             <button type="button" class="es-noteact" data-esnoteed="${esc(n.id)}">edit</button>
+             <button type="button" class="es-noteact" data-esnotedel="${esc(n.id)}">delete</button>
+           </div>
+         </div>`).join("");
+  }
+  function esNotesPaneHTML(cls) {
+    return `<aside class="${cls}" data-esnotespane>
+      <div class="es-notesh">My notes</div>
+      <textarea class="es-notenew" data-esnotenew placeholder="Write a note in your own words..."></textarea>
+      <div class="es-notelist" data-esnotelist>${esNotesListHTML()}</div>
+    </aside>`;
+  }
+  // Bound per pane. Every action redraws that pane's list and nothing else: the
+  // composer, the workspace grid and the Learning Centre are all uninvolved in
+  // whether a note exists.
+  function esNotesBind(root) {
+    if (!root) return;
+    root.querySelectorAll("[data-esnotespane]").forEach(pane => {
+      const redraw = () => {
+        document.querySelectorAll("[data-esnotelist]").forEach(l => { l.innerHTML = esNotesListHTML(); });
+        document.querySelectorAll("[data-esnotespane]").forEach(x => esNotesBindOne(x));
+      };
+      esNotesBindOne(pane, redraw);
+    });
+  }
+  function esNotesBindOne(pane, redraw) {
+    const again = redraw || (() => {
+      document.querySelectorAll("[data-esnotelist]").forEach(l => { l.innerHTML = esNotesListHTML(); });
+      document.querySelectorAll("[data-esnotespane]").forEach(x => esNotesBindOne(x));
+    });
+    const box = pane.querySelector("[data-esnotenew]");
+    if (box) box.onkeydown = e => {
+      // Enter saves, shift+Enter is a new line, which is what a notes field does.
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (box.value.trim()) { esNoteAdd(box.value); box.value = ""; again(); } }
+    };
+    pane.querySelectorAll("[data-esnoteed]").forEach(b => b.onclick = () => { ES.ui.noteEdit = b.dataset.esnoteed; again(); });
+    pane.querySelectorAll("[data-esnotedel]").forEach(b => b.onclick = () => { esNoteDelete(b.dataset.esnotedel); again(); });
+    pane.querySelectorAll("[data-esnotecancel]").forEach(b => b.onclick = () => { ES.ui.noteEdit = null; again(); });
+    pane.querySelectorAll("[data-esnotesave]").forEach(b => b.onclick = () => {
+      const id = b.dataset.esnotesave;
+      const ta = pane.querySelector('[data-esnoteedit="' + id + '"]');
+      esNoteUpdate(id, ta ? ta.value : ""); ES.ui.noteEdit = null; again();
+    });
+  }
+
   function esSaveDraft() {
     if (!ES.draft) return;
     ES.draft.updatedAt = new Date().toISOString(); // most-recent-first ordering
@@ -12171,10 +12338,17 @@ window.BUSCONTENT = {
       const sibs = eslSiblings(p);
       if (!sibs.length) return `<p class="esl-none">Nothing has been written for the other parts of this topic yet.</p>`;
       return `<p class="esl-lede">${esc(t1)} are the things a business can actually change. These are the ones this topic covers.</p>
-        <div class="esl-grid">${sibs.map(x => `<div class="esl-tile">
-          <div class="esl-tilet">${esc(x.title)}</div>
-          ${x.lede ? `<p class="esl-tileb">${esc(x.lede)}</p>` : ""}
-          ${x.named ? `<p class="esl-tilen">${esc(x.named)}</p>` : ""}</div>`).join("")}</div>`;
+        <div class="esl-grid">${sibs.map(x => {
+          // A tile with a lesson behind it is a way in. One without is still a
+          // definition, and says nothing about being unfinished.
+          const L = esLesson(x.title);
+          const inner = `<div class="esl-tilet">${esc(x.title)}</div>
+            ${L ? `<p class="esl-tileb">${esc(L.glance)}</p><span class="esl-tilego">Learn this \u2192</span>`
+                : `${x.lede ? `<p class="esl-tileb">${esc(x.lede)}</p>` : ""}
+                   ${x.named ? `<p class="esl-tilen">${esc(x.named)}</p>` : ""}`}`;
+          return L ? `<button type="button" class="esl-tile can" data-esllesson="${esc(x.title)}">${inner}</button>`
+                   : `<div class="esl-tile">${inner}</div>`;
+        }).join("")}</div>`;
     }
     if (route === "objectives") {
       const o = eslObjectives(p);
@@ -12219,6 +12393,27 @@ window.BUSCONTENT = {
               <p class="esl-quote">${esc(x.text)}</p>`).join("")}</details>` : ""}
         </div>`).join("")}`;
     }
+    // A concept opens inside the Centre with a Back control. Not another modal
+    // over this one, and not a replacement of the essay page underneath.
+    if (route === "lesson") {
+      const L = esLesson(ES.centre && ES.centre.lesson);
+      if (!L) return "";
+      const open = (ES.centre && ES.centre.layers) || {};
+      return `<button type="button" class="esl-back" data-eslroute="strategies">\u2190 Back to operations strategies</button>
+        <h3 class="esl-l1">${esc(L.title)}</h3>
+        <div class="esl-glance">
+          <p class="esl-p">${esc(L.glance)}</p>
+          <ul class="esl-keys">${L.keys.map(k => `<li>${esc(k)}</li>`).join("")}</ul>
+        </div>
+        ${L.layers.map(y => `<div class="esl-layer">
+          <button type="button" class="esl-layerh" data-esllayer="${esc(y.id)}" aria-expanded="${open[y.id] ? "true" : "false"}">
+            <span>${esc(y.head)}</span><span>${open[y.id] ? "\u2212" : "+"}</span></button>
+          <div class="esl-layerb" data-esllayerb="${esc(y.id)}"${open[y.id] ? "" : " hidden"}>
+            ${y.flow ? `<div class="esl-flow">${y.flow.map((n, i) => `${i ? `<div class="esl-flowarrow">\u2193</div>` : ""}<div class="esl-flownode">${esc(n)}</div>`).join("")}</div>` : ""}
+            ${y.body ? String(y.body).split("\n\n").map(par => `<p class="esl-p">${esc(par)}</p>`).join("") : ""}
+          </div>
+        </div>`).join("")}`;
+    }
     const o = eslObjectives(p), sibs = eslSiblings(p);
     return `<p class="esl-lede">What do you want to learn?</p>
       <div class="esl-grid three">
@@ -12228,6 +12423,40 @@ window.BUSCONTENT = {
         ${eslDirective() ? eslCardHTML("directive", `What "${eslDirective().command.toLowerCase()}" means`, eslDirective().meaning, false) : ""}
       </div>`;
   }
+  // ---- ONE DEEP LESSON, as a pattern rather than a library ----------------
+  // Authored here to prove the shape a lesson needs before the same shape is
+  // repeated across twenty concepts. Written from the authored Operations
+  // content and asserting no relationship that content does not carry.
+  const ES_LESSONS = {
+    "inventory management": {
+      title: "Inventory management",
+      glance: "Deciding how much stock to hold, and when to order it, so the business can meet demand without paying to store more than it needs.",
+      keys: [
+        "Stock sits in three states: raw materials, work in progress, and finished goods.",
+        "Holding stock costs money. Running out costs sales. The decision is the trade off between them.",
+        "Just in time keeps stock as low as possible by having inputs arrive close to when they are used."
+      ],
+      layers: [
+        { id: "understand", head: "Understand it",
+          body: "Every item a business holds has been paid for and is not yet earning anything. It occupies space, it can be damaged, it can go out of date, and the money spent on it cannot be spent elsewhere. Holding less of it frees that money up.\n\nThe cost of holding too little is different in kind. If an input is not there when it is needed the process stops, and a customer who cannot be served may not come back. So the question is never simply how to hold less stock, it is how little can be held while still being able to serve demand." },
+        { id: "terms", head: "Key terms",
+          body: "Raw materials are inputs bought but not yet used. Work in progress is partly finished output. Finished goods are ready to sell.\n\nLead time is the gap between ordering an input and receiving it. The longer it is, the more stock has to be held to cover it.\n\nJust in time schedules inputs to arrive close to the moment they are used, so very little is stored. It depends on suppliers who deliver reliably: the stock that would have absorbed a late delivery is not there any more." },
+        { id: "example", head: "Example",
+          body: "A restaurant chain decides how much of each ingredient sits in a store room. Order weekly and the room is full, money is tied up, and fresh items are thrown away. Order daily and almost nothing is stored, but a supplier who arrives late leaves the kitchen unable to serve part of the menu at lunchtime.\n\nThe choice between those is the inventory decision, and it is made against how reliable the supply actually is." },
+        { id: "visual", head: "How it works", flow: [
+            "How much stock is held",
+            "Money tied up, space used, waste risk",
+            "Lower holding cost",
+            "and a higher risk that a late delivery stops the process" ] },
+        { id: "exam", head: "Where it matters in this question",
+          body: "This question asks how an operations strategy contributes to a performance objective. Inventory management is one such strategy, and the objectives it bears on most directly are cost, because stock is money held still, and dependability, because stock is what absorbs a supply problem before a customer notices it.\n\nWhich of those you argue is your decision, and the sentence has to be yours." },
+        { id: "mistake", head: "Common mistake",
+          body: "Treating less stock as automatically better. Just in time lowers holding costs and raises exposure to supply disruption at the same time, so an answer naming only the saving has described half of the strategy." }
+      ]
+    }
+  };
+  function esLesson(key) { return ES_LESSONS[String(key || "").toLowerCase()] || null; }
+
   function eslHTML(p) {
     const q = esQuestionDef() || {};
     const route = (ES.centre && ES.centre.route) || "choose";
@@ -12244,7 +12473,10 @@ window.BUSCONTENT = {
       </div>
       <p class="esl-q">${esc(q.text || (ES.draft && ES.draft.question) || "")}</p>
       <div class="esl-tabs">${tab("choose", "Start here")}${sides.first ? tab("strategies", sides.first) : ""}${sides.second ? tab("objectives", sides.second) : ""}${hasLinks ? tab("connect", "How they connect") : ""}${dir ? tab("directive", `What "${dir.command.toLowerCase()}" means`) : ""}</div>
-      <div class="esl-body">${eslBodyHTML(p)}</div>
+      <div class="esl-body">
+        <div class="esl-main">${eslBodyHTML(p)}</div>
+        ${esNotesPaneHTML("esl-notes")}
+      </div>
       <div class="esl-foot">
         ${guide ? `<span class="esl-footg"><b>${esc(guide.head || "")}</b> ${esc(guide.job || "")}</span>` : ""}
         <button type="button" class="es-btn primary sm" id="eslback">Back to your sentence</button>
@@ -12280,6 +12512,24 @@ window.BUSCONTENT = {
       ES.centre.route = b.dataset.eslroute;
       // Only the centre re-renders. esRender is never called from in here.
       eslMount(p);
+    });
+    esNotesBind(host);
+    // Entering a lesson is internal navigation inside this overlay.
+    host.querySelectorAll("[data-esllesson]").forEach(b => b.onclick = () => {
+      ES.centre.lesson = b.dataset.esllesson; ES.centre.route = "lesson"; ES.centre.layers = {};
+      eslMount(p);
+    });
+    // A layer opening is a disclosure inside one card. It reveals content that is
+    // already rendered and touches nothing else, so the Centre does not redraw and
+    // the reader does not lose their scroll position.
+    host.querySelectorAll("[data-esllayer]").forEach(b => b.onclick = () => {
+      const id = b.dataset.esllayer;
+      ES.centre.layers = ES.centre.layers || {};
+      ES.centre.layers[id] = !ES.centre.layers[id];
+      const body = host.querySelector('[data-esllayerb="' + id + '"]');
+      if (body) body.hidden = !ES.centre.layers[id];
+      b.setAttribute("aria-expanded", ES.centre.layers[id] ? "true" : "false");
+      const sign = b.lastElementChild; if (sign) sign.textContent = ES.centre.layers[id] ? "\u2212" : "+";
     });
     const x = host.querySelector("#eslx"); if (x) x.onclick = () => { eslUnmount(); esFocusComposer(); };
     const back = host.querySelector("#eslback"); if (back) back.onclick = () => { eslUnmount(); esFocusComposer(); };
@@ -13768,29 +14018,30 @@ window.BUSCONTENT = {
             whenever the argument picker was showing. */ ""}
       ${esWritingHead(sc, "Guided", "full attempt", "full", true)}
       ${esToolbeltHTML(p)}
-      <div class="es-cols ${ES.ui.tool ? "withdrawer" : ES.ui.contextView ? "withctx" : esDecodeOf(esQuestionDef()) ? "withdec" : ""}">
+      <div class="es-cols withnotes ${ES.ui.tool ? "withdrawer" : ES.ui.contextView ? "withctx" : esDecodeOf(esQuestionDef()) ? "withdec" : ""}">
         ${esDecodeHost(esQuestionDef())}
-        <aside class="es-map" ${ES.ui.mapPop ? "" : "hidden"}>
-          <div class="es-maph">My response</div>
-          ${(() => { const wa = esWorkingAnswer(d); if (!wa) return "";
-            return `<button type="button" class="es-mapwa" id="esmapwa" title="What the arguments you have chosen add up to. It comes from your plan, not from reading your paragraphs.">
-              <span class="es-corelbl">${esIsJudgement() ? "current answer" : "working answer"}</span>
-              <span class="es-mapwatext">${esc(wa.text)}</span></button>`; })()}
-          ${map}
-          <div class="es-wordcount"${target ? ` title="Around ${target} words would be a full answer at ${esc(String(d.marks || 20))} marks. A guide, not a limit: write more if you have more to say."` : ""}>
-            <span><b>${words}</b> here · <b>${whole}</b> in all${target ? ` · ~${target}` : ""}</span>
-          </div>
-        </aside>
         <div class="es-compose">
           <div class="es-parahead">
             <button type="button" class="es-parapick" id="esmappop" aria-expanded="${ES.ui.mapPop ? "true" : "false"}">
               <span class="es-pararole">${esc(p.role)}</span><span class="es-parachev">\u25be</span></button>
+            <aside class="es-map" ${ES.ui.mapPop ? "" : "hidden"}>
+              <div class="es-maph">My response</div>
+              ${(() => { const wa = esWorkingAnswer(d); if (!wa) return "";
+                return `<button type="button" class="es-mapwa" id="esmapwa" title="What the arguments you have chosen add up to. It comes from your plan, not from reading your paragraphs.">
+                  <span class="es-corelbl">${esIsJudgement() ? "current answer" : "working answer"}</span>
+                  <span class="es-mapwatext">${esc(wa.text)}</span></button>`; })()}
+              ${map}
+              <div class="es-wordcount"${target ? ` title="Around ${target} words would be a full answer at ${esc(String(d.marks || 20))} marks. A guide, not a limit: write more if you have more to say."` : ""}>
+                <span><b>${words}</b> here \u00b7 <b>${whole}</b> in all${target ? ` \u00b7 ~${target}` : ""}</span>
+              </div>
+            </aside>
             <span class="es-parameta">${words} words${target ? " \u00b7 ~" + esc(String(target)) : ""}</span>
             ${(() => { const st = esStepDef(p), all = slotsForRole(p.role);
               const i = all.findIndex(x => st && x.key === st.key);
               return ""; })()}
             <span class="es-headacts">
               ${(esIsIntro(p) || esIsConcl(p)) ? `<button type="button" class="es-linkbtn es-ctxbtn" id="esctx" data-esctxview="${esIsConcl(p) ? "judgement" : "plan"}" aria-expanded="${ES.ui.contextView ? "true" : "false"}">${esIsConcl(p) ? "Review my arguments" : "View plan"}</button>` : ""}
+              <button type="button" class="es-linkbtn es-notesbtn" id="esnotesbtn" aria-expanded="false">notes</button>
               <button type="button" class="es-mapall" id="esreview">read all</button>
             </span>
           </div>
@@ -13831,7 +14082,7 @@ window.BUSCONTENT = {
                   const open = !!ES.ui.shapeOpen;
                   return `<button type="button" class="es-linkbtn es-shapebtn" id="esshape" aria-expanded="${open}">${open ? "Hide sentence shape" : "Show sentence shape"}</button>
                     <div class="es-shapes" id="esshapes"${open ? "" : " hidden"}>${all.map(x =>
-                      `<p class="es-shape">${esc(x).replace(/_{2,}/g, '<span class="es-blank">____</span>')}</p>`).join("")}</div>`;
+                      `<p class="es-shape">${esc(x).replace(/\[[^\]]+\]/g, m => `<span class="es-hole">${m.slice(1, -1)}</span>`).replace(/_{2,}/g, '<span class="es-blank">____</span>')}</p>`).join("")}</div>`;
                 })()}
               </div>
               <textarea id="esline" class="es-input es-linebox" rows="2" placeholder="Type your next sentence..."></textarea>
@@ -13850,6 +14101,7 @@ window.BUSCONTENT = {
           <div class="es-seqhost">${esSeqNudge(p)}</div>
         </div>
         ${ES.ui.tool ? esDrawerHTML(p) : esRestHTML(p)}
+        ${esNotesPaneHTML("es-notes")}
       </div>
     </div></div></div>`;
 
@@ -13975,6 +14227,14 @@ window.BUSCONTENT = {
       ES.ui.contextView = ES.ui.contextView === want ? null : want;
       if (ES.ui.contextView) ES.ui.tool = null;
       esRenderKeepingPlace(p);
+    };
+    esNotesBind(host);
+    const nb = $("#esnotesbtn");
+    if (nb) nb.onclick = () => {
+      // Narrow screens only. A fixed drawer sliding over the page, so the writing
+      // column is the same width open or closed.
+      document.body.classList.toggle("es-notesopen");
+      nb.setAttribute("aria-expanded", document.body.classList.contains("es-notesopen") ? "true" : "false");
     };
     const sh = $("#esshape");
     if (sh) sh.onclick = () => {

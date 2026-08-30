@@ -3292,6 +3292,97 @@
     const all = esReadStore(); const bag = all[esBagKey()];
     ES.list = esRecent(bag && Array.isArray(bag.drafts) ? bag.drafts : []);
   }
+  // ---- MY NOTES ---------------------------------------------------------
+  // One collection per attempt, living on the draft, so it persists with
+  // everything else and survives moving between sections, opening the Learning
+  // Centre and closing it again. The page pane and the Centre's pane are two
+  // views of this array, never two stores.
+  //
+  // There is deliberately no "insert into the essay". The workflow is learn,
+  // note, return, and then say it in your own words: a control that pasted a
+  // note into the response would remove the only step in that sequence where
+  // the student has to do the thinking.
+  function esNotes() {
+    if (!ES.draft) return [];
+    if (!Array.isArray(ES.draft.notes)) ES.draft.notes = [];
+    return ES.draft.notes;
+  }
+  function esNoteAdd(text) {
+    const t = String(text || "").trim(); if (!t) return null;
+    const n = { id: "n" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), text: t, at: new Date().toISOString() };
+    esNotes().unshift(n); esSaveDraft(); return n;
+  }
+  function esNoteUpdate(id, text) {
+    const n = esNotes().find(x => x.id === id); if (!n) return;
+    const t = String(text || "").trim();
+    if (!t) return esNoteDelete(id);
+    n.text = t; esSaveDraft();
+  }
+  function esNoteDelete(id) {
+    const list = esNotes(); const i = list.findIndex(x => x.id === id);
+    if (i >= 0) { list.splice(i, 1); esSaveDraft(); }
+  }
+  // The list only. Re-rendered on its own when a note changes, so nothing else
+  // on either surface is touched.
+  function esNotesListHTML() {
+    const list = esNotes();
+    if (!list.length) return `<p class="es-noteempty">Nothing yet. Notes you take while learning stay here while you write.</p>`;
+    return list.map(n => ES.ui.noteEdit === n.id
+      ? `<div class="es-note" data-esnote="${esc(n.id)}">
+           <textarea class="es-noteedit" data-esnoteedit="${esc(n.id)}">${esc(n.text)}</textarea>
+           <div class="es-noteacts">
+             <button type="button" class="es-noteact" data-esnotesave="${esc(n.id)}">save</button>
+             <button type="button" class="es-noteact" data-esnotecancel="1">cancel</button>
+           </div>
+         </div>`
+      : `<div class="es-note" data-esnote="${esc(n.id)}">
+           <div class="es-notetext">${esc(n.text)}</div>
+           <div class="es-noteacts">
+             <button type="button" class="es-noteact" data-esnoteed="${esc(n.id)}">edit</button>
+             <button type="button" class="es-noteact" data-esnotedel="${esc(n.id)}">delete</button>
+           </div>
+         </div>`).join("");
+  }
+  function esNotesPaneHTML(cls) {
+    return `<aside class="${cls}" data-esnotespane>
+      <div class="es-notesh">My notes</div>
+      <textarea class="es-notenew" data-esnotenew placeholder="Write a note in your own words..."></textarea>
+      <div class="es-notelist" data-esnotelist>${esNotesListHTML()}</div>
+    </aside>`;
+  }
+  // Bound per pane. Every action redraws that pane's list and nothing else: the
+  // composer, the workspace grid and the Learning Centre are all uninvolved in
+  // whether a note exists.
+  function esNotesBind(root) {
+    if (!root) return;
+    root.querySelectorAll("[data-esnotespane]").forEach(pane => {
+      const redraw = () => {
+        document.querySelectorAll("[data-esnotelist]").forEach(l => { l.innerHTML = esNotesListHTML(); });
+        document.querySelectorAll("[data-esnotespane]").forEach(x => esNotesBindOne(x));
+      };
+      esNotesBindOne(pane, redraw);
+    });
+  }
+  function esNotesBindOne(pane, redraw) {
+    const again = redraw || (() => {
+      document.querySelectorAll("[data-esnotelist]").forEach(l => { l.innerHTML = esNotesListHTML(); });
+      document.querySelectorAll("[data-esnotespane]").forEach(x => esNotesBindOne(x));
+    });
+    const box = pane.querySelector("[data-esnotenew]");
+    if (box) box.onkeydown = e => {
+      // Enter saves, shift+Enter is a new line, which is what a notes field does.
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (box.value.trim()) { esNoteAdd(box.value); box.value = ""; again(); } }
+    };
+    pane.querySelectorAll("[data-esnoteed]").forEach(b => b.onclick = () => { ES.ui.noteEdit = b.dataset.esnoteed; again(); });
+    pane.querySelectorAll("[data-esnotedel]").forEach(b => b.onclick = () => { esNoteDelete(b.dataset.esnotedel); again(); });
+    pane.querySelectorAll("[data-esnotecancel]").forEach(b => b.onclick = () => { ES.ui.noteEdit = null; again(); });
+    pane.querySelectorAll("[data-esnotesave]").forEach(b => b.onclick = () => {
+      const id = b.dataset.esnotesave;
+      const ta = pane.querySelector('[data-esnoteedit="' + id + '"]');
+      esNoteUpdate(id, ta ? ta.value : ""); ES.ui.noteEdit = null; again();
+    });
+  }
+
   function esSaveDraft() {
     if (!ES.draft) return;
     ES.draft.updatedAt = new Date().toISOString(); // most-recent-first ordering
@@ -4855,10 +4946,17 @@
       const sibs = eslSiblings(p);
       if (!sibs.length) return `<p class="esl-none">Nothing has been written for the other parts of this topic yet.</p>`;
       return `<p class="esl-lede">${esc(t1)} are the things a business can actually change. These are the ones this topic covers.</p>
-        <div class="esl-grid">${sibs.map(x => `<div class="esl-tile">
-          <div class="esl-tilet">${esc(x.title)}</div>
-          ${x.lede ? `<p class="esl-tileb">${esc(x.lede)}</p>` : ""}
-          ${x.named ? `<p class="esl-tilen">${esc(x.named)}</p>` : ""}</div>`).join("")}</div>`;
+        <div class="esl-grid">${sibs.map(x => {
+          // A tile with a lesson behind it is a way in. One without is still a
+          // definition, and says nothing about being unfinished.
+          const L = esLesson(x.title);
+          const inner = `<div class="esl-tilet">${esc(x.title)}</div>
+            ${L ? `<p class="esl-tileb">${esc(L.glance)}</p><span class="esl-tilego">Learn this \u2192</span>`
+                : `${x.lede ? `<p class="esl-tileb">${esc(x.lede)}</p>` : ""}
+                   ${x.named ? `<p class="esl-tilen">${esc(x.named)}</p>` : ""}`}`;
+          return L ? `<button type="button" class="esl-tile can" data-esllesson="${esc(x.title)}">${inner}</button>`
+                   : `<div class="esl-tile">${inner}</div>`;
+        }).join("")}</div>`;
     }
     if (route === "objectives") {
       const o = eslObjectives(p);
@@ -4903,6 +5001,27 @@
               <p class="esl-quote">${esc(x.text)}</p>`).join("")}</details>` : ""}
         </div>`).join("")}`;
     }
+    // A concept opens inside the Centre with a Back control. Not another modal
+    // over this one, and not a replacement of the essay page underneath.
+    if (route === "lesson") {
+      const L = esLesson(ES.centre && ES.centre.lesson);
+      if (!L) return "";
+      const open = (ES.centre && ES.centre.layers) || {};
+      return `<button type="button" class="esl-back" data-eslroute="strategies">\u2190 Back to operations strategies</button>
+        <h3 class="esl-l1">${esc(L.title)}</h3>
+        <div class="esl-glance">
+          <p class="esl-p">${esc(L.glance)}</p>
+          <ul class="esl-keys">${L.keys.map(k => `<li>${esc(k)}</li>`).join("")}</ul>
+        </div>
+        ${L.layers.map(y => `<div class="esl-layer">
+          <button type="button" class="esl-layerh" data-esllayer="${esc(y.id)}" aria-expanded="${open[y.id] ? "true" : "false"}">
+            <span>${esc(y.head)}</span><span>${open[y.id] ? "\u2212" : "+"}</span></button>
+          <div class="esl-layerb" data-esllayerb="${esc(y.id)}"${open[y.id] ? "" : " hidden"}>
+            ${y.flow ? `<div class="esl-flow">${y.flow.map((n, i) => `${i ? `<div class="esl-flowarrow">\u2193</div>` : ""}<div class="esl-flownode">${esc(n)}</div>`).join("")}</div>` : ""}
+            ${y.body ? String(y.body).split("\n\n").map(par => `<p class="esl-p">${esc(par)}</p>`).join("") : ""}
+          </div>
+        </div>`).join("")}`;
+    }
     const o = eslObjectives(p), sibs = eslSiblings(p);
     return `<p class="esl-lede">What do you want to learn?</p>
       <div class="esl-grid three">
@@ -4912,6 +5031,40 @@
         ${eslDirective() ? eslCardHTML("directive", `What "${eslDirective().command.toLowerCase()}" means`, eslDirective().meaning, false) : ""}
       </div>`;
   }
+  // ---- ONE DEEP LESSON, as a pattern rather than a library ----------------
+  // Authored here to prove the shape a lesson needs before the same shape is
+  // repeated across twenty concepts. Written from the authored Operations
+  // content and asserting no relationship that content does not carry.
+  const ES_LESSONS = {
+    "inventory management": {
+      title: "Inventory management",
+      glance: "Deciding how much stock to hold, and when to order it, so the business can meet demand without paying to store more than it needs.",
+      keys: [
+        "Stock sits in three states: raw materials, work in progress, and finished goods.",
+        "Holding stock costs money. Running out costs sales. The decision is the trade off between them.",
+        "Just in time keeps stock as low as possible by having inputs arrive close to when they are used."
+      ],
+      layers: [
+        { id: "understand", head: "Understand it",
+          body: "Every item a business holds has been paid for and is not yet earning anything. It occupies space, it can be damaged, it can go out of date, and the money spent on it cannot be spent elsewhere. Holding less of it frees that money up.\n\nThe cost of holding too little is different in kind. If an input is not there when it is needed the process stops, and a customer who cannot be served may not come back. So the question is never simply how to hold less stock, it is how little can be held while still being able to serve demand." },
+        { id: "terms", head: "Key terms",
+          body: "Raw materials are inputs bought but not yet used. Work in progress is partly finished output. Finished goods are ready to sell.\n\nLead time is the gap between ordering an input and receiving it. The longer it is, the more stock has to be held to cover it.\n\nJust in time schedules inputs to arrive close to the moment they are used, so very little is stored. It depends on suppliers who deliver reliably: the stock that would have absorbed a late delivery is not there any more." },
+        { id: "example", head: "Example",
+          body: "A restaurant chain decides how much of each ingredient sits in a store room. Order weekly and the room is full, money is tied up, and fresh items are thrown away. Order daily and almost nothing is stored, but a supplier who arrives late leaves the kitchen unable to serve part of the menu at lunchtime.\n\nThe choice between those is the inventory decision, and it is made against how reliable the supply actually is." },
+        { id: "visual", head: "How it works", flow: [
+            "How much stock is held",
+            "Money tied up, space used, waste risk",
+            "Lower holding cost",
+            "and a higher risk that a late delivery stops the process" ] },
+        { id: "exam", head: "Where it matters in this question",
+          body: "This question asks how an operations strategy contributes to a performance objective. Inventory management is one such strategy, and the objectives it bears on most directly are cost, because stock is money held still, and dependability, because stock is what absorbs a supply problem before a customer notices it.\n\nWhich of those you argue is your decision, and the sentence has to be yours." },
+        { id: "mistake", head: "Common mistake",
+          body: "Treating less stock as automatically better. Just in time lowers holding costs and raises exposure to supply disruption at the same time, so an answer naming only the saving has described half of the strategy." }
+      ]
+    }
+  };
+  function esLesson(key) { return ES_LESSONS[String(key || "").toLowerCase()] || null; }
+
   function eslHTML(p) {
     const q = esQuestionDef() || {};
     const route = (ES.centre && ES.centre.route) || "choose";
@@ -4928,7 +5081,10 @@
       </div>
       <p class="esl-q">${esc(q.text || (ES.draft && ES.draft.question) || "")}</p>
       <div class="esl-tabs">${tab("choose", "Start here")}${sides.first ? tab("strategies", sides.first) : ""}${sides.second ? tab("objectives", sides.second) : ""}${hasLinks ? tab("connect", "How they connect") : ""}${dir ? tab("directive", `What "${dir.command.toLowerCase()}" means`) : ""}</div>
-      <div class="esl-body">${eslBodyHTML(p)}</div>
+      <div class="esl-body">
+        <div class="esl-main">${eslBodyHTML(p)}</div>
+        ${esNotesPaneHTML("esl-notes")}
+      </div>
       <div class="esl-foot">
         ${guide ? `<span class="esl-footg"><b>${esc(guide.head || "")}</b> ${esc(guide.job || "")}</span>` : ""}
         <button type="button" class="es-btn primary sm" id="eslback">Back to your sentence</button>
@@ -4964,6 +5120,24 @@
       ES.centre.route = b.dataset.eslroute;
       // Only the centre re-renders. esRender is never called from in here.
       eslMount(p);
+    });
+    esNotesBind(host);
+    // Entering a lesson is internal navigation inside this overlay.
+    host.querySelectorAll("[data-esllesson]").forEach(b => b.onclick = () => {
+      ES.centre.lesson = b.dataset.esllesson; ES.centre.route = "lesson"; ES.centre.layers = {};
+      eslMount(p);
+    });
+    // A layer opening is a disclosure inside one card. It reveals content that is
+    // already rendered and touches nothing else, so the Centre does not redraw and
+    // the reader does not lose their scroll position.
+    host.querySelectorAll("[data-esllayer]").forEach(b => b.onclick = () => {
+      const id = b.dataset.esllayer;
+      ES.centre.layers = ES.centre.layers || {};
+      ES.centre.layers[id] = !ES.centre.layers[id];
+      const body = host.querySelector('[data-esllayerb="' + id + '"]');
+      if (body) body.hidden = !ES.centre.layers[id];
+      b.setAttribute("aria-expanded", ES.centre.layers[id] ? "true" : "false");
+      const sign = b.lastElementChild; if (sign) sign.textContent = ES.centre.layers[id] ? "\u2212" : "+";
     });
     const x = host.querySelector("#eslx"); if (x) x.onclick = () => { eslUnmount(); esFocusComposer(); };
     const back = host.querySelector("#eslback"); if (back) back.onclick = () => { eslUnmount(); esFocusComposer(); };
@@ -6452,29 +6626,30 @@
             whenever the argument picker was showing. */ ""}
       ${esWritingHead(sc, "Guided", "full attempt", "full", true)}
       ${esToolbeltHTML(p)}
-      <div class="es-cols ${ES.ui.tool ? "withdrawer" : ES.ui.contextView ? "withctx" : esDecodeOf(esQuestionDef()) ? "withdec" : ""}">
+      <div class="es-cols withnotes ${ES.ui.tool ? "withdrawer" : ES.ui.contextView ? "withctx" : esDecodeOf(esQuestionDef()) ? "withdec" : ""}">
         ${esDecodeHost(esQuestionDef())}
-        <aside class="es-map" ${ES.ui.mapPop ? "" : "hidden"}>
-          <div class="es-maph">My response</div>
-          ${(() => { const wa = esWorkingAnswer(d); if (!wa) return "";
-            return `<button type="button" class="es-mapwa" id="esmapwa" title="What the arguments you have chosen add up to. It comes from your plan, not from reading your paragraphs.">
-              <span class="es-corelbl">${esIsJudgement() ? "current answer" : "working answer"}</span>
-              <span class="es-mapwatext">${esc(wa.text)}</span></button>`; })()}
-          ${map}
-          <div class="es-wordcount"${target ? ` title="Around ${target} words would be a full answer at ${esc(String(d.marks || 20))} marks. A guide, not a limit: write more if you have more to say."` : ""}>
-            <span><b>${words}</b> here · <b>${whole}</b> in all${target ? ` · ~${target}` : ""}</span>
-          </div>
-        </aside>
         <div class="es-compose">
           <div class="es-parahead">
             <button type="button" class="es-parapick" id="esmappop" aria-expanded="${ES.ui.mapPop ? "true" : "false"}">
               <span class="es-pararole">${esc(p.role)}</span><span class="es-parachev">\u25be</span></button>
+            <aside class="es-map" ${ES.ui.mapPop ? "" : "hidden"}>
+              <div class="es-maph">My response</div>
+              ${(() => { const wa = esWorkingAnswer(d); if (!wa) return "";
+                return `<button type="button" class="es-mapwa" id="esmapwa" title="What the arguments you have chosen add up to. It comes from your plan, not from reading your paragraphs.">
+                  <span class="es-corelbl">${esIsJudgement() ? "current answer" : "working answer"}</span>
+                  <span class="es-mapwatext">${esc(wa.text)}</span></button>`; })()}
+              ${map}
+              <div class="es-wordcount"${target ? ` title="Around ${target} words would be a full answer at ${esc(String(d.marks || 20))} marks. A guide, not a limit: write more if you have more to say."` : ""}>
+                <span><b>${words}</b> here \u00b7 <b>${whole}</b> in all${target ? ` \u00b7 ~${target}` : ""}</span>
+              </div>
+            </aside>
             <span class="es-parameta">${words} words${target ? " \u00b7 ~" + esc(String(target)) : ""}</span>
             ${(() => { const st = esStepDef(p), all = slotsForRole(p.role);
               const i = all.findIndex(x => st && x.key === st.key);
               return ""; })()}
             <span class="es-headacts">
               ${(esIsIntro(p) || esIsConcl(p)) ? `<button type="button" class="es-linkbtn es-ctxbtn" id="esctx" data-esctxview="${esIsConcl(p) ? "judgement" : "plan"}" aria-expanded="${ES.ui.contextView ? "true" : "false"}">${esIsConcl(p) ? "Review my arguments" : "View plan"}</button>` : ""}
+              <button type="button" class="es-linkbtn es-notesbtn" id="esnotesbtn" aria-expanded="false">notes</button>
               <button type="button" class="es-mapall" id="esreview">read all</button>
             </span>
           </div>
@@ -6515,7 +6690,7 @@
                   const open = !!ES.ui.shapeOpen;
                   return `<button type="button" class="es-linkbtn es-shapebtn" id="esshape" aria-expanded="${open}">${open ? "Hide sentence shape" : "Show sentence shape"}</button>
                     <div class="es-shapes" id="esshapes"${open ? "" : " hidden"}>${all.map(x =>
-                      `<p class="es-shape">${esc(x).replace(/_{2,}/g, '<span class="es-blank">____</span>')}</p>`).join("")}</div>`;
+                      `<p class="es-shape">${esc(x).replace(/\[[^\]]+\]/g, m => `<span class="es-hole">${m.slice(1, -1)}</span>`).replace(/_{2,}/g, '<span class="es-blank">____</span>')}</p>`).join("")}</div>`;
                 })()}
               </div>
               <textarea id="esline" class="es-input es-linebox" rows="2" placeholder="Type your next sentence..."></textarea>
@@ -6534,6 +6709,7 @@
           <div class="es-seqhost">${esSeqNudge(p)}</div>
         </div>
         ${ES.ui.tool ? esDrawerHTML(p) : esRestHTML(p)}
+        ${esNotesPaneHTML("es-notes")}
       </div>
     </div></div></div>`;
 
@@ -6659,6 +6835,14 @@
       ES.ui.contextView = ES.ui.contextView === want ? null : want;
       if (ES.ui.contextView) ES.ui.tool = null;
       esRenderKeepingPlace(p);
+    };
+    esNotesBind(host);
+    const nb = $("#esnotesbtn");
+    if (nb) nb.onclick = () => {
+      // Narrow screens only. A fixed drawer sliding over the page, so the writing
+      // column is the same width open or closed.
+      document.body.classList.toggle("es-notesopen");
+      nb.setAttribute("aria-expanded", document.body.classList.contains("es-notesopen") ? "true" : "false");
     };
     const sh = $("#esshape");
     if (sh) sh.onclick = () => {

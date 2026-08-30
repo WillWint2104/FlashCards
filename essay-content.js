@@ -1579,14 +1579,14 @@ window.ESSAY = {
             { key: "link",    label: "concluding link", job: "link back to the question with a clear judgement" }
           ],
           templates: {
-            topic:   { tier1: "____ can affect ____ because ____.",
-                       tier2: [ { type: "cause and effect", frame: "____ influences ____ by ____." } ] },
-            explain: { tier1: "This works because ____ leads to ____.",
-                       tier2: [ { type: "mechanism", frame: "By ____, the business is able to ____, which changes ____." } ] },
-            example: { tier1: "For example, a business could ____, which shows ____." },
-            effect:  { tier1: "As a result, ____ improves ____, which matters because ____.",
-                       tier2: [ { type: "trade-off", frame: "This improves ____, although it can reduce ____." } ] },
-            link:    { tier1: "Therefore, ____ affects ____, which addresses the question because ____." }
+            topic:   { tier1: "[strategy] can affect [objective] because [main relationship].",
+                       tier2: [ { type: "cause and effect", frame: "[strategy] influences [objective] by [how it works]." } ] },
+            explain: { tier1: "This works because [what the strategy changes] leads to [the effect on the objective].",
+                       tier2: [ { type: "mechanism", frame: "By [what the business does], the business is able to [what that makes possible], which changes [the objective]." } ] },
+            example: { tier1: "For example, [business] could [specific action], which shows [connection to the argument]." },
+            effect:  { tier1: "As a result, [strategy] improves [objective], which matters because [why it matters to the business].",
+                       tier2: [ { type: "trade-off", frame: "This improves [objective], although it can reduce [the objective it trades against]." } ] },
+            link:    { tier1: "Therefore, [strategy] affects [objective], which addresses the question because [link to the question]." }
           }
         },
         tdecc: {
@@ -1599,13 +1599,13 @@ window.ESSAY = {
             { key: "link",    label: "connect",              job: "return to the question and say what the example has demonstrated" }
           ],
           templates: {
-            topic:   { tier1: "____ can affect ____ because ____." },
-            define:  { tier1: "____ refers to ____.",
-                       tier2: [ { type: "define then apply", frame: "____ is ____, which allows a business to ____." } ] },
-            explain: { tier1: "This happens because ____ leads to ____.",
-                       tier2: [ { type: "cause and effect", frame: "Because ____, a business ____, which changes ____." } ] },
-            example: { tier1: "For example, a business could ____, which shows ____." },
-            link:    { tier1: "Therefore, ____ affects ____, which addresses the question because ____." }
+            topic:   { tier1: "[strategy] can affect [objective] because [main relationship]." },
+            define:  { tier1: "[concept] refers to [meaning in your own words].",
+                       tier2: [ { type: "define then apply", frame: "[concept] is [meaning], which allows a business to [what it makes possible]." } ] },
+            explain: { tier1: "This happens because [cause] leads to [effect].",
+                       tier2: [ { type: "cause and effect", frame: "Because [cause], a business [what it does], which changes [the outcome]." } ] },
+            example: { tier1: "For example, [business] could [specific action], which shows [connection to the argument]." },
+            link:    { tier1: "Therefore, [strategy] affects [objective], which addresses the question because [link to the question]." }
           }
         }
       },
@@ -1799,49 +1799,49 @@ window.ESSAY = {
       ]
     },
     templates: {
-      point:     { tier1: "____ was a key way that ____.",
-                   tier2: [ { type: "claim", frame: "One way ____ can be seen is through ____." },
-                            { type: "contrast", frame: "While ____, this paragraph argues that ____." } ] },
-      analysis:  { tier1: "This demonstrates that ____ because ____.",
-                   tier2: [ { type: "significance", frame: "This was significant because it allowed ____ to ____, which shows ____." },
-                            { type: "appearance and reality", frame: "This created the impression of ____ while in reality ____, revealing ____." },
-                            { type: "cause and effect", frame: "By doing this, ____ led to ____." } ] },
-      evidence:  { tier1: "This is supported by ____, which shows ____.",
-                   tier2: [ { type: "named source", frame: "According to ____, ____, which suggests ____." },
-                            { type: "specific detail", frame: "The detail that ____ shows ____." } ] },
+      point:     { tier1: "[method or factor] was a key way that [what it achieved].",
+                   tier2: [ { type: "claim", frame: "One way [the main idea] can be seen is through [specific method or factor]." },
+                            { type: "contrast", frame: "While [the other view], this paragraph argues that [your claim]." } ] },
+      analysis:  { tier1: "This demonstrates that [what it shows] because [reason].",
+                   tier2: [ { type: "significance", frame: "This was significant because it allowed [who or what] to [do what], which shows [what it demonstrates]." },
+                            { type: "appearance and reality", frame: "This created the impression of [the appearance] while in reality [the reality], revealing [what that tells us]." },
+                            { type: "cause and effect", frame: "By doing this, [cause] led to [effect]." } ] },
+      evidence:  { tier1: "This is supported by [specific evidence], which shows [connection to the argument].",
+                   tier2: [ { type: "named source", frame: "According to [source], [what it states], which suggests [what it implies]." },
+                            { type: "specific detail", frame: "The detail that [specific detail] shows [what it demonstrates]." } ] },
       // Which directive family a question belongs to. The command is authored on
       // every question; coreAnswer.mode is not, so the command is what decides.
       directiveFamilies: {
         judgement: ["evaluate", "assess", "to what extent", "discuss", "critically"],
         causal: ["explain", "how can", "how do", "how does", "describe", "outline", "analyse", "account for", "examine"]
       },
-      link:      { tier1: "Therefore, ____ was a key method because ____.",
-                   tier2: [ { type: "answer the question", frame: "This shows that ____, which directly addresses ____." },
-                            { type: "weigh it", frame: "This mattered more than ____ because ____." } ] },
+      link:      { tier1: "Therefore, [method or factor] was a key method because [reason].",
+                   tier2: [ { type: "answer the question", frame: "This shows that [your claim], which directly addresses [the question]." },
+                            { type: "weigh it", frame: "This mattered more than [the alternative] because [reason]." } ] },
       // The shape of a thesis follows the directive. An Explain or How question wants
       // a causal line; an Evaluate or Assess question wants a weighed one. Offering
       // judgement frames for a How question teaches the wrong sentence, so the
       // families are separated and the directive chooses. Content free either way.
-      thesis:    { tier1: "____ can be assessed by weighing ____ against ____.",
-                   tier2: [ { type: "line of argument", frame: "While ____, ultimately ____ because ____." } ],
+      thesis:    { tier1: "[the subject of the question] can be assessed by weighing [one side] against [the other side].",
+                   tier2: [ { type: "line of argument", frame: "While [the other side], ultimately [your position] because [main reason]." } ],
                    byFamily: {
                      // A thesis answers the whole question and says where the
                      // response is going. A body topic sentence states one
                      // relationship. Sharing frames between them teaches a student
                      // to write a paragraph opener where an essay opener belongs,
                      // so these signpost and the topic frames do not.
-                     causal: { tier1: "Overall, ____ can contribute to ____ through ____ and ____.",
-                               tier2: [ { type: "signpost the ways", frame: "____ affects ____ in several ways, most importantly ____ and ____." },
-                                        { type: "name the strongest", frame: "____ shapes ____ most through ____, and to a lesser extent through ____." } ] },
-                     judgement: { tier1: "Overall, ____ is ____ because ____, although ____.",
-                               tier2: [ { type: "line of argument", frame: "While ____, ultimately ____ because ____." },
-                                        { type: "weigh two sides", frame: "____ can be assessed by weighing ____ against ____, and on balance ____." } ] } } },
-      methods:   { tier1: "This will be shown through ____ and ____.",
-                   tier2: [ { type: "signpost", frame: "By examining ____ and ____, this essay will argue ____." } ] },
-      restate:   { tier1: "Overall, ____ shows that ____.",
-                   tier2: [ { type: "draw together", frame: "Taken together, ____ and ____ reveal ____." } ] },
-      judgement: { tier1: "On balance, ____ was ____ because ____.",
-                   tier2: [ { type: "weighed judgement", frame: "Although ____, on balance ____ because ____." } ] }
+                     causal: { tier1: "Overall, [concept from the question] can contribute to [result from the question] through [argument 1] and [argument 2].",
+                               tier2: [ { type: "signpost the ways", frame: "[concept from the question] affects [result from the question] in several ways, most importantly [argument 1] and [argument 2]." },
+                                        { type: "name the strongest", frame: "[concept from the question] shapes [result from the question] most through [strongest argument], and to a lesser extent through [weaker argument]." } ] },
+                     judgement: { tier1: "Overall, [the subject of the question] is [your judgement] because [main reason], although [the qualification].",
+                               tier2: [ { type: "line of argument", frame: "While [the other side], ultimately [your position] because [main reason]." },
+                                        { type: "weigh two sides", frame: "[the subject of the question] can be assessed by weighing [one side] against [the other side], and on balance [your judgement]." } ] } } },
+      methods:   { tier1: "This will be shown through [first argument] and [second argument].",
+                   tier2: [ { type: "signpost", frame: "By examining [first argument] and [second argument], this essay will argue [your position]." } ] },
+      restate:   { tier1: "Overall, [what you examined] shows that [your conclusion].",
+                   tier2: [ { type: "draw together", frame: "Taken together, [argument 1] and [argument 2] reveal [your conclusion]." } ] },
+      judgement: { tier1: "On balance, [the subject of the question] was [your judgement] because [main reason].",
+                   tier2: [ { type: "weighed judgement", frame: "Although [the qualification], on balance [your judgement] because [main reason]." } ] }
     },
     // Worked examples for the optional "see a worked example" reference. These are
     // FIXED, pre-written (never generated, so no invented history), and ALWAYS on a
@@ -1906,7 +1906,7 @@ window.ESSAY = {
     // usually miss in the demo; the app falls back to the paragraph's first sentences.
     lines: [
       { quote: "", issue: "This sentence describes what happened instead of explaining why it matters.", fix: "This shows ____ because ____.", severity: "critical" },
-      { quote: "", issue: "There is a claim here with no evidence attached to it.", fix: "This is supported by ____, which shows ____.", severity: "should" },
+      { quote: "", issue: "There is a claim here with no evidence attached to it.", fix: "This is supported by [specific evidence], which shows [connection to the argument].", severity: "should" },
       { quote: "", issue: "This sentence never links back to the question.", fix: "Therefore ____, which addresses ____.", severity: "should" }
     ]
   }
