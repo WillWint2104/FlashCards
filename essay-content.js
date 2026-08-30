@@ -293,6 +293,11 @@ window.ESSAY = {
         // requirement that named one would be a claim this file cannot vouch for.
         { id: "mkt-01", command: "Explain", qtype: "C", qtypeLabel: "multi-element",
           marks: 20,
+          // What this question's plan lines pair a strategy WITH. Operations pairs
+          // strategies with the six performance objectives and needs no list; here
+          // the second end is the four service elements the question fixes, so they
+          // are named rather than left for the renderer to recognise.
+          objectiveWords: ["e-marketing", "people", "processes", "physical evidence"],
           requirements: {
             concepts: ["target market", "e-marketing", "people as a marketing strategy", "processes as a marketing strategy", "physical evidence as a marketing strategy"],
             // THE AUTHORITY on what this question fixes. Decode highlights point at
@@ -335,6 +340,7 @@ window.ESSAY = {
               adds: "the digital channels it markets through",
               meaning: "These customers already spend their attention on digital channels, so that is where the business has to buy it.",
               whatToProve: "customers are already on digital channels \u2192 the business moves its promotion there \u2192 why that reaches them better than the alternative",
+              mechanism: { state: "none-required", reason: "The two ends already meet. Nothing sits between a customer being on a channel and the business promoting there, and a middle step would restate the relationship rather than explain it." },
               commonMistake: "Listing the business's digital channels without saying what it is about these customers that made digital the right choice.",
               // Not yet reviewed for what it depends on. A state, not a claim that it
               // depends on nothing: see decisions/2026-08-22-concept-routing.md.
@@ -376,6 +382,7 @@ window.ESSAY = {
               adds: "the offers and loyalty schemes it runs digitally",
               meaning: "These customers decide on price, and digital channels are the cheapest way to put an offer in front of them again and again.",
               whatToProve: "customers respond to price \u2192 the business needs a cheap and repeatable way to reach them with offers \u2192 digital promotions and loyalty schemes become the tool",
+              mechanism: { state: "authored", text: "digital channels carry an offer at a lower promotion cost, so the same customers can be reached with offers again and again" },
               commonMistake: "Arguing that discounts attract customers, which is a pricing point, rather than arguing why the offer is delivered digitally.",
               // Not yet reviewed for what it depends on. A state, not a claim that it
               // depends on nothing: see decisions/2026-08-22-concept-routing.md.
@@ -392,6 +399,7 @@ window.ESSAY = {
               adds: "where its marketing sits relative to ordering",
               meaning: "These customers want to act on an offer immediately, so the marketing has to sit inside the channel they already order through.",
               whatToProve: "customers want to act with the least effort \u2192 marketing has to sit where the order is placed \u2192 the ordering channel becomes a promotion channel",
+              mechanism: { state: "authored", text: "browsing, ordering and paying happen in one place, so an offer shown there costs the customer no extra step" },
               commonMistake: "Describing the app as convenient to order with, which is a processes argument, instead of arguing that it is where the marketing reaches them.",
               // Not yet reviewed for what it depends on. A state, not a claim that it
               // depends on nothing: see decisions/2026-08-22-concept-routing.md.
@@ -437,6 +445,7 @@ window.ESSAY = {
                 explore: { concept: "people", label: "Read more about people in the marketing mix" }
               },
               whatToProve: "customers expect to be dealt with personally \u2192 staff are part of the product \u2192 the business invests in training and service standards",
+              mechanism: { state: "authored", text: "the staff member is part of what the customer is buying, so their skill and manner are judged as part of the service" },
               commonMistake: "Saying good staff are important, which is true of every business, instead of saying what THIS target market expects that forced the investment.",
               concept: { topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
               evidence: ["Intensive distribution and standardised service"],
@@ -449,6 +458,7 @@ window.ESSAY = {
               adds: "how it staffs and rosters for demand",
               meaning: "These customers count waiting as a cost, so the business has to have the right number of staff on at the right hour.",
               whatToProve: "customers will not wait \u2192 service capacity has to match demand hour by hour \u2192 staffing and rostering change",
+              mechanism: { state: "unreviewed", note: "The relationship holds, but the middle step is about matching service capacity to demand, which is authored under Operations rather than Marketing. Naming it here would import a mechanism this topic does not carry." },
               commonMistake: "Arguing about the ordering system, which is processes, rather than about the people who have to be there to deliver it.",
               // Not yet reviewed for what it depends on. A state, not a claim that it
               // depends on nothing: see decisions/2026-08-22-concept-routing.md.
@@ -463,6 +473,7 @@ window.ESSAY = {
               adds: "how consistently it trains staff across the network",
               meaning: "These customers are buying predictability, so what the staff do has to be the same in every store.",
               whatToProve: "customers are buying predictability \u2192 variation between staff breaks it \u2192 training and service standards are standardised",
+              mechanism: { state: "authored", text: "if the staff are part of the product, then differences between staff are differences in the product itself" },
               commonMistake: "Describing standard uniforms, signage or layout, which is physical evidence, rather than what the staff are trained to do.",
               // Not yet reviewed for what it depends on. A state, not a claim that it
               // depends on nothing: see decisions/2026-08-22-concept-routing.md.
@@ -516,6 +527,7 @@ window.ESSAY = {
                 explore: { concept: "processes", label: "Read more about processes" }
               },
               whatToProve: "customer expectation \u2192 the process change it forces \u2192 why the new process suits this market better",
+              mechanism: { state: "authored", text: "ordering, queuing and paying are steps the customer performs personally, so effort taken out of them is effort taken off the customer" },
               commonMistake: "Describing an app or a kiosk without explaining what it was about these customers that caused the process to change.",
               concept: { key: "processes", topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
               evidence: [
@@ -616,6 +628,7 @@ window.ESSAY = {
                 explore: { concept: "processes", label: "Read more about processes" }
               },
               whatToProve: "customers count waiting as a cost \u2192 steps are separated or run alongside each other \u2192 the wait falls, especially at peak",
+              mechanism: { state: "authored", text: "the customer experiences the process as waiting, so how long it takes is part of how the service is judged" },
               commonMistake: "Claiming the business is faster without naming which step was taken out of the queue.",
               concept: { key: "processes", topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
               evidence: [
@@ -716,6 +729,7 @@ window.ESSAY = {
                 explore: { concept: "processes", label: "Read more about processes" }
               },
               whatToProve: "customers expect to change the order \u2192 no two orders are identical \u2192 the ordering system has to capture the variation accurately",
+              mechanism: { state: "unreviewed", note: "No authored marketing content connects customising an order to what the ordering system has to capture. The step is plausible but would have to be invented here." },
               commonMistake: "Arguing about choice on the menu, which is a product point, instead of about how the process carries a non-standard order.",
               concept: { key: "processes", topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
               evidence: [
@@ -792,6 +806,7 @@ window.ESSAY = {
               adds: "how deliberately its surroundings are designed",
               meaning: "These customers cannot test the service before buying it, so they judge it by the room, and the room has to be designed.",
               whatToProve: "the service is intangible \u2192 customers judge it by what they can see \u2192 the setting is designed rather than left to chance",
+              mechanism: { state: "authored", text: "the service cannot be seen or tested before it is bought, so the surroundings become the thing the customer inspects instead" },
               commonMistake: "Listing what the premises look like without saying what the customer concludes from it.",
               // Not yet reviewed for what it depends on. A state, not a claim that it
               // depends on nothing: see decisions/2026-08-22-concept-routing.md.
@@ -807,6 +822,7 @@ window.ESSAY = {
               adds: "how the space is divided between segments",
               meaning: "More than one group is being served and they do not want the same surroundings, so the space is divided between them.",
               whatToProve: "more than one segment is served \u2192 one setting cannot suit both \u2192 the space is divided so each gets its own",
+              mechanism: { state: "authored", text: "a segmentation approach means a separate marketing mix for each segment, and the surroundings are part of that mix" },
               commonMistake: "Naming the segments and the products built for them, which is segmentation, without ever getting to the physical space.",
               // Not yet reviewed for what it depends on. A state, not a claim that it
               // depends on nothing: see decisions/2026-08-22-concept-routing.md.
@@ -821,6 +837,7 @@ window.ESSAY = {
               adds: "how far the surroundings explain themselves",
               meaning: "These customers would rather use a machine than ask someone, so what they can see has to explain itself.",
               whatToProve: "customers prefer to serve themselves \u2192 the surroundings have to do the explaining \u2192 screens, signage and layout are built to be self-explanatory",
+              mechanism: { state: "unreviewed", note: "The authored content lists signage and layout as physical evidence but never links them to serving yourself. Naming the middle step would assert a connection the source does not make." },
               commonMistake: "Arguing that self-service is faster, which is a processes point, rather than about what the customer sees and touches.",
               // Not yet reviewed for what it depends on. A state, not a claim that it
               // depends on nothing: see decisions/2026-08-22-concept-routing.md.

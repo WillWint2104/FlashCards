@@ -4288,6 +4288,14 @@
   // The six objectives the Operations question is about, as the syllabus names
   // them. Used only to read authored plan lines, never to assert anything.
   const ES_OBJECTIVES = ["quality", "speed", "dependability", "flexibility", "customisation", "cost"];
+  // The six performance objectives are the Operations vocabulary. A question whose
+  // plan pairs a strategy with something else entirely, as the Marketing questions
+  // do with the four service elements, authors its own list rather than having the
+  // renderer guess what counts as an objective. Absent, Operations behaves as before.
+  function esObjectiveWords(q) {
+    const own = q && q.objectiveWords;
+    return Array.isArray(own) && own.length ? own.map(x => String(x).toLowerCase()) : ES_OBJECTIVES;
+  }
 
   // The other syllabus points in the same section: on the Operations question
   // that is exactly the list of strategy families, already authored.
@@ -4317,12 +4325,13 @@
     const sibs = eslSiblings(p);
     const hit = esSectionFor(p);
     const all = hit ? (hit.section.points || []) : [];
+    const chosen = esPathway(p);
     return q.plan.map(line => {
       const m = String(line).split(/\s+to\s+/i);
       if (m.length < 2) return null;
       const strategy = m[0].trim();
       const objectives = m[1].split(/\s*(?:,|and)\s*/).map(x => x.trim().toLowerCase())
-        .filter(x => ES_OBJECTIVES.indexOf(x) >= 0);
+        .filter(x => esObjectiveWords(q).indexOf(x) >= 0);
       if (!objectives.length) return null;
       const key = strategy.toLowerCase();
       const pt = all.find(x => String(x.point || "").toLowerCase().indexOf(key) === 0);
@@ -4346,8 +4355,17 @@
           if (hitS) { seen.push(hitS); says.push({ objective: o, text: hitS }); }
         });
       }
+      // The middle step is printed only when an author wrote one, and only on the
+      // line the student's own argument runs along: three arguments share the line
+      // "Target market to people" and each has a different mechanism, so showing one
+      // against a line the student did not choose would attach it to the wrong claim.
+      // Nothing is derived here. An unreviewed or none-required mechanism prints
+      // nothing at all, and the chain stays the two-step pairing the plan authored.
+      const mech = (chosen && chosen.mechanism && chosen.mechanism.state === "authored"
+        && objectives.indexOf(String(chosen.area || "").toLowerCase()) >= 0)
+        ? String(chosen.mechanism.text || "").trim() : "";
       return { line: String(line), strategy: strategy, objectives: objectives,
-        mechanism: "", lede: sib ? sib.lede : "", says: says, point: pt || null };
+        mechanism: mech, lede: sib ? sib.lede : "", says: says, point: pt || null };
     }).filter(Boolean);
   }
 
