@@ -20,7 +20,12 @@ on:
 jobs:
   harness:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Measured at 39 minutes on a developer machine, from fixture build to the
+    # bots suite, so the original 30 would have been killed mid-run and read as
+    # a harness failure. A hosted runner is slower again, so this leaves real
+    # headroom rather than the smallest number that passed once. The answer to
+    # a timeout here is a longer budget or a faster suite, never a smaller run.
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
