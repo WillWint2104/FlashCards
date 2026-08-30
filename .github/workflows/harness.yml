@@ -17,6 +17,12 @@ on:
   pull_request:
   push:
     branches: [main]
+# This job runs pull-request code. It reads the repository, builds it and runs
+# the suites; it pushes nothing and needs no authenticated git. So it takes the
+# least privilege that does that, explicitly, rather than inheriting whatever
+# the repository or organisation default happens to be.
+permissions:
+  contents: read
 jobs:
   harness:
     runs-on: ubuntu-latest
@@ -28,6 +34,11 @@ jobs:
     timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Default true, which writes GITHUB_TOKEN into the runner's git config
+          # where every later step, and the pull-request code they run, can use
+          # it. Nothing here runs an authenticated git command.
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
