@@ -1,0 +1,72 @@
+# The 51-suite harness, plus the simulated students, on every pull request.
+#
+# Until now Actions ran stylelint and nothing else, so every check that actually
+# exercises the app ran only where someone remembered to run it. Four regressions
+# in a single authoring session were caught locally by suites a pull request never
+# saw: a supporting concept used where only a domain concept is allowed, learning
+# blocks that would have made one field serve two purposes, a subject filter that
+# removed the only way to choose a subject, and a test probe that inspected an
+# empty list and would have passed while checking nothing.
+#
+# The harness needs three things a default runner does not have: Chromium, a
+# python3 for the walkthrough fixture builder, and enough time. It is slower than
+# a lint job by design, because it drives a real browser through the student
+# journeys.
+name: harness
+on:
+  pull_request:
+  push:
+    branches: [main]
+# This job runs pull-request code. It reads the repository, builds it and runs
+# the suites; it pushes nothing and needs no authenticated git. So it takes the
+# least privilege that does that, explicitly, rather than inheriting whatever
+# the repository or organisation default happens to be.
+permissions:
+  contents: read
+jobs:
+  harness:
+    runs-on: ubuntu-latest
+    # Measured at 39 minutes on a developer machine, from fixture build to the
+    # bots suite, so the original 30 would have been killed mid-run and read as
+    # a harness failure. A hosted runner is slower again, so this leaves real
+    # headroom rather than the smallest number that passed once. The answer to
+    # a timeout here is a longer budget or a faster suite, never a smaller run.
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Default true, which writes GITHUB_TOKEN into the runner's git config
+          # where every later step, and the pull-request code they run, can use
+          # it. Nothing here runs an authenticated git command.
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      # Chromium only. The suites never touch the other engines, and installing
+      # all three roughly triples the step for nothing.
+      - run: npx playwright install --with-deps chromium
+      # Fail fast, and legibly. A runner without a usable browser produces the
+      # same symptom as a broken app: every ui suite times out waiting for a
+      # locator. That cost real time to diagnose once already, so prove the
+      # browser launches BEFORE the suites run and say so plainly if it does not.
+      - name: the browser actually launches
+        run: |
+          node -e '
+            const pw = require("playwright");
+            pw.chromium.launch()
+              .then(async b => { await b.close(); console.log("chromium launches, version " + require("playwright/package.json").version); })
+              .catch(e => { console.error("CHROMIUM COULD NOT LAUNCH. The suites below would all time out for this reason, not because the app is broken.\n" + e.message); process.exit(1); });
+          '
+      # The build is a gate in its own right: it refuses on a content fault and
+      # publishes nothing, so a failure here is a real finding rather than noise.
+      - run: node build.js
+      # The pair must be reproducible. A build that differs from the committed
+      # artefact means the two can drift, and the preview a reviewer reads would
+      # stop being the thing the tests ran against.
+      - name: the committed build matches a fresh one
+        run: git diff --exit-code -- marginal-preview.html docs/support-coverage.md
+      - run: node tests/run.js

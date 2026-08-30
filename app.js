@@ -5073,11 +5073,22 @@
   }
   // ---- the verification gate -------------------------------------------------
   // A student must be able to trust that anything in the evidence picker is safe
-  // to put in an answer. So an item without a recorded source is a CANDIDATE, held
-  // internally until it has been checked, and never offered as usable evidence.
-  // It is withheld rather than shown with a warning, because a warning still puts
-  // an unverified claim in front of someone who is about to be marked on it.
-  function esEvidenceUsable(e) { return !!(e && String(e.source || "").trim()); }
+  // to put in an answer. So an item is a CANDIDATE, held internally and never
+  // offered, until BOTH halves of verification are recorded. It is withheld rather
+  // than shown with a warning, because a warning still puts an unverified claim in
+  // front of someone who is about to be marked on it.
+  //
+  // Both halves, because finding a source and confirming it are different acts:
+  //
+  //   source   WHERE the claim can be checked, in words a teacher could follow
+  //   checked  the date someone actually did check it
+  //
+  // A source without a checked date is the most dangerous state this bank can
+  // hold: it looks complete, it reads as authoritative, and nobody has opened it.
+  // A located URL is weaker still and never counted for anything on its own.
+  function esEvidenceUsable(e) {
+    return !!(e && String(e.source || "").trim() && String(e.checked || "").trim());
+  }
   function esEvidenceBank() {
     const b = busContent(); const key = busTopicKey();
     const all = (b && key && b.evidence && b.evidence[key]) || [];

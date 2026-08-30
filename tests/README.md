@@ -13,18 +13,59 @@ node tests/run.js          # shims, walkthrough file, then every suite
 node tests/run.js ui16 t8  # just these
 ```
 
-`tests/run.js` rebuilds three things first and then runs everything:
+`tests/run.js` rebuilds six things first and then runs everything:
 
 * `mkshim.js` re-exports the internals of `proxy/worker.js` as `worker.mjs`
 * `mkblockshim.js` extracts the real reconciliation functions from `app.js`
+* `mkwashim.js` extracts the working-answer assembly
+* `mklearnshim.js` extracts the learning-state resolution
+* `mkevidenceshim.js` extracts the evidence publication gate
 * `mkwalk.py` builds `tests/out/marginal-walkthrough.html`
 
-Both shims pull the **shipped** code out of the source files rather than
+Every shim pulls the **shipped** code out of the source files rather than
 reimplementing it, so a suite cannot pass against a copy that has drifted.
+
+Running a browser suite on its own reads `tests/out/marginal-walkthrough.html`,
+which only `run.js` regenerates. After editing `app.js` or `index.html`, run
+`node build.js` and `python3 tests/mkwalk.py` before running a single suite, or
+it tests the previous build's bytes.
 
 Playwright is taken from the project if installed there, and otherwise from the
 system install. Where a pre-installed Chromium exists at `/opt/pw-browsers/chromium`
 it is used; do not run `playwright install` in the hosted environment.
+
+## Writing a suite
+
+**A journey test must prove it reached its prerequisite state before asserting
+the outcome. A missing prerequisite is a failure, never a reason to skip.**
+
+This harness has produced two false greens, and both were this rule being
+broken rather than a product bug:
+
+* assertions skipped because a control the scenario needed was not found, so
+  the suite recorded nothing and reported green;
+* a scenario that navigated into the wrong state before asserting, so it was
+  measuring an empty composer rather than the stage it named. It had never
+  once run, and the guard around it hid that for as long as it existed.
+
+So, in any suite:
+
+* no `if (control) { ...assertions... }` around a control the scenario
+  requires. Assert the control is there, then use it. Where the shape is
+  genuinely convenient, write `if (!control) { ok(false, "...") } else { ... }`
+  so a missing prerequisite fails loudly;
+* no `.catch(() => {})` around an interaction the scenario depends on. Swallow
+  a failure only for genuinely optional setup, and say why in a comment;
+* assert the state you navigated into, not just the outcome you expect from
+  it. `ok(atFinalStage, ...)` before the thing that is only true at the final
+  stage;
+* count exactly. `=== 1` rather than `<= 1`, because losing the thing
+  altogether is as much a defect as duplicating it.
+
+A regression test earns its place by failing when the defect returns. Reverting
+the fix and watching the suite go red is worth the two minutes: `ui37` was
+written for a defect it could not actually detect until that check was run
+against it.
 
 ## What each suite covers
 
