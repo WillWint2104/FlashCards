@@ -32,7 +32,7 @@ if (!fs.existsSync(path.join(ROOT, "marginal-preview.html"))) {
   console.error("Run `node build.js` in the repo root first."); process.exit(1);
 }
 console.log("--- building fixtures");
-// Run all four before deciding, so the output names every broken one. A stale
+// Run all six before deciding, so the output names every broken one. A stale
 // fixture is the worst failure mode this harness has: the suites would pass
 // against the PREVIOUS build and the run would print "all suites green".
 const built = [
