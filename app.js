@@ -3304,6 +3304,7 @@
   // autosaves with the draft. Saving under a name is a separate, explicit act.
   const ES_NB_KEY = "marginal.notebooks.v1";
   const ES_NB_SIZE = "marginal.notebook.size";
+  const ES_NB_POS = "marginal.notebook.pos";
   function esNb() {
     if (!ES.draft) return { pages: [], active: 0 };
     if (!ES.draft.notebook || !Array.isArray(ES.draft.notebook.pages) || !ES.draft.notebook.pages.length) {
@@ -3350,12 +3351,20 @@
     try { const v = JSON.parse(sessionStorage.getItem(ES_NB_SIZE) || "null"); if (v && v.w && v.h) return v; } catch (e) { /* private mode */ }
     return { w: 420, h: 520 };
   }
+  function esNbPos() {
+    if (ES.ui.nbPos) return ES.ui.nbPos;
+    try { const v = JSON.parse(sessionStorage.getItem(ES_NB_POS) || "null"); if (v && typeof v.left === "number") return v; } catch (e) { /* private mode */ }
+    return null;
+  }
   function esNbHTML() {
     const n = esNb(), pg = esNbPage(), lib = esNbLibrary(), sz = esNbSize();
     const mode = ES.ui.nbMode || "";
-    return `<div class="es-nb" style="width:${sz.w}px;height:${sz.h}px" role="dialog" aria-label="Notebook">
+    const pos = esNbPos();
+    const place = pos ? `left:${pos.left}px;top:${pos.top}px;right:auto;bottom:auto` : "";
+    return `<div class="es-nb" style="width:${sz.w}px;height:${sz.h}px;${place}" role="dialog" aria-label="Notebook">
       <div class="es-nbhead">
         <span class="es-nbtitle">Notebook</span>
+        <button type="button" class="es-nbact" data-esnbhome title="Put the notebook back in its default corner">reset position</button>
         <button type="button" class="es-nbact" data-esnbmode="${mode === "save" ? "" : "save"}">save notebook</button>
         <button type="button" class="es-nbact" data-esnbmode="${mode === "open" ? "" : "open"}">open</button>
         <button type="button" class="es-nbx" data-esnbclose aria-label="Close notebook">${esIcon("close")}</button>
@@ -3420,7 +3429,31 @@
         esNbUseCopy(b.dataset.esnbcopy); ES.ui.nbMode = ""; esNbMount();
       }
     });
+    const home = panel.querySelector("[data-esnbhome]");
+    if (home) home.onclick = () => { ES.ui.nbPos = null; try { sessionStorage.removeItem(ES_NB_POS); } catch (e) { /* private mode */ } esNbMount(); };
     const x = panel.querySelector("[data-esnbclose]"); if (x) x.onclick = () => esNbUnmount();
+    // Draggable from its title bar. Collisions between a floating notebook and a
+    // tool sheet are the student's to resolve by moving it, which is how every
+    // desktop notebook works, rather than a placement algorithm that guesses.
+    const head = panel.querySelector(".es-nbhead");
+    if (head) head.onmousedown = e => {
+      if (e.target.closest("button") || e.target.closest("input")) return;
+      e.preventDefault();
+      const r = panel.getBoundingClientRect();
+      const dx = e.clientX - r.left, dy = e.clientY - r.top;
+      const move = ev => {
+        // Bounded, so it can never be dragged somewhere it cannot be dragged back from.
+        const w = panel.offsetWidth, h = panel.offsetHeight;
+        const left = Math.max(6, Math.min(window.innerWidth - w - 6, ev.clientX - dx));
+        const top = Math.max(6, Math.min(window.innerHeight - h - 6, ev.clientY - dy));
+        panel.style.left = left + "px"; panel.style.top = top + "px";
+        panel.style.right = "auto"; panel.style.bottom = "auto";
+        ES.ui.nbPos = { left: left, top: top };
+        try { sessionStorage.setItem(ES_NB_POS, JSON.stringify(ES.ui.nbPos)); } catch (e2) { /* private mode */ }
+      };
+      const up = () => { document.removeEventListener("mousemove", move); document.removeEventListener("mouseup", up); };
+      document.addEventListener("mousemove", move); document.addEventListener("mouseup", up);
+    };
     // The student's own size, remembered for the session.
     if (window.ResizeObserver) {
       const ro = new ResizeObserver(() => {
@@ -4872,8 +4905,11 @@
         <p class="es-evsrc">${e.source ? "Source: " + esc(e.source) : "No source has been recorded for this item yet."}${e.verify ? ` <span class="es-evflag">check a current figure yourself</span>` : ""}</p>
       </div>`;
       if (d.empty) {
-        body = `<p class="es-drawer-none">No verified evidence is available for this topic yet.</p>
-          <p class="es-drawer-note">${d.withheld} item${d.withheld === 1 ? " is" : "s are"} written but still waiting on a checked source, so ${d.withheld === 1 ? "it is" : "they are"} not offered. Your own evidence is always allowed, and everything else here still works.</p>`;
+        // How many records are waiting on a checked source is authoring state. It
+        // tells the student nothing they can act on and says the product is
+        // unfinished, which is not their problem to carry. Absence is absence.
+        body = `<p class="es-drawer-none">No verified evidence is available for this argument yet.</p>
+          <p class="es-drawer-note">You can keep writing and use evidence you already know.</p>`;
       } else
       body = `${d.selected.length ? `<h4 class="es-drawer-h">Your evidence</h4>${d.selected.map(row).join("")}` : ""}
         <h4 class="es-drawer-h">${d.selected.length ? "Other evidence that fits this argument" : "Evidence that fits this argument"}</h4>
@@ -4881,7 +4917,6 @@
         ${d.forArgument ? "" : `<p class="es-drawer-note">Nothing has been linked to this argument yet, so this is the closest evidence in the topic.</p>`}
         ${(d.wider && d.wider.length) ? `<button type="button" class="es-linkbtn" id="esevall">${ES.ui.evAll ? "Show less" : "Browse all evidence for this topic"}</button>
           <div class="es-drawer-more"${ES.ui.evAll ? "" : " hidden"}>${d.wider.map(row).join("")}</div>` : ""}
-        ${d.withheld ? `<p class="es-drawer-note">${d.withheld} further item${d.withheld === 1 ? " is" : "s are"} waiting on a checked source and are not offered until then.</p>` : ""}
         <p class="es-drawer-note">Evidence is supplied. What it proves is still yours to explain.</p>`;
     } else if (key === "structure") {
       body = `<h4 class="es-drawer-h">${esc(d.role)}</h4>
@@ -4889,9 +4924,16 @@
         ${d.current ? `<p class="es-drawer-p"><b>Right now:</b> ${esc(d.current.job)}</p>` : ""}
         <ol class="es-struct">${d.steps.map((st, i) => `<li class="${i < d.at ? "done" : i === d.at ? "now" : ""}"><b>${esc(st.label)}</b><span>${esc(st.job)}</span></li>`).join("")}</ol>`;
     }
+    // One sheet, four tools. Switching swaps what is inside it rather than opening
+    // a second panel, and the context line says which paragraph and argument the
+    // contents are answering for, since "evidence" alone does not say for what.
+    const path = esPathway(p);
+    const ctx = [p.role, path && path.short ? path.short : (p.point || "")].filter(Boolean).join(" \u00b7 ");
     return `<aside class="es-drawer" role="dialog" aria-label="${esc(tool.label)}">
       <div class="es-drawer-top">${esIcon(tool.icon)}<span class="es-drawer-title">${esc(tool.label)}</span>
         <button type="button" class="es-drawer-x" id="esdrawerx" aria-label="Close and return to your sentence">${esIcon("close")}</button></div>
+      ${ctx ? `<div class="es-drawer-ctx">${esc(ctx)}</div>` : ""}
+      <div class="es-drawer-tabs">${ES_TOOLS.map(t => `<button type="button" class="es-drawer-tab ${t.key === key ? "on" : ""}" data-estool="${esc(t.key)}">${esc(t.label)}</button>`).join("")}</div>
       ${key === "understand" && d ? `<div class="es-drawer-open"><button type="button" class="es-linkbtn" id="eslopen">Open learning centre ↗</button></div>` : ""}
       <div class="es-drawer-body">${body}</div>
       <div class="es-drawer-foot">Close to go straight back to the word you were on. <kbd>Esc</kbd></div>
@@ -4937,6 +4979,31 @@
     });
     const x = host.querySelector("#esdrawerx");
     if (x) x.onclick = () => { ES.ui.tool = null; esRenderKeepingPlace(p); esFocusComposer(); };
+    // A temporary surface closes the ways every temporary surface closes. Bound
+    // while open and dropped on close, so nothing accumulates across renders.
+    const sheet = host.querySelector(".es-drawer");
+    if (sheet) {
+      const shut = () => {
+        document.removeEventListener("mousedown", away, true);
+        document.removeEventListener("keydown", key2, true);
+        ES.ui.tool = null; esRenderKeepingPlace(p); esFocusComposer();
+      };
+      const away = e => {
+        if (sheet.contains(e.target)) return;
+        // The toolbelt owns opening, so a press there is a switch, not an outside
+        // click, and the notebook floats over everything without dismissing it.
+        // Peers, not outsides. The toolbelt owns opening this sheet, so a press
+        // there is a switch. The notebook is a floating surface of its own and is
+        // meant to be usable beside a tool, so neither it nor the control that
+        // opens it dismisses this one.
+        if (e.target.closest && (e.target.closest("[data-estool]") || e.target.closest("#esnbhost")
+          || e.target.closest("[data-esnbtoggle]"))) return;
+        shut();
+      };
+      const key2 = e => { if (e.key === "Escape") { e.preventDefault(); shut(); } };
+      document.addEventListener("mousedown", away, true);
+      document.addEventListener("keydown", key2, true);
+    }
     const ea = host.querySelector("#esevall");
     if (ea) ea.onclick = () => { ES.ui.evAll = !ES.ui.evAll; esRenderKeepingPlace(p); };
     const mr = host.querySelector("#esmoreread");

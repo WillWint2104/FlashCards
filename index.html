@@ -596,9 +596,22 @@
      temporary thing. It used to take a grid column, which moved the writing the
      moment a student looked something up. The sheet is fixed and out of flow, so
      the textarea keeps its width and its left edge whatever is open. */
-  .es-cols > .es-drawer{position:fixed;top:0;right:0;bottom:0;width:min(380px,88vw);z-index:150;
+  .es-cols > .es-drawer{position:fixed;top:0;right:0;bottom:0;width:min(480px,90vw);z-index:150;
     background:var(--card);border-left:1.5px solid var(--line);border-radius:0;
-    box-shadow:-20px 0 54px rgba(28,40,40,.20);overflow:auto;padding:16px}
+    box-shadow:-20px 0 54px rgba(28,40,40,.20);overflow:auto;padding:0;
+    display:flex;flex-direction:column}
+  .es-cols > .es-drawer > .es-drawer-top{padding:14px 18px;border-bottom:1px solid var(--line);flex:0 0 auto}
+  .es-drawer-ctx{padding:9px 18px 0;font-size:12px;font-weight:700;letter-spacing:.04em;
+    text-transform:uppercase;color:var(--ink-3)}
+  /* One surface, four tools: switching swaps the contents rather than opening a
+     second panel beside the first. */
+  .es-drawer-tabs{display:flex;flex-wrap:wrap;gap:5px;padding:10px 18px 12px;border-bottom:1px solid var(--line);flex:0 0 auto}
+  .es-drawer-tab{background:none;border:1px solid var(--line);border-radius:999px;padding:4px 11px;
+    font:inherit;font-size:12.5px;color:var(--ink-2);cursor:pointer}
+  .es-drawer-tab:hover{border-color:var(--green);color:var(--green-dk)}
+  .es-drawer-tab.on{background:var(--green-soft);border-color:var(--green);color:var(--green-dk);font-weight:700}
+  .es-cols > .es-drawer > .es-drawer-body{flex:1;min-height:0;overflow:auto;padding:16px 18px}
+  .es-cols > .es-drawer > .es-drawer-foot{padding:10px 18px;border-top:1px solid var(--line);flex:0 0 auto}
   /* The decoder host is a permanent child of the columns, placed in the support
      track. It costs nothing until a stem word is pressed, and because it is not the
      node esSwapSide replaces, opening or closing a tool cannot take it away. */
