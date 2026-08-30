@@ -90,6 +90,9 @@ async function choose(p,id){
 
   console.log('--- the withheld ones are withheld, not flagged ---');
   const said = await setupText(p);
+  // setupText() yields '' for a missing element, and no label is found in ''.
+  // Prove the surface is there before asking what it does not contain.
+  ok(said.length>0,'the setup surface rendered, so the assertions below mean something');
   ok([LABEL.A,LABEL.B,LABEL.D,LABEL.E,LABEL.F].every(l=>said.indexOf(l)<0),
     'no withheld label appears anywhere on the screen');
   ok(!/unverified claim|not checked|unconfirmed source/i.test(said),

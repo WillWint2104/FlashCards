@@ -76,6 +76,9 @@ async function choose(p,id){
   ok(!(await p.$('.es-lesson')),'no lesson body');
   ok((await p.$$('.es-concept')).length===0,'and no concept definitions');
   const said=await text(p,'.es-setup');
+  // text() yields '' for a missing element, and '' satisfies every negative
+  // regex below. Prove the surface is there before asking what it does not say.
+  ok(said.length>0,'the setup surface rendered, so the assertion below means something');
   ok(!/unreviewed|incomplete|not yet|coming soon|unfinished|no lesson/i.test(said),
     'the student is never told the content is unfinished: '+said.slice(0,80));
   ok(!!(await p.$('#esstartwriting')),'and writing is unaffected');
