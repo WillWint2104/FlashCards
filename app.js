@@ -4918,15 +4918,44 @@
           ${d.options.map(o => `<div class="es-idea ${d.chosen.indexOf(o) >= 0 ? "on" : ""}">${esc(o)}</div>`).join("")}`;
       }
     } else if (key === "evidence") {
+      // The card gives the fact and, behind a press, what it could be used for.
+      // It led with the use before, which read as instructions for assembling the
+      // sentence rather than material to think with. Guided composition means the
+      // student still decides what the fact proves.
+      //
+      // One status line, never two. An item only reaches a student with both a
+      // source and a checked date, so everything here is published; `verify` means
+      // the NUMBER may have moved since. Saying "verified" and "check it yourself"
+      // in the same breath told the student two different things at once.
       const row = e => `<div class="es-ev">
         <div class="es-evh">${esc(e.label)}</div>
         <p class="es-drawer-p">${esc(e.fact)}</p>
+        ${(e.supports && e.supports.length) ? `<p class="es-evsupports">Could support: ${e.supports.map(x => `<span class="es-evtag">${esc(x)}</span>`).join(" ")}</p>` : ""}
         ${e.why ? `<p class="es-evwhy"><b>For this argument:</b> ${esc(e.why)}</p>` : ""}
-        ${e.use ? `<p class="es-drawer-note">${esc(e.use)}</p>` : ""}
+        ${e.use ? `<details class="es-evwhy2"><summary>Why could this matter?</summary><p class="es-drawer-note">${esc(e.use)}</p></details>` : ""}
         ${e.limits ? `<p class="es-evlimit">${esc(e.limits)}</p>` : ""}
-        <p class="es-evsrc">${e.source ? "Source: " + esc(e.source) : "No source has been recorded for this item yet."}${e.verify ? ` <span class="es-evflag">check a current figure yourself</span>` : ""}</p>
+        <p class="es-evsrc">${e.verify
+          ? `<span class="es-evstatus dated">Check the current figure before you use it</span>`
+          : `<span class="es-evstatus ok">Checked case study fact</span>`}
+          ${e.source ? `<span class="es-evsrct">${esc(e.source)}</span>` : ""}</p>
       </div>`;
-      if (d.empty) {
+      // What the tool says depends on where the student is, because "no evidence
+      // here" and "evidence does not belong here" are different facts and only one
+      // of them is a gap. Our own essay model puts evidence in the body.
+      if (esIsIntro(p) || esIsConcl(p)) {
+        const intro = esIsIntro(p);
+        body = `<p class="es-drawer-p">${intro
+          ? "Evidence is usually not needed in your introduction. Its job is to state the line of argument and signpost the paragraphs that follow."
+          : "New evidence normally should not appear in your conclusion. It weighs what your body paragraphs already established."}</p>
+          <p class="es-drawer-note">${intro
+            ? "Use evidence in your body paragraphs, where each argument needs support."
+            : "If a fact matters enough to introduce here, it belongs in the paragraph that argues for it."}</p>
+          <button type="button" class="es-linkbtn" id="esevall">${ES.ui.evAll ? "Hide the topic evidence" : "Browse evidence anyway"}</button>
+          <div class="es-drawer-more"${ES.ui.evAll ? "" : " hidden"}>${
+            (d.wider && d.wider.length) ? d.wider.map(row).join("")
+              : (d.compatible && d.compatible.length) ? d.compatible.map(row).join("")
+              : `<p class="es-drawer-none">No verified evidence is available for this topic yet.</p>`}</div>`;
+      } else if (d.empty) {
         // How many records are waiting on a checked source is authoring state. It
         // tells the student nothing they can act on and says the product is
         // unfinished, which is not their problem to carry. Absence is absence.

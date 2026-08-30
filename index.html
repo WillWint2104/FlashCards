@@ -1541,6 +1541,18 @@
   .es-skelchip{font:inherit;font-weight:700;font-size:11.5px;color:var(--ink-2);background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:3px 10px;cursor:pointer}
   .es-skelchip.on{color:var(--green-dk);border-color:var(--green);background:var(--green-soft)}
   .es-skelchip:hover{border-color:var(--green)}
+  .es-evstatus{display:inline-block;font-size:11.5px;font-weight:700;border-radius:6px;padding:2px 8px;letter-spacing:.02em}
+  .es-evstatus.ok{background:var(--green-soft);color:var(--green-dk)}
+  .es-evstatus.dated{background:var(--gold-soft);color:#7a5b16}
+  .es-evsrct{display:block;margin-top:5px;font-size:11.5px;color:var(--ink-3)}
+  .es-evsupports{font-size:12.5px;color:var(--ink-2);margin:7px 0 0}
+  .es-evtag{display:inline-block;background:var(--green-soft);color:var(--green-dk);border-radius:5px;
+    padding:1px 7px;font-size:12px;font-weight:700;margin-right:3px}
+  .es-evwhy2{margin-top:8px}
+  .es-evwhy2 > summary{cursor:pointer;font-size:12.5px;font-weight:700;color:var(--green-dk);list-style:none}
+  .es-evwhy2 > summary::-webkit-details-marker{display:none}
+  .es-evwhy2 > summary::before{content:"+ ";font-weight:800}
+  .es-evwhy2[open] > summary::before{content:"\2212 "}
   .es-blank{font-style:normal;font-weight:800;color:var(--green-dk);letter-spacing:1px}
   /* A slot says what belongs in it. An anonymous blank made the student guess the
      role as well as the content, and in the walkthrough that produced an answer
