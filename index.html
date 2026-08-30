@@ -596,10 +596,15 @@
      temporary thing. It used to take a grid column, which moved the writing the
      moment a student looked something up. The sheet is fixed and out of flow, so
      the textarea keeps its width and its left edge whatever is open. */
-  .es-cols > .es-drawer{position:fixed;top:0;right:0;bottom:0;width:min(480px,90vw);z-index:150;
-    background:var(--card);border-left:1.5px solid var(--line);border-radius:0;
-    box-shadow:-20px 0 54px rgba(28,40,40,.20);overflow:auto;padding:0;
+  /* A floating window, like the notebook, because they are peers: both are things
+     the student opens beside the writing and can move out of each other's way.
+     Not clamped to the viewport edge, and no taller than its contents need. */
+  .es-cols > .es-drawer{position:fixed;z-index:150;resize:both;
+    min-width:340px;min-height:220px;max-width:92vw;max-height:88vh;
+    background:var(--card);border:1.5px solid var(--line);border-radius:14px;
+    box-shadow:0 26px 70px rgba(28,40,40,.30);overflow:hidden;padding:0;
     display:flex;flex-direction:column}
+  .es-cols > .es-drawer > .es-drawer-top{cursor:move}
   .es-cols > .es-drawer > .es-drawer-top{padding:14px 18px;border-bottom:1px solid var(--line);flex:0 0 auto}
   .es-drawer-ctx{padding:9px 18px 0;font-size:12px;font-weight:700;letter-spacing:.04em;
     text-transform:uppercase;color:var(--ink-3)}

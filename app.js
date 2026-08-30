@@ -3457,6 +3457,9 @@
     // The student's own size, remembered for the session.
     if (window.ResizeObserver) {
       const ro = new ResizeObserver(() => {
+        // Same guard as the tool window: a teardown resize is not a size the
+        // student picked, and storing it loses the one they did.
+        if (!panel.isConnected || !panel.offsetWidth || !panel.offsetHeight) return;
         try { sessionStorage.setItem(ES_NB_SIZE, JSON.stringify({ w: Math.round(panel.offsetWidth), h: Math.round(panel.offsetHeight) })); } catch (e) { /* private mode */ }
       });
       ro.observe(panel);
@@ -4841,6 +4844,25 @@
       return `<button type="button" class="es-belt-b ${on ? "on" : ""}" data-estool="${t.key}" ${has ? "" : "disabled title=\"Nothing has been written for this question yet\""}>${esIcon(t.icon)}<span>${esc(t.label)}</span></button>`;
     }).join("") + `</div>`;
   }
+  const ES_TOOL_BOX = "marginal.tools.box";
+  // Opens near the top right of the writing workspace, not flush to the viewport,
+  // so it reads as belonging to the page rather than to the browser.
+  function esToolBox() {
+    if (ES.ui.toolBox) return ES.ui.toolBox;
+    try { const v = JSON.parse(sessionStorage.getItem(ES_TOOL_BOX) || "null"); if (v && v.w) return v; } catch (e) { /* private mode */ }
+    // No default height. An empty tool should be the size of "nothing here yet",
+    // not a 700px column containing one sentence, so the window is content sized
+    // until the student resizes it and it starts remembering their choice.
+    const w = 470, h = null;
+    const cols = document.querySelector(".es-cols");
+    const r = cols ? cols.getBoundingClientRect() : null;
+    const left = r ? Math.max(12, Math.min(window.innerWidth - w - 24, r.right - w + 40)) : Math.max(12, window.innerWidth - w - 60);
+    // Below the paragraph head, not level with it. Opening level covered the row
+    // holding View plan, notebook and read all, so the window swallowed clicks on
+    // the page's own controls the moment it appeared.
+    const top = r ? Math.max(12, r.top + 46) : 120;
+    return { left: Math.round(left), top: Math.round(top), w: w, h: h };
+  }
   function esDrawerHTML(p) {
     const key = ES.ui.tool; if (!key) return "";
     const tool = ES_TOOLS.find(t => t.key === key); if (!tool) return "";
@@ -4929,11 +4951,17 @@
     // contents are answering for, since "evidence" alone does not say for what.
     const path = esPathway(p);
     const ctx = [p.role, path && path.short ? path.short : (p.point || "")].filter(Boolean).join(" \u00b7 ");
-    return `<aside class="es-drawer" role="dialog" aria-label="${esc(tool.label)}">
+    const box = esToolBox();
+    // A floating window, opened near the work rather than clamped to the edge of
+    // the browser. Draggable, resizable, bounded, and remembered for the session,
+    // like the notebook, because the two are peers and behave alike.
+    return `<aside class="es-drawer" role="dialog" aria-label="Writing tools"
+      style="left:${box.left}px;top:${box.top}px;width:${box.w}px${box.h ? `;height:${box.h}px` : ""}">
       <div class="es-drawer-top">${esIcon(tool.icon)}<span class="es-drawer-title">${esc(tool.label)}</span>
+        <button type="button" class="es-nbact" data-estoolhome title="Put the window back where it opens">reset position</button>
         <button type="button" class="es-drawer-x" id="esdrawerx" aria-label="Close and return to your sentence">${esIcon("close")}</button></div>
       ${ctx ? `<div class="es-drawer-ctx">${esc(ctx)}</div>` : ""}
-      <div class="es-drawer-tabs">${ES_TOOLS.map(t => `<button type="button" class="es-drawer-tab ${t.key === key ? "on" : ""}" data-estool="${esc(t.key)}">${esc(t.label)}</button>`).join("")}</div>
+      <div class="es-drawer-tabs">${ES_TOOLS.filter(t => t.key !== "understand").map(t => `<button type="button" class="es-drawer-tab ${t.key === key ? "on" : ""}" data-estool="${esc(t.key)}">${esc(t.label)}</button>`).join("")}</div>
       ${key === "understand" && d ? `<div class="es-drawer-open"><button type="button" class="es-linkbtn" id="eslopen">Open learning centre ↗</button></div>` : ""}
       <div class="es-drawer-body">${body}</div>
       <div class="es-drawer-foot">Close to go straight back to the word you were on. <kbd>Esc</kbd></div>
@@ -4972,9 +5000,19 @@
     const host = document.getElementById("eshost"); if (!host) return;
     host.querySelectorAll("[data-estool]").forEach(b => b.onclick = () => {
       const key = b.dataset.estool;
+      // Learn opens the Learning Centre. It is teaching, not a writing tool, and
+      // giving it a tab in the tool window put two different classes of activity
+      // behind one control set.
+      if (key === "understand") {
+        ES.centre = ES.centre || { route: "choose", dock: "right" };
+        ES.centre.open = true;
+        ES.ui.tool = null; ES.ui.contextView = null; esRenderKeepingPlace(p);
+        eslMount(p); return;
+      }
       if (ES.ui.tool === key) { ES.ui.tool = null; esRenderKeepingPlace(p); esFocusComposer(); return; }
       esCaptureContext(p);
       ES.ui.tool = key; ES.ui.readMore = false; ES.ui.contextView = null;
+      ES.ui.toolFrom = b.id || null;
       esRenderKeepingPlace(p);
     });
     const x = host.querySelector("#esdrawerx");
@@ -4983,6 +5021,42 @@
     // while open and dropped on close, so nothing accumulates across renders.
     const sheet = host.querySelector(".es-drawer");
     if (sheet) {
+      const head = sheet.querySelector(".es-drawer-top");
+      if (head) head.onmousedown = e => {
+        if (e.target.closest("button")) return;
+        e.preventDefault();
+        const r = sheet.getBoundingClientRect();
+        const dx = e.clientX - r.left, dy = e.clientY - r.top;
+        const move = ev => {
+          const w = sheet.offsetWidth, h = sheet.offsetHeight;
+          const left = Math.max(6, Math.min(window.innerWidth - w - 6, ev.clientX - dx));
+          const top = Math.max(6, Math.min(window.innerHeight - h - 6, ev.clientY - dy));
+          sheet.style.left = left + "px"; sheet.style.top = top + "px";
+          ES.ui.toolBox = { left: left, top: top, w: w, h: h };
+          try { sessionStorage.setItem(ES_TOOL_BOX, JSON.stringify(ES.ui.toolBox)); } catch (e2) { /* private mode */ }
+        };
+        const up = () => { document.removeEventListener("mousemove", move); document.removeEventListener("mouseup", up); };
+        document.addEventListener("mousemove", move); document.addEventListener("mouseup", up);
+      };
+      if (window.ResizeObserver) {
+        const ro = new ResizeObserver(() => {
+          // Fires while the window is being torn down too, where the rect is 0x0 at
+          // 0,0. Recording that put the window in the top left corner at its
+          // minimum size the next time it was opened, having "remembered" a
+          // geometry the student never chose.
+          if (!sheet.isConnected) return;
+          const r2 = sheet.getBoundingClientRect();
+          if (!r2.width || !r2.height) return;
+          ES.ui.toolBox = { left: Math.round(r2.left), top: Math.round(r2.top), w: Math.round(sheet.offsetWidth), h: Math.round(sheet.offsetHeight) };
+          try { sessionStorage.setItem(ES_TOOL_BOX, JSON.stringify(ES.ui.toolBox)); } catch (e2) { /* private mode */ }
+        });
+        ro.observe(sheet);
+      }
+      const home = sheet.querySelector("[data-estoolhome]");
+      if (home) home.onclick = () => {
+        ES.ui.toolBox = null; try { sessionStorage.removeItem(ES_TOOL_BOX); } catch (e2) { /* private mode */ }
+        esRenderKeepingPlace(p);
+      };
       const shut = () => {
         document.removeEventListener("mousedown", away, true);
         document.removeEventListener("keydown", key2, true);
