@@ -12395,6 +12395,27 @@ window.BUSCONTENT = {
             (d.wider && d.wider.length) ? d.wider.map(row).join("")
               : (d.compatible && d.compatible.length) ? d.compatible.map(row).join("")
               : `<p class="es-drawer-none">No verified evidence is available for this topic yet.</p>`}</div>`;
+      } else if (!esPathway(p)) {
+        // A body paragraph with no argument chosen. Saying "evidence that fits this
+        // argument" here names a relationship to something that does not exist yet,
+        // and saying "nothing has been linked to this argument" in the same panel
+        // contradicts it. Both were true of the old copy at once.
+        //
+        // Two different reasons the argument can be absent, and only one is the
+        // student's to act on: this question may have no authored arguments at all,
+        // in which case telling them to choose one sends them looking for a control
+        // that is not there.
+        const q2 = esQuestionDef();
+        const choosable = !!((q2 && q2.pathways) || []).length;
+        const pool = (d.wider && d.wider.length) ? d.wider : (d.compatible || []);
+        body = `<p class="es-drawer-p">${choosable
+          ? "Choose what this paragraph argues first. Once you choose an argument, Evidence can show material that may support it."
+          : "This paragraph does not have an argument recorded yet. Evidence below is everything the topic holds, in no particular order."}</p>
+          ${pool.length ? `<button type="button" class="es-linkbtn" id="esevall">${ES.ui.evAll ? "Hide topic evidence" : "Browse topic evidence anyway"}</button>
+          <div class="es-drawer-more"${ES.ui.evAll ? "" : " hidden"}>
+            <p class="es-drawer-sub">Topic evidence, not matched to your argument yet</p>
+            ${pool.map(row).join("")}</div>`
+          : `<p class="es-drawer-none">No verified evidence is available for this topic yet.</p>`}`;
       } else if (d.empty) {
         // How many records are waiting on a checked source is authoring state. It
         // tells the student nothing they can act on and says the product is
@@ -12402,10 +12423,15 @@ window.BUSCONTENT = {
         body = `<p class="es-drawer-none">No verified evidence is available for this argument yet.</p>
           <p class="es-drawer-note">You can keep writing and use evidence you already know.</p>`;
       } else
+      // "Fits this argument" is a claim about the content, so it is only made where
+      // the content makes it. Where nothing is linked, the heading says what these
+      // items actually are: evidence from the topic, offered without a match.
       body = `${d.selected.length ? `<h4 class="es-drawer-h">Your evidence</h4>${d.selected.map(row).join("")}` : ""}
-        <h4 class="es-drawer-h">${d.selected.length ? "Other evidence that fits this argument" : "Evidence that fits this argument"}</h4>
+        <h4 class="es-drawer-h">${d.forArgument
+          ? (d.selected.length ? "Other evidence linked to this argument" : "Evidence linked to this argument")
+          : "Topic evidence, not matched to your argument"}</h4>
         ${d.compatible.length ? d.compatible.map(row).join("") : `<p class="es-drawer-none">No further evidence has been authored for this argument.</p>`}
-        ${d.forArgument ? "" : `<p class="es-drawer-note">Nothing has been linked to this argument yet, so this is the closest evidence in the topic.</p>`}
+        ${d.forArgument ? "" : `<p class="es-drawer-note">Nothing has been linked to this argument yet, so these are simply what the topic holds.</p>`}
         ${(d.wider && d.wider.length) ? `<button type="button" class="es-linkbtn" id="esevall">${ES.ui.evAll ? "Show less" : "Browse all evidence for this topic"}</button>
           <div class="es-drawer-more"${ES.ui.evAll ? "" : " hidden"}>${d.wider.map(row).join("")}</div>` : ""}
         <p class="es-drawer-note">Evidence is supplied. What it proves is still yours to explain.</p>`;
