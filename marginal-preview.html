@@ -12384,9 +12384,14 @@ window.BUSCONTENT = {
       // of them is a gap. Our own essay model puts evidence in the body.
       if (esIsIntro(p) || esIsConcl(p)) {
         const intro = esIsIntro(p);
+        // "Weighs" is judgement language. On an Explain question a conclusion draws
+        // the explanation together; it does not decide between sides. Same
+        // directive contamination the sentence shapes already had, so it is keyed
+        // on the authored command the same way rather than assumed.
+        const judging = esDirectiveFamily() === "judgement";
         body = `<p class="es-drawer-p">${intro
           ? "Evidence is usually not needed in your introduction. Its job is to state the line of argument and signpost the paragraphs that follow."
-          : "New evidence normally should not appear in your conclusion. It weighs what your body paragraphs already established."}</p>
+          : `New evidence normally should not appear in your conclusion. It ${judging ? "weighs" : "draws together"} what your body paragraphs already established.`}</p>
           <p class="es-drawer-note">${intro
             ? "Use evidence in your body paragraphs, where each argument needs support."
             : "If a fact matters enough to introduce here, it belongs in the paragraph that argues for it."}</p>
@@ -12427,8 +12432,14 @@ window.BUSCONTENT = {
       // the content makes it. Where nothing is linked, the heading says what these
       // items actually are: evidence from the topic, offered without a match.
       body = `${d.selected.length ? `<h4 class="es-drawer-h">Your evidence</h4>${d.selected.map(row).join("")}` : ""}
+        ${/* "Linked to this argument" reads as "this proves the argument", and the
+              authored link does not say that. An item can be an example of the
+              strategy, or evidence of an outcome, or simply relevant, and the
+              content records only that someone attached it. Until an evidence ROLE
+              is authored, the heading claims relevance and nothing more, and the
+              role is never guessed from the prose. */ ""}
         <h4 class="es-drawer-h">${d.forArgument
-          ? (d.selected.length ? "Other evidence linked to this argument" : "Evidence linked to this argument")
+          ? (d.selected.length ? "Other case-study evidence relevant to this argument" : "Case-study evidence relevant to this argument")
           : "Topic evidence, not matched to your argument"}</h4>
         ${d.compatible.length ? d.compatible.map(row).join("") : `<p class="es-drawer-none">No further evidence has been authored for this argument.</p>`}
         ${d.forArgument ? "" : `<p class="es-drawer-note">Nothing has been linked to this argument yet, so these are simply what the topic holds.</p>`}
@@ -12459,7 +12470,10 @@ window.BUSCONTENT = {
       <div class="es-drawer-tabs">${ES_TOOLS.filter(t => t.key !== "understand").map(t => `<button type="button" class="es-drawer-tab ${t.key === key ? "on" : ""}" data-estool="${esc(t.key)}">${esc(t.label)}</button>`).join("")}</div>
       ${key === "understand" && d ? `<div class="es-drawer-open"><button type="button" class="es-linkbtn" id="eslopen">Open learning centre ↗</button></div>` : ""}
       <div class="es-drawer-body">${body}</div>
-      <div class="es-drawer-foot">Close to go straight back to the word you were on. <kbd>Esc</kbd></div>
+      ${/* The old line promised a return to "the word you were on", which is not
+            true when the window is opened from the argument chooser, where there is
+            no sentence yet. Focus still goes back to the composer when there is one. */ ""}
+      <div class="es-drawer-foot">Close to return to your writing <kbd>Esc</kbd></div>
     </aside>`;
   }
   // Opening a tool CAPTURES where the student was; closing puts them back exactly
