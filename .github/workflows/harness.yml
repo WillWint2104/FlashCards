@@ -1,4 +1,4 @@
-# The 45-suite harness, on every pull request.
+# The 51-suite harness, plus the simulated students, on every pull request.
 #
 # Until now Actions ran stylelint and nothing else, so every check that actually
 # exercises the app ran only where someone remembered to run it. Four regressions
