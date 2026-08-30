@@ -604,8 +604,15 @@
   .es-cols:not(.withdec):not(.withdrawer):not(.withctx)>.es-dechost{display:none}
   /* The response map is a popover now. It keeps its place in the grid only while open. */
   .es-cols>.es-map[hidden]{display:none}
-  .es-cols.mapopen{grid-template-columns:230px minmax(0,1fr) auto}
-  .es-cols.mapopen.withdrawer{grid-template-columns:230px minmax(0,1fr) 340px}
+  /* A menu is a menu. Opening the section list used to add a 230px grid column,
+     so choosing where to go moved the writing 130px to the right first. It is now
+     a popover: out of flow, over the page, gone when it closes, and the grid never
+     hears about it. If a `.es-cols.mapopen` column rule ever comes back, that is
+     the navigation becoming furniture again. */
+  .es-cols{position:relative}
+  .es-cols > .es-map{position:absolute;top:0;left:0;z-index:20;width:250px;
+    background:var(--card);border:1.5px solid var(--line);border-radius:14px;
+    box-shadow:0 18px 46px rgba(28,40,40,.22);padding:8px;max-height:70vh;overflow:auto}
   .es-rest.quiet.empty{display:none}
   /* Long lines are hard to write into as well as to read. */
   /* The shell takes the width so no column stands empty, but the card inside it is
@@ -628,7 +635,7 @@
   /* Below the width where all three fit, the drawer OVERLAYS. The composer never
      shrinks to make room for a resource: the writing is the product. */
   @media(max-width:1320px){
-    .es-cols,.es-cols.mapopen{grid-template-columns:minmax(0,1fr)}
+    .es-cols{grid-template-columns:minmax(0,1fr)}
     .es-cols.withdrawer .es-drawer{position:fixed;right:16px;top:76px;bottom:16px;width:min(390px,86vw);z-index:130;max-height:none;box-shadow:0 20px 60px rgba(28,40,40,.28)}
   }
   .es-map{position:sticky;top:8px;display:flex;flex-direction:column;gap:3px}
@@ -705,18 +712,24 @@
      workspace and leaves both fully visible. It is a class on body and nothing is
      rebuilt, so the composer keeps its node, caret, scroll and undo history. */
   :root{--esl-w:clamp(420px,42vw,660px)}
-  body.esl-open .es-scrim{padding-right:calc(var(--esl-w) + 30px)}
-  body.esl-open.esl-left .es-scrim{padding-right:16px;padding-left:calc(var(--esl-w) + 30px)}
+  /* THE CENTRE IS THE TEMPORARY SURFACE. It used to sit beside the writing and
+     contract it, so opening reference material re-laid-out the workspace: the
+     composer moved, the grid changed columns, the third column vanished. The
+     supplementary task now goes over the primary one, which is the ordinary way
+     round. The workspace underneath is not touched at all, so there is nothing
+     to reflow, nothing to move and nothing to rebuild. */
+  #eslhost.on{pointer-events:auto;background:rgba(28,40,40,.42)}
+  .esl-panel{position:absolute;inset:5vh 5vw;top:5vh;bottom:5vh;left:5vw;right:5vw;width:auto;
+    max-width:1180px;margin:0 auto;border-radius:16px}
   /* The workspace gives up its third column while the centre is open, rather than
      clipping it. The node stays in the DOM, only hidden, so esSwapSide still finds
      the side column it swaps and the tool path is unaffected. */
   /* With the map now a popover, the composer is the first grid child, so the
      contracted state is a single column. The earlier rule sized the composer as
      though it were still the navigation track. */
-  body.esl-open .es-cols,body.esl-open .es-cols.mapopen,
-  body.esl-open .es-cols.withdrawer{grid-template-columns:minmax(0,1fr)}
-  body.esl-open .es-cols > .es-map,
-  body.esl-open .es-cols > .es-rest,body.esl-open .es-cols > .es-drawer{display:none}
+  /* Deliberately empty. The workspace keeps its grid, its columns and its scroll
+     position while the centre is open. If a rule ever needs to go here again,
+     that is the signal that the overlay has started resizing the page again. */
   .esl-head{display:flex;align-items:center;gap:10px;padding:15px 18px;border-bottom:1px solid var(--line);flex:0 0 auto}
   .esl-title{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--ink);margin:0;flex:1}
   .esl-title:focus-visible{outline:2px solid var(--green);outline-offset:3px;border-radius:5px}
@@ -778,8 +791,7 @@
   /* Below the width where a contracted workspace and the panel cannot both work,
      the panel goes back to being an overlay and the workspace takes its width back. */
   @media(max-width:1180px){
-    body.esl-open .es-scrim,body.esl-open.esl-left .es-scrim{padding-right:16px;padding-left:16px}
-    .esl-panel,.esl-panel.left{left:16px;right:16px;width:auto}
+    .esl-panel,.esl-panel.left{left:12px;right:12px;top:12px;bottom:12px;width:auto}
   }
   .es-learn-lede{font-weight:600}
   /* The row list is the primary content on the first screen here, not a reference
@@ -1255,9 +1267,24 @@
   /* ===== Essay practice mode (behind essayMode / ?essaydemo). White surfaces,
      strong ink, the single green accent, sentence case, no em-dashes. ===== */
   body.es-lock{overflow:hidden}
-  .es-scrim{position:fixed;inset:0;background:rgba(28,40,40,.42);display:flex;align-items:flex-start;justify-content:center;padding:24px 16px;overflow:auto;z-index:120}
-  .es-shell{width:100%;max-width:760px}
-  .es-wrap{background:var(--card);border-radius:22px;box-shadow:0 24px 60px rgba(28,40,40,.28);padding:22px clamp(18px,3vw,30px) 28px;animation:rvpop .22s cubic-bezier(.35,.65,.25,1)}
+  /* THE ESSAY IS A PAGE. It was a modal: a dimmed application behind a rounded
+     card, which is the right shape for a task that lasts a moment and the wrong
+     one for a task that lasts an hour. Writing 800 words, moving between
+     sections, consulting material and reviewing the whole response is not a
+     temporary interruption to the flashcards, it is the work. So the surface is
+     opaque, square, full width and does not float: no scrim colour, no card
+     radius, no shadow, no entrance animation. Nothing shows through, because
+     there is nothing behind it any more. */
+  .es-scrim{position:fixed;inset:0;background:var(--bg);display:block;padding:0;overflow:auto;z-index:120}
+  .es-shell{width:100%;max-width:none}
+  .es-wrap{background:transparent;border-radius:0;box-shadow:none;padding:0 0 40px}
+  /* The header is the application's, so it stays put and reads as one: full
+     bleed, sticky, its contents centred on the same column as the page body.
+     No wrapper element, so every screen that renders .es-top gets it. */
+  .es-wrap > *{max-width:min(1180px,94vw);margin-left:auto;margin-right:auto}
+  .es-wrap > .es-top{max-width:none;position:sticky;top:0;z-index:6;background:var(--card);
+    border-bottom:1px solid var(--line);margin-bottom:20px;
+    padding:13px max(clamp(16px,3vw,28px),calc((100% - min(1180px,94vw))/2))}
   .es-shell:has(.es-wide){max-width:1040px}
   /* the composer takes the canvas: the writing has to be the dominant thing on screen */
   .es-shell:has(.es-canvas){max-width:min(1480px,94vw)}
@@ -12230,12 +12257,15 @@ window.BUSCONTENT = {
   function eslMount(p) {
     let host = document.getElementById("eslhost");
     if (!host) { host = document.createElement("div"); host.id = "eslhost"; document.body.appendChild(host); }
-    // A CSS layout state, not a re-render: the writing workspace contracts by the
-    // panel's width so both stay fully visible. Below the width where they cannot
-    // both fit, the stylesheet drops back to an overlay.
+    // An overlay over the workspace, which is left exactly as it was: same grid,
+    // same columns, same scroll position, same composer node. The host takes
+    // pointer events only while open, so the backdrop can be clicked to leave.
+    host.classList.add("on");
     document.body.classList.add("esl-open");
     document.body.classList.toggle("esl-left", (ES.centre && ES.centre.dock) === "left");
     host.innerHTML = eslHTML(p);
+    // Temporary surfaces close the ways every other application closes them.
+    host.onmousedown = e => { if (e.target === host) { eslUnmount(); esFocusComposer(); } };
     eslBind(p);
     const t = document.getElementById("esltitle"); if (t) t.focus();
   }
@@ -13794,10 +13824,14 @@ window.BUSCONTENT = {
                   const st = esStepDef(p); if (!st) return "";
                   const all = esShapesFor(st.key);
                   if (!all.length) return "";
+                  // Rendered once and revealed in place. Showing the shape is a
+                  // disclosure inside one component, not a change of application
+                  // state, so it must not re-enter the render pipeline: that is what
+                  // made a two-word control feel like the page reloading.
                   const open = !!ES.ui.shapeOpen;
                   return `<button type="button" class="es-linkbtn es-shapebtn" id="esshape" aria-expanded="${open}">${open ? "Hide sentence shape" : "Show sentence shape"}</button>
-                    ${open ? `<div class="es-shapes">${all.map(x =>
-                      `<p class="es-shape">${esc(x).replace(/_{2,}/g, '<span class="es-blank">____</span>')}</p>`).join("")}</div>` : ""}`;
+                    <div class="es-shapes" id="esshapes"${open ? "" : " hidden"}>${all.map(x =>
+                      `<p class="es-shape">${esc(x).replace(/_{2,}/g, '<span class="es-blank">____</span>')}</p>`).join("")}</div>`;
                 })()}
               </div>
               <textarea id="esline" class="es-input es-linebox" rows="2" placeholder="Type your next sentence..."></textarea>
@@ -13944,7 +13978,14 @@ window.BUSCONTENT = {
     };
     const sh = $("#esshape");
     if (sh) sh.onclick = () => {
-      esCaptureContext(p); ES.ui.shapeOpen = !ES.ui.shapeOpen; esRender(); esRestoreContext();
+      // Touches its own button and its own panel. No capture, no render, no
+      // restore: the composer, its caret, its scroll and its undo stack are not
+      // involved in whether a hint is visible.
+      ES.ui.shapeOpen = !ES.ui.shapeOpen;
+      const box = document.getElementById("esshapes");
+      if (box) box.hidden = !ES.ui.shapeOpen;
+      sh.setAttribute("aria-expanded", ES.ui.shapeOpen ? "true" : "false");
+      sh.textContent = ES.ui.shapeOpen ? "Hide sentence shape" : "Show sentence shape";
     };
     const mp = $("#esmappop");
     if (mp) mp.onclick = () => {
@@ -13952,6 +13993,21 @@ window.BUSCONTENT = {
       const aside = host.querySelector(".es-map");
       if (aside) aside.hidden = !ES.ui.mapPop;
       mp.setAttribute("aria-expanded", ES.ui.mapPop ? "true" : "false");
+      // Closes the ways a menu closes: choosing, clicking away, Escape. Bound while
+      // open and dropped on close, so nothing accumulates across renders.
+      if (ES.ui.mapPop) {
+        const shut = () => {
+          ES.ui.mapPop = false;
+          if (aside) aside.hidden = true;
+          mp.setAttribute("aria-expanded", "false");
+          document.removeEventListener("mousedown", away, true);
+          document.removeEventListener("keydown", key, true);
+        };
+        const away = e => { if (aside && !aside.contains(e.target) && e.target !== mp && !mp.contains(e.target)) shut(); };
+        const key = e => { if (e.key === "Escape") { e.preventDefault(); shut(); } };
+        document.addEventListener("mousedown", away, true);
+        document.addEventListener("keydown", key, true);
+      }
       const cols = host.querySelector(".es-cols");
       if (cols) cols.classList.toggle("mapopen", !!ES.ui.mapPop);
     };

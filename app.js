@@ -4941,12 +4941,15 @@
   function eslMount(p) {
     let host = document.getElementById("eslhost");
     if (!host) { host = document.createElement("div"); host.id = "eslhost"; document.body.appendChild(host); }
-    // A CSS layout state, not a re-render: the writing workspace contracts by the
-    // panel's width so both stay fully visible. Below the width where they cannot
-    // both fit, the stylesheet drops back to an overlay.
+    // An overlay over the workspace, which is left exactly as it was: same grid,
+    // same columns, same scroll position, same composer node. The host takes
+    // pointer events only while open, so the backdrop can be clicked to leave.
+    host.classList.add("on");
     document.body.classList.add("esl-open");
     document.body.classList.toggle("esl-left", (ES.centre && ES.centre.dock) === "left");
     host.innerHTML = eslHTML(p);
+    // Temporary surfaces close the ways every other application closes them.
+    host.onmousedown = e => { if (e.target === host) { eslUnmount(); esFocusComposer(); } };
     eslBind(p);
     const t = document.getElementById("esltitle"); if (t) t.focus();
   }
@@ -6505,10 +6508,14 @@
                   const st = esStepDef(p); if (!st) return "";
                   const all = esShapesFor(st.key);
                   if (!all.length) return "";
+                  // Rendered once and revealed in place. Showing the shape is a
+                  // disclosure inside one component, not a change of application
+                  // state, so it must not re-enter the render pipeline: that is what
+                  // made a two-word control feel like the page reloading.
                   const open = !!ES.ui.shapeOpen;
                   return `<button type="button" class="es-linkbtn es-shapebtn" id="esshape" aria-expanded="${open}">${open ? "Hide sentence shape" : "Show sentence shape"}</button>
-                    ${open ? `<div class="es-shapes">${all.map(x =>
-                      `<p class="es-shape">${esc(x).replace(/_{2,}/g, '<span class="es-blank">____</span>')}</p>`).join("")}</div>` : ""}`;
+                    <div class="es-shapes" id="esshapes"${open ? "" : " hidden"}>${all.map(x =>
+                      `<p class="es-shape">${esc(x).replace(/_{2,}/g, '<span class="es-blank">____</span>')}</p>`).join("")}</div>`;
                 })()}
               </div>
               <textarea id="esline" class="es-input es-linebox" rows="2" placeholder="Type your next sentence..."></textarea>
@@ -6655,7 +6662,14 @@
     };
     const sh = $("#esshape");
     if (sh) sh.onclick = () => {
-      esCaptureContext(p); ES.ui.shapeOpen = !ES.ui.shapeOpen; esRender(); esRestoreContext();
+      // Touches its own button and its own panel. No capture, no render, no
+      // restore: the composer, its caret, its scroll and its undo stack are not
+      // involved in whether a hint is visible.
+      ES.ui.shapeOpen = !ES.ui.shapeOpen;
+      const box = document.getElementById("esshapes");
+      if (box) box.hidden = !ES.ui.shapeOpen;
+      sh.setAttribute("aria-expanded", ES.ui.shapeOpen ? "true" : "false");
+      sh.textContent = ES.ui.shapeOpen ? "Hide sentence shape" : "Show sentence shape";
     };
     const mp = $("#esmappop");
     if (mp) mp.onclick = () => {
@@ -6663,6 +6677,21 @@
       const aside = host.querySelector(".es-map");
       if (aside) aside.hidden = !ES.ui.mapPop;
       mp.setAttribute("aria-expanded", ES.ui.mapPop ? "true" : "false");
+      // Closes the ways a menu closes: choosing, clicking away, Escape. Bound while
+      // open and dropped on close, so nothing accumulates across renders.
+      if (ES.ui.mapPop) {
+        const shut = () => {
+          ES.ui.mapPop = false;
+          if (aside) aside.hidden = true;
+          mp.setAttribute("aria-expanded", "false");
+          document.removeEventListener("mousedown", away, true);
+          document.removeEventListener("keydown", key, true);
+        };
+        const away = e => { if (aside && !aside.contains(e.target) && e.target !== mp && !mp.contains(e.target)) shut(); };
+        const key = e => { if (e.key === "Escape") { e.preventDefault(); shut(); } };
+        document.addEventListener("mousedown", away, true);
+        document.addEventListener("keydown", key, true);
+      }
       const cols = host.querySelector(".es-cols");
       if (cols) cols.classList.toggle("mapopen", !!ES.ui.mapPop);
     };
