@@ -17,10 +17,16 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  FAIL:', m); 
 
 // The authored strings, restated here so the suite owns its expectations. If the
 // content changes, this fails and someone re-reads it, which is the point.
-const AUTHORED = 'digital channels carry an offer at a lower promotion cost, so the same customers can be reached with offers again and again';
-const IDS = { authored: 'mkt01-em-value', noneRequired: 'mkt01-em-digital', alsoAuthored: 'mkt01-em-convenience' };
+const AUTHORED = 'the staff member is part of what the customer is buying, so their skill and manner are the thing being judged';
+const AUTHORED2 = 'if the staff are part of the product, differences between staff are differences in the product itself';
+const FROM = 'customers who expect personal service';
+const IDS = { authored: 'mkt01-pe-service', alsoAuthored: 'mkt01-pe-consistency', notAuthored: 'mkt01-pe-speed' };
+// The connect card's own sentence. The Operations copy is false of this question,
+// so it must not appear here, and mkt-01's own must.
+const OPS_COPY = /are actions a business takes/i;
+const MKT_INTRO = /characteristics of a target market shape the marketing strategies/i;
 
-async function openQuestion(p, qre) {
+async function openQuestion(p, qre, bodyIndex) {
   await p.goto(T); await p.waitForTimeout(400);
   await p.evaluate(() => localStorage.removeItem('marginal.essay.v1'));
   await p.goto(T); await p.waitForTimeout(700);
@@ -29,7 +35,9 @@ async function openQuestion(p, qre) {
   await p.selectOption('#essubject', 'business_studies').catch(() => {});
   await p.$$eval('.es-qchip', (es, r) => { const t = es.find(x => new RegExp(r, 'i').test(x.textContent)); t && t.click(); }, qre);
   await p.click('#esstart'); await p.waitForTimeout(700);
-  if (await p.$('.es-startrow')) await p.$$eval('.es-startrow', es => { const t = es.filter(x => /Body/.test(x.textContent))[0]; t && t.click(); });
+  if (await p.$('.es-startrow')) await p.$$eval('.es-startrow', (es, n) => {
+    const t = es.filter(x => /Body/.test(x.textContent))[n || 0]; t && t.click();
+  }, bodyIndex || 0);
   await p.waitForTimeout(650);
 }
 const offered = p => p.$$eval('[data-espath]', es => es.map(e => e.dataset.espath));
@@ -66,7 +74,8 @@ async function chain(p) {
   return p.evaluate(() => ({
     mids: Array.from(document.querySelectorAll('.esl-mid')).map(e => e.textContent.trim()),
     nodes: Array.from(document.querySelectorAll('.esl-node')).map(e => e.textContent.trim()),
-    links: document.querySelectorAll('.esl-link').length
+    links: document.querySelectorAll('.esl-link').length,
+    intro: (document.querySelector('.esl-panel .esl-lede') || {}).textContent || ''
   }));
 }
 const close = async p => { await p.keyboard.press('Escape'); await p.waitForTimeout(450); };
@@ -77,16 +86,16 @@ const close = async p => { await p.keyboard.press('Escape'); await p.waitForTime
   const errs = []; p.on('pageerror', e => errs.push(String(e).slice(0, 200)));
   await p.route(/workers\.dev/, r => r.abort());
 
-  await openQuestion(p, 'target markets affect');
+  // Body 2 is the people area, where the authored mechanisms live. Asserted rather
+  // than assumed: on the wrong body the ids below are simply absent and every
+  // assertion after them would be measuring another argument entirely.
+  await openQuestion(p, 'target markets affect', 1);
   const ids = await offered(p);
-  console.log('--- the three arguments this suite needs are on the screen ---');
+  console.log('--- the arguments this suite needs are on the screen ---');
   console.log('    offered:', JSON.stringify(ids));
-  // Asserted before anything else. Choosing a pathway that was never offered
-  // leaves the previous one selected, and every assertion below would then be
-  // measuring the wrong argument while reporting a pass.
   ok(ids.indexOf(IDS.authored) >= 0, 'the authored-mechanism argument is offered');
-  ok(ids.indexOf(IDS.noneRequired) >= 0, 'the none-required argument is offered');
   ok(ids.indexOf(IDS.alsoAuthored) >= 0, 'the second authored argument is offered');
+  ok(ids.indexOf(IDS.notAuthored) >= 0, 'the unreviewed argument is offered');
 
   console.log('--- an authored mechanism is a three-step chain ---');
   await choose(p, IDS.authored);
@@ -97,43 +106,57 @@ const close = async p => { await p.keyboard.press('Escape'); await p.waitForTime
     ok(a.mids.length === 1, 'exactly one middle step is shown: ' + a.mids.length);
     ok(a.mids[0] === AUTHORED, 'and it is the authored text, character for character: ' + JSON.stringify((a.mids[0] || '').slice(0, 50)));
     ok(a.nodes.length >= 2, 'with both ends still present: ' + JSON.stringify(a.nodes.slice(0, 4)));
+    console.log('--- and the cause is the characteristic, not the category ---');
+    // "Target market" is the category. A zero-knowledge learner needs the
+    // characteristic that actually drives the argument they picked.
+    ok(a.nodes.indexOf(FROM) >= 0, 'the chosen line is labelled with its authored characteristic: ' + JSON.stringify(a.nodes.slice(0, 4)));
+    ok(a.nodes.filter(x => x === 'Target market').length === 3, 'and the three lines the student did not choose keep the category label: ' + a.nodes.filter(x => x === 'Target market').length);
+  }
+  console.log('--- the connect card explains THIS relationship, not the Operations one ---');
+  if (a) {
+    ok(MKT_INTRO.test(a.intro), 'the question\u2019s own authored sentence is shown: ' + JSON.stringify(a.intro.slice(0, 70)));
+    // The leak this exists to catch: a target market is not an action a business
+    // takes, and a marketing strategy is not what it is trying to improve.
+    ok(!OPS_COPY.test(a.intro), 'and the strategy-to-objective copy does not appear on it');
   }
   await close(p);
 
   console.log('--- anything not authored is a two-step chain, not an empty one ---');
-  await choose(p, IDS.noneRequired);
+  await choose(p, IDS.notAuthored);
   const n = await chain(p);
   ok(!!n, 'the connect card still opens');
   if (n) {
     ok(n.links > 0, 'the chain still rendered, so a missing middle step is not a missing chain');
     ok(n.nodes.length >= 2, 'both ends are shown: ' + JSON.stringify(n.nodes.slice(0, 4)));
     ok(n.mids.length === 0, 'and no middle step is invented for it: ' + JSON.stringify(n.mids));
+    ok(n.nodes.indexOf('customers who expect speed') >= 0, 'it still gets its authored characteristic, which does not depend on the mechanism');
   }
   await close(p);
 
   console.log('--- the middle step belongs to the argument in play, not the line ---');
-  // Three arguments share the plan line "Target market to e-marketing". If the
-  // mechanism were attached to the line rather than to the chosen argument, the
-  // text above would still be showing here, against a claim nobody made.
+  // Three arguments share the plan line "Target market to people". If the mechanism
+  // were attached to the line, the first argument\u2019s text would still be here.
   await choose(p, IDS.alsoAuthored);
   const c = await chain(p);
   ok(!!c, 'the connect card opens on the third argument');
   if (c) {
     ok(c.mids.length === 1, 'it has its own middle step: ' + c.mids.length);
-    ok(c.mids[0] !== AUTHORED, 'which is not the previous argument’s: ' + JSON.stringify((c.mids[0] || '').slice(0, 50)));
+    ok(c.mids[0] === AUTHORED2, 'which is its own authored text: ' + JSON.stringify((c.mids[0] || '').slice(0, 50)));
+    ok(c.mids[0] !== AUTHORED, 'and not the previously chosen argument\u2019s');
   }
   await close(p);
 
   console.log('--- Operations is untouched by all of this ---');
-  // The objective vocabulary became per-question. Operations authors none, so it
-  // must still resolve the six performance objectives and still show no mechanism,
-  // because none is authored there either.
-  await openQuestion(p, 'operations strategies');
+  // The objective vocabulary and the intro both became per-question. Operations
+  // authors neither, so it must still resolve the six performance objectives, still
+  // show its own explanation, and still show no mechanism, because none is authored.
+  await openQuestion(p, 'operations strategies', 0);
   const o = await chain(p);
   ok(!!o, 'Operations still renders its connect card');
   if (o) {
     ok(o.links > 0, 'and still resolves its plan lines: ' + o.links);
     ok(o.mids.length === 0, 'with no middle step, because none is authored: ' + JSON.stringify(o.mids));
+    ok(OPS_COPY.test(o.intro), 'and it keeps the strategy-to-objective sentence, which is true of it: ' + JSON.stringify(o.intro.slice(0, 60)));
   }
 
   console.log('\npageerrors:', errs.length ? errs.join(' | ') : 'none');

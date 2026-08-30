@@ -4361,10 +4361,17 @@
       // against a line the student did not choose would attach it to the wrong claim.
       // Nothing is derived here. An unreviewed or none-required mechanism prints
       // nothing at all, and the chain stays the two-step pairing the plan authored.
-      const mech = (chosen && chosen.mechanism && chosen.mechanism.state === "authored"
-        && objectives.indexOf(String(chosen.area || "").toLowerCase()) >= 0)
+      const isChosen = !!(chosen && objectives.indexOf(String(chosen.area || "").toLowerCase()) >= 0);
+      const mech = (isChosen && chosen.mechanism && chosen.mechanism.state === "authored")
         ? String(chosen.mechanism.text || "").trim() : "";
-      return { line: String(line), strategy: strategy, objectives: objectives,
+      // "Target market" is the category, not the cause. The cause is a characteristic
+      // OF that market, and on the line the student's own argument runs along the
+      // authored characteristic is what they are actually learning. Authored per
+      // pathway and never derived: no splitting of `short`, no phrase taken out of
+      // `relationship`. Absent, the generic category label stands, which is still
+      // true, just less use to someone who does not know the topic yet.
+      const from = (isChosen && chosen.fromLabel) ? String(chosen.fromLabel).trim() : strategy;
+      return { line: String(line), strategy: strategy, from: from, objectives: objectives,
         mechanism: mech, lede: sib ? sib.lede : "", says: says, point: pt || null };
     }).filter(Boolean);
   }
@@ -4872,10 +4879,20 @@
     if (route === "connect") {
       const links = eslLinks(p);
       if (!links.length) return "";
-      return `<p class="esl-lede">${esc(t1)} are actions a business takes. ${esc(t2)} are what it is trying to improve. Each argument below joins one to the other.</p>
+      // The sentence below describes a strategy raising a performance objective.
+      // That is the Operations relationship, and it is false of any other: a target
+      // market is not an action a business takes, and a marketing strategy is not
+      // what a business is trying to improve. So a question that declares its own
+      // relationship vocabulary does not inherit this copy. It authors its own
+      // sentence or the card carries none, because a wrong explanation of what the
+      // two ends ARE is worse than no explanation at all.
+      const ownIntro = String(q.connectIntro || "").trim();
+      const customPair = Array.isArray(q.objectiveWords) && q.objectiveWords.length > 0;
+      const intro = ownIntro || (customPair ? "" : `${t1} are actions a business takes. ${t2} are what it is trying to improve. Each argument below joins one to the other.`);
+      return `${intro ? `<p class="esl-lede">${esc(intro)}</p>` : ""}
         ${links.map(L => `<div class="esl-link">
           <div class="esl-chain">
-            <span class="esl-node">${esc(L.strategy)}</span>
+            <span class="esl-node">${esc(L.from || L.strategy)}</span>
             ${L.mechanism ? `<span class="esl-arrow">↓</span><span class="esl-mid">${esc(L.mechanism)}</span>` : ""}
             <span class="esl-arrow">↓</span>
             <span class="esl-node">${esc(L.objectives.join(" and "))}</span>
