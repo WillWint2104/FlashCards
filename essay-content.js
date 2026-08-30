@@ -1831,8 +1831,14 @@ window.ESSAY = {
                      // to write a paragraph opener where an essay opener belongs,
                      // so these signpost and the topic frames do not.
                      causal: { tier1: "Overall, [concept from the question] can contribute to [result from the question] through [argument 1] and [argument 2].",
-                               tier2: [ { type: "signpost the ways", frame: "[concept from the question] affects [result from the question] in several ways, most importantly [argument 1] and [argument 2]." },
-                                        { type: "name the strongest", frame: "[concept from the question] shapes [result from the question] most through [strongest argument], and to a lesser extent through [weaker argument]." } ] },
+                               // Neutral by directive. A How can... question asks how something happens, not
+                               // which of two things matters more, so no frame here asks for a ranking.
+                               // "most importantly", "strongest" and "to a lesser extent" are claims about
+                               // degree, and a causal answer making one has answered a question nobody asked.
+                               // Ranking frames live in the judgement family below, where degree is the thing
+                               // being assessed.
+                               tier2: [ { type: "signpost the ways", frame: "[concept from the question] affects [result from the question] in several ways, including [argument 1] and [argument 2]." },
+                                        { type: "name the second way", frame: "[concept from the question] shapes [result from the question] through [argument 1], and also through [argument 2]." } ] },
                      judgement: { tier1: "Overall, [the subject of the question] is [your judgement] because [main reason], although [the qualification].",
                                tier2: [ { type: "line of argument", frame: "While [the other side], ultimately [your position] because [main reason]." },
                                         { type: "weigh two sides", frame: "[the subject of the question] can be assessed by weighing [one side] against [the other side], and on balance [your judgement]." } ] } } },

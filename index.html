@@ -592,19 +592,16 @@
   /* Three states, not one grid with hidden children. Closed support gives its
      space back to the writing; open support takes exactly what it needs. */
   .es-cols{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;align-items:start;margin-top:14px}
-  .es-cols.withdrawer{grid-template-columns:minmax(0,1fr) 340px}
-  /* Notes is a permanent column on desktop and never a consequence of anything
-     else being open, so its presence cannot move the writing. */
-  .es-cols.withnotes{grid-template-columns:minmax(0,1fr) 320px}
-  .es-cols.withnotes.withdrawer{grid-template-columns:minmax(0,1fr) 340px 320px}
-  .es-cols.withnotes.withctx{grid-template-columns:minmax(0,1fr) clamp(300px,26vw,390px) 320px}
-  .es-cols.withnotes.withdec{grid-template-columns:minmax(0,1fr) 340px 320px}
-  .es-cols > .es-notes{grid-column:-2}
-  .es-cols.withctx{grid-template-columns:minmax(0,1fr) clamp(300px,26vw,390px)}
+  /* A support tool is temporary, so it goes over the page like every other
+     temporary thing. It used to take a grid column, which moved the writing the
+     moment a student looked something up. The sheet is fixed and out of flow, so
+     the textarea keeps its width and its left edge whatever is open. */
+  .es-cols > .es-drawer{position:fixed;top:0;right:0;bottom:0;width:min(380px,88vw);z-index:150;
+    background:var(--card);border-left:1.5px solid var(--line);border-radius:0;
+    box-shadow:-20px 0 54px rgba(28,40,40,.20);overflow:auto;padding:16px}
   /* The decoder host is a permanent child of the columns, placed in the support
      track. It costs nothing until a stem word is pressed, and because it is not the
      node esSwapSide replaces, opening or closing a tool cannot take it away. */
-  .es-cols.withdec{grid-template-columns:minmax(0,1fr) 340px}
   .es-cols>.es-dechost{grid-column:2}
   .es-cols{grid-auto-flow:row}
   .es-cols>.es-dechost.empty{display:none}
@@ -622,30 +619,54 @@
      It now sits directly under its own button, out of flow, and the grid never
      hears about it either way. */
   .es-parahead{position:relative}
-  .es-parahead > .es-map{position:absolute;top:calc(100% + 6px);left:0;z-index:30;width:252px;
+  /* Aligned to the trigger, not merely near it. The button carries
+     margin-left:-8px, so its box starts 8px left of the row and left:0 put the
+     menu 8px right of the control it belongs to. */
+  .es-parahead > .es-map{position:absolute;top:calc(100% + 6px);left:-8px;z-index:30;width:252px;
     background:var(--card);border:1.5px solid var(--line);border-radius:14px;
     box-shadow:0 18px 46px rgba(28,40,40,.22);padding:8px;max-height:min(60vh,420px);overflow:auto}
 
-  /* NOTES. Its own column, and its one job is notes: no navigation, no plan, no
-     tools, no learning. The old rail failed because several owners shared one
-     container and fought over it. This one has a single owner. */
-  .es-notes{background:var(--card);border:1.5px solid var(--line);border-radius:14px;
-    padding:12px;display:flex;flex-direction:column;gap:9px;align-self:start;position:sticky;top:78px;
-    max-height:calc(100vh - 96px)}
-  .es-notesh{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);font-weight:700}
-  .es-notenew{width:100%;font:inherit;font-size:13.5px;line-height:1.5;border:1.5px solid var(--line);
-    border-radius:10px;padding:8px 10px;resize:vertical;min-height:64px;background:var(--bg);color:var(--ink)}
-  .es-notenew:focus{outline:none;border-color:var(--green)}
-  .es-notelist{display:flex;flex-direction:column;gap:8px;overflow:auto;min-height:0}
-  .es-note{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--bg)}
-  .es-notetext{font-size:13.5px;line-height:1.55;color:var(--ink);white-space:pre-wrap;word-break:break-word}
-  .es-noteacts{display:flex;gap:10px;margin-top:6px}
-  .es-noteact{background:none;border:none;padding:0;cursor:pointer;font:inherit;font-size:12px;color:var(--ink-2);text-decoration:underline}
-  .es-noteact:hover{color:var(--green)}
-  .es-noteedit{width:100%;font:inherit;font-size:13.5px;line-height:1.5;border:1.5px solid var(--green);
-    border-radius:8px;padding:6px 8px;resize:vertical;min-height:56px;background:var(--card);color:var(--ink)}
-  .es-noteempty{font-size:13px;color:var(--ink-2);line-height:1.55}
-  .es-notesbtn{display:none}
+  /* THE NOTEBOOK. Floating, resizable, above everything including the Learning
+     Centre, and never part of any grid: opening it cannot move the writing
+     because the writing does not know it exists. Paper rather than UI cards,
+     because the student is meant to write on it, not administer it. */
+  #esnbhost{position:fixed;inset:0;z-index:300;pointer-events:none}
+  .es-nb{position:absolute;right:26px;bottom:26px;pointer-events:auto;resize:both;overflow:hidden;
+    min-width:300px;min-height:280px;max-width:92vw;max-height:88vh;
+    background:#fffdf7;border:1.5px solid var(--line);border-radius:14px;
+    box-shadow:0 26px 70px rgba(28,40,40,.32);display:flex;flex-direction:column}
+  .es-nbhead{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #eadfc6;flex:0 0 auto}
+  .es-nbtitle{font-family:var(--disp);font-weight:600;font-size:14.5px;color:#2c2a24;flex:1}
+  .es-nbact{background:none;border:none;padding:0;cursor:pointer;font:inherit;font-size:12.5px;
+    color:#6b6455;text-decoration:underline}
+  .es-nbact:hover{color:var(--green-dk)}
+  .es-nbx{background:none;border:none;cursor:pointer;color:#6b6455;padding:3px;display:grid;place-items:center;border-radius:7px}
+  .es-nbx:hover{background:var(--green-soft);color:var(--green-dk)}
+  /* Ruled paper. The lines sit under the text at the same rhythm as the line
+     height, so writing lands on them. */
+  .es-nbpaper{flex:1;min-height:0;width:100%;border:none;outline:none;resize:none;
+    font:inherit;font-size:15px;line-height:28px;color:#1d1b16;background-color:#fffdf7;
+    background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 27px,#e7dcc2 27px,#e7dcc2 28px);
+    background-attachment:local;padding:6px 16px 16px;letter-spacing:.1px}
+  .es-nbpaper::placeholder{color:#a9a08c}
+  .es-nbfoot{display:flex;align-items:center;gap:8px;padding:8px 12px;border-top:1px solid #eadfc6;flex:0 0 auto}
+  .es-nbstep{background:none;border:1px solid #e0d5bb;border-radius:7px;cursor:pointer;color:#4a4438;
+    width:26px;height:26px;display:grid;place-items:center;font-size:15px}
+  .es-nbstep:disabled{opacity:.35;cursor:default}
+  .es-nbstep:not(:disabled):hover{border-color:var(--green);color:var(--green-dk)}
+  .es-nbpagename{flex:1;min-width:0;font:inherit;font-size:13px;font-weight:700;color:#2c2a24;
+    background:none;border:1px solid transparent;border-radius:6px;padding:3px 6px}
+  .es-nbpagename:hover{border-color:#e0d5bb}
+  .es-nbpagename:focus{outline:none;border-color:var(--green);background:#fff}
+  .es-nbcount{font-size:12px;color:#6b6455;white-space:nowrap}
+  .es-nbbar{display:flex;gap:8px;padding:10px 12px 4px;align-items:center;flex-wrap:wrap}
+  .es-nbname{flex:1;min-width:140px;font:inherit;font-size:13.5px;border:1.5px solid #e0d5bb;border-radius:8px;
+    padding:6px 9px;background:#fff;color:#1d1b16}
+  .es-nbname:focus{outline:none;border-color:var(--green)}
+  .es-nbnote{font-size:12px;color:#6b6455;line-height:1.5;margin:4px 12px 8px}
+  .es-nblib{padding:8px 12px;max-height:150px;overflow:auto}
+  .es-nbrow{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #eadfc6}
+  .es-nbrown{flex:1;font-size:13.5px;color:#1d1b16;font-weight:600}
   .es-rest.quiet.empty{display:none}
   /* Long lines are hard to write into as well as to read. */
   /* The shell takes the width so no column stands empty, but the card inside it is
@@ -1159,15 +1180,6 @@
   .es-linerow .es-linkbtn[disabled]{opacity:.4;pointer-events:none}
   .es-btn.sm{padding:7px 13px;font-size:13px}
   /* Narrower still: the response map collapses first, the composer stays readable. */
-  @media(max-width:1180px){
-    .es-cols.withnotes,.es-cols.withnotes.withdrawer,.es-cols.withnotes.withctx,
-    .es-cols.withnotes.withdec{grid-template-columns:minmax(0,1fr)}
-    .es-notes{position:fixed;top:0;right:0;bottom:0;width:min(360px,86vw);z-index:140;
-      border-radius:0;border-left:1.5px solid var(--line);max-height:none;
-      box-shadow:-18px 0 46px rgba(28,40,40,.18);transform:translateX(100%);transition:transform .18s ease}
-    body.es-notesopen .es-notes{transform:translateX(0)}
-    .es-notesbtn{display:inline-flex}
-  }
   @media(max-width:1000px){.es-cols{grid-template-columns:minmax(0,1fr)}.es-map{position:static;flex-direction:row;flex-wrap:wrap}.es-margin{order:3}}
 
   /* ===== Marking rebuild: where to start, and the way back into writing ===== */

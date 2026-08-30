@@ -3292,95 +3292,142 @@
     const all = esReadStore(); const bag = all[esBagKey()];
     ES.list = esRecent(bag && Array.isArray(bag.drafts) ? bag.drafts : []);
   }
-  // ---- MY NOTES ---------------------------------------------------------
-  // One collection per attempt, living on the draft, so it persists with
-  // everything else and survives moving between sections, opening the Learning
-  // Centre and closing it again. The page pane and the Centre's pane are two
-  // views of this array, never two stores.
+  // ---- THE NOTEBOOK -------------------------------------------------------
+  // A separate cognitive space between being taught something and writing an
+  // assessed answer. It is deliberately not part of the page geometry: it floats
+  // over whatever is underneath, so opening it never moves the writing, and it
+  // stays reachable while the Learning Centre is open because that is exactly
+  // when a student wants to write something down.
   //
-  // There is deliberately no "insert into the essay". The workflow is learn,
-  // note, return, and then say it in your own words: a control that pasted a
-  // note into the response would remove the only step in that sequence where
-  // the student has to do the thinking.
-  function esNotes() {
-    if (!ES.draft) return [];
-    if (!Array.isArray(ES.draft.notes)) ES.draft.notes = [];
-    return ES.draft.notes;
+  // Pages, not a feed. A growing list of snippets is a log; a notebook with a
+  // handful of named pages is somewhere to think. The attempt's own notebook
+  // autosaves with the draft. Saving under a name is a separate, explicit act.
+  const ES_NB_KEY = "marginal.notebooks.v1";
+  const ES_NB_SIZE = "marginal.notebook.size";
+  function esNb() {
+    if (!ES.draft) return { pages: [], active: 0 };
+    if (!ES.draft.notebook || !Array.isArray(ES.draft.notebook.pages) || !ES.draft.notebook.pages.length) {
+      ES.draft.notebook = { pages: [{ id: "p1", name: "Page 1", body: "" }], active: 0 };
+    }
+    const n = ES.draft.notebook;
+    if (n.active >= n.pages.length) n.active = n.pages.length - 1;
+    if (n.active < 0) n.active = 0;
+    return n;
   }
-  function esNoteAdd(text) {
-    const t = String(text || "").trim(); if (!t) return null;
-    const n = { id: "n" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), text: t, at: new Date().toISOString() };
-    esNotes().unshift(n); esSaveDraft(); return n;
+  function esNbPage() { const n = esNb(); return n.pages[n.active] || null; }
+  function esNbAddPage() {
+    const n = esNb();
+    n.pages.push({ id: "p" + Date.now().toString(36), name: "Page " + (n.pages.length + 1), body: "" });
+    n.active = n.pages.length - 1; esSaveDraft();
   }
-  function esNoteUpdate(id, text) {
-    const n = esNotes().find(x => x.id === id); if (!n) return;
-    const t = String(text || "").trim();
-    if (!t) return esNoteDelete(id);
-    n.text = t; esSaveDraft();
+  function esNbDeletePage() {
+    const n = esNb();
+    if (n.pages.length <= 1) { n.pages[0].body = ""; n.pages[0].name = "Page 1"; esSaveDraft(); return; }
+    n.pages.splice(n.active, 1);
+    if (n.active >= n.pages.length) n.active = n.pages.length - 1;
+    esSaveDraft();
   }
-  function esNoteDelete(id) {
-    const list = esNotes(); const i = list.findIndex(x => x.id === id);
-    if (i >= 0) { list.splice(i, 1); esSaveDraft(); }
+  function esNbGo(d) { const n = esNb(); n.active = Math.max(0, Math.min(n.pages.length - 1, n.active + d)); esSaveDraft(); }
+  function esNbLibrary() {
+    try { return JSON.parse(localStorage.getItem(ES_NB_KEY) || "[]") || []; } catch (e) { return []; }
   }
-  // The list only. Re-rendered on its own when a note changes, so nothing else
-  // on either surface is touched.
-  function esNotesListHTML() {
-    const list = esNotes();
-    if (!list.length) return `<p class="es-noteempty">Nothing yet. Notes you take while learning stay here while you write.</p>`;
-    return list.map(n => ES.ui.noteEdit === n.id
-      ? `<div class="es-note" data-esnote="${esc(n.id)}">
-           <textarea class="es-noteedit" data-esnoteedit="${esc(n.id)}">${esc(n.text)}</textarea>
-           <div class="es-noteacts">
-             <button type="button" class="es-noteact" data-esnotesave="${esc(n.id)}">save</button>
-             <button type="button" class="es-noteact" data-esnotecancel="1">cancel</button>
-           </div>
-         </div>`
-      : `<div class="es-note" data-esnote="${esc(n.id)}">
-           <div class="es-notetext">${esc(n.text)}</div>
-           <div class="es-noteacts">
-             <button type="button" class="es-noteact" data-esnoteed="${esc(n.id)}">edit</button>
-             <button type="button" class="es-noteact" data-esnotedel="${esc(n.id)}">delete</button>
-           </div>
-         </div>`).join("");
+  function esNbSaveNamed(name) {
+    const list = esNbLibrary();
+    const nm = String(name || "").trim(); if (!nm) return;
+    const copy = JSON.parse(JSON.stringify(esNb()));
+    const i2 = list.findIndex(x => x.name.toLowerCase() === nm.toLowerCase());
+    const rec = { name: nm, at: new Date().toISOString(), notebook: copy };
+    if (i2 >= 0) list[i2] = rec; else list.push(rec);
+    try { localStorage.setItem(ES_NB_KEY, JSON.stringify(list)); } catch (e) { /* quota */ }
   }
-  function esNotesPaneHTML(cls) {
-    return `<aside class="${cls}" data-esnotespane>
-      <div class="es-notesh">My notes</div>
-      <textarea class="es-notenew" data-esnotenew placeholder="Write a note in your own words..."></textarea>
-      <div class="es-notelist" data-esnotelist>${esNotesListHTML()}</div>
-    </aside>`;
+  // Opening a saved notebook must never quietly replace what the student has
+  // written for this attempt, so the copy is an explicit second step.
+  function esNbUseCopy(name) {
+    const rec = esNbLibrary().find(x => x.name === name); if (!rec || !ES.draft) return;
+    ES.draft.notebook = JSON.parse(JSON.stringify(rec.notebook)); esSaveDraft();
   }
-  // Bound per pane. Every action redraws that pane's list and nothing else: the
-  // composer, the workspace grid and the Learning Centre are all uninvolved in
-  // whether a note exists.
-  function esNotesBind(root) {
-    if (!root) return;
-    root.querySelectorAll("[data-esnotespane]").forEach(pane => {
-      const redraw = () => {
-        document.querySelectorAll("[data-esnotelist]").forEach(l => { l.innerHTML = esNotesListHTML(); });
-        document.querySelectorAll("[data-esnotespane]").forEach(x => esNotesBindOne(x));
-      };
-      esNotesBindOne(pane, redraw);
+  function esNbSize() {
+    try { const v = JSON.parse(sessionStorage.getItem(ES_NB_SIZE) || "null"); if (v && v.w && v.h) return v; } catch (e) { /* private mode */ }
+    return { w: 420, h: 520 };
+  }
+  function esNbHTML() {
+    const n = esNb(), pg = esNbPage(), lib = esNbLibrary(), sz = esNbSize();
+    const mode = ES.ui.nbMode || "";
+    return `<div class="es-nb" style="width:${sz.w}px;height:${sz.h}px" role="dialog" aria-label="Notebook">
+      <div class="es-nbhead">
+        <span class="es-nbtitle">Notebook</span>
+        <button type="button" class="es-nbact" data-esnbmode="${mode === "save" ? "" : "save"}">save notebook</button>
+        <button type="button" class="es-nbact" data-esnbmode="${mode === "open" ? "" : "open"}">open</button>
+        <button type="button" class="es-nbx" data-esnbclose aria-label="Close notebook">${esIcon("close")}</button>
+      </div>
+      ${mode === "save" ? `<div class="es-nbbar">
+        <input class="es-nbname" data-esnbname placeholder="Name this notebook" value="${esc(ES.ui.nbName || "")}">
+        <button type="button" class="es-btn sm primary" data-esnbsave>Save to this device</button>
+        <button type="button" class="es-btn sm" disabled title="Sign-in exists, but notebooks are not stored on the account yet. Nothing here is sent anywhere.">My account</button>
+      </div>
+      <p class="es-nbnote">Saved on this device only. Account storage is not wired up yet, so that option stays off rather than pretending.</p>` : ""}
+      ${mode === "open" ? `<div class="es-nblib">
+        ${lib.length ? lib.map(x => `<div class="es-nbrow">
+          <span class="es-nbrown">${esc(x.name)}</span>
+          <button type="button" class="es-noteact" data-esnbcopy="${esc(x.name)}">use a copy for this essay</button>
+        </div>`).join("") : `<p class="es-nbnote">No saved notebooks yet.</p>`}
+      </div>` : ""}
+      <textarea class="es-nbpaper" data-esnbbody placeholder="Write what you want to remember, in your own words.">${esc(pg ? pg.body : "")}</textarea>
+      <div class="es-nbfoot">
+        <button type="button" class="es-nbstep" data-esnbgo="-1" ${n.active === 0 ? "disabled" : ""} aria-label="Previous page">\u2039</button>
+        <input class="es-nbpagename" data-esnbrename value="${esc(pg ? pg.name : "")}" aria-label="Page name">
+        <span class="es-nbcount">${n.active + 1} of ${n.pages.length}</span>
+        <button type="button" class="es-nbstep" data-esnbgo="1" ${n.active >= n.pages.length - 1 ? "disabled" : ""} aria-label="Next page">\u203a</button>
+        <button type="button" class="es-nbact" data-esnbadd>+ new page</button>
+        <button type="button" class="es-nbact" data-esnbdel>delete page</button>
+      </div>
+    </div>`;
+  }
+  function esNbMount() {
+    let host = document.getElementById("esnbhost");
+    if (!host) { host = document.createElement("div"); host.id = "esnbhost"; document.body.appendChild(host); }
+    host.innerHTML = esNbHTML();
+    esNbBind(host);
+  }
+  function esNbUnmount() {
+    const host = document.getElementById("esnbhost"); if (host) host.remove();
+    ES.ui.nbOpen = false; ES.ui.nbMode = "";
+    document.querySelectorAll("[data-esnbtoggle]").forEach(b => b.setAttribute("aria-expanded", "false"));
+  }
+  function esNbToggle() {
+    ES.ui.nbOpen = !ES.ui.nbOpen;
+    if (ES.ui.nbOpen) { esNbMount(); document.querySelectorAll("[data-esnbtoggle]").forEach(b => b.setAttribute("aria-expanded", "true")); }
+    else esNbUnmount();
+  }
+  function esNbBind(host) {
+    const panel = host.querySelector(".es-nb"); if (!panel) return;
+    const body = panel.querySelector("[data-esnbbody]");
+    // Autosave while typing. No save button for the attempt's own notebook,
+    // because a notebook you can lose by navigating away is not a notebook.
+    if (body) body.oninput = () => { const pg = esNbPage(); if (pg) { pg.body = body.value; esSaveDraft(); } };
+    const rn = panel.querySelector("[data-esnbrename]");
+    if (rn) rn.oninput = () => { const pg = esNbPage(); if (pg) { pg.name = rn.value; esSaveDraft(); } };
+    panel.querySelectorAll("[data-esnbgo]").forEach(b => b.onclick = () => { esNbGo(Number(b.dataset.esnbgo)); esNbMount(); });
+    const add = panel.querySelector("[data-esnbadd]"); if (add) add.onclick = () => { esNbAddPage(); esNbMount(); };
+    const del = panel.querySelector("[data-esnbdel]");
+    if (del) del.onclick = () => { if (window.confirm("Delete this page? What is written on it will be lost.")) { esNbDeletePage(); esNbMount(); } };
+    panel.querySelectorAll("[data-esnbmode]").forEach(b => b.onclick = () => { ES.ui.nbMode = b.dataset.esnbmode; esNbMount(); });
+    const nm = panel.querySelector("[data-esnbname]"); if (nm) nm.oninput = () => { ES.ui.nbName = nm.value; };
+    const sv = panel.querySelector("[data-esnbsave]");
+    if (sv) sv.onclick = () => { esNbSaveNamed(ES.ui.nbName); ES.ui.nbMode = ""; esNbMount(); };
+    panel.querySelectorAll("[data-esnbcopy]").forEach(b => b.onclick = () => {
+      if (window.confirm("Replace this essay's notebook with a copy of \"" + b.dataset.esnbcopy + "\"? The current notebook will be lost unless you saved it.")) {
+        esNbUseCopy(b.dataset.esnbcopy); ES.ui.nbMode = ""; esNbMount();
+      }
     });
-  }
-  function esNotesBindOne(pane, redraw) {
-    const again = redraw || (() => {
-      document.querySelectorAll("[data-esnotelist]").forEach(l => { l.innerHTML = esNotesListHTML(); });
-      document.querySelectorAll("[data-esnotespane]").forEach(x => esNotesBindOne(x));
-    });
-    const box = pane.querySelector("[data-esnotenew]");
-    if (box) box.onkeydown = e => {
-      // Enter saves, shift+Enter is a new line, which is what a notes field does.
-      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (box.value.trim()) { esNoteAdd(box.value); box.value = ""; again(); } }
-    };
-    pane.querySelectorAll("[data-esnoteed]").forEach(b => b.onclick = () => { ES.ui.noteEdit = b.dataset.esnoteed; again(); });
-    pane.querySelectorAll("[data-esnotedel]").forEach(b => b.onclick = () => { esNoteDelete(b.dataset.esnotedel); again(); });
-    pane.querySelectorAll("[data-esnotecancel]").forEach(b => b.onclick = () => { ES.ui.noteEdit = null; again(); });
-    pane.querySelectorAll("[data-esnotesave]").forEach(b => b.onclick = () => {
-      const id = b.dataset.esnotesave;
-      const ta = pane.querySelector('[data-esnoteedit="' + id + '"]');
-      esNoteUpdate(id, ta ? ta.value : ""); ES.ui.noteEdit = null; again();
-    });
+    const x = panel.querySelector("[data-esnbclose]"); if (x) x.onclick = () => esNbUnmount();
+    // The student's own size, remembered for the session.
+    if (window.ResizeObserver) {
+      const ro = new ResizeObserver(() => {
+        try { sessionStorage.setItem(ES_NB_SIZE, JSON.stringify({ w: Math.round(panel.offsetWidth), h: Math.round(panel.offsetHeight) })); } catch (e) { /* private mode */ }
+      });
+      ro.observe(panel);
+    }
   }
 
   function esSaveDraft() {
@@ -5076,15 +5123,13 @@
     return `<div class="esl-panel ${ES.centre && ES.centre.dock === "left" ? "left" : ""}" role="dialog" aria-label="Learning centre">
       <div class="esl-head">
         <h2 class="esl-title" id="esltitle" tabindex="-1">Learning centre</h2>
+        <button type="button" class="esl-tab" data-esnbtoggle aria-expanded="${ES.ui.nbOpen ? "true" : "false"}">notebook</button>
         <button type="button" class="esl-dock" id="esldock" aria-label="Move to the other side">⇄</button>
         <button type="button" class="esl-x" id="eslx" aria-label="Close">${esIcon("close")}</button>
       </div>
       <p class="esl-q">${esc(q.text || (ES.draft && ES.draft.question) || "")}</p>
       <div class="esl-tabs">${tab("choose", "Start here")}${sides.first ? tab("strategies", sides.first) : ""}${sides.second ? tab("objectives", sides.second) : ""}${hasLinks ? tab("connect", "How they connect") : ""}${dir ? tab("directive", `What "${dir.command.toLowerCase()}" means`) : ""}</div>
-      <div class="esl-body">
-        <div class="esl-main">${eslBodyHTML(p)}</div>
-        ${esNotesPaneHTML("esl-notes")}
-      </div>
+      <div class="esl-body"><div class="esl-main">${eslBodyHTML(p)}</div></div>
       <div class="esl-foot">
         ${guide ? `<span class="esl-footg"><b>${esc(guide.head || "")}</b> ${esc(guide.job || "")}</span>` : ""}
         <button type="button" class="es-btn primary sm" id="eslback">Back to your sentence</button>
@@ -5121,7 +5166,7 @@
       // Only the centre re-renders. esRender is never called from in here.
       eslMount(p);
     });
-    esNotesBind(host);
+    host.querySelectorAll("[data-esnbtoggle]").forEach(b => b.onclick = () => esNbToggle());
     // Entering a lesson is internal navigation inside this overlay.
     host.querySelectorAll("[data-esllesson]").forEach(b => b.onclick = () => {
       ES.centre.lesson = b.dataset.esllesson; ES.centre.route = "lesson"; ES.centre.layers = {};
@@ -6626,7 +6671,7 @@
             whenever the argument picker was showing. */ ""}
       ${esWritingHead(sc, "Guided", "full attempt", "full", true)}
       ${esToolbeltHTML(p)}
-      <div class="es-cols withnotes ${ES.ui.tool ? "withdrawer" : ES.ui.contextView ? "withctx" : esDecodeOf(esQuestionDef()) ? "withdec" : ""}">
+      <div class="es-cols ${ES.ui.tool ? "withdrawer" : ES.ui.contextView ? "withctx" : esDecodeOf(esQuestionDef()) ? "withdec" : ""}">
         ${esDecodeHost(esQuestionDef())}
         <div class="es-compose">
           <div class="es-parahead">
@@ -6649,7 +6694,7 @@
               return ""; })()}
             <span class="es-headacts">
               ${(esIsIntro(p) || esIsConcl(p)) ? `<button type="button" class="es-linkbtn es-ctxbtn" id="esctx" data-esctxview="${esIsConcl(p) ? "judgement" : "plan"}" aria-expanded="${ES.ui.contextView ? "true" : "false"}">${esIsConcl(p) ? "Review my arguments" : "View plan"}</button>` : ""}
-              <button type="button" class="es-linkbtn es-notesbtn" id="esnotesbtn" aria-expanded="false">notes</button>
+              <button type="button" class="es-linkbtn" data-esnbtoggle aria-expanded="${ES.ui.nbOpen ? "true" : "false"}">notebook</button>
               <button type="button" class="es-mapall" id="esreview">read all</button>
             </span>
           </div>
@@ -6709,7 +6754,6 @@
           <div class="es-seqhost">${esSeqNudge(p)}</div>
         </div>
         ${ES.ui.tool ? esDrawerHTML(p) : esRestHTML(p)}
-        ${esNotesPaneHTML("es-notes")}
       </div>
     </div></div></div>`;
 
@@ -6836,14 +6880,7 @@
       if (ES.ui.contextView) ES.ui.tool = null;
       esRenderKeepingPlace(p);
     };
-    esNotesBind(host);
-    const nb = $("#esnotesbtn");
-    if (nb) nb.onclick = () => {
-      // Narrow screens only. A fixed drawer sliding over the page, so the writing
-      // column is the same width open or closed.
-      document.body.classList.toggle("es-notesopen");
-      nb.setAttribute("aria-expanded", document.body.classList.contains("es-notesopen") ? "true" : "false");
-    };
+    host.querySelectorAll("[data-esnbtoggle]").forEach(b => b.onclick = () => esNbToggle());
     const sh = $("#esshape");
     if (sh) sh.onclick = () => {
       // Touches its own button and its own panel. No capture, no render, no
