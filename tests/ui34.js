@@ -57,7 +57,10 @@ async function toComposer(p){
     sel:document.querySelector('#esline').selectionStart}));
 
   console.log('--- switching tools rebuilds nothing ---');
-  const cycle = ['understand','evidence','structure','vocabulary','understand'].filter(t=>tools.includes(t));
+  // Learn opens the Learning Centre now, which is a modal rather than a tool the
+  // belt swaps in place, so it is exercised separately below. The cycle here is
+  // the four writing tools, which do switch inside one window.
+  const cycle = ['evidence','structure','vocabulary','evidence'].filter(t=>tools.includes(t));
   ok(cycle.length>=3,'the cycle exercises at least three tools');
   for (const t of cycle){
     await p.$$eval(`[data-estool="${t}"]`,es=>es[0].click()); await p.waitForTimeout(360);
@@ -75,6 +78,22 @@ async function toComposer(p){
     ok(st.sel===before.sel,   t+': the caret survived at '+st.sel);
   }
 
+  console.log('--- and opening the Learning Centre rebuilds nothing either ---');
+  // The surface changed from a drawer to a modal, so the same guarantee has to be
+  // proven again on the new one: the workspace underneath is not remounted.
+  if (tools.includes('understand')) {
+    await p.$$eval('[data-estool="understand"]', es => es[0].click()); await p.waitForTimeout(420);
+    const cst = await p.evaluate(()=>({
+      centre: !!document.querySelector('.esl-panel'),
+      recreated:['.es-scrim','.es-shell','.es-wrap','.es-belt','.es-compose','#esline']
+        .filter(s=>document.querySelector(s)!==window.__ref[s]),
+      v: document.querySelector('#esline')?.value }));
+    ok(cst.centre,'Learn opens the Learning Centre');
+    ok(cst.recreated.length===0,'and the workspace under it is the same DOM: '+JSON.stringify(cst.recreated));
+    ok(cst.v===before.v,'with the sentence untouched: '+JSON.stringify((cst.v||'').slice(0,30)));
+    await p.keyboard.press('Escape'); await p.waitForTimeout(320);
+  } else ok(false,'the Learn control is reachable');
+
   console.log('--- and the student can still undo ---');
   // The point of the whole fix. Before it, this returned the text unchanged
   // because .value assignment never entered the undo stack.
@@ -86,8 +105,11 @@ async function toComposer(p){
   console.log('--- the question decoder stays alive behind an open drawer ---');
   // Open a tool that is NOT already open: clicking the lit one toggles it shut,
   // and the cycle above finishes with one lit.
+  // Skip Learn: it opens the Centre, not a drawer, and this checks the decoder
+  // survives behind a writing tool.
   await p.$$eval('[data-estool]',es=>{
-    const t=es.find(x=>!x.disabled && !x.classList.contains('on')); t&&t.click(); });
+    const t=es.find(x=>!x.disabled && !x.classList.contains('on') && x.dataset.estool!=='understand');
+    t&&t.click(); });
   await p.waitForTimeout(380);
   ok(!!(await p.$('.es-drawer')),'a drawer is open');
   const dec = await p.$$eval('[data-esdecode]',es=>es.map(e=>e.textContent.trim()));

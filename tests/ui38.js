@@ -61,11 +61,13 @@ async function choose(p, id) {
 }
 // Open the centre and the connect card. Returns the chain as the student sees it.
 async function chain(p) {
+  // Learn opens the Learning Centre directly now. It used to open a drawer that
+  // carried an "Open learning centre" link, and that link no longer exists
+  // because the drawer does not.
   const tool = await p.$('[data-estool="understand"]');
-  if (tool) { await tool.click(); await p.waitForTimeout(420); }
-  const lo = await p.$('#eslopen');
-  if (!lo) return null;
-  await lo.click(); await p.waitForTimeout(650);
+  if (!tool) return null;
+  await tool.click(); await p.waitForTimeout(650);
+  if (!(await p.$('.esl-panel'))) return null;
   const opened = await p.$$eval('.esl-panel button', es => {
     const t = es.find(x => /How they connect/i.test(x.textContent || '')); if (t) { t.click(); return true; } return false;
   });

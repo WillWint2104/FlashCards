@@ -47,7 +47,14 @@ async function run(sourced){
   ok(!/checked source|withheld|unverified/i.test(a.note.join(' ')),'without exposing how the system thinks about it');
   console.log('    evidence drawer:',JSON.stringify(a.drawer.slice(0,150)));
   ok(/No verified evidence/i.test(a.drawer),'the drawer withholds rather than warns');
-  ok(/12 items are written/.test(a.drawer),'and is honest about how many are held back: '+/(\d+) items? (is|are) written/.exec(a.drawer));
+  // This used to assert the opposite: that the panel told the student how many
+  // items were held back. That is authoring state. It names nothing the student
+  // can act on and announces that the product is unfinished, which is not theirs
+  // to carry, and it contradicted the assertion four lines above. The contract is
+  // now the honesty rule itself, so removing the leak cannot silently regress.
+  const leak = /\d+\s+items?\s+(is|are)\s+written|waiting on a checked source|withheld|unverified|candidate/i;
+  ok(!leak.test(a.drawer),'no authoring state reaches the student: '+JSON.stringify((a.drawer.match(leak)||[""])[0]));
+  ok(!leak.test(a.note.join(' ')),'nor anywhere in the plan copy');
   ok(!/McDonald/.test(a.drawer),'no unverified fact leaks into the drawer at all');
   console.log('    belt:',JSON.stringify(a.belt.map(x=>x.l+(x.off?'(off)':''))));
   ok(a.belt.filter(x=>/Learn|Arguments|Structure/.test(x.l)).every(x=>!x.off),'Learn, Arguments and Structure keep working');

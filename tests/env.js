@@ -49,7 +49,17 @@ async function openMap(page) {
   const b = await page.$("#esmappop");
   if (b) { await b.click(); await page.waitForTimeout(220); }
 }
+// The section list is an overlay now, not a grid column, so one left open sits on
+// top of whatever the next step wants to press. A menu closes before anything
+// outside it is clicked, which is what a person does without thinking about it.
+async function closeMap(page) {
+  const shown = await page.$eval(".es-map", e => !e.hasAttribute("hidden")).catch(() => false);
+  if (!shown) return;
+  await page.keyboard.press("Escape").catch(() => {});
+  await page.waitForTimeout(220);
+}
 async function nextSection(page) {
+  await closeMap(page);
   const done = await page.$("#esdonenext");
   if (done) { await done.click(); await page.waitForTimeout(420); return; }
   await openMap(page);
@@ -60,6 +70,7 @@ async function nextSection(page) {
   await page.waitForTimeout(420);
 }
 async function prevSection(page) {
+  await closeMap(page);
   await openMap(page);
   await page.$$eval(".es-mapitem", es => {
     const i = es.findIndex(e => /(^|\s)on(\s|$)/.test(e.className));
@@ -75,7 +86,7 @@ async function planAll(page) {
   if (b) { await b.click(); await page.waitForTimeout(400); }
 }
 
-module.exports = {
+module.exports = { closeMap,
   nextSection, prevSection, planAll, openMap,
   chromium, ROOT, OUT, BASE: OUT,
   WALK, T: url(WALK),

@@ -42,6 +42,10 @@ async function openTool(p, c, tool) {
   // A click can land while the drawer fails to render. Returning true there sends
   // the geometry reads into a null and kills the run before its summary, so the
   // suite reports a crash rather than a failure.
+  // Learn opens the Learning Centre; the other four open the writing tool window.
+  // Verifying the drawer for all of them reported "Learn did not open" when what
+  // had actually happened was that Learn opened something else.
+  if (tool === 'understand') return !!(await p.$('.esl-panel')) && !!(await p.$('.esl-main')) && !!(await p.$('.esl-foot'));
   return !!(await p.$('.es-drawer')) && !!(await p.$('.es-drawer-body')) && !!(await p.$('.es-drawer-foot'));
 }
 
@@ -81,49 +85,49 @@ const reachLast = p => p.evaluate(() => {
     const at = `${vp.width}x${vp.height}`;
     console.log(`--- ${at} ---`);
 
-    if (await openTool(p, WORST, 'understand')) {
-      for (const stage of ['collapsed', 'read more open']) {
-        if (stage === 'read more open') {
-          const rm = await p.$('#esmoreread');
-          if (!rm) { console.log('    no Read more on this entry'); break; }
-          await rm.click(); await p.waitForTimeout(320);
-        }
-        const g = await geom(p);
-        console.log(`    worst, ${stage}: ${g.words} words, drawer ${g.drawer.top}-${g.drawer.bottom} in ${g.vh}px`);
-        ok(g.drawer.bottom <= g.vh, `${at} ${stage}: the drawer ends on screen: ${g.drawer.bottom} <= ${g.vh}`);
-        ok(g.drawer.top >= 0, `${at} ${stage}: the drawer starts on screen: ${g.drawer.top}`);
-        ok(g.foot.bottom <= g.vh && g.foot.top >= 0,
-          `${at} ${stage}: the footer is readable without scrolling the page: ${g.foot.top}-${g.foot.bottom} in ${g.vh}`);
-        // Not "it must scroll": the longest entry is no longer a wall of prose, so at a
-        // tall viewport it legitimately fits. The contract is two sided - a scrollbar
-        // appears only once the drawer is out of room, and nothing is ever clipped.
-        ok(g.scrollH <= g.clientH + 1 || g.drawer.bottom >= g.vh - 20,
-          `${at} ${stage}: a scrollbar only once the drawer is out of room: ${g.scrollH} into ${g.clientH}`);
-        ok(g.foot.bottom <= g.drawer.bottom + 1, `${at} ${stage}: the footer is inside the drawer, not below it`);
-        ok(await reachLast(p) === 'reachable', `${at} ${stage}: the last control can be pressed: ${await reachLast(p)}`);
-      }
-    } else ok(false, `${at}: Learn opened on the worst-case entry`);
-
-    if (await openTool(p, SHORT, 'understand')) {
-      const g = await geom(p);
-      console.log(`    short: ${g.words} words, drawer ${g.drawer.top}-${g.drawer.bottom} in ${g.vh}px`);
-      ok(g.drawer.bottom <= g.vh, `${at} short: the drawer ends on screen: ${g.drawer.bottom} <= ${g.vh}`);
-      ok(g.foot.bottom <= g.vh && g.foot.top >= 0, `${at} short: the footer is on screen`);
-      ok(await reachLast(p) === 'reachable', `${at} short: the last control can be pressed: ${await reachLast(p)}`);
-      // In the three-column layout the drawer is sized by its content. A scrollbar
-      // is correct only once it has run out of room: on a short screen even a
-      // short entry can exceed what is left below the question and the toolbelt.
-      const fixed = await p.$eval('.es-drawer', e => getComputedStyle(e).position === 'fixed');
-      if (!fixed) {
-        const atCap = g.drawer.bottom >= g.vh - 20;
-        ok(g.scrollH <= g.clientH + 1 || atCap,
-          `${at} short: a scrollbar only once the drawer is out of room: ${g.scrollH} into ${g.clientH}, at cap ${atCap}`);
-        ok(g.drawer.h <= g.vh - g.drawer.top,
-          `${at} short: the drawer is never taller than the room it has: ${g.drawer.h} in ${g.vh - g.drawer.top}`);
-        if (!atCap) ok(g.foot.bottom <= g.drawer.bottom + 1 && g.drawer.bottom - g.foot.bottom < 8,
-          `${at} short: no dead space under the footer: ${g.drawer.bottom - g.foot.bottom}px`);
-      }
-    } else ok(false, `${at}: Learn opened on the short entry`);
+    // Learn is a modal now, not a drawer, so drawer geometry is not the contract
+    // any more: those assertions measured a surface that no longer exists. What
+    // has to hold instead is what a modal owes the page it covers.
+    for (const [entry, name] of [[WORST, 'worst-case entry'], [SHORT, 'short entry']]) {
+      const opened = await openTool(p, entry, 'understand');
+      ok(opened, `${at}: Learn opens on the ${name}`);
+      if (!opened) continue;
+      const c = await p.evaluate(() => {
+        const panel = document.querySelector('.esl-panel');
+        const main = document.querySelector('.esl-main');
+        const foot = document.querySelector('.esl-foot');
+        const line = document.querySelector('#esline');
+        const r = panel ? panel.getBoundingClientRect() : null;
+        const f = foot ? foot.getBoundingClientRect() : null;
+        return {
+          panels: document.querySelectorAll('.esl-panel').length,
+          essayStillMounted: !!document.querySelector('.es-compose'),
+          lineStillMounted: !!line,
+          lineValue: line ? line.value : null,
+          top: r ? Math.round(r.top) : null, bottom: r ? Math.round(r.bottom) : null,
+          vh: window.innerHeight,
+          scrolls: main ? main.scrollHeight > main.clientHeight + 1 : null,
+          mainOverflow: main ? getComputedStyle(main).overflowY : null,
+          footInside: (f && r) ? f.bottom <= r.bottom + 1 : null
+        };
+      });
+      console.log(`    ${name}: panel ${c.top}-${c.bottom} in ${c.vh}px, main scrolls ${c.scrolls}`);
+      ok(c.panels === 1, `${at} ${name}: exactly one Learning Centre is open: ${c.panels}`);
+      ok(c.essayStillMounted && c.lineStillMounted, `${at} ${name}: the essay stays mounted underneath it`);
+      ok(c.top >= 0 && c.bottom <= c.vh, `${at} ${name}: the modal is on screen: ${c.top}-${c.bottom} in ${c.vh}`);
+      ok(c.mainOverflow === 'auto' || c.mainOverflow === 'scroll',
+        `${at} ${name}: long content scrolls inside the modal rather than off it: ${c.mainOverflow}`);
+      ok(c.footInside === true, `${at} ${name}: the footer is inside the modal, not below it`);
+      // Closing puts the student back where they were, which is the whole reason
+      // the modal is allowed to cover the page in the first place.
+      await p.keyboard.press('Escape'); await p.waitForTimeout(320);
+      const after = await p.evaluate(() => ({
+        gone: !document.querySelector('.esl-panel'),
+        line: document.querySelector('#esline') ? document.querySelector('#esline').value : null
+      }));
+      ok(after.gone, `${at} ${name}: Escape closes it`);
+      ok(after.line === c.lineValue, `${at} ${name}: and the writing is exactly as it was`);
+    }
     await ctx.close();
   }
   console.log('pageerrors:', errs.length ? errs : 'none');

@@ -118,14 +118,18 @@ const rungs = p => p.$$eval('.es-rung',es=>es.map(e=>({n:e.querySelector('.es-ru
   ok(surfaceRows>=3,'and the parts of the concept are on the surface, not buried behind Read more: '+surfaceRows);
   ok(!!(await p.$('#esmoreread')),'and there is a deeper read behind it');
   await p.click('#esmoreread'); await p.waitForTimeout(250);
-  const deep=await p.$eval('.es-drawer-more',e=>e.innerText);
+  // Learn opens the Learning Centre now, so the deeper read is the Centre's own
+  // disclosure rather than the drawer's. The contract below is unchanged: it is
+  // still a real explanation, still names what students get wrong, still defines
+  // terminology, and still refuses to write their case study for them.
+  const deep=await p.$eval('[data-esllayerb="deeper"]',e=>e.innerText);
   ok(deep.length>1200,'read more is a real explanation: '+deep.length+' chars');
   ok(/easy to get wrong/i.test(deep),'including what students get wrong');
   ok(/a simple example/i.test(deep),'and a conceptual example');
   ok((await p.$$eval('.es-gloss dt',es=>es.length))>=5,'with terminology defined, not just listed');
   ok(!/mcdonald/i.test(deep),'and it teaches the concept without writing their case study for them');
   await p.screenshot({path:OUT+'shot-p1-learn.png'});
-  await p.click('#esdrawerx'); await p.waitForTimeout(250);
+  await p.click('#eslx'); await p.waitForTimeout(300);
   ok(!!(await p.$('#esline')),'closing puts them back on the sentence');
 
   console.log('6. Arguments explains what each option MEANS');
@@ -147,7 +151,16 @@ const rungs = p => p.$$eval('.es-rung',es=>es.map(e=>({n:e.querySelector('.es-ru
   console.log('    evidence shown:',evs.length);
   ok(evs.length>0&&evs.length<=4,'the best few for this argument, not a generic list: '+evs.length);
   ok(evs.every(t=>/For this argument:/.test(t)),'each says why it fits THIS argument');
-  ok(evs.some(t=>/No source has been recorded/.test(t)||/Source:/.test(t)),'and either names its source or says it has none');
+  // An item only reaches a student with both a source and a checked date, so
+  // "no source recorded" can no longer appear on screen at all. What each item
+  // carries now is exactly one status, never the old pair that said verified and
+  // check-it-yourself in the same breath.
+  const statuses=await p.$$eval('.es-ev',es=>es.map(e=>({
+    ok:/Checked case study fact/.test(e.textContent),
+    dated:/Check the current figure/.test(e.textContent)})));
+  ok(statuses.every(x=>x.ok||x.dated),'every item shown carries a status');
+  ok(statuses.every(x=>!(x.ok&&x.dated)),'and never both at once, which said two things to the student');
+  ok(!/No source has been recorded/.test(evs.join(' ')),'nothing unsourced reaches the student to explain itself');
   ok(evs.some(t=>/does not/i.test(t)||/Say how/i.test(t)||/Use it for/i.test(t)),'with a limit on how far it can be pushed');
   ok(!!(await p.$('#esevall')),'browsing the whole bank is still possible');
   await p.screenshot({path:OUT+'shot-p1-evidence.png'});

@@ -5075,6 +5075,10 @@
       if (key === "understand") {
         ES.centre = ES.centre || { route: "choose", dock: "right" };
         ES.centre.open = true;
+        // Straight to the concept this paragraph's argument names, where one is
+        // authored. Landing on a chooser when the app already knows what the
+        // student is arguing about makes them pick something it could have opened.
+        ES.centre.route = esToolData("understand", p) ? "concept" : "choose";
         ES.ui.tool = null; ES.ui.contextView = null; esRenderKeepingPlace(p);
         eslMount(p); return;
       }
@@ -5199,6 +5203,29 @@
     const q = esQuestionDef() || {};
     const route = (ES.centre && ES.centre.route) || "choose";
     const sides = eslSides(p), t1 = sides.first, t2 = sides.second;
+    // The concept behind this paragraph's argument. Learn used to open a drawer on
+    // it; moving Learn to the Centre left that teaching with no route into it at
+    // all, which is a loss of function rather than a change of address. Same
+    // authored data, same two depths, now inside the Centre.
+    if (route === "concept") {
+      const d2 = esToolData("understand", p);
+      if (!d2) return "";
+      const para = x => `<p class="esl-p">${esc(x)}</p>`;
+      const more = (d2.watch || []).map(w => `<div class="esl-sech">${esc(w.label)}</div>${para(w.text)}`).join("")
+        + (d2.rest || []).map(para).join("") + (d2.readMore || []).map(para).join("")
+        + (d2.why ? para(d2.why) : "") + (d2.example ? `<div class="esl-sech">a simple example</div>${para(d2.example)}` : "");
+      return `${d2.topic ? `<div class="esl-sech">${esc(d2.topic)}</div>` : ""}
+        <h3 class="esl-l1 es-drawer-h">${esc(d2.title)}</h3>
+        ${d2.lede ? `<p class="esl-p es-drawer-p">${esc(d2.lede)}</p>` : ""}
+        ${d2.floor ? para(d2.floor) : ""}
+        ${(d2.parts && d2.parts.length) ? `<dl class="es-gloss surface">${d2.parts.map(x =>
+          `<dt>${esc(x.label)}</dt><dd>${esc(x.meaning)}</dd>`).join("")}</dl>` : ""}
+        ${more ? `<div class="esl-layer">
+          <button type="button" class="esl-layerh" data-esllayer="deeper" id="esmoreread" aria-expanded="${(ES.centre && ES.centre.layers && ES.centre.layers.deeper) ? "true" : "false"}">
+            <span>Read more about this</span><span>${(ES.centre && ES.centre.layers && ES.centre.layers.deeper) ? "\u2212" : "+"}</span></button>
+          <div class="esl-layerb" data-esllayerb="deeper"${(ES.centre && ES.centre.layers && ES.centre.layers.deeper) ? "" : " hidden"}>${more}</div>
+        </div>` : ""}`;
+    }
     if (route === "strategies") {
       const sibs = eslSiblings(p);
       if (!sibs.length) return `<p class="esl-none">Nothing has been written for the other parts of this topic yet.</p>`;
@@ -5330,6 +5357,7 @@
     // Absence is absence. A question with no authored relationships simply has no
     // third route, rather than a line telling the student the app is unfinished.
     const hasLinks = eslLinks(p).length > 0, dir = eslDirective();
+    const hasConcept = !!esToolData("understand", p);
     return `<div class="esl-panel ${ES.centre && ES.centre.dock === "left" ? "left" : ""}" role="dialog" aria-label="Learning centre">
       <div class="esl-head">
         <h2 class="esl-title" id="esltitle" tabindex="-1">Learning centre</h2>
@@ -5338,7 +5366,7 @@
         <button type="button" class="esl-x" id="eslx" aria-label="Close">${esIcon("close")}</button>
       </div>
       <p class="esl-q">${esc(q.text || (ES.draft && ES.draft.question) || "")}</p>
-      <div class="esl-tabs">${tab("choose", "Start here")}${sides.first ? tab("strategies", sides.first) : ""}${sides.second ? tab("objectives", sides.second) : ""}${hasLinks ? tab("connect", "How they connect") : ""}${dir ? tab("directive", `What "${dir.command.toLowerCase()}" means`) : ""}</div>
+      <div class="esl-tabs">${tab("choose", "Start here")}${hasConcept ? tab("concept", "This argument") : ""}${sides.first ? tab("strategies", sides.first) : ""}${sides.second ? tab("objectives", sides.second) : ""}${hasLinks ? tab("connect", "How they connect") : ""}${dir ? tab("directive", `What "${dir.command.toLowerCase()}" means`) : ""}</div>
       <div class="esl-body"><div class="esl-main">${eslBodyHTML(p)}</div></div>
       <div class="esl-foot">
         ${guide ? `<span class="esl-footg"><b>${esc(guide.head || "")}</b> ${esc(guide.job || "")}</span>` : ""}
@@ -7111,14 +7139,22 @@
       // Closes the ways a menu closes: choosing, clicking away, Escape. Bound while
       // open and dropped on close, so nothing accumulates across renders.
       if (ES.ui.mapPop) {
+        // Look the menu up when the event fires, never capture it. A render while
+        // the menu is open replaces the node, and handlers holding the old one
+        // then hid a detached element: the menu on screen stayed open and could
+        // not be closed by Escape, by clicking away, or by anything else.
+        const live = () => document.querySelector(".es-map");
         const shut = () => {
           ES.ui.mapPop = false;
-          if (aside) aside.hidden = true;
-          mp.setAttribute("aria-expanded", "false");
+          const node = live(); if (node) node.hidden = true;
+          document.querySelectorAll("#esmappop").forEach(x => x.setAttribute("aria-expanded", "false"));
           document.removeEventListener("mousedown", away, true);
           document.removeEventListener("keydown", key, true);
         };
-        const away = e => { if (aside && !aside.contains(e.target) && e.target !== mp && !mp.contains(e.target)) shut(); };
+        const away = e => {
+          const node = live();
+          if (node && !node.contains(e.target) && !(e.target.closest && e.target.closest("#esmappop"))) shut();
+        };
         const key = e => { if (e.key === "Escape") { e.preventDefault(); shut(); } };
         document.addEventListener("mousedown", away, true);
         document.addEventListener("keydown", key, true);

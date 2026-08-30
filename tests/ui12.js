@@ -100,14 +100,22 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   ok(typed===expect,'typing continues from exactly there: '+JSON.stringify(typed.slice(0,30)));
 
   console.log('--- no model request anywhere in the toolbelt ---');
+  // Learn opens the Learning Centre rather than a drawer, and the Centre is a
+  // modal: leaving it open swallows the press on the next tool. Each surface is
+  // closed before the next is opened, so the loop really does visit all five
+  // rather than stopping at the first one that covers the others.
   for (const t of ['understand','ideas','evidence','structure','vocabulary']) {
     const btn = await p.$(`[data-estool="${t}"]:not([disabled])`);
-    if (btn) { await btn.click(); await p.waitForTimeout(200); }
+    if (btn) {
+      await btn.click(); await p.waitForTimeout(250);
+      await p.keyboard.press('Escape'); await p.waitForTimeout(200);
+    }
   }
   ok(calls===0,'zero worker calls after opening every tool: '+calls);
 
   await p.click('[data-estool="understand"]').catch(()=>{});
-  await p.waitForTimeout(300);
+  await p.waitForTimeout(350);
+  await p.keyboard.press('Escape'); await p.waitForTimeout(250);
   await p.$eval('#esline',e=>e.scrollIntoView({block:'center'})).catch(()=>{});
   await p.screenshot({path:OUT+'shot-toolbelt.png'});
 
