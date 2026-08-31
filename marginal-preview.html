@@ -1567,6 +1567,8 @@
     font:inherit;font-size:13px;color:var(--ink-2);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
   .es-pill:hover{border-color:var(--green);color:var(--green-dk)}
   .es-pill.on{background:var(--green-soft);border-color:var(--green);color:var(--green-dk);font-weight:700}
+  .es-pill.empty{opacity:.42;cursor:default;border-style:dashed}
+  .es-pill.empty:hover{border-color:var(--line);background:none}
   .es-pilln{font-size:11px;color:var(--ink-3);font-weight:600}
   .es-pill.on .es-pilln{color:var(--green-dk)}
   .es-qrows{display:flex;flex-direction:column;gap:6px}
@@ -11148,10 +11150,76 @@ window.BUSCONTENT = {
   // already says it demands. Nothing here invents a syllabus requirement: an
   // authored question contributes its own concepts and relationships, and a
   // student's own question contributes only its directive.
+  // What a question the STUDENT typed can be known to demand, without guessing.
+  //
+  // The directive is read from its own first words. The topic and the concepts are
+  // matched against the authored syllabus itself: the 83 point titles and their
+  // terms, as written. Nothing is inferred by similarity and no concept is
+  // attached because it seemed related, because a rubric that invents a
+  // requirement marks a student against something nobody asked of them.
+  //
+  // Only phrases of two or more words count. Single words like "business" or
+  // "management" appear in half the syllabus and would match everything.
+  function esSyllabusPhrases() {
+    if (ES._phrases) return ES._phrases;
+    const out = [];
+    const topics = (window.BUSCONTENT && window.BUSCONTENT.topics) || {};
+    Object.keys(topics).forEach(key => {
+      (topics[key].sections || []).forEach(sec => {
+        (sec.points || []).forEach(pt => {
+          const add = (phrase, weight) => {
+            const t = String(phrase || "").toLowerCase().trim();
+            // Syllabus titles carry dashes and lists; take the head, and keep only
+            // multi-word phrases, which are the ones that mean something on sight.
+            const head = t.split(/\s+[\u2013-]\s+/)[0].split(/,/)[0].trim();
+            if (head.split(/\s+/).length >= 2 && head.length >= 8) out.push({ topic: key, phrase: head, weight: weight });
+          };
+          // A point TITLE says what its topic is about. A term in a point's
+          // glossary may be borrowed from anywhere: "marketing objectives" appears
+          // inside a Finance point, and counted equally it ties Finance against
+          // Marketing on a question that is plainly about marketing. Titles carry.
+          add(pt.point, 3);
+          // A term that restates its own point's subject is evidence of topic.
+          // A term merely mentioned inside a point about something else is not:
+          // "marketing objectives" sits in the glossary of Finance's profitability
+          // point, and counted equally it ties Finance against Marketing on a
+          // question that is plainly about marketing.
+          const title = String(pt.point || "").toLowerCase();
+          (pt.terms || []).forEach(x => add(x, title.indexOf(String(x || "").toLowerCase()) >= 0 ? 2 : 1));
+        });
+      });
+    });
+    // Longest first, so "operations strategies" wins over "strategies".
+    out.sort((a, b) => b.phrase.length - a.phrase.length);
+    ES._phrases = out;
+    return out;
+  }
+  function esDetectFromText(text) {
+    const low = " " + String(text || "").toLowerCase().replace(/\s+/g, " ") + " ";
+    const hits = [], seen = [], byTopic = {};
+    esSyllabusPhrases().forEach(x => {
+      if (low.indexOf(" " + x.phrase) < 0 && low.indexOf(x.phrase) < 0) return;
+      // Skip a phrase already covered by a longer one already matched.
+      if (seen.some(p => p.indexOf(x.phrase) >= 0)) return;
+      seen.push(x.phrase); hits.push(x);
+      byTopic[x.topic] = (byTopic[x.topic] || 0) + (x.weight || 1);
+    });
+    const ranked = Object.keys(byTopic).sort((a, b) => byTopic[b] - byTopic[a]);
+    // A topic is only claimed when it is the clear leader. A tie means the
+    // question spans two areas or names none, and either way saying so is honest.
+    const topic = (ranked.length === 1 || (ranked.length > 1 && byTopic[ranked[0]] > byTopic[ranked[1]])) ? ranked[0] : null;
+    return { topic: topic, concepts: hits.filter(h => !topic || h.topic === topic).map(h => h.phrase) };
+  }
+  const ES_TOPIC_LABEL = { operations: "Operations", marketing: "Marketing", finance: "Finance", human_resources: "Human resources" };
+
   function esGenerateRubric(q, text, sc) {
     const cmd = String((q && q.command) || esDetectCommand(text) || "").trim();
     const fam = esFamilyOfCommand(cmd);
     const req = (q && q.requirements) || {};
+    // A question of ours declares what it demands. A question the student typed
+    // declares nothing, so it is read instead, and what cannot be read is said to
+    // be unread rather than filled in.
+    const found = q ? null : esDetectFromText(text);
     const lines = [];
     lines.push("What this question asks for");
     lines.push(cmd
@@ -11163,6 +11231,17 @@ window.BUSCONTENT = {
       lines.push("");
       lines.push("Concepts the question fixes");
       lines.push(req.concepts.join(", ") + ".");
+    } else if (found) {
+      lines.push("");
+      lines.push("Topic");
+      lines.push(found.topic
+        ? ES_TOPIC_LABEL[found.topic] + ", from the syllabus terms this question names."
+        : "The topic could not be identified from the wording, so nothing is assumed about which part of the course this belongs to.");
+      lines.push("");
+      lines.push("Syllabus concepts named in the question");
+      lines.push(found.concepts.length
+        ? found.concepts.join(", ") + ". These are the terms the question actually uses. Anything else you bring is your decision, not a requirement."
+        : "None were recognised, so this guidance covers what any answer to this directive has to do rather than particular content.");
     }
     if ((req.requiredAreas || []).length) {
       lines.push("");
@@ -11190,7 +11269,11 @@ window.BUSCONTENT = {
   function esDetectCommand(text) {
     const t = String(text || "").trim().toLowerCase();
     const all = ["to what extent", "how can", "evaluate", "assess", "analyse", "explain", "discuss", "describe", "outline", "examine"];
-    return all.find(c => t.indexOf(c) === 0) || "";
+    const hit = all.find(c => t.indexOf(c) === 0);
+    // Give it back as the student will read it, not as it was matched. "The
+    // directive is assess" reads like a typo in the one place that is telling
+    // them what the question demands.
+    return hit ? hit.charAt(0).toUpperCase() + hit.slice(1) : "";
   }
   function esFamilyOfCommand(cmd) {
     const c = String(cmd || "").toLowerCase();
@@ -11270,7 +11353,9 @@ window.BUSCONTENT = {
         if (!qs.length) return `<div class="es-field">
           <label class="es-label" for="esq">Essay question <span class="es-req">needed</span></label>
           <textarea id="esq" class="es-input es-ta" rows="3" placeholder="Paste or type the question you are practising.">${esc(f.question)}</textarea></div>`;
-        const mode = f.setupMode || "practice";
+        // A student with a question in front of them is the normal case: this is
+        // essay practice that also supplies questions, not a question bank.
+        const mode = f.setupMode || "own";
         const dirs = [];
         qs.forEach(q => { const c = String(q.command || "").trim(); if (c && dirs.indexOf(c) < 0) dirs.push(c); });
         const topics = [];
@@ -11279,11 +11364,14 @@ window.BUSCONTENT = {
         const shown = f.setupTopic ? byDir.filter(q => String(q.topic || "").trim() === f.setupTopic) : byDir;
         const chosen = f.questionId ? qs.find(q => q.id === f.questionId) : null;
         const pill = (val, cur, key, label, count) =>
-          `<button type="button" class="es-pill ${cur === val ? "on" : ""}" data-es${key}="${esc(val)}">${esc(label)}${count != null ? `<span class="es-pilln">${count}</span>` : ""}</button>`;
+          // A count of zero is worth showing, because it tells the student what this
+          // subject has before they go looking. It is not worth making clickable:
+          // a pill that leads to an empty list is a dead end dressed as a choice.
+          `<button type="button" class="es-pill ${cur === val ? "on" : ""}${count === 0 ? " empty" : ""}"${count === 0 ? " disabled" : ""} data-es${key}="${esc(val)}">${esc(label)}${count != null ? `<span class="es-pilln">${count}</span>` : ""}</button>`;
         return `<div class="es-field">
           <div class="es-modes">
+            <button type="button" class="es-mode ${mode === "own" ? "on" : ""}" data-esmode="own">Use my question</button>
             <button type="button" class="es-mode ${mode === "practice" ? "on" : ""}" data-esmode="practice">Choose a practice question</button>
-            <button type="button" class="es-mode ${mode === "own" ? "on" : ""}" data-esmode="own">Use my own question</button>
           </div>
           ${mode === "own" ? `
             <label class="es-label" for="esq">Your essay question <span class="es-req">needed</span></label>
