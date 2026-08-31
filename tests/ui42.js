@@ -12,6 +12,12 @@
 // So this suite states the assumption and fails when it stops being true.
 // Fonts may vanish. Function may not.
 const { chromium, T, usePractice } = require('./env');
+
+// Waits that name their condition. This app fetches nothing and renders
+// synchronously, so the effect of a click is present on the next frame:
+// settled() is that frame, not a shorter guess at a duration.
+const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+const here = (p, sel) => p.waitForSelector(sel, { timeout: 8000 });
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  FAIL:', m); } };
 
@@ -98,7 +104,7 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  FAIL:', m); 
   p2.on('requestfailed', r => { if (/^https?:\/\//.test(r.url())) seen.push(r.resourceType()); });
   await p2.setContent('<html><body><script src="https://cdn.example.com/needed.js"></script>ok</body></html>',
     { waitUntil: 'domcontentloaded' }).catch(() => {});
-  await p2.waitForTimeout(300);
+  await settled(p2);
   ok(seen.indexOf('script') >= 0, 'a blocked script is visible to the same detector: ' + JSON.stringify(seen));
   await p2.close();
 

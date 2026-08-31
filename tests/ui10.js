@@ -1,5 +1,11 @@
 // the plain build on purpose: this suite tests the shipped defaults
 const { chromium, P: T, OUT, ownQuestion } = require('./env');
+
+// Waits that name their condition. This app fetches nothing and renders
+// synchronously, so the effect of a click is present on the next frame:
+// settled() is that frame, not a shorter guess at a duration.
+const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+const here = (p, sel) => p.waitForSelector(sel, { timeout: 8000 });
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 (async()=>{
   const b=await chromium.launch();
@@ -21,15 +27,16 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
       credited:[],checks:{passes:2,sentences:2,sentencesVerified:2,grounded:1,focusQuoted:true,focusBlock:true},
       overall:{summary:'x'},criteria:[],next_steps:[],missing_vocabulary:[]})});
   });
-  await p.goto(T+'?essaydemo=1&essaymark=1'); await p.waitForTimeout(700);
+  await p.goto(T+'?essaydemo=1&essaymark=1'); await settled(p);
   await ownQuestion(p, 'Explain how target markets affect e-marketing.');
-  await p.click('#esstart'); await p.waitForTimeout(450);
+  await p.click('#esstart');
+  await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
 
   console.log('--- blocks are durable and carry identity ---');
   await p.fill('#esline','Target markets are the groups a business aims at.');
-  await p.click('#esaccept'); await p.waitForTimeout(300);
+  await p.click('#esaccept'); await settled(p);
   await p.fill('#esline','This response examines each element in turn.');
-  await p.click('#esaccept'); await p.waitForTimeout(300);
+  await p.click('#esaccept'); await settled(p);
   let ids = await p.evaluate(()=>JSON.parse(localStorage.getItem('marginal.essay.v1')));
   let bag = Object.values(ids)[0].drafts[0].paras[0].blocks;
   ok(bag.length===2,'two blocks saved: '+bag.length);
@@ -38,11 +45,11 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   const firstId = bag[0].id;
 
   console.log('--- editing elsewhere does NOT destroy identity ---');
-  await p.click('#esmodeswitch'); await p.waitForTimeout(400);
+  await p.click('#esmodeswitch'); await settled(p);
   const full = await p.$eval('#esfull',e=>e.value);
   await p.fill('#esfull', full.replace('groups a business aims at','groups a business directs its marketing at'));
-  await p.waitForTimeout(250);
-  await p.click('#esmodeswitch'); await p.waitForTimeout(450);
+  await settled(p);
+  await p.click('#esmodeswitch'); await settled(p);
   ids = await p.evaluate(()=>JSON.parse(localStorage.getItem('marginal.essay.v1')));
   bag = Object.values(ids)[0].drafts[0].paras[0].blocks;
   ok(bag.length===2,'still two blocks after a full-attempt edit: '+bag.length);
@@ -53,13 +60,13 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   ok(!!changed&&!!survivor&&changed.id!==survivor.id,'and the two are distinct blocks');
 
   console.log('--- marking receives the sentence list ---');
-  await p.click('#esmodeswitch'); await p.waitForTimeout(400);
-  await p.click('#essubmit'); await p.waitForTimeout(900);
+  await p.click('#esmodeswitch'); await settled(p);
+  await p.click('#essubmit'); await settled(p);
   ok(sent && Array.isArray(sent.blocks) && sent.blocks.length===2,'blocks travel with the response: '+(sent&&(sent.blocks||[]).length));
   ok(sent.blocks[0].id && sent.blocks[0].text,'each carries id and text');
 
   console.log('--- revise opens the block the marker named, not the one it quoted first ---');
-  await p.click('#esrevise'); await p.waitForTimeout(600);
+  await p.click('#esrevise'); await settled(p);
   const open = await p.$('[data-esedit]');
   ok(!!open,'a sentence opened for editing');
   const v = await p.$eval('[data-esedit]',e=>e.value);

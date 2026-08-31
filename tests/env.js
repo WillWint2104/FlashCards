@@ -46,6 +46,15 @@ async function armPage(page) {
   return page;
 }
 function wrapContext(ctx) {
+  // Playwright's default action timeout is 30 seconds. A suite that wraps an
+  // action in .catch() to handle "this control may not be here" then pays that
+  // full 30 seconds every time it is not, invisibly: ui17 spent 30 of its 34
+  // seconds inside one, and reported nothing because the catch was doing its job.
+  //
+  // Nothing in this app takes 8 seconds. A page load is 0.15s. So a swallowed
+  // failure now costs about a second instead of half a minute, and a real hang
+  // still fails rather than passing slowly.
+  ctx.setDefaultTimeout(8000);
   const orig = ctx.newPage.bind(ctx);
   ctx.newPage = async function () { return armPage(await orig()); };
   return ctx;

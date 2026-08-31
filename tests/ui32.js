@@ -18,25 +18,32 @@
 // ui31 keeps the same contract as an end-to-end journey through real content.
 // Three tests, three different ways to be wrong.
 const { chromium, P, usePractice } = require('./env');
+
+// Waits that name their condition. This app fetches nothing and renders
+// synchronously, so the effect of a click is present on the next frame:
+// settled() is that frame, not a shorter guess at a duration.
+const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+const here = (p, sel) => p.waitForSelector(sel, { timeout: 8000 });
 const { WITHHOLDING_FIXTURE } = require('./fixtures/withholding.js');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 
 async function openFixture(p){
-  await p.goto(P); await p.waitForTimeout(600);
+  await p.goto(P); await here(p, '.navtab');
   await p.evaluate(()=>localStorage.removeItem('marginal.essay.v1'));
-  await p.goto(P); await p.waitForTimeout(600);
+  await p.goto(P); await here(p, '.navtab');
   // the fixture subject, added to the pack the page already loaded
   await p.evaluate(f=>{ window.ESSAY.subjects[f.key]=f; }, WITHHOLDING_FIXTURE);
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
-  await p.waitForTimeout(400);
+  await settled(p);
   await p.selectOption('#essubject','contract_test');
-  await p.waitForTimeout(300);
+  await settled(p);
   await usePractice(p); await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/fixture question/i.test(x.textContent));t&&t.click();});
-  await p.waitForTimeout(200);
-  await p.click('#esstart'); await p.waitForTimeout(700);
+  await settled(p);
+  await p.click('#esstart');
+  await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
   if (await p.$('.es-startrow')) await p.$$eval('.es-startrow',es=>{const t=es.filter(x=>/Body/.test(x.textContent))[0];t&&t.click();});
   else await p.$$eval('.es-mapitem',es=>{const t=es.filter(x=>/Body/.test(x.textContent))[0];t&&t.click();});
-  await p.waitForTimeout(650);
+  await settled(p);
 }
 const text=(p,sel)=>p.$eval(sel,e=>e.innerText.replace(/\s+/g,' ').trim()).catch(()=>'');
 async function choose(p,id){
@@ -46,12 +53,12 @@ async function choose(p,id){
   // screen that never offered the thing they claim was withheld.
   if (!(await p.$('[data-espath]'))) {
     await p.click('#esbackarg').catch(()=>{});
-    await p.waitForTimeout(420);
+    await settled(p);
   }
   const seen = await p.$$eval('[data-espath]',es=>es.map(e=>e.dataset.espath));
   if (seen.indexOf(id) < 0) throw new Error('pathway '+id+' was not offered; saw '+JSON.stringify(seen));
   await p.$$eval('[data-espath]',(es,want)=>{const t=es.find(x=>x.dataset.espath===want);t&&t.click();},id);
-  await p.waitForTimeout(460);
+  await settled(p);
 }
 
 (async()=>{
@@ -99,7 +106,7 @@ async function choose(p,id){
   console.log('--- and the lesson it opens is that pathway\u2019s own ---');
   // Opened last, because the lesson panel covers the argument controls and
   // nothing after this needs them.
-  await p.click('#eslessonopen'); await p.waitForTimeout(480);
+  await p.click('#eslessonopen'); await settled(p);
   const lesson=await text(p,'.es-lesson');
   ok(lesson.length>0,'it opens a lesson: '+lesson.slice(0,60));
   ok(/fixture/i.test(lesson),'which is this pathway\u2019s own authored content');

@@ -3,26 +3,33 @@
 // produced. This is what changed that, and the thing it must not do is speak to
 // a student who wrote a perfectly good argument nobody happened to author.
 const { chromium, T, OUT, usePractice } = require('./env');
+
+// Waits that name their condition. This app fetches nothing and renders
+// synchronously, so the effect of a click is present on the next frame:
+// settled() is that frame, not a shorter guess at a duration.
+const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+const here = (p, sel) => p.waitForSelector(sel, { timeout: 8000 });
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 async function open(p, re){
-  await p.goto(T); await p.waitForTimeout(650);
+  await p.goto(T); await here(p, '.navtab');
   await p.evaluate(()=>localStorage.removeItem('marginal.essay.v1'));
-  await p.goto(T); await p.waitForTimeout(650);
+  await p.goto(T); await here(p, '.navtab');
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
-  await p.waitForTimeout(400);
-  await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);
+  await settled(p);
+  await p.selectOption('#essubject','business_studies'); await settled(p);
   await usePractice(p); await p.$$eval('.es-qrow',(es,r)=>{const t=es.find(x=>new RegExp(r,'i').test(x.textContent));t&&t.click();}, re.source);
-  await p.click('#esstart'); await p.waitForTimeout(700);
+  await p.click('#esstart');
+  await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
 }
 const text=(p,sel)=>p.$eval(sel,e=>e.innerText.replace(/\s+/g,' ').trim()).catch(()=>'');
 // state a point as this paragraph's own argument, the way a student would
 async function ownArgument(p, line){
-  await p.click('[data-espathown]'); await p.waitForTimeout(260);
+  await p.click('[data-espathown]'); await settled(p);
   await p.fill('#esownarg', line);
-  await p.click('#esownok'); await p.waitForTimeout(500);
+  await p.click('#esownok'); await settled(p);
 }
 async function backToArgument(p){
-  const b=await p.$('#esbackarg'); if (b) { await b.click(); await p.waitForTimeout(420); }
+  const b=await p.$('#esbackarg'); if (b) { await b.click(); await settled(p); }
 }
 (async()=>{
   const b=await chromium.launch();
@@ -32,7 +39,7 @@ async function backToArgument(p){
 
   console.log('1. an argument that runs backwards is questioned');
   await open(p,/financial strategies affect/);
-  await p.click('#esstartbody'); await p.waitForTimeout(600);
+  await p.click('#esstartbody'); await settled(p);
   await ownArgument(p,'Profitability determines which cost control a business chooses.');
   const dir=await text(p,'.es-drift.dir');
   console.log('   ',dir.slice(0,175));
@@ -45,12 +52,12 @@ async function backToArgument(p){
   await p.screenshot({path:OUT+'shot-direction-check.png'});
 
   console.log('2. keeping it is keyed to the claim, not to the press');
-  await p.click('[data-esdirkeep]'); await p.waitForTimeout(450);
+  await p.click('[data-esdirkeep]'); await settled(p);
   ok(!(await p.$('.es-drift.dir')),'keeping it puts the question away');
   await backToArgument(p);
   await ownArgument(p,'Liquidity decides the cash flow management a business uses.');
   ok(!!(await p.$('.es-drift.dir')),'a different claim is a new question, even though the last one was dismissed');
-  await p.click('[data-esdirkeep]'); await p.waitForTimeout(450);
+  await p.click('[data-esdirkeep]'); await settled(p);
   ok(!(await p.$('.es-drift.dir')),'and that one can be kept too');
 
   console.log('3. an argument nobody authored, running the right way, is left alone');
@@ -83,25 +90,25 @@ async function backToArgument(p){
   ok(!/check the direction/i.test(half),'and never as a direction problem');
 
   console.log('5. the same check on the paragraph’s own note');
-  await p.click('#esstartwriting').catch(()=>{}); await p.waitForTimeout(500);
-  const tog=await p.$('#espointtoggle'); if (tog) { await tog.click(); await p.waitForTimeout(350); }
+  await p.click('#esstartwriting').catch(()=>{}); await settled(p);
+  const tog=await p.$('#espointtoggle'); if (tog) { await tog.click(); await settled(p); }
   // deliberately NOT one of the claims dismissed above: those stay dismissed,
   // which is the point of keying the acknowledgement to the claim
   await p.fill('#espoint','Profitability drives the expense minimisation a business applies.');
-  await p.$eval('#espoint',e=>e.blur()); await p.waitForTimeout(600);
+  await p.$eval('#espoint',e=>e.blur()); await settled(p);
   ok(!!(await p.$('.es-drift.dir')),'a note that runs backwards is questioned where it is written');
   await p.fill('#espoint','Liquidity decides the cash flow management a business uses.');
-  await p.$eval('#espoint',e=>e.blur()); await p.waitForTimeout(600);
+  await p.$eval('#espoint',e=>e.blur()); await settled(p);
   ok(!(await p.$('.es-drift.dir')),'and a claim already answered for stays answered, wherever it is retyped');
   await p.fill('#espoint','Cash flow management improves liquidity.');
-  await p.$eval('#espoint',e=>e.blur()); await p.waitForTimeout(550);
+  await p.$eval('#espoint',e=>e.blur()); await settled(p);
   ok(!(await p.$('.es-drift.dir')),'and the question goes when the note runs the right way');
 
   console.log('6. a judgement question asks how far, not whether');
   await open(p,/the effectiveness of human resource/);
-  await p.click('#esposdefer').catch(()=>{}); await p.waitForTimeout(350);
-  await p.click('#esstartbody'); await p.waitForTimeout(600);
-  await p.$$eval('[data-essetuparea]',es=>es[0]&&es[0].click()); await p.waitForTimeout(340);
+  await p.click('#esposdefer').catch(()=>{}); await settled(p);
+  await p.click('#esstartbody'); await settled(p);
+  await p.$$eval('[data-essetuparea]',es=>es[0]&&es[0].click()); await settled(p);
   await ownArgument(p,'Training raises productivity at McDonald’s.');
   const deg=await text(p,'.es-drift.dir');
   console.log('   ',deg.slice(0,150));

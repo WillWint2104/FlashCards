@@ -1,6 +1,12 @@
 // The verification gate: evidence without a recorded source is never offered to a
 // student, and everything else about the paragraph keeps working without it.
 const { chromium, T, OUT, BASE, fileUrl, usePractice } = require('./env');
+
+// Waits that name their condition. This app fetches nothing and renders
+// synchronously, so the effect of a click is present on the next frame:
+// settled() is that frame, not a shorter guess at a duration.
+const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+const here = (p, sel) => p.waitForSelector(sel, { timeout: 8000 });
 const { planAll } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 async function run(sourced){
@@ -8,29 +14,30 @@ async function run(sourced){
   const p=await (await b.newContext({viewport:{width:1500,height:1000},deviceScaleFactor:2})).newPage();
   const errs=[]; p.on('pageerror',e=>errs.push(String(e).slice(0,200)));
   let calls=0; await p.route(/workers\.dev/, r=>{calls++;r.abort();});
-  await p.goto(T); await p.waitForTimeout(700);
+  await p.goto(T); await here(p, '.navtab');
   if (sourced) await p.evaluate(()=>{ window.BUSCONTENT.evidence.marketing.forEach(e=>{e.source='test fixture source'; e.checked='2026-08-19';}); });
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
-  await p.waitForTimeout(400);
-  await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);
+  await settled(p);
+  await p.selectOption('#essubject','business_studies'); await settled(p);
   await usePractice(p); await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/target markets/i.test(x.textContent));t&&t.click();});
-  await p.waitForTimeout(200);
-  await p.click('#esstart'); await p.waitForTimeout(500);
+  await settled(p);
+  await p.click('#esstart');
+  await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
   await planAll(p);
   await p.$$eval('.es-plancard [data-esplanarea]',es=>{const t=es.find(x=>/processes/i.test(x.textContent));t&&t.click();});
-  await p.waitForTimeout(300);
+  await settled(p);
   await p.$$eval('[data-esplanpick]',es=>{const t=es.find(x=>/Convenience-oriented/i.test(x.textContent));t&&t.click();});
-  await p.waitForTimeout(350);
+  await settled(p);
   const chips=await p.$$eval('.es-plancard .es-evchip',es=>es.length);
   const note=await p.$$eval('.es-planevnote',es=>es.map(e=>e.textContent.trim())).catch(()=>[]);
-  await p.click('#esplango'); await p.waitForTimeout(400);
-  await p.$$eval('[data-esgo]',es=>{const t=es.find(x=>/Body 1/.test(x.textContent));t&&t.click();}); await p.waitForTimeout(400);
+  await p.click('#esplango'); await settled(p);
+  await p.$$eval('[data-esgo]',es=>{const t=es.find(x=>/Body 1/.test(x.textContent));t&&t.click();}); await settled(p);
   const evTool=await p.$eval('[data-estool="evidence"]',e=>e.disabled);
   let drawer='';
-  if (!evTool) { await p.$eval('[data-estool="evidence"]',e=>e.click()); await p.waitForTimeout(300);
-    drawer=await p.$eval('.es-drawer-body',e=>e.innerText.replace(/\s+/g,' ').trim()); await p.click('#esdrawerx'); await p.waitForTimeout(200); }
+  if (!evTool) { await p.$eval('[data-estool="evidence"]',e=>e.click()); await settled(p);
+    drawer=await p.$eval('.es-drawer-body',e=>e.innerText.replace(/\s+/g,' ').trim()); await p.click('#esdrawerx'); await settled(p); }
   const belt=await p.$$eval('.es-belt-b',es=>es.map(e=>({l:e.textContent.trim(),off:e.disabled})));
-  const rungs=await (async()=>{ for(let k=0;k<6;k++){const btn=await p.$('#esmorehelp'); if(!btn)break; await btn.click(); await p.waitForTimeout(100);} return p.$$eval('.es-rung',es=>es.length); })();
+  const rungs=await (async()=>{ for(let k=0;k<6;k++){const btn=await p.$('#esmorehelp'); if(!btn)break; await btn.click(); await settled(p);} return p.$$eval('.es-rung',es=>es.length); })();
   const guide=await p.$eval('.es-guidejob',e=>e.textContent.trim());
   const shot=OUT+'shot-evgate-'+(sourced?'sourced':'withheld')+'.png';
   await p.screenshot({path:shot});

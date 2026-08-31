@@ -11,6 +11,12 @@
 // in the body can be scrolled to and pressed. Checking that a CSS property exists
 // would have passed against the broken build.
 const { chromium, T, ownQuestion } = require('./env');
+
+// Waits that name their condition. This app fetches nothing and renders
+// synchronously, so the effect of a click is present on the next frame:
+// settled() is that frame, not a shorter guess at a duration.
+const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+const here = (p, sel) => p.waitForSelector(sel, { timeout: 8000 });
 const { nextSection } = require('./env');
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  FAIL:', m); } };
@@ -24,21 +30,22 @@ const SHORT = { q: 'Explain how employment contracts affect human resource manag
   topic: 'Human resources', point: 'The HSC examination specifications describe the paper.' };
 
 async function openTool(p, c, tool) {
-  await p.goto(T); await p.waitForTimeout(400);
+  await p.goto(T); await here(p, '.navtab');
   await p.evaluate(() => localStorage.removeItem('marginal.essay.v1'));
-  await p.goto(T); await p.waitForTimeout(650);
+  await p.goto(T); await here(p, '.navtab');
   await p.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
-  await p.waitForTimeout(350);
+  await settled(p);
   await p.selectOption('#essubject', 'business_studies').catch(() => {});
   await ownQuestion(p, c.q);
-  await p.click('#esstart'); await p.waitForTimeout(550);
+  await p.click('#esstart');
+  await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
   await nextSection(p);
-  { const t = await p.$('#espointtoggle'); if (t && !(await p.$('#espoint'))) { await t.click(); await p.waitForTimeout(250); } }
-  await p.fill('#espoint', c.point); await p.waitForTimeout(280);
-  const x = await p.$('.es-drawer-x'); if (x) { await x.click(); await p.waitForTimeout(220); }
+  { const t = await p.$('#espointtoggle'); if (t && !(await p.$('#espoint'))) { await t.click(); await settled(p); } }
+  await p.fill('#espoint', c.point); await settled(p);
+  const x = await p.$('.es-drawer-x'); if (x) { await x.click(); await settled(p); }
   const b = await p.$(`[data-estool="${tool}"]:not([disabled])`);
   if (!b) return false;
-  await b.click(); await p.waitForTimeout(380);
+  await b.click(); await settled(p);
   // A click can land while the drawer fails to render. Returning true there sends
   // the geometry reads into a null and kills the run before its summary, so the
   // suite reports a crash rather than a failure.
@@ -120,7 +127,7 @@ const reachLast = p => p.evaluate(() => {
       ok(c.footInside === true, `${at} ${name}: the footer is inside the modal, not below it`);
       // Closing puts the student back where they were, which is the whole reason
       // the modal is allowed to cover the page in the first place.
-      await p.keyboard.press('Escape'); await p.waitForTimeout(320);
+      await p.keyboard.press('Escape'); await settled(p);
       const after = await p.evaluate(() => ({
         gone: !document.querySelector('.esl-panel'),
         line: document.querySelector('#esline') ? document.querySelector('#esline').value : null

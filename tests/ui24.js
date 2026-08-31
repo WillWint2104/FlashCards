@@ -2,16 +2,23 @@
 // written: an anchor, then one decision at a time, and a working answer the
 // system keeps that never touches the student's prose.
 const { chromium, T, OUT, usePractice } = require('./env');
+
+// Waits that name their condition. This app fetches nothing and renders
+// synchronously, so the effect of a click is present on the next frame:
+// settled() is that frame, not a shorter guess at a duration.
+const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+const here = (p, sel) => p.waitForSelector(sel, { timeout: 8000 });
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 async function open(p, re){
-  await p.goto(T); await p.waitForTimeout(650);
+  await p.goto(T); await here(p, '.navtab');
   await p.evaluate(()=>localStorage.removeItem('marginal.essay.v1'));
-  await p.goto(T); await p.waitForTimeout(650);
+  await p.goto(T); await here(p, '.navtab');
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
-  await p.waitForTimeout(400);
-  await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);
+  await settled(p);
+  await p.selectOption('#essubject','business_studies'); await settled(p);
   await usePractice(p); await p.$$eval('.es-qrow',(es,r)=>{const t=es.find(x=>new RegExp(r,'i').test(x.textContent));t&&t.click();}, re.source);
-  await p.click('#esstart'); await p.waitForTimeout(650);
+  await p.click('#esstart');
+  await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
 }
 const wa = p => p.$eval('.es-watext',e=>e.textContent.trim()).catch(()=>'');
 (async()=>{
@@ -39,21 +46,21 @@ const wa = p => p.$eval('.es-watext',e=>e.textContent.trim()).catch(()=>'');
   ok(!!(await p.$('#esposdefer')),'a position can be taken now, or deferred');
 
   console.log('3. it develops as arguments are chosen, not before');
-  await p.click('#esplanall'); await p.waitForTimeout(350);
+  await p.click('#esplanall'); await settled(p);
   await p.$$eval('.es-plancard .es-areachip',es=>{const t=es.find(x=>x.textContent.trim().indexOf('training')===0); t&&t.click();});
-  await p.waitForTimeout(300);
-  await p.$$eval('[data-esplanpick]',es=>es[0]&&es[0].click()); await p.waitForTimeout(350);
-  await p.click('#esplanless'); await p.waitForTimeout(350);
+  await settled(p);
+  await p.$$eval('[data-esplanpick]',es=>es[0]&&es[0].click()); await settled(p);
+  await p.click('#esplanless'); await settled(p);
   const w1=await wa(p);
   console.log('   after one argument:',w1);
   ok(/raising productivity/.test(w1),'it names what that argument adds');
   ok(!/depends on how well/.test(w1),'and carries no qualifier yet, because nothing qualifies it');
-  await p.click('#esplanall'); await p.waitForTimeout(300);
+  await p.click('#esplanall'); await settled(p);
   await p.$$eval('.es-plancard .es-areachip',es=>{const t=es.find(x=>x.textContent.trim().indexOf('performance management')===0); t&&t.click();});
-  await p.waitForTimeout(300);
+  await settled(p);
   await p.$$eval('[data-esplanpick]',es=>{const t=es.find(x=>/pf-trust/.test(x.dataset.esplanpick)); t&&t.click();});
-  await p.waitForTimeout(350);
-  await p.click('#esplanless'); await p.waitForTimeout(350);
+  await settled(p);
+  await p.click('#esplanless'); await settled(p);
   const w2=await wa(p);
   console.log('   after a limitation:',w2);
   ok(/affecting trust as well as accountability/.test(w2),'the limitation is in the answer');
@@ -62,28 +69,28 @@ const wa = p => p.$eval('.es-watext',e=>e.textContent.trim()).catch(()=>'');
   await p.screenshot({path:OUT+'shot-working-answer.png'});
 
   console.log('4. it travels with the writing');
-  await p.click('#esstartbody'); await p.waitForTimeout(500);
+  await p.click('#esstartbody'); await settled(p);
   ok(!!(await p.$('#esline'))||!!(await p.$('.es-setup')),'starting a body goes straight there');
   const mapWa=await p.$eval('.es-mapwa',e=>e.innerText.replace(/\s+/g,' ')).catch(()=>'');
   ok(/raising productivity/.test(mapWa),'the working answer is beside the writing: '+mapWa.slice(0,60));
 
   console.log('5. an unplanned paragraph asks just in time');
   await p.$$eval('[data-esgo]',es=>{const t=es.find(x=>/Body 3/.test(x.textContent));t&&t.click();});
-  await p.waitForTimeout(450);
+  await settled(p);
   ok(!!(await p.$('.es-setup')),'Body 3 asks what it will argue at the moment it is reached');
   const ask=await p.$eval('.es-setuph',e=>e.textContent.trim()).catch(()=>'');
   ok(/Which human resource strategy will Body 3 use/i.test(ask),'naming the decision: '+JSON.stringify(ask));
   ok((await p.$$eval('[data-espath]',es=>es.length))===0,'and not offering all eight relationships at once');
   await p.$$eval('[data-essetuparea]',es=>{const t=es.find(x=>x.textContent.trim().indexOf('rewards')===0); t&&t.click();});
-  await p.waitForTimeout(350);
+  await settled(p);
   ok((await p.$$eval('[data-espath]',es=>es.length))===2,'choosing the area narrows it to that area\u2019s two');
   ok((await p.$$eval('[data-espath] .es-picksub',es=>es.length))===2,'each saying what it means');
 
   console.log('6. the working answer never rewrites the student');
   await p.$$eval('[data-esgo]',es=>{const t=es.find(x=>/Introduction/.test(x.textContent));t&&t.click();});
-  await p.waitForTimeout(400);
+  await settled(p);
   await p.fill('#esline','Human resource strategies are highly effective at improving business performance.');
-  await p.click('#esaccept'); await p.waitForTimeout(350);
+  await p.click('#esaccept'); await settled(p);
   const prose=await p.$eval('.es-prose',e=>e.textContent);
   ok(/highly effective/.test(prose),'their sentence stands exactly as written');
   const w3=(await wa(p))||await p.$eval('.es-mapwa',e=>e.innerText.replace(/\s+/g,' ')).catch(()=>'');
@@ -97,10 +104,10 @@ const wa = p => p.$eval('.es-watext',e=>e.textContent.trim()).catch(()=>'');
   ok(/required in your response/i.test(cov),'the four required parts are shown up front');
   ok(/start anywhere/i.test(cov),'as information, not a gate');
   ok((await p.$$eval('.es-startbtns button',es=>es.length))===3,'and the same three routes are offered');
-  await p.click('#esstartintro'); await p.waitForTimeout(500);
+  await p.click('#esstartintro'); await settled(p);
   await p.fill('#esline','Target markets shape every marketing decision a business makes.');
-  await p.click('#esaccept'); await p.waitForTimeout(300);
-  await p.click('#esreview'); await p.waitForTimeout(500);
+  await p.click('#esaccept'); await settled(p);
+  await p.click('#esreview'); await settled(p);
   const miss=await p.$eval('.es-cover.missing',e=>e.innerText.replace(/\s+/g,' ')).catch(()=>'');
   console.log('   ',miss.slice(0,140));
   ok(/not yet addressed/i.test(miss),'at review, what is missing is named');

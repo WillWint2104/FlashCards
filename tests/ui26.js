@@ -1,4 +1,10 @@
 const { openMap, usePractice } = require('./env');
+
+// Waits that name their condition. This app fetches nothing and renders
+// synchronously, so the effect of a click is present on the next frame:
+// settled() is that frame, not a shorter guess at a duration.
+const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+const here = (p, sel) => p.waitForSelector(sel, { timeout: 8000 });
 // Coverage recovery, at its edges. The review may name a required part the
 // response has not addressed and offer a way back to it. The thing that must
 // never happen is the coverage checker quietly taking over work the student has
@@ -6,15 +12,16 @@ const { openMap, usePractice } = require('./env');
 const { chromium, T, OUT } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 async function open(p, re, structure){
-  await p.goto(T); await p.waitForTimeout(650);
+  await p.goto(T); await here(p, '.navtab');
   await p.evaluate(()=>localStorage.removeItem('marginal.essay.v1'));
-  await p.goto(T); await p.waitForTimeout(650);
+  await p.goto(T); await here(p, '.navtab');
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
-  await p.waitForTimeout(400);
-  await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);
+  await settled(p);
+  await p.selectOption('#essubject','business_studies'); await settled(p);
   await usePractice(p); await p.$$eval('.es-qrow',(es,r)=>{const t=es.find(x=>new RegExp(r,'i').test(x.textContent));t&&t.click();}, re.source);
-  if (structure) { await p.selectOption('#esstruct', structure); await p.waitForTimeout(150); }
-  await p.click('#esstart'); await p.waitForTimeout(700);
+  if (structure) { await p.selectOption('#esstruct', structure); await settled(p); }
+  await p.click('#esstart');
+  await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
 }
 const text = (p,sel) => p.$eval(sel,e=>e.innerText.replace(/\s+/g,' ').trim()).catch(()=>'');
 // which required parts the app believes are claimed, and by which paragraph.
@@ -23,29 +30,29 @@ const claimed = p => p.$$eval('.es-covitem.on',es=>es.map(e=>e.innerText.replace
 const sections = p => p.$$eval('.es-startrow',es=>es.map(e=>e.innerText.replace(/\s+/g,' ').trim()));
 const covBtns = p => p.$$eval('[data-escover]',es=>es.map(e=>({label:e.textContent.trim(),area:e.dataset.escover})));
 const rvSecs = p => p.$$eval('.es-rvsec',es=>es.map(e=>e.innerText.replace(/\s+/g,' ').trim()));
-async function toStart(p){ await openMap(p); const m=await p.$('.es-mapwa'); if (m) { await m.click(); await p.waitForTimeout(450); } }
+async function toStart(p){ await openMap(p); const m=await p.$('.es-mapwa'); if (m) { await m.click(); await settled(p); } }
 // read all lives in the composer, so from the start surface step into a
 // paragraph first rather than silently doing nothing
 async function review(p){
   if (!(await p.$('#esreview'))) {
     await p.$$eval('.es-startrow',es=>es[0]&&es[0].click());
-    await p.waitForTimeout(500);
+    await settled(p);
   }
-  const r=await p.$('#esreview'); if(r){ await r.click(); await p.waitForTimeout(550);} }
+  const r=await p.$('#esreview'); if(r){ await r.click(); await settled(p);} }
 async function intro(p, line){
-  await p.click('#esstartintro'); await p.waitForTimeout(500);
-  await p.fill('#esline',line); await p.click('#esaccept'); await p.waitForTimeout(400);
+  await p.click('#esstartintro'); await settled(p);
+  await p.fill('#esline',line); await p.click('#esaccept'); await settled(p);
 }
 // plan every body, opening each collapsed row first
 async function planAllBodies(p, n){
-  await p.click('#esplanall'); await p.waitForTimeout(400);
+  await p.click('#esplanall'); await settled(p);
   for (let k=0;k<n;k++){
     if (!(await p.$('[data-esplanpick]'))) {
-      await p.$$eval('.es-planrow',es=>es[0]&&es[0].click()); await p.waitForTimeout(300);
+      await p.$$eval('.es-planrow',es=>es[0]&&es[0].click()); await settled(p);
     }
-    await p.$$eval('[data-esplanpick]',es=>es[0]&&es[0].click()); await p.waitForTimeout(320);
+    await p.$$eval('[data-esplanpick]',es=>es[0]&&es[0].click()); await settled(p);
   }
-  await p.click('#esplanless'); await p.waitForTimeout(350);
+  await p.click('#esplanless'); await settled(p);
 }
 (async()=>{
   const b=await chromium.launch();
@@ -62,7 +69,7 @@ async function planAllBodies(p, n){
   ok(btns.length===4,'all four required parts offer a way back: '+btns.length);
   ok(btns.every(x=>/^Go to /.test(x.label)),'each says go, because there is room: '+JSON.stringify(btns.map(x=>x.label)));
   await p.$$eval('[data-escover]',es=>{const t=es.find(x=>/processes/i.test(x.dataset.escover)); t&&t.click();});
-  await p.waitForTimeout(550);
+  await settled(p);
   ok(/processes/i.test(await text(p,'.es-compose')),'it lands ready to argue processes');
   await toStart(p);
   let cl=await claimed(p);
@@ -82,7 +89,7 @@ async function planAllBodies(p, n){
   ok(btns.length>0,'parts are still unaddressed, because nothing is written in them yet');
   ok(btns.every(x=>/^Go to /.test(x.label)),'and it offers to go, never to add: '+JSON.stringify(btns[0].label));
   await p.$$eval('[data-escover]',es=>es[0]&&es[0].click());
-  await p.waitForTimeout(600);
+  await settled(p);
   await toStart(p);
   const after=await claimed(p);
   ok(JSON.stringify(before)===JSON.stringify(after),'not one planned paragraph was repurposed\n      before '+JSON.stringify(before)+'\n      after  '+JSON.stringify(after));
@@ -93,20 +100,20 @@ async function planAllBodies(p, n){
   console.log('3. writing with no declared area is not relabelled, and a paragraph is offered instead');
   await open(p,/target markets affect/,'four');
   ok((await sections(p)).length===4,'a two body structure was chosen');
-  await p.click('#esstartbody'); await p.waitForTimeout(550);
-  await p.click('[data-espathown]'); await p.waitForTimeout(250);
+  await p.click('#esstartbody'); await settled(p);
+  await p.click('[data-espathown]'); await settled(p);
   await p.fill('#esownarg','Customers who order on their phone expect the whole thing to be quick.');
-  await p.click('#esownok'); await p.waitForTimeout(450);
-  const sw=await p.$('#esstartwriting'); if (sw) { await sw.click(); await p.waitForTimeout(450); }
+  await p.click('#esownok'); await settled(p);
+  const sw=await p.$('#esstartwriting'); if (sw) { await sw.click(); await settled(p); }
   await p.fill('#esline','McDonald’s built its ordering around customers who want visible proof that it will be fast.');
-  await p.click('#esaccept'); await p.waitForTimeout(450);
+  await p.click('#esaccept'); await settled(p);
   ok(/visible proof/.test(await text(p,'.es-prose')),'their own sentence is in body 1');
   await toStart(p);
   ok((await claimed(p)).length===0,'writing their own argument claims no required part');
   await p.$$eval('.es-startrow',es=>{const t=es.find(x=>/Body 2/.test(x.textContent)); t&&t.click();});
-  await p.waitForTimeout(500);
-  await p.$$eval('[data-espath]',es=>es[0]&&es[0].click()); await p.waitForTimeout(400);
-  const sw2=await p.$('#esstartwriting'); if (sw2) { await sw2.click(); await p.waitForTimeout(400); }
+  await settled(p);
+  await p.$$eval('[data-espath]',es=>es[0]&&es[0].click()); await settled(p);
+  const sw2=await p.$('#esstartwriting'); if (sw2) { await sw2.click(); await settled(p); }
   await toStart(p);
   const two=await claimed(p);
   ok(two.length===1,'body 2 claims one part, body 1 still claims none: '+JSON.stringify(two));
@@ -128,7 +135,7 @@ async function planAllBodies(p, n){
   const pe=btns.find(x=>/physical evidence/i.test(x.area));
   ok(!!pe,'including physical evidence');
   await p.$$eval('[data-escover]',es=>{const t=es.find(x=>/physical evidence/i.test(x.dataset.escover)); t&&t.click();});
-  await p.waitForTimeout(700);
+  await settled(p);
   await toStart(p);
   const secs=await sections(p);
   console.log('   ',JSON.stringify(secs.map(s=>s.slice(0,46))));

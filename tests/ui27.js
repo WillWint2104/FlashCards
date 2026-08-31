@@ -3,17 +3,24 @@
 // relationship in the question at once, it never said which required part the
 // paragraph was answering, and it repeated an argument without a word.
 const { openMap, usePractice } = require('./env');
+
+// Waits that name their condition. This app fetches nothing and renders
+// synchronously, so the effect of a click is present on the next frame:
+// settled() is that frame, not a shorter guess at a duration.
+const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+const here = (p, sel) => p.waitForSelector(sel, { timeout: 8000 });
 const { chromium, T, OUT } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 async function open(p, re){
-  await p.goto(T); await p.waitForTimeout(650);
+  await p.goto(T); await here(p, '.navtab');
   await p.evaluate(()=>localStorage.removeItem('marginal.essay.v1'));
-  await p.goto(T); await p.waitForTimeout(650);
+  await p.goto(T); await here(p, '.navtab');
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
-  await p.waitForTimeout(400);
-  await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);
+  await settled(p);
+  await p.selectOption('#essubject','business_studies'); await settled(p);
   await usePractice(p); await p.$$eval('.es-qrow',(es,r)=>{const t=es.find(x=>new RegExp(r,'i').test(x.textContent));t&&t.click();}, re.source);
-  await p.click('#esstart'); await p.waitForTimeout(700);
+  await p.click('#esstart');
+  await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
 }
 const text=(p,sel)=>p.$eval(sel,e=>e.innerText.replace(/\s+/g,' ').trim()).catch(()=>'');
 const count=(p,sel)=>p.$$eval(sel,es=>es.length).catch(()=>0);
@@ -25,10 +32,10 @@ async function body(p, n){
   } else {
     await p.$$eval('.es-mapitem',(es,i)=>{const t=es.filter(x=>/Body/.test(x.textContent))[i-1]; t&&t.click();}, n);
   }
-  await p.waitForTimeout(650);
+  await settled(p);
 }
 async function writeThrough(p, lines){
-  for (const l of lines){ if (!(await p.$('#esline'))) break; await p.fill('#esline',l); await p.click('#esaccept'); await p.waitForTimeout(360); }
+  for (const l of lines){ if (!(await p.$('#esline'))) break; await p.fill('#esline',l); await p.click('#esaccept'); await settled(p); }
 }
 (async()=>{
   const b=await chromium.launch();
@@ -52,8 +59,8 @@ async function writeThrough(p, lines){
   await p.screenshot({path:OUT+'shot-setup-required.png'});
 
   console.log('2. a part answered elsewhere says so');
-  await p.$$eval('[data-espath]',es=>es[0]&&es[0].click()); await p.waitForTimeout(400);
-  let sw=await p.$('#esstartwriting'); if (sw){ await sw.click(); await p.waitForTimeout(400); }
+  await p.$$eval('[data-espath]',es=>es[0]&&es[0].click()); await settled(p);
+  let sw=await p.$('#esstartwriting'); if (sw){ await sw.click(); await settled(p); }
   await writeThrough(p,['Target markets shape which digital channels a business uses.','It reaches them where they already are.']);
   await body(p,2);
   const fixed2=await p.$$eval('.es-areachip.fixed',es=>es.map(e=>e.innerText.replace(/\s+/g,' ').trim())).catch(()=>[]);
@@ -63,18 +70,18 @@ async function writeThrough(p, lines){
 
   console.log('3. the writing route now names a repeated argument');
   await open(p,/the effectiveness of human resource/);
-  await p.click('#esposdefer').catch(()=>{}); await p.waitForTimeout(350);
+  await p.click('#esposdefer').catch(()=>{}); await settled(p);
   await body(p,1);
-  await p.$$eval('[data-essetuparea]',es=>es[0]&&es[0].click()); await p.waitForTimeout(320);
+  await p.$$eval('[data-essetuparea]',es=>es[0]&&es[0].click()); await settled(p);
   const first=await p.$$eval('[data-espath]',es=>es[0]?es[0].dataset.espath:'');
-  await p.$$eval('[data-espath]',es=>es[0]&&es[0].click()); await p.waitForTimeout(420);
+  await p.$$eval('[data-espath]',es=>es[0]&&es[0].click()); await settled(p);
   ok(!(await p.$('.es-twin')),'the first use of an argument is not a repeat');
-  sw=await p.$('#esstartwriting'); if (sw) { await sw.click(); await p.waitForTimeout(400); }
+  sw=await p.$('#esstartwriting'); if (sw) { await sw.click(); await settled(p); }
   await writeThrough(p,['Training raises productivity at McDonald’s.']);
   await body(p,2);
-  await p.$$eval('[data-essetuparea]',es=>es[0]&&es[0].click()); await p.waitForTimeout(320);
+  await p.$$eval('[data-essetuparea]',es=>es[0]&&es[0].click()); await settled(p);
   await p.$$eval('[data-espath]',(es,id)=>{const t=es.find(x=>x.dataset.espath===id); t&&t.click();}, first);
-  await p.waitForTimeout(450);
+  await settled(p);
   const twin=await text(p,'.es-twin');
   console.log('   ',twin.slice(0,120));
   ok(!!twin,'choosing it again in body 2 says so, on the route most students take');
@@ -84,38 +91,38 @@ async function writeThrough(p, lines){
   await p.screenshot({path:OUT+'shot-twin-writing-route.png'});
 
   console.log('4. keeping one repeat does not silence the next');
-  await p.click('[data-estwinok]'); await p.waitForTimeout(420);
+  await p.click('[data-estwinok]'); await settled(p);
   ok(!(await p.$('.es-twin')),'keeping it puts the warning away');
-  await p.click('#esbackarg').catch(()=>{}); await p.waitForTimeout(420);
+  await p.click('#esbackarg').catch(()=>{}); await settled(p);
   const others=await p.$$eval('[data-espath]',es=>es.map(e=>e.dataset.espath));
   const second=others.find(x=>x!==first);
   await p.$$eval('[data-espath]',(es,id)=>{const t=es.find(x=>x.dataset.espath===id); t&&t.click();}, second);
-  await p.waitForTimeout(430);
+  await settled(p);
   ok(!(await p.$('.es-twin')),'a different argument is not a repeat');
-  await p.click('#esbackarg').catch(()=>{}); await p.waitForTimeout(420);
+  await p.click('#esbackarg').catch(()=>{}); await settled(p);
   await p.$$eval('[data-espath]',(es,id)=>{const t=es.find(x=>x.dataset.espath===id); t&&t.click();}, first);
-  await p.waitForTimeout(450);
+  await settled(p);
   ok(!(await p.$('.es-twin')),'and returning to the one they kept does not ask them again about the same argument');
   // the bug this replaced: the dismissal was keyed to the paragraph, so one
   // "Keep it" silenced every later repeat anywhere in the response
-  sw=await p.$('#esstartwriting'); if (sw) { await sw.click(); await p.waitForTimeout(400); }
+  sw=await p.$('#esstartwriting'); if (sw) { await sw.click(); await settled(p); }
   await body(p,3);
-  await p.$$eval('[data-essetuparea]',es=>es[0]&&es[0].click()); await p.waitForTimeout(320);
+  await p.$$eval('[data-essetuparea]',es=>es[0]&&es[0].click()); await settled(p);
   await p.$$eval('[data-espath]',(es,id)=>{const t=es.find(x=>x.dataset.espath===id); t&&t.click();}, first);
-  await p.waitForTimeout(450);
+  await settled(p);
   const t3=await text(p,'.es-twin');
   ok(!!t3,'a third paragraph repeating it is a new question, and is asked: '+t3.slice(0,60));
 
   console.log('5. an argument in the student’s own words is counted, not ignored');
   await open(p,/the effectiveness of human resource/);
-  await p.click('#esposdefer').catch(()=>{}); await p.waitForTimeout(350);
+  await p.click('#esposdefer').catch(()=>{}); await settled(p);
   await body(p,1);
-  await p.$$eval('[data-essetuparea]',es=>es[0]&&es[0].click()); await p.waitForTimeout(320);
-  await p.click('[data-espathown]'); await p.waitForTimeout(250);
+  await p.$$eval('[data-essetuparea]',es=>es[0]&&es[0].click()); await settled(p);
+  await p.click('[data-espathown]'); await settled(p);
   await p.fill('#esownarg','Training pays for itself within a year at a high turnover site.');
-  await p.click('#esownok'); await p.waitForTimeout(450);
+  await p.click('#esownok'); await settled(p);
   await openMap(p);
-  await p.click('.es-mapwa').catch(()=>{}); await p.waitForTimeout(500);
+  await p.click('.es-mapwa').catch(()=>{}); await settled(p);
   const note=await text(p,'.es-wa');
   console.log('   ',note.slice(0,150));
   ok(!/develops as you choose arguments/i.test(note),'it no longer says nothing has been chosen');

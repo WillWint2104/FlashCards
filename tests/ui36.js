@@ -6,6 +6,12 @@
 // was found by a single suite that happened to use the right question, so this walks
 // the combinations instead: role x mode x which support surface is open.
 const { chromium, T, OUT, usePractice } = require('./env');
+
+// Waits that name their condition. This app fetches nothing and renders
+// synchronously, so the effect of a click is present on the next frame:
+// settled() is that frame, not a shorter guess at a duration.
+const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+const here = (p, sel) => p.waitForSelector(sel, { timeout: 8000 });
 const { openMap } = require('./env');
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  FAIL:', m); } };
@@ -17,27 +23,28 @@ const QUESTIONS = [
 ];
 
 async function open(p, re) {
-  await p.goto(T); await p.waitForTimeout(500);
+  await p.goto(T); await here(p, '.navtab');
   await p.evaluate(() => localStorage.removeItem('marginal.essay.v1'));
-  await p.goto(T); await p.waitForTimeout(650);
+  await p.goto(T); await here(p, '.navtab');
   await p.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
-  await p.waitForTimeout(400);
+  await settled(p);
   await p.selectOption('#essubject', 'business_studies').catch(() => {});
   await usePractice(p); await p.$$eval('.es-qrow', (es, r) => { const t = es.find(x => new RegExp(r, 'i').test(x.textContent)); t && t.click(); }, re.source);
-  await p.click('#esstart'); await p.waitForTimeout(700);
+  await p.click('#esstart');
+  await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
   await p.click('#esposdefer').catch(() => {});
-  await p.waitForTimeout(300);
+  await settled(p);
 }
 async function toRole(p, role) {
   if (await p.$('.es-startrow')) {
     const hit = await p.$$eval('.es-startrow', (es, r) => {
       const t = es.find(x => new RegExp(r, 'i').test(x.textContent)); if (t) { t.click(); return true; } return false; }, role);
-    if (hit) { await p.waitForTimeout(600); return true; }
+    if (hit) { await settled(p); return true; }
   }
   await openMap(p);
   const hit = await p.$$eval('.es-mapitem', (es, r) => {
     const t = es.find(x => new RegExp(r, 'i').test(x.textContent)); if (t) { t.click(); return true; } return false; }, role);
-  await p.waitForTimeout(600);
+  await settled(p);
   return hit;
 }
 // Exactly one panel, always, whatever else is on screen.
@@ -63,7 +70,7 @@ const chips = p => p.$$eval('[data-esdecode],[data-esdecopen]', es => es.length)
       // 2. with a tool open
       const tool = await p.$('[data-estool="structure"]:not([disabled])');
       if (tool) {
-        await tool.click(); await p.waitForTimeout(350);
+        await tool.click(); await settled(p);
         ok(await hosts(p) <= 1, `${label} + tool: still one panel: ${await hosts(p)}`);
         const c = await chips(p);
         if (c) {
@@ -75,13 +82,13 @@ const chips = p => p.$$eval('[data-esdecode],[data-esdecopen]', es => es.length)
           });
           ok(bound === 'opens', `${label} + tool: a highlighted question word still opens the panel: ${bound}`);
         }
-        await p.keyboard.press('Escape'); await p.waitForTimeout(300);
+        await p.keyboard.press('Escape'); await settled(p);
       }
 
       // 3. with the context panel, where the role offers one
       const cx = await p.$('#esctx');
       if (cx) {
-        await cx.click(); await p.waitForTimeout(400);
+        await cx.click(); await settled(p);
         const railText = await p.$eval('.es-rest', e => e.innerText.trim()).catch(() => '');
         ok(railText.length > 0, `${label} + context: the control opens the surface it names`);
         ok(await hosts(p) <= 1, `${label} + context: still one panel: ${await hosts(p)}`);
@@ -95,7 +102,7 @@ const chips = p => p.$$eval('[data-esdecode],[data-esdecopen]', es => es.length)
         const showed = await p.$eval('.es-rest', e => e.innerText).catch(() => '');
         const proof = want === 'judgement' ? /judgement|established|paragraphs/i : /plan|signpost|argue/i;
         ok(proof.test(showed), `${label} + context: and the rail shows that view, not another one`);
-        await cx.click().catch(() => {}); await p.waitForTimeout(350);
+        await cx.click().catch(() => {}); await settled(p);
       }
 
       // 4. and the composer survives all of it

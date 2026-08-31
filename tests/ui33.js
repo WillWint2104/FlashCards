@@ -19,6 +19,12 @@
 // Driven from a fixture the test owns, so the real bank can be sourced, resourced
 // or rewritten without touching it.
 const { chromium, P, usePractice } = require('./env');
+
+// Waits that name their condition. This app fetches nothing and renders
+// synchronously, so the effect of a click is present on the next frame:
+// settled() is that frame, not a shorter guess at a duration.
+const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+const here = (p, sel) => p.waitForSelector(sel, { timeout: 8000 });
 const { EVIDENCE_FIXTURE } = require('./fixtures/evidence-publication.js');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 
@@ -28,9 +34,9 @@ const LABEL = { A:"A draft claim", B:"B candidate with a url", C:"C confirmed an
                 F:"F both fields blank" };
 
 async function openFixture(p){
-  await p.goto(P); await p.waitForTimeout(600);
+  await p.goto(P); await here(p, '.navtab');
   await p.evaluate(()=>localStorage.removeItem('marginal.essay.v1'));
-  await p.goto(P); await p.waitForTimeout(600);
+  await p.goto(P); await here(p, '.navtab');
   await p.evaluate(f=>{
     window.ESSAY.subjects[f.subject.key]=f.subject;
     // The bank the fixture question resolves to. Replaced wholesale for this run
@@ -38,15 +44,16 @@ async function openFixture(p){
     window.BUSCONTENT.evidence.marketing = f.records;
   }, F);
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
-  await p.waitForTimeout(400);
+  await settled(p);
   await p.selectOption('#essubject','evidence_contract');
-  await p.waitForTimeout(300);
+  await settled(p);
   await usePractice(p); await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/fixture marketing question/i.test(x.textContent));t&&t.click();});
-  await p.waitForTimeout(200);
-  await p.click('#esstart'); await p.waitForTimeout(700);
+  await settled(p);
+  await p.click('#esstart');
+  await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
   if (await p.$('.es-startrow')) await p.$$eval('.es-startrow',es=>{const t=es.filter(x=>/Body/.test(x.textContent))[0];t&&t.click();});
   else await p.$$eval('.es-mapitem',es=>{const t=es.filter(x=>/Body/.test(x.textContent))[0];t&&t.click();});
-  await p.waitForTimeout(650);
+  await settled(p);
 }
 const offered = p => p.$$eval('[data-esev]',es=>es.map(e=>e.dataset.esev));
 const setupText = p => p.$eval('.es-setup',e=>e.innerText.replace(/\s+/g,' ').trim()).catch(()=>'');
@@ -54,11 +61,11 @@ async function choose(p,id){
   // Standard harness rule: prove the thing exists, then test its behaviour. An
   // empty selection would otherwise report every hidden-evidence assertion below
   // as a pass while nothing was on screen at all.
-  if (!(await p.$('[data-espath]'))) { await p.click('#esbackarg').catch(()=>{}); await p.waitForTimeout(420); }
+  if (!(await p.$('[data-espath]'))) { await p.click('#esbackarg').catch(()=>{}); await settled(p); }
   const seen = await p.$$eval('[data-espath]',es=>es.map(e=>e.dataset.espath));
   if (seen.indexOf(id) < 0) throw new Error('pathway '+id+' was not offered; saw '+JSON.stringify(seen));
   await p.$$eval('[data-espath]',(es,want)=>{const t=es.find(x=>x.dataset.espath===want);t&&t.click();},id);
-  await p.waitForTimeout(520);
+  await settled(p);
 }
 
 (async()=>{

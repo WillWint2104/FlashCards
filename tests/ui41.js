@@ -10,27 +10,33 @@
 // not be, however related it seems, because a rubric that invents a requirement
 // marks someone against something nobody asked of them.
 const { chromium, T, ownQuestion } = require('./env');
+
+// Waits that name their condition. This app fetches nothing and renders
+// synchronously, so the effect of a click is present on the next frame:
+// settled() is that frame, not a shorter guess at a duration.
+const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+const here = (p, sel) => p.waitForSelector(sel, { timeout: 8000 });
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  FAIL:', m); } };
 
 async function setup(p) {
-  await p.goto(T); await p.waitForTimeout(350);
+  await p.goto(T); await here(p, '.navtab');
   await p.evaluate(() => localStorage.removeItem('marginal.essay.v1'));
-  await p.goto(T); await p.waitForTimeout(650);
+  await p.goto(T); await here(p, '.navtab');
   await p.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
-  await p.waitForTimeout(400);
+  await settled(p);
   await p.selectOption('#essubject', 'business_studies').catch(() => {});
-  await p.waitForTimeout(350);
+  await settled(p);
 }
 // The guidance as the student can actually see it: open the disclosure and read.
 async function guidance(p, q) {
   const typed = await ownQuestion(p, q);
   if (!typed) return null;
-  await p.waitForTimeout(450);
+  await settled(p);
   // The guidance sits behind "Review or edit", which is where a student who wants
   // to know what they will be marked against goes.
   await p.evaluate(() => { const b = document.querySelector('#esrubopen'); b && b.click(); });
-  await p.waitForTimeout(350);
+  await settled(p);
   return p.evaluate(() => {
     const box = document.querySelector('.es-rubpre');
     const status = document.querySelector('.es-rubstatus');
@@ -107,13 +113,13 @@ async function guidance(p, q) {
   console.log('--- a topic with nothing behind it is not offered as a choice ---');
   await setup(p);
   await p.evaluate(() => { const t = [...document.querySelectorAll('[data-esmode]')].find(x => x.dataset.esmode === 'practice'); t && t.click(); });
-  await p.waitForTimeout(400);
+  await settled(p);
   const dir = await p.evaluate(() => {
     const d = [...document.querySelectorAll('[data-essetupdir]')].find(x => /Explain/i.test(x.textContent));
     if (d) { d.click(); return d.textContent.trim(); } return null;
   });
   ok(!!dir, 'a directive can be chosen: ' + JSON.stringify(dir));
-  await p.waitForTimeout(400);
+  await settled(p);
   const pills = await p.evaluate(() => [...document.querySelectorAll('[data-essetuptopic]')].map(x => {
     const n = x.querySelector('.es-pilln');
     return { label: x.textContent.replace(/\s+/g, ' ').trim(),

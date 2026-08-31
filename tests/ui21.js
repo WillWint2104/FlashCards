@@ -1,6 +1,12 @@
 // The planning surface: one page, four states. Understand the answer, inspect
 // and choose four relationships, then write a thesis that signposts them.
 const { chromium, T, OUT, usePractice } = require('./env');
+
+// Waits that name their condition. This app fetches nothing and renders
+// synchronously, so the effect of a click is present on the next frame:
+// settled() is that frame, not a shorter guess at a duration.
+const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+const here = (p, sel) => p.waitForSelector(sel, { timeout: 8000 });
 const { planAll } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 (async()=>{
@@ -8,12 +14,13 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   const p=await (await b.newContext({viewport:{width:1500,height:1050},deviceScaleFactor:2})).newPage();
   const errs=[]; p.on('pageerror',e=>errs.push(String(e).slice(0,200)));
   let calls=0; await p.route(/workers\.dev/, r=>{calls++;r.abort();});
-  await p.goto(T); await p.waitForTimeout(800);
+  await p.goto(T); await here(p, '.navtab');
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
-  await p.waitForTimeout(400);
-  await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);
+  await settled(p);
+  await p.selectOption('#essubject','business_studies'); await settled(p);
   await usePractice(p); await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/target markets affect/i.test(x.textContent));t&&t.click();});
-  await p.click('#esstart'); await p.waitForTimeout(600);
+  await p.click('#esstart');
+  await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
   await planAll(p);
 
   console.log('1. one surface, not three stages');
@@ -26,34 +33,35 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   const pat=await p.$eval('.es-corepat',e=>e.textContent.trim());
   ok(/→/.test(pat)&&pat.split(' ').length<12,'it leads with the shape of the answer: '+JSON.stringify(pat));
   ok(!(await p.$('#escoregot')),'understanding is not something to certify, so there is nothing to press');
-  await p.click('#escoreexplain'); await p.waitForTimeout(250);
+  await p.click('#escoreexplain'); await settled(p);
   const rel=await p.$eval('.es-corerel',e=>e.textContent.trim());
   ok(/characteristics and expectations within its target market/i.test(rel),'and the relationship is one press away: '+rel.slice(0,50));
   const ex=await p.$eval('.es-corebody',e=>e.innerText);
   ok(ex.length>400,'Explain this is a real explanation: '+ex.length+' chars');
   ok(/downstream of that one|not everyone who might buy/i.test(ex),'and teaches what a target market actually is');
   await p.click('#escoreidea').catch(()=>{});
-  await p.waitForTimeout(250);
+  await settled(p);
   const idea=await p.$$eval('.es-corebody',es=>es.map(e=>e.innerText).join(' '));
   ok(/not a sentence to copy/i.test(idea),'a thesis IDEA is offered, labelled as not a sentence to copy');
-  await p.click('#escoreexplain'); await p.waitForTimeout(200);
-  await p.click('#escoreidea').catch(()=>{}); await p.waitForTimeout(200);
+  await p.click('#escoreexplain'); await settled(p);
+  await p.click('#escoreidea').catch(()=>{}); await settled(p);
   const shut=await p.$eval('.es-core',e=>e.innerText.replace(/\s+/g,' '));
   ok(shut.split(' ').length<24,'closing it leaves one quiet line: '+shut.slice(0,70));
 
   console.log('3. it is not a gate');
   const fresh=await (await b.newContext({viewport:{width:1400,height:1000}})).newPage();
   await fresh.route(/workers\.dev/, r=>r.abort());
-  await fresh.goto(T); await fresh.waitForTimeout(700);
+  await fresh.goto(T); await here(fresh, '.navtab');
   await fresh.evaluate(()=>localStorage.removeItem('marginal.essay.v1'));
-  await fresh.goto(T); await fresh.waitForTimeout(700);
+  await fresh.goto(T); await here(fresh, '.navtab');
   await fresh.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
-  await fresh.waitForTimeout(400);
-  await fresh.selectOption('#essubject','business_studies'); await fresh.waitForTimeout(200);
+  await settled(fresh);
+  await fresh.selectOption('#essubject','business_studies'); await settled(fresh);
   await usePractice(fresh); await fresh.$$eval('.es-qrow',es=>{const t=es.find(x=>/target markets affect/i.test(x.textContent));t&&t.click();});
-  await fresh.click('#esstart'); await fresh.waitForTimeout(500);
+  await fresh.click('#esstart');
+  await fresh.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
   await planAll(fresh);
-  await fresh.$$eval('[data-esplanpick]',es=>es[0]&&es[0].click()); await fresh.waitForTimeout(300);
+  await fresh.$$eval('[data-esplanpick]',es=>es[0]&&es[0].click()); await settled(fresh);
   ok((await fresh.$$eval('.es-plancard.done',es=>es.length))===1,'an argument can be chosen without touching the core answer');
   await fresh.close();
 
@@ -70,7 +78,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   ok(subs.every(x=>x.length<170),'short enough to read at a glance: max '+Math.max(...subs.map(x=>x.length))+' chars');
   const whys=await p.$$eval('[data-eswhy]',es=>es.length);
   ok(whys>=3,'and every option still offers Why?: '+whys);
-  await p.$$eval('[data-eswhy]',es=>{const t=es[0];t&&t.click();}); await p.waitForTimeout(250);
+  await p.$$eval('[data-eswhy]',es=>{const t=es[0];t&&t.click();}); await settled(p);
   const why=await p.$eval('.es-whybox',e=>e.innerText.replace(/\s+/g,' '));
   console.log('   ',why.slice(0,130));
   ok(!/what this means/i.test(why),'Why? no longer repeats what is already on the option');
@@ -78,7 +86,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   ok(/common mistake/i.test(why),'and what students do instead');
   ok(/→/.test(why),'the chain is shown as a chain');
   ok((await p.$$eval('.es-whybox .es-btn',es=>es.length))===1,'and the choice is made from inside the explanation');
-  await p.$eval('.es-whybox .es-btn',e=>e.click()); await p.waitForTimeout(350);
+  await p.$eval('.es-whybox .es-btn',e=>e.click()); await settled(p);
   ok(!(await p.$('.es-whybox')),'choosing closes the reasoning panel');
   ok((await p.$$eval('.es-plancard.done',es=>es.length))>=1,'and records the choice');
   await p.screenshot({path:OUT+'shot-plan-learning.png'});
@@ -89,7 +97,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
     if (await p.$('.es-thesis')) break;
     const picked=await p.$$eval('[data-esplanpick]',es=>{const t=es[0]; if(t){t.click();return true;} return false;});
     if(!picked) break;
-    await p.waitForTimeout(300);
+    await settled(p);
   }
   ok(!!(await p.$('.es-thesis')),'with all four chosen, the thesis section appears');
   const plan=await p.$$eval('.es-thesisplan li',es=>es.map(e=>e.innerText.replace(/\s+/g,' ')));
@@ -98,8 +106,8 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
 
   console.log('7. Compare is instant, authored, and never inserted');
   await p.fill('#esthesis','Target markets change what a business does with its marketing.');
-  await p.click('#esthesissave'); await p.waitForTimeout(350);
-  await p.click('#escompare'); await p.waitForTimeout(300);
+  await p.click('#esthesissave'); await settled(p);
+  await p.click('#escompare'); await settled(p);
   const cmp=await p.$eval('.es-compare',e=>e.innerText.replace(/\s+/g,' '));
   ok(/yours/i.test(cmp)&&/one acceptable thesis/i.test(cmp),'both are shown side by side');
   ok(!/band 6/i.test(cmp),'it is not labelled as a band: calibration, not intimidation');

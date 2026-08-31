@@ -1,4 +1,10 @@
 const { chromium, T, OUT, BASE, fileUrl } = require('./env');
+
+// Waits that name their condition. This app fetches nothing and renders
+// synchronously, so the effect of a click is present on the next frame:
+// settled() is that frame, not a shorter guess at a duration.
+const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+const here = (p, sel) => p.waitForSelector(sel, { timeout: 8000 });
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 
 // A SHORT-ANSWER review: one paragraph, NO rubric, focus pointing at a real line.
@@ -26,28 +32,28 @@ const SHORT = ans => ({
     sent=s;
     await r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(SHORT(s.answer))});
   });
-  await p.goto(T+'?review=1'); await p.waitForTimeout(900);
+  await p.goto(T+'?review=1'); await settled(p);
 
   console.log('--- sit only the short-answer section ---');
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Test mode/i.test(x.textContent)); t&&t.click();});
-  await p.waitForTimeout(500);
+  await settled(p);
   await p.$$eval('button, .area',es=>{const t=es.find(x=>/^Sit\b|Sit /i.test(x.textContent.trim())); t&&t.click();});
-  await p.waitForTimeout(500);
-  await p.click('text=Clear'); await p.waitForTimeout(200);
+  await settled(p);
+  await p.click('text=Clear'); await settled(p);
   await p.$$eval('.exam-pick, [data-exampick], label, button',es=>{
     const t=es.find(x=>/Short answer/i.test(x.textContent)); t&&t.click();
   });
-  await p.waitForTimeout(250);
-  await p.click('text=Start'); await p.waitForTimeout(500);
+  await settled(p);
+  await p.click('text=Start'); await settled(p);
   // walk past the section intro
-  const begin = await p.$('#exambegin'); if (begin) { await begin.click(); await p.waitForTimeout(500); }
+  const begin = await p.$('#exambegin'); if (begin) { await begin.click(); await settled(p); }
   ok(!!(await p.$('#ans')),'a short-answer question is on screen');
   const marks = await p.$eval('.exam-qhead',e=>e.textContent.trim());
   console.log('    question:', marks);
 
   console.log('--- answer it: the checklist gives the mark ---');
   await p.fill('#ans','McDonalds uses mobile ordering.');
-  await p.click('#check'); await p.waitForTimeout(700);
+  await p.click('#check'); await settled(p);
   ok(!!(await p.$('.sheet')),'it grades');
   const kind = await p.$eval('#sheet',e=>e.textContent);
   ok(/✓|✗/.test(kind) || /\d+\s*\/\s*\d+/.test(kind),'a mark is shown');
@@ -56,7 +62,7 @@ const SHORT = ans => ({
   await p.screenshot({path:OUT+'shot-short-sheet.png'});
 
   console.log('--- ask for it: marked AS a short answer ---');
-  await p.click('#examreview'); await p.waitForTimeout(900);
+  await p.click('#examreview'); await settled(p);
   ok(sent && sent.responseType==='short','the request says it is a short answer: '+(sent&&sent.responseType));
   ok(sent && sent.marks>0 && sent.marks<=10,'with its own mark value: '+(sent&&sent.marks));
   ok(sent && typeof sent.command==='string','the directive verb travels: '+JSON.stringify(sent&&sent.command));
@@ -71,7 +77,7 @@ const SHORT = ans => ({
   await p.screenshot({path:OUT+'shot-short-review.png'});
 
   console.log('--- revise returns to the answer box with the line selected ---');
-  await p.click('#rvfocusgo'); await p.waitForTimeout(600);
+  await p.click('#rvfocusgo'); await settled(p);
   ok(!(await p.$('.rv-scrim')),'the review closes');
   ok(!!(await p.$('#ans')),'the question is back');
   const box = await p.$eval('#ans',e=>({v:e.value,s:e.selectionStart,e:e.selectionEnd}));

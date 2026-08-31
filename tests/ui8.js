@@ -1,28 +1,34 @@
 const { chromium, T, OUT, BASE, fileUrl } = require('./env');
+
+// Waits that name their condition. This app fetches nothing and renders
+// synchronously, so the effect of a click is present on the next frame:
+// settled() is that frame, not a shorter guess at a duration.
+const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+const here = (p, sel) => p.waitForSelector(sel, { timeout: 8000 });
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 (async()=>{
   const b=await chromium.launch();
   const p=await (await b.newContext({viewport:{width:1280,height:1100},deviceScaleFactor:2})).newPage();
   const errs=[]; p.on('pageerror',e=>errs.push(String(e).slice(0,200)));
   await p.route(/workers\.dev/, r=>r.abort());
-  await p.goto(T); await p.waitForTimeout(900);
+  await p.goto(T); await here(p, '.navtab');
 
   const sit = async name => {
-    await p.goto(T); await p.waitForTimeout(800);
+    await p.goto(T); await here(p, '.navtab');
     await p.$$eval('.navtab',es=>{const t=es.find(x=>/Test mode/i.test(x.textContent)); t&&t.click();});
-    await p.waitForTimeout(450);
+    await settled(p);
     await p.$$eval('button, .area',es=>{const t=es.find(x=>/^Sit\b|Sit /i.test(x.textContent.trim())); t&&t.click();});
-    await p.waitForTimeout(450);
-    await p.click('#exampicknone'); await p.waitForTimeout(150);
+    await settled(p);
+    await p.click('#exampicknone'); await settled(p);
     await p.$$eval('.exam-pick',(es,n)=>{
       const t=es.find(x=>new RegExp(n,'i').test(x.textContent));
       if(t){ const cb=t.querySelector('input'); if(cb && !cb.checked) cb.click(); }
     }, name);
-    await p.waitForTimeout(200);
-    await p.click('#exampickgo'); await p.waitForTimeout(500);
-    const begin=await p.$('#exambegin'); if(begin){ await begin.click(); await p.waitForTimeout(450); }
+    await settled(p);
+    await p.click('#exampickgo'); await settled(p);
+    const begin=await p.$('#exambegin'); if(begin){ await begin.click(); await settled(p); }
     // an either/or section asks which question to attempt before it starts
-    const choice=await p.$('[data-examchoose]'); if(choice){ await choice.click(); await p.waitForTimeout(450); }
+    const choice=await p.$('[data-examchoose]'); if(choice){ await choice.click(); await settled(p); }
   };
 
   console.log('--- EXTENDED RESPONSE inside a paper ---');
@@ -62,9 +68,9 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   // walk to a later question with a different verb
   for (let i=0;i<4;i++){
     await p.fill('#ans','placeholder answer for walking forward');
-    await p.click('#check'); await p.waitForTimeout(500);
-    await p.click('#examnext'); await p.waitForTimeout(450);
-    const bg=await p.$('#exambegin'); if(bg){ await bg.click(); await p.waitForTimeout(400); }
+    await p.click('#check'); await settled(p);
+    await p.click('#examnext'); await settled(p);
+    const bg=await p.$('#exambegin'); if(bg){ await bg.click(); await settled(p); }
     if (!(await p.$('.ansshape'))) continue;
     const l=(await p.$$eval('.ansshape .es-skellabel',es=>es.map(e=>e.textContent.trim()))).join('|');
     const h=await p.$eval('.ansshape .es-skelh',e=>e.textContent.trim());
