@@ -74,7 +74,7 @@ async function openMap(page) {
   const shown = await page.$eval(".es-map", e => !e.hasAttribute("hidden")).catch(() => false);
   if (shown) return;
   const b = await page.$("#esmappop");
-  if (b) { await b.click(); await page.waitForTimeout(220); }
+  if (b) { await b.click(); await page.waitForFunction(() => { const m = document.querySelector(".es-map"); return m && !m.hasAttribute("hidden"); }, null, { timeout: 8000 }).catch(() => {}); }
 }
 // The section list is an overlay now, not a grid column, so one left open sits on
 // top of whatever the next step wants to press. A menu closes before anything
@@ -83,7 +83,7 @@ async function closeMap(page) {
   const shown = await page.$eval(".es-map", e => !e.hasAttribute("hidden")).catch(() => false);
   if (!shown) return;
   await page.keyboard.press("Escape").catch(() => {});
-  await page.waitForTimeout(220);
+  await page.waitForFunction(() => { const m = document.querySelector(".es-map"); return !m || m.hasAttribute("hidden"); }, null, { timeout: 8000 }).catch(() => {});
 }
 async function nextSection(page) {
   await closeMap(page);
@@ -122,11 +122,11 @@ async function ownQuestion(page, q) {
     const b = [...document.querySelectorAll('[data-esmode]')].find(x => x.dataset.esmode === 'own');
     if (b) b.click();
   });
-  await page.waitForTimeout(260);
-  const box = await page.$('#esq');
+  const box = await page.waitForSelector('#esq', { timeout: 8000 }).catch(() => null);
   if (!box) return false;
   await page.fill('#esq', q);
-  await page.waitForTimeout(180);
+  // The value landing is what the caller depends on, and it is synchronous.
+  await page.waitForFunction(v => { const e = document.querySelector('#esq'); return !!e && e.value === v; }, q, { timeout: 8000 }).catch(() => {});
   return true;
 }
 
@@ -140,7 +140,8 @@ async function usePractice(page) {
     const b = [...document.querySelectorAll('[data-esmode]')].find(x => x.dataset.esmode === 'practice');
     if (b && !b.classList.contains('on')) b.click();
   });
-  await page.waitForTimeout(300);
+  // The rows are the point of switching, so wait for them rather than for 300ms.
+  await page.waitForSelector('.es-qrow', { timeout: 8000 }).catch(() => {});
 }
 
 module.exports = { usePractice, ownQuestion, closeMap,

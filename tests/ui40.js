@@ -32,17 +32,18 @@ const shellOf = p => p.evaluate(() => {
 });
 
 async function toPicker(p, subject) {
-  await p.goto(T); await p.waitForTimeout(300);
+  await p.goto(T); await p.waitForSelector('.navtab', { timeout: 8000 });
   await p.evaluate(() => localStorage.removeItem('marginal.essay.v1'));
-  await p.goto(T); await p.waitForTimeout(600);
+  await p.goto(T); await p.waitForSelector('.navtab', { timeout: 8000 });
   const tab = await p.evaluate(() => {
     const t = [...document.querySelectorAll('.navtab')].find(x => /Essay practice/i.test(x.textContent));
     if (t) { t.click(); return true; } return false;
   });
   if (!tab) return false;
-  await p.waitForTimeout(400);
+  await p.waitForSelector('#essubject', { timeout: 8000 });
   await p.selectOption('#essubject', subject).catch(() => {});
-  await p.waitForTimeout(400);
+  // The picker is ready when it has offered something, whichever mode it opens in.
+  await p.waitForFunction(() => !!document.querySelector('.es-qrow, [data-esmode]'), null, { timeout: 8000 });
   return true;
 }
 
@@ -52,7 +53,7 @@ async function toPicker(p, subject) {
   const errs = []; p.on('pageerror', e => errs.push(String(e).slice(0, 200)));
   await p.route(/workers\.dev/, r => r.abort());
 
-  await p.goto(T); await p.waitForTimeout(500);
+  await p.goto(T); await p.waitForSelector('.navtab', { timeout: 8000 });
   const bank = await p.evaluate(() => {
     const s = (window.ESSAY && window.ESSAY.subjects) || {};
     const bs = (s.business_studies && s.business_studies.questions) || [];
@@ -80,7 +81,8 @@ async function toPicker(p, subject) {
     const started = await p.evaluate(() => { const s = document.querySelector('#esstart'); if (s) { s.click(); return true; } return false; });
     ok(started, q.id + ': can be started');
     if (!started) continue;
-    await p.waitForTimeout(750);
+    // The essay surface is up when one of its two valid opening states exists.
+    await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow'), null, { timeout: 8000 }).catch(() => {});
     const sh = await shellOf(p);
     ok(sh.present, q.id + ': the essay surface mounted');
     if (!sh.present) continue;
@@ -111,7 +113,7 @@ async function toPicker(p, subject) {
   await toPicker(p, 'business_studies');
   await usePractice(p);
   await p.evaluate(() => { const row = document.querySelector('.es-qrow'); row && row.click(); });
-  await p.waitForTimeout(350);
+  await p.waitForFunction(() => !!document.querySelector('.es-qrow.on'), null, { timeout: 8000 }).catch(() => {});
   const carried = await p.evaluate(() => {
     const on = document.querySelector('.es-qrow.on'), c = document.querySelector('.es-chosenq');
     return { id: on ? on.dataset.esq : null, stated: c ? c.textContent.trim().length : 0,
