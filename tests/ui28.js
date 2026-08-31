@@ -98,7 +98,7 @@ async function backToArgument(p){
   ok(!(await p.$('.es-drift.dir')),'and the question goes when the note runs the right way');
 
   console.log('6. a judgement question asks how far, not whether');
-  await open(p,/Evaluate the effectiveness/);
+  await open(p,/the effectiveness of human resource/);
   await p.click('#esposdefer').catch(()=>{}); await p.waitForTimeout(350);
   await p.click('#esstartbody'); await p.waitForTimeout(600);
   await p.$$eval('[data-essetuparea]',es=>es[0]&&es[0].click()); await p.waitForTimeout(340);

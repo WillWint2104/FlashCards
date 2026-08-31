@@ -22,7 +22,7 @@ async function open(p, re){
   let calls=0; await p.route(/workers\.dev/, r=>{calls++;r.abort();});
 
   console.log('1. the mode is data, not a special case');
-  await open(p,/Evaluate the effectiveness/);
+  await open(p,/the effectiveness of human resource/);
   const modes=await p.evaluate(()=>{
     const qs=window.ESSAY.subjects.business_studies.questions;
     const g=id=>{const q=qs.find(x=>x.id===id); return {mode:(q.coreAnswer||{}).mode, pos:((q.coreAnswer||{}).positions||[]).length, crit:((q.coreAnswer||{}).criteria||[]).length};};

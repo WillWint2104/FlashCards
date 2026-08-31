@@ -62,7 +62,7 @@ async function writeThrough(p, lines){
   ok(/people/i.test(await text(p,'.es-setuph')),'and this paragraph is named for its own part');
 
   console.log('3. the writing route now names a repeated argument');
-  await open(p,/Evaluate the effectiveness/);
+  await open(p,/the effectiveness of human resource/);
   await p.click('#esposdefer').catch(()=>{}); await p.waitForTimeout(350);
   await body(p,1);
   await p.$$eval('[data-essetuparea]',es=>es[0]&&es[0].click()); await p.waitForTimeout(320);
@@ -107,7 +107,7 @@ async function writeThrough(p, lines){
   ok(!!t3,'a third paragraph repeating it is a new question, and is asked: '+t3.slice(0,60));
 
   console.log('5. an argument in the student’s own words is counted, not ignored');
-  await open(p,/Evaluate the effectiveness/);
+  await open(p,/the effectiveness of human resource/);
   await p.click('#esposdefer').catch(()=>{}); await p.waitForTimeout(350);
   await body(p,1);
   await p.$$eval('[data-essetuparea]',es=>es[0]&&es[0].click()); await p.waitForTimeout(320);

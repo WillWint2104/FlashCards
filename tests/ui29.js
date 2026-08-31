@@ -55,7 +55,7 @@ async function write(p, line){ if (await p.$('#esline')) { await p.fill('#esline
   let calls=0; await p.route(/workers\.dev/, r=>{calls++;r.abort();});
 
   console.log('1. A then B then A, on one paragraph');
-  await open(p,/Evaluate the effectiveness/);
+  await open(p,/the effectiveness of human resource/);
   await p.click('#esposdefer').catch(()=>{}); await p.waitForTimeout(350);
   await go(p,'Body 1');
   await pickArea(p,0);
@@ -97,7 +97,7 @@ async function write(p, line){ if (await p.$('#esline')) { await p.fill('#esline
   ok(/tied to what a crew member/.test(await text(p,'.es-prose')),'the sentence survived all three moves');
 
   console.log('3. support, limitation, support again');
-  await open(p,/Evaluate the effectiveness/);
+  await open(p,/the effectiveness of human resource/);
   await p.$$eval('[data-espos]',es=>{const t=es.find(x=>/Highly effective/i.test(x.textContent)); t&&t.click();});
   await p.waitForTimeout(400);
   await go(p,'Body 1'); await pickArea(p,0); await pickPath(p); await startWriting(p);

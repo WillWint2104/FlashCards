@@ -13,7 +13,7 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  FAIL:', m); 
 // mkt-01 is causal and authors a decoder; hr-01 is a judgement question.
 const QUESTIONS = [
   { name: 'causal, decoder authored', re: /target markets affect/, mode: 'causal' },
-  { name: 'judgement', re: /Evaluate the effectiveness/, mode: 'judgement' },
+  { name: 'judgement', re: /the effectiveness of human resource/, mode: 'judgement' },
 ];
 
 async function open(p, re) {

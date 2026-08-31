@@ -33,7 +33,7 @@ async function plan(p, area, id){
   let calls=0; await p.route(/workers\.dev/, r=>{calls++;r.abort();});
 
   console.log('1. a judgement is an orientation, not an entry requirement');
-  await open(p,/Evaluate the effectiveness/);
+  await open(p,/the effectiveness of human resource/);
   ok(!!(await p.$('.es-judge')),'the question is asked');
   ok(!!(await p.$('#esposdefer')),'and deciding later is one of the answers');
   ok(!!(await p.$('#esstartbody')),'writing is reachable with the question unanswered');

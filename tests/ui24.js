@@ -21,7 +21,7 @@ const wa = p => p.$eval('.es-watext',e=>e.textContent.trim()).catch(()=>'');
   let calls=0; await p.route(/workers\.dev/, r=>{calls++;r.abort();});
 
   console.log('1. nothing has to be planned before writing');
-  await open(p,/Evaluate the effectiveness/);
+  await open(p,/the effectiveness of human resource/);
   ok(!(await p.$('.es-plancards')),'the four-card planner is not what opens');
   ok((await p.$$eval('.es-startrow',es=>es.length))===6,'the shape of the response is shown, all six sections');
   const idle=await p.$$eval('.es-startrow:not(.planned):not(.written)',es=>es.length);
