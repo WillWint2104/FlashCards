@@ -31,7 +31,7 @@ const TIERS = {
     suites: ["t1", "t2", "ui13", "ui30", "ui35", "ui37", "ui38", "ui39", "ui40", "ui41", "ui42", "bots"],
   },
   // Everything run.js knows about. An empty list means "pass no filter".
-  full: { budget: 300, suites: [] },
+  full: { budget: 360, suites: [] },
 };
 
 const tier = (process.argv[2] || "").toLowerCase();

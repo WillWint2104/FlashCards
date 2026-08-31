@@ -3827,7 +3827,7 @@
       <div class="es-field">
         <label class="es-label" for="esparamodel">Paragraph structure</label>
         <select id="esparamodel" class="es-input es-select">${sc.paraModels.map(m =>
-          `<option value="${esc(m)}" ${m === f.paraModel ? "selected" : ""}>${esc(esParaModelLabel(m))}${(scObj.scaffolds[m] && scObj.scaffolds[m].expansion) ? " — " + esc(scObj.scaffolds[m].expansion) : ""}</option>`).join("")}</select>
+          `<option value="${esc(m)}" ${m === f.paraModel ? "selected" : ""}>${esc(esParaModelLabel(m))}${(scObj.scaffolds[m] && scObj.scaffolds[m].expansion) ? " \u00b7 " + esc(scObj.scaffolds[m].expansion) : ""}</option>`).join("")}</select>
         <p class="es-help">Each body paragraph will be scaffolded to this structure.</p>
       </div>` : "";
     // Suggested questions are subject-specific: show them ONLY when THIS subject ships
