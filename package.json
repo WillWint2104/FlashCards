@@ -4,7 +4,10 @@
   "description": "Marginal \u2014 HSC Economics study app (dev tooling only; the app itself is dependency-free static files).",
   "scripts": {
     "lint:css": "stylelint index.html",
-    "test": "node build.js && node tests/run.js"
+    "test": "node build.js && node tests/run.js",
+    "gate:fast": "node build.js && node tests/run.js ui39",
+    "gate:checkpoint": "node build.js && node tests/run.js ui39 ui40 ui41 ui34 ui37",
+    "gate:full": "node tests/snapshot.js"
   },
   "devDependencies": {
     "postcss-html": "^1.7.0",
