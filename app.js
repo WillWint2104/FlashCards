@@ -5085,14 +5085,33 @@
     // No default height. An empty tool should be the size of "nothing here yet",
     // not a 700px column containing one sentence, so the window is content sized
     // until the student resizes it and it starts remembering their choice.
-    const w = 470, h = null;
+    // FLOOR matches min-width on .es-cols > .es-drawer. Asking for less than the
+    // stylesheet allows does not make the window narrower, it makes it hang off
+    // the right of the screen.
+    const WANT = 470, FLOOR = 340, GAP = 16, EDGE = 12, h = null;
     const cols = document.querySelector(".es-cols");
     const r = cols ? cols.getBoundingClientRect() : null;
-    const left = r ? Math.max(12, Math.min(window.innerWidth - w - 24, r.right - w + 40)) : Math.max(12, window.innerWidth - w - 60);
     // Below the paragraph head, not level with it. Opening level covered the row
     // holding View plan, notebook and read all, so the window swallowed clicks on
     // the page's own controls the moment it appeared.
     const top = r ? Math.max(12, r.top + 46) : 120;
+    // What the window has to clear is the WRITING CARD, .es-flow, which is 940px
+    // inside a 1420px column. The old placement measured .es-cols, the page
+    // container, so a 470px window opened 430px over the paragraph heading at
+    // every width, including 1920px screens with room for it twice over.
+    const rights = [".es-flow", ".es-parahead"].map(s => document.querySelector(s))
+      .filter(Boolean).map(e => e.getBoundingClientRect().right);
+    const writing = rights.length ? Math.max.apply(null, rights) : null;
+    const room = writing == null ? 0 : window.innerWidth - writing - GAP - EDGE;
+    // Beside the writing whenever the space left is wide enough to read in, and
+    // narrower rather than overlapping when the space is only nearly enough.
+    // Below the floor there is no honest way to avoid overlapping: at 1440px the
+    // writing leaves 275px, less than the window is allowed to be. It then sits
+    // at the edge, which covers 179px of the writing rather than the 430px this
+    // used to cover at every width, and can be dragged anywhere from there.
+    const beside = room >= FLOOR;
+    const w = beside ? Math.min(WANT, Math.round(room)) : WANT;
+    const left = beside ? Math.round(writing + GAP) : Math.max(EDGE, window.innerWidth - w - EDGE);
     return { left: Math.round(left), top: Math.round(top), w: w, h: h };
   }
   function esDrawerHTML(p) {
@@ -7153,7 +7172,7 @@
                 return `<button type="button" class="es-mapwa" id="esmapwa" title="What the arguments you have chosen add up to. It comes from your plan, not from reading your paragraphs.">
                   <span class="es-corelbl">${esIsJudgement() ? "current answer" : "working answer"}</span>
                   <span class="es-mapwatext">${esc(wa.text)}</span></button>`; })()}
-              ${map}
+              <div class="es-mapscroll">${map}</div>
               <div class="es-wordcount"${target ? ` title="Around ${target} words would be a full answer at ${esc(String(d.marks || 20))} marks. A guide, not a limit: write more if you have more to say."` : ""}>
                 <span><b>${words}</b> here \u00b7 <b>${whole}</b> in all${target ? ` \u00b7 ~${target}` : ""}</span>
               </div>

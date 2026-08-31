@@ -19,7 +19,7 @@
 // Geometry is asserted against a baseline captured at runtime, never against a
 // pixel constant. The contract is that the writing does not move, not that a
 // particular viewport produces a particular number.
-const { chromium, T, usePractice } = require('./env');
+const { chromium, T, usePractice, openMap, closeMap } = require('./env');
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  FAIL:', m); } };
 const TOL = 1;
@@ -310,6 +310,58 @@ async function toWriting(p, qre) {
     ok(!/fits this argument/i.test(t2) || !/nothing has been linked/i.test(t2),
       'and it never claims a fit and denies one in the same panel');
   }
+
+  console.log('--- the window opens beside the writing, and the small controls say what they are doing ---');
+  // The shell rule is that opening a tool does not disturb the writing. It moves
+  // nothing, which the geometry above proves, but a window that lands on top of
+  // the sentence heading still covers the thing being written. At this viewport
+  // there is room beside the writing, so it has to be used.
+  await p.keyboard.press('Escape').catch(() => {});
+  await gone(p, '.es-drawer').catch(() => {});
+  const ev3 = await p.$('[data-estool="evidence"]');
+  if (ev3) {
+    await ev3.click(); await here(p, '.es-drawer'); await settled(p);
+    const cover = await p.evaluate(() => {
+      const d = document.querySelector('.es-drawer').getBoundingClientRect();
+      const rights = ['.es-flow', '.es-parahead'].map(s => document.querySelector(s))
+        .filter(Boolean).map(e => e.getBoundingClientRect().right);
+      const writing = rights.length ? Math.max.apply(null, rights) : 0;
+      return { over: Math.round(Math.max(0, writing - d.left)), onScreen: Math.round(d.right) <= window.innerWidth,
+        w: Math.round(d.width) };
+    });
+    ok(cover.over === 0, 'the tool window does not cover the writing where there is room beside it: ' + cover.over + 'px');
+    ok(cover.onScreen, 'and it is fully on screen: ' + cover.w + 'px wide');
+    await p.keyboard.press('Escape'); await gone(p, '.es-drawer').catch(() => {});
+  }
+
+  // The notebook control looked identical whether pressing it would open the
+  // notebook or close it. aria-expanded was already right; the styling ignored it.
+  const nb3 = await p.$('.es-headacts [data-esnbtoggle]');
+  ok(!!nb3, 'the notebook control is in the writing head');
+  if (nb3) {
+    const look = () => p.evaluate(() => { const t = document.querySelector('.es-headacts [data-esnbtoggle]');
+      const c = getComputedStyle(t); return { expanded: t.getAttribute('aria-expanded'), bg: c.backgroundColor, shadow: c.boxShadow }; });
+    const shut = await look();
+    await nb3.click(); await here(p, '.es-nb'); await settled(p);
+    const open = await look();
+    ok(open.expanded === 'true' && shut.expanded === 'false', 'it reports its state to assistive technology');
+    ok(open.bg !== shut.bg || open.shadow !== shut.shadow, 'and it now looks different when the notebook is open: ' + open.bg);
+    await p.click('[data-esnbclose]').catch(() => {}); await gone(p, '.es-nb').catch(() => {});
+    const back = await look();
+    ok(back.bg === shut.bg, 'and goes back to looking shut when it is');
+  }
+
+  // The word count sat below the fold of a popover that scrolled as one piece,
+  // so it was cut by the popover's own edge. The sections scroll; the count does not.
+  await openMap(p); await settled(p);
+  const wc = await p.evaluate(() => {
+    const a = document.querySelector('.es-map'); if (!a) return null;
+    const c = a.querySelector('.es-wordcount'); if (!c) return null;
+    const ar = a.getBoundingClientRect(), cr = c.getBoundingClientRect();
+    return { inside: cr.bottom <= ar.bottom + 1 && cr.top >= ar.top - 1, text: c.innerText.replace(/\s+/g, ' ').trim() };
+  });
+  ok(wc && wc.inside, 'the section popover keeps its word count inside itself: ' + (wc && JSON.stringify(wc.text)));
+  await closeMap(p);
 
   console.log('\npageerrors:', errs.length ? errs.join(' | ') : 'none');
   ok(errs.length === 0, 'no page errors across the whole shell');
