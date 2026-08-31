@@ -16,7 +16,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   await p.waitForTimeout(500);
   await p.selectOption('#essubject','business_studies').catch(()=>{});
   await p.waitForTimeout(250);
-  await p.$$eval('.es-qchip',es=>{const t=es.find(x=>/target markets/i.test(x.textContent));t&&t.click();});
+  await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/target markets/i.test(x.textContent));t&&t.click();});
   await p.waitForTimeout(300);
   await p.click('#esstart'); await p.waitForTimeout(400);
   // this suite tests the per-paragraph route, which the start surface offers

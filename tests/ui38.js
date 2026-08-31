@@ -33,7 +33,7 @@ async function openQuestion(p, qre, bodyIndex) {
   await p.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await p.waitForTimeout(400);
   await p.selectOption('#essubject', 'business_studies').catch(() => {});
-  await p.$$eval('.es-qchip', (es, r) => { const t = es.find(x => new RegExp(r, 'i').test(x.textContent)); t && t.click(); }, qre);
+  await p.$$eval('.es-qrow', (es, r) => { const t = es.find(x => new RegExp(r, 'i').test(x.textContent)); t && t.click(); }, qre);
   await p.click('#esstart'); await p.waitForTimeout(700);
   if (await p.$('.es-startrow')) await p.$$eval('.es-startrow', (es, n) => {
     const t = es.filter(x => /Body/.test(x.textContent))[n || 0]; t && t.click();

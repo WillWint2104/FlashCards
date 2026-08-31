@@ -25,7 +25,7 @@ async function openApp(p, T, subject, qre, structure) {
   await p.$$eval(".navtab", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await wait(p, 400);
   await p.selectOption("#essubject", subject); await wait(p, 220);
-  await p.$$eval(".es-qchip", (es, r) => { const t = es.find(x => new RegExp(r, "i").test(x.textContent)); t && t.click(); }, qre.source);
+  await p.$$eval(".es-qrow", (es, r) => { const t = es.find(x => new RegExp(r, "i").test(x.textContent)); t && t.click(); }, qre.source);
   if (structure) { await p.selectOption("#esstruct", structure); await wait(p, 150); }
   await p.click("#esstart"); await wait(p, 700);
 }

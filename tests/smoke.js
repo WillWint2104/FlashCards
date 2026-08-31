@@ -90,10 +90,10 @@ const okline = m => console.log('  ok:', m);
   if (!subj) { bad('essay practice did not open its setup screen'); }
   else {
     await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(250);
-    const chips = await p.$$eval('.es-qchip', es => es.length);
+    const chips = await p.$$eval('.es-qrow', es => es.length);
     if (!chips) bad('no authored questions offered for Business Studies');
     else okline(chips + ' authored questions offered');
-    await p.$$eval('.es-qchip', es => { const t = es.find(x=>/target markets/i.test(x.textContent)); t && t.click(); });
+    await p.$$eval('.es-qrow', es => { const t = es.find(x=>/target markets/i.test(x.textContent)); t && t.click(); });
     await p.waitForTimeout(250);
     await p.click('#esstart'); await p.waitForTimeout(600);
   await planAll(p);
@@ -168,7 +168,7 @@ const okline = m => console.log('  ok:', m);
   await p.goto(T); await p.waitForTimeout(700);
   await goTab('Essay');
   await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);
-  await p.$$eval('.es-qchip', es => { const t=es.find(x=>/target markets/i.test(x.textContent)); t&&t.click(); });
+  await p.$$eval('.es-qrow', es => { const t=es.find(x=>/target markets/i.test(x.textContent)); t&&t.click(); });
   await p.click('#esstart'); await p.waitForTimeout(500);
   await planAll(p);
   await p.$$eval('.es-plancard [data-esplanarea]', es => { const t=es.find(x=>/processes/i.test(x.textContent)); t&&t.click(); });

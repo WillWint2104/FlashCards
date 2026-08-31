@@ -120,7 +120,7 @@ if (!P) {
   await p.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await p.waitForTimeout(400);
   await p.selectOption('#essubject', 'business_studies').catch(() => {}); await p.waitForTimeout(200);
-  await p.$$eval('.es-qchip', es => { const t = es.find(x => /target markets/i.test(x.textContent)); t && t.click(); });
+  await p.$$eval('.es-qrow', es => { const t = es.find(x => /target markets/i.test(x.textContent)); t && t.click(); });
   await p.waitForTimeout(200);
   await p.selectOption('#esstruct', 'six').catch(e => note('setup', 'could not choose a 4-body structure'));
   await p.waitForTimeout(150);

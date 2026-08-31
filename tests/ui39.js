@@ -50,7 +50,7 @@ async function toWriting(p, qre) {
   await p.waitForTimeout(400);
   await p.selectOption('#essubject', 'business_studies').catch(() => {});
   const chip = await p.evaluate(r => {
-    const t = [...document.querySelectorAll('.es-qchip')].find(x => new RegExp(r, 'i').test(x.textContent));
+    const t = [...document.querySelectorAll('.es-qrow')].find(x => new RegExp(r, 'i').test(x.textContent));
     if (t) { t.click(); return true; } return false;
   }, qre);
   if (!chip) return false;
