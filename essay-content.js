@@ -293,6 +293,16 @@ window.ESSAY = {
         // requirement that named one would be a claim this file cannot vouch for.
         { id: "mkt-01", command: "Explain", qtype: "C", qtypeLabel: "multi-element",
           marks: 20,
+          // What this question's plan lines pair a strategy WITH. Operations pairs
+          // strategies with the six performance objectives and needs no list; here
+          // the second end is the four service elements the question fixes, so they
+          // are named rather than left for the renderer to recognise.
+          objectiveWords: ["e-marketing", "people", "processes", "physical evidence"],
+          // The connect card's own sentence. The default copy describes a strategy
+          // raising a performance objective, which is the Operations relationship
+          // and false here: a target market is not an action a business takes, and
+          // a marketing strategy is not what it is trying to improve.
+          connectIntro: "This question asks how the characteristics of a target market shape the marketing strategies a business chooses. Each argument below links one characteristic to one part of the marketing mix.",
           requirements: {
             concepts: ["target market", "e-marketing", "people as a marketing strategy", "processes as a marketing strategy", "physical evidence as a marketing strategy"],
             // THE AUTHORITY on what this question fixes. Decode highlights point at
@@ -335,6 +345,8 @@ window.ESSAY = {
               adds: "the digital channels it markets through",
               meaning: "These customers already spend their attention on digital channels, so that is where the business has to buy it.",
               whatToProve: "customers are already on digital channels \u2192 the business moves its promotion there \u2192 why that reaches them better than the alternative",
+              mechanism: { state: "none-required", reason: "The two ends already meet. Nothing sits between a customer being on a channel and the business promoting there, and a middle step would restate the relationship rather than explain it." },
+              fromLabel: "customers already on digital channels",
               commonMistake: "Listing the business's digital channels without saying what it is about these customers that made digital the right choice.",
               // Not yet reviewed for what it depends on. A state, not a claim that it
               // depends on nothing: see decisions/2026-08-22-concept-routing.md.
@@ -376,6 +388,8 @@ window.ESSAY = {
               adds: "the offers and loyalty schemes it runs digitally",
               meaning: "These customers decide on price, and digital channels are the cheapest way to put an offer in front of them again and again.",
               whatToProve: "customers respond to price \u2192 the business needs a cheap and repeatable way to reach them with offers \u2192 digital promotions and loyalty schemes become the tool",
+              mechanism: { state: "unreviewed", note: "The authored e-marketing content explains that digital channels cut promotion costs and carry personalised offers. That is a capability of the strategy once chosen, not a reason a price-conscious market forces it. Bridging the two would mean inventing the step in between." },
+              fromLabel: "customers who decide on price",
               commonMistake: "Arguing that discounts attract customers, which is a pricing point, rather than arguing why the offer is delivered digitally.",
               // Not yet reviewed for what it depends on. A state, not a claim that it
               // depends on nothing: see decisions/2026-08-22-concept-routing.md.
@@ -392,6 +406,8 @@ window.ESSAY = {
               adds: "where its marketing sits relative to ordering",
               meaning: "These customers want to act on an offer immediately, so the marketing has to sit inside the channel they already order through.",
               whatToProve: "customers want to act with the least effort \u2192 marketing has to sit where the order is placed \u2192 the ordering channel becomes a promotion channel",
+              mechanism: { state: "unreviewed", note: "The source says customers browse, order and pay in one place, which describes what the channel does rather than why this market selects it. The bridging step, that an extra action loses a customer who chooses by effort, is not authored anywhere." },
+              fromLabel: "customers who want to act at once",
               commonMistake: "Describing the app as convenient to order with, which is a processes argument, instead of arguing that it is where the marketing reaches them.",
               // Not yet reviewed for what it depends on. A state, not a claim that it
               // depends on nothing: see decisions/2026-08-22-concept-routing.md.
@@ -437,6 +453,8 @@ window.ESSAY = {
                 explore: { concept: "people", label: "Read more about people in the marketing mix" }
               },
               whatToProve: "customers expect to be dealt with personally \u2192 staff are part of the product \u2192 the business invests in training and service standards",
+              mechanism: { state: "authored", text: "the staff member is part of what the customer is buying, so their skill and manner are the thing being judged" },
+              fromLabel: "customers who expect personal service",
               commonMistake: "Saying good staff are important, which is true of every business, instead of saying what THIS target market expects that forced the investment.",
               concept: { topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
               evidence: ["Intensive distribution and standardised service"],
@@ -449,6 +467,8 @@ window.ESSAY = {
               adds: "how it staffs and rosters for demand",
               meaning: "These customers count waiting as a cost, so the business has to have the right number of staff on at the right hour.",
               whatToProve: "customers will not wait \u2192 service capacity has to match demand hour by hour \u2192 staffing and rostering change",
+              mechanism: { state: "unreviewed", note: "The relationship holds, but the middle step is about matching service capacity to demand, which is authored under Operations rather than Marketing. Naming it here would import a mechanism this topic does not carry." },
+              fromLabel: "customers who expect speed",
               commonMistake: "Arguing about the ordering system, which is processes, rather than about the people who have to be there to deliver it.",
               // Not yet reviewed for what it depends on. A state, not a claim that it
               // depends on nothing: see decisions/2026-08-22-concept-routing.md.
@@ -463,6 +483,8 @@ window.ESSAY = {
               adds: "how consistently it trains staff across the network",
               meaning: "These customers are buying predictability, so what the staff do has to be the same in every store.",
               whatToProve: "customers are buying predictability \u2192 variation between staff breaks it \u2192 training and service standards are standardised",
+              mechanism: { state: "authored", text: "if the staff are part of the product, differences between staff are differences in the product itself" },
+              fromLabel: "customers who expect the same experience everywhere",
               commonMistake: "Describing standard uniforms, signage or layout, which is physical evidence, rather than what the staff are trained to do.",
               // Not yet reviewed for what it depends on. A state, not a claim that it
               // depends on nothing: see decisions/2026-08-22-concept-routing.md.
@@ -516,6 +538,8 @@ window.ESSAY = {
                 explore: { concept: "processes", label: "Read more about processes" }
               },
               whatToProve: "customer expectation \u2192 the process change it forces \u2192 why the new process suits this market better",
+              mechanism: { state: "authored", text: "ordering, queuing and paying are steps the customer performs personally, so effort left in them is effort spent by the customer" },
+              fromLabel: "customers who want the least effort",
               commonMistake: "Describing an app or a kiosk without explaining what it was about these customers that caused the process to change.",
               concept: { key: "processes", topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
               evidence: [
@@ -616,6 +640,8 @@ window.ESSAY = {
                 explore: { concept: "processes", label: "Read more about processes" }
               },
               whatToProve: "customers count waiting as a cost \u2192 steps are separated or run alongside each other \u2192 the wait falls, especially at peak",
+              mechanism: { state: "authored", text: "the customer spends the process waiting, so its length is part of what they are judging" },
+              fromLabel: "customers who count waiting as a cost",
               commonMistake: "Claiming the business is faster without naming which step was taken out of the queue.",
               concept: { key: "processes", topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
               evidence: [
@@ -716,6 +742,8 @@ window.ESSAY = {
                 explore: { concept: "processes", label: "Read more about processes" }
               },
               whatToProve: "customers expect to change the order \u2192 no two orders are identical \u2192 the ordering system has to capture the variation accurately",
+              mechanism: { state: "unreviewed", note: "No authored marketing content connects customising an order to what the ordering system has to capture. The step is plausible but would have to be invented here." },
+              fromLabel: "customers who want to change the order",
               commonMistake: "Arguing about choice on the menu, which is a product point, instead of about how the process carries a non-standard order.",
               concept: { key: "processes", topic: "marketing", section: "marketing strategies", point: "people, processes and physical evidence" },
               evidence: [
@@ -792,6 +820,8 @@ window.ESSAY = {
               adds: "how deliberately its surroundings are designed",
               meaning: "These customers cannot test the service before buying it, so they judge it by the room, and the room has to be designed.",
               whatToProve: "the service is intangible \u2192 customers judge it by what they can see \u2192 the setting is designed rather than left to chance",
+              mechanism: { state: "authored", text: "the service itself cannot be seen or tested before it is bought, so the surroundings are what the customer inspects instead" },
+              fromLabel: "customers who judge by surroundings",
               commonMistake: "Listing what the premises look like without saying what the customer concludes from it.",
               // Not yet reviewed for what it depends on. A state, not a claim that it
               // depends on nothing: see decisions/2026-08-22-concept-routing.md.
@@ -807,6 +837,8 @@ window.ESSAY = {
               adds: "how the space is divided between segments",
               meaning: "More than one group is being served and they do not want the same surroundings, so the space is divided between them.",
               whatToProve: "more than one segment is served \u2192 one setting cannot suit both \u2192 the space is divided so each gets its own",
+              mechanism: { state: "unreviewed", note: "The source establishes that a segmentation approach means a separate mix per segment, which is the definition of the approach rather than a reason one setting cannot serve both groups. That reason is not authored." },
+              fromLabel: "several segments served at once",
               commonMistake: "Naming the segments and the products built for them, which is segmentation, without ever getting to the physical space.",
               // Not yet reviewed for what it depends on. A state, not a claim that it
               // depends on nothing: see decisions/2026-08-22-concept-routing.md.
@@ -821,6 +853,8 @@ window.ESSAY = {
               adds: "how far the surroundings explain themselves",
               meaning: "These customers would rather use a machine than ask someone, so what they can see has to explain itself.",
               whatToProve: "customers prefer to serve themselves \u2192 the surroundings have to do the explaining \u2192 screens, signage and layout are built to be self-explanatory",
+              mechanism: { state: "unreviewed", note: "The authored content lists signage and layout as physical evidence but never links them to serving yourself. Naming the middle step would assert a connection the source does not make." },
+              fromLabel: "customers who prefer to serve themselves",
               commonMistake: "Arguing that self-service is faster, which is a processes point, rather than about what the customer sees and touches.",
               // Not yet reviewed for what it depends on. A state, not a claim that it
               // depends on nothing: see decisions/2026-08-22-concept-routing.md.
@@ -1545,14 +1579,14 @@ window.ESSAY = {
             { key: "link",    label: "concluding link", job: "link back to the question with a clear judgement" }
           ],
           templates: {
-            topic:   { tier1: "____ can affect ____ because ____.",
-                       tier2: [ { type: "cause and effect", frame: "____ influences ____ by ____." } ] },
-            explain: { tier1: "This works because ____ leads to ____.",
-                       tier2: [ { type: "mechanism", frame: "By ____, the business is able to ____, which changes ____." } ] },
-            example: { tier1: "For example, a business could ____, which shows ____." },
-            effect:  { tier1: "As a result, ____ improves ____, which matters because ____.",
-                       tier2: [ { type: "trade-off", frame: "This improves ____, although it can reduce ____." } ] },
-            link:    { tier1: "Therefore, ____ affects ____, which addresses the question because ____." }
+            topic:   { tier1: "[strategy] can affect [objective] because [main relationship].",
+                       tier2: [ { type: "cause and effect", frame: "[strategy] influences [objective] by [how it works]." } ] },
+            explain: { tier1: "This works because [what the strategy changes] leads to [the effect on the objective].",
+                       tier2: [ { type: "mechanism", frame: "By [what the business does], the business is able to [what that makes possible], which changes [the objective]." } ] },
+            example: { tier1: "For example, [business] could [specific action], which shows [connection to the argument]." },
+            effect:  { tier1: "As a result, [strategy] improves [objective], which matters because [why it matters to the business].",
+                       tier2: [ { type: "trade-off", frame: "This improves [objective], although it can reduce [the objective it trades against]." } ] },
+            link:    { tier1: "Therefore, [strategy] affects [objective], which addresses the question because [link to the question]." }
           }
         },
         tdecc: {
@@ -1565,13 +1599,13 @@ window.ESSAY = {
             { key: "link",    label: "connect",              job: "return to the question and say what the example has demonstrated" }
           ],
           templates: {
-            topic:   { tier1: "____ can affect ____ because ____." },
-            define:  { tier1: "____ refers to ____.",
-                       tier2: [ { type: "define then apply", frame: "____ is ____, which allows a business to ____." } ] },
-            explain: { tier1: "This happens because ____ leads to ____.",
-                       tier2: [ { type: "cause and effect", frame: "Because ____, a business ____, which changes ____." } ] },
-            example: { tier1: "For example, a business could ____, which shows ____." },
-            link:    { tier1: "Therefore, ____ affects ____, which addresses the question because ____." }
+            topic:   { tier1: "[strategy] can affect [objective] because [main relationship]." },
+            define:  { tier1: "[concept] refers to [meaning in your own words].",
+                       tier2: [ { type: "define then apply", frame: "[concept] is [meaning], which allows a business to [what it makes possible]." } ] },
+            explain: { tier1: "This happens because [cause] leads to [effect].",
+                       tier2: [ { type: "cause and effect", frame: "Because [cause], a business [what it does], which changes [the outcome]." } ] },
+            example: { tier1: "For example, [business] could [specific action], which shows [connection to the argument]." },
+            link:    { tier1: "Therefore, [strategy] affects [objective], which addresses the question because [link to the question]." }
           }
         }
       },
@@ -1765,49 +1799,55 @@ window.ESSAY = {
       ]
     },
     templates: {
-      point:     { tier1: "____ was a key way that ____.",
-                   tier2: [ { type: "claim", frame: "One way ____ can be seen is through ____." },
-                            { type: "contrast", frame: "While ____, this paragraph argues that ____." } ] },
-      analysis:  { tier1: "This demonstrates that ____ because ____.",
-                   tier2: [ { type: "significance", frame: "This was significant because it allowed ____ to ____, which shows ____." },
-                            { type: "appearance and reality", frame: "This created the impression of ____ while in reality ____, revealing ____." },
-                            { type: "cause and effect", frame: "By doing this, ____ led to ____." } ] },
-      evidence:  { tier1: "This is supported by ____, which shows ____.",
-                   tier2: [ { type: "named source", frame: "According to ____, ____, which suggests ____." },
-                            { type: "specific detail", frame: "The detail that ____ shows ____." } ] },
+      point:     { tier1: "[method or factor] was a key way that [what it achieved].",
+                   tier2: [ { type: "claim", frame: "One way [the main idea] can be seen is through [specific method or factor]." },
+                            { type: "contrast", frame: "While [the other view], this paragraph argues that [your claim]." } ] },
+      analysis:  { tier1: "This demonstrates that [what it shows] because [reason].",
+                   tier2: [ { type: "significance", frame: "This was significant because it allowed [who or what] to [do what], which shows [what it demonstrates]." },
+                            { type: "appearance and reality", frame: "This created the impression of [the appearance] while in reality [the reality], revealing [what that tells us]." },
+                            { type: "cause and effect", frame: "By doing this, [cause] led to [effect]." } ] },
+      evidence:  { tier1: "This is supported by [specific evidence], which shows [connection to the argument].",
+                   tier2: [ { type: "named source", frame: "According to [source], [what it states], which suggests [what it implies]." },
+                            { type: "specific detail", frame: "The detail that [specific detail] shows [what it demonstrates]." } ] },
       // Which directive family a question belongs to. The command is authored on
       // every question; coreAnswer.mode is not, so the command is what decides.
       directiveFamilies: {
         judgement: ["evaluate", "assess", "to what extent", "discuss", "critically"],
         causal: ["explain", "how can", "how do", "how does", "describe", "outline", "analyse", "account for", "examine"]
       },
-      link:      { tier1: "Therefore, ____ was a key method because ____.",
-                   tier2: [ { type: "answer the question", frame: "This shows that ____, which directly addresses ____." },
-                            { type: "weigh it", frame: "This mattered more than ____ because ____." } ] },
+      link:      { tier1: "Therefore, [method or factor] was a key method because [reason].",
+                   tier2: [ { type: "answer the question", frame: "This shows that [your claim], which directly addresses [the question]." },
+                            { type: "weigh it", frame: "This mattered more than [the alternative] because [reason]." } ] },
       // The shape of a thesis follows the directive. An Explain or How question wants
       // a causal line; an Evaluate or Assess question wants a weighed one. Offering
       // judgement frames for a How question teaches the wrong sentence, so the
       // families are separated and the directive chooses. Content free either way.
-      thesis:    { tier1: "____ can be assessed by weighing ____ against ____.",
-                   tier2: [ { type: "line of argument", frame: "While ____, ultimately ____ because ____." } ],
+      thesis:    { tier1: "[the subject of the question] can be assessed by weighing [one side] against [the other side].",
+                   tier2: [ { type: "line of argument", frame: "While [the other side], ultimately [your position] because [main reason]." } ],
                    byFamily: {
                      // A thesis answers the whole question and says where the
                      // response is going. A body topic sentence states one
                      // relationship. Sharing frames between them teaches a student
                      // to write a paragraph opener where an essay opener belongs,
                      // so these signpost and the topic frames do not.
-                     causal: { tier1: "Overall, ____ can contribute to ____ through ____ and ____.",
-                               tier2: [ { type: "signpost the ways", frame: "____ affects ____ in several ways, most importantly ____ and ____." },
-                                        { type: "name the strongest", frame: "____ shapes ____ most through ____, and to a lesser extent through ____." } ] },
-                     judgement: { tier1: "Overall, ____ is ____ because ____, although ____.",
-                               tier2: [ { type: "line of argument", frame: "While ____, ultimately ____ because ____." },
-                                        { type: "weigh two sides", frame: "____ can be assessed by weighing ____ against ____, and on balance ____." } ] } } },
-      methods:   { tier1: "This will be shown through ____ and ____.",
-                   tier2: [ { type: "signpost", frame: "By examining ____ and ____, this essay will argue ____." } ] },
-      restate:   { tier1: "Overall, ____ shows that ____.",
-                   tier2: [ { type: "draw together", frame: "Taken together, ____ and ____ reveal ____." } ] },
-      judgement: { tier1: "On balance, ____ was ____ because ____.",
-                   tier2: [ { type: "weighed judgement", frame: "Although ____, on balance ____ because ____." } ] }
+                     causal: { tier1: "Overall, [concept from the question] can contribute to [result from the question] through [argument 1] and [argument 2].",
+                               // Neutral by directive. A How can... question asks how something happens, not
+                               // which of two things matters more, so no frame here asks for a ranking.
+                               // "most importantly", "strongest" and "to a lesser extent" are claims about
+                               // degree, and a causal answer making one has answered a question nobody asked.
+                               // Ranking frames live in the judgement family below, where degree is the thing
+                               // being assessed.
+                               tier2: [ { type: "signpost the ways", frame: "[concept from the question] affects [result from the question] in several ways, including [argument 1] and [argument 2]." },
+                                        { type: "name the second way", frame: "[concept from the question] shapes [result from the question] through [argument 1], and also through [argument 2]." } ] },
+                     judgement: { tier1: "Overall, [the subject of the question] is [your judgement] because [main reason], although [the qualification].",
+                               tier2: [ { type: "line of argument", frame: "While [the other side], ultimately [your position] because [main reason]." },
+                                        { type: "weigh two sides", frame: "[the subject of the question] can be assessed by weighing [one side] against [the other side], and on balance [your judgement]." } ] } } },
+      methods:   { tier1: "This will be shown through [first argument] and [second argument].",
+                   tier2: [ { type: "signpost", frame: "By examining [first argument] and [second argument], this essay will argue [your position]." } ] },
+      restate:   { tier1: "Overall, [what you examined] shows that [your conclusion].",
+                   tier2: [ { type: "draw together", frame: "Taken together, [argument 1] and [argument 2] reveal [your conclusion]." } ] },
+      judgement: { tier1: "On balance, [the subject of the question] was [your judgement] because [main reason].",
+                   tier2: [ { type: "weighed judgement", frame: "Although [the qualification], on balance [your judgement] because [main reason]." } ] }
     },
     // Worked examples for the optional "see a worked example" reference. These are
     // FIXED, pre-written (never generated, so no invented history), and ALWAYS on a
@@ -1872,7 +1912,7 @@ window.ESSAY = {
     // usually miss in the demo; the app falls back to the paragraph's first sentences.
     lines: [
       { quote: "", issue: "This sentence describes what happened instead of explaining why it matters.", fix: "This shows ____ because ____.", severity: "critical" },
-      { quote: "", issue: "There is a claim here with no evidence attached to it.", fix: "This is supported by ____, which shows ____.", severity: "should" },
+      { quote: "", issue: "There is a claim here with no evidence attached to it.", fix: "This is supported by [specific evidence], which shows [connection to the argument].", severity: "should" },
       { quote: "", issue: "This sentence never links back to the question.", fix: "Therefore ____, which addresses ____.", severity: "should" }
     ]
   }

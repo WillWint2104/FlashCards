@@ -1,6 +1,6 @@
 // Learning pass over the reference area. Three support profiles through the same
 // Processes paragraph. Changes nothing; counts and records what each one sees.
-const { chromium, T, OUT, BASE, fileUrl } = require('./env');
+const { chromium, T, OUT, BASE, fileUrl, usePractice } = require('./env');
 const { planAll } = require('./env');
 const PROFILE=process.argv[2]||'moderate';
 const PROFILES={ independent:{help:0,drawers:[]}, moderate:{help:2,drawers:['understand']},
@@ -33,7 +33,7 @@ const LINES=[
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await p.waitForTimeout(400);
   await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);
-  await p.$$eval('.es-qchip',es=>{const t=es.find(x=>/target markets/i.test(x.textContent));t&&t.click();});
+  await usePractice(p); await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/target markets/i.test(x.textContent));t&&t.click();});
   await p.waitForTimeout(200);
   await p.click('#esstart'); await p.waitForTimeout(500);
   await planAll(p);

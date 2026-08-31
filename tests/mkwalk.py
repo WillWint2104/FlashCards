@@ -51,9 +51,26 @@ boot = """
 """.replace("SEED", json.dumps(seed).replace("<", "\\u003c"))
 i = src.index("<script>\n// =")
 src = src[:i] + boot + src[i:]
+# A manual review was once contaminated by opening an obsolete copy of this file,
+# which looked identical to the current one. So the build stamps itself: the
+# commit and the time it was made go into the tab title, where anyone walking the
+# app can see at a glance whether they are looking at today's build.
+def _stamp_text():
+    import subprocess, datetime
+    try:
+        sha = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT).decode().strip()
+    except Exception:
+        sha = "unknown"
+    return sha + " " + datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+
+_st = _stamp_text()
+src = re.sub(r"<title>[^<]*</title>", "<title>Marginal walkthrough \u00b7 " + _st + "</title>", src, count=1)
+if "<title>" not in src:
+    src = src.replace("</head>", "<title>Marginal walkthrough \u00b7 " + _st + "</title></head>", 1)
+
 dest = os.path.join(OUT, "marginal-walkthrough.html")
 io.open(dest, "w", encoding="utf-8").write(src)
-print("walkthrough:", dest, len(src), "bytes")
+print("walkthrough:", dest, len(src), "bytes  [" + _st + "]")
 
 # A second build for walking the Evidence layer before real sources exist. Every
 # item is stamped with a source that SAYS it is not verified, and the app prints

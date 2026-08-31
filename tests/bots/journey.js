@@ -3,7 +3,7 @@
 // the student does: the profile's knowledge state does, and the app's response
 // to it does.
 const { termsOf, vocabulary, teachable, Ledger, Trace } = require("./lib");
-const { openMap } = require("../env");
+const { openMap, usePractice } = require("../env");
 // what a pathway SAYS it depends on, which is the thing worth auditing. A word
 // the sentence happened to contain is not a teaching dependency.
 function declaredOf(q, id, store) {
@@ -25,7 +25,8 @@ async function openApp(p, T, subject, qre, structure) {
   await p.$$eval(".navtab", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await wait(p, 400);
   await p.selectOption("#essubject", subject); await wait(p, 220);
-  await p.$$eval(".es-qchip", (es, r) => { const t = es.find(x => new RegExp(r, "i").test(x.textContent)); t && t.click(); }, qre.source);
+  await usePractice(p);
+  await p.$$eval(".es-qrow", (es, r) => { const t = es.find(x => new RegExp(r, "i").test(x.textContent)); t && t.click(); }, qre.source);
   if (structure) { await p.selectOption("#esstruct", structure); await wait(p, 150); }
   await p.click("#esstart"); await wait(p, 700);
 }
@@ -94,10 +95,15 @@ async function writeParagraph(p, tr, led, vocab, prof, need, unexplained, cs) {
       guard++;
       if (prof.opensLearn && !learnOpened) {
         learnOpened = true; tr.m.surfacesOpened++;
-        await p.click('[data-estool="understand"]').catch(() => {}); await wait(p, 420);
+        // Learn opens the Learning Centre. The ledger has to read what the student
+        // was actually shown, so it reads the Centre; reading the old drawer
+        // selector would credit them with nothing and quietly change what the
+        // journey claims they were taught. Closing is Escape, because a modal
+        // swallows the second press on the control that opened it.
+        await p.click('[data-estool="understand"]').catch(() => {}); await wait(p, 520);
         tr.say("open", "Learn");
-        await read(p, tr, led, vocab, ".es-drawer", "Learn");
-        await p.click('[data-estool="understand"]').catch(() => {}); await wait(p, 300);
+        await read(p, tr, led, vocab, ".esl-panel", "Learn");
+        await p.keyboard.press("Escape").catch(() => {}); await wait(p, 320);
       } else if (prof.usesHelp && await has(p, "#esmorehelp")) {
         await p.click("#esmorehelp"); await wait(p, 340);
         tr.m.helpRungs++;
@@ -171,6 +177,10 @@ async function runJourney(p, o) {
 
   const used = [];
   for (let k = 0; k < bodies; k++) {
+    // The section list is an overlay now. Left open it covers the very controls
+    // this loop presses, and the click lands on the menu instead.
+    const mapShown = await p.$eval(".es-map", e => !e.hasAttribute("hidden")).catch(() => false);
+    if (mapShown) { await p.keyboard.press("Escape").catch(() => {}); await wait(p, 240); }
     if (k === 0) { await p.click("#esstartbody").catch(() => {}); }
     else {
       const nx = await p.$("#esdonenext");

@@ -1,5 +1,11 @@
 // the plain build on purpose: this suite tests the shipped defaults
-const { chromium, P: T, OUT } = require('./env');
+const { chromium, P: T, OUT, usePractice } = require('./env');
+
+// Waits that name their condition. This app fetches nothing and renders
+// synchronously, so the effect of a click is present on the next frame:
+// settled() is that frame, not a shorter guess at a duration.
+const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+const here = (p, sel) => p.waitForSelector(sel, { timeout: 8000 });
 const { nextSection, prevSection } = require('./env');
 let pass=0, fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 
@@ -29,36 +35,50 @@ const REVIEW = {
     sent=s; await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(REVIEW)});
   });
   await p.goto(T+'?essaydemo=1&essaymark=1');
-  await p.waitForTimeout(600);
+  await settled(p);
 
   // ---- pick an AUTHORED question: its definition must travel with the response
-  const chip = await p.$('.es-qchip');
+  await usePractice(p);
+  const chip = await p.$('.es-qrow');
   ok(!!chip,'authored question chips are offered');
-  const chips = await p.$$('.es-qchip');
+  const chips = await p.$$('.es-qrow');
   // ah-religion is the second Ancient History question
-  await chips[1].click(); await p.waitForTimeout(300);
-  const qtext = await p.$eval('#esq',e=>e.value);
-  ok(/religious beliefs/.test(qtext),'question text filled from the chip');
-  await p.click('#esstart'); await p.waitForTimeout(400);
+  await chips[1].click(); await settled(p);
+  // Choosing a practice question no longer types it into a box: the box only
+  // exists for a question the student brings. It is stated back to them instead,
+  // and the id is what travels with the response.
+  const qtext = await p.evaluate(() => {
+    const c = document.querySelector('.es-chosenq');
+    const on = document.querySelector('.es-qrow.on');
+    return { shown: c ? c.textContent : '', id: on ? on.dataset.esq : null };
+  });
+  ok(/religious beliefs/.test(qtext.shown),'the chosen question is stated back: '+JSON.stringify(qtext.shown.slice(0,50)));
+  ok(!!qtext.id,'and the row is marked as the chosen one: '+qtext.id);
+  await p.click('#esstart');
+  await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
 
   // ---- coached mode: write the intro, SKIP the next slot, write the one after.
   // An empty middle slot is never submitted, so the marker's "paragraph 2" is the
   // student's third slot. This is the case that a naive index mapping gets wrong.
   await p.fill('#esline','Target markets shape the mix.');
-  await p.click('#esaccept'); await p.waitForTimeout(300);
+  await p.click('#esaccept'); await settled(p);
   await nextSection(p);
   const emptySlot = await p.$eval('.es-pararole',e=>e.textContent.trim()).catch(()=>'');
   const emptyText = await p.$eval('#esline',e=>e.value).catch(()=>null);
   await nextSection(p);
   const skipped = await p.$eval('.es-pararole',e=>e.textContent.trim()).catch(()=>'');
   await p.fill('#esline','Overall the target market drives the strategy.');
-  await p.click('#esaccept'); await p.waitForTimeout(300);
-  await p.waitForTimeout(150);
-  await p.click('#esmodeswitch'); await p.waitForTimeout(350);
-  await p.click('#essubmit'); await p.waitForTimeout(900);
+  await p.click('#esaccept'); await settled(p);
+  await settled(p);
+  await p.click('#esmodeswitch'); await settled(p);
+  await p.click('#essubmit'); await settled(p);
   ok(!!skipped&&!!emptySlot&&skipped!==emptySlot&&emptyText==='',
      'wrote into slot 1 and slot 3, leaving slot 2 empty (now on '+skipped+', skipped '+emptySlot+')');
 
+  // The typed topic field is gone, so a PRACTICE question has to supply its own.
+  // ui.js holds the other half: a question the student types carries none.
+  ok(sent && typeof sent.topic === 'string' && sent.topic.length > 0,
+     'the chosen question carried its authored topic into marking, with nobody typing one: '+JSON.stringify(sent&&sent.topic));
   ok(sent && sent.requirements && sent.requirements.relationships.length>0,
      'the picked question\'s requirements reach the marker: '+JSON.stringify(sent&&sent.requirements&&sent.requirements.concepts));
   ok(sent && sent.requirements.syllabus.length>0,'syllabus scope sent');
@@ -67,7 +87,7 @@ const REVIEW = {
   ok(sent && sent.answer.split(/\n\s*\n/).length===2,'only the written paragraphs are submitted: '+(sent&&sent.answer.split(/\n\s*\n/).length));
 
   // ---- revise must land on the paragraph the student actually wrote SECOND
-  await p.click('#esrevise'); await p.waitForTimeout(400);
+  await p.click('#esrevise'); await settled(p);
   // page.$eval REJECTS when the selector matches nothing, so the old `||`
   // fallback could never run: a revise landing on a finished paragraph killed
   // the suite instead of failing this line.

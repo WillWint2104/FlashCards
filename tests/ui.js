@@ -1,5 +1,11 @@
 // the plain build on purpose: this suite tests the shipped defaults
-const { chromium, P: T, OUT } = require('./env');
+const { chromium, P: T, OUT, ownQuestion } = require('./env');
+
+// Waits that name their condition. This app fetches nothing and renders
+// synchronously, so the effect of a click is present on the next frame:
+// settled() is that frame, not a shorter guess at a duration.
+const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+const here = (p, sel) => p.waitForSelector(sel, { timeout: 8000 });
 let pass=0, fail=0;
 const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 
@@ -50,25 +56,27 @@ const REVIEW = (marks) => ({
   });
 
   await p.goto(T + '?essaydemo=1&essaymark=1');
-  await p.waitForTimeout(600);
-  ok(!!(await p.$('#esq')),'essay setup opens');
+  await settled(p);
+  // Setup opens on the practice picker now, not on a question box: the box only
+  // exists once the student says they are bringing their own question.
+  ok(!!(await p.$('[data-esmode]')),'essay setup opens');
 
   // ---- marks field exists and defaults sensibly
   ok(await p.$eval('#esmarks',e=>e.value)==='20','marks field defaults to 20');
   await p.fill('#esmarks','16');
-  await p.fill('#esq','Explain how target markets affect e-marketing, people, processes and physical evidence.');
-  await p.fill('#estopic','Marketing');
-  await p.click('#esstart'); await p.waitForTimeout(400);
+  await ownQuestion(p, 'Explain how target markets affect e-marketing, people, processes and physical evidence.');
+  await p.click('#esstart');
+  await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
   ok(!!(await p.$('#esline')),'the composer opens');
 
   // ---- write a plan point + text on paragraph 1, then go to full attempt
   await p.fill('#esline','Target markets shape every element of the marketing mix.');
-  await p.click('#esaccept'); await p.waitForTimeout(300);
-  await p.click('#esmodeswitch'); await p.waitForTimeout(400);
+  await p.click('#esaccept'); await settled(p);
+  await p.click('#esmodeswitch'); await settled(p);
   ok(!!(await p.$('#esfull')),'full attempt screen opens');
   await p.fill('#esfull','Target markets shape every element of the marketing mix.\n\nMcDonalds introduced mobile ordering through its app.\n\nThe restaurants now have digital kiosks.');
-  await p.waitForTimeout(200);
-  await p.click('#essubmit'); await p.waitForTimeout(900);
+  await settled(p);
+  await p.click('#essubmit'); await settled(p);
 
   // ---- payload assertions
   ok(!!sent,'a marking request was sent');
@@ -78,7 +86,10 @@ const REVIEW = (marks) => ({
   ok(sent && Array.isArray(sent.criteria) && sent.criteria.length===4,'criteria sent: '+JSON.stringify(sent&&sent.criteria));
   ok(sent && Array.isArray(sent.bands) && sent.bands.length>0,'band expectations sent: '+((sent&&sent.bands)||[]).length);
   ok(sent && sent.plan && sent.plan.paragraphs.length>=3,'the plan is sent as context: '+JSON.stringify(sent&&sent.plan&&sent.plan.paragraphs[0]));
-  ok(sent && sent.topic==='Marketing','topic sent');
+  // This attempt uses a question the student typed, which carries no topic: the
+  // field that used to ask for one has gone. ui40 holds the replacement contract,
+  // that a chosen PRACTICE question supplies its own.
+  ok(sent && !sent.topic,'a typed question carries no invented topic: '+JSON.stringify(sent&&sent.topic));
   ok(sent && sent.answer.indexOf('mobile ordering')>0,'the exact response is sent');
 
   // ---- the marked result surfaces ONE next action
@@ -91,7 +102,7 @@ const REVIEW = (marks) => ({
   ok(!!(await p.$('#esrevise')),'revise button present');
 
   // ---- REVISE returns to the writing surface at that paragraph, on that line
-  await p.click('#esrevise'); await p.waitForTimeout(400);
+  await p.click('#esrevise'); await settled(p);
   ok(!!(await p.$('#esline')) || !!(await p.$('[data-esedit]')),'revise lands on the composer');
   const edited = await p.$('[data-esedit]');
   ok(!!edited,'and the marker\'s sentence is open as an editable block');
@@ -99,9 +110,9 @@ const REVIEW = (marks) => ({
   ok(/mobile ordering/.test(v),'it is the RIGHT sentence: '+JSON.stringify(v.slice(0,50)));
 
   // ---- full review, focus strip, and revise from inside it
-  await p.click('#esmodeswitch'); await p.waitForTimeout(300);
-  await p.click('#essubmit'); await p.waitForTimeout(900);
-  await p.click('#esseemark'); await p.waitForTimeout(400);
+  await p.click('#esmodeswitch'); await settled(p);
+  await p.click('#essubmit'); await settled(p);
+  await p.click('#esseemark'); await settled(p);
   ok(!!(await p.$('.rv-focus')),'focus strip renders in the review');
   ok((await p.$eval('.rv-focusarea',e=>e.textContent))==='Explanation','focus area in the review');
   ok(!!(await p.$('.rv-credited')),'off-pathway credit is shown');
@@ -109,7 +120,7 @@ const REVIEW = (marks) => ({
   ok(/servicescape/.test(credited),'credited argument named: '+credited.slice(0,90));
   const active=await p.$eval('.rv-pmark.active',e=>e.getAttribute('data-rvpara'));
   ok(active==='1','the review opens on the focus paragraph: '+active);
-  await p.click('#rvfocusgo'); await p.waitForTimeout(400);
+  await p.click('#rvfocusgo'); await settled(p);
   ok((!!(await p.$('#esline')) || !!(await p.$('[data-esedit]'))) && !(await p.$('.rv-focus')),'revise from the review closes it and returns to writing');
 
   console.log('pageerrors:', errs.join(' | ')||'none');

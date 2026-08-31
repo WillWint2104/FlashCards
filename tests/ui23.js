@@ -1,18 +1,25 @@
 // Third architecture case: a judgement question. The student decides what to
 // discuss AND what they think, each argument declares what it does for that
 // judgement, and the conclusion can weigh them. Same fields, different mode.
-const { chromium, T, OUT } = require('./env');
+const { chromium, T, OUT, usePractice } = require('./env');
+
+// Waits that name their condition. This app fetches nothing and renders
+// synchronously, so the effect of a click is present on the next frame:
+// settled() is that frame, not a shorter guess at a duration.
+const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+const here = (p, sel) => p.waitForSelector(sel, { timeout: 8000 });
 const { planAll } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 async function open(p, re){
-  await p.goto(T); await p.waitForTimeout(650);
+  await p.goto(T); await here(p, '.navtab');
   await p.evaluate(()=>localStorage.removeItem('marginal.essay.v1'));
-  await p.goto(T); await p.waitForTimeout(650);
+  await p.goto(T); await here(p, '.navtab');
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
-  await p.waitForTimeout(400);
-  await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);
-  await p.$$eval('.es-qchip',(es,r)=>{const t=es.find(x=>new RegExp(r,'i').test(x.textContent));t&&t.click();}, re.source);
-  await p.click('#esstart'); await p.waitForTimeout(650);
+  await settled(p);
+  await p.selectOption('#essubject','business_studies'); await settled(p);
+  await usePractice(p); await p.$$eval('.es-qrow',(es,r)=>{const t=es.find(x=>new RegExp(r,'i').test(x.textContent));t&&t.click();}, re.source);
+  await p.click('#esstart');
+  await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
   await planAll(p);
 }
 (async()=>{
@@ -22,7 +29,7 @@ async function open(p, re){
   let calls=0; await p.route(/workers\.dev/, r=>{calls++;r.abort();});
 
   console.log('1. the mode is data, not a special case');
-  await open(p,/Evaluate the effectiveness/);
+  await open(p,/the effectiveness of human resource/);
   const modes=await p.evaluate(()=>{
     const qs=window.ESSAY.subjects.business_studies.questions;
     const g=id=>{const q=qs.find(x=>x.id===id); return {mode:(q.coreAnswer||{}).mode, pos:((q.coreAnswer||{}).positions||[]).length, crit:((q.coreAnswer||{}).criteria||[]).length};};
@@ -44,7 +51,7 @@ async function open(p, re){
   ok(!!(await p.$('[data-esposown]')),'and writing their own is first class');
   const judgeText=await p.$eval('.es-judge',e=>e.innerText.replace(/\s+/g,' '));
   ok(/one-sided judgement is still a judgement/i.test(judgeText),'no artificial balance is demanded: '+judgeText.slice(0,40));
-  await p.click('#escrit'); await p.waitForTimeout(250);
+  await p.click('#escrit'); await settled(p);
   const crit=await p.$eval('.es-corebody',e=>e.innerText.replace(/\s+/g,' '));
   ok(/against a named measure/i.test(crit)&&/how much, not whether/i.test(crit),'the criteria are taught: '+crit.slice(0,60));
   ok(/do not invent a doubt/i.test(crit),'including that balance must not be manufactured');
@@ -52,13 +59,13 @@ async function open(p, re){
   console.log('3. it is not a gate');
   ok((await p.$$eval('.es-plancard,.es-planrow',es=>es.length))>0,'the body plan is on the same page and reachable without taking a position');
   await p.$$eval('[data-espos]',es=>{const t=es.find(x=>/dependent on how they are carried out/i.test(x.textContent));t&&t.click();});
-  await p.waitForTimeout(350);
+  await settled(p);
   ok(!!(await p.$('.es-judge.done')),'taking a position collapses it to a line, with no extra confirmation');
   ok(!!(await p.$('#esposopen')),'with a way to change it');
 
   console.log('4. every argument says what it does FOR the judgement');
   await p.$$eval('.es-plancard .es-areachip',es=>{const t=es.find(x=>/performance management/i.test(x.textContent));t&&t.click();});
-  await p.waitForTimeout(320);
+  await settled(p);
   const roles=await p.$$eval('.es-optwrap .es-tprole',es=>es.map(e=>e.textContent.trim()));
   console.log('   ',JSON.stringify(roles));
   ok(roles.length===2,'each option carries a contribution: '+roles.length);
@@ -75,8 +82,8 @@ async function open(p, re){
   // a deliberate student, choosing four DIFFERENT strategies
   for (const area of ['training and development','rewards','performance management','job design']) {
     const got=await p.$$eval('.es-plancard .es-areachip',(es,a)=>{const t=es.find(x=>x.textContent.trim().indexOf(a)===0); if(t){t.click();return true;} return false;}, area);
-    if(!got) break; await p.waitForTimeout(280);
-    await p.$$eval('[data-esplanpick]',es=>{const t=es[0]; t&&t.click();}); await p.waitForTimeout(300);
+    if(!got) break; await settled(p);
+    await p.$$eval('[data-esplanpick]',es=>{const t=es[0]; t&&t.click();}); await settled(p);
   }
   const distinct=await p.$$eval('.es-thesisplan .es-tparea',es=>new Set(es.map(e=>e.textContent.trim())).size);
   ok(distinct===4,'four different strategies, not the same one four times: '+distinct);
@@ -91,13 +98,13 @@ async function open(p, re){
 
   console.log('6. THE ACCEPTANCE TEST: the conclusion can weigh what was argued');
   await p.fill('#esthesis','Human resource strategies are effective, though it depends on how they are carried out.');
-  await p.click('#esthesissave'); await p.waitForTimeout(350);
-  await p.click('#esplango'); await p.waitForTimeout(500);
+  await p.click('#esthesissave'); await settled(p);
+  await p.click('#esplango'); await settled(p);
   await p.$$eval('[data-esgo]',es=>{const t=es.find(x=>/Conclusion/.test(x.textContent));t&&t.click();});
-  await p.waitForTimeout(450);
+  await settled(p);
   // No catch: if the contextual control is missing or unusable, that is the defect
   // this block exists to notice, not something to step over.
-  await p.click('#esctx'); await p.waitForTimeout(350);
+  await p.click('#esctx'); await settled(p);
   ok(!!(await p.$('.es-rest')),'the conclusion context opened before its content is read');
   const rail=await p.$eval('.es-rest',e=>e.innerText.replace(/\s+/g,' '));
   console.log('   ',rail.slice(0,220));
@@ -113,23 +120,23 @@ async function open(p, re){
 
   console.log('6b. arguing the same thing twice is warned about, not blocked');
   // back to the plan the way the conclusion offers it
-  await p.click('#esrestplan'); await p.waitForTimeout(450);
+  await p.click('#esrestplan'); await settled(p);
   ok(!!(await p.$('.es-planwrap')),'the plan is reachable from the conclusion');
   await planAll(p);
   const firstId=await p.evaluate(()=>{try{const st=JSON.parse(localStorage.getItem('marginal.essay.v1'));const bag=Object.values(st)[0];const d=bag.drafts[bag.drafts.length-1];return d.paras[1].argumentId;}catch(e){return null;}});
   // reopen BODY 2 and give it Body 1's argument
   await p.$$eval('.es-plancard,.es-planrow',es=>{const t=es[1]&&es[1].querySelector('[data-esplanedit]'); t&&t.click();});
-  await p.waitForTimeout(350);
+  await settled(p);
   await p.$$eval('.es-plancard .es-areachip',es=>{const t=es.find(x=>x.textContent.trim().indexOf('training and development')===0); t&&t.click();});
-  await p.waitForTimeout(320);
+  await settled(p);
   await p.$$eval('[data-esplanpick]',(es,id)=>{const t=es.find(x=>x.dataset.esplanpick.split('|')[1]===id); t&&t.click();}, firstId);
-  await p.waitForTimeout(400);
+  await settled(p);
   const twin=await p.$eval('.es-twin',e=>e.innerText.replace(/\s+/g,' ')).catch(()=>'');
   ok(/same argument as/i.test(twin),'it says which paragraph it duplicates: '+twin.slice(0,60));
   ok(/narrows what your response covers/i.test(twin),'and why that costs them');
   ok(/if the point is genuinely different/i.test(twin),'without asserting reuse is invalid');
   ok(!!(await p.$('[data-estwinok]')),'Keep it is offered');
-  await p.$eval('[data-estwinok]',e=>e.click()); await p.waitForTimeout(300);
+  await p.$eval('[data-estwinok]',e=>e.click()); await settled(p);
   ok(!(await p.$('.es-twin')),'and taking it dismisses the warning rather than the choice');
 
   console.log('7. the causal questions are untouched');

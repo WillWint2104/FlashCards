@@ -3292,6 +3292,180 @@
     const all = esReadStore(); const bag = all[esBagKey()];
     ES.list = esRecent(bag && Array.isArray(bag.drafts) ? bag.drafts : []);
   }
+  // ---- THE NOTEBOOK -------------------------------------------------------
+  // A separate cognitive space between being taught something and writing an
+  // assessed answer. It is deliberately not part of the page geometry: it floats
+  // over whatever is underneath, so opening it never moves the writing, and it
+  // stays reachable while the Learning Centre is open because that is exactly
+  // when a student wants to write something down.
+  //
+  // Pages, not a feed. A growing list of snippets is a log; a notebook with a
+  // handful of named pages is somewhere to think. The attempt's own notebook
+  // autosaves with the draft. Saving under a name is a separate, explicit act.
+  const ES_NB_KEY = "marginal.notebooks.v1";
+  const ES_NB_SIZE = "marginal.notebook.size";
+  const ES_NB_POS = "marginal.notebook.pos";
+  function esNb() {
+    if (!ES.draft) return { pages: [], active: 0 };
+    if (!ES.draft.notebook || !Array.isArray(ES.draft.notebook.pages) || !ES.draft.notebook.pages.length) {
+      ES.draft.notebook = { pages: [{ id: "p1", name: "Page 1", body: "" }], active: 0 };
+    }
+    const n = ES.draft.notebook;
+    if (n.active >= n.pages.length) n.active = n.pages.length - 1;
+    if (n.active < 0) n.active = 0;
+    return n;
+  }
+  function esNbPage() { const n = esNb(); return n.pages[n.active] || null; }
+  function esNbAddPage() {
+    const n = esNb();
+    n.pages.push({ id: "p" + Date.now().toString(36), name: "Page " + (n.pages.length + 1), body: "" });
+    n.active = n.pages.length - 1; esSaveDraft();
+  }
+  function esNbDeletePage() {
+    const n = esNb();
+    if (n.pages.length <= 1) { n.pages[0].body = ""; n.pages[0].name = "Page 1"; esSaveDraft(); return; }
+    n.pages.splice(n.active, 1);
+    if (n.active >= n.pages.length) n.active = n.pages.length - 1;
+    esSaveDraft();
+  }
+  function esNbGo(d) { const n = esNb(); n.active = Math.max(0, Math.min(n.pages.length - 1, n.active + d)); esSaveDraft(); }
+  function esNbLibrary() {
+    try { return JSON.parse(localStorage.getItem(ES_NB_KEY) || "[]") || []; } catch (e) { return []; }
+  }
+  function esNbSaveNamed(name) {
+    const list = esNbLibrary();
+    const nm = String(name || "").trim(); if (!nm) return;
+    const copy = JSON.parse(JSON.stringify(esNb()));
+    const i2 = list.findIndex(x => x.name.toLowerCase() === nm.toLowerCase());
+    const rec = { name: nm, at: new Date().toISOString(), notebook: copy };
+    if (i2 >= 0) list[i2] = rec; else list.push(rec);
+    try { localStorage.setItem(ES_NB_KEY, JSON.stringify(list)); } catch (e) { /* quota */ }
+  }
+  // Opening a saved notebook must never quietly replace what the student has
+  // written for this attempt, so the copy is an explicit second step.
+  function esNbUseCopy(name) {
+    const rec = esNbLibrary().find(x => x.name === name); if (!rec || !ES.draft) return;
+    ES.draft.notebook = JSON.parse(JSON.stringify(rec.notebook)); esSaveDraft();
+  }
+  function esNbSize() {
+    try { const v = JSON.parse(sessionStorage.getItem(ES_NB_SIZE) || "null"); if (v && v.w && v.h) return v; } catch (e) { /* private mode */ }
+    return { w: 420, h: 520 };
+  }
+  function esNbPos() {
+    if (ES.ui.nbPos) return ES.ui.nbPos;
+    try { const v = JSON.parse(sessionStorage.getItem(ES_NB_POS) || "null"); if (v && typeof v.left === "number") return v; } catch (e) { /* private mode */ }
+    return null;
+  }
+  function esNbHTML() {
+    const n = esNb(), pg = esNbPage(), lib = esNbLibrary(), sz = esNbSize();
+    const mode = ES.ui.nbMode || "";
+    const pos = esNbPos();
+    const place = pos ? `left:${pos.left}px;top:${pos.top}px;right:auto;bottom:auto` : "";
+    return `<div class="es-nb" style="width:${sz.w}px;height:${sz.h}px;${place}" role="dialog" aria-label="Notebook">
+      <div class="es-nbhead">
+        <span class="es-nbtitle">Notebook</span>
+        <button type="button" class="es-nbact" data-esnbhome title="Put the notebook back in its default corner">reset position</button>
+        <button type="button" class="es-nbact" data-esnbmode="${mode === "save" ? "" : "save"}">save notebook</button>
+        <button type="button" class="es-nbact" data-esnbmode="${mode === "open" ? "" : "open"}">open</button>
+        <button type="button" class="es-nbx" data-esnbclose aria-label="Close notebook">${esIcon("close")}</button>
+      </div>
+      ${mode === "save" ? `<div class="es-nbbar">
+        <input class="es-nbname" data-esnbname placeholder="Name this notebook" value="${esc(ES.ui.nbName || "")}">
+        <button type="button" class="es-btn sm primary" data-esnbsave>Save to this device</button>
+        <button type="button" class="es-btn sm" disabled title="Sign-in exists, but notebooks are not stored on the account yet. Nothing here is sent anywhere.">My account</button>
+      </div>
+      <p class="es-nbnote">Saved on this device only. Account storage is not wired up yet, so that option stays off rather than pretending.</p>` : ""}
+      ${mode === "open" ? `<div class="es-nblib">
+        ${lib.length ? lib.map(x => `<div class="es-nbrow">
+          <span class="es-nbrown">${esc(x.name)}</span>
+          <button type="button" class="es-noteact" data-esnbcopy="${esc(x.name)}">use a copy for this essay</button>
+        </div>`).join("") : `<p class="es-nbnote">No saved notebooks yet.</p>`}
+      </div>` : ""}
+      <textarea class="es-nbpaper" data-esnbbody placeholder="Write what you want to remember, in your own words.">${esc(pg ? pg.body : "")}</textarea>
+      <div class="es-nbfoot">
+        <button type="button" class="es-nbstep" data-esnbgo="-1" ${n.active === 0 ? "disabled" : ""} aria-label="Previous page">\u2039</button>
+        <input class="es-nbpagename" data-esnbrename value="${esc(pg ? pg.name : "")}" aria-label="Page name">
+        <span class="es-nbcount">${n.active + 1} of ${n.pages.length}</span>
+        <button type="button" class="es-nbstep" data-esnbgo="1" ${n.active >= n.pages.length - 1 ? "disabled" : ""} aria-label="Next page">\u203a</button>
+        <button type="button" class="es-nbact" data-esnbadd>+ new page</button>
+        <button type="button" class="es-nbact" data-esnbdel>delete page</button>
+      </div>
+    </div>`;
+  }
+  function esNbMount() {
+    let host = document.getElementById("esnbhost");
+    if (!host) { host = document.createElement("div"); host.id = "esnbhost"; document.body.appendChild(host); }
+    host.innerHTML = esNbHTML();
+    esNbBind(host);
+  }
+  function esNbUnmount() {
+    const host = document.getElementById("esnbhost"); if (host) host.remove();
+    ES.ui.nbOpen = false; ES.ui.nbMode = "";
+    document.querySelectorAll("[data-esnbtoggle]").forEach(b => b.setAttribute("aria-expanded", "false"));
+  }
+  function esNbToggle() {
+    ES.ui.nbOpen = !ES.ui.nbOpen;
+    if (ES.ui.nbOpen) { esNbMount(); document.querySelectorAll("[data-esnbtoggle]").forEach(b => b.setAttribute("aria-expanded", "true")); }
+    else esNbUnmount();
+  }
+  function esNbBind(host) {
+    const panel = host.querySelector(".es-nb"); if (!panel) return;
+    const body = panel.querySelector("[data-esnbbody]");
+    // Autosave while typing. No save button for the attempt's own notebook,
+    // because a notebook you can lose by navigating away is not a notebook.
+    if (body) body.oninput = () => { const pg = esNbPage(); if (pg) { pg.body = body.value; esSaveDraft(); } };
+    const rn = panel.querySelector("[data-esnbrename]");
+    if (rn) rn.oninput = () => { const pg = esNbPage(); if (pg) { pg.name = rn.value; esSaveDraft(); } };
+    panel.querySelectorAll("[data-esnbgo]").forEach(b => b.onclick = () => { esNbGo(Number(b.dataset.esnbgo)); esNbMount(); });
+    const add = panel.querySelector("[data-esnbadd]"); if (add) add.onclick = () => { esNbAddPage(); esNbMount(); };
+    const del = panel.querySelector("[data-esnbdel]");
+    if (del) del.onclick = () => { if (window.confirm("Delete this page? What is written on it will be lost.")) { esNbDeletePage(); esNbMount(); } };
+    panel.querySelectorAll("[data-esnbmode]").forEach(b => b.onclick = () => { ES.ui.nbMode = b.dataset.esnbmode; esNbMount(); });
+    const nm = panel.querySelector("[data-esnbname]"); if (nm) nm.oninput = () => { ES.ui.nbName = nm.value; };
+    const sv = panel.querySelector("[data-esnbsave]");
+    if (sv) sv.onclick = () => { esNbSaveNamed(ES.ui.nbName); ES.ui.nbMode = ""; esNbMount(); };
+    panel.querySelectorAll("[data-esnbcopy]").forEach(b => b.onclick = () => {
+      if (window.confirm("Replace this essay's notebook with a copy of \"" + b.dataset.esnbcopy + "\"? The current notebook will be lost unless you saved it.")) {
+        esNbUseCopy(b.dataset.esnbcopy); ES.ui.nbMode = ""; esNbMount();
+      }
+    });
+    const home = panel.querySelector("[data-esnbhome]");
+    if (home) home.onclick = () => { ES.ui.nbPos = null; try { sessionStorage.removeItem(ES_NB_POS); } catch (e) { /* private mode */ } esNbMount(); };
+    const x = panel.querySelector("[data-esnbclose]"); if (x) x.onclick = () => esNbUnmount();
+    // Draggable from its title bar. Collisions between a floating notebook and a
+    // tool sheet are the student's to resolve by moving it, which is how every
+    // desktop notebook works, rather than a placement algorithm that guesses.
+    const head = panel.querySelector(".es-nbhead");
+    if (head) head.onmousedown = e => {
+      if (e.target.closest("button") || e.target.closest("input")) return;
+      e.preventDefault();
+      const r = panel.getBoundingClientRect();
+      const dx = e.clientX - r.left, dy = e.clientY - r.top;
+      const move = ev => {
+        // Bounded, so it can never be dragged somewhere it cannot be dragged back from.
+        const w = panel.offsetWidth, h = panel.offsetHeight;
+        const left = Math.max(6, Math.min(window.innerWidth - w - 6, ev.clientX - dx));
+        const top = Math.max(6, Math.min(window.innerHeight - h - 6, ev.clientY - dy));
+        panel.style.left = left + "px"; panel.style.top = top + "px";
+        panel.style.right = "auto"; panel.style.bottom = "auto";
+        ES.ui.nbPos = { left: left, top: top };
+        try { sessionStorage.setItem(ES_NB_POS, JSON.stringify(ES.ui.nbPos)); } catch (e2) { /* private mode */ }
+      };
+      const up = () => { document.removeEventListener("mousemove", move); document.removeEventListener("mouseup", up); };
+      document.addEventListener("mousemove", move); document.addEventListener("mouseup", up);
+    };
+    // The student's own size, remembered for the session.
+    if (window.ResizeObserver) {
+      const ro = new ResizeObserver(() => {
+        // Same guard as the tool window: a teardown resize is not a size the
+        // student picked, and storing it loses the one they did.
+        if (!panel.isConnected || !panel.offsetWidth || !panel.offsetHeight) return;
+        try { sessionStorage.setItem(ES_NB_SIZE, JSON.stringify({ w: Math.round(panel.offsetWidth), h: Math.round(panel.offsetHeight) })); } catch (e) { /* private mode */ }
+      });
+      ro.observe(panel);
+    }
+  }
+
   function esSaveDraft() {
     if (!ES.draft) return;
     ES.draft.updatedAt = new Date().toISOString(); // most-recent-first ordering
@@ -3482,6 +3656,158 @@
       : text;
   }
   // ---------------------------------- SETUP ----------------------------------
+  // MARKING GUIDANCE, resolved in one place so provenance is never guessed.
+  //
+  //   user-provided   the student pasted their own
+  //   authored        a rubric written for this question, or the subject's
+  //   generated       built from the question itself
+  //
+  // Generated guidance is never presented as though someone marked with it. It is
+  // derived from what the question demands, and it says so.
+  function esRubricFor(f, sc) {
+    const typed = String((f && f.rubric) || "").trim();
+    if (typed) return { source: "user-provided", text: typed };
+    const q = (f && f.questionId && sc && sc.questions) ? sc.questions.find(x => x.id === f.questionId) : null;
+    const own = q && (q.rubric || q.markingCriteria);
+    if (own) return { source: "authored", text: typeof own === "string" ? own : JSON.stringify(own) };
+    return { source: "generated", text: esGenerateRubric(q, (f && f.question) || "", sc) };
+  }
+  // Built from the directive and, where the question is one of ours, from what it
+  // already says it demands. Nothing here invents a syllabus requirement: an
+  // authored question contributes its own concepts and relationships, and a
+  // student's own question contributes only its directive.
+  // What a question the STUDENT typed can be known to demand, without guessing.
+  //
+  // The directive is read from its own first words. The topic and the concepts are
+  // matched against the authored syllabus itself: the 83 point titles and their
+  // terms, as written. Nothing is inferred by similarity and no concept is
+  // attached because it seemed related, because a rubric that invents a
+  // requirement marks a student against something nobody asked of them.
+  //
+  // Only phrases of two or more words count. Single words like "business" or
+  // "management" appear in half the syllabus and would match everything.
+  function esSyllabusPhrases() {
+    if (ES._phrases) return ES._phrases;
+    const out = [];
+    const topics = (window.BUSCONTENT && window.BUSCONTENT.topics) || {};
+    Object.keys(topics).forEach(key => {
+      (topics[key].sections || []).forEach(sec => {
+        (sec.points || []).forEach(pt => {
+          const add = (phrase, weight) => {
+            const t = String(phrase || "").toLowerCase().trim();
+            // Syllabus titles carry dashes and lists; take the head, and keep only
+            // multi-word phrases, which are the ones that mean something on sight.
+            const head = t.split(/\s+[\u2013-]\s+/)[0].split(/,/)[0].trim();
+            if (head.split(/\s+/).length >= 2 && head.length >= 8) out.push({ topic: key, phrase: head, weight: weight });
+          };
+          // A point TITLE says what its topic is about. A term in a point's
+          // glossary may be borrowed from anywhere: "marketing objectives" appears
+          // inside a Finance point, and counted equally it ties Finance against
+          // Marketing on a question that is plainly about marketing. Titles carry.
+          add(pt.point, 3);
+          // A term that restates its own point's subject is evidence of topic.
+          // A term merely mentioned inside a point about something else is not:
+          // "marketing objectives" sits in the glossary of Finance's profitability
+          // point, and counted equally it ties Finance against Marketing on a
+          // question that is plainly about marketing.
+          const title = String(pt.point || "").toLowerCase();
+          (pt.terms || []).forEach(x => add(x, title.indexOf(String(x || "").toLowerCase()) >= 0 ? 2 : 1));
+        });
+      });
+    });
+    // Longest first, so "operations strategies" wins over "strategies".
+    out.sort((a, b) => b.phrase.length - a.phrase.length);
+    ES._phrases = out;
+    return out;
+  }
+  function esDetectFromText(text) {
+    const low = " " + String(text || "").toLowerCase().replace(/\s+/g, " ") + " ";
+    const hits = [], seen = [], byTopic = {};
+    esSyllabusPhrases().forEach(x => {
+      if (low.indexOf(" " + x.phrase) < 0 && low.indexOf(x.phrase) < 0) return;
+      // Skip a phrase already covered by a longer one already matched.
+      if (seen.some(p => p.indexOf(x.phrase) >= 0)) return;
+      seen.push(x.phrase); hits.push(x);
+      byTopic[x.topic] = (byTopic[x.topic] || 0) + (x.weight || 1);
+    });
+    const ranked = Object.keys(byTopic).sort((a, b) => byTopic[b] - byTopic[a]);
+    // A topic is only claimed when it is the clear leader. A tie means the
+    // question spans two areas or names none, and either way saying so is honest.
+    const topic = (ranked.length === 1 || (ranked.length > 1 && byTopic[ranked[0]] > byTopic[ranked[1]])) ? ranked[0] : null;
+    return { topic: topic, concepts: hits.filter(h => !topic || h.topic === topic).map(h => h.phrase) };
+  }
+  const ES_TOPIC_LABEL = { operations: "Operations", marketing: "Marketing", finance: "Finance", human_resources: "Human resources" };
+
+  function esGenerateRubric(q, text, sc) {
+    const cmd = String((q && q.command) || esDetectCommand(text) || "").trim();
+    const fam = esFamilyOfCommand(cmd);
+    const req = (q && q.requirements) || {};
+    // A question of ours declares what it demands. A question the student typed
+    // declares nothing, so it is read instead, and what cannot be read is said to
+    // be unread rather than filled in.
+    const found = q ? null : esDetectFromText(text);
+    const lines = [];
+    lines.push("What this question asks for");
+    lines.push(cmd
+      ? "The directive is " + cmd + ". " + (fam === "judgement"
+        ? "A judgement is required: reach a position and support it, rather than describing both sides evenly."
+        : "A causal explanation is required: show how one thing leads to another, rather than describing each in turn.")
+      : "State a clear line of argument and hold it through the response.");
+    if ((req.concepts || []).length) {
+      lines.push("");
+      lines.push("Concepts the question fixes");
+      lines.push(req.concepts.join(", ") + ".");
+    } else if (found) {
+      lines.push("");
+      lines.push("Topic");
+      lines.push(found.topic
+        ? ES_TOPIC_LABEL[found.topic] + ", from the syllabus terms this question names."
+        : "The topic could not be identified from the wording, so nothing is assumed about which part of the course this belongs to.");
+      lines.push("");
+      lines.push("Syllabus concepts named in the question");
+      lines.push(found.concepts.length
+        ? found.concepts.join(", ") + ". These are the terms the question actually uses. Anything else you bring is your decision, not a requirement."
+        : "None were recognised, so this guidance covers what any answer to this directive has to do rather than particular content.");
+    }
+    if ((req.requiredAreas || []).length) {
+      lines.push("");
+      lines.push("Areas that must be covered");
+      lines.push(req.requiredAreas.map(a => a.label).join(", ") + ".");
+    }
+    if ((req.relationships || []).length) {
+      lines.push("");
+      lines.push("Relationships to establish");
+      req.relationships.forEach(r => lines.push("- " + r));
+    }
+    lines.push("");
+    lines.push("Reasoning");
+    lines.push(fam === "judgement"
+      ? "Weigh the evidence on each side and say how far, not simply whether."
+      : "Name the step between cause and effect rather than asserting the link.");
+    lines.push("");
+    lines.push("Evidence");
+    lines.push("Support each claim with a specific case study fact, and say what it demonstrates rather than leaving it to speak for itself.");
+    lines.push("");
+    lines.push("Organisation");
+    lines.push("One idea per paragraph, each tied back to the question, in an order a reader can follow.");
+    return lines.join("\n");
+  }
+  function esDetectCommand(text) {
+    const t = String(text || "").trim().toLowerCase();
+    const all = ["to what extent", "how can", "evaluate", "assess", "analyse", "explain", "discuss", "describe", "outline", "examine"];
+    const hit = all.find(c => t.indexOf(c) === 0);
+    // Give it back as the student will read it, not as it was matched. "The
+    // directive is assess" reads like a typo in the one place that is telling
+    // them what the question demands.
+    return hit ? hit.charAt(0).toUpperCase() + hit.slice(1) : "";
+  }
+  function esFamilyOfCommand(cmd) {
+    const c = String(cmd || "").toLowerCase();
+    const fams = ((window.ESSAY && window.ESSAY.slots && window.ESSAY.slots.templates) || {}).directiveFamilies || {};
+    for (const name of Object.keys(fams)) if ((fams[name] || []).some(x => c === x || c.indexOf(x) === 0)) return name;
+    return "causal";
+  }
+
   function esRenderSetup(host, sc) {
     if (!ES.form) ES.form = { question: "", topic: "", rubric: "", marks: 20, structure: sc.defaultStructure, paraModel: (sc.paraModels[0] || null), rubricOpen: false };
     const f = ES.form;
@@ -3501,7 +3827,7 @@
       <div class="es-field">
         <label class="es-label" for="esparamodel">Paragraph structure</label>
         <select id="esparamodel" class="es-input es-select">${sc.paraModels.map(m =>
-          `<option value="${esc(m)}" ${m === f.paraModel ? "selected" : ""}>${esc(esParaModelLabel(m))}${(scObj.scaffolds[m] && scObj.scaffolds[m].expansion) ? " — " + esc(scObj.scaffolds[m].expansion) : ""}</option>`).join("")}</select>
+          `<option value="${esc(m)}" ${m === f.paraModel ? "selected" : ""}>${esc(esParaModelLabel(m))}${(scObj.scaffolds[m] && scObj.scaffolds[m].expansion) ? " \u00b7 " + esc(scObj.scaffolds[m].expansion) : ""}</option>`).join("")}</select>
         <p class="es-help">Each body paragraph will be scaffolded to this structure.</p>
       </div>` : "";
     // Suggested questions are subject-specific: show them ONLY when THIS subject ships
@@ -3544,23 +3870,83 @@
       <p class="es-lead">Only the question is needed. Everything else is optional and you can change all of it later.</p>
       ${subjectPicker}
       ${resume}
-      <div class="es-field">
-        <label class="es-label" for="esq">Essay question <span class="es-req">needed</span></label>
-        <textarea id="esq" class="es-input es-ta" rows="3" placeholder="Paste or type the question you are practising.">${esc(f.question)}</textarea>
-        ${sc.hasQuestions ? `<p class="es-help">Or start from one of these practice questions:</p>
-        <div class="es-qchips">${qChips}</div>` : ""}
-      </div>
-      <div class="es-field">
-        <label class="es-label" for="estopic">Chosen topic or option <span class="es-opt">optional</span></label>
-        <input id="estopic" class="es-input" value="${esc(f.topic)}" placeholder="e.g. Old Kingdom Egypt. This just tags the draft so you can tell your essays apart.">
-      </div>
-      <div class="es-field">
-        <label class="es-label" for="esrubric">Marking rubric <span class="es-opt">optional</span></label>
-        <p class="es-help">Paste a rubric or marking guide and the coach will aim its feedback at it. Skip it and the coach uses general HSC band expectations. Skipping costs you nothing.</p>
-        <textarea id="esrubric" class="es-input es-ta" rows="3" placeholder="Paste your rubric or marking bands here, or leave blank.">${esc(f.rubric)}</textarea>
-        <button class="es-linkbtn" id="esbandsref">${f.rubricOpen ? "Hide" : "Show"} the general band expectations the coach falls back to</button>
-        <div class="es-bands" data-bands${f.rubricOpen ? "" : " hidden"}>${bandsRef}</div>
-      </div>
+      ${(() => {
+        // Thirteen full-width questions in one column made the student read every
+        // one to find the kind they wanted. The directive and the topic are both
+        // authored on every question, so they are used as filters rather than
+        // matched out of the text.
+        const qs = (sc.questions || []);
+        if (!qs.length) return `<div class="es-field">
+          <label class="es-label" for="esq">Essay question <span class="es-req">needed</span></label>
+          <textarea id="esq" class="es-input es-ta" rows="3" placeholder="Paste or type the question you are practising.">${esc(f.question)}</textarea></div>`;
+        // A student with a question in front of them is the normal case: this is
+        // essay practice that also supplies questions, not a question bank.
+        const mode = f.setupMode || "own";
+        const dirs = [];
+        qs.forEach(q => { const c = String(q.command || "").trim(); if (c && dirs.indexOf(c) < 0) dirs.push(c); });
+        const topics = [];
+        qs.forEach(q => { const t = String(q.topic || "").trim(); if (t && topics.indexOf(t) < 0) topics.push(t); });
+        const byDir = f.setupDir ? qs.filter(q => String(q.command || "").trim() === f.setupDir) : qs;
+        const shown = f.setupTopic ? byDir.filter(q => String(q.topic || "").trim() === f.setupTopic) : byDir;
+        const chosen = f.questionId ? qs.find(q => q.id === f.questionId) : null;
+        const pill = (val, cur, key, label, count) =>
+          // A count of zero is worth showing, because it tells the student what this
+          // subject has before they go looking. It is not worth making clickable:
+          // a pill that leads to an empty list is a dead end dressed as a choice.
+          `<button type="button" class="es-pill ${cur === val ? "on" : ""}${count === 0 ? " empty" : ""}"${count === 0 ? " disabled" : ""} data-es${key}="${esc(val)}">${esc(label)}${count != null ? `<span class="es-pilln">${count}</span>` : ""}</button>`;
+        return `<div class="es-field">
+          <div class="es-modes">
+            <button type="button" class="es-mode ${mode === "own" ? "on" : ""}" data-esmode="own">Use my question</button>
+            <button type="button" class="es-mode ${mode === "practice" ? "on" : ""}" data-esmode="practice">Choose a practice question</button>
+          </div>
+          ${mode === "own" ? `
+            <label class="es-label" for="esq">Your essay question <span class="es-req">needed</span></label>
+            <textarea id="esq" class="es-input es-ta" rows="3" placeholder="Paste or type the whole question, including the directive.">${esc(f.question)}</textarea>
+          ` : `
+            <div class="es-step">
+              <div class="es-steplbl">Directive</div>
+              <div class="es-pills">${dirs.map(d => pill(d, f.setupDir, "setupdir", d, qs.filter(q => String(q.command || "").trim() === d).length)).join("")}</div>
+            </div>
+            <div class="es-step">
+              <div class="es-steplbl">Topic</div>
+              <div class="es-pills">${topics.map(t => pill(t, f.setupTopic, "setuptopic", t, byDir.filter(q => String(q.topic || "").trim() === t).length)).join("")}</div>
+            </div>
+            <div class="es-step">
+              <div class="es-steplbl">${shown.length} question${shown.length === 1 ? "" : "s"}</div>
+              ${shown.length ? `<div class="es-qrows">${shown.map(q =>
+                `<button type="button" class="es-qrow ${f.questionId === q.id ? "on" : ""}" data-esq="${esc(q.id)}">${esc(esQuestionPreview(q))}</button>`).join("")}</div>`
+                : `<p class="es-help">Nothing matches both of those. Clear one of them to see more.</p>`}
+            </div>
+            ${chosen ? `<div class="es-chosen">
+              <div class="es-steplbl">Your question</div>
+              <p class="es-chosenq"><b>${esc(chosen.command)}</b> ${esc(esQuestionPreview(chosen))}</p>
+            </div>` : ""}
+          `}
+        </div>`;
+      })()}
+      ${(() => {
+        // A status line, not a form field. The guidance resolves without being
+        // asked for, and the disclosure is there for the student who wants to
+        // check what it will be marked against.
+        const r = esRubricFor(f, sc);
+        const label = r.source === "user-provided" ? "Your own marking guidance will be used"
+          : r.source === "authored" ? "Marking guidance written for this question will be used"
+          : "Marking guidance will be generated from this question";
+        return `<div class="es-field">
+          <div class="es-rubstatus">
+            <span class="es-rubtick">\u2713</span>
+            <span class="es-rubtext">${esc(label)}</span>
+            <span class="es-rubprov">${esc(r.source)}</span>
+            <button type="button" class="es-linkbtn" id="esrubopen">${f.rubricOpen ? "Hide" : "Review or edit"}</button>
+          </div>
+          <div class="es-rubbox"${f.rubricOpen ? "" : " hidden"}>
+            ${r.source === "generated" ? `<p class="es-help">Generated from the question in front of you. It is not an official marking guide and is not from NESA.</p>` : ""}
+            <pre class="es-rubpre">${esc(r.text)}</pre>
+            <label class="es-label" for="esrubric">Replace it with your own</label>
+            <textarea id="esrubric" class="es-input es-ta" rows="3" placeholder="Paste your rubric or marking bands here.">${esc(f.rubric)}</textarea>
+          </div>
+        </div>`;
+      })()}
       <div class="es-field">
         <label class="es-label" for="esmarks">Marks this question is worth</label>
         <p class="es-help">Used only when you submit a full attempt for marking, so the mark you get back means something.</p>
@@ -3577,13 +3963,29 @@
       </div>
     </div></div></div>`;
     $("#esx").onclick = esClose;
-    const q = $("#esq"); q.oninput = () => {
+    const q = $("#esq"); if (q) q.oninput = () => {
       f.question = q.value;
       const picked = f.questionId && sc.questions.find(x => x.id === f.questionId);
       if (picked && picked.text.trim() !== q.value.trim()) f.questionId = null;
     };
-    const tp = $("#estopic"); tp.oninput = () => { f.topic = tp.value; };
-    const rb = $("#esrubric"); rb.oninput = () => { f.rubric = rb.value; };
+    host.querySelectorAll("[data-esmode]").forEach(b => b.onclick = () => {
+      f.setupMode = b.dataset.esmode;
+      if (f.setupMode === "own") { f.questionId = null; }
+      esRender();
+    });
+    host.querySelectorAll("[data-essetupdir]").forEach(b => b.onclick = () => {
+      // Pressing the chosen one again clears it, which is how a filter behaves.
+      f.setupDir = f.setupDir === b.dataset.essetupdir ? null : b.dataset.essetupdir;
+      f.questionId = null; f.question = "";
+      esRender();
+    });
+    host.querySelectorAll("[data-essetuptopic]").forEach(b => b.onclick = () => {
+      f.setupTopic = f.setupTopic === b.dataset.essetuptopic ? null : b.dataset.essetuptopic;
+      f.questionId = null; f.question = "";
+      esRender();
+    });
+    const ro = $("#esrubopen"); if (ro) ro.onclick = () => { f.rubricOpen = !f.rubricOpen; esRender(); };
+    const rb = $("#esrubric"); if (rb) rb.oninput = () => { f.rubric = rb.value; };
     const mk = $("#esmarks"); if (mk) mk.oninput = () => { const n = Math.round(Number(mk.value)); f.marks = (n >= 1 && n <= 60) ? n : 20; };
     const stt = $("#esstruct"); stt.onchange = () => { f.structure = stt.value; };
     const subjSel = $("#essubject");
@@ -3597,17 +3999,21 @@
     };
     const pmSel = $("#esparamodel");
     if (pmSel) pmSel.onchange = () => { f.paraModel = pmSel.value; };
-    $("#esbandsref").onclick = () => {
-      f.rubricOpen = !f.rubricOpen;
-      const bands = document.querySelector("[data-bands]"); if (bands) bands.hidden = !f.rubricOpen;
-      $("#esbandsref").textContent = (f.rubricOpen ? "Hide" : "Show") + " the general band expectations the coach falls back to";
-    };
     host.querySelectorAll("[data-esq]").forEach(b => b.onclick = () => {
       const qq = sc.questions.find(x => x.id === b.dataset.esq);
       // Remember the id: it carries this question's requirements, band expectations
       // and mark value into marking. Typing over the text clears it, because the
       // definition no longer describes the question being answered.
-      if (qq) { f.question = qq.text; f.questionId = qq.id; if (!f.topic) f.topic = qq.topic || ""; if (qq.marks) f.marks = qq.marks; esRender(); $("#esq").focus(); }
+      // The question textarea only exists in "my own question" mode now, so
+      // focusing it unconditionally threw and left the rest of the bindings
+      // unattached: the row appeared to do nothing when it had in fact worked.
+      if (qq) {
+        f.question = qq.text; f.questionId = qq.id;
+        if (!f.topic) f.topic = qq.topic || "";
+        if (qq.marks) f.marks = qq.marks;
+        esRender();
+        const box = $("#esq"); if (box) box.focus();
+      }
     });
     host.querySelectorAll("[data-esresume]").forEach(b => b.onclick = () => {
       const d = ES.list.find(x => x.id === b.dataset.esresume);
@@ -4288,6 +4694,14 @@
   // The six objectives the Operations question is about, as the syllabus names
   // them. Used only to read authored plan lines, never to assert anything.
   const ES_OBJECTIVES = ["quality", "speed", "dependability", "flexibility", "customisation", "cost"];
+  // The six performance objectives are the Operations vocabulary. A question whose
+  // plan pairs a strategy with something else entirely, as the Marketing questions
+  // do with the four service elements, authors its own list rather than having the
+  // renderer guess what counts as an objective. Absent, Operations behaves as before.
+  function esObjectiveWords(q) {
+    const own = q && q.objectiveWords;
+    return Array.isArray(own) && own.length ? own.map(x => String(x).toLowerCase()) : ES_OBJECTIVES;
+  }
 
   // The other syllabus points in the same section: on the Operations question
   // that is exactly the list of strategy families, already authored.
@@ -4317,12 +4731,13 @@
     const sibs = eslSiblings(p);
     const hit = esSectionFor(p);
     const all = hit ? (hit.section.points || []) : [];
+    const chosen = esPathway(p);
     return q.plan.map(line => {
       const m = String(line).split(/\s+to\s+/i);
       if (m.length < 2) return null;
       const strategy = m[0].trim();
       const objectives = m[1].split(/\s*(?:,|and)\s*/).map(x => x.trim().toLowerCase())
-        .filter(x => ES_OBJECTIVES.indexOf(x) >= 0);
+        .filter(x => esObjectiveWords(q).indexOf(x) >= 0);
       if (!objectives.length) return null;
       const key = strategy.toLowerCase();
       const pt = all.find(x => String(x.point || "").toLowerCase().indexOf(key) === 0);
@@ -4346,8 +4761,24 @@
           if (hitS) { seen.push(hitS); says.push({ objective: o, text: hitS }); }
         });
       }
-      return { line: String(line), strategy: strategy, objectives: objectives,
-        mechanism: "", lede: sib ? sib.lede : "", says: says, point: pt || null };
+      // The middle step is printed only when an author wrote one, and only on the
+      // line the student's own argument runs along: three arguments share the line
+      // "Target market to people" and each has a different mechanism, so showing one
+      // against a line the student did not choose would attach it to the wrong claim.
+      // Nothing is derived here. An unreviewed or none-required mechanism prints
+      // nothing at all, and the chain stays the two-step pairing the plan authored.
+      const isChosen = !!(chosen && objectives.indexOf(String(chosen.area || "").toLowerCase()) >= 0);
+      const mech = (isChosen && chosen.mechanism && chosen.mechanism.state === "authored")
+        ? String(chosen.mechanism.text || "").trim() : "";
+      // "Target market" is the category, not the cause. The cause is a characteristic
+      // OF that market, and on the line the student's own argument runs along the
+      // authored characteristic is what they are actually learning. Authored per
+      // pathway and never derived: no splitting of `short`, no phrase taken out of
+      // `relationship`. Absent, the generic category label stands, which is still
+      // true, just less use to someone who does not know the topic yet.
+      const from = (isChosen && chosen.fromLabel) ? String(chosen.fromLabel).trim() : strategy;
+      return { line: String(line), strategy: strategy, from: from, objectives: objectives,
+        mechanism: mech, lede: sib ? sib.lede : "", says: says, point: pt || null };
     }).filter(Boolean);
   }
 
@@ -4645,6 +5076,25 @@
       return `<button type="button" class="es-belt-b ${on ? "on" : ""}" data-estool="${t.key}" ${has ? "" : "disabled title=\"Nothing has been written for this question yet\""}>${esIcon(t.icon)}<span>${esc(t.label)}</span></button>`;
     }).join("") + `</div>`;
   }
+  const ES_TOOL_BOX = "marginal.tools.box";
+  // Opens near the top right of the writing workspace, not flush to the viewport,
+  // so it reads as belonging to the page rather than to the browser.
+  function esToolBox() {
+    if (ES.ui.toolBox) return ES.ui.toolBox;
+    try { const v = JSON.parse(sessionStorage.getItem(ES_TOOL_BOX) || "null"); if (v && v.w) return v; } catch (e) { /* private mode */ }
+    // No default height. An empty tool should be the size of "nothing here yet",
+    // not a 700px column containing one sentence, so the window is content sized
+    // until the student resizes it and it starts remembering their choice.
+    const w = 470, h = null;
+    const cols = document.querySelector(".es-cols");
+    const r = cols ? cols.getBoundingClientRect() : null;
+    const left = r ? Math.max(12, Math.min(window.innerWidth - w - 24, r.right - w + 40)) : Math.max(12, window.innerWidth - w - 60);
+    // Below the paragraph head, not level with it. Opening level covered the row
+    // holding View plan, notebook and read all, so the window swallowed clicks on
+    // the page's own controls the moment it appeared.
+    const top = r ? Math.max(12, r.top + 46) : 120;
+    return { left: Math.round(left), top: Math.round(top), w: w, h: h };
+  }
   function esDrawerHTML(p) {
     const key = ES.ui.tool; if (!key) return "";
     const tool = ES_TOOLS.find(t => t.key === key); if (!tool) return "";
@@ -4700,25 +5150,93 @@
           ${d.options.map(o => `<div class="es-idea ${d.chosen.indexOf(o) >= 0 ? "on" : ""}">${esc(o)}</div>`).join("")}`;
       }
     } else if (key === "evidence") {
+      // The card gives the fact and, behind a press, what it could be used for.
+      // It led with the use before, which read as instructions for assembling the
+      // sentence rather than material to think with. Guided composition means the
+      // student still decides what the fact proves.
+      //
+      // One status line, never two. An item only reaches a student with both a
+      // source and a checked date, so everything here is published; `verify` means
+      // the NUMBER may have moved since. Saying "verified" and "check it yourself"
+      // in the same breath told the student two different things at once.
       const row = e => `<div class="es-ev">
         <div class="es-evh">${esc(e.label)}</div>
         <p class="es-drawer-p">${esc(e.fact)}</p>
+        ${(e.supports && e.supports.length) ? `<p class="es-evsupports">Could support: ${e.supports.map(x => `<span class="es-evtag">${esc(x)}</span>`).join(" ")}</p>` : ""}
         ${e.why ? `<p class="es-evwhy"><b>For this argument:</b> ${esc(e.why)}</p>` : ""}
-        ${e.use ? `<p class="es-drawer-note">${esc(e.use)}</p>` : ""}
+        ${e.use ? `<details class="es-evwhy2"><summary>Why could this matter?</summary><p class="es-drawer-note">${esc(e.use)}</p></details>` : ""}
         ${e.limits ? `<p class="es-evlimit">${esc(e.limits)}</p>` : ""}
-        <p class="es-evsrc">${e.source ? "Source: " + esc(e.source) : "No source has been recorded for this item yet."}${e.verify ? ` <span class="es-evflag">check a current figure yourself</span>` : ""}</p>
+        <p class="es-evsrc">${e.verify
+          ? `<span class="es-evstatus dated">Check the current figure before you use it</span>`
+          : `<span class="es-evstatus ok">Checked case study fact</span>`}
+          ${e.source ? `<span class="es-evsrct">${esc(e.source)}</span>` : ""}</p>
       </div>`;
-      if (d.empty) {
-        body = `<p class="es-drawer-none">No verified evidence is available for this topic yet.</p>
-          <p class="es-drawer-note">${d.withheld} item${d.withheld === 1 ? " is" : "s are"} written but still waiting on a checked source, so ${d.withheld === 1 ? "it is" : "they are"} not offered. Your own evidence is always allowed, and everything else here still works.</p>`;
+      // What the tool says depends on where the student is, because "no evidence
+      // here" and "evidence does not belong here" are different facts and only one
+      // of them is a gap. Our own essay model puts evidence in the body.
+      if (esIsIntro(p) || esIsConcl(p)) {
+        const intro = esIsIntro(p);
+        // "Weighs" is judgement language. On an Explain question a conclusion draws
+        // the explanation together; it does not decide between sides. Same
+        // directive contamination the sentence shapes already had, so it is keyed
+        // on the authored command the same way rather than assumed.
+        const judging = esDirectiveFamily() === "judgement";
+        body = `<p class="es-drawer-p">${intro
+          ? "Evidence is usually not needed in your introduction. Its job is to state the line of argument and signpost the paragraphs that follow."
+          : `New evidence normally should not appear in your conclusion. It ${judging ? "weighs" : "draws together"} what your body paragraphs already established.`}</p>
+          <p class="es-drawer-note">${intro
+            ? "Use evidence in your body paragraphs, where each argument needs support."
+            : "If a fact matters enough to introduce here, it belongs in the paragraph that argues for it."}</p>
+          <button type="button" class="es-linkbtn" id="esevall">${ES.ui.evAll ? "Hide the topic evidence" : "Browse evidence anyway"}</button>
+          <div class="es-drawer-more"${ES.ui.evAll ? "" : " hidden"}>${
+            (d.wider && d.wider.length) ? d.wider.map(row).join("")
+              : (d.compatible && d.compatible.length) ? d.compatible.map(row).join("")
+              : `<p class="es-drawer-none">No verified evidence is available for this topic yet.</p>`}</div>`;
+      } else if (!esPathway(p)) {
+        // A body paragraph with no argument chosen. Saying "evidence that fits this
+        // argument" here names a relationship to something that does not exist yet,
+        // and saying "nothing has been linked to this argument" in the same panel
+        // contradicts it. Both were true of the old copy at once.
+        //
+        // Two different reasons the argument can be absent, and only one is the
+        // student's to act on: this question may have no authored arguments at all,
+        // in which case telling them to choose one sends them looking for a control
+        // that is not there.
+        const q2 = esQuestionDef();
+        const choosable = !!((q2 && q2.pathways) || []).length;
+        const pool = (d.wider && d.wider.length) ? d.wider : (d.compatible || []);
+        body = `<p class="es-drawer-p">${choosable
+          ? "Choose what this paragraph argues first. Once you choose an argument, Evidence can show material that may support it."
+          : "This paragraph does not have an argument recorded yet. Evidence below is everything the topic holds, in no particular order."}</p>
+          ${pool.length ? `<button type="button" class="es-linkbtn" id="esevall">${ES.ui.evAll ? "Hide topic evidence" : "Browse topic evidence anyway"}</button>
+          <div class="es-drawer-more"${ES.ui.evAll ? "" : " hidden"}>
+            <p class="es-drawer-sub">Topic evidence, not matched to your argument yet</p>
+            ${pool.map(row).join("")}</div>`
+          : `<p class="es-drawer-none">No verified evidence is available for this topic yet.</p>`}`;
+      } else if (d.empty) {
+        // How many records are waiting on a checked source is authoring state. It
+        // tells the student nothing they can act on and says the product is
+        // unfinished, which is not their problem to carry. Absence is absence.
+        body = `<p class="es-drawer-none">No verified evidence is available for this argument yet.</p>
+          <p class="es-drawer-note">You can keep writing and use evidence you already know.</p>`;
       } else
+      // "Fits this argument" is a claim about the content, so it is only made where
+      // the content makes it. Where nothing is linked, the heading says what these
+      // items actually are: evidence from the topic, offered without a match.
       body = `${d.selected.length ? `<h4 class="es-drawer-h">Your evidence</h4>${d.selected.map(row).join("")}` : ""}
-        <h4 class="es-drawer-h">${d.selected.length ? "Other evidence that fits this argument" : "Evidence that fits this argument"}</h4>
+        ${/* "Linked to this argument" reads as "this proves the argument", and the
+              authored link does not say that. An item can be an example of the
+              strategy, or evidence of an outcome, or simply relevant, and the
+              content records only that someone attached it. Until an evidence ROLE
+              is authored, the heading claims relevance and nothing more, and the
+              role is never guessed from the prose. */ ""}
+        <h4 class="es-drawer-h">${d.forArgument
+          ? (d.selected.length ? "Other case-study evidence relevant to this argument" : "Case-study evidence relevant to this argument")
+          : "Topic evidence, not matched to your argument"}</h4>
         ${d.compatible.length ? d.compatible.map(row).join("") : `<p class="es-drawer-none">No further evidence has been authored for this argument.</p>`}
-        ${d.forArgument ? "" : `<p class="es-drawer-note">Nothing has been linked to this argument yet, so this is the closest evidence in the topic.</p>`}
+        ${d.forArgument ? "" : `<p class="es-drawer-note">Nothing has been linked to this argument yet, so these are simply what the topic holds.</p>`}
         ${(d.wider && d.wider.length) ? `<button type="button" class="es-linkbtn" id="esevall">${ES.ui.evAll ? "Show less" : "Browse all evidence for this topic"}</button>
           <div class="es-drawer-more"${ES.ui.evAll ? "" : " hidden"}>${d.wider.map(row).join("")}</div>` : ""}
-        ${d.withheld ? `<p class="es-drawer-note">${d.withheld} further item${d.withheld === 1 ? " is" : "s are"} waiting on a checked source and are not offered until then.</p>` : ""}
         <p class="es-drawer-note">Evidence is supplied. What it proves is still yours to explain.</p>`;
     } else if (key === "structure") {
       body = `<h4 class="es-drawer-h">${esc(d.role)}</h4>
@@ -4726,12 +5244,28 @@
         ${d.current ? `<p class="es-drawer-p"><b>Right now:</b> ${esc(d.current.job)}</p>` : ""}
         <ol class="es-struct">${d.steps.map((st, i) => `<li class="${i < d.at ? "done" : i === d.at ? "now" : ""}"><b>${esc(st.label)}</b><span>${esc(st.job)}</span></li>`).join("")}</ol>`;
     }
-    return `<aside class="es-drawer" role="dialog" aria-label="${esc(tool.label)}">
+    // One sheet, four tools. Switching swaps what is inside it rather than opening
+    // a second panel, and the context line says which paragraph and argument the
+    // contents are answering for, since "evidence" alone does not say for what.
+    const path = esPathway(p);
+    const ctx = [p.role, path && path.short ? path.short : (p.point || "")].filter(Boolean).join(" \u00b7 ");
+    const box = esToolBox();
+    // A floating window, opened near the work rather than clamped to the edge of
+    // the browser. Draggable, resizable, bounded, and remembered for the session,
+    // like the notebook, because the two are peers and behave alike.
+    return `<aside class="es-drawer" role="dialog" aria-label="Writing tools"
+      style="left:${box.left}px;top:${box.top}px;width:${box.w}px${box.h ? `;height:${box.h}px` : ""}">
       <div class="es-drawer-top">${esIcon(tool.icon)}<span class="es-drawer-title">${esc(tool.label)}</span>
+        <button type="button" class="es-nbact" data-estoolhome title="Put the window back where it opens">reset position</button>
         <button type="button" class="es-drawer-x" id="esdrawerx" aria-label="Close and return to your sentence">${esIcon("close")}</button></div>
+      ${ctx ? `<div class="es-drawer-ctx">${esc(ctx)}</div>` : ""}
+      <div class="es-drawer-tabs">${ES_TOOLS.filter(t => t.key !== "understand").map(t => `<button type="button" class="es-drawer-tab ${t.key === key ? "on" : ""}" data-estool="${esc(t.key)}">${esc(t.label)}</button>`).join("")}</div>
       ${key === "understand" && d ? `<div class="es-drawer-open"><button type="button" class="es-linkbtn" id="eslopen">Open learning centre ↗</button></div>` : ""}
       <div class="es-drawer-body">${body}</div>
-      <div class="es-drawer-foot">Close to go straight back to the word you were on. <kbd>Esc</kbd></div>
+      ${/* The old line promised a return to "the word you were on", which is not
+            true when the window is opened from the argument chooser, where there is
+            no sentence yet. Focus still goes back to the composer when there is one. */ ""}
+      <div class="es-drawer-foot">Close to return to your writing <kbd>Esc</kbd></div>
     </aside>`;
   }
   // Opening a tool CAPTURES where the student was; closing puts them back exactly
@@ -4767,13 +5301,88 @@
     const host = document.getElementById("eshost"); if (!host) return;
     host.querySelectorAll("[data-estool]").forEach(b => b.onclick = () => {
       const key = b.dataset.estool;
+      // Learn opens the Learning Centre. It is teaching, not a writing tool, and
+      // giving it a tab in the tool window put two different classes of activity
+      // behind one control set.
+      if (key === "understand") {
+        ES.centre = ES.centre || { route: "choose", dock: "right" };
+        ES.centre.open = true;
+        // Straight to the concept this paragraph's argument names, where one is
+        // authored. Landing on a chooser when the app already knows what the
+        // student is arguing about makes them pick something it could have opened.
+        ES.centre.route = esToolData("understand", p) ? "concept" : "choose";
+        ES.ui.tool = null; ES.ui.contextView = null; esRenderKeepingPlace(p);
+        eslMount(p); return;
+      }
       if (ES.ui.tool === key) { ES.ui.tool = null; esRenderKeepingPlace(p); esFocusComposer(); return; }
       esCaptureContext(p);
       ES.ui.tool = key; ES.ui.readMore = false; ES.ui.contextView = null;
+      ES.ui.toolFrom = b.id || null;
       esRenderKeepingPlace(p);
     });
     const x = host.querySelector("#esdrawerx");
     if (x) x.onclick = () => { ES.ui.tool = null; esRenderKeepingPlace(p); esFocusComposer(); };
+    // A temporary surface closes the ways every temporary surface closes. Bound
+    // while open and dropped on close, so nothing accumulates across renders.
+    const sheet = host.querySelector(".es-drawer");
+    if (sheet) {
+      const head = sheet.querySelector(".es-drawer-top");
+      if (head) head.onmousedown = e => {
+        if (e.target.closest("button")) return;
+        e.preventDefault();
+        const r = sheet.getBoundingClientRect();
+        const dx = e.clientX - r.left, dy = e.clientY - r.top;
+        const move = ev => {
+          const w = sheet.offsetWidth, h = sheet.offsetHeight;
+          const left = Math.max(6, Math.min(window.innerWidth - w - 6, ev.clientX - dx));
+          const top = Math.max(6, Math.min(window.innerHeight - h - 6, ev.clientY - dy));
+          sheet.style.left = left + "px"; sheet.style.top = top + "px";
+          ES.ui.toolBox = { left: left, top: top, w: w, h: h };
+          try { sessionStorage.setItem(ES_TOOL_BOX, JSON.stringify(ES.ui.toolBox)); } catch (e2) { /* private mode */ }
+        };
+        const up = () => { document.removeEventListener("mousemove", move); document.removeEventListener("mouseup", up); };
+        document.addEventListener("mousemove", move); document.addEventListener("mouseup", up);
+      };
+      if (window.ResizeObserver) {
+        const ro = new ResizeObserver(() => {
+          // Fires while the window is being torn down too, where the rect is 0x0 at
+          // 0,0. Recording that put the window in the top left corner at its
+          // minimum size the next time it was opened, having "remembered" a
+          // geometry the student never chose.
+          if (!sheet.isConnected) return;
+          const r2 = sheet.getBoundingClientRect();
+          if (!r2.width || !r2.height) return;
+          ES.ui.toolBox = { left: Math.round(r2.left), top: Math.round(r2.top), w: Math.round(sheet.offsetWidth), h: Math.round(sheet.offsetHeight) };
+          try { sessionStorage.setItem(ES_TOOL_BOX, JSON.stringify(ES.ui.toolBox)); } catch (e2) { /* private mode */ }
+        });
+        ro.observe(sheet);
+      }
+      const home = sheet.querySelector("[data-estoolhome]");
+      if (home) home.onclick = () => {
+        ES.ui.toolBox = null; try { sessionStorage.removeItem(ES_TOOL_BOX); } catch (e2) { /* private mode */ }
+        esRenderKeepingPlace(p);
+      };
+      const shut = () => {
+        document.removeEventListener("mousedown", away, true);
+        document.removeEventListener("keydown", key2, true);
+        ES.ui.tool = null; esRenderKeepingPlace(p); esFocusComposer();
+      };
+      const away = e => {
+        if (sheet.contains(e.target)) return;
+        // The toolbelt owns opening, so a press there is a switch, not an outside
+        // click, and the notebook floats over everything without dismissing it.
+        // Peers, not outsides. The toolbelt owns opening this sheet, so a press
+        // there is a switch. The notebook is a floating surface of its own and is
+        // meant to be usable beside a tool, so neither it nor the control that
+        // opens it dismisses this one.
+        if (e.target.closest && (e.target.closest("[data-estool]") || e.target.closest("#esnbhost")
+          || e.target.closest("[data-esnbtoggle]"))) return;
+        shut();
+      };
+      const key2 = e => { if (e.key === "Escape") { e.preventDefault(); shut(); } };
+      document.addEventListener("mousedown", away, true);
+      document.addEventListener("keydown", key2, true);
+    }
     const ea = host.querySelector("#esevall");
     if (ea) ea.onclick = () => { ES.ui.evAll = !ES.ui.evAll; esRenderKeepingPlace(p); };
     const mr = host.querySelector("#esmoreread");
@@ -4826,14 +5435,44 @@
     const q = esQuestionDef() || {};
     const route = (ES.centre && ES.centre.route) || "choose";
     const sides = eslSides(p), t1 = sides.first, t2 = sides.second;
+    // The concept behind this paragraph's argument. Learn used to open a drawer on
+    // it; moving Learn to the Centre left that teaching with no route into it at
+    // all, which is a loss of function rather than a change of address. Same
+    // authored data, same two depths, now inside the Centre.
+    if (route === "concept") {
+      const d2 = esToolData("understand", p);
+      if (!d2) return "";
+      const para = x => `<p class="esl-p">${esc(x)}</p>`;
+      const more = (d2.watch || []).map(w => `<div class="esl-sech">${esc(w.label)}</div>${para(w.text)}`).join("")
+        + (d2.rest || []).map(para).join("") + (d2.readMore || []).map(para).join("")
+        + (d2.why ? para(d2.why) : "") + (d2.example ? `<div class="esl-sech">a simple example</div>${para(d2.example)}` : "");
+      return `${d2.topic ? `<div class="esl-sech">${esc(d2.topic)}</div>` : ""}
+        <h3 class="esl-l1 es-drawer-h">${esc(d2.title)}</h3>
+        ${d2.lede ? `<p class="esl-p es-drawer-p">${esc(d2.lede)}</p>` : ""}
+        ${d2.floor ? para(d2.floor) : ""}
+        ${(d2.parts && d2.parts.length) ? `<dl class="es-gloss surface">${d2.parts.map(x =>
+          `<dt>${esc(x.label)}</dt><dd>${esc(x.meaning)}</dd>`).join("")}</dl>` : ""}
+        ${more ? `<div class="esl-layer">
+          <button type="button" class="esl-layerh" data-esllayer="deeper" id="esmoreread" aria-expanded="${(ES.centre && ES.centre.layers && ES.centre.layers.deeper) ? "true" : "false"}">
+            <span>Read more about this</span><span>${(ES.centre && ES.centre.layers && ES.centre.layers.deeper) ? "\u2212" : "+"}</span></button>
+          <div class="esl-layerb" data-esllayerb="deeper"${(ES.centre && ES.centre.layers && ES.centre.layers.deeper) ? "" : " hidden"}>${more}</div>
+        </div>` : ""}`;
+    }
     if (route === "strategies") {
       const sibs = eslSiblings(p);
       if (!sibs.length) return `<p class="esl-none">Nothing has been written for the other parts of this topic yet.</p>`;
       return `<p class="esl-lede">${esc(t1)} are the things a business can actually change. These are the ones this topic covers.</p>
-        <div class="esl-grid">${sibs.map(x => `<div class="esl-tile">
-          <div class="esl-tilet">${esc(x.title)}</div>
-          ${x.lede ? `<p class="esl-tileb">${esc(x.lede)}</p>` : ""}
-          ${x.named ? `<p class="esl-tilen">${esc(x.named)}</p>` : ""}</div>`).join("")}</div>`;
+        <div class="esl-grid">${sibs.map(x => {
+          // A tile with a lesson behind it is a way in. One without is still a
+          // definition, and says nothing about being unfinished.
+          const L = esLesson(x.title);
+          const inner = `<div class="esl-tilet">${esc(x.title)}</div>
+            ${L ? `<p class="esl-tileb">${esc(L.glance)}</p><span class="esl-tilego">Learn this \u2192</span>`
+                : `${x.lede ? `<p class="esl-tileb">${esc(x.lede)}</p>` : ""}
+                   ${x.named ? `<p class="esl-tilen">${esc(x.named)}</p>` : ""}`}`;
+          return L ? `<button type="button" class="esl-tile can" data-esllesson="${esc(x.title)}">${inner}</button>`
+                   : `<div class="esl-tile">${inner}</div>`;
+        }).join("")}</div>`;
     }
     if (route === "objectives") {
       const o = eslObjectives(p);
@@ -4854,10 +5493,20 @@
     if (route === "connect") {
       const links = eslLinks(p);
       if (!links.length) return "";
-      return `<p class="esl-lede">${esc(t1)} are actions a business takes. ${esc(t2)} are what it is trying to improve. Each argument below joins one to the other.</p>
+      // The sentence below describes a strategy raising a performance objective.
+      // That is the Operations relationship, and it is false of any other: a target
+      // market is not an action a business takes, and a marketing strategy is not
+      // what a business is trying to improve. So a question that declares its own
+      // relationship vocabulary does not inherit this copy. It authors its own
+      // sentence or the card carries none, because a wrong explanation of what the
+      // two ends ARE is worse than no explanation at all.
+      const ownIntro = String(q.connectIntro || "").trim();
+      const customPair = Array.isArray(q.objectiveWords) && q.objectiveWords.length > 0;
+      const intro = ownIntro || (customPair ? "" : `${t1} are actions a business takes. ${t2} are what it is trying to improve. Each argument below joins one to the other.`);
+      return `${intro ? `<p class="esl-lede">${esc(intro)}</p>` : ""}
         ${links.map(L => `<div class="esl-link">
           <div class="esl-chain">
-            <span class="esl-node">${esc(L.strategy)}</span>
+            <span class="esl-node">${esc(L.from || L.strategy)}</span>
             ${L.mechanism ? `<span class="esl-arrow">↓</span><span class="esl-mid">${esc(L.mechanism)}</span>` : ""}
             <span class="esl-arrow">↓</span>
             <span class="esl-node">${esc(L.objectives.join(" and "))}</span>
@@ -4866,6 +5515,27 @@
             <summary>See why</summary>
             ${L.says.map(x => `<div class="esl-sech">what the topic says about ${esc(x.objective)}</div>
               <p class="esl-quote">${esc(x.text)}</p>`).join("")}</details>` : ""}
+        </div>`).join("")}`;
+    }
+    // A concept opens inside the Centre with a Back control. Not another modal
+    // over this one, and not a replacement of the essay page underneath.
+    if (route === "lesson") {
+      const L = esLesson(ES.centre && ES.centre.lesson);
+      if (!L) return "";
+      const open = (ES.centre && ES.centre.layers) || {};
+      return `<button type="button" class="esl-back" data-eslroute="strategies">\u2190 Back to operations strategies</button>
+        <h3 class="esl-l1">${esc(L.title)}</h3>
+        <div class="esl-glance">
+          <p class="esl-p">${esc(L.glance)}</p>
+          <ul class="esl-keys">${L.keys.map(k => `<li>${esc(k)}</li>`).join("")}</ul>
+        </div>
+        ${L.layers.map(y => `<div class="esl-layer">
+          <button type="button" class="esl-layerh" data-esllayer="${esc(y.id)}" aria-expanded="${open[y.id] ? "true" : "false"}">
+            <span>${esc(y.head)}</span><span>${open[y.id] ? "\u2212" : "+"}</span></button>
+          <div class="esl-layerb" data-esllayerb="${esc(y.id)}"${open[y.id] ? "" : " hidden"}>
+            ${y.flow ? `<div class="esl-flow">${y.flow.map((n, i) => `${i ? `<div class="esl-flowarrow">\u2193</div>` : ""}<div class="esl-flownode">${esc(n)}</div>`).join("")}</div>` : ""}
+            ${y.body ? String(y.body).split("\n\n").map(par => `<p class="esl-p">${esc(par)}</p>`).join("") : ""}
+          </div>
         </div>`).join("")}`;
     }
     const o = eslObjectives(p), sibs = eslSiblings(p);
@@ -4877,6 +5547,40 @@
         ${eslDirective() ? eslCardHTML("directive", `What "${eslDirective().command.toLowerCase()}" means`, eslDirective().meaning, false) : ""}
       </div>`;
   }
+  // ---- ONE DEEP LESSON, as a pattern rather than a library ----------------
+  // Authored here to prove the shape a lesson needs before the same shape is
+  // repeated across twenty concepts. Written from the authored Operations
+  // content and asserting no relationship that content does not carry.
+  const ES_LESSONS = {
+    "inventory management": {
+      title: "Inventory management",
+      glance: "Deciding how much stock to hold, and when to order it, so the business can meet demand without paying to store more than it needs.",
+      keys: [
+        "Stock sits in three states: raw materials, work in progress, and finished goods.",
+        "Holding stock costs money. Running out costs sales. The decision is the trade off between them.",
+        "Just in time keeps stock as low as possible by having inputs arrive close to when they are used."
+      ],
+      layers: [
+        { id: "understand", head: "Understand it",
+          body: "Every item a business holds has been paid for and is not yet earning anything. It occupies space, it can be damaged, it can go out of date, and the money spent on it cannot be spent elsewhere. Holding less of it frees that money up.\n\nThe cost of holding too little is different in kind. If an input is not there when it is needed the process stops, and a customer who cannot be served may not come back. So the question is never simply how to hold less stock, it is how little can be held while still being able to serve demand." },
+        { id: "terms", head: "Key terms",
+          body: "Raw materials are inputs bought but not yet used. Work in progress is partly finished output. Finished goods are ready to sell.\n\nLead time is the gap between ordering an input and receiving it. The longer it is, the more stock has to be held to cover it.\n\nJust in time schedules inputs to arrive close to the moment they are used, so very little is stored. It depends on suppliers who deliver reliably: the stock that would have absorbed a late delivery is not there any more." },
+        { id: "example", head: "Example",
+          body: "A restaurant chain decides how much of each ingredient sits in a store room. Order weekly and the room is full, money is tied up, and fresh items are thrown away. Order daily and almost nothing is stored, but a supplier who arrives late leaves the kitchen unable to serve part of the menu at lunchtime.\n\nThe choice between those is the inventory decision, and it is made against how reliable the supply actually is." },
+        { id: "visual", head: "How it works", flow: [
+            "How much stock is held",
+            "Money tied up, space used, waste risk",
+            "Lower holding cost",
+            "and a higher risk that a late delivery stops the process" ] },
+        { id: "exam", head: "Where it matters in this question",
+          body: "This question asks how an operations strategy contributes to a performance objective. Inventory management is one such strategy, and the objectives it bears on most directly are cost, because stock is money held still, and dependability, because stock is what absorbs a supply problem before a customer notices it.\n\nWhich of those you argue is your decision, and the sentence has to be yours." },
+        { id: "mistake", head: "Common mistake",
+          body: "Treating less stock as automatically better. Just in time lowers holding costs and raises exposure to supply disruption at the same time, so an answer naming only the saving has described half of the strategy." }
+      ]
+    }
+  };
+  function esLesson(key) { return ES_LESSONS[String(key || "").toLowerCase()] || null; }
+
   function eslHTML(p) {
     const q = esQuestionDef() || {};
     const route = (ES.centre && ES.centre.route) || "choose";
@@ -4885,15 +5589,17 @@
     // Absence is absence. A question with no authored relationships simply has no
     // third route, rather than a line telling the student the app is unfinished.
     const hasLinks = eslLinks(p).length > 0, dir = eslDirective();
+    const hasConcept = !!esToolData("understand", p);
     return `<div class="esl-panel ${ES.centre && ES.centre.dock === "left" ? "left" : ""}" role="dialog" aria-label="Learning centre">
       <div class="esl-head">
         <h2 class="esl-title" id="esltitle" tabindex="-1">Learning centre</h2>
+        <button type="button" class="esl-tab" data-esnbtoggle aria-expanded="${ES.ui.nbOpen ? "true" : "false"}">notebook</button>
         <button type="button" class="esl-dock" id="esldock" aria-label="Move to the other side">⇄</button>
         <button type="button" class="esl-x" id="eslx" aria-label="Close">${esIcon("close")}</button>
       </div>
       <p class="esl-q">${esc(q.text || (ES.draft && ES.draft.question) || "")}</p>
-      <div class="esl-tabs">${tab("choose", "Start here")}${sides.first ? tab("strategies", sides.first) : ""}${sides.second ? tab("objectives", sides.second) : ""}${hasLinks ? tab("connect", "How they connect") : ""}${dir ? tab("directive", `What "${dir.command.toLowerCase()}" means`) : ""}</div>
-      <div class="esl-body">${eslBodyHTML(p)}</div>
+      <div class="esl-tabs">${tab("choose", "Start here")}${hasConcept ? tab("concept", "This argument") : ""}${sides.first ? tab("strategies", sides.first) : ""}${sides.second ? tab("objectives", sides.second) : ""}${hasLinks ? tab("connect", "How they connect") : ""}${dir ? tab("directive", `What "${dir.command.toLowerCase()}" means`) : ""}</div>
+      <div class="esl-body"><div class="esl-main">${eslBodyHTML(p)}</div></div>
       <div class="esl-foot">
         ${guide ? `<span class="esl-footg"><b>${esc(guide.head || "")}</b> ${esc(guide.job || "")}</span>` : ""}
         <button type="button" class="es-btn primary sm" id="eslback">Back to your sentence</button>
@@ -4906,12 +5612,15 @@
   function eslMount(p) {
     let host = document.getElementById("eslhost");
     if (!host) { host = document.createElement("div"); host.id = "eslhost"; document.body.appendChild(host); }
-    // A CSS layout state, not a re-render: the writing workspace contracts by the
-    // panel's width so both stay fully visible. Below the width where they cannot
-    // both fit, the stylesheet drops back to an overlay.
+    // An overlay over the workspace, which is left exactly as it was: same grid,
+    // same columns, same scroll position, same composer node. The host takes
+    // pointer events only while open, so the backdrop can be clicked to leave.
+    host.classList.add("on");
     document.body.classList.add("esl-open");
     document.body.classList.toggle("esl-left", (ES.centre && ES.centre.dock) === "left");
     host.innerHTML = eslHTML(p);
+    // Temporary surfaces close the ways every other application closes them.
+    host.onmousedown = e => { if (e.target === host) { eslUnmount(); esFocusComposer(); } };
     eslBind(p);
     const t = document.getElementById("esltitle"); if (t) t.focus();
   }
@@ -4926,6 +5635,24 @@
       ES.centre.route = b.dataset.eslroute;
       // Only the centre re-renders. esRender is never called from in here.
       eslMount(p);
+    });
+    host.querySelectorAll("[data-esnbtoggle]").forEach(b => b.onclick = () => esNbToggle());
+    // Entering a lesson is internal navigation inside this overlay.
+    host.querySelectorAll("[data-esllesson]").forEach(b => b.onclick = () => {
+      ES.centre.lesson = b.dataset.esllesson; ES.centre.route = "lesson"; ES.centre.layers = {};
+      eslMount(p);
+    });
+    // A layer opening is a disclosure inside one card. It reveals content that is
+    // already rendered and touches nothing else, so the Centre does not redraw and
+    // the reader does not lose their scroll position.
+    host.querySelectorAll("[data-esllayer]").forEach(b => b.onclick = () => {
+      const id = b.dataset.esllayer;
+      ES.centre.layers = ES.centre.layers || {};
+      ES.centre.layers[id] = !ES.centre.layers[id];
+      const body = host.querySelector('[data-esllayerb="' + id + '"]');
+      if (body) body.hidden = !ES.centre.layers[id];
+      b.setAttribute("aria-expanded", ES.centre.layers[id] ? "true" : "false");
+      const sign = b.lastElementChild; if (sign) sign.textContent = ES.centre.layers[id] ? "\u2212" : "+";
     });
     const x = host.querySelector("#eslx"); if (x) x.onclick = () => { eslUnmount(); esFocusComposer(); };
     const back = host.querySelector("#eslback"); if (back) back.onclick = () => { eslUnmount(); esFocusComposer(); };
@@ -6416,27 +7143,28 @@
       ${esToolbeltHTML(p)}
       <div class="es-cols ${ES.ui.tool ? "withdrawer" : ES.ui.contextView ? "withctx" : esDecodeOf(esQuestionDef()) ? "withdec" : ""}">
         ${esDecodeHost(esQuestionDef())}
-        <aside class="es-map" ${ES.ui.mapPop ? "" : "hidden"}>
-          <div class="es-maph">My response</div>
-          ${(() => { const wa = esWorkingAnswer(d); if (!wa) return "";
-            return `<button type="button" class="es-mapwa" id="esmapwa" title="What the arguments you have chosen add up to. It comes from your plan, not from reading your paragraphs.">
-              <span class="es-corelbl">${esIsJudgement() ? "current answer" : "working answer"}</span>
-              <span class="es-mapwatext">${esc(wa.text)}</span></button>`; })()}
-          ${map}
-          <div class="es-wordcount"${target ? ` title="Around ${target} words would be a full answer at ${esc(String(d.marks || 20))} marks. A guide, not a limit: write more if you have more to say."` : ""}>
-            <span><b>${words}</b> here · <b>${whole}</b> in all${target ? ` · ~${target}` : ""}</span>
-          </div>
-        </aside>
         <div class="es-compose">
           <div class="es-parahead">
             <button type="button" class="es-parapick" id="esmappop" aria-expanded="${ES.ui.mapPop ? "true" : "false"}">
               <span class="es-pararole">${esc(p.role)}</span><span class="es-parachev">\u25be</span></button>
+            <aside class="es-map" ${ES.ui.mapPop ? "" : "hidden"}>
+              <div class="es-maph">My response</div>
+              ${(() => { const wa = esWorkingAnswer(d); if (!wa) return "";
+                return `<button type="button" class="es-mapwa" id="esmapwa" title="What the arguments you have chosen add up to. It comes from your plan, not from reading your paragraphs.">
+                  <span class="es-corelbl">${esIsJudgement() ? "current answer" : "working answer"}</span>
+                  <span class="es-mapwatext">${esc(wa.text)}</span></button>`; })()}
+              ${map}
+              <div class="es-wordcount"${target ? ` title="Around ${target} words would be a full answer at ${esc(String(d.marks || 20))} marks. A guide, not a limit: write more if you have more to say."` : ""}>
+                <span><b>${words}</b> here \u00b7 <b>${whole}</b> in all${target ? ` \u00b7 ~${target}` : ""}</span>
+              </div>
+            </aside>
             <span class="es-parameta">${words} words${target ? " \u00b7 ~" + esc(String(target)) : ""}</span>
             ${(() => { const st = esStepDef(p), all = slotsForRole(p.role);
               const i = all.findIndex(x => st && x.key === st.key);
               return ""; })()}
             <span class="es-headacts">
               ${(esIsIntro(p) || esIsConcl(p)) ? `<button type="button" class="es-linkbtn es-ctxbtn" id="esctx" data-esctxview="${esIsConcl(p) ? "judgement" : "plan"}" aria-expanded="${ES.ui.contextView ? "true" : "false"}">${esIsConcl(p) ? "Review my arguments" : "View plan"}</button>` : ""}
+              <button type="button" class="es-linkbtn" data-esnbtoggle aria-expanded="${ES.ui.nbOpen ? "true" : "false"}">notebook</button>
               <button type="button" class="es-mapall" id="esreview">read all</button>
             </span>
           </div>
@@ -6470,10 +7198,14 @@
                   const st = esStepDef(p); if (!st) return "";
                   const all = esShapesFor(st.key);
                   if (!all.length) return "";
+                  // Rendered once and revealed in place. Showing the shape is a
+                  // disclosure inside one component, not a change of application
+                  // state, so it must not re-enter the render pipeline: that is what
+                  // made a two-word control feel like the page reloading.
                   const open = !!ES.ui.shapeOpen;
                   return `<button type="button" class="es-linkbtn es-shapebtn" id="esshape" aria-expanded="${open}">${open ? "Hide sentence shape" : "Show sentence shape"}</button>
-                    ${open ? `<div class="es-shapes">${all.map(x =>
-                      `<p class="es-shape">${esc(x).replace(/_{2,}/g, '<span class="es-blank">____</span>')}</p>`).join("")}</div>` : ""}`;
+                    <div class="es-shapes" id="esshapes"${open ? "" : " hidden"}>${all.map(x =>
+                      `<p class="es-shape">${esc(x).replace(/\[[^\]]+\]/g, m => `<span class="es-hole">${m.slice(1, -1)}</span>`).replace(/_{2,}/g, '<span class="es-blank">____</span>')}</p>`).join("")}</div>`;
                 })()}
               </div>
               <textarea id="esline" class="es-input es-linebox" rows="2" placeholder="Type your next sentence..."></textarea>
@@ -6618,9 +7350,17 @@
       if (ES.ui.contextView) ES.ui.tool = null;
       esRenderKeepingPlace(p);
     };
+    host.querySelectorAll("[data-esnbtoggle]").forEach(b => b.onclick = () => esNbToggle());
     const sh = $("#esshape");
     if (sh) sh.onclick = () => {
-      esCaptureContext(p); ES.ui.shapeOpen = !ES.ui.shapeOpen; esRender(); esRestoreContext();
+      // Touches its own button and its own panel. No capture, no render, no
+      // restore: the composer, its caret, its scroll and its undo stack are not
+      // involved in whether a hint is visible.
+      ES.ui.shapeOpen = !ES.ui.shapeOpen;
+      const box = document.getElementById("esshapes");
+      if (box) box.hidden = !ES.ui.shapeOpen;
+      sh.setAttribute("aria-expanded", ES.ui.shapeOpen ? "true" : "false");
+      sh.textContent = ES.ui.shapeOpen ? "Hide sentence shape" : "Show sentence shape";
     };
     const mp = $("#esmappop");
     if (mp) mp.onclick = () => {
@@ -6628,6 +7368,29 @@
       const aside = host.querySelector(".es-map");
       if (aside) aside.hidden = !ES.ui.mapPop;
       mp.setAttribute("aria-expanded", ES.ui.mapPop ? "true" : "false");
+      // Closes the ways a menu closes: choosing, clicking away, Escape. Bound while
+      // open and dropped on close, so nothing accumulates across renders.
+      if (ES.ui.mapPop) {
+        // Look the menu up when the event fires, never capture it. A render while
+        // the menu is open replaces the node, and handlers holding the old one
+        // then hid a detached element: the menu on screen stayed open and could
+        // not be closed by Escape, by clicking away, or by anything else.
+        const live = () => document.querySelector(".es-map");
+        const shut = () => {
+          ES.ui.mapPop = false;
+          const node = live(); if (node) node.hidden = true;
+          document.querySelectorAll("#esmappop").forEach(x => x.setAttribute("aria-expanded", "false"));
+          document.removeEventListener("mousedown", away, true);
+          document.removeEventListener("keydown", key, true);
+        };
+        const away = e => {
+          const node = live();
+          if (node && !node.contains(e.target) && !(e.target.closest && e.target.closest("#esmappop"))) shut();
+        };
+        const key = e => { if (e.key === "Escape") { e.preventDefault(); shut(); } };
+        document.addEventListener("mousedown", away, true);
+        document.addEventListener("keydown", key, true);
+      }
       const cols = host.querySelector(".es-cols");
       if (cols) cols.classList.toggle("mapopen", !!ES.ui.mapPop);
     };

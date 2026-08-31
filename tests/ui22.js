@@ -1,18 +1,25 @@
 // Second architecture case. fin-01 names a cause and an effect but fixes NO
 // areas, so choosing which strategies to argue is part of the answer. Nothing
 // about it is special-cased: the same fields drive both questions.
-const { chromium, T, OUT } = require('./env');
+const { chromium, T, OUT, usePractice } = require('./env');
+
+// Waits that name their condition. This app fetches nothing and renders
+// synchronously, so the effect of a click is present on the next frame:
+// settled() is that frame, not a shorter guess at a duration.
+const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+const here = (p, sel) => p.waitForSelector(sel, { timeout: 8000 });
 const { planAll } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 async function open(p, re){
-  await p.goto(T); await p.waitForTimeout(650);
+  await p.goto(T); await here(p, '.navtab');
   await p.evaluate(()=>localStorage.removeItem('marginal.essay.v1'));
-  await p.goto(T); await p.waitForTimeout(650);
+  await p.goto(T); await here(p, '.navtab');
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
-  await p.waitForTimeout(400);
-  await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);
-  await p.$$eval('.es-qchip',(es,r)=>{const t=es.find(x=>new RegExp(r,'i').test(x.textContent));t&&t.click();}, re.source);
-  await p.click('#esstart'); await p.waitForTimeout(650);
+  await settled(p);
+  await p.selectOption('#essubject','business_studies'); await settled(p);
+  await usePractice(p); await p.$$eval('.es-qrow',(es,r)=>{const t=es.find(x=>new RegExp(r,'i').test(x.textContent));t&&t.click();}, re.source);
+  await p.click('#esstart');
+  await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
   await planAll(p);
 }
 (async()=>{
@@ -44,18 +51,18 @@ async function open(p, re){
 
   console.log('3. choosing a strategy narrows to its relationships');
   await p.$$eval('.es-plancard .es-areachip',es=>{const t=es.find(x=>/profitability/i.test(x.textContent));t&&t.click();});
-  await p.waitForTimeout(350);
+  await settled(p);
   const opts=await p.$$eval('.es-optwrap .es-pickrel',es=>es.map(e=>e.textContent.trim()));
   ok(opts.length===2,'two relationships for that strategy, not all eight: '+opts.length);
   ok(opts.every(o=>/profitability/i.test(o)),'and they are that strategy’s: '+JSON.stringify(opts.map(o=>o.slice(0,34))));
   const subs=await p.$$eval('.es-optwrap .es-picksub',es=>es.map(e=>e.textContent.trim()));
   ok(subs.length===2&&subs.every(x=>x.length>50),'each says what it means without being asked');
-  await p.$$eval('[data-eswhy]',es=>es[0]&&es[0].click()); await p.waitForTimeout(250);
+  await p.$$eval('[data-eswhy]',es=>es[0]&&es[0].click()); await settled(p);
   const why=await p.$eval('.es-whybox',e=>e.innerText.replace(/\s+/g,' '));
   ok(/what you would need to show/i.test(why)&&/common mistake/i.test(why),'and Why? holds the deeper material here too');
 
   console.log('4. a strategy already argued elsewhere is marked, not blocked');
-  await p.$$eval('[data-esplanpick]',es=>es[0]&&es[0].click()); await p.waitForTimeout(400);
+  await p.$$eval('[data-esplanpick]',es=>es[0]&&es[0].click()); await settled(p);
   const used=await p.$$eval('.es-areaused',es=>es.map(e=>e.textContent.trim()));
   ok(used.length===1&&/Body 1/.test(used[0]),'the next paragraph says where it was already used: '+JSON.stringify(used));
   const dim=await p.$$eval('.es-areachip',es=>es.some(e=>e.disabled||parseFloat(getComputedStyle(e).opacity)<0.9));
@@ -64,7 +71,7 @@ async function open(p, re){
   console.log('5. decoding adapts to a question that fixes nothing');
   const chip=await p.$$eval('.es-decchip',es=>es.map(e=>e.textContent.trim()));
   ok(chip.some(c=>/what does my answer have to do/i.test(c)),'it does not ask what must be covered: '+JSON.stringify(chip));
-  await p.$eval('[data-esdecopen="cover"]',e=>e.click()); await p.waitForTimeout(300);
+  await p.$eval('[data-esdecopen="cover"]',e=>e.click()); await settled(p);
   const cover=await p.$eval('[data-esdecpanel="cover"]',e=>e.innerText.replace(/\s+/g,' '));
   console.log('   ',cover.slice(0,150));
   ok(/which to write about is your choice/i.test(cover),'it says the choice is the student’s');
@@ -73,7 +80,7 @@ async function open(p, re){
   const hl=await p.$$eval('.es-dec',es=>es.map(e=>e.textContent.trim()));
   ok(hl.length===3,'three parts of the stem are pressable: '+JSON.stringify(hl));
   await p.$$eval('.es-dec',es=>{const t=es.find(x=>/objectives of financial/i.test(x.textContent));t&&t.click();});
-  await p.waitForTimeout(250);
+  await settled(p);
   const eff=await p.$$eval('.es-decpanel',es=>es.filter(e=>!e.hidden).map(e=>e.innerText.replace(/\s+/g,' '))[0]||'');
   ok(/what has to move/i.test(eff),'a new kind of highlight carries its own label: '+eff.slice(0,50));
   ok(/liquidity, profitability/i.test(eff),'and names the objectives');
@@ -82,19 +89,19 @@ async function open(p, re){
   console.log('6. the rest of the stack works on it with no special casing');
   for (let n=0;n<4;n++){
     const did=await p.$$eval('.es-plancard .es-areachip',es=>{const t=es.find(x=>!x.classList.contains('on')); if(t){t.click();return true;} return false;});
-    if(!did) break; await p.waitForTimeout(280);
-    await p.$$eval('[data-esplanpick]',es=>{const t=es[0]; t&&t.click();}); await p.waitForTimeout(300);
+    if(!did) break; await settled(p);
+    await p.$$eval('[data-esplanpick]',es=>{const t=es[0]; t&&t.click();}); await settled(p);
   }
   ok(!!(await p.$('.es-thesis')),'the thesis appears once every paragraph has a relationship');
   const pat=await p.$eval('.es-corepat',e=>e.textContent.trim()).catch(()=>'');
   ok(/financial strategy → what it changes/.test(pat),'the pattern is this question’s, not the other one’s: '+JSON.stringify(pat));
-  await p.click('#escoreexplain'); await p.waitForTimeout(250);
+  await p.click('#escoreexplain'); await settled(p);
   const core=await p.$eval('.es-corebody',e=>e.innerText.replace(/\s+/g,' ')).catch(()=>'');
   ok(/name a strategy, explain what it changes/i.test(core),'and the teaching runs the argument forwards');
-  await p.click('#escoreexplain'); await p.waitForTimeout(200);
+  await p.click('#escoreexplain'); await settled(p);
   await p.fill('#esthesis','Financial strategies change how well a business meets its objectives.');
-  await p.click('#esthesissave'); await p.waitForTimeout(300);
-  await p.click('#escompare'); await p.waitForTimeout(300);
+  await p.click('#esthesissave'); await settled(p);
+  await p.click('#escompare'); await settled(p);
   const cmp=await p.$eval('.es-compare',e=>e.innerText.replace(/\s+/g,' '));
   ok(/one acceptable thesis/i.test(cmp)&&/trade-off/i.test(cmp),'Compare offers this question’s acceptable thesis');
   ok(/runs the argument forwards/i.test(cmp),'with its own checklist, in this question\u2019s terms');

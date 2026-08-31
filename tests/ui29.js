@@ -1,4 +1,10 @@
-const { openMap } = require('./env');
+const { openMap, usePractice } = require('./env');
+
+// Waits that name their condition. This app fetches nothing and renders
+// synchronously, so the effect of a click is present on the next frame:
+// settled() is that frame, not a shorter guess at a duration.
+const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+const here = (p, sel) => p.waitForSelector(sel, { timeout: 8000 });
 // Decision histories, not final states.
 //
 // Students do not arrive at a set of choices, they arrive at a sequence of them,
@@ -8,15 +14,16 @@ const { openMap } = require('./env');
 const { chromium, T, OUT } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 async function open(p, re, structure){
-  await p.goto(T); await p.waitForTimeout(650);
+  await p.goto(T); await here(p, '.navtab');
   await p.evaluate(()=>localStorage.removeItem('marginal.essay.v1'));
-  await p.goto(T); await p.waitForTimeout(650);
+  await p.goto(T); await here(p, '.navtab');
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
-  await p.waitForTimeout(400);
-  await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);
-  await p.$$eval('.es-qchip',(es,r)=>{const t=es.find(x=>new RegExp(r,'i').test(x.textContent));t&&t.click();}, re.source);
-  if (structure) { await p.selectOption('#esstruct', structure); await p.waitForTimeout(150); }
-  await p.click('#esstart'); await p.waitForTimeout(700);
+  await settled(p);
+  await p.selectOption('#essubject','business_studies'); await settled(p);
+  await usePractice(p); await p.$$eval('.es-qrow',(es,r)=>{const t=es.find(x=>new RegExp(r,'i').test(x.textContent));t&&t.click();}, re.source);
+  if (structure) { await p.selectOption('#esstruct', structure); await settled(p); }
+  await p.click('#esstart');
+  await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
 }
 const text=(p,sel)=>p.$eval(sel,e=>e.innerText.replace(/\s+/g,' ').trim()).catch(()=>'');
 const wa=p=>p.$eval('.es-mapwatext',e=>e.textContent.trim()).catch(()=>p.$eval('.es-watext',e=>e.textContent.trim()).catch(()=>''));
@@ -24,29 +31,29 @@ const wa=p=>p.$eval('.es-mapwatext',e=>e.textContent.trim()).catch(()=>p.$eval('
 // The start surface is where the app states all three together.
 const map=p=>p.$$eval('.es-mapitem',es=>es.map(e=>e.innerText.replace(/\s+/g,' ').trim())).catch(()=>[]);
 async function sections(p){
-  if (!(await p.$('.es-startrow'))) { await openMap(p); await p.click('.es-mapwa').catch(()=>{}); await p.waitForTimeout(520); }
+  if (!(await p.$('.es-startrow'))) { await openMap(p); await p.click('.es-mapwa').catch(()=>{}); await settled(p); }
   const rows = await p.$$eval('.es-startrow',es=>es.map(e=>e.innerText.replace(/\s+/g,' ').trim())).catch(()=>[]);
   return rows;
 }
 async function go(p, role){
   if (await p.$('.es-startrow')) await p.$$eval('.es-startrow',(es,r)=>{const t=es.find(x=>new RegExp(r,'i').test(x.textContent));t&&t.click();}, role);
   else await p.$$eval('.es-mapitem',(es,r)=>{const t=es.find(x=>new RegExp(r,'i').test(x.textContent));t&&t.click();}, role);
-  await p.waitForTimeout(620);
+  await settled(p);
 }
-async function pickArea(p, i){ const a=await p.$$('[data-essetuparea]'); if (a[i]) { await a[i].click(); await p.waitForTimeout(340); } }
+async function pickArea(p, i){ const a=await p.$$('[data-essetuparea]'); if (a[i]) { await a[i].click(); await settled(p); } }
 async function pickPath(p, id){
   await p.$$eval('[data-espath]',(es,x)=>{const t=x?es.find(e=>e.dataset.espath===x):es[0]; t&&t.click();}, id||null);
-  await p.waitForTimeout(430);
+  await settled(p);
 }
-async function startWriting(p){ const b=await p.$('#esstartwriting'); if (b) { await b.click(); await p.waitForTimeout(430); } }
-async function backToArgument(p){ const b=await p.$('#esbackarg'); if (b) { await b.click(); await p.waitForTimeout(430); } }
+async function startWriting(p){ const b=await p.$('#esstartwriting'); if (b) { await b.click(); await settled(p); } }
+async function backToArgument(p){ const b=await p.$('#esbackarg'); if (b) { await b.click(); await settled(p); } }
 async function changeArgument(p){
   // whichever route this paragraph is on, get back to the argument choice
   if (await p.$('#esbackarg')) return backToArgument(p);
   const chip=await p.$('[data-eschangearg]') || await p.$('.es-chip-arg');
-  if (chip) { await chip.click(); await p.waitForTimeout(430); }
+  if (chip) { await chip.click(); await settled(p); }
 }
-async function write(p, line){ if (await p.$('#esline')) { await p.fill('#esline',line); await p.click('#esaccept'); await p.waitForTimeout(400); } }
+async function write(p, line){ if (await p.$('#esline')) { await p.fill('#esline',line); await p.click('#esaccept'); await settled(p); } }
 
 (async()=>{
   const b=await chromium.launch();
@@ -55,8 +62,8 @@ async function write(p, line){ if (await p.$('#esline')) { await p.fill('#esline
   let calls=0; await p.route(/workers\.dev/, r=>{calls++;r.abort();});
 
   console.log('1. A then B then A, on one paragraph');
-  await open(p,/Evaluate the effectiveness/);
-  await p.click('#esposdefer').catch(()=>{}); await p.waitForTimeout(350);
+  await open(p,/the effectiveness of human resource/);
+  await p.click('#esposdefer').catch(()=>{}); await settled(p);
   await go(p,'Body 1');
   await pickArea(p,0);
   const ids=await p.$$eval('[data-espath]',es=>es.map(e=>e.dataset.espath));
@@ -79,9 +86,9 @@ async function write(p, line){ if (await p.$('#esline')) { await p.fill('#esline
   console.log('2. own argument, authored argument, own again');
   await go(p,'Body 2');
   await pickArea(p,1);
-  await p.click('[data-espathown]'); await p.waitForTimeout(260);
+  await p.click('[data-espathown]'); await settled(p);
   await p.fill('#esownarg','Rewards lift output significantly where output can be measured.');
-  await p.click('#esownok'); await p.waitForTimeout(460);
+  await p.click('#esownok'); await settled(p);
   await startWriting(p);
   await write(p,'Rewards at McDonald’s are tied to what a crew member can be seen to do.');
   const own1=await text(p,'.es-prose');
@@ -89,24 +96,24 @@ async function write(p, line){ if (await p.$('#esline')) { await p.fill('#esline
   await changeArgument(p); await pickPath(p); await startWriting(p);
   ok(/tied to what a crew member/.test(await text(p,'.es-prose')),'moving to an authored argument keeps their sentence');
   await changeArgument(p);
-  await p.click('[data-espathown]'); await p.waitForTimeout(260);
+  await p.click('[data-espathown]'); await settled(p);
   await p.fill('#esownarg','Rewards lift output significantly where output can be measured.');
-  await p.click('#esownok'); await p.waitForTimeout(460);
+  await p.click('#esownok'); await settled(p);
   ok(!(await p.$('.es-drift.dir')),'and returning to their own argument does not re-ask a question they answered');
   await startWriting(p);
   ok(/tied to what a crew member/.test(await text(p,'.es-prose')),'the sentence survived all three moves');
 
   console.log('3. support, limitation, support again');
-  await open(p,/Evaluate the effectiveness/);
+  await open(p,/the effectiveness of human resource/);
   await p.$$eval('[data-espos]',es=>{const t=es.find(x=>/Highly effective/i.test(x.textContent)); t&&t.click();});
-  await p.waitForTimeout(400);
+  await settled(p);
   await go(p,'Body 1'); await pickArea(p,0); await pickPath(p); await startWriting(p);
   const sup=await wa(p);
   ok(!/depends on how well/.test(sup),'a supporting argument carries no qualifier');
   await changeArgument(p);
   await pickArea(p,2);
   await p.$$eval('[data-espath]',es=>{const t=es.find(x=>/pf-trust/.test(x.dataset.espath)); t&&t.click();});
-  await p.waitForTimeout(450); await startWriting(p);
+  await settled(p); await startWriting(p);
   ok(/depends on how well/.test(await wa(p)),'adding a limitation brings the qualifier in');
   await changeArgument(p);
   await pickArea(p,0);
@@ -139,11 +146,11 @@ async function write(p, line){ if (await p.$('#esline')) { await p.fill('#esline
   await go(p,'Body 2'); await pickPath(p); await startWriting(p);
   const before=await sections(p);
   console.log('   before',JSON.stringify(before.map(r=>r.slice(0,44))));
-  await p.click('#esplanall'); await p.waitForTimeout(420);
+  await p.click('#esplanall'); await settled(p);
   const grow=await p.$('#esplanstruct');
   ok(!!grow,'the plan offers to match the structure to the four parts the question names');
-  await grow.click(); await p.waitForTimeout(600);
-  await p.click('#esplanless').catch(()=>{}); await p.waitForTimeout(400);
+  await grow.click(); await settled(p);
+  await p.click('#esplanless').catch(()=>{}); await settled(p);
   const after=await sections(p);
   console.log('   after ',JSON.stringify(after.map(r=>r.slice(0,44))));
   ok(after.length===before.length+2,'two body paragraphs were added: '+before.length+' to '+after.length);

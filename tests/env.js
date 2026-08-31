@@ -30,8 +30,44 @@ function isExecutableFile(f) {
 }
 const EXECUTABLE = isExecutableFile(HOSTED_CHROME) ? HOSTED_CHROME : undefined;
 
+// Every page gets external requests blocked before it loads anything.
+//
+// The app under test is one self-contained file. It also asks for web fonts and
+// a CDN, which no suite asserts anything about, and which in a sandbox do not
+// fail fast: they hang until the proxy gives up. goto() waits for the load event,
+// so every page load cost 12.7 SECONDS of waiting for resources that were never
+// going to arrive. Blocked, the same load takes 0.14s and the app renders
+// identically.
+//
+// Done here rather than in 39 suites, because every one of them takes its
+// chromium from this module.
+async function armPage(page) {
+  await page.route(/^https?:\/\//, r => r.abort());
+  return page;
+}
+function wrapContext(ctx) {
+  // Playwright's default action timeout is 30 seconds. A suite that wraps an
+  // action in .catch() to handle "this control may not be here" then pays that
+  // full 30 seconds every time it is not, invisibly: ui17 spent 30 of its 34
+  // seconds inside one, and reported nothing because the catch was doing its job.
+  //
+  // Nothing in this app takes 8 seconds. A page load is 0.15s. So a swallowed
+  // failure now costs about a second instead of half a minute, and a real hang
+  // still fails rather than passing slowly.
+  ctx.setDefaultTimeout(8000);
+  const orig = ctx.newPage.bind(ctx);
+  ctx.newPage = async function () { return armPage(await orig()); };
+  return ctx;
+}
+function wrapBrowser(b) {
+  const origCtx = b.newContext.bind(b);
+  b.newContext = async function (o) { return wrapContext(await origCtx(o)); };
+  const origPage = b.newPage.bind(b);
+  b.newPage = async function (o) { return armPage(await origPage(o)); };
+  return b;
+}
 const chromium = {
-  launch: (opts) => pw.chromium.launch(Object.assign({}, EXECUTABLE ? { executablePath: EXECUTABLE } : {}, opts || {})),
+  launch: async (opts) => wrapBrowser(await pw.chromium.launch(Object.assign({}, EXECUTABLE ? { executablePath: EXECUTABLE } : {}, opts || {}))),
 };
 
 const url = f => "file://" + f.split(path.sep).join("/");
@@ -47,9 +83,19 @@ async function openMap(page) {
   const shown = await page.$eval(".es-map", e => !e.hasAttribute("hidden")).catch(() => false);
   if (shown) return;
   const b = await page.$("#esmappop");
-  if (b) { await b.click(); await page.waitForTimeout(220); }
+  if (b) { await b.click(); await page.waitForFunction(() => { const m = document.querySelector(".es-map"); return m && !m.hasAttribute("hidden"); }, null, { timeout: 8000 }).catch(() => {}); }
+}
+// The section list is an overlay now, not a grid column, so one left open sits on
+// top of whatever the next step wants to press. A menu closes before anything
+// outside it is clicked, which is what a person does without thinking about it.
+async function closeMap(page) {
+  const shown = await page.$eval(".es-map", e => !e.hasAttribute("hidden")).catch(() => false);
+  if (!shown) return;
+  await page.keyboard.press("Escape").catch(() => {});
+  await page.waitForFunction(() => { const m = document.querySelector(".es-map"); return !m || m.hasAttribute("hidden"); }, null, { timeout: 8000 }).catch(() => {});
 }
 async function nextSection(page) {
+  await closeMap(page);
   const done = await page.$("#esdonenext");
   if (done) { await done.click(); await page.waitForTimeout(420); return; }
   await openMap(page);
@@ -60,6 +106,7 @@ async function nextSection(page) {
   await page.waitForTimeout(420);
 }
 async function prevSection(page) {
+  await closeMap(page);
   await openMap(page);
   await page.$$eval(".es-mapitem", es => {
     const i = es.findIndex(e => /(^|\s)on(\s|$)/.test(e.className));
@@ -75,7 +122,38 @@ async function planAll(page) {
   if (b) { await b.click(); await page.waitForTimeout(400); }
 }
 
-module.exports = {
+
+// Setup now asks whether you are choosing a practice question or bringing your
+// own, and the question box only exists in the second mode. A suite that types
+// its own question has to say so first, which is also what a student does.
+async function ownQuestion(page, q) {
+  await page.evaluate(() => {
+    const b = [...document.querySelectorAll('[data-esmode]')].find(x => x.dataset.esmode === 'own');
+    if (b) b.click();
+  });
+  const box = await page.waitForSelector('#esq', { timeout: 8000 }).catch(() => null);
+  if (!box) return false;
+  await page.fill('#esq', q);
+  // The value landing is what the caller depends on, and it is synchronous.
+  await page.waitForFunction(v => { const e = document.querySelector('#esq'); return !!e && e.value === v; }, q, { timeout: 8000 }).catch(() => {});
+  return true;
+}
+
+
+// Setup opens on the student's own question, because that is the normal case.
+// The practice bank is the other route, so a suite that picks a premade question
+// has to ask for it first, exactly as a student without a question of their own
+// does. Safe to call when already there.
+async function usePractice(page) {
+  await page.evaluate(() => {
+    const b = [...document.querySelectorAll('[data-esmode]')].find(x => x.dataset.esmode === 'practice');
+    if (b && !b.classList.contains('on')) b.click();
+  });
+  // The rows are the point of switching, so wait for them rather than for 300ms.
+  await page.waitForSelector('.es-qrow', { timeout: 8000 }).catch(() => {});
+}
+
+module.exports = { usePractice, ownQuestion, closeMap,
   nextSection, prevSection, planAll, openMap,
   chromium, ROOT, OUT, BASE: OUT,
   WALK, T: url(WALK),

@@ -592,20 +592,99 @@
   /* Three states, not one grid with hidden children. Closed support gives its
      space back to the writing; open support takes exactly what it needs. */
   .es-cols{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;align-items:start;margin-top:14px}
-  .es-cols.withdrawer{grid-template-columns:minmax(0,1fr) 340px}
-  .es-cols.withctx{grid-template-columns:minmax(0,1fr) clamp(300px,26vw,390px)}
+  /* A support tool is temporary, so it goes over the page like every other
+     temporary thing. It used to take a grid column, which moved the writing the
+     moment a student looked something up. The sheet is fixed and out of flow, so
+     the textarea keeps its width and its left edge whatever is open. */
+  /* A floating window, like the notebook, because they are peers: both are things
+     the student opens beside the writing and can move out of each other's way.
+     Not clamped to the viewport edge, and no taller than its contents need. */
+  .es-cols > .es-drawer{position:fixed;z-index:150;resize:both;
+    min-width:340px;min-height:220px;max-width:92vw;max-height:88vh;
+    background:var(--card);border:1.5px solid var(--line);border-radius:14px;
+    box-shadow:0 26px 70px rgba(28,40,40,.30);overflow:hidden;padding:0;
+    display:flex;flex-direction:column}
+  .es-cols > .es-drawer > .es-drawer-top{cursor:move}
+  .es-cols > .es-drawer > .es-drawer-top{padding:14px 18px;border-bottom:1px solid var(--line);flex:0 0 auto}
+  .es-drawer-ctx{padding:9px 18px 0;font-size:12px;font-weight:700;letter-spacing:.04em;
+    text-transform:uppercase;color:var(--ink-3)}
+  /* One surface, four tools: switching swaps the contents rather than opening a
+     second panel beside the first. */
+  .es-drawer-tabs{display:flex;flex-wrap:wrap;gap:5px;padding:10px 18px 12px;border-bottom:1px solid var(--line);flex:0 0 auto}
+  .es-drawer-tab{background:none;border:1px solid var(--line);border-radius:999px;padding:4px 11px;
+    font:inherit;font-size:12.5px;color:var(--ink-2);cursor:pointer}
+  .es-drawer-tab:hover{border-color:var(--green);color:var(--green-dk)}
+  .es-drawer-tab.on{background:var(--green-soft);border-color:var(--green);color:var(--green-dk);font-weight:700}
+  .es-cols > .es-drawer > .es-drawer-body{flex:1;min-height:0;overflow:auto;padding:16px 18px}
+  .es-cols > .es-drawer > .es-drawer-foot{padding:10px 18px;border-top:1px solid var(--line);flex:0 0 auto}
   /* The decoder host is a permanent child of the columns, placed in the support
      track. It costs nothing until a stem word is pressed, and because it is not the
      node esSwapSide replaces, opening or closing a tool cannot take it away. */
-  .es-cols.withdec{grid-template-columns:minmax(0,1fr) 340px}
   .es-cols>.es-dechost{grid-column:2}
   .es-cols{grid-auto-flow:row}
   .es-cols>.es-dechost.empty{display:none}
   .es-cols:not(.withdec):not(.withdrawer):not(.withctx)>.es-dechost{display:none}
   /* The response map is a popover now. It keeps its place in the grid only while open. */
   .es-cols>.es-map[hidden]{display:none}
-  .es-cols.mapopen{grid-template-columns:230px minmax(0,1fr) auto}
-  .es-cols.mapopen.withdrawer{grid-template-columns:230px minmax(0,1fr) 340px}
+  /* A menu is a menu. Opening the section list used to add a 230px grid column,
+     so choosing where to go moved the writing 130px to the right first. It is now
+     a popover: out of flow, over the page, gone when it closes, and the grid never
+     hears about it. If a `.es-cols.mapopen` column rule ever comes back, that is
+     the navigation becoming furniture again. */
+  /* A menu hangs off the control that opens it. It used to be a 230px grid column,
+     so choosing where to go moved the writing 130px right first; then it was a
+     popover anchored to the workspace origin, which put it over the word count.
+     It now sits directly under its own button, out of flow, and the grid never
+     hears about it either way. */
+  .es-parahead{position:relative}
+  /* Aligned to the trigger, not merely near it. The button carries
+     margin-left:-8px, so its box starts 8px left of the row and left:0 put the
+     menu 8px right of the control it belongs to. */
+  .es-parahead > .es-map{position:absolute;top:calc(100% + 6px);left:-8px;z-index:30;width:252px;
+    background:var(--card);border:1.5px solid var(--line);border-radius:14px;
+    box-shadow:0 18px 46px rgba(28,40,40,.22);padding:8px;max-height:min(60vh,420px);overflow:auto}
+
+  /* THE NOTEBOOK. Floating, resizable, above everything including the Learning
+     Centre, and never part of any grid: opening it cannot move the writing
+     because the writing does not know it exists. Paper rather than UI cards,
+     because the student is meant to write on it, not administer it. */
+  #esnbhost{position:fixed;inset:0;z-index:300;pointer-events:none}
+  .es-nb{position:absolute;right:26px;bottom:26px;pointer-events:auto;resize:both;overflow:hidden;
+    min-width:300px;min-height:280px;max-width:92vw;max-height:88vh;
+    background:#fffdf7;border:1.5px solid var(--line);border-radius:14px;
+    box-shadow:0 26px 70px rgba(28,40,40,.32);display:flex;flex-direction:column}
+  .es-nbhead{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #eadfc6;flex:0 0 auto}
+  .es-nbtitle{font-family:var(--disp);font-weight:600;font-size:14.5px;color:#2c2a24;flex:1}
+  .es-nbact{background:none;border:none;padding:0;cursor:pointer;font:inherit;font-size:12.5px;
+    color:#6b6455;text-decoration:underline}
+  .es-nbact:hover{color:var(--green-dk)}
+  .es-nbx{background:none;border:none;cursor:pointer;color:#6b6455;padding:3px;display:grid;place-items:center;border-radius:7px}
+  .es-nbx:hover{background:var(--green-soft);color:var(--green-dk)}
+  /* Ruled paper. The lines sit under the text at the same rhythm as the line
+     height, so writing lands on them. */
+  .es-nbpaper{flex:1;min-height:0;width:100%;border:none;outline:none;resize:none;
+    font:inherit;font-size:15px;line-height:28px;color:#1d1b16;background-color:#fffdf7;
+    background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 27px,#e7dcc2 27px,#e7dcc2 28px);
+    background-attachment:local;padding:6px 16px 16px;letter-spacing:.1px}
+  .es-nbpaper::placeholder{color:#a9a08c}
+  .es-nbfoot{display:flex;align-items:center;gap:8px;padding:8px 12px;border-top:1px solid #eadfc6;flex:0 0 auto}
+  .es-nbstep{background:none;border:1px solid #e0d5bb;border-radius:7px;cursor:pointer;color:#4a4438;
+    width:26px;height:26px;display:grid;place-items:center;font-size:15px}
+  .es-nbstep:disabled{opacity:.35;cursor:default}
+  .es-nbstep:not(:disabled):hover{border-color:var(--green);color:var(--green-dk)}
+  .es-nbpagename{flex:1;min-width:0;font:inherit;font-size:13px;font-weight:700;color:#2c2a24;
+    background:none;border:1px solid transparent;border-radius:6px;padding:3px 6px}
+  .es-nbpagename:hover{border-color:#e0d5bb}
+  .es-nbpagename:focus{outline:none;border-color:var(--green);background:#fff}
+  .es-nbcount{font-size:12px;color:#6b6455;white-space:nowrap}
+  .es-nbbar{display:flex;gap:8px;padding:10px 12px 4px;align-items:center;flex-wrap:wrap}
+  .es-nbname{flex:1;min-width:140px;font:inherit;font-size:13.5px;border:1.5px solid #e0d5bb;border-radius:8px;
+    padding:6px 9px;background:#fff;color:#1d1b16}
+  .es-nbname:focus{outline:none;border-color:var(--green)}
+  .es-nbnote{font-size:12px;color:#6b6455;line-height:1.5;margin:4px 12px 8px}
+  .es-nblib{padding:8px 12px;max-height:150px;overflow:auto}
+  .es-nbrow{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #eadfc6}
+  .es-nbrown{flex:1;font-size:13.5px;color:#1d1b16;font-weight:600}
   .es-rest.quiet.empty{display:none}
   /* Long lines are hard to write into as well as to read. */
   /* The shell takes the width so no column stands empty, but the card inside it is
@@ -628,7 +707,7 @@
   /* Below the width where all three fit, the drawer OVERLAYS. The composer never
      shrinks to make room for a resource: the writing is the product. */
   @media(max-width:1320px){
-    .es-cols,.es-cols.mapopen{grid-template-columns:minmax(0,1fr)}
+    .es-cols{grid-template-columns:minmax(0,1fr)}
     .es-cols.withdrawer .es-drawer{position:fixed;right:16px;top:76px;bottom:16px;width:min(390px,86vw);z-index:130;max-height:none;box-shadow:0 20px 60px rgba(28,40,40,.28)}
   }
   .es-map{position:sticky;top:8px;display:flex;flex-direction:column;gap:3px}
@@ -705,18 +784,52 @@
      workspace and leaves both fully visible. It is a class on body and nothing is
      rebuilt, so the composer keeps its node, caret, scroll and undo history. */
   :root{--esl-w:clamp(420px,42vw,660px)}
-  body.esl-open .es-scrim{padding-right:calc(var(--esl-w) + 30px)}
-  body.esl-open.esl-left .es-scrim{padding-right:16px;padding-left:calc(var(--esl-w) + 30px)}
+  /* THE CENTRE IS THE TEMPORARY SURFACE. It used to sit beside the writing and
+     contract it, so opening reference material re-laid-out the workspace: the
+     composer moved, the grid changed columns, the third column vanished. The
+     supplementary task now goes over the primary one, which is the ordinary way
+     round. The workspace underneath is not touched at all, so there is nothing
+     to reflow, nothing to move and nothing to rebuild. */
+  #eslhost.on{pointer-events:auto;background:rgba(28,40,40,.42)}
+  .esl-panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:min(1200px,90vw);height:min(860px,90vh);max-width:none;bottom:auto;right:auto;border-radius:16px}
+  /* Learning on the left, notes on the right, and nothing else in either. */
+  .esl-body{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;min-height:0;flex:1;overflow:hidden}
+  .esl-main{overflow:auto;min-width:0;padding-right:2px}
+  .esl-notes{border-left:1px solid var(--line);padding-left:16px;display:flex;flex-direction:column;gap:9px;min-height:0}
+  /* internal navigation, not another modal */
+  .esl-back{background:none;border:none;cursor:pointer;font:inherit;font-size:13.5px;color:var(--ink-2);
+    padding:0;margin-bottom:10px;text-decoration:underline}
+  .esl-back:hover{color:var(--green)}
+  .esl-l1{font-family:var(--disp);font-size:19px;font-weight:600;color:var(--ink);margin:0 0 6px}
+  .esl-glance{background:var(--green-soft);border-radius:12px;padding:12px 14px;margin-bottom:14px}
+  .esl-keys{margin:8px 0 0;padding-left:18px}
+  .esl-keys li{font-size:14px;line-height:1.6;color:var(--ink);margin-bottom:3px}
+  .esl-layer{border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden}
+  .esl-layerh{width:100%;text-align:left;background:none;border:none;cursor:pointer;font:inherit;
+    font-size:14.5px;font-weight:700;color:var(--ink);padding:11px 14px;display:flex;justify-content:space-between;gap:10px}
+  .esl-layerh:hover{background:var(--green-soft)}
+  .esl-layerb{padding:0 14px 13px;font-size:14px;line-height:1.65;color:var(--ink)}
+  .esl-flow{display:flex;flex-direction:column;gap:2px;margin:10px 0;font-size:13.5px}
+  .esl-flownode{background:var(--green-soft);border-radius:8px;padding:7px 11px;color:var(--ink);font-weight:600;align-self:flex-start}
+  .esl-flowarrow{color:var(--ink-2);padding-left:12px}
+  .esl-tile.can{cursor:pointer;text-align:left;font:inherit;width:100%}
+  .esl-tile.can:hover{border-color:var(--green);background:var(--green-soft)}
+  .esl-tilego{display:block;margin-top:8px;font-size:12.5px;font-weight:700;color:var(--green-dk)}
+  .esl-pick{width:100%;text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:12px;
+    padding:12px 14px;cursor:pointer;font:inherit;margin-bottom:8px;display:block}
+  .esl-pick:hover{border-color:var(--green);background:var(--green-soft)}
+  .esl-pickt{font-weight:700;font-size:15px;color:var(--ink);display:block}
+  .esl-picks{font-size:13px;color:var(--ink-2);display:block;margin-top:3px;line-height:1.5}
   /* The workspace gives up its third column while the centre is open, rather than
      clipping it. The node stays in the DOM, only hidden, so esSwapSide still finds
      the side column it swaps and the tool path is unaffected. */
   /* With the map now a popover, the composer is the first grid child, so the
      contracted state is a single column. The earlier rule sized the composer as
      though it were still the navigation track. */
-  body.esl-open .es-cols,body.esl-open .es-cols.mapopen,
-  body.esl-open .es-cols.withdrawer{grid-template-columns:minmax(0,1fr)}
-  body.esl-open .es-cols > .es-map,
-  body.esl-open .es-cols > .es-rest,body.esl-open .es-cols > .es-drawer{display:none}
+  /* Deliberately empty. The workspace keeps its grid, its columns and its scroll
+     position while the centre is open. If a rule ever needs to go here again,
+     that is the signal that the overlay has started resizing the page again. */
   .esl-head{display:flex;align-items:center;gap:10px;padding:15px 18px;border-bottom:1px solid var(--line);flex:0 0 auto}
   .esl-title{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--ink);margin:0;flex:1}
   .esl-title:focus-visible{outline:2px solid var(--green);outline-offset:3px;border-radius:5px}
@@ -778,8 +891,9 @@
   /* Below the width where a contracted workspace and the panel cannot both work,
      the panel goes back to being an overlay and the workspace takes its width back. */
   @media(max-width:1180px){
-    body.esl-open .es-scrim,body.esl-open.esl-left .es-scrim{padding-right:16px;padding-left:16px}
-    .esl-panel,.esl-panel.left{left:16px;right:16px;width:auto}
+    .esl-panel,.esl-panel.left{left:12px;right:12px;top:12px;bottom:12px;width:auto;height:auto;transform:none;max-width:none}
+    .esl-body{grid-template-columns:minmax(0,1fr)}
+    .esl-notes{border-left:none;border-top:1px solid var(--line);padding-left:0;padding-top:12px}
   }
   .es-learn-lede{font-weight:600}
   /* The row list is the primary content on the first screen here, not a reference
@@ -1255,9 +1369,24 @@
   /* ===== Essay practice mode (behind essayMode / ?essaydemo). White surfaces,
      strong ink, the single green accent, sentence case, no em-dashes. ===== */
   body.es-lock{overflow:hidden}
-  .es-scrim{position:fixed;inset:0;background:rgba(28,40,40,.42);display:flex;align-items:flex-start;justify-content:center;padding:24px 16px;overflow:auto;z-index:120}
-  .es-shell{width:100%;max-width:760px}
-  .es-wrap{background:var(--card);border-radius:22px;box-shadow:0 24px 60px rgba(28,40,40,.28);padding:22px clamp(18px,3vw,30px) 28px;animation:rvpop .22s cubic-bezier(.35,.65,.25,1)}
+  /* THE ESSAY IS A PAGE. It was a modal: a dimmed application behind a rounded
+     card, which is the right shape for a task that lasts a moment and the wrong
+     one for a task that lasts an hour. Writing 800 words, moving between
+     sections, consulting material and reviewing the whole response is not a
+     temporary interruption to the flashcards, it is the work. So the surface is
+     opaque, square, full width and does not float: no scrim colour, no card
+     radius, no shadow, no entrance animation. Nothing shows through, because
+     there is nothing behind it any more. */
+  .es-scrim{position:fixed;inset:0;background:var(--bg);display:block;padding:0;overflow:auto;z-index:120}
+  .es-shell{width:100%;max-width:none}
+  .es-wrap{background:transparent;border-radius:0;box-shadow:none;padding:0 0 40px}
+  /* The header is the application's, so it stays put and reads as one: full
+     bleed, sticky, its contents centred on the same column as the page body.
+     No wrapper element, so every screen that renders .es-top gets it. */
+  .es-wrap > *{max-width:min(1420px,96vw);margin-left:auto;margin-right:auto}
+  .es-wrap > .es-top{max-width:none;position:sticky;top:0;z-index:6;background:var(--card);
+    border-bottom:1px solid var(--line);margin-bottom:20px;
+    padding:13px max(clamp(16px,3vw,28px),calc((100% - min(1420px,96vw))/2))}
   .es-shell:has(.es-wide){max-width:1040px}
   /* the composer takes the canvas: the writing has to be the dominant thing on screen */
   .es-shell:has(.es-canvas){max-width:min(1480px,94vw)}
@@ -1412,7 +1541,57 @@
   .es-skelchip{font:inherit;font-weight:700;font-size:11.5px;color:var(--ink-2);background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:3px 10px;cursor:pointer}
   .es-skelchip.on{color:var(--green-dk);border-color:var(--green);background:var(--green-soft)}
   .es-skelchip:hover{border-color:var(--green)}
+  .es-evstatus{display:inline-block;font-size:11.5px;font-weight:700;border-radius:6px;padding:2px 8px;letter-spacing:.02em}
+  .es-evstatus.ok{background:var(--green-soft);color:var(--green-dk)}
+  .es-evstatus.dated{background:var(--gold-soft);color:#7a5b16}
+  .es-evsrct{display:block;margin-top:5px;font-size:11.5px;color:var(--ink-3)}
+  .es-evsupports{font-size:12.5px;color:var(--ink-2);margin:7px 0 0}
+  .es-evtag{display:inline-block;background:var(--green-soft);color:var(--green-dk);border-radius:5px;
+    padding:1px 7px;font-size:12px;font-weight:700;margin-right:3px}
+  .es-evwhy2{margin-top:8px}
+  .es-evwhy2 > summary{cursor:pointer;font-size:12.5px;font-weight:700;color:var(--green-dk);list-style:none}
+  .es-evwhy2 > summary::-webkit-details-marker{display:none}
+  .es-evwhy2 > summary::before{content:"+ ";font-weight:800}
+  .es-evwhy2[open] > summary::before{content:"\2212 "}
+  /* Setup: two modes, then two filters, then only what matches. */
+  .es-modes{display:flex;gap:8px;margin-bottom:16px}
+  .es-mode{flex:0 0 auto;background:none;border:1.5px solid var(--line);border-radius:999px;
+    padding:7px 15px;font:inherit;font-size:13.5px;color:var(--ink-2);cursor:pointer}
+  .es-mode:hover{border-color:var(--green);color:var(--green-dk)}
+  .es-mode.on{background:var(--green-soft);border-color:var(--green);color:var(--green-dk);font-weight:700}
+  .es-step{margin-bottom:14px}
+  .es-steplbl{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);
+    font-weight:700;margin-bottom:7px}
+  .es-pills{display:flex;flex-wrap:wrap;gap:6px}
+  .es-pill{background:none;border:1px solid var(--line);border-radius:999px;padding:5px 12px;
+    font:inherit;font-size:13px;color:var(--ink-2);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+  .es-pill:hover{border-color:var(--green);color:var(--green-dk)}
+  .es-pill.on{background:var(--green-soft);border-color:var(--green);color:var(--green-dk);font-weight:700}
+  .es-pill.empty{opacity:.42;cursor:default;border-style:dashed}
+  .es-pill.empty:hover{border-color:var(--line);background:none}
+  .es-pilln{font-size:11px;color:var(--ink-3);font-weight:600}
+  .es-pill.on .es-pilln{color:var(--green-dk)}
+  .es-qrows{display:flex;flex-direction:column;gap:6px}
+  .es-qrow{text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:10px;
+    padding:10px 13px;font:inherit;font-size:14px;line-height:1.5;color:var(--ink);cursor:pointer}
+  .es-qrow:hover{border-color:var(--green);background:var(--green-soft)}
+  .es-qrow.on{border-color:var(--green);background:var(--green-soft);font-weight:600}
+  .es-chosen{border-top:1px solid var(--line);padding-top:12px;margin-top:4px}
+  .es-chosenq{font-size:15px;line-height:1.6;color:var(--ink);margin:0}
+  /* Marking guidance: a status line, with the detail one press away. */
+  .es-rubstatus{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .es-rubtick{color:var(--green-dk);font-weight:800}
+  .es-rubtext{font-size:14px;color:var(--ink)}
+  .es-rubprov{font-size:11px;letter-spacing:.04em;text-transform:uppercase;font-weight:700;
+    color:var(--ink-3);border:1px solid var(--line);border-radius:5px;padding:1px 7px}
+  .es-rubbox{margin-top:11px;border:1px solid var(--line);border-radius:10px;padding:12px}
+  .es-rubpre{white-space:pre-wrap;font:inherit;font-size:13px;line-height:1.6;color:var(--ink);
+    background:var(--bg);border-radius:8px;padding:11px;margin:0 0 12px;max-height:280px;overflow:auto}
   .es-blank{font-style:normal;font-weight:800;color:var(--green-dk);letter-spacing:1px}
+  /* A slot says what belongs in it. An anonymous blank made the student guess the
+     role as well as the content, and in the walkthrough that produced an answer
+     entered at the wrong stage. Sentence case, the one green accent. */
+  .es-shape .es-hole{background:var(--green-soft);color:var(--green-dk);font-size:12.5px;font-weight:700}
   /* polish reveal */
   .es-polish{margin-top:6px;border-top:1px solid var(--line);padding-top:10px}
   .es-polishtoggle{background:none;border:none;font-family:var(--disp);font-weight:600;font-size:12.5px;color:var(--ink-2);cursor:pointer;padding:2px 0}

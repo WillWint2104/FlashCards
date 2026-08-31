@@ -14,9 +14,9 @@ let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log("  FAIL: " + m); } };
 
 const RUNS = [
-  { prof: ZERO,   qid: "hr-01",  qre: /Evaluate the effectiveness/, bodies: 2 },
-  { prof: STRONG, qid: "hr-01",  qre: /Evaluate the effectiveness/, bodies: 2 },
-  { prof: WRONG,  qid: "hr-01",  qre: /Evaluate the effectiveness/, bodies: 3 },
+  { prof: ZERO,   qid: "hr-01",  qre: /the effectiveness of human resource/, bodies: 2 },
+  { prof: STRONG, qid: "hr-01",  qre: /the effectiveness of human resource/, bodies: 2 },
+  { prof: WRONG,  qid: "hr-01",  qre: /the effectiveness of human resource/, bodies: 3 },
   { prof: WRONG,  qid: "mkt-01", qre: /target markets affect/,      bodies: 3 },
   { prof: ZERO,    qid: "mkt-01", qre: /target markets affect/,      bodies: 3 },
   { prof: PARTIAL, qid: "mkt-01", qre: /target markets affect/,      bodies: 3 },

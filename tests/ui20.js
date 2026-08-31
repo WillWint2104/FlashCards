@@ -1,40 +1,47 @@
 // The guidance chain: a chosen argument must never be answered with scaffold
 // language written for no question in particular.
 //     pathway.guides[slot]  ->  areas[area].guides[slot]  ->  slot.job
-const { chromium, T, OUT } = require('./env');
+const { chromium, T, OUT, usePractice } = require('./env');
+
+// Waits that name their condition. This app fetches nothing and renders
+// synchronously, so the effect of a click is present on the next frame:
+// settled() is that frame, not a shorter guess at a duration.
+const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+const here = (p, sel) => p.waitForSelector(sel, { timeout: 8000 });
 const { planAll } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 const GENERIC=/strategy affecting an objective/;
 async function openWith(p, area, argRe){
-  await p.goto(T); await p.waitForTimeout(650);
+  await p.goto(T); await here(p, '.navtab');
   await p.evaluate(()=>localStorage.removeItem('marginal.essay.v1'));
-  await p.goto(T); await p.waitForTimeout(650);
+  await p.goto(T); await here(p, '.navtab');
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
-  await p.waitForTimeout(400);
-  await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);
-  await p.$$eval('.es-qchip',es=>{const t=es.find(x=>/target markets affect/i.test(x.textContent));t&&t.click();});
-  await p.click('#esstart'); await p.waitForTimeout(550);
+  await settled(p);
+  await p.selectOption('#essubject','business_studies'); await settled(p);
+  await usePractice(p); await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/target markets affect/i.test(x.textContent));t&&t.click();});
+  await p.click('#esstart');
+  await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
   await planAll(p);
   await p.$$eval('.es-plancard [data-esplanarea]',(es,a)=>{
     const card=es[0]&&es[0].closest('.es-plancard'); if(!card) return;
     const t=[...card.querySelectorAll('[data-esplanarea]')].find(x=>x.textContent.trim()===a); t&&t.click();
   }, area);
-  await p.waitForTimeout(300);
+  await settled(p);
   const got=await p.$$eval('.es-plancard [data-esplanpick]',(es,r)=>{
     const card=es[0]&&es[0].closest('.es-plancard'); if(!card) return null;
     const t=[...card.querySelectorAll('[data-esplanpick]')].find(x=>new RegExp(r,'i').test(x.textContent));
     if(t){t.click(); return t.textContent.trim();} return null;
   }, argRe.source);
-  await p.waitForTimeout(300);
-  await p.click('#esplango'); await p.waitForTimeout(400);
+  await settled(p);
+  await p.click('#esplango'); await settled(p);
   await p.$$eval('[data-esgo]',es=>{const t=es.find(x=>/Body 1/.test(x.textContent));t&&t.click();});
-  await p.waitForTimeout(400);
+  await settled(p);
   const guides=[];
   for(let i=0;i<6;i++){
     const head=await p.$eval('.es-guideh',e=>e.textContent.trim()).catch(()=>null); if(!head) break;
     guides.push({head, job: await p.$eval('.es-guidejob',e=>e.textContent.trim())});
     const ng=await p.$('#esnextguide'); if(!ng||await ng.evaluate(e=>e.disabled)) break;
-    await ng.click(); await p.waitForTimeout(200);
+    await ng.click(); await settled(p);
   }
   const id=await p.evaluate(()=>{try{const s=JSON.parse(localStorage.getItem('marginal.essay.v1'));const bag=Object.values(s)[0];const d=bag.drafts[bag.drafts.length-1];return d.paras[d.pos].argumentId;}catch(e){return null;}});
   return {picked:got, id, guides};

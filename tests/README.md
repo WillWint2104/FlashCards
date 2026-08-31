@@ -34,6 +34,49 @@ Playwright is taken from the project if installed there, and otherwise from the
 system install. Where a pre-installed Chromium exists at `/opt/pw-browsers/chromium`
 it is used; do not run `playwright install` in the hosted environment.
 
+## Three gates, and which one to trust
+
+A full run takes about 46 minutes, which is too long to be the feedback loop for
+a narrow change and exactly right as the thing that decides whether a branch is
+finished. So there are three:
+
+```
+npm run gate:fast         build + the shell contract        1.2 min measured
+npm run gate:checkpoint   shell, entry, setup, stability    not yet measured
+npm run gate:full         every suite, at a commit          46 min measured
+```
+
+`gate:full` runs `tests/snapshot.js`, which resolves a SHA, adds a detached git
+worktree at it, builds there and runs the harness inside it. The run cannot see
+your working tree, so you can keep editing while it goes. Its result is
+authoritative **for that commit and for nothing else**, and it says so.
+
+```
+node tests/snapshot.js               HEAD
+node tests/snapshot.js --sha abc123  a specific commit
+node tests/snapshot.js ui39 ui40     just these
+node tests/snapshot.js --keep        leave the worktree to inspect
+```
+
+This exists because the harness and development shared one working tree, and
+editing during a run changed the thing being tested halfway through. Three runs
+in one session were invalidated that way before the cause was addressed rather
+than worked around.
+
+**A narrow gate can only tell you about what it ran.** Changing the way the app
+is entered has broken this harness in four successive waves, each hidden behind
+the last, and every time the suites checked individually were green while the
+full run was not. If you touched setup, navigation, or anything a suite uses to
+reach the app, the fast gate is not evidence.
+
+### Where the time goes
+
+`tests/run.js` prints a per-suite breakdown at the end of every run. The cost is
+almost entirely browser suites waiting: some 632 fixed `waitForTimeout` calls,
+over 268 seconds single-pass before loops. The content suites are close to free.
+Replacing a fixed sleep with a wait for the condition it was guessing at is the
+cheapest speedup available and costs no coverage.
+
 ## Writing a suite
 
 **A journey test must prove it reached its prerequisite state before asserting

@@ -10,7 +10,13 @@
 // the capture too eagerly loses the student's words, and clearing it too late
 // duplicates them. 47 suites, the role-by-mode matrix and a six area walkthrough all
 // missed the duplication, because it only appears after ACCEPTING at the same stage.
-const { chromium, T, OUT } = require('./env');
+const { chromium, T, OUT, usePractice } = require('./env');
+
+// Waits that name their condition. This app fetches nothing and renders
+// synchronously, so the effect of a click is present on the next frame:
+// settled() is that frame, not a shorter guess at a duration.
+const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+const here = (p, sel) => p.waitForSelector(sel, { timeout: 8000 });
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  FAIL:', m); } };
 const val = p => p.$eval('#esline', e => e.value).catch(() => null);
@@ -18,18 +24,19 @@ const prose = p => p.$eval('.es-prose', e => e.textContent).catch(() => '');
 const countIn = (hay, needle) => hay.split(needle).length - 1;
 
 async function toWriting(p) {
-  await p.goto(T); await p.waitForTimeout(500);
+  await p.goto(T); await here(p, '.navtab');
   await p.evaluate(() => localStorage.removeItem('marginal.essay.v1'));
-  await p.goto(T); await p.waitForTimeout(700);
+  await p.goto(T); await here(p, '.navtab');
   await p.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
-  await p.waitForTimeout(400);
+  await settled(p);
   await p.selectOption('#essubject', 'business_studies').catch(() => {});
-  await p.$$eval('.es-qchip', es => { const t = es.find(x => /target markets affect/i.test(x.textContent)); t && t.click(); });
-  await p.click('#esstart'); await p.waitForTimeout(700);
+  await usePractice(p); await p.$$eval('.es-qrow', es => { const t = es.find(x => /target markets affect/i.test(x.textContent)); t && t.click(); });
+  await p.click('#esstart');
+  await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
   if (await p.$('.es-startrow')) await p.$$eval('.es-startrow', es => { const t = es.filter(x => /Body/.test(x.textContent))[0]; t && t.click(); });
-  await p.waitForTimeout(600);
-  await p.$$eval('[data-espath]', es => es[0] && es[0].click()); await p.waitForTimeout(500);
-  const sw = await p.$('#esstartwriting'); if (sw) { await sw.click(); await p.waitForTimeout(700); }
+  await settled(p);
+  await p.$$eval('[data-espath]', es => es[0] && es[0].click()); await settled(p);
+  const sw = await p.$('#esstartwriting'); if (sw) { await sw.click(); await settled(p); }
 }
 
 (async () => {
@@ -45,17 +52,17 @@ async function toWriting(p) {
   await p.click('#esline'); await p.keyboard.type(SENT);
   // Opening a tool captures. Closing it swaps the side back in place, which is the
   // path on which the capture is not needed and must be dropped.
-  await p.click('[data-estool="structure"]'); await p.waitForTimeout(380);
+  await p.click('[data-estool="structure"]'); await settled(p);
   ok((await val(p)) === SENT, 'the sentence survives a tool opening');
-  await p.keyboard.press('Escape'); await p.waitForTimeout(350);
+  await p.keyboard.press('Escape'); await settled(p);
   ok((await val(p)) === SENT, 'and survives it closing');
 
   // Stay at this stage, so accepting does not advance the slot. This is the exact
   // sequence the duplication needed: same paragraph, same slot, empty input.
   const same = await p.$('#essamestep');
   ok(!!same, 'the same stage control is reachable, without it this is not a same stage test');
-  if (same) { await same.click(); await p.waitForTimeout(250); }
-  await p.click('#esaccept'); await p.waitForTimeout(650);
+  if (same) { await same.click(); await settled(p); }
+  await p.click('#esaccept'); await settled(p);
   const after = await val(p);
   ok(after === '', 'accepting at the same stage leaves the input empty: ' + JSON.stringify((after || '').slice(0, 40)));
   const text = await prose(p);
@@ -68,10 +75,10 @@ async function toWriting(p) {
   const chip = await p.$('[data-esrestchange]');
   if (!chip) { ok(false, 'the argument chip is reachable'); }
   else {
-    await chip.click(); await p.waitForTimeout(450);
+    await chip.click(); await settled(p);
     ok((await val(p)) === null, 'the composer really does leave the screen on this path');
-    await p.$$eval('[data-espath]', es => es[0] && es[0].click()); await p.waitForTimeout(420);
-    const sw = await p.$('#esstartwriting'); if (sw) { await sw.click(); await p.waitForTimeout(650); }
+    await p.$$eval('[data-espath]', es => es[0] && es[0].click()); await settled(p);
+    const sw = await p.$('#esstartwriting'); if (sw) { await sw.click(); await settled(p); }
     ok((await val(p)) === PART, 'the unfinished sentence comes back: ' + JSON.stringify((await val(p) || '').slice(0, 40)));
   }
 
@@ -82,9 +89,9 @@ async function toWriting(p) {
   const chip2 = await p.$('[data-esrestchange]');
   if (!chip2) { ok(false, 'the argument chip is reachable for the second round trip'); }
   else {
-    await chip2.click(); await p.waitForTimeout(420);
-    await p.$$eval('[data-espath]', es => es[0] && es[0].click()); await p.waitForTimeout(400);
-    const sw2 = await p.$('#esstartwriting'); if (sw2) { await sw2.click(); await p.waitForTimeout(650); }
+    await chip2.click(); await settled(p);
+    await p.$$eval('[data-espath]', es => es[0] && es[0].click()); await settled(p);
+    const sw2 = await p.$('#esstartwriting'); if (sw2) { await sw2.click(); await settled(p); }
     const again = await val(p);
     ok(again === '', 'a consumed capture is not restored a second time: ' + JSON.stringify((again || '').slice(0, 40)));
   }
@@ -97,18 +104,18 @@ async function toWriting(p) {
   for (let i = 0; i < 8; i++) {
     const next = await p.$('#esnextguide:not([disabled])');
     if (!next) break;
-    await next.click(); await p.waitForTimeout(240);
+    await next.click(); await settled(p);
   }
   const atEnd = await p.$('#esnextguide:not([disabled])');
   ok(!atEnd, 'the walk reaches a stage with nothing left to advance to');
   await p.click('#esline'); await p.keyboard.type(SENT);
-  await p.click('[data-estool="structure"]'); await p.waitForTimeout(350);
-  await p.keyboard.press('Escape'); await p.waitForTimeout(320);
+  await p.click('[data-estool="structure"]'); await settled(p);
+  await p.keyboard.press('Escape'); await settled(p);
   const line = await val(p);
   // An empty composer here is one of the defects this suite exists to catch, so it
   // has to be a failure and not a reason to skip the rest of the scenario.
   ok(line === SENT, 'the sentence is still in the composer at the final stage: ' + JSON.stringify((line || '').slice(0, 40)));
-  await p.click('#esaccept'); await p.waitForTimeout(650);
+  await p.click('#esaccept'); await settled(p);
   const last = await val(p);
   ok(last === '', 'accepting at the final stage leaves the input empty: ' + JSON.stringify((last || '').slice(0, 40)));
   const t2 = await prose(p);

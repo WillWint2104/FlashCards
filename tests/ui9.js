@@ -1,5 +1,11 @@
 // the plain build on purpose: this suite tests the shipped defaults
-const { chromium, P: T, OUT } = require('./env');
+const { chromium, P: T, OUT, ownQuestion } = require('./env');
+
+// Waits that name their condition. This app fetches nothing and renders
+// synchronously, so the effect of a click is present on the next frame:
+// settled() is that frame, not a shorter guess at a duration.
+const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+const here = (p, sel) => p.waitForSelector(sel, { timeout: 8000 });
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 (async()=>{
   const b=await chromium.launch();
@@ -7,9 +13,10 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   const errs=[]; p.on('pageerror',e=>errs.push(String(e).slice(0,220)));
   let calls=0;
   await p.route(/workers\.dev/, r=>{ calls++; r.abort(); });
-  await p.goto(T+'?essaydemo=1'); await p.waitForTimeout(700);
-  await p.fill('#esq','Explain how target markets affect e-marketing, people, processes and physical evidence.');
-  await p.click('#esstart'); await p.waitForTimeout(500);
+  await p.goto(T+'?essaydemo=1'); await settled(p);
+  await ownQuestion(p, 'Explain how target markets affect e-marketing, people, processes and physical evidence.');
+  await p.click('#esstart');
+  await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
 
   console.log('--- the composer, not a textarea + instruction card ---');
   ok(!!(await p.$('#esline')),'there is ONE active sentence input');
@@ -23,7 +30,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
 
   console.log('--- write a sentence: it becomes prose, the guide moves on ---');
   await p.fill('#esline','Target markets are the specific groups a business directs its marketing towards.');
-  await p.click('#esaccept'); await p.waitForTimeout(400);
+  await p.click('#esaccept'); await settled(p);
   const prose = await p.$eval('.es-prose',e=>e.textContent.trim());
   ok(/Target markets are the specific groups/.test(prose),'the sentence is now prose: '+prose.slice(0,50));
   ok((await p.$eval('#esline',e=>e.value))==='','the input is empty and ready for the next one');
@@ -51,12 +58,12 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   console.log('--- another sentence at this stage keeps the step ---');
   const before = await p.$eval('.es-guideh',e=>e.textContent.trim());
   ok(await p.$eval('#essamestep',e=>e.hidden),'staying at a stage is not offered until there is a sentence to add');
-  await p.fill('#esline','This second sentence stays at the same stage.'); await p.waitForTimeout(200);
+  await p.fill('#esline','This second sentence stays at the same stage.'); await settled(p);
   ok(!(await p.$eval('#essamestep',e=>e.hidden)),'and it appears once there is');
-  await p.click('#essamestep'); await p.waitForTimeout(200);
+  await p.click('#essamestep'); await settled(p);
   ok((await p.$eval('#esline',e=>e.value)).length>0,'arming it does not throw away what they typed');
   ok((await p.$eval('.es-guideh',e=>e.textContent.trim()))===before,'the step held');
-  await p.click('#esaccept'); await p.waitForTimeout(400);
+  await p.click('#esaccept'); await settled(p);
   ok((await p.$eval('.es-guideh',e=>e.textContent.trim()))===before,'and it is still the same stage after adding');
   ok((await p.$$('.es-said')).length===2,'two sentences of prose now');
 
@@ -71,18 +78,18 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   ok(calls===0,'ZERO model calls while writing: '+calls);
 
   console.log('--- reopen an accepted sentence ---');
-  await p.click('.es-said'); await p.waitForTimeout(300);
+  await p.click('.es-said'); await settled(p);
   ok(!!(await p.$('[data-esedit="0"]')),'clicking prose reopens that sentence');
   await p.fill('[data-esedit="0"]','Target markets are the groups a business aims its marketing at.');
-  await p.click('[data-essaveedit="0"]'); await p.waitForTimeout(400);
+  await p.click('[data-essaveedit="0"]'); await settled(p);
   ok(/aims its marketing at/.test(await p.$eval('.es-prose',e=>e.textContent)),'the edit stuck');
   ok((await p.$$('.es-said')).length===2,'and the other sentence survived');
 
   console.log('--- the single draft is intact: full attempt sees the same text ---');
-  await p.click('#esmodeswitch'); await p.waitForTimeout(450);
+  await p.click('#esmodeswitch'); await settled(p);
   const full = await p.$eval('#esfull',e=>e.value);
   ok(/aims its marketing at/.test(full) && /stays at the same stage/.test(full),'both sentences round-tripped into the one draft');
-  await p.click('#esmodeswitch'); await p.waitForTimeout(450);
+  await p.click('#esmodeswitch'); await settled(p);
   ok((await p.$$('.es-said')).length===2,'and back again with the blocks intact');
 
   await p.screenshot({path:OUT+'shot-composer.png'});
