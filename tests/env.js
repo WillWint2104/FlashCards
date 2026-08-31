@@ -103,7 +103,20 @@ async function ownQuestion(page, q) {
   return true;
 }
 
-module.exports = { ownQuestion, closeMap,
+
+// Setup opens on the student's own question, because that is the normal case.
+// The practice bank is the other route, so a suite that picks a premade question
+// has to ask for it first, exactly as a student without a question of their own
+// does. Safe to call when already there.
+async function usePractice(page) {
+  await page.evaluate(() => {
+    const b = [...document.querySelectorAll('[data-esmode]')].find(x => x.dataset.esmode === 'practice');
+    if (b && !b.classList.contains('on')) b.click();
+  });
+  await page.waitForTimeout(300);
+}
+
+module.exports = { usePractice, ownQuestion, closeMap,
   nextSection, prevSection, planAll, openMap,
   chromium, ROOT, OUT, BASE: OUT,
   WALK, T: url(WALK),

@@ -7,7 +7,7 @@
 // lesson is assembled from concepts authored once, in the same schema, and
 // declaring a concept is what makes it eligible: nothing is shown because it
 // merely exists.
-const { chromium, T, OUT } = require('./env');
+const { chromium, T, OUT, usePractice } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 const { execFileSync } = require('child_process');
 async function open(p){
@@ -17,7 +17,7 @@ async function open(p){
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await p.waitForTimeout(400);
   await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);
-  await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/target markets affect/i.test(x.textContent));t&&t.click();});
+  await usePractice(p); await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/target markets affect/i.test(x.textContent));t&&t.click();});
   await p.click('#esstart'); await p.waitForTimeout(700);
 }
 const text=(p,sel)=>p.$eval(sel,e=>e.innerText.replace(/\s+/g,' ').trim()).catch(()=>'');

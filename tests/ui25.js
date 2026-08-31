@@ -1,4 +1,4 @@
-const { openMap } = require('./env');
+const { openMap, usePractice } = require('./env');
 // The consolidation pass on progressive construction. Four things this proves:
 // the working answer describes CHOICES and never claims the prose establishes
 // them; a judgement is an orientation a student may defer; required coverage
@@ -13,7 +13,7 @@ async function open(p, re){
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await p.waitForTimeout(400);
   await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);
-  await p.$$eval('.es-qrow',(es,r)=>{const t=es.find(x=>new RegExp(r,'i').test(x.textContent));t&&t.click();}, re.source);
+  await usePractice(p); await p.$$eval('.es-qrow',(es,r)=>{const t=es.find(x=>new RegExp(r,'i').test(x.textContent));t&&t.click();}, re.source);
   await p.click('#esstart'); await p.waitForTimeout(650);
 }
 const text = (p,sel) => p.$eval(sel,e=>e.innerText.replace(/\s+/g,' ').trim()).catch(()=>'');

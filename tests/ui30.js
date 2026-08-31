@@ -7,7 +7,7 @@
 // the student to USE the idea; a wrong answer gets a targeted repair and a retry,
 // not the lesson again; every route lands back in the paragraph; and a student who
 // knows this already never meets any of it.
-const { chromium, T, OUT } = require('./env');
+const { chromium, T, OUT, usePractice } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 async function open(p){
   await p.goto(T); await p.waitForTimeout(650);
@@ -16,7 +16,7 @@ async function open(p){
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await p.waitForTimeout(400);
   await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);
-  await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/target markets affect/i.test(x.textContent));t&&t.click();});
+  await usePractice(p); await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/target markets affect/i.test(x.textContent));t&&t.click();});
   await p.click('#esstart'); await p.waitForTimeout(700);
 }
 const text=(p,sel)=>p.$eval(sel,e=>e.innerText.replace(/\s+/g,' ').trim()).catch(()=>'');

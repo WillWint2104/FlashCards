@@ -1,6 +1,6 @@
 // The verification gate: evidence without a recorded source is never offered to a
 // student, and everything else about the paragraph keeps working without it.
-const { chromium, T, OUT, BASE, fileUrl } = require('./env');
+const { chromium, T, OUT, BASE, fileUrl, usePractice } = require('./env');
 const { planAll } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 async function run(sourced){
@@ -13,7 +13,7 @@ async function run(sourced){
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await p.waitForTimeout(400);
   await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);
-  await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/target markets/i.test(x.textContent));t&&t.click();});
+  await usePractice(p); await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/target markets/i.test(x.textContent));t&&t.click();});
   await p.waitForTimeout(200);
   await p.click('#esstart'); await p.waitForTimeout(500);
   await planAll(p);

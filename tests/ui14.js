@@ -1,4 +1,4 @@
-const { chromium, T, OUT, BASE, fileUrl } = require('./env');
+const { chromium, T, OUT, BASE, fileUrl, usePractice } = require('./env');
 const { nextSection, prevSection } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 const rungs = p => p.$$eval('.es-rung',es=>es.map(e=>({n:e.querySelector('.es-rungn').textContent.trim(),
@@ -16,7 +16,7 @@ const rungs = p => p.$$eval('.es-rung',es=>es.map(e=>({n:e.querySelector('.es-ru
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await p.waitForTimeout(450);
   await p.selectOption('#essubject','business_studies').catch(()=>{}); await p.waitForTimeout(250);
-  await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/target markets/i.test(x.textContent));t&&t.click();}); await p.waitForTimeout(250);
+  await usePractice(p); await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/target markets/i.test(x.textContent));t&&t.click();}); await p.waitForTimeout(250);
   await p.click('#esstart'); await p.waitForTimeout(400);
   // this suite tests the per-paragraph route, which the start surface offers
   await p.click('#esstartintro'); await p.waitForTimeout(400);

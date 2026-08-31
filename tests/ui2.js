@@ -1,5 +1,5 @@
 // the plain build on purpose: this suite tests the shipped defaults
-const { chromium, P: T, OUT } = require('./env');
+const { chromium, P: T, OUT, usePractice } = require('./env');
 const { nextSection, prevSection } = require('./env');
 let pass=0, fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 
@@ -32,6 +32,7 @@ const REVIEW = {
   await p.waitForTimeout(600);
 
   // ---- pick an AUTHORED question: its definition must travel with the response
+  await usePractice(p);
   const chip = await p.$('.es-qrow');
   ok(!!chip,'authored question chips are offered');
   const chips = await p.$$('.es-qrow');

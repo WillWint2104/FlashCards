@@ -18,7 +18,7 @@
 //
 // Driven from a fixture the test owns, so the real bank can be sourced, resourced
 // or rewritten without touching it.
-const { chromium, P } = require('./env');
+const { chromium, P, usePractice } = require('./env');
 const { EVIDENCE_FIXTURE } = require('./fixtures/evidence-publication.js');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 
@@ -41,7 +41,7 @@ async function openFixture(p){
   await p.waitForTimeout(400);
   await p.selectOption('#essubject','evidence_contract');
   await p.waitForTimeout(300);
-  await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/fixture marketing question/i.test(x.textContent));t&&t.click();});
+  await usePractice(p); await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/fixture marketing question/i.test(x.textContent));t&&t.click();});
   await p.waitForTimeout(200);
   await p.click('#esstart'); await p.waitForTimeout(700);
   if (await p.$('.es-startrow')) await p.$$eval('.es-startrow',es=>{const t=es.filter(x=>/Body/.test(x.textContent))[0];t&&t.click();});

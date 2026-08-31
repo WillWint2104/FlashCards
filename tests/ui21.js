@@ -1,6 +1,6 @@
 // The planning surface: one page, four states. Understand the answer, inspect
 // and choose four relationships, then write a thesis that signposts them.
-const { chromium, T, OUT } = require('./env');
+const { chromium, T, OUT, usePractice } = require('./env');
 const { planAll } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 (async()=>{
@@ -12,7 +12,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await p.waitForTimeout(400);
   await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);
-  await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/target markets affect/i.test(x.textContent));t&&t.click();});
+  await usePractice(p); await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/target markets affect/i.test(x.textContent));t&&t.click();});
   await p.click('#esstart'); await p.waitForTimeout(600);
   await planAll(p);
 
@@ -50,7 +50,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   await fresh.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await fresh.waitForTimeout(400);
   await fresh.selectOption('#essubject','business_studies'); await fresh.waitForTimeout(200);
-  await fresh.$$eval('.es-qrow',es=>{const t=es.find(x=>/target markets affect/i.test(x.textContent));t&&t.click();});
+  await usePractice(fresh); await fresh.$$eval('.es-qrow',es=>{const t=es.find(x=>/target markets affect/i.test(x.textContent));t&&t.click();});
   await fresh.click('#esstart'); await fresh.waitForTimeout(500);
   await planAll(fresh);
   await fresh.$$eval('[data-esplanpick]',es=>es[0]&&es[0].click()); await fresh.waitForTimeout(300);

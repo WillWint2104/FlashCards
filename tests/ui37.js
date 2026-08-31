@@ -10,7 +10,7 @@
 // the capture too eagerly loses the student's words, and clearing it too late
 // duplicates them. 47 suites, the role-by-mode matrix and a six area walkthrough all
 // missed the duplication, because it only appears after ACCEPTING at the same stage.
-const { chromium, T, OUT } = require('./env');
+const { chromium, T, OUT, usePractice } = require('./env');
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  FAIL:', m); } };
 const val = p => p.$eval('#esline', e => e.value).catch(() => null);
@@ -24,7 +24,7 @@ async function toWriting(p) {
   await p.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await p.waitForTimeout(400);
   await p.selectOption('#essubject', 'business_studies').catch(() => {});
-  await p.$$eval('.es-qrow', es => { const t = es.find(x => /target markets affect/i.test(x.textContent)); t && t.click(); });
+  await usePractice(p); await p.$$eval('.es-qrow', es => { const t = es.find(x => /target markets affect/i.test(x.textContent)); t && t.click(); });
   await p.click('#esstart'); await p.waitForTimeout(700);
   if (await p.$('.es-startrow')) await p.$$eval('.es-startrow', es => { const t = es.filter(x => /Body/.test(x.textContent))[0]; t && t.click(); });
   await p.waitForTimeout(600);

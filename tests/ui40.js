@@ -8,7 +8,7 @@
 // The invariant: content availability changes what appears INSIDE the page. It
 // never changes which page. A question with no authored pathways is a page with a
 // simpler inside, never a different shell.
-const { chromium, T } = require('./env');
+const { chromium, T, usePractice } = require('./env');
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  FAIL:', m); } };
 
@@ -70,6 +70,7 @@ async function toPicker(p, subject) {
     if (!ready) { ok(false, q.id + ': the essay picker is reachable'); continue; }
     // Rows drop the directive they were filtered by, so their text is not the
     // question text. The id is on the element and is exact.
+    await usePractice(p);
     const picked = await p.evaluate(id => {
       const c = [...document.querySelectorAll('.es-qrow')].find(x => x.dataset.esq === id);
       if (c) { c.click(); return true; } return false;
@@ -108,6 +109,7 @@ async function toPicker(p, subject) {
   // The topic field the student used to type into is gone, so the question has to
   // supply it. This is the contract that replaced it.
   await toPicker(p, 'business_studies');
+  await usePractice(p);
   await p.evaluate(() => { const row = document.querySelector('.es-qrow'); row && row.click(); });
   await p.waitForTimeout(350);
   const carried = await p.evaluate(() => {
@@ -123,6 +125,7 @@ async function toPicker(p, subject) {
 
   console.log('--- Ancient History is legacy and stays out of the Business Studies picker ---');
   await toPicker(p, 'business_studies');
+  await usePractice(p);
   const offered = await p.evaluate(() => [...document.querySelectorAll('.es-qrow')].map(x => x.dataset.esq + ' ' + x.textContent.replace(/\s+/g, ' ').trim()));
   ok(offered.length === bank.length, 'the picker offers exactly the Business Studies bank: ' + offered.length + ' against ' + bank.length);
   const leaked = offered.filter(t => /egypt|old kingdom|pharaoh|akhenaten|hatshepsut|rome|pompeii|spartan/i.test(t));

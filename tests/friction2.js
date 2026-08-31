@@ -1,5 +1,5 @@
 // Probe pass: the questions the click counts cannot answer. Changes nothing.
-const { chromium, T, OUT, BASE, fileUrl } = require('./env');
+const { chromium, T, OUT, BASE, fileUrl, usePractice } = require('./env');
 (async () => {
   const b = await chromium.launch();
   const p = await (await b.newContext({ viewport: { width: 1500, height: 1000 } })).newPage();
@@ -9,7 +9,7 @@ const { chromium, T, OUT, BASE, fileUrl } = require('./env');
   await p.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await p.waitForTimeout(400);
   await p.selectOption('#essubject', 'business_studies'); await p.waitForTimeout(200);
-  await p.$$eval('.es-qrow', es => { const t = es.find(x => /target markets/i.test(x.textContent)); t && t.click(); });
+  await usePractice(p); await p.$$eval('.es-qrow', es => { const t = es.find(x => /target markets/i.test(x.textContent)); t && t.click(); });
   await p.selectOption('#esstruct', 'six'); await p.waitForTimeout(150);
   await p.click('#esstart'); await p.waitForTimeout(400);
 

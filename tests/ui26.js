@@ -1,4 +1,4 @@
-const { openMap } = require('./env');
+const { openMap, usePractice } = require('./env');
 // Coverage recovery, at its edges. The review may name a required part the
 // response has not addressed and offer a way back to it. The thing that must
 // never happen is the coverage checker quietly taking over work the student has
@@ -12,7 +12,7 @@ async function open(p, re, structure){
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await p.waitForTimeout(400);
   await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);
-  await p.$$eval('.es-qrow',(es,r)=>{const t=es.find(x=>new RegExp(r,'i').test(x.textContent));t&&t.click();}, re.source);
+  await usePractice(p); await p.$$eval('.es-qrow',(es,r)=>{const t=es.find(x=>new RegExp(r,'i').test(x.textContent));t&&t.click();}, re.source);
   if (structure) { await p.selectOption('#esstruct', structure); await p.waitForTimeout(150); }
   await p.click('#esstart'); await p.waitForTimeout(700);
 }

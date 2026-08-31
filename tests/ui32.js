@@ -17,7 +17,7 @@
 //
 // ui31 keeps the same contract as an end-to-end journey through real content.
 // Three tests, three different ways to be wrong.
-const { chromium, P } = require('./env');
+const { chromium, P, usePractice } = require('./env');
 const { WITHHOLDING_FIXTURE } = require('./fixtures/withholding.js');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 
@@ -31,7 +31,7 @@ async function openFixture(p){
   await p.waitForTimeout(400);
   await p.selectOption('#essubject','contract_test');
   await p.waitForTimeout(300);
-  await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/fixture question/i.test(x.textContent));t&&t.click();});
+  await usePractice(p); await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/fixture question/i.test(x.textContent));t&&t.click();});
   await p.waitForTimeout(200);
   await p.click('#esstart'); await p.waitForTimeout(700);
   if (await p.$('.es-startrow')) await p.$$eval('.es-startrow',es=>{const t=es.filter(x=>/Body/.test(x.textContent))[0];t&&t.click();});

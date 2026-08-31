@@ -11,7 +11,7 @@
 // So this suite asserts the negative as hard as the positive. An authored
 // mechanism appears, exactly as written. Anything else appears not at all, and
 // the chain falls back to the two-step pairing rather than to nothing.
-const { chromium, T } = require('./env');
+const { chromium, T, usePractice } = require('./env');
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  FAIL:', m); } };
 
@@ -33,7 +33,7 @@ async function openQuestion(p, qre, bodyIndex) {
   await p.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await p.waitForTimeout(400);
   await p.selectOption('#essubject', 'business_studies').catch(() => {});
-  await p.$$eval('.es-qrow', (es, r) => { const t = es.find(x => new RegExp(r, 'i').test(x.textContent)); t && t.click(); }, qre);
+  await usePractice(p); await p.$$eval('.es-qrow', (es, r) => { const t = es.find(x => new RegExp(r, 'i').test(x.textContent)); t && t.click(); }, qre);
   await p.click('#esstart'); await p.waitForTimeout(700);
   if (await p.$('.es-startrow')) await p.$$eval('.es-startrow', (es, n) => {
     const t = es.filter(x => /Body/.test(x.textContent))[n || 0]; t && t.click();

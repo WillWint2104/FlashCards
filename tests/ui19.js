@@ -1,5 +1,5 @@
 // Question Decode: the stem is readable, pressable, and derives what it can.
-const { chromium, T, OUT, ownQuestion } = require('./env');
+const { chromium, T, OUT, ownQuestion, usePractice } = require('./env');
 const { planAll } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 (async()=>{
@@ -13,7 +13,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await p.waitForTimeout(400);
   await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);
-  await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/target markets affect/i.test(x.textContent));t&&t.click();});
+  await usePractice(p); await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/target markets affect/i.test(x.textContent));t&&t.click();});
   await p.click('#esstart'); await p.waitForTimeout(600);
   await planAll(p);
 

@@ -5,7 +5,7 @@
 // it named; and the grid stayed one column because only one class was toggled. Each
 // was found by a single suite that happened to use the right question, so this walks
 // the combinations instead: role x mode x which support surface is open.
-const { chromium, T, OUT } = require('./env');
+const { chromium, T, OUT, usePractice } = require('./env');
 const { openMap } = require('./env');
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  FAIL:', m); } };
@@ -23,7 +23,7 @@ async function open(p, re) {
   await p.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await p.waitForTimeout(400);
   await p.selectOption('#essubject', 'business_studies').catch(() => {});
-  await p.$$eval('.es-qrow', (es, r) => { const t = es.find(x => new RegExp(r, 'i').test(x.textContent)); t && t.click(); }, re.source);
+  await usePractice(p); await p.$$eval('.es-qrow', (es, r) => { const t = es.find(x => new RegExp(r, 'i').test(x.textContent)); t && t.click(); }, re.source);
   await p.click('#esstart'); await p.waitForTimeout(700);
   await p.click('#esposdefer').catch(() => {});
   await p.waitForTimeout(300);

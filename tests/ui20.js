@@ -1,7 +1,7 @@
 // The guidance chain: a chosen argument must never be answered with scaffold
 // language written for no question in particular.
 //     pathway.guides[slot]  ->  areas[area].guides[slot]  ->  slot.job
-const { chromium, T, OUT } = require('./env');
+const { chromium, T, OUT, usePractice } = require('./env');
 const { planAll } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 const GENERIC=/strategy affecting an objective/;
@@ -12,7 +12,7 @@ async function openWith(p, area, argRe){
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await p.waitForTimeout(400);
   await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);
-  await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/target markets affect/i.test(x.textContent));t&&t.click();});
+  await usePractice(p); await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/target markets affect/i.test(x.textContent));t&&t.click();});
   await p.click('#esstart'); await p.waitForTimeout(550);
   await planAll(p);
   await p.$$eval('.es-plancard [data-esplanarea]',(es,a)=>{
