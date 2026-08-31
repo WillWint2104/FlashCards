@@ -30,8 +30,35 @@ function isExecutableFile(f) {
 }
 const EXECUTABLE = isExecutableFile(HOSTED_CHROME) ? HOSTED_CHROME : undefined;
 
+// Every page gets external requests blocked before it loads anything.
+//
+// The app under test is one self-contained file. It also asks for web fonts and
+// a CDN, which no suite asserts anything about, and which in a sandbox do not
+// fail fast: they hang until the proxy gives up. goto() waits for the load event,
+// so every page load cost 12.7 SECONDS of waiting for resources that were never
+// going to arrive. Blocked, the same load takes 0.14s and the app renders
+// identically.
+//
+// Done here rather than in 39 suites, because every one of them takes its
+// chromium from this module.
+async function armPage(page) {
+  await page.route(/^https?:\/\//, r => r.abort());
+  return page;
+}
+function wrapContext(ctx) {
+  const orig = ctx.newPage.bind(ctx);
+  ctx.newPage = async function () { return armPage(await orig()); };
+  return ctx;
+}
+function wrapBrowser(b) {
+  const origCtx = b.newContext.bind(b);
+  b.newContext = async function (o) { return wrapContext(await origCtx(o)); };
+  const origPage = b.newPage.bind(b);
+  b.newPage = async function (o) { return armPage(await origPage(o)); };
+  return b;
+}
 const chromium = {
-  launch: (opts) => pw.chromium.launch(Object.assign({}, EXECUTABLE ? { executablePath: EXECUTABLE } : {}, opts || {})),
+  launch: async (opts) => wrapBrowser(await pw.chromium.launch(Object.assign({}, EXECUTABLE ? { executablePath: EXECUTABLE } : {}, opts || {}))),
 };
 
 const url = f => "file://" + f.split(path.sep).join("/");
