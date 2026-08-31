@@ -1,5 +1,5 @@
 // the plain build on purpose: this suite tests the shipped defaults
-const { chromium, P: T, OUT } = require('./env');
+const { chromium, P: T, OUT, ownQuestion } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 (async()=>{
   const b=await chromium.launch();
@@ -22,7 +22,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
       overall:{summary:'x'},criteria:[],next_steps:[],missing_vocabulary:[]})});
   });
   await p.goto(T+'?essaydemo=1&essaymark=1'); await p.waitForTimeout(700);
-  await p.fill('#esq','Explain how target markets affect e-marketing.');
+  await ownQuestion(p, 'Explain how target markets affect e-marketing.');
   await p.click('#esstart'); await p.waitForTimeout(450);
 
   console.log('--- blocks are durable and carry identity ---');

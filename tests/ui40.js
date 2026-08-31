@@ -68,10 +68,12 @@ async function toPicker(p, subject) {
   for (const q of bank) {
     const ready = await toPicker(p, 'business_studies');
     if (!ready) { ok(false, q.id + ': the essay picker is reachable'); continue; }
-    const picked = await p.evaluate(t => {
-      const c = [...document.querySelectorAll('.es-qchip')].find(x => x.textContent.indexOf(t) >= 0);
+    // Rows drop the directive they were filtered by, so their text is not the
+    // question text. The id is on the element and is exact.
+    const picked = await p.evaluate(id => {
+      const c = [...document.querySelectorAll('.es-qrow')].find(x => x.dataset.esq === id);
       if (c) { c.click(); return true; } return false;
-    }, q.text);
+    }, q.id);
     ok(picked, q.id + ': is offered in the picker');
     if (!picked) continue;
     const started = await p.evaluate(() => { const s = document.querySelector('#esstart'); if (s) { s.click(); return true; } return false; });
@@ -102,9 +104,26 @@ async function toPicker(p, subject) {
   // same shell. Stated here so the contract is legible rather than implied.
   ok(opened === bank.length, 'both kinds reached the same page shell');
 
+  console.log('--- a chosen practice question carries its own topic ---');
+  // The topic field the student used to type into is gone, so the question has to
+  // supply it. This is the contract that replaced it.
+  await toPicker(p, 'business_studies');
+  await p.evaluate(() => { const row = document.querySelector('.es-qrow'); row && row.click(); });
+  await p.waitForTimeout(350);
+  const carried = await p.evaluate(() => {
+    const on = document.querySelector('.es-qrow.on'), c = document.querySelector('.es-chosenq');
+    return { id: on ? on.dataset.esq : null, stated: c ? c.textContent.trim().length : 0,
+      typedField: !!document.querySelector('#estopic') };
+  });
+  ok(!!carried.id, 'choosing a row marks it as chosen: ' + JSON.stringify(carried.id));
+  ok(carried.stated > 20, 'and states the whole question back once: ' + carried.stated + ' chars');
+  // ES lives inside the IIFE and cannot be read from a test, so the topic actually
+  // reaching marking is asserted in ui2, where the payload is captured.
+  ok(!carried.typedField, 'and nobody is asked to type a topic any more');
+
   console.log('--- Ancient History is legacy and stays out of the Business Studies picker ---');
   await toPicker(p, 'business_studies');
-  const offered = await p.evaluate(() => [...document.querySelectorAll('.es-qchip')].map(x => x.textContent.replace(/\s+/g, ' ').trim()));
+  const offered = await p.evaluate(() => [...document.querySelectorAll('.es-qrow')].map(x => x.dataset.esq + ' ' + x.textContent.replace(/\s+/g, ' ').trim()));
   ok(offered.length === bank.length, 'the picker offers exactly the Business Studies bank: ' + offered.length + ' against ' + bank.length);
   const leaked = offered.filter(t => /egypt|old kingdom|pharaoh|akhenaten|hatshepsut|rome|pompeii|spartan/i.test(t));
   ok(leaked.length === 0, 'no Ancient History question appears among them: ' + JSON.stringify(leaked.slice(0, 2)));

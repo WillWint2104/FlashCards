@@ -10,7 +10,7 @@
 // viewport, the footer is visible without scrolling the page, and the last control
 // in the body can be scrolled to and pressed. Checking that a CSS property exists
 // would have passed against the broken build.
-const { chromium, T } = require('./env');
+const { chromium, T, ownQuestion } = require('./env');
 const { nextSection } = require('./env');
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  FAIL:', m); } };
@@ -30,7 +30,7 @@ async function openTool(p, c, tool) {
   await p.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await p.waitForTimeout(350);
   await p.selectOption('#essubject', 'business_studies').catch(() => {});
-  await p.fill('#esq', c.q); await p.fill('#estopic', c.topic);
+  await ownQuestion(p, c.q);
   await p.click('#esstart'); await p.waitForTimeout(550);
   await nextSection(p);
   { const t = await p.$('#espointtoggle'); if (t && !(await p.$('#espoint'))) { await t.click(); await p.waitForTimeout(250); } }

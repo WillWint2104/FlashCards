@@ -1,5 +1,5 @@
 // the plain build on purpose: this suite tests the shipped defaults
-const { chromium, P: T, OUT } = require('./env');
+const { chromium, P: T, OUT, ownQuestion } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 (async()=>{
   const b=await chromium.launch();
@@ -8,7 +8,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   let calls=0;
   await p.route(/workers\.dev/, r=>{ calls++; r.abort(); });
   await p.goto(T+'?essaydemo=1'); await p.waitForTimeout(700);
-  await p.fill('#esq','Explain how target markets affect e-marketing, people, processes and physical evidence.');
+  await ownQuestion(p, 'Explain how target markets affect e-marketing, people, processes and physical evidence.');
   await p.click('#esstart'); await p.waitForTimeout(500);
 
   console.log('--- the composer, not a textarea + instruction card ---');

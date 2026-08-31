@@ -1,4 +1,4 @@
-const { chromium, T, OUT, BASE, fileUrl } = require('./env');
+const { chromium, T, OUT, BASE, fileUrl, ownQuestion } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 (async()=>{
   const b=await chromium.launch();
@@ -35,7 +35,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   ok(!!(await p.$('#esq')),'essay setup opens from the tab');
   const subj = await p.$$eval('#essubject option',es=>es.map(e=>e.textContent.trim())).catch(()=>[]);
   console.log('    subjects offered:', subj.join(' | ')||'(single subject)');
-  await p.fill('#esq','Explain how target markets affect e-marketing, people, processes and physical evidence.');
+  await ownQuestion(p, 'Explain how target markets affect e-marketing, people, processes and physical evidence.');
   await p.click('#esstart'); await p.waitForTimeout(500);
   ok(!!(await p.$('#esline')) && !!(await p.$('.es-guide')),'the composer opens with a guide on the active line');
   const job = await p.$eval('.es-guidejob',e=>e.textContent.trim());

@@ -86,7 +86,24 @@ async function planAll(page) {
   if (b) { await b.click(); await page.waitForTimeout(400); }
 }
 
-module.exports = { closeMap,
+
+// Setup now asks whether you are choosing a practice question or bringing your
+// own, and the question box only exists in the second mode. A suite that types
+// its own question has to say so first, which is also what a student does.
+async function ownQuestion(page, q) {
+  await page.evaluate(() => {
+    const b = [...document.querySelectorAll('[data-esmode]')].find(x => x.dataset.esmode === 'own');
+    if (b) b.click();
+  });
+  await page.waitForTimeout(260);
+  const box = await page.$('#esq');
+  if (!box) return false;
+  await page.fill('#esq', q);
+  await page.waitForTimeout(180);
+  return true;
+}
+
+module.exports = { ownQuestion, closeMap,
   nextSection, prevSection, planAll, openMap,
   chromium, ROOT, OUT, BASE: OUT,
   WALK, T: url(WALK),

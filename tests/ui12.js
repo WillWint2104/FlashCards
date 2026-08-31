@@ -1,4 +1,4 @@
-const { chromium, T, OUT, BASE, fileUrl } = require('./env');
+const { chromium, T, OUT, BASE, fileUrl, ownQuestion } = require('./env');
 const { nextSection, prevSection } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 (async()=>{
@@ -20,8 +20,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   // The BROADER practice stem on purpose. It is a separate question with no
   // authored pathways, so this suite exercises the fallback resolution the
   // toolbelt has to do when nothing is authored for the question.
-  await p.fill('#esq','Explain how target markets influence the development of marketing strategies.');
-  await p.fill('#estopic','Marketing');
+  await ownQuestion(p, 'Explain how target markets influence the development of marketing strategies.');
   await p.click('#esstart'); await p.waitForTimeout(500);
   // move to a body paragraph and give it a point so context can resolve
   await nextSection(p);
@@ -55,7 +54,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
     await p2.waitForTimeout(400);
     await p2.selectOption('#essubject','ancient_history').catch(()=>{});
     await p2.waitForTimeout(250);
-    await p2.fill('#esq','Explain how religious beliefs shaped everyday life in one ancient society you have studied.');
+    await ownQuestion(p2, 'Explain how religious beliefs shaped everyday life in one ancient society you have studied.');
     await p2.click('#esstart'); await p2.waitForTimeout(400);
     const t2 = await p2.$$eval('.es-belt-b',es=>es.map(e=>({t:e.textContent.trim(),off:e.disabled})));
     console.log('    ancient history tools:', t2.map(x=>x.t+(x.off?' (off)':'')).join(' | '));

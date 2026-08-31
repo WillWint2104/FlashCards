@@ -1,5 +1,5 @@
 // the plain build on purpose: this suite tests the shipped defaults
-const { chromium, P: T, OUT } = require('./env');
+const { chromium, P: T, OUT, ownQuestion } = require('./env');
 let pass=0, fail=0;
 const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 
@@ -51,13 +51,14 @@ const REVIEW = (marks) => ({
 
   await p.goto(T + '?essaydemo=1&essaymark=1');
   await p.waitForTimeout(600);
-  ok(!!(await p.$('#esq')),'essay setup opens');
+  // Setup opens on the practice picker now, not on a question box: the box only
+  // exists once the student says they are bringing their own question.
+  ok(!!(await p.$('[data-esmode]')),'essay setup opens');
 
   // ---- marks field exists and defaults sensibly
   ok(await p.$eval('#esmarks',e=>e.value)==='20','marks field defaults to 20');
   await p.fill('#esmarks','16');
-  await p.fill('#esq','Explain how target markets affect e-marketing, people, processes and physical evidence.');
-  await p.fill('#estopic','Marketing');
+  await ownQuestion(p, 'Explain how target markets affect e-marketing, people, processes and physical evidence.');
   await p.click('#esstart'); await p.waitForTimeout(400);
   ok(!!(await p.$('#esline')),'the composer opens');
 
@@ -78,7 +79,10 @@ const REVIEW = (marks) => ({
   ok(sent && Array.isArray(sent.criteria) && sent.criteria.length===4,'criteria sent: '+JSON.stringify(sent&&sent.criteria));
   ok(sent && Array.isArray(sent.bands) && sent.bands.length>0,'band expectations sent: '+((sent&&sent.bands)||[]).length);
   ok(sent && sent.plan && sent.plan.paragraphs.length>=3,'the plan is sent as context: '+JSON.stringify(sent&&sent.plan&&sent.plan.paragraphs[0]));
-  ok(sent && sent.topic==='Marketing','topic sent');
+  // This attempt uses a question the student typed, which carries no topic: the
+  // field that used to ask for one has gone. ui40 holds the replacement contract,
+  // that a chosen PRACTICE question supplies its own.
+  ok(sent && !sent.topic,'a typed question carries no invented topic: '+JSON.stringify(sent&&sent.topic));
   ok(sent && sent.answer.indexOf('mobile ordering')>0,'the exact response is sent');
 
   // ---- the marked result surfaces ONE next action

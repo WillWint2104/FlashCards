@@ -1,5 +1,5 @@
 // Question Decode: the stem is readable, pressable, and derives what it can.
-const { chromium, T, OUT } = require('./env');
+const { chromium, T, OUT, ownQuestion } = require('./env');
 const { planAll } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 (async()=>{
@@ -89,7 +89,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await p.waitForTimeout(400);
   await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);
-  await p.fill('#esq','Explain how target markets influence the development of marketing strategies.');
+  await ownQuestion(p, 'Explain how target markets influence the development of marketing strategies.');
   await p.click('#esstart'); await p.waitForTimeout(500);
   await planAll(p);
   ok((await p.$$('.es-dec')).length===0,'no invented highlights on a question with no decode');

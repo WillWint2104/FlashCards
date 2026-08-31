@@ -1,5 +1,5 @@
 // the plain build on purpose: this suite tests the shipped defaults
-const { chromium, P: T, OUT } = require('./env');
+const { chromium, P: T, OUT, ownQuestion } = require('./env');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 (async()=>{
   const b=await chromium.launch();
@@ -26,7 +26,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   await p.route(/workers\.dev/, r=>{ called=true; r.fulfill({status:200,contentType:'application/json',body:'{}'}); });
   await p.goto(T+'?essay=1'); await p.waitForTimeout(600);
   ok(!!(await p.$('#esq')),'essay mode opens on ?essay=1');
-  await p.fill('#esq','Explain something for practice.');
+  await ownQuestion(p, 'Explain something for practice.');
   await p.click('#esstart'); await p.waitForTimeout(350);
   await p.click('#esmodeswitch'); await p.waitForTimeout(350);
   await p.fill('#esfull','A paragraph written for the flag-off check.'); await p.waitForTimeout(150);

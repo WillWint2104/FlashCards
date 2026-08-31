@@ -32,13 +32,21 @@ const REVIEW = {
   await p.waitForTimeout(600);
 
   // ---- pick an AUTHORED question: its definition must travel with the response
-  const chip = await p.$('.es-qchip');
+  const chip = await p.$('.es-qrow');
   ok(!!chip,'authored question chips are offered');
-  const chips = await p.$$('.es-qchip');
+  const chips = await p.$$('.es-qrow');
   // ah-religion is the second Ancient History question
   await chips[1].click(); await p.waitForTimeout(300);
-  const qtext = await p.$eval('#esq',e=>e.value);
-  ok(/religious beliefs/.test(qtext),'question text filled from the chip');
+  // Choosing a practice question no longer types it into a box: the box only
+  // exists for a question the student brings. It is stated back to them instead,
+  // and the id is what travels with the response.
+  const qtext = await p.evaluate(() => {
+    const c = document.querySelector('.es-chosenq');
+    const on = document.querySelector('.es-qrow.on');
+    return { shown: c ? c.textContent : '', id: on ? on.dataset.esq : null };
+  });
+  ok(/religious beliefs/.test(qtext.shown),'the chosen question is stated back: '+JSON.stringify(qtext.shown.slice(0,50)));
+  ok(!!qtext.id,'and the row is marked as the chosen one: '+qtext.id);
   await p.click('#esstart'); await p.waitForTimeout(400);
 
   // ---- coached mode: write the intro, SKIP the next slot, write the one after.
@@ -59,6 +67,10 @@ const REVIEW = {
   ok(!!skipped&&!!emptySlot&&skipped!==emptySlot&&emptyText==='',
      'wrote into slot 1 and slot 3, leaving slot 2 empty (now on '+skipped+', skipped '+emptySlot+')');
 
+  // The typed topic field is gone, so a PRACTICE question has to supply its own.
+  // ui.js holds the other half: a question the student types carries none.
+  ok(sent && typeof sent.topic === 'string' && sent.topic.length > 0,
+     'the chosen question carried its authored topic into marking, with nobody typing one: '+JSON.stringify(sent&&sent.topic));
   ok(sent && sent.requirements && sent.requirements.relationships.length>0,
      'the picked question\'s requirements reach the marker: '+JSON.stringify(sent&&sent.requirements&&sent.requirements.concepts));
   ok(sent && sent.requirements.syllabus.length>0,'syllabus scope sent');
