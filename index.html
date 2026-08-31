@@ -1553,6 +1553,38 @@
   .es-evwhy2 > summary::-webkit-details-marker{display:none}
   .es-evwhy2 > summary::before{content:"+ ";font-weight:800}
   .es-evwhy2[open] > summary::before{content:"\2212 "}
+  /* Setup: two modes, then two filters, then only what matches. */
+  .es-modes{display:flex;gap:8px;margin-bottom:16px}
+  .es-mode{flex:0 0 auto;background:none;border:1.5px solid var(--line);border-radius:999px;
+    padding:7px 15px;font:inherit;font-size:13.5px;color:var(--ink-2);cursor:pointer}
+  .es-mode:hover{border-color:var(--green);color:var(--green-dk)}
+  .es-mode.on{background:var(--green-soft);border-color:var(--green);color:var(--green-dk);font-weight:700}
+  .es-step{margin-bottom:14px}
+  .es-steplbl{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);
+    font-weight:700;margin-bottom:7px}
+  .es-pills{display:flex;flex-wrap:wrap;gap:6px}
+  .es-pill{background:none;border:1px solid var(--line);border-radius:999px;padding:5px 12px;
+    font:inherit;font-size:13px;color:var(--ink-2);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+  .es-pill:hover{border-color:var(--green);color:var(--green-dk)}
+  .es-pill.on{background:var(--green-soft);border-color:var(--green);color:var(--green-dk);font-weight:700}
+  .es-pilln{font-size:11px;color:var(--ink-3);font-weight:600}
+  .es-pill.on .es-pilln{color:var(--green-dk)}
+  .es-qrows{display:flex;flex-direction:column;gap:6px}
+  .es-qrow{text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:10px;
+    padding:10px 13px;font:inherit;font-size:14px;line-height:1.5;color:var(--ink);cursor:pointer}
+  .es-qrow:hover{border-color:var(--green);background:var(--green-soft)}
+  .es-qrow.on{border-color:var(--green);background:var(--green-soft);font-weight:600}
+  .es-chosen{border-top:1px solid var(--line);padding-top:12px;margin-top:4px}
+  .es-chosenq{font-size:15px;line-height:1.6;color:var(--ink);margin:0}
+  /* Marking guidance: a status line, with the detail one press away. */
+  .es-rubstatus{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .es-rubtick{color:var(--green-dk);font-weight:800}
+  .es-rubtext{font-size:14px;color:var(--ink)}
+  .es-rubprov{font-size:11px;letter-spacing:.04em;text-transform:uppercase;font-weight:700;
+    color:var(--ink-3);border:1px solid var(--line);border-radius:5px;padding:1px 7px}
+  .es-rubbox{margin-top:11px;border:1px solid var(--line);border-radius:10px;padding:12px}
+  .es-rubpre{white-space:pre-wrap;font:inherit;font-size:13px;line-height:1.6;color:var(--ink);
+    background:var(--bg);border-radius:8px;padding:11px;margin:0 0 12px;max-height:280px;overflow:auto}
   .es-blank{font-style:normal;font-weight:800;color:var(--green-dk);letter-spacing:1px}
   /* A slot says what belongs in it. An anonymous blank made the student guess the
      role as well as the content, and in the walkthrough that produced an answer

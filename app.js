@@ -3656,6 +3656,77 @@
       : text;
   }
   // ---------------------------------- SETUP ----------------------------------
+  // MARKING GUIDANCE, resolved in one place so provenance is never guessed.
+  //
+  //   user-provided   the student pasted their own
+  //   authored        a rubric written for this question, or the subject's
+  //   generated       built from the question itself
+  //
+  // Generated guidance is never presented as though someone marked with it. It is
+  // derived from what the question demands, and it says so.
+  function esRubricFor(f, sc) {
+    const typed = String((f && f.rubric) || "").trim();
+    if (typed) return { source: "user-provided", text: typed };
+    const q = (f && f.questionId && sc && sc.questions) ? sc.questions.find(x => x.id === f.questionId) : null;
+    const own = q && (q.rubric || q.markingCriteria);
+    if (own) return { source: "authored", text: typeof own === "string" ? own : JSON.stringify(own) };
+    return { source: "generated", text: esGenerateRubric(q, (f && f.question) || "", sc) };
+  }
+  // Built from the directive and, where the question is one of ours, from what it
+  // already says it demands. Nothing here invents a syllabus requirement: an
+  // authored question contributes its own concepts and relationships, and a
+  // student's own question contributes only its directive.
+  function esGenerateRubric(q, text, sc) {
+    const cmd = String((q && q.command) || esDetectCommand(text) || "").trim();
+    const fam = esFamilyOfCommand(cmd);
+    const req = (q && q.requirements) || {};
+    const lines = [];
+    lines.push("What this question asks for");
+    lines.push(cmd
+      ? "The directive is " + cmd + ". " + (fam === "judgement"
+        ? "A judgement is required: reach a position and support it, rather than describing both sides evenly."
+        : "A causal explanation is required: show how one thing leads to another, rather than describing each in turn.")
+      : "State a clear line of argument and hold it through the response.");
+    if ((req.concepts || []).length) {
+      lines.push("");
+      lines.push("Concepts the question fixes");
+      lines.push(req.concepts.join(", ") + ".");
+    }
+    if ((req.requiredAreas || []).length) {
+      lines.push("");
+      lines.push("Areas that must be covered");
+      lines.push(req.requiredAreas.map(a => a.label).join(", ") + ".");
+    }
+    if ((req.relationships || []).length) {
+      lines.push("");
+      lines.push("Relationships to establish");
+      req.relationships.forEach(r => lines.push("- " + r));
+    }
+    lines.push("");
+    lines.push("Reasoning");
+    lines.push(fam === "judgement"
+      ? "Weigh the evidence on each side and say how far, not simply whether."
+      : "Name the step between cause and effect rather than asserting the link.");
+    lines.push("");
+    lines.push("Evidence");
+    lines.push("Support each claim with a specific case study fact, and say what it demonstrates rather than leaving it to speak for itself.");
+    lines.push("");
+    lines.push("Organisation");
+    lines.push("One idea per paragraph, each tied back to the question, in an order a reader can follow.");
+    return lines.join("\n");
+  }
+  function esDetectCommand(text) {
+    const t = String(text || "").trim().toLowerCase();
+    const all = ["to what extent", "how can", "evaluate", "assess", "analyse", "explain", "discuss", "describe", "outline", "examine"];
+    return all.find(c => t.indexOf(c) === 0) || "";
+  }
+  function esFamilyOfCommand(cmd) {
+    const c = String(cmd || "").toLowerCase();
+    const fams = ((window.ESSAY && window.ESSAY.slots && window.ESSAY.slots.templates) || {}).directiveFamilies || {};
+    for (const name of Object.keys(fams)) if ((fams[name] || []).some(x => c === x || c.indexOf(x) === 0)) return name;
+    return "causal";
+  }
+
   function esRenderSetup(host, sc) {
     if (!ES.form) ES.form = { question: "", topic: "", rubric: "", marks: 20, structure: sc.defaultStructure, paraModel: (sc.paraModels[0] || null), rubricOpen: false };
     const f = ES.form;
@@ -3718,23 +3789,78 @@
       <p class="es-lead">Only the question is needed. Everything else is optional and you can change all of it later.</p>
       ${subjectPicker}
       ${resume}
-      <div class="es-field">
-        <label class="es-label" for="esq">Essay question <span class="es-req">needed</span></label>
-        <textarea id="esq" class="es-input es-ta" rows="3" placeholder="Paste or type the question you are practising.">${esc(f.question)}</textarea>
-        ${sc.hasQuestions ? `<p class="es-help">Or start from one of these practice questions:</p>
-        <div class="es-qchips">${qChips}</div>` : ""}
-      </div>
-      <div class="es-field">
-        <label class="es-label" for="estopic">Chosen topic or option <span class="es-opt">optional</span></label>
-        <input id="estopic" class="es-input" value="${esc(f.topic)}" placeholder="e.g. Old Kingdom Egypt. This just tags the draft so you can tell your essays apart.">
-      </div>
-      <div class="es-field">
-        <label class="es-label" for="esrubric">Marking rubric <span class="es-opt">optional</span></label>
-        <p class="es-help">Paste a rubric or marking guide and the coach will aim its feedback at it. Skip it and the coach uses general HSC band expectations. Skipping costs you nothing.</p>
-        <textarea id="esrubric" class="es-input es-ta" rows="3" placeholder="Paste your rubric or marking bands here, or leave blank.">${esc(f.rubric)}</textarea>
-        <button class="es-linkbtn" id="esbandsref">${f.rubricOpen ? "Hide" : "Show"} the general band expectations the coach falls back to</button>
-        <div class="es-bands" data-bands${f.rubricOpen ? "" : " hidden"}>${bandsRef}</div>
-      </div>
+      ${(() => {
+        // Thirteen full-width questions in one column made the student read every
+        // one to find the kind they wanted. The directive and the topic are both
+        // authored on every question, so they are used as filters rather than
+        // matched out of the text.
+        const qs = (sc.questions || []);
+        if (!qs.length) return `<div class="es-field">
+          <label class="es-label" for="esq">Essay question <span class="es-req">needed</span></label>
+          <textarea id="esq" class="es-input es-ta" rows="3" placeholder="Paste or type the question you are practising.">${esc(f.question)}</textarea></div>`;
+        const mode = f.setupMode || "practice";
+        const dirs = [];
+        qs.forEach(q => { const c = String(q.command || "").trim(); if (c && dirs.indexOf(c) < 0) dirs.push(c); });
+        const topics = [];
+        qs.forEach(q => { const t = String(q.topic || "").trim(); if (t && topics.indexOf(t) < 0) topics.push(t); });
+        const byDir = f.setupDir ? qs.filter(q => String(q.command || "").trim() === f.setupDir) : qs;
+        const shown = f.setupTopic ? byDir.filter(q => String(q.topic || "").trim() === f.setupTopic) : byDir;
+        const chosen = f.questionId ? qs.find(q => q.id === f.questionId) : null;
+        const pill = (val, cur, key, label, count) =>
+          `<button type="button" class="es-pill ${cur === val ? "on" : ""}" data-es${key}="${esc(val)}">${esc(label)}${count != null ? `<span class="es-pilln">${count}</span>` : ""}</button>`;
+        return `<div class="es-field">
+          <div class="es-modes">
+            <button type="button" class="es-mode ${mode === "practice" ? "on" : ""}" data-esmode="practice">Choose a practice question</button>
+            <button type="button" class="es-mode ${mode === "own" ? "on" : ""}" data-esmode="own">Use my own question</button>
+          </div>
+          ${mode === "own" ? `
+            <label class="es-label" for="esq">Your essay question <span class="es-req">needed</span></label>
+            <textarea id="esq" class="es-input es-ta" rows="3" placeholder="Paste or type the whole question, including the directive.">${esc(f.question)}</textarea>
+          ` : `
+            <div class="es-step">
+              <div class="es-steplbl">Directive</div>
+              <div class="es-pills">${dirs.map(d => pill(d, f.setupDir, "setupdir", d, qs.filter(q => String(q.command || "").trim() === d).length)).join("")}</div>
+            </div>
+            <div class="es-step">
+              <div class="es-steplbl">Topic</div>
+              <div class="es-pills">${topics.map(t => pill(t, f.setupTopic, "setuptopic", t, byDir.filter(q => String(q.topic || "").trim() === t).length)).join("")}</div>
+            </div>
+            <div class="es-step">
+              <div class="es-steplbl">${shown.length} question${shown.length === 1 ? "" : "s"}</div>
+              ${shown.length ? `<div class="es-qrows">${shown.map(q =>
+                `<button type="button" class="es-qrow ${f.questionId === q.id ? "on" : ""}" data-esq="${esc(q.id)}">${esc(esQuestionPreview(q))}</button>`).join("")}</div>`
+                : `<p class="es-help">Nothing matches both of those. Clear one of them to see more.</p>`}
+            </div>
+            ${chosen ? `<div class="es-chosen">
+              <div class="es-steplbl">Your question</div>
+              <p class="es-chosenq"><b>${esc(chosen.command)}</b> ${esc(esQuestionPreview(chosen))}</p>
+            </div>` : ""}
+          `}
+        </div>`;
+      })()}
+      ${(() => {
+        // A status line, not a form field. The guidance resolves without being
+        // asked for, and the disclosure is there for the student who wants to
+        // check what it will be marked against.
+        const r = esRubricFor(f, sc);
+        const label = r.source === "user-provided" ? "Your own marking guidance will be used"
+          : r.source === "authored" ? "Marking guidance written for this question will be used"
+          : "Marking guidance will be generated from this question";
+        return `<div class="es-field">
+          <div class="es-rubstatus">
+            <span class="es-rubtick">\u2713</span>
+            <span class="es-rubtext">${esc(label)}</span>
+            <span class="es-rubprov">${esc(r.source)}</span>
+            <button type="button" class="es-linkbtn" id="esrubopen">${f.rubricOpen ? "Hide" : "Review or edit"}</button>
+          </div>
+          <div class="es-rubbox"${f.rubricOpen ? "" : " hidden"}>
+            ${r.source === "generated" ? `<p class="es-help">Generated from the question in front of you. It is not an official marking guide and is not from NESA.</p>` : ""}
+            <pre class="es-rubpre">${esc(r.text)}</pre>
+            <label class="es-label" for="esrubric">Replace it with your own</label>
+            <textarea id="esrubric" class="es-input es-ta" rows="3" placeholder="Paste your rubric or marking bands here.">${esc(f.rubric)}</textarea>
+          </div>
+        </div>`;
+      })()}
       <div class="es-field">
         <label class="es-label" for="esmarks">Marks this question is worth</label>
         <p class="es-help">Used only when you submit a full attempt for marking, so the mark you get back means something.</p>
@@ -3751,13 +3877,29 @@
       </div>
     </div></div></div>`;
     $("#esx").onclick = esClose;
-    const q = $("#esq"); q.oninput = () => {
+    const q = $("#esq"); if (q) q.oninput = () => {
       f.question = q.value;
       const picked = f.questionId && sc.questions.find(x => x.id === f.questionId);
       if (picked && picked.text.trim() !== q.value.trim()) f.questionId = null;
     };
-    const tp = $("#estopic"); tp.oninput = () => { f.topic = tp.value; };
-    const rb = $("#esrubric"); rb.oninput = () => { f.rubric = rb.value; };
+    host.querySelectorAll("[data-esmode]").forEach(b => b.onclick = () => {
+      f.setupMode = b.dataset.esmode;
+      if (f.setupMode === "own") { f.questionId = null; }
+      esRender();
+    });
+    host.querySelectorAll("[data-essetupdir]").forEach(b => b.onclick = () => {
+      // Pressing the chosen one again clears it, which is how a filter behaves.
+      f.setupDir = f.setupDir === b.dataset.essetupdir ? null : b.dataset.essetupdir;
+      f.questionId = null; f.question = "";
+      esRender();
+    });
+    host.querySelectorAll("[data-essetuptopic]").forEach(b => b.onclick = () => {
+      f.setupTopic = f.setupTopic === b.dataset.essetuptopic ? null : b.dataset.essetuptopic;
+      f.questionId = null; f.question = "";
+      esRender();
+    });
+    const ro = $("#esrubopen"); if (ro) ro.onclick = () => { f.rubricOpen = !f.rubricOpen; esRender(); };
+    const rb = $("#esrubric"); if (rb) rb.oninput = () => { f.rubric = rb.value; };
     const mk = $("#esmarks"); if (mk) mk.oninput = () => { const n = Math.round(Number(mk.value)); f.marks = (n >= 1 && n <= 60) ? n : 20; };
     const stt = $("#esstruct"); stt.onchange = () => { f.structure = stt.value; };
     const subjSel = $("#essubject");
@@ -3771,17 +3913,21 @@
     };
     const pmSel = $("#esparamodel");
     if (pmSel) pmSel.onchange = () => { f.paraModel = pmSel.value; };
-    $("#esbandsref").onclick = () => {
-      f.rubricOpen = !f.rubricOpen;
-      const bands = document.querySelector("[data-bands]"); if (bands) bands.hidden = !f.rubricOpen;
-      $("#esbandsref").textContent = (f.rubricOpen ? "Hide" : "Show") + " the general band expectations the coach falls back to";
-    };
     host.querySelectorAll("[data-esq]").forEach(b => b.onclick = () => {
       const qq = sc.questions.find(x => x.id === b.dataset.esq);
       // Remember the id: it carries this question's requirements, band expectations
       // and mark value into marking. Typing over the text clears it, because the
       // definition no longer describes the question being answered.
-      if (qq) { f.question = qq.text; f.questionId = qq.id; if (!f.topic) f.topic = qq.topic || ""; if (qq.marks) f.marks = qq.marks; esRender(); $("#esq").focus(); }
+      // The question textarea only exists in "my own question" mode now, so
+      // focusing it unconditionally threw and left the rest of the bindings
+      // unattached: the row appeared to do nothing when it had in fact worked.
+      if (qq) {
+        f.question = qq.text; f.questionId = qq.id;
+        if (!f.topic) f.topic = qq.topic || "";
+        if (qq.marks) f.marks = qq.marks;
+        esRender();
+        const box = $("#esq"); if (box) box.focus();
+      }
     });
     host.querySelectorAll("[data-esresume]").forEach(b => b.onclick = () => {
       const d = ES.list.find(x => x.id === b.dataset.esresume);
