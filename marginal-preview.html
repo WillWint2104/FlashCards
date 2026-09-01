@@ -1811,6 +1811,182 @@
   .exam-ressech{font-family:var(--disp);font-weight:700;color:var(--green-dk);display:flex;justify-content:space-between;margin-bottom:6px}
   .exam-resq{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--ink-2);padding:3px 0}
   .exam-resm{font-weight:800;color:var(--ink);white-space:nowrap}
+
+  /* ==========================================================================
+     PR B — THE WRITING WORKSPACE
+     A visual system for the essay page, scoped to .es-scrim so the flashcards
+     app around it is untouched. Tokens are sampled from the approved mockup
+     rather than inherited: the page recedes to near-white, white surfaces do
+     the work, text is charcoal rather than grey-green, and green is used for
+     state and primary action instead of as an outline around everything.
+     ========================================================================== */
+  .es-scrim{
+    --page:#F6F9F9; --surface:#FFFFFF; --sunk:#FAFCFC;
+    --e-ink:#18272D; --e-ink2:#63787F; --e-ink3:#95A7AD;
+    --e-green:#12B27A; --e-green-dk:#0E9765; --e-mint:#E7F8F0; --e-mint2:#F2FBF7;
+    --e-line:#E8EEEF; --e-line2:#F1F6F6;
+    --e-shadow:0 1px 2px rgba(18,48,58,.04), 0 10px 28px rgba(18,48,58,.05);
+    --main:1088px; --rail:330px; --e-gap:22px;
+    background:var(--page);color:var(--e-ink)
+  }
+  /* The workspace does its own centring, from the viewport, so the legacy shell
+     cap must not also constrain it: at 1920 it pinned the whole page to a
+     1480px box at x=20 while the offsets below were computing for a centred one. */
+  .es-scrim .es-shell{max-width:none;width:100%}
+  .es-scrim .es-wrap{padding-bottom:84px;background:transparent}
+  /* The canvas used to be a white card. The cards are the cards now, and the
+     page behind them is the page. */
+  .es-scrim .es-wrap.es-canvas,.es-scrim .es-cols{background:transparent;box-shadow:none;border:0}
+  .es-scrim .es-wrap > *{max-width:calc(var(--main) + var(--rail) + var(--e-gap))}
+  .es-scrim .es-wrap > .es-top{max-width:none}
+  /* The question and the belt belong to the writing column, not to the whole
+     workspace. Centred at workspace width they spanned 1440 above a 1088 writer,
+     which is the loose, unrelated-widths look the redesign is meant to remove.
+     They are capped at the writer's width and pushed to the workspace's own left
+     edge, the same offset the sticky header pads to. */
+  .es-scrim .es-qbar, .es-scrim .es-belt{
+    max-width:var(--main);
+    margin-left:max(clamp(16px,2.4vw,26px), calc((100% - (var(--main) + var(--rail) + var(--e-gap)))/2));
+    margin-right:auto}
+
+  /* ---- header: brand left, utilities right ---- */
+  .es-scrim .es-wrap > .es-top{background:var(--surface);border-bottom:1px solid var(--e-line);
+    padding:0 max(clamp(16px,2.4vw,26px),calc((100% - (var(--main) + var(--rail) + var(--e-gap)))/2));
+    margin-bottom:22px;height:62px;align-items:center}
+  .es-scrim .es-brand{font-size:16.5px;color:var(--e-ink);gap:12px}
+  .es-scrim .es-mark{width:32px;height:32px;border-radius:10px;background:var(--e-green);color:#fff;
+    display:grid;place-items:center;font-family:var(--disp);font-weight:600;font-size:17px;
+    box-shadow:0 2px 0 var(--e-green-dk)}
+  .es-scrim .es-subj{font-size:14.5px;font-weight:500;color:var(--e-ink2)}
+  .es-scrim .es-topbtns{gap:8px}
+  .es-util{display:inline-flex;align-items:center;gap:8px;background:var(--surface);
+    border:1px solid var(--e-line);border-radius:11px;padding:8px 14px;font-family:var(--body);
+    font-size:13.5px;font-weight:600;color:var(--e-ink);cursor:pointer}
+  .es-util .es-ico{width:17px;height:17px;color:var(--e-ink2)}
+  .es-util:hover{border-color:var(--e-green);color:var(--e-green-dk)}
+  .es-util:hover .es-ico{color:var(--e-green-dk)}
+  .es-util[aria-expanded="true"]{background:var(--e-mint);border-color:var(--e-green);color:var(--e-green-dk)}
+  .es-util[aria-expanded="true"] .es-ico{color:var(--e-green-dk)}
+  .es-scrim .es-linkbtn,.es-scrim .es-x{color:var(--e-ink2);font-family:var(--body);font-weight:600;
+    font-size:13.5px;text-decoration:none}
+  .es-scrim .es-linkbtn:hover,.es-scrim .es-x:hover{color:var(--e-ink);background:none}
+
+  /* ---- question card ---- */
+  .es-scrim .es-qbar{background:var(--surface);border:1px solid var(--e-line);border-left:1px solid var(--e-line);
+    border-radius:16px;box-shadow:var(--e-shadow);padding:17px 22px;margin-bottom:16px;display:block}
+  .es-scrim .es-restag{display:inline-block;background:var(--e-mint);color:var(--e-green-dk);border-radius:8px;
+    padding:4px 10px;font-size:12px;font-weight:700;margin-bottom:9px}
+  .es-scrim .es-qbar-q{font-family:var(--disp);font-weight:500;font-size:19px;line-height:1.4;color:var(--e-ink)}
+  .es-qmeta{display:flex;align-items:center;gap:9px;margin-top:10px;font-size:12.5px;color:var(--e-ink3);font-weight:500}
+  .es-qmeta b{color:var(--e-ink2);font-weight:600}
+  .es-qmeta i{font-style:normal;color:var(--e-line)}
+  .es-scrim .es-qchip{background:var(--surface);border:1px solid var(--e-line);color:var(--e-ink);
+    font-family:var(--body);font-weight:600;font-size:12.5px;border-radius:9px}
+  .es-scrim .es-qchip:hover{border-color:var(--e-green);color:var(--e-green-dk);background:var(--e-mint2)}
+
+  /* ---- writing-support belt: one control group, not four pills ---- */
+  .es-scrim .es-belt{background:var(--surface);border:1px solid var(--e-line);border-radius:16px;
+    box-shadow:var(--e-shadow);padding:5px;gap:2px;margin-bottom:16px;flex-wrap:nowrap;width:fit-content}
+  .es-scrim .es-belt-b{background:none;border:none;border-radius:11px;padding:10px 16px;
+    font-family:var(--body);font-size:13.5px;font-weight:600;color:var(--e-ink2);gap:8px}
+  .es-scrim .es-belt-b .es-ico{color:var(--e-ink3)}
+  .es-scrim .es-belt-b:hover:not([disabled]){background:var(--sunk);color:var(--e-ink)}
+  .es-scrim .es-belt-b.on{background:var(--e-mint);color:var(--e-green-dk)}
+  .es-scrim .es-belt-b.on .es-ico{color:var(--e-green-dk)}
+
+  /* ---- the workspace grid: writer and rail on one centred grid ---- */
+  .es-scrim .es-cols{grid-template-columns:minmax(0,var(--main)) var(--rail);gap:var(--e-gap);
+    justify-content:center;margin-top:0}
+  .es-scrim .es-cols > .es-dechost{grid-column:1 / -1}
+  .es-rail{display:flex;flex-direction:column;gap:14px;position:sticky;top:78px;min-width:0}
+
+  /* ---- the writer ---- */
+  .es-scrim .es-compose{background:var(--surface);border:1px solid var(--e-line);border-radius:16px;
+    box-shadow:var(--e-shadow);padding:18px 22px 20px}
+  .es-scrim .es-parahead{margin:0 0 4px}
+  .es-scrim .es-pararole{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--e-ink)}
+  .es-scrim .es-parameta,.es-scrim .es-headacts{color:var(--e-ink3);font-weight:500;font-size:12.5px}
+  /* the sentence being written: the loudest thing inside the card */
+  .es-scrim .es-active{background:var(--e-mint2);border:1px solid var(--e-line);border-radius:13px;
+    padding:14px 17px;margin-top:14px}
+  .es-scrim .es-active > .es-steplbl,.es-scrim .es-slotlbl{font-size:10.5px;font-weight:700;letter-spacing:.09em;
+    text-transform:uppercase;color:var(--e-green-dk)}
+  .es-scrim .es-active h3,.es-scrim .es-stepjob{font-family:var(--disp);font-weight:500;font-size:15.5px;
+    color:var(--e-ink);line-height:1.45;border:none;padding:0;margin:5px 0 0}
+  .es-scrim .es-shapebtn,.es-scrim .es-stuckbtn{font-family:var(--body);font-size:12.5px;font-weight:600;
+    color:var(--e-green-dk);text-decoration:none;padding:0}
+  .es-scrim .es-shapebtn:hover,.es-scrim .es-stuckbtn:hover{text-decoration:underline;text-underline-offset:3px}
+  /* accepted prose: readable, and quieter than the task */
+  .es-scrim .es-linehost{margin-top:14px}
+  .es-scrim .es-line,.es-scrim .es-para-text{font-size:14.5px;line-height:1.7;color:var(--e-ink2);
+    font-weight:400;max-width:74ch}
+  /* the composer: calm, with the accent kept for focus */
+  .es-scrim .es-linebox{border:1px solid var(--e-line);border-radius:13px;background:var(--surface);
+    font-size:15px;line-height:1.7;color:var(--e-ink);padding:15px 17px;max-width:none}
+  .es-scrim .es-linebox:focus{border-color:var(--e-green);box-shadow:0 0 0 3px var(--e-mint);outline:none}
+  .es-scrim .es-linebox::placeholder{color:var(--e-ink3)}
+  .es-scrim .es-btn.primary{background:var(--e-green);box-shadow:0 2px 0 var(--e-green-dk);border-radius:11px;
+    font-family:var(--body);font-weight:600;font-size:13.5px;padding:11px 20px}
+  .es-scrim .es-btn.ghost,.es-scrim .es-btn.sm{border:1px solid var(--e-line);background:var(--surface);
+    color:var(--e-ink);border-radius:11px;font-family:var(--body);font-weight:600}
+  .es-scrim .es-btn.ghost:hover{border-color:var(--e-green);color:var(--e-green-dk)}
+
+  /* ---- rail panel ---- */
+  .es-rp{background:var(--surface);border:1px solid var(--e-line);border-radius:16px;
+    box-shadow:var(--e-shadow);padding:16px 18px}
+  .es-rp-hd{display:flex;align-items:center;gap:9px;margin-bottom:11px}
+  .es-rp-ico{width:28px;height:28px;border-radius:9px;background:var(--e-mint);color:var(--e-green-dk);
+    display:grid;place-items:center;flex:none}
+  .es-rp-t{font-family:var(--disp);font-weight:600;font-size:14.5px;color:var(--e-ink)}
+  .es-rp-prov{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--e-ink3)}
+  .es-rp-lead{font-size:13px;color:var(--e-ink2);line-height:1.6;margin:0 0 13px;font-weight:500}
+  .es-rp-list{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-direction:column;gap:9px}
+  .es-rp-list li{display:flex;gap:9px;font-size:12.5px;color:var(--e-ink2);font-weight:500;line-height:1.45}
+  .es-rp-ck{width:16px;height:16px;border-radius:5px;background:var(--e-mint);color:var(--e-green-dk);
+    display:grid;place-items:center;font-size:10px;flex:none;margin-top:1px}
+  .es-rp-btn{display:block;width:100%;background:var(--surface);border:1px solid var(--e-line);border-radius:10px;
+    padding:9px;font-family:var(--body);font-size:13px;font-weight:600;color:var(--e-ink);cursor:pointer}
+  .es-rp-btn:hover{border-color:var(--e-green);color:var(--e-green-dk)}
+
+  /* ---- response status navigator: where you are, not a second planner ---- */
+  .es-resp{background:var(--surface);border:1px solid var(--e-line);border-radius:16px;
+    box-shadow:var(--e-shadow);padding:15px 20px 17px;margin-top:16px}
+  .es-resp-lab{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--e-ink3)}
+  .es-resp-row{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
+  .es-resp-b{flex:1 1 120px;min-width:0;text-align:left;background:var(--surface);border:1px solid var(--e-line);
+    border-radius:12px;padding:10px 12px;font-family:var(--body);cursor:pointer}
+  .es-resp-b:hover{border-color:var(--e-green)}
+  .es-resp-b.on{border-color:var(--e-green);background:var(--e-mint2)}
+  .es-resp-n{font-family:var(--disp);font-weight:600;font-size:13.5px;color:var(--e-ink);display:flex;align-items:center;gap:7px}
+  .es-resp-dot{width:7px;height:7px;border-radius:99px;background:var(--e-line);flex:none}
+  .es-resp-b.on .es-resp-dot{background:var(--e-green)}
+  .es-resp-b.done .es-resp-dot{background:var(--e-green-dk)}
+  .es-resp-w{font-size:11.5px;color:var(--e-ink3);font-weight:600;margin-top:6px}
+
+  /* ---- sticky action bar: one line, save status quietest ---- */
+  .es-footbar{position:fixed;left:0;right:0;bottom:0;z-index:140;background:var(--surface);
+    border-top:1px solid var(--e-line)}
+  .es-footbar-in{max-width:calc(var(--main) + var(--rail) + var(--e-gap));margin:0 auto;
+    padding:8px clamp(16px,2.4vw,26px);display:flex;align-items:center;gap:10px}
+  .es-footsave{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--e-ink3);font-weight:500}
+  .es-footsave .es-ico{width:15px;height:15px}
+  .es-footbar .es-sp{flex:1}
+  .es-footbar .es-btn{padding:7px 13px;font-size:13px}
+  .es-footbar .es-btn.primary{padding:8px 16px}
+
+  /* ---- responsive ---- */
+  @media(max-width:1700px){ .es-scrim{--main:1040px;--rail:300px} }
+  @media(max-width:1499px){ .es-scrim{--main:958px;--rail:286px;--e-gap:18px} }
+  /* The rail goes before the writing does. Everything in it stays reachable
+     through Learn and the marking guide control, so collapsing it loses nothing. */
+  @media(max-width:1399px){
+    /* The rail is gone, so it must stop contributing width to the offset the
+       question and belt are aligned by. */
+    .es-scrim{--main:1020px;--rail:0px;--e-gap:0px}
+    .es-scrim .es-cols{grid-template-columns:minmax(0,var(--main))}
+    .es-rail{display:none}
+    .es-scrim .es-active{padding:12px 15px}
+  }
 </style>
 </head>
 <body>
@@ -11975,21 +12151,36 @@ window.BUSCONTENT = {
     // lives on it rather than being a stage the student passes through once.
     const qdef = esQuestionDef();
     const qdec = esDecodeOf(qdef);
+    // Metadata is rendered only where the value exists. A question that carries
+    // no mark total loses the number AND its separator, rather than the layout
+    // being kept by assuming one: an invented 20 looks exactly like a real 20.
+    const marks = ES.draft.marks || (qdef && qdef.marks) || null;
+    const cmd = (qdef && qdef.command) || (ES.draft && ES.draft.command) || "";
+    const bits = [];
+    if (cmd) bits.push('<b>' + esc(cmd) + '</b>');
+    if (marks) bits.push(esc(String(marks)) + ' marks');
+    if (modeLabel) bits.push(esc(String(modeLabel).toLowerCase()));
     return `
       <div class="es-top">
-        <div class="es-brand">Marginal · essay practice ${sc.label ? `<span class="es-subj">${esc(sc.label)}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}</div>
+        <div class="es-brand"><span class="es-mark">M</span>Marginal ${sc.label ? `<span class="es-subj">${esc(sc.label)}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}</div>
         <div class="es-topbtns">
+          ${/* Learn and Notebook are utilities: they make sense whatever sentence
+                the student is on, they open their own floating windows, and they
+                stay open across the writing. The four writing tools are not
+                utilities and stay on the belt above the writer. */ ""}
+          <button type="button" class="es-util" data-estool="understand" aria-expanded="${ES.ui.studyOpen ? "true" : "false"}">${esIcon("book")}<span>Learn</span></button>
+          <button type="button" class="es-util" data-esnbtoggle aria-expanded="${ES.ui.nbOpen ? "true" : "false"}">${esIcon("note")}<span>Notebook</span></button>
           <button class="es-linkbtn" id="esmodeswitch">${esc(switchLabel)}</button>
           <button class="es-x" id="esx" aria-label="Back to setup">setup</button>
         </div>
       </div>
       <div class="es-qbar">
         <div class="es-qbar-main">
-          <div class="es-qbar-mode">${esc(modeLabel)}</div>
+          ${ES.draft.topic ? `<span class="es-restag">${esc(ES.draft.topic)}</span>` : ""}
           <div class="es-qbar-q">${qdec ? esDecodeStem(ES.draft.question, qdec.highlights) : esc(ES.draft.question)}</div>
+          ${bits.length ? '<div class="es-qmeta">' + bits.join('<i>\u2022</i>') + '</div>' : ""}
           ${qdec ? esDecodeChips(qdef) + (boxElsewhere ? "" : esDecodeHost(qdef)) : ""}
         </div>
-        ${ES.draft.topic ? `<span class="es-restag">${esc(ES.draft.topic)}</span>` : ""}
       </div>`;
   }
 
@@ -12389,6 +12580,10 @@ window.BUSCONTENT = {
     // A link that leaves Marginal, and a note that is not a warning.
     open: '<path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
     info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/>',
+    note: '<rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8.5 3v18"/>',
+    cloud: '<path d="M17.5 19H7a5 5 0 0 1-.5-9.98A6 6 0 0 1 18 8.5a4.5 4.5 0 0 1-.5 10.5z"/><path d="m9.5 13.5 2 2 3.5-4"/>',
+    note: '<rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8.5 3v18"/>',
+    cloud: '<path d="M17.5 19H7a5 5 0 0 1-.5-9.98A6 6 0 0 1 18 8.5a4.5 4.5 0 0 1-.5 10.5z"/><path d="m9.5 13.5 2 2 3.5-4"/>',
   };
   function esIcon(name) {
     return '<svg class="es-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ES_ICONS[name] || "") + '</svg>';
@@ -12859,7 +13054,7 @@ window.BUSCONTENT = {
 
   // ---- the drawer ------------------------------------------------------------
   function esToolbeltHTML(p) {
-    return `<div class="es-belt" role="toolbar" aria-label="Writing support">` + ES_TOOLS.map(t => {
+    return `<div class="es-belt" role="toolbar" aria-label="Writing support">` + ES_TOOLS.filter(t => t.key !== "understand").map(t => {
       const has = !!esToolData(t.key, p);
       const on = ES.ui.tool === t.key;
       // Nothing authored behind it means the tool is disabled, not filled with filler.
@@ -14839,6 +15034,84 @@ window.BUSCONTENT = {
   // margin, and any toggled-open missing-element frames as ghosts beneath the box.
   // The stepper is a POSITION INDICATOR only; Back / Next move one paragraph.
   const ES_WHERE = { point: "as the opening sentence", analysis: "right after your point", evidence: "to back the point up", link: "at the end, tying back to the question", thesis: "as your opening line", methods: "right after your thesis", restate: "to open the conclusion", judgement: "as your final line" };
+  // ---- THE CONTEXTUAL RAIL ---------------------------------------------------
+  //
+  // Only where real data exists. A panel that says a thing is unavailable fills
+  // the screen for the sake of filling it, so a panel with nothing behind it is
+  // not rendered at all and the rail simply gets shorter.
+  function esMarkingPanel() {
+    const q = esQuestionDef();
+    const sc = esSubjectContent(ES.subject);
+    const dec = q && q.decode;
+    const lead = (dec && dec.verbMeaning) || "";
+    const crit = (sc && sc.markingCriteria) || [];
+    const own = (ES.draft && ES.draft.rubric) || "";
+    // Provenance, said the way the rubric resolver says it, never guessed.
+    const prov = own ? "yours" : (q && q.criteria && q.criteria.source) ? "general" : (crit.length ? "general" : "");
+    if (!lead && !crit.length && !own) return "";
+    return `<div class="es-rp">
+      <div class="es-rp-hd"><span class="es-rp-ico">${esIcon("check")}</span>
+        <span class="es-rp-t">Marking guidance</span>
+        ${prov ? `<span class="es-rp-prov">${esc(prov)}</span>` : ""}</div>
+      ${lead ? `<p class="es-rp-lead">${esc(lead)}</p>` : ""}
+      ${crit.length ? `<ul class="es-rp-list">${crit.map(c =>
+        `<li><span class="es-rp-ck">✓</span>${esc(c)}</li>`).join("")}</ul>` : ""}
+      <button type="button" class="es-rp-btn" id="esmarkfull">View full marking guide</button>
+    </div>`;
+  }
+  function esRailHTML() {
+    const panels = [esMarkingPanel()].filter(Boolean);
+    if (!panels.length) return "";
+    return `<div class="es-rail">${panels.join("")}</div>`;
+  }
+  // ---- THE RESPONSE NAVIGATOR ------------------------------------------------
+  //
+  // Where you are and what is written, and nothing else. Not a second planner:
+  // no arguments, no structure guidance, no evidence. Pressing one moves there.
+  function esRespNavHTML(d) {
+    if (!d || !Array.isArray(d.paras) || d.paras.length < 2) return "";
+    return `<div class="es-resp">
+      <div class="es-resp-lab">Your response</div>
+      <div class="es-resp-row">${d.paras.map((pp, i) => {
+        const w = esWordsOf(pp.text);
+        const on = i === d.pos;
+        return `<button type="button" class="es-resp-b ${on ? "on" : ""}${!on && w ? " done" : ""}" data-esrespgo="${i}">
+          <span class="es-resp-n"><span class="es-resp-dot"></span>${esc(pp.role)}</span>
+          <span class="es-resp-w">${w ? w + " words" : "not started"}</span></button>`;
+      }).join("")}</div>
+    </div>`;
+  }
+  // ---- THE ACTION BAR --------------------------------------------------------
+  //
+  // The primary action names the section it would check, because "check this
+  // paragraph" is wrong on an introduction. Where checking is not available for
+  // the current state there is no primary action rather than a dead one.
+  function esFootBarHTML(d, p, canAsk) {
+    const role = (p && p.role) || "";
+    const can = !!canAsk;
+    const label = ES.pending ? "Checking\u2026"
+      : /introduction/i.test(role) ? "Check introduction"
+      : /conclusion/i.test(role) ? "Check conclusion" : "Check this paragraph";
+    return `<div class="es-footbar"><div class="es-footbar-in">
+      <span class="es-footsave">${esIcon("cloud")}Saved</span>
+      <span class="es-sp"></span>
+      <button type="button" class="es-btn ghost sm" id="esfootoutline">Outline</button>
+      <button type="button" class="es-btn ghost sm" id="esfootpreview">Preview response</button>
+      ${can ? `<button type="button" class="es-btn primary" id="esask" ${ES.pending ? "disabled" : ""}>${esc(label)}</button>` : ""}
+    </div></div>`;
+  }
+  function esBindWorkspace(host, d) {
+    host.querySelectorAll("[data-esrespgo]").forEach(b => b.onclick = () => {
+      d.pos = Number(b.dataset.esrespgo); ES.ui.tool = null; esSaveDraft(); esRender();
+    });
+    const rev = host.querySelector("#esfootpreview") || host.querySelector("#esfootoutline");
+    host.querySelectorAll("#esfootpreview,#esfootoutline").forEach(b => b.onclick = () => {
+      ES.screen = "review"; esRender();
+    });
+    const mg = host.querySelector("#esmarkfull");
+    if (mg) mg.onclick = () => { ES.screen = "review"; esRender(); };
+  }
+
   function esRenderCoached(host, sc) {
     const d = ES.draft;
     if (d.pos < 0) d.pos = 0; if (d.pos > d.paras.length - 1) d.pos = d.paras.length - 1;
@@ -15039,17 +15312,21 @@ window.BUSCONTENT = {
               </div>
             </div>`}
           </div>`}
-          <div class="es-navrow">
-            ${canAsk ? `<button class="es-btn ghost sm" id="esask" ${ES.pending ? "disabled" : ""}>${askLabel}</button>` : ""}
-
-          </div>
+          ${/* The checking action lives in the action bar now. Rendering it here
+                too put the same button on screen twice, which is the duplication
+                the bar was supposed to remove. */ ""}
+          <div class="es-navrow"></div>
           <div class="es-linehost" data-linehost>${esLinesBlock(p)}</div>
           <div class="es-seqhost">${esSeqNudge(p)}</div>
+          ${esRespNavHTML(d)}
         </div>
+        ${esRailHTML()}
         ${ES.ui.tool ? esDrawerHTML(p) : esRestHTML(p)}
       </div>
-    </div></div></div>`;
+    </div></div></div>
+    ${esFootBarHTML(d, p, canAsk)}`;
 
+    esBindWorkspace(host, d);
     esBindWritingHead();
     esBindReasoning(host, p, "#espoint");
     const pt = $("#espoint");

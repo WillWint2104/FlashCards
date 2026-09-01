@@ -4393,21 +4393,36 @@
     // lives on it rather than being a stage the student passes through once.
     const qdef = esQuestionDef();
     const qdec = esDecodeOf(qdef);
+    // Metadata is rendered only where the value exists. A question that carries
+    // no mark total loses the number AND its separator, rather than the layout
+    // being kept by assuming one: an invented 20 looks exactly like a real 20.
+    const marks = ES.draft.marks || (qdef && qdef.marks) || null;
+    const cmd = (qdef && qdef.command) || (ES.draft && ES.draft.command) || "";
+    const bits = [];
+    if (cmd) bits.push('<b>' + esc(cmd) + '</b>');
+    if (marks) bits.push(esc(String(marks)) + ' marks');
+    if (modeLabel) bits.push(esc(String(modeLabel).toLowerCase()));
     return `
       <div class="es-top">
-        <div class="es-brand">Marginal · essay practice ${sc.label ? `<span class="es-subj">${esc(sc.label)}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}</div>
+        <div class="es-brand"><span class="es-mark">M</span>Marginal ${sc.label ? `<span class="es-subj">${esc(sc.label)}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}</div>
         <div class="es-topbtns">
+          ${/* Learn and Notebook are utilities: they make sense whatever sentence
+                the student is on, they open their own floating windows, and they
+                stay open across the writing. The four writing tools are not
+                utilities and stay on the belt above the writer. */ ""}
+          <button type="button" class="es-util" data-estool="understand" aria-expanded="${ES.ui.studyOpen ? "true" : "false"}">${esIcon("book")}<span>Learn</span></button>
+          <button type="button" class="es-util" data-esnbtoggle aria-expanded="${ES.ui.nbOpen ? "true" : "false"}">${esIcon("note")}<span>Notebook</span></button>
           <button class="es-linkbtn" id="esmodeswitch">${esc(switchLabel)}</button>
           <button class="es-x" id="esx" aria-label="Back to setup">setup</button>
         </div>
       </div>
       <div class="es-qbar">
         <div class="es-qbar-main">
-          <div class="es-qbar-mode">${esc(modeLabel)}</div>
+          ${ES.draft.topic ? `<span class="es-restag">${esc(ES.draft.topic)}</span>` : ""}
           <div class="es-qbar-q">${qdec ? esDecodeStem(ES.draft.question, qdec.highlights) : esc(ES.draft.question)}</div>
+          ${bits.length ? '<div class="es-qmeta">' + bits.join('<i>\u2022</i>') + '</div>' : ""}
           ${qdec ? esDecodeChips(qdef) + (boxElsewhere ? "" : esDecodeHost(qdef)) : ""}
         </div>
-        ${ES.draft.topic ? `<span class="es-restag">${esc(ES.draft.topic)}</span>` : ""}
       </div>`;
   }
 
@@ -4807,6 +4822,10 @@
     // A link that leaves Marginal, and a note that is not a warning.
     open: '<path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
     info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/>',
+    note: '<rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8.5 3v18"/>',
+    cloud: '<path d="M17.5 19H7a5 5 0 0 1-.5-9.98A6 6 0 0 1 18 8.5a4.5 4.5 0 0 1-.5 10.5z"/><path d="m9.5 13.5 2 2 3.5-4"/>',
+    note: '<rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8.5 3v18"/>',
+    cloud: '<path d="M17.5 19H7a5 5 0 0 1-.5-9.98A6 6 0 0 1 18 8.5a4.5 4.5 0 0 1-.5 10.5z"/><path d="m9.5 13.5 2 2 3.5-4"/>',
   };
   function esIcon(name) {
     return '<svg class="es-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ES_ICONS[name] || "") + '</svg>';
@@ -5277,7 +5296,7 @@
 
   // ---- the drawer ------------------------------------------------------------
   function esToolbeltHTML(p) {
-    return `<div class="es-belt" role="toolbar" aria-label="Writing support">` + ES_TOOLS.map(t => {
+    return `<div class="es-belt" role="toolbar" aria-label="Writing support">` + ES_TOOLS.filter(t => t.key !== "understand").map(t => {
       const has = !!esToolData(t.key, p);
       const on = ES.ui.tool === t.key;
       // Nothing authored behind it means the tool is disabled, not filled with filler.
@@ -7257,6 +7276,84 @@
   // margin, and any toggled-open missing-element frames as ghosts beneath the box.
   // The stepper is a POSITION INDICATOR only; Back / Next move one paragraph.
   const ES_WHERE = { point: "as the opening sentence", analysis: "right after your point", evidence: "to back the point up", link: "at the end, tying back to the question", thesis: "as your opening line", methods: "right after your thesis", restate: "to open the conclusion", judgement: "as your final line" };
+  // ---- THE CONTEXTUAL RAIL ---------------------------------------------------
+  //
+  // Only where real data exists. A panel that says a thing is unavailable fills
+  // the screen for the sake of filling it, so a panel with nothing behind it is
+  // not rendered at all and the rail simply gets shorter.
+  function esMarkingPanel() {
+    const q = esQuestionDef();
+    const sc = esSubjectContent(ES.subject);
+    const dec = q && q.decode;
+    const lead = (dec && dec.verbMeaning) || "";
+    const crit = (sc && sc.markingCriteria) || [];
+    const own = (ES.draft && ES.draft.rubric) || "";
+    // Provenance, said the way the rubric resolver says it, never guessed.
+    const prov = own ? "yours" : (q && q.criteria && q.criteria.source) ? "general" : (crit.length ? "general" : "");
+    if (!lead && !crit.length && !own) return "";
+    return `<div class="es-rp">
+      <div class="es-rp-hd"><span class="es-rp-ico">${esIcon("check")}</span>
+        <span class="es-rp-t">Marking guidance</span>
+        ${prov ? `<span class="es-rp-prov">${esc(prov)}</span>` : ""}</div>
+      ${lead ? `<p class="es-rp-lead">${esc(lead)}</p>` : ""}
+      ${crit.length ? `<ul class="es-rp-list">${crit.map(c =>
+        `<li><span class="es-rp-ck">✓</span>${esc(c)}</li>`).join("")}</ul>` : ""}
+      <button type="button" class="es-rp-btn" id="esmarkfull">View full marking guide</button>
+    </div>`;
+  }
+  function esRailHTML() {
+    const panels = [esMarkingPanel()].filter(Boolean);
+    if (!panels.length) return "";
+    return `<div class="es-rail">${panels.join("")}</div>`;
+  }
+  // ---- THE RESPONSE NAVIGATOR ------------------------------------------------
+  //
+  // Where you are and what is written, and nothing else. Not a second planner:
+  // no arguments, no structure guidance, no evidence. Pressing one moves there.
+  function esRespNavHTML(d) {
+    if (!d || !Array.isArray(d.paras) || d.paras.length < 2) return "";
+    return `<div class="es-resp">
+      <div class="es-resp-lab">Your response</div>
+      <div class="es-resp-row">${d.paras.map((pp, i) => {
+        const w = esWordsOf(pp.text);
+        const on = i === d.pos;
+        return `<button type="button" class="es-resp-b ${on ? "on" : ""}${!on && w ? " done" : ""}" data-esrespgo="${i}">
+          <span class="es-resp-n"><span class="es-resp-dot"></span>${esc(pp.role)}</span>
+          <span class="es-resp-w">${w ? w + " words" : "not started"}</span></button>`;
+      }).join("")}</div>
+    </div>`;
+  }
+  // ---- THE ACTION BAR --------------------------------------------------------
+  //
+  // The primary action names the section it would check, because "check this
+  // paragraph" is wrong on an introduction. Where checking is not available for
+  // the current state there is no primary action rather than a dead one.
+  function esFootBarHTML(d, p, canAsk) {
+    const role = (p && p.role) || "";
+    const can = !!canAsk;
+    const label = ES.pending ? "Checking\u2026"
+      : /introduction/i.test(role) ? "Check introduction"
+      : /conclusion/i.test(role) ? "Check conclusion" : "Check this paragraph";
+    return `<div class="es-footbar"><div class="es-footbar-in">
+      <span class="es-footsave">${esIcon("cloud")}Saved</span>
+      <span class="es-sp"></span>
+      <button type="button" class="es-btn ghost sm" id="esfootoutline">Outline</button>
+      <button type="button" class="es-btn ghost sm" id="esfootpreview">Preview response</button>
+      ${can ? `<button type="button" class="es-btn primary" id="esask" ${ES.pending ? "disabled" : ""}>${esc(label)}</button>` : ""}
+    </div></div>`;
+  }
+  function esBindWorkspace(host, d) {
+    host.querySelectorAll("[data-esrespgo]").forEach(b => b.onclick = () => {
+      d.pos = Number(b.dataset.esrespgo); ES.ui.tool = null; esSaveDraft(); esRender();
+    });
+    const rev = host.querySelector("#esfootpreview") || host.querySelector("#esfootoutline");
+    host.querySelectorAll("#esfootpreview,#esfootoutline").forEach(b => b.onclick = () => {
+      ES.screen = "review"; esRender();
+    });
+    const mg = host.querySelector("#esmarkfull");
+    if (mg) mg.onclick = () => { ES.screen = "review"; esRender(); };
+  }
+
   function esRenderCoached(host, sc) {
     const d = ES.draft;
     if (d.pos < 0) d.pos = 0; if (d.pos > d.paras.length - 1) d.pos = d.paras.length - 1;
@@ -7457,17 +7554,21 @@
               </div>
             </div>`}
           </div>`}
-          <div class="es-navrow">
-            ${canAsk ? `<button class="es-btn ghost sm" id="esask" ${ES.pending ? "disabled" : ""}>${askLabel}</button>` : ""}
-
-          </div>
+          ${/* The checking action lives in the action bar now. Rendering it here
+                too put the same button on screen twice, which is the duplication
+                the bar was supposed to remove. */ ""}
+          <div class="es-navrow"></div>
           <div class="es-linehost" data-linehost>${esLinesBlock(p)}</div>
           <div class="es-seqhost">${esSeqNudge(p)}</div>
+          ${esRespNavHTML(d)}
         </div>
+        ${esRailHTML()}
         ${ES.ui.tool ? esDrawerHTML(p) : esRestHTML(p)}
       </div>
-    </div></div></div>`;
+    </div></div></div>
+    ${esFootBarHTML(d, p, canAsk)}`;
 
+    esBindWorkspace(host, d);
     esBindWritingHead();
     esBindReasoning(host, p, "#espoint");
     const pt = $("#espoint");
