@@ -8,9 +8,12 @@ A label that prints the word does not teach it.
 
 | question | mode | pathways | concepts explained | guidance | pathway lessons | full ladders | sourced evidence | wrong-turn recovery | readiness |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `ops-02` | judgement | 7 | 30/31 | 7/7 | 0/7 | 0/7 | 0/7 | yes | Guided practice |
 | `mkt-01` | causal | 12 | 28/29 | 12/12 | 4/12 | 3/12 | 0/12 | yes | Guided practice |
+| `mkt-03` | judgement | 8 | 25/34 | 8/8 | 0/8 | 0/8 | 0/8 | yes | Guided practice |
 | `fin-01` | causal | 8 | 24/26 | 8/8 | 0/8 | 0/8 | 0/8 | yes | Guided practice |
 | `hr-01` | judgement | 8 | 13/16 | 8/8 | 0/8 | 0/8 | 0/8 | yes | Guided practice |
+| `hr-02` | causal | 6 | 23/31 | 6/6 | 0/6 | 0/6 | 0/6 | yes | Guided practice |
 
 ## Can this pathway deliver what it depends on?
 
@@ -27,6 +30,22 @@ pathway that cannot surface it. The chain runs:
 
 `unreviewed` means nobody has yet decided what the pathway depends on.
 It is never a claim that it depends on nothing.
+
+### `ops-02`
+
+| pathway | state | concepts declared | authored | reachable here |
+| --- | --- | --- | --- | --- |
+| `ops02-gs-cost` | unreviewed | - | - | - |
+| `ops02-es-cost` | unreviewed | - | - | - |
+| `ops02-sl-quality` | unreviewed | - | - | - |
+| `ops02-rd-newproducts` | unreviewed | - | - | - |
+| `ops02-supply-risk` | unreviewed | - | - | - |
+| `ops02-adapt` | unreviewed | - | - | - |
+| `ops02-home-competition` | unreviewed | - | - | - |
+
+Authored, requires teaching, and no pathway here declares it: `processes`, `people`, `training`
+
+Reviewed: 0 of 7. Authored lessons: 0.
 
 ### `mkt-01`
 
@@ -46,6 +65,23 @@ It is never a claim that it depends on nothing.
 | `mkt01-ph-selfservice` | unreviewed | - | - | - |
 
 Reviewed: 4 of 12. Authored lessons: 4.
+
+### `mkt-03`
+
+| pathway | state | concepts declared | authored | reachable here |
+| --- | --- | --- | --- | --- |
+| `mkt03-econ-tradedown` | unreviewed | - | - | - |
+| `mkt03-psych` | unreviewed | - | - | - |
+| `mkt03-socio` | unreviewed | - | - | - |
+| `mkt03-govt` | unreviewed | - | - | - |
+| `mkt03-consumerlaw` | unreviewed | - | - | - |
+| `mkt03-ethical` | unreviewed | - | - | - |
+| `mkt03-response` | unreviewed | - | - | - |
+| `mkt03-uncontrollable` | unreviewed | - | - | - |
+
+Authored, requires teaching, and no pathway here declares it: `processes`, `people`, `training`
+
+Reviewed: 0 of 8. Authored lessons: 0.
 
 ### `fin-01`
 
@@ -81,6 +117,21 @@ Authored, requires teaching, and no pathway here declares it: `processes`, `peop
 
 Reviewed: 0 of 8. Authored lessons: 0.
 
+### `hr-02`
+
+| pathway | state | concepts declared | authored | reachable here |
+| --- | --- | --- | --- | --- |
+| `hr02-stake-conflict` | unreviewed | - | - | - |
+| `hr02-legal-floor` | unreviewed | - | - | - |
+| `hr02-econ-cycle` | unreviewed | - | - | - |
+| `hr02-tech-skills` | unreviewed | - | - | - |
+| `hr02-social-retention` | unreviewed | - | - | - |
+| `hr02-ethics-beyondlaw` | unreviewed | - | - | - |
+
+Authored, requires teaching, and no pathway here declares it: `processes`, `people`, `training`
+
+Reviewed: 0 of 6. Authored lessons: 0.
+
 ## Named in the interface, explained nowhere
 
 Words a student can be shown while nothing in the app can tell them what
@@ -88,7 +139,10 @@ they mean. Ordinary English is excluded by the authored
 `vocabulary.ordinary` list rather than by guesswork, so this is a list of
 teaching dependencies and not of unfamiliar tokens.
 
+- `ops-02` (1): `pressure`
 - `mkt-01` (1): `sensitivity`
+- `mkt-03` (9): `conditions`, `psychological`, `reached`, `sociocultural`, `government`, `claimed`, `choices`, `against`, `results`
 - `fin-01` (2): `expenses`, `movement`
 - `hr-01` (3): `surveillance`, `retention`, `arrangements`
+- `hr-02` (8): `conflicting`, `floor`, `beneath`, `recruiting`, `managing`, `automation`, `keep`, `going`
 

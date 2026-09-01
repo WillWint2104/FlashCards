@@ -6163,8 +6163,13 @@
           // which part this paragraph is answering and which are already done.
           return `<span class="es-areachip fixed ${on ? "on" : ""}">${esc(a)}${(used && !on) ? `<span class="es-areaused">done in ${esc(used)}</span>` : ""}</span>`;
         }).join("")}</div>` : ""}
+        ${/* On a judgement question the role an argument plays is part of what the
+              student is choosing: taking a limitation is a different decision from
+              taking a support. The planner showed it and this chooser did not, so
+              the student choosing here was picking blind. Nothing new is written:
+              it is the authored contribution, shown where the choice is made. */ ""}
         ${opts.map(o => `<button type="button" class="es-pick" data-espath="${esc(o.id)}">
-          ${o.short ? `<span class="es-pickshort">${esc(o.short)}</span>` : ""}
+          ${o.short ? `<span class="es-pickshort">${esc(o.short)}</span>${(esIsJudgement() && o.contribution) ? `<span class="es-tprole ${esc(o.contribution.role)}">${esc(ES_ROLES[o.contribution.role] || "")}</span>` : ""}` : ""}
           <span class="es-pickrel">${esc(o.relationship)}</span>
           ${esChoiceMeaning(o) ? `<span class="es-picksub">${esc(esChoiceMeaning(o))}</span>` : ""}</button>`).join("")}
         <button type="button" class="es-pick own" data-espathown>Write my own argument</button>

@@ -4157,11 +4157,235 @@ window.ESSAY = {
           topic: "Operations", term1: "Operations strategies", term2: "Performance objectives",
           plan: ["Technology to speed and cost", "Inventory management to dependability and cost", "Quality management to quality", "Supply chain management to dependability and cost"],
           argument: "Operations strategies influence business performance by changing the quality, speed, dependability, flexibility, customisation and cost of outputs." },
-        { id: "ops-02", command: "Assess", qtype: "B", qtypeLabel: "judgement",
+        // ---------------------------------------------------------------------
+        // FOURTH ARCHITECTURE CASE: Assess, on an INFLUENCE rather than on a set
+        // of strategies. Two things separate it from hr-01, the other judgement
+        // question here.
+        //
+        // First, what is being weighed is something the business did not choose.
+        // A student cannot argue that globalisation was carried out well or
+        // badly, only how far it reaches operations and on which objectives.
+        //
+        // Second, the four plan lines this question shipped with are the four
+        // items of ONE syllabus point, global factors, which sits under
+        // operations STRATEGIES. Every one of them is favourable, so a response
+        // built from those alone has nothing to weigh and cannot assess
+        // anything. They are kept, because they are the mechanisms by which
+        // globalisation reaches operations, and three further pathways carry the
+        // impact they leave out. All three are authored in business-content.js:
+        // the supply chain exposure and the standardise-or-adapt decision in the
+        // same global factors point, and overseas competition at home in the
+        // influences point.
+        //
+        // Every pathway carries the same area. Areas exist to narrow the options
+        // when a question fixes its paragraphs; this one does not, so narrowing
+        // by the words a student happens to have typed would hide authored
+        // options rather than help. Seven options are not seven paragraphs.
+        // ---------------------------------------------------------------------
+        { id: "ops-02", command: "Assess", qtype: "B", qtypeLabel: "judgement", marks: 20,
           text: "Assess the impact of globalisation on operations management.",
           topic: "Operations", term1: "Globalisation", term2: "Operations management",
-          plan: ["Global sourcing to costs and supply", "Economies of scale to cost leadership", "Scanning and learning to innovation", "Research and development to differentiation"],
-          argument: "Globalisation can substantially improve cost competitiveness and innovation but exposes businesses to greater supply-chain and global risk." },
+          plan: ["Global sourcing to costs and supply", "Economies of scale to cost leadership", "Scanning and learning to innovation", "Research and development to differentiation",
+            "Longer supply chains to dependability and cost", "Standardising or adapting the output for each market", "Overseas competitors arriving in the home market"],
+          argument: "Globalisation can substantially improve cost competitiveness and innovation but exposes businesses to greater supply-chain and global risk.",
+          requirements: {
+            concepts: ["globalisation", "operations management", "global factors", "performance objectives", "cost per unit"],
+            relationships: [
+              "globalisation is an influence, so operations responds to it rather than choosing it",
+              "the same global reach that lowers cost per unit also lengthens the supply chain, so one impact carries the other",
+              "an impact is significant to the degree that it moves a named performance objective"
+            ],
+            accomplish: [
+              "states an overall position on how far globalisation changes operations, and holds it across the response",
+              "for each impact, names the performance objective it moves rather than describing globalisation",
+              "weighs at least one favourable impact against at least one that is not, where the material supports it",
+              "keeps globalisation as the influence being assessed rather than drifting into a general operations strategies answer",
+              "uses one business consistently so the impacts can be weighed against each other"
+            ],
+            syllabus: "Operations: globalisation as an influence on operations management, and the global factors of global sourcing, economies of scale, scanning and learning, and research and development."
+          },
+          decode: {
+            verbMeaning: "Assess asks you to weigh something up and say how significant it is. Listing what globalisation does is not an assessment; saying how far it changes operations, on which objectives, and what it costs, is.",
+            plainEnglish: "Work out how much the world operating as one market actually changes the way a business makes and delivers what it sells, and be straight about the parts that hurt as well as the parts that help.",
+            highlights: [
+              { anchor: "Assess", kind: "directive", label: "what you need to do",
+                note: "Weigh it up and reach a position. A list of effects is not an assessment, and a position that only appears in the last paragraph is not one either." },
+              { anchor: "impact", kind: "judgement", label: "what you are weighing",
+                note: "How far globalisation reaches operations. An impact has a size, and the size is what you are being asked for." },
+              { anchor: "globalisation", kind: "cause", label: "what is doing the changing",
+                note: "The world operating as one market: the business can buy inputs and sell overseas, and it also meets overseas competitors at home." },
+              { anchor: "operations management", kind: "effect", label: "what changes",
+                note: "Weigh it against the performance objectives: quality, speed, dependability, flexibility, customisation and cost. Operations improving is not one of them." }
+            ],
+            cover: {
+              forEach: "an impact of globalisation \u2192 the performance objective it moves \u2192 how significant that is, and what it costs",
+              consistency: "Choose the impacts yourself, use one business throughout, and hold one position across the whole response."
+            }
+          },
+          workingAnswer: {
+            base: "Globalisation changes how operations is run.",
+            lead: "Globalisation changes how operations is run by",
+            join: ", and by",
+            qualifier: "although the same global reach carries risks operations cannot control"
+          },
+          reasoning: {
+            cause: {
+              label: "globalisation, or a global factor it makes possible",
+              terms: ["globalisation", "global sourcing", "economies of scale", "scanning and learning",
+                "research and development", "overseas suppliers", "global supply chain", "supply chain",
+                "overseas competitors", "global market", "best practice"]
+            },
+            effect: {
+              label: "something operations is judged on",
+              terms: ["cost", "cost per unit", "quality", "speed", "dependability", "flexibility",
+                "customisation", "supply", "inputs", "new products", "processes"]
+            },
+            forward: "The question asks you to weigh how far globalisation changes operations.",
+            backward: "Your point currently explains how operations shapes globalisation, which runs the influence backwards.",
+            degree: {
+              ask: "This says globalisation has an effect. Assess asks how significant, so your point needs to land somewhere on a scale.",
+              terms: ["highly", "very", "largely", "significantly", "significant", "substantially", "substantial",
+                "considerably", "considerable", "moderately", "moderate", "somewhat", "slightly", "slight",
+                "marginally", "marginal", "limited", "little", "only where", "only when", "only if",
+                "strongly", "strong", "greatly", "great", "most", "least", "far more", "far less",
+                "rarely", "outweigh", "outweighs", "outweighed"]
+            }
+          },
+          coreAnswer: {
+            mode: "judgement",
+            pattern: "an impact of globalisation \u2192 the performance objective it moves \u2192 how significant, and at what cost",
+            statement: "Globalisation substantially changes operations, lowering cost per unit and widening access to ideas and inputs, while the same reach makes supply less predictable and forces the business to decide what to standardise and what to adapt.",
+            judging: "how far globalisation changes operations management",
+            criteria: [
+              { id: "cost", label: "against cost per unit",
+                note: "Cost per unit is the number a cost leader attacks, and it is the objective global sourcing and economies of scale move most directly." },
+              { id: "capability", label: "against quality and new products",
+                note: "Scanning and learning reaches quality; research and development reaches new products. These are separate gains from the cost ones and worth separating." },
+              { id: "dependability", label: "against dependability of supply",
+                note: "A longer chain has more points of failure and more exposure to rates and tariffs, so the same decision that cut cost can cost predictability." },
+              { id: "fit", label: "against fit with the local market",
+                note: "What is accepted in one market may be rejected in another, so scale gains are partly given back wherever the output has to be adapted." }
+            ],
+            positions: [
+              { id: "substantial", label: "A substantial and mostly favourable impact", lean: "positive",
+                note: "Take this if your business buys or sells globally and you can show the cost and capability gains reaching named objectives." },
+              { id: "bothsides", label: "Substantial on both sides", lean: "qualified",
+                note: "Take this if the same global reach that lowered cost also made supply or market fit harder, and you can show both." },
+              { id: "exposed", label: "Significant only where the business is exposed to it", lean: "qualified",
+                note: "Take this if the impact runs mainly through competitors arriving here rather than through anything the business does overseas." }
+            ]
+          },
+          pathways: [
+            { id: "ops02-gs-cost", area: "globalisation",
+              short: "Global sourcing \u2192 input cost and supplier choice",
+              adds: "lowering input cost by buying anywhere in the world",
+              relationship: "Global sourcing lowers input cost and widens supplier choice, because suppliers are chosen on price, quality, capability or availability rather than on where they are",
+              meaning: "Once the whole world is the supplier list, the business is no longer paying whatever the nearest supplier charges.",
+              contribution: { role: "support", note: "The most direct of the favourable impacts: it reaches cost per unit without depending on scale." },
+              whatToProve: "inputs can be bought worldwide \u2192 suppliers are chosen on price and capability \u2192 cost per unit falls, or input quality rises",
+              commonMistake: "Calling ordinary bulk buying global sourcing. Global sourcing is about where the supplier is, not how much is ordered.",
+              learning: { status: "unreviewed" },
+              concept: { topic: "operations", section: "operations strategies", point: "global factors \u2013 global sourcing, economies of scale, scanning and learning, research and development" },
+              evidence: [],
+              guides: {
+                explain: "Explain what changes when the supplier can be anywhere: which criterion the business now chooses on, and what that does to the input.",
+                effect: "Say which performance objective moved, and by enough to matter.",
+                link: "Say how much of your overall position this impact carries." } },
+            { id: "ops02-es-cost", area: "globalisation",
+              short: "Economies of scale \u2192 cost per unit",
+              adds: "spreading fixed costs across a larger output",
+              relationship: "Economies of scale cut cost per unit, because fixed costs are spread across more units and larger orders earn supplier discounts",
+              meaning: "The same design, equipment and administration are paid for once and then divided by a much larger number.",
+              contribution: { role: "support", note: "Strong, but it depends on the business actually operating at world scale, which is worth saying." },
+              whatToProve: "output rises \u2192 fixed costs are spread further and orders earn discounts \u2192 cost per unit falls",
+              commonMistake: "Treating a fall in total cost as a fall in cost per unit. Only the cost of one unit tells you whether scale worked.",
+              learning: { status: "unreviewed" },
+              concept: { topic: "operations", section: "operations strategies", point: "global factors \u2013 global sourcing, economies of scale, scanning and learning, research and development" },
+              evidence: [],
+              guides: {
+                explain: "Explain the mechanism: which costs are fixed, and what dividing them by a larger output does to the cost of one unit.",
+                effect: "Name the objective this serves and say how far it goes.",
+                link: "Say whether this impact would exist at all without global scale." } },
+            { id: "ops02-sl-quality", area: "globalisation",
+              short: "Scanning and learning \u2192 better processes",
+              adds: "adopting the best practice found anywhere in the industry",
+              relationship: "Scanning and learning improves processes, because the business adopts the best practice found anywhere in the industry rather than only what it can see at home",
+              meaning: "Watching a whole world of competitors gives the business methods it would never have arrived at on its own.",
+              contribution: { role: "support", note: "A capability gain rather than a cost one, so it is worth weighing separately from the two cost impacts." },
+              whatToProve: "global markets and rivals are watched \u2192 a better method is identified \u2192 the process is changed and quality rises",
+              commonMistake: "Saying the business learns from overseas without naming what it changed. Learning that changes no process changes no objective.",
+              learning: { status: "unreviewed" },
+              concept: { topic: "operations", section: "operations strategies", point: "global factors \u2013 global sourcing, economies of scale, scanning and learning, research and development" },
+              evidence: [],
+              guides: {
+                explain: "Explain what was seen, what was adopted, and what the process does differently now.",
+                effect: "Name the objective it moved, which is usually quality rather than cost.",
+                link: "Say how this compares in size with the cost impacts." } },
+            { id: "ops02-rd-newproducts", area: "globalisation",
+              short: "Research and development \u2192 new products, trialled in one market",
+              adds: "creating new products and trialling them in one market first",
+              relationship: "Research and development produces new products and better processes, and a global business can trial them in one market before using them everywhere",
+              meaning: "Being in many markets turns one of them into a test: the business finds out whether something works before it commits everywhere.",
+              contribution: { role: "conditional", note: "Real, but it only pays where the trial market actually resembles the others. Say so rather than assuming it transfers." },
+              whatToProve: "spending creates a new product or process \u2192 it is trialled in one market \u2192 it is adopted more widely only if it works there",
+              commonMistake: "Describing research and development as a cost saving. It buys new products and better methods; the saving, if it comes, comes later.",
+              learning: { status: "unreviewed" },
+              concept: { topic: "operations", section: "operations strategies", point: "new product or service design and development" },
+              evidence: [],
+              guides: {
+                explain: "Explain what being global adds to research and development that a single-market business does not have.",
+                effect: "Say what this produces, and be honest that it is not guaranteed to transfer.",
+                link: "Say what this impact is worth once you allow for the trials that fail." } },
+            { id: "ops02-supply-risk", area: "globalisation",
+              short: "A longer supply chain \u2192 less predictable supply",
+              adds: "exposing supply to disruption, exchange rates and tariffs",
+              relationship: "The same global reach exposes operations to disruption, exchange rates and tariffs, because a global supply chain is longer than a domestic one",
+              meaning: "Every extra step between the input and the business is another place the supply can fail or the price can move.",
+              contribution: { role: "limitation", note: "This is the impact that makes the question an Assess. It is produced by the same decision that produced the cost gain." },
+              whatToProve: "inputs travel further \u2192 the chain has more points of failure and more exposure to rates and tariffs \u2192 dependability and cost become less predictable",
+              commonMistake: "Treating this as a reason not to source globally. The question asks how significant the impact is, not what the business should do.",
+              learning: { status: "unreviewed" },
+              concept: { topic: "operations", section: "operations strategies", point: "global factors \u2013 global sourcing, economies of scale, scanning and learning, research and development" },
+              evidence: [],
+              guides: {
+                explain: "Explain why length itself is the problem: what a longer chain exposes the business to that a short one does not.",
+                effect: "Name the objective this costs, which is dependability before it is cost.",
+                link: "Weigh this against the cost gain that came from the same decision." } },
+            { id: "ops02-adapt", area: "globalisation",
+              short: "Standardise or adapt \u2192 scale given back",
+              adds: "forcing a choice between one standard output and a local one",
+              relationship: "A product or method accepted in one market may be rejected in another, so the business must decide what to standardise and what to adapt",
+              meaning: "Selling everywhere does not mean selling the same thing everywhere, and every adaptation costs some of the scale that made it cheap.",
+              contribution: { role: "limitation", note: "It limits the cost impact directly: the more the output is adapted, the less of the scale gain survives." },
+              whatToProve: "the world is one market \u2192 the same output meets different expectations \u2192 scale gains are given back wherever the output has to be adapted",
+              commonMistake: "Describing cultural differences without saying what operations had to change. The impact is on the process, not on the marketing.",
+              learning: { status: "unreviewed" },
+              concept: { topic: "operations", section: "influences", point: "globalisation, technology, quality expectations, cost-based competition, government policies, legal regulation, environmental sustainability" },
+              evidence: [],
+              guides: {
+                explain: "Explain the decision the business is forced into, and what each side of it costs.",
+                effect: "Say which objective is traded for which, rather than saying it is difficult.",
+                link: "Say how much of the earlier cost gain survives this." } },
+            { id: "ops02-home-competition", area: "globalisation",
+              short: "Overseas competitors here \u2192 price pressure at home",
+              adds: "bringing overseas competitors into the home market",
+              relationship: "Globalisation brings overseas competitors into the home market, so operations meets price pressure it did not choose and must standardise, cut waste and find cheaper inputs to survive at a lower price",
+              meaning: "The business does not have to trade globally to be changed by globalisation: the competition arrives whether or not it goes anywhere.",
+              contribution: { role: "support", note: "The impact that reaches a business with no overseas operations at all, which is why it is worth arguing rather than assuming." },
+              whatToProve: "overseas rivals sell here \u2192 price competition intensifies \u2192 operations standardises and strips cost whether or not it trades globally itself",
+              commonMistake: "Turning this into a general answer about cost-based competition. Cost-based competition is the mechanism; globalisation is what brought it, and globalisation is what you are assessing.",
+              learning: { status: "unreviewed" },
+              // Anchored in globalisation. Cost-based competition is a separate
+              // authored influence and is cited above as the mechanism, but the
+              // pathway routes to globalisation so the paragraph cannot quietly
+              // become a cost-based competition answer.
+              concept: { topic: "operations", section: "influences", point: "globalisation, technology, quality expectations, cost-based competition, government policies, legal regulation, environmental sustainability" },
+              evidence: [],
+              guides: {
+                explain: "Explain how a business that never leaves home is still changed: who arrived, and what that did to what it can charge.",
+                effect: "Name what operations had to do about it.",
+                link: "Say whether this impact is larger or smaller than the ones that need the business to trade globally." } }
+          ] },
         { id: "ops-03", command: "How can", qtype: "A", qtypeLabel: "relationship",
           text: "How can operations strategies affect corporate social responsibility?",
           topic: "Operations", term1: "Operations strategies", term2: "Corporate social responsibility",
@@ -4899,11 +5123,240 @@ window.ESSAY = {
           topic: "Marketing", term1: "Marketing strategies", term2: "Marketing objectives",
           plan: ["Product differentiation to market share", "Pricing to sales and profitability", "Promotion to awareness and sales", "Distribution and e-marketing to market expansion"],
           argument: "Marketing strategies can be effective in achieving objectives, though their success depends on fit with the market and on competitors' responses." },
-        { id: "mkt-03", command: "To what extent", qtype: "B", qtypeLabel: "judgement",
+        // ---------------------------------------------------------------------
+        // SIXTH ARCHITECTURE CASE: To what extent, where DEGREE has to be
+        // produced by the arguments rather than announced in the conclusion.
+        //
+        // The four plan lines this question shipped with are the four factors of
+        // one authored point, factors influencing customer choice, and as a set
+        // they argue one thing: that influences matter. Six such pathways would
+        // leave the student to manufacture a degree at the end out of nothing.
+        //
+        // Two pathways carry the other half, and both are authored: the point's
+        // own reasoning, that understanding these factors lets a business target
+        // the right segment and time its campaigns, and this question's own
+        // argument line, that management's response ultimately determines their
+        // effect. They are deliberately opposed to each other, and both are kept.
+        //
+        // The section holds two further authored points, consumer laws and
+        // ethical influences, and both are in scope for this question, so both
+        // are offered rather than narrowing it to customer choice alone.
+        // ---------------------------------------------------------------------
+        { id: "mkt-03", command: "To what extent", qtype: "B", qtypeLabel: "judgement", marks: 20,
           text: "To what extent do influences on marketing determine business success?",
           topic: "Marketing", term1: "Influences on marketing", term2: "Business success",
-          plan: ["Psychological influences", "Sociocultural influences", "Economic influences", "Government, legal and ethical influences"],
-          argument: "Influences significantly shape customer behaviour and constrain decisions, though management's response ultimately determines their effect on success." },
+          plan: ["Psychological influences", "Sociocultural influences", "Economic influences", "Government influences",
+            "Consumer laws", "Ethical influences", "What the business does in response"],
+          argument: "Influences significantly shape customer behaviour and constrain decisions, though management's response ultimately determines their effect on success.",
+          requirements: {
+            concepts: ["influences on marketing", "factors influencing customer choice", "consumer laws", "ethical marketing", "market objectives", "business success"],
+            relationships: [
+              "an influence acts on the customer or on what the business is allowed to do, not on success directly",
+              "the same influence reaches every business in the market, so the response is what differs",
+              "success has to be read off a named market objective before it can be called success"
+            ],
+            accomplish: [
+              "states how far influences determine success and holds that position across the response",
+              "for each influence, reaches a named market objective rather than stopping at customer behaviour",
+              "shows at least one influence the business can only respond to, and at least one where the response changes the result",
+              "says what the market objective then means for the business overall",
+              "uses one business consistently so the influences can be compared"
+            ],
+            syllabus: "Marketing: influences on marketing, being the factors influencing customer choice, consumer laws and ethical influences, weighed against the market objectives the business sets."
+          },
+          decode: {
+            verbMeaning: "To what extent asks how far something is true, so the answer is a degree rather than a yes or a no. An answer that says influences matter has not given a degree, and neither has one that says they do not.",
+            plainEnglish: "Work out how much of a business's success is decided by things it cannot control, and how much by what it does about them.",
+            highlights: [
+              { anchor: "To what extent", kind: "directive", label: "what you need to do",
+                note: "Give a degree and hold it. The degree has to come out of the paragraphs, not be announced at the end." },
+              { anchor: "influences on marketing", kind: "cause", label: "what might be doing the determining",
+                note: "The factors influencing customer choice, consumer laws and ethical influences. Which ones you use is your choice." },
+              { anchor: "determine", kind: "judgement", label: "the word carrying the degree",
+                note: "Determine is stronger than affect. Showing that an influence matters is not yet showing that it determines the outcome." },
+              { anchor: "business success", kind: "effect", label: "what has to be measured",
+                note: "Read it off a market objective first: market share, sales revenue, product range, customer service, entering a new market. Then say what that objective means for the business overall." }
+            ],
+            cover: {
+              forEach: "an influence \u2192 what it changes for the customer or the business \u2192 the market objective it moves, and how far that settles the outcome",
+              consistency: "Choose the influences yourself, use one business throughout, and hold one degree across the whole response."
+            }
+          },
+          workingAnswer: {
+            base: "Influences on marketing shape business success.",
+            lead: "Influences on marketing shape business success by",
+            join: ", and by",
+            qualifier: "although how far they determine it depends on how the business responds"
+          },
+          reasoning: {
+            cause: {
+              label: "an influence on marketing",
+              terms: ["psychological", "perception", "motives", "attitudes", "sociocultural", "family", "peers",
+                "social class", "culture", "economic", "downturn", "boom", "government", "regulation",
+                "consumer law", "consumer laws", "ethical", "ethics", "advertising standards"]
+            },
+            effect: {
+              label: "a market objective, or business success",
+              terms: ["market share", "sales", "sales revenue", "revenue", "customer service", "product range",
+                "new market", "loyalty", "repeat purchase", "reputation", "profit", "business success"]
+            },
+            forward: "The question asks how far an influence determines success.",
+            backward: "Your point currently explains how the business changes the influence. These influences are external: the business responds to them.",
+            degree: {
+              ask: "This says the influence matters. To what extent asks how far it determines the outcome, so your point needs to land somewhere on a scale.",
+              terms: ["highly", "very", "largely", "significantly", "significant", "substantially", "substantial",
+                "considerably", "considerable", "moderately", "moderate", "somewhat", "slightly", "slight",
+                "marginally", "marginal", "limited", "little", "only where", "only when", "only if",
+                "strongly", "strong", "greatly", "great", "most", "least", "far more", "far less",
+                "rarely", "partly", "in part", "to a large extent", "to a limited extent", "outweigh"]
+            }
+          },
+          coreAnswer: {
+            mode: "judgement",
+            pattern: "an influence \u2192 the market objective it moves \u2192 how far that settles the outcome",
+            statement: "Influences on marketing significantly shape customer behaviour and constrain what the business may do, though how far they determine success depends on how well the business understands them and responds.",
+            judging: "how far influences on marketing determine business success",
+            criteria: [
+              { id: "objective", label: "against a named market objective",
+                note: "Market share, sales revenue, product range, customer service or entering a new market. Success has to be read off one of these before it can be weighed." },
+              { id: "reach", label: "how much of the choice it drives",
+                note: "Some influences change what the customer will buy at all. Others change only when, where or at what price. That difference is degree." },
+              { id: "response", label: "whether the business can respond",
+                note: "Every business in the market meets the same influence. Where the response changes the result, the influence did not determine it on its own." },
+              { id: "overall", label: "what the objective means for the business",
+                note: "A movement in market share or revenue is the measurable part. Say what it means for the business overall, which is what the question asks about." }
+            ],
+            positions: [
+              { id: "largely", label: "Largely determined by the influences", lean: "positive",
+                note: "Take this if your influences reach market objectives directly and the responses available to the business are narrow." },
+              { id: "conditions", label: "The influences set the conditions; the response decides the result", lean: "qualified",
+                note: "Take this if you can show two businesses meeting the same influence and finishing in different places." },
+              { id: "varies", label: "Determined for some influences and not for others", lean: "qualified",
+                note: "Take this if some of your influences can only be responded to while others can be answered, and you can say which is which." }
+            ]
+          },
+          pathways: [
+            { id: "mkt03-econ-tradedown", area: "influences on marketing",
+              short: "Economic conditions \u2192 customers trade down",
+              adds: "changing what customers can afford to buy",
+              relationship: "Economic conditions change spending directly: in a downturn customers trade down to cheaper brands, so pricing and promotion must change or sales are lost",
+              meaning: "When household budgets tighten, the same customer buys a cheaper version of the same thing, and the business finds out through its sales.",
+              contribution: { role: "support", note: "The strongest of the influences for this question: it reaches sales revenue without needing anything else to happen." },
+              whatToProve: "household budgets tighten \u2192 customers move to cheaper brands \u2192 sales revenue falls unless price and promotion change",
+              commonMistake: "Saying a downturn is bad for business. The point is which market objective moved, and by how much.",
+              learning: { status: "unreviewed" },
+              concept: { topic: "marketing", section: "influences on marketing", point: "factors influencing customer choice \u2013 psychological, sociocultural, economic, government" },
+              evidence: [],
+              guides: {
+                explain: "Explain what changes in the customer's decision, not in the economy.",
+                effect: "Name the market objective this moves and say how far.",
+                link: "Say how much of your overall degree this influence carries." } },
+            { id: "mkt03-psych", area: "influences on marketing",
+              short: "Psychological factors \u2192 which segment can be reached",
+              adds: "deciding which customers the offer can reach at all",
+              relationship: "Perception, motives, attitudes, personality and learning shape which product the customer chooses, so they decide which segment can be reached at all",
+              meaning: "What is inside the buyer decides whether the product is even considered, before price or promotion get a say.",
+              contribution: { role: "support", note: "It determines who can be sold to, which is a strong claim, but it is slower to show up in a market objective than the economic one." },
+              whatToProve: "buyers hold perceptions and motives \u2192 these decide which offers are considered \u2192 the business must target the segment whose motives its product already fits",
+              commonMistake: "Describing the psychology and stopping. The influence has to reach a decision the business made about who it sells to.",
+              learning: { status: "unreviewed" },
+              concept: { topic: "marketing", section: "influences on marketing", point: "factors influencing customer choice \u2013 psychological, sociocultural, economic, government" },
+              evidence: [],
+              guides: {
+                explain: "Explain which motive or perception is at work and what it rules in or out.",
+                effect: "Say which market objective follows from targeting that segment.",
+                link: "Say how far this influence settles the outcome by itself." } },
+            { id: "mkt03-socio", area: "influences on marketing",
+              short: "Sociocultural factors \u2192 choice made in a group",
+              adds: "showing choice being made socially rather than individually",
+              relationship: "Family, peers, social class and culture apply pressure from outside the buyer, so choice is not made by the individual alone",
+              meaning: "People buy what the people around them buy, which is why a segment defined socially behaves differently from one defined by age or income.",
+              contribution: { role: "support", note: "Useful where your business sells to groups rather than individuals; weaker where the purchase is private." },
+              whatToProve: "social groups set what is normal to buy \u2192 individual choice follows the group \u2192 segments defined socially behave differently from segments defined by age or income alone",
+              commonMistake: "Treating culture as a general background. Name the group and what it makes normal.",
+              learning: { status: "unreviewed" },
+              concept: { topic: "marketing", section: "influences on marketing", point: "factors influencing customer choice \u2013 psychological, sociocultural, economic, government" },
+              evidence: [],
+              guides: {
+                explain: "Explain whose expectations are acting on the buyer.",
+                effect: "Say what the business did about it and which objective moved.",
+                link: "Say how far this influence reaches compared with the others you have used." } },
+            { id: "mkt03-govt", area: "influences on marketing",
+              short: "Government \u2192 what the business is allowed to do",
+              adds: "removing some of the responses the business could make",
+              relationship: "Government laws, taxes and regulations shape what can be sold, to whom, and how it may be advertised, so they constrain the response rather than change the customer's preference",
+              meaning: "The customer may still want it; the business may simply not be allowed to sell it that way.",
+              contribution: { role: "conditional", note: "It acts on the business rather than on the customer, so it determines the outcome only where it takes away the response the business needed." },
+              whatToProve: "a rule applies to the product or its advertising \u2192 some responses become unavailable \u2192 success depends on what the business can still do, not on what the customer wants",
+              commonMistake: "Treating regulation as the same kind of influence as customer psychology. One changes what people want; the other changes what the business may do about it.",
+              learning: { status: "unreviewed" },
+              concept: { topic: "marketing", section: "influences on marketing", point: "factors influencing customer choice \u2013 psychological, sociocultural, economic, government" },
+              evidence: [],
+              guides: {
+                explain: "Explain which response is closed off, and to whom.",
+                effect: "Say what the business does with what is left, and which objective that reaches.",
+                link: "Say whether this changed the outcome or only the method." } },
+            { id: "mkt03-consumerlaw", area: "influences on marketing",
+              short: "Consumer law \u2192 what may be claimed, and repeat purchase",
+              adds: "fixing what may be claimed and what the buyer is owed",
+              relationship: "Consumer law sets what may be claimed and what every sale must deliver, so a breach brings penalties and publicity that damages the brand, while honouring implied conditions and warranties builds the trust that produces repeat purchase",
+              meaning: "The law is a floor under the promise: it decides what the business may say, and what the customer gets whether it was promised or not.",
+              contribution: { role: "conditional", note: "It determines success sharply at the point of breach and slowly through trust, so its degree depends on which of the two your business shows." },
+              whatToProve: "a claim or a sale falls under consumer law \u2192 the business either breaches it or honours it \u2192 reputation and repeat purchase move accordingly",
+              commonMistake: "Listing the parts of consumer law. Choose the one that touches your business and follow it to a market objective.",
+              learning: { status: "unreviewed" },
+              concept: { topic: "marketing", section: "influences on marketing", point: "consumer laws" },
+              evidence: [],
+              guides: {
+                explain: "Explain which requirement applies and what it obliges the business to do or not say.",
+                effect: "Say what followed for reputation or repeat purchase, and which objective that reaches.",
+                link: "Say how far this influence determines the outcome for a business that complies." } },
+            { id: "mkt03-ethical", area: "influences on marketing",
+              short: "Ethical choices \u2192 short-term sales against long-term loyalty",
+              adds: "trading short-term sales against long-term loyalty",
+              relationship: "Ethical marketing goes beyond what the law requires, so unethical conduct may lift short-term sales while risking backlash, boycotts and tighter regulation, and ethical conduct supports loyalty and market share while raising costs and ruling out profitable segments",
+              meaning: "The choice is not between right and profitable: it is between money now and a position later, and the business has to pick.",
+              contribution: { role: "conditional", note: "This is where the degree lives on the ethical side: the same choice pays over one horizon and costs over another." },
+              whatToProve: "the business chooses conduct the law does not require \u2192 short-term sales and long-term standing move in opposite directions \u2192 which objective you measure decides how far this determined success",
+              commonMistake: "Arguing that ethical marketing is simply better. The authored tension is that it can raise costs and rule out profitable segments, and the question asks you to weigh that.",
+              learning: { status: "unreviewed" },
+              concept: { topic: "marketing", section: "influences on marketing", point: "ethical \u2013 truth, accuracy and good taste in advertising, products that may damage health, engaging in fair competition, sugging" },
+              evidence: [],
+              guides: {
+                explain: "Explain the choice being made and what the law would have allowed instead.",
+                effect: "Say which objective gains and which loses, over which time.",
+                link: "Say what the two together are worth to your overall degree." } },
+            { id: "mkt03-response", area: "influences on marketing",
+              short: "The response \u2192 the same influence, different results",
+              adds: "showing the response producing the difference in outcome",
+              relationship: "Understanding the influences lets a business target the right segment and time its campaigns, so two businesses meeting the same influence do not get the same result",
+              meaning: "If the influence settled it, every business in the market would end up in the same place, and they do not.",
+              contribution: { role: "limitation", note: "This is the pathway that makes the degree real. Without it the response has six arguments for one side and a conclusion asserting the other." },
+              whatToProve: "the influence is the same for every business in the market \u2192 the responses differ \u2192 the difference in outcome was produced by the response, which limits how far the influence itself determined success",
+              commonMistake: "Turning this into an argument that influences do not matter. It limits the degree; it does not reverse it.",
+              learning: { status: "unreviewed" },
+              concept: { topic: "marketing", section: "marketing process", point: "developing marketing strategies" },
+              evidence: [],
+              guides: {
+                explain: "Explain what one business did with the influence that another did not.",
+                effect: "Say which objective separated them.",
+                link: "Say how much this takes off the degree you would otherwise give." } },
+            { id: "mkt03-uncontrollable", area: "influences on marketing",
+              short: "What cannot be answered \u2192 the response runs out",
+              adds: "naming an influence no response can remove",
+              relationship: "Some influences can only be responded to and not countered, so beyond a point no marketing response recovers the position",
+              meaning: "There is a limit to what marketing can do about the world, and knowing where that limit falls is the answer to how far.",
+              contribution: { role: "support", note: "The counterweight to the response pathway, and the reason the degree is not simply low." },
+              whatToProve: "the influence is outside the business's control \u2192 the response can adapt to it but not remove it \u2192 for that influence the degree of determination is high",
+              commonMistake: "Using this for every influence. It only holds where you can say what the business tried and why it could not work.",
+              learning: { status: "unreviewed" },
+              concept: { topic: "marketing", section: "marketing process", point: "situational analysis \u2013 SWOT, product life cycle" },
+              evidence: [],
+              guides: {
+                explain: "Explain what the business could and could not do about this one.",
+                effect: "Say which objective moved anyway.",
+                link: "Say what this adds back to your degree." } }
+          ] },
         // ---------------------------------------------------------------------
         // SECOND ARCHITECTURE CASE. Unlike mkt-01, this question names a cause
         // and an effect but FIXES NO AREAS. There is no requirements.requiredAreas,
@@ -5434,11 +5887,180 @@ window.ESSAY = {
           criteria: { bands: null, source: "general HSC band expectations" },
           plan: ["Leadership style to satisfaction and culture", "Training and development to productivity and skills", "Performance management and rewards to turnover and performance", "Dispute resolution to disputation and satisfaction"],
           argument: "Human resource strategies can be effective in improving performance, measured against indicators such as turnover, absenteeism, disputation and worker satisfaction." },
-        { id: "hr-02", command: "Analyse", qtype: "A", qtypeLabel: "relationship",
+        // ---------------------------------------------------------------------
+        // FIFTH ARCHITECTURE CASE: Analyse, which the directive families put in
+        // the CAUSAL family, not the judgement one. It is here as a deliberate
+        // test of that boundary. The other Human Resources question is Evaluate,
+        // and the risk is that its judgement language leaks into this one: every
+        // pathway below stops at what human resource management then has to do,
+        // and none of them says whether that is good.
+        //
+        // The plan line "technological, social and ethical" grouped three
+        // separately authored syllabus points into one paragraph. It is split, so
+        // the pathways follow the authored points rather than the grouping, and
+        // each carries its own relationship and consequence.
+        // ---------------------------------------------------------------------
+        { id: "hr-02", command: "Analyse", qtype: "A", qtypeLabel: "relationship", marks: 20,
           text: "Analyse how key influences affect human resource management.",
           topic: "Human Resources", term1: "Key influences", term2: "Human resource management",
-          plan: ["Stakeholders", "Legal influences", "Economic influences", "Technological, social and ethical influences"],
-          argument: "Key influences shape human resource decisions by changing the expectations, constraints and conditions managers must respond to." },
+          plan: ["Stakeholders", "Legal influences", "Economic influences", "Technological influences", "Social influences", "Ethics and corporate social responsibility"],
+          argument: "Key influences shape human resource decisions by changing the expectations, constraints and conditions managers must respond to.",
+          requirements: {
+            concepts: ["key influences", "human resource management", "stakeholders", "the legal framework", "acquisition", "development", "maintenance", "separation"],
+            relationships: [
+              "an influence is external, so human resource management responds to it rather than choosing it",
+              "an influence reaches human resource management by changing an expectation, a constraint or a condition",
+              "the change shows up in a named process or strategy, not in the abstract"
+            ],
+            accomplish: [
+              "names the influence specifically rather than writing about the law or the economy in general",
+              "says what the influence changes for the manager, which is the middle of the relationship",
+              "follows that through to a named human resource process or strategy",
+              "keeps to how the influence works, without judging whether the outcome is good",
+              "uses one workplace consistently so the influences can be seen acting on the same decisions"
+            ],
+            syllabus: "Human resources: the key influences of stakeholders, legal, economic, technological and social factors, and ethics and corporate social responsibility."
+          },
+          decode: {
+            verbMeaning: "Analyse asks you to take the relationship apart and show how the parts connect: name the influence, say what it changes for the manager, and follow that through to what human resource management then does. It does not ask whether the result is good.",
+            plainEnglish: "Show how things outside a manager's control end up changing what they actually do about hiring, training, paying and keeping staff.",
+            highlights: [
+              { anchor: "Analyse", kind: "directive", label: "what you need to do",
+                note: "Show the connection between the parts. This is not a judgement question: an answer that decides which influence matters most has answered a different one." },
+              { anchor: "key influences", kind: "cause", label: "what is doing the changing",
+                note: "Stakeholders, the legal framework, economic conditions, technology, social change, and ethics and corporate social responsibility. Which ones you use is your choice." },
+              { anchor: "affect", kind: "supporting", label: "the link you have to show",
+                note: "The middle step. An influence does not reach human resource management directly: it changes an expectation, a constraint or a condition first." },
+              { anchor: "human resource management", kind: "effect", label: "where it lands",
+                note: "A named process or strategy: acquisition, development, maintenance, separation, or the strategies inside them. Managers having to respond is not yet an effect." }
+            ],
+            cover: {
+              forEach: "an influence \u2192 what it changes for the manager \u2192 what human resource management then does",
+              consistency: "Choose the influences yourself and use one workplace throughout, so the influences act on the same decisions."
+            }
+          },
+          workingAnswer: {
+            base: "Key influences change what human resource management has to do.",
+            lead: "Key influences change what human resource management has to do by",
+            join: ", and by"
+          },
+          reasoning: {
+            cause: {
+              label: "a key influence",
+              terms: ["stakeholders", "stakeholder", "unions", "union", "employer associations", "legal", "law",
+                "legislation", "award", "enterprise agreement", "economic", "business cycle", "labour market",
+                "technology", "technological", "automation", "social", "work patterns", "casualisation",
+                "ethics", "ethical", "corporate social responsibility"]
+            },
+            effect: {
+              label: "something human resource management does",
+              terms: ["recruitment", "acquisition", "training", "development", "maintenance", "separation",
+                "retrenchment", "job design", "rewards", "pay", "performance management", "workplace disputes",
+                "retention", "turnover", "hiring", "rostering", "conditions"]
+            },
+            forward: "The question asks how an influence changes what human resource management does.",
+            backward: "Your point currently explains how human resource management changes the influence, which is the reverse: these influences are external and the business responds to them."
+          },
+          coreAnswer: {
+            mode: "causal",
+            pattern: "influence \u2192 what it changes for the manager \u2192 what human resource management does",
+            statement: "Key influences are external, so human resource management responds to them. In each paragraph, name the influence, say what it changes for the manager, and show that change reaching a named human resource process or strategy.",
+            explain: [
+              "The key influences are stakeholders, the legal framework, economic conditions, technology, social change, and ethics and corporate social responsibility. None of them is chosen by the business, which is what makes them influences rather than strategies.",
+              "An influence never reaches human resource management directly. It changes an expectation, a constraint or a condition first, and that change is what the manager actually responds to. The middle step is where the marks are: naming the influence and then naming a process leaves out the part that connects them.",
+              "Analyse asks for that connection, not for a verdict. Saying an influence matters most, or that a business handled it well, is a different question."
+            ]
+          },
+          pathways: [
+            { id: "hr02-stake-conflict", area: "key influences",
+              short: "Conflicting stakeholder interests \u2192 decisions made to balance them",
+              adds: "balancing interests that cannot all be satisfied",
+              relationship: "Stakeholder interests conflict, so managers must balance them: employees want higher wages and employers want lower costs",
+              meaning: "Every human resource decision has more than one group with a stake in it, and they do not want the same thing.",
+              whatToProve: "named groups hold opposed interests \u2192 the manager cannot satisfy both \u2192 the decision is made to balance them, or disputes and reputational damage follow",
+              commonMistake: "Listing who the stakeholders are. The list is not the analysis; the conflict between two of them is.",
+              learning: { status: "unreviewed" },
+              concept: { topic: "human_resources", section: "key influences", point: "stakeholders \u2013 employers, employees, employer associations, unions, government organisations, society" },
+              evidence: [],
+              guides: {
+                topic: "State which two groups are pulling against each other in this decision.",
+                explain: "Explain what each of them wants and why the manager cannot give both.",
+                effect: "Say what the manager did about it, and what follows if the balance fails." } },
+            { id: "hr02-legal-floor", area: "key influences",
+              short: "The legal framework \u2192 a floor beneath every decision",
+              adds: "setting a minimum the decision cannot go below",
+              relationship: "The legal framework fixes minimum pay, conditions, safety and non-discrimination, so it sets the floor beneath every human resource decision rather than influencing it at the margin",
+              meaning: "Some of what a manager might do is simply unavailable, and the law decides which parts.",
+              whatToProve: "a named part of the framework applies \u2192 the decision has a legal minimum it cannot go below \u2192 compliance is built into recruitment, pay or safety, or penalties follow",
+              commonMistake: "Writing about the law in general. Name the part you are using: the award, the enterprise agreement, work health and safety, or antidiscrimination.",
+              learning: { status: "unreviewed" },
+              concept: { topic: "human_resources", section: "key influences", point: "legal \u2013 the current legal framework" },
+              evidence: [],
+              guides: {
+                topic: "Name the specific part of the framework this paragraph is about.",
+                explain: "Explain what it requires and therefore what the manager can no longer decide.",
+                effect: "Say where that shows up in a human resource process." } },
+            { id: "hr02-econ-cycle", area: "key influences",
+              short: "Economic conditions \u2192 recruiting, or managing separation",
+              adds: "deciding whether the work is growing the workforce or shrinking it",
+              relationship: "Economic conditions decide whether human resource management is recruiting and training or shrinking and managing separation",
+              meaning: "The same department does opposite work in an upswing and a downturn, and it does not get to choose which.",
+              whatToProve: "the business cycle and labour market move \u2192 labour cost and skill availability change \u2192 the work switches between acquisition and separation, affecting morale and skill retention",
+              commonMistake: "Saying a downturn is bad for staff. The analysis is about which human resource work the conditions create, not about how it feels.",
+              learning: { status: "unreviewed" },
+              concept: { topic: "human_resources", section: "key influences", point: "economic" },
+              evidence: [],
+              guides: {
+                topic: "State which economic condition this paragraph is about.",
+                explain: "Explain how it changes the cost of labour or the supply of the skills the business needs.",
+                effect: "Say which human resource process the business is doing more of as a result." } },
+            { id: "hr02-tech-skills", area: "key influences",
+              short: "Automation \u2192 a changed skill mix, and retraining",
+              adds: "changing which skills the work needs",
+              relationship: "Technology automates routine tasks, removing some jobs and creating others that need higher skills, and deskilling the roles it leaves behind",
+              meaning: "The machine does not simply take work away: it takes the judgement out of some jobs and adds it to others.",
+              whatToProve: "a task is automated \u2192 the skill mix of the role changes \u2192 retraining and consultation become the manager's work, or resistance to change follows",
+              commonMistake: "Saying technology replaces workers and stopping there. The point is what happens to the jobs that remain.",
+              learning: { status: "unreviewed" },
+              concept: { topic: "human_resources", section: "key influences", point: "technological" },
+              evidence: [],
+              guides: {
+                topic: "State which task the technology took over.",
+                explain: "Explain what that did to the skill the job needs, upwards or downwards.",
+                effect: "Say what human resource management then had to do about the people in that job." } },
+            { id: "hr02-social-retention", area: "key influences",
+              short: "Changed expectations of work \u2192 arrangements that keep staff",
+              adds: "making flexible arrangements a condition of keeping staff",
+              relationship: "Changing work patterns and rising expectations about security and work life balance mean a business that ignores them cannot attract or keep staff",
+              meaning: "What counted as a normal job changes over time, and a workplace that does not move with it is comparing itself to ones that did.",
+              whatToProve: "community expectations shift \u2192 the same conditions become less acceptable than they were \u2192 flexible arrangements become a retention tool, or turnover and absenteeism rise",
+              commonMistake: "Describing how society has changed without reaching the workplace. The change has to arrive at something the business does.",
+              learning: { status: "unreviewed" },
+              concept: { topic: "human_resources", section: "key influences", point: "social \u2013 changing work patterns, living standards" },
+              evidence: [],
+              guides: {
+                topic: "State which expectation has changed.",
+                explain: "Explain why the conditions that used to be acceptable no longer are.",
+                effect: "Say what the business changed in response, and where that shows up." } },
+            { id: "hr02-ethics-beyondlaw", area: "key influences",
+              short: "Going beyond compliance \u2192 decisions the law does not reach",
+              adds: "changing decisions no law required it to change",
+              relationship: "Ethical responsibility is voluntary and goes beyond legal compliance, so it changes decisions the law does not reach: pay above the award, the privacy of employee records, auditing overseas contractors",
+              meaning: "Compliance is the minimum. Anything the business does past it, it chose, and that choice is the influence.",
+              whatToProve: "the law sets a minimum \u2192 the business chooses to go beyond it \u2192 conditions, monitoring or supplier standards change in ways no law required",
+              // The leak risk on this question. Its authored teaching ends on
+              // trust and reputation, which is one step from evaluation, so the
+              // guidance below stops at what changed. Analyse does not ask
+              // whether going further was worth it.
+              commonMistake: "Arguing that the business should go further. Analyse asks what changes when it does, not whether it ought to.",
+              learning: { status: "unreviewed" },
+              concept: { topic: "human_resources", section: "key influences", point: "ethics and corporate social responsibility" },
+              evidence: [],
+              guides: {
+                topic: "State the decision this paragraph is about, and where the legal minimum sits on it.",
+                explain: "Explain the gap between what the law requires and what the business chose to do.",
+                effect: "Say what is different in the workplace as a result. Stop there: this question does not ask whether it was worth it." } }
+          ] },
         { id: "hr-03", command: "To what extent", qtype: "B", qtypeLabel: "judgement",
           text: "To what extent can human resource processes contribute to effective human resource management?",
           topic: "Human Resources", term1: "Human resource processes", term2: "Effective human resource management",
@@ -13654,8 +14276,13 @@ window.BUSCONTENT = {
           // which part this paragraph is answering and which are already done.
           return `<span class="es-areachip fixed ${on ? "on" : ""}">${esc(a)}${(used && !on) ? `<span class="es-areaused">done in ${esc(used)}</span>` : ""}</span>`;
         }).join("")}</div>` : ""}
+        ${/* On a judgement question the role an argument plays is part of what the
+              student is choosing: taking a limitation is a different decision from
+              taking a support. The planner showed it and this chooser did not, so
+              the student choosing here was picking blind. Nothing new is written:
+              it is the authored contribution, shown where the choice is made. */ ""}
         ${opts.map(o => `<button type="button" class="es-pick" data-espath="${esc(o.id)}">
-          ${o.short ? `<span class="es-pickshort">${esc(o.short)}</span>` : ""}
+          ${o.short ? `<span class="es-pickshort">${esc(o.short)}</span>${(esIsJudgement() && o.contribution) ? `<span class="es-tprole ${esc(o.contribution.role)}">${esc(ES_ROLES[o.contribution.role] || "")}</span>` : ""}` : ""}
           <span class="es-pickrel">${esc(o.relationship)}</span>
           ${esChoiceMeaning(o) ? `<span class="es-picksub">${esc(esChoiceMeaning(o))}</span>` : ""}</button>`).join("")}
         <button type="button" class="es-pick own" data-espathown>Write my own argument</button>
