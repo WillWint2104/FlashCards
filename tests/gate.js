@@ -28,7 +28,7 @@ const TIERS = {
   // other, so there is no honest subset of them to run.
   checkpoint: {
     budget: 180,
-    suites: ["t1", "t2", "ui13", "ui30", "ui35", "ui37", "ui38", "ui39", "ui40", "ui41", "ui42", "bots"],
+    suites: ["t1", "t2", "ui13", "ui30", "ui35", "ui37", "ui38", "ui39", "ui40", "ui41", "ui42", "ui43", "bots"],
   },
   // Everything run.js knows about. An empty list means "pass no filter".
   full: { budget: 360, suites: [] },

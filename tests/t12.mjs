@@ -1,10 +1,10 @@
 // The working answer is a sentence built out of authored fragments, so the risk
 // is not that a fragment is wrong but that a COMBINATION of them does not parse.
-// Twelve pathways make 4095 non-empty subsets, 2509 of them within the six
-// argument cap an essay could hold; the two eight-pathway questions add 246
-// each, so a run renders 3001 in all. Cheap enough to render every one and read
-// the result mechanically. This runs the shipped assembler, not a copy:
-// tests/mkwashim.js lifts it out of app.js.
+// Every non-empty subset of each question's pathways, capped at the six
+// arguments an essay could hold, is rendered and read mechanically; the run
+// prints how many that came to, which grows as questions are authored. This
+// runs the shipped assembler, not a copy: tests/mkwashim.js lifts it out of
+// app.js.
 import { readFileSync } from "fs";
 import { createContext, runInContext } from "vm";
 import { setQuestion, esWorkingAnswer, esWorkingParts, esPositionTension } from "./wa.mjs";
@@ -127,8 +127,22 @@ questions.forEach(q => {
 });
 
 // ---- the qualifier appears exactly when something qualifies the judgement ----
-const hr = questions.find(q => (q.coreAnswer || {}).mode === "judgement");
-ok(!!hr, "a judgement question exists to test the qualifier against");
+// This block needs a particular SHAPE of judgement question: one offering a
+// negative position and at least two different limitations, because half of what
+// it asserts is a judgement sitting against arguments that pull the other way.
+// It used to take the first judgement question in the bank and then name hr-01's
+// position ids as literals, so authoring an earlier judgement question silently
+// pointed it at positions that did not exist and every assertion here failed.
+// It now says what it needs and resolves positions by their lean.
+const leansOf = q => ((q.coreAnswer || {}).positions || []).map(x => x.lean);
+const rolesOf = q => (q.pathways || []).reduce((a, x) => {
+  const r = (x.contribution || {}).role; if (r) a[r] = (a[r] || 0) + 1; return a;
+}, {});
+const posByLean = (q, lean) => ((((q.coreAnswer || {}).positions || []).find(x => x.lean === lean)) || {}).id;
+const isJudgement = q => (q.coreAnswer || {}).mode === "judgement";
+const hr = questions.find(q => isJudgement(q) && leansOf(q).indexOf("negative") >= 0
+  && (rolesOf(q).limitation || 0) >= 2 && (rolesOf(q).conditional || 0) >= 1 && (rolesOf(q).support || 0) >= 1);
+ok(!!hr, "a judgement question with a negative position and two limitations exists to test the qualifier against");
 if (hr) {
   setQuestion(hr);
   const ids = hr.pathways.map(x => x.id);
@@ -151,37 +165,70 @@ if (hr) {
 
   // ---- judgement against argument shape: asks, never decides ----------------
   const pos = id => ({ position: id });
+  const POSITIVE = posByLean(hr, "positive"), NEGATIVE = posByLean(hr, "negative"), QUALIFIED = posByLean(hr, "qualified");
   const T = (p, pick, extra) => esPositionTension(draft(hr, pick, Object.assign({}, pos(p), extra || {})));
   const one = sup.slice(0, 1), twoLim = lim.slice(0, 2);
-  ok(T("high", one.concat(twoLim)) !== null, "a positive judgement against mostly qualifying arguments raises a question");
-  ok(T("high", sup.slice(0, 3)) === null, "a positive judgement with supporting arguments raises nothing");
-  ok(T("limited", sup.slice(0, 2)) !== null, "a negative judgement against supporting arguments raises a question");
-  ok(T("limited", lim.concat(cond.slice(0, 1))) === null, "a negative judgement against limiting arguments raises nothing");
-  ok(T("conditional", sup.slice(0, 3)) !== null, "an it depends judgement where every argument pulls one way raises a question");
-  ok(T("conditional", sup.slice(0, 1).concat(cond.slice(0, 1), lim.slice(0, 1))) === null, "a mixed set under a qualified judgement raises nothing");
-  ok(T("high", one) === null, "one argument is never enough to question a judgement");
-  ok(T("high", [lim[0], lim[0]]) === null, "and neither is one argument written out twice");
-  ok(T("high", [lim[0], lim[0], lim[1]]) !== null, "two different limitations do question it");
+  ok(T(POSITIVE, one.concat(twoLim)) !== null, "a positive judgement against mostly qualifying arguments raises a question");
+  ok(T(POSITIVE, sup.slice(0, 3)) === null, "a positive judgement with supporting arguments raises nothing");
+  ok(T(NEGATIVE, sup.slice(0, 2)) !== null, "a negative judgement against supporting arguments raises a question");
+  ok(T(NEGATIVE, lim.concat(cond.slice(0, 1))) === null, "a negative judgement against limiting arguments raises nothing");
+  ok(T(QUALIFIED, sup.slice(0, 3)) !== null, "an it depends judgement where every argument pulls one way raises a question");
+  ok(T(QUALIFIED, sup.slice(0, 1).concat(cond.slice(0, 1), lim.slice(0, 1))) === null, "a mixed set under a qualified judgement raises nothing");
+  ok(T(POSITIVE, one) === null, "one argument is never enough to question a judgement");
+  ok(T(POSITIVE, [lim[0], lim[0]]) === null, "and neither is one argument written out twice");
+  ok(T(POSITIVE, [lim[0], lim[0], lim[1]]) !== null, "two different limitations do question it");
   ok(T("own:I think they work", one.concat(twoLim)) === null, "a position the student wrote is left alone");
   ok(T(null, one.concat(twoLim)) === null, "no position means nothing to question");
-  const t = T("high", one.concat(twoLim));
+  const t = T(POSITIVE, one.concat(twoLim));
   ok(t && t.label && t.ask, "the question names the judgement and what is odd about the arguments");
   ok(t && !/\bwrong\b|\bshould\b|\bdowngrade\b/i.test(t.ask), "it does not tell the student the judgement is wrong");
-  const t0 = T("high", one.concat(twoLim));
-  ok(T("high", one.concat(twoLim), { posSeenShape: t0.shape }) === null, "dismissing it keeps that shape dismissed");
-  ok(T("high", one.concat(twoLim, cond.slice(0, 1)), { posSeenShape: t0.shape }) !== null, "it returns when the shape moves again");
+  const t0 = T(POSITIVE, one.concat(twoLim));
+  ok(T(POSITIVE, one.concat(twoLim), { posSeenShape: t0.shape }) === null, "dismissing it keeps that shape dismissed");
+  ok(T(POSITIVE, one.concat(twoLim, cond.slice(0, 1)), { posSeenShape: t0.shape }) !== null, "it returns when the shape moves again");
   // the reason the key is the shape and not a count: swapping one argument for
   // another of a different kind leaves the count identical and changes the
   // question entirely
-  const swapped = T("high", one.concat(lim.slice(0, 1), cond.slice(0, 1)), { posSeenShape: t0.shape });
+  const swapped = T(POSITIVE, one.concat(lim.slice(0, 1), cond.slice(0, 1)), { posSeenShape: t0.shape });
   ok(swapped !== null, "and returns when an argument is swapped for a different kind without the count moving");
-  ok(T("limited", sup.slice(0, 2), { posSeenShape: t0.shape }) !== null,
+  ok(T(NEGATIVE, sup.slice(0, 2), { posSeenShape: t0.shape }) !== null,
     "a different judgement is never covered by another judgement's dismissal");
-  const d = draft(hr, one.concat(twoLim), pos("high"));
+  const d = draft(hr, one.concat(twoLim), pos(POSITIVE));
   esPositionTension(d);
-  ok(d.position === "high", "checking the tension never changes the student's judgement");
-  ok(esWorkingAnswer(d).text.indexOf("Highly effective") < 0, "the working answer does not restate the judgement label");
+  ok(d.position === POSITIVE, "checking the tension never changes the student's judgement");
+  const label = (((hr.coreAnswer || {}).positions || []).find(x => x.id === POSITIVE) || {}).label || "";
+  ok(esWorkingAnswer(d).text.indexOf(label) < 0, "the working answer does not restate the judgement label");
 }
+
+// ---- the same reasoning, on every judgement question there is ---------------
+// The block above needs one question's particular shape. These are the parts
+// that need only a positive position and a limitation, so they run everywhere,
+// which is how a newly authored judgement question gets checked rather than
+// merely added.
+questions.filter(isJudgement).forEach(q => {
+  setQuestion(q);
+  const ids = q.pathways.map(x => x.id);
+  const role = id => ((q.pathways.find(x => x.id === id) || {}).contribution || {}).role;
+  const sup = ids.filter(id => role(id) === "support");
+  const lim = ids.filter(id => role(id) === "limitation");
+  const positive = posByLean(q, "positive");
+  ok(!!positive, q.id + ": offers a position to hold");
+  ok(sup.length >= 1 && lim.length >= 1, q.id + ": offers something to weigh in both directions");
+  if (!positive || !sup.length || !lim.length) return;
+  const T2 = (p, pick, extra) => esPositionTension(draft(q, pick, Object.assign({ position: p }, extra || {})));
+  ok(T2(positive, sup.slice(0, 3)) === null, q.id + ": a positive position with supporting arguments raises nothing");
+  ok(T2(positive, [lim[0], lim[0]]) === null, q.id + ": one argument written out twice is not a pattern");
+  if (lim.length >= 2) {
+    const t = T2(positive, sup.slice(0, 1).concat(lim.slice(0, 2)));
+    ok(t !== null, q.id + ": a positive position against two limitations raises a question");
+    ok(t && !/\bwrong\b|\bshould\b|\bdowngrade\b/i.test(t.ask || ""), q.id + ": and asks rather than corrects");
+    ok(T2(positive, sup.slice(0, 1).concat(lim.slice(0, 2)), { posSeenShape: t.shape }) === null,
+      q.id + ": dismissing it keeps that shape dismissed");
+  } else {
+    // Not a gap to be filled by inventing a second limitation. Said out loud so
+    // the coverage of this check is visible rather than assumed.
+    console.log("  " + q.id + " has one limitation, so the two-limitation shape is not testable here");
+  }
+});
 
 // ---- a pathway with no adds would silently vanish from the answer -----------
 questions.forEach(q => {
