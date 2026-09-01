@@ -1,0 +1,619 @@
+{
+  "schema": "marginal.question-package",
+  "version": 1,
+  "question": {
+    "id": "mkt-03",
+    "subject": "business_studies",
+    "topic": "Marketing",
+    "directive": "To what extent",
+    "text": "To what extent do influences on marketing determine business success?",
+    "marks": 20,
+    "terms": {
+      "first": "Influences on marketing",
+      "second": "Business success"
+    },
+    "overallArgument": "Influences significantly shape customer behaviour and constrain decisions, though management's response ultimately determines their effect on success."
+  },
+  "origin": {
+    "type": "bundled",
+    "packageId": null,
+    "author": null,
+    "authoredAt": null
+  },
+  "relationship": {
+    "intro": null,
+    "claims": [
+      {
+        "id": "mkt-03-claim-1",
+        "line": "Psychological influences",
+        "left": {
+          "label": "Psychological influences",
+          "conceptRef": null
+        },
+        "relation": "affects",
+        "right": [],
+        "pathwayRefs": []
+      },
+      {
+        "id": "mkt-03-claim-2",
+        "line": "Sociocultural influences",
+        "left": {
+          "label": "Sociocultural influences",
+          "conceptRef": null
+        },
+        "relation": "affects",
+        "right": [],
+        "pathwayRefs": []
+      },
+      {
+        "id": "mkt-03-claim-3",
+        "line": "Economic influences",
+        "left": {
+          "label": "Economic influences",
+          "conceptRef": null
+        },
+        "relation": "affects",
+        "right": [],
+        "pathwayRefs": []
+      },
+      {
+        "id": "mkt-03-claim-4",
+        "line": "Government influences",
+        "left": {
+          "label": "Government influences",
+          "conceptRef": null
+        },
+        "relation": "affects",
+        "right": [],
+        "pathwayRefs": []
+      },
+      {
+        "id": "mkt-03-claim-5",
+        "line": "Consumer laws",
+        "left": {
+          "label": "Consumer laws",
+          "conceptRef": null
+        },
+        "relation": "affects",
+        "right": [],
+        "pathwayRefs": []
+      },
+      {
+        "id": "mkt-03-claim-6",
+        "line": "Ethical influences",
+        "left": {
+          "label": "Ethical influences",
+          "conceptRef": null
+        },
+        "relation": "affects",
+        "right": [],
+        "pathwayRefs": []
+      },
+      {
+        "id": "mkt-03-claim-7",
+        "line": "What the business does in response",
+        "left": {
+          "label": "What the business does in response",
+          "conceptRef": null
+        },
+        "relation": "affects",
+        "right": [],
+        "pathwayRefs": []
+      }
+    ]
+  },
+  "decode": {
+    "verbMeaning": "To what extent asks how far something is true, so the answer is a degree rather than a yes or a no. An answer that says influences matter has not given a degree, and neither has one that says they do not.",
+    "plainEnglish": "Work out how much of a business's success is decided by things it cannot control, and how much by what it does about them.",
+    "highlights": [
+      {
+        "anchor": "To what extent",
+        "kind": "directive",
+        "label": "what you need to do",
+        "note": "Give a degree and hold it. The degree has to come out of the paragraphs, not be announced at the end."
+      },
+      {
+        "anchor": "influences on marketing",
+        "kind": "cause",
+        "label": "what might be doing the determining",
+        "note": "The factors influencing customer choice, consumer laws and ethical influences. Which ones you use is your choice."
+      },
+      {
+        "anchor": "determine",
+        "kind": "judgement",
+        "label": "the word carrying the degree",
+        "note": "Determine is stronger than affect. Showing that an influence matters is not yet showing that it determines the outcome."
+      },
+      {
+        "anchor": "business success",
+        "kind": "effect",
+        "label": "what has to be measured",
+        "note": "Read it off a market objective first: market share, sales revenue, product range, customer service, entering a new market. Then say what that objective means for the business overall."
+      }
+    ],
+    "cover": {
+      "forEach": "an influence → what it changes for the customer or the business → the market objective it moves, and how far that settles the outcome",
+      "consistency": "Choose the influences yourself, use one business throughout, and hold one degree across the whole response."
+    }
+  },
+  "requirements": {
+    "concepts": [
+      "influences on marketing",
+      "factors influencing customer choice",
+      "consumer laws",
+      "ethical marketing",
+      "market objectives",
+      "business success"
+    ],
+    "relationships": [
+      "an influence acts on the customer or on what the business is allowed to do, not on success directly",
+      "the same influence reaches every business in the market, so the response is what differs",
+      "success has to be read off a named market objective before it can be called success"
+    ],
+    "accomplish": [
+      "states how far influences determine success and holds that position across the response",
+      "for each influence, reaches a named market objective rather than stopping at customer behaviour",
+      "shows at least one influence the business can only respond to, and at least one where the response changes the result",
+      "says what the market objective then means for the business overall",
+      "uses one business consistently so the influences can be compared"
+    ],
+    "syllabus": "Marketing: influences on marketing, being the factors influencing customer choice, consumer laws and ethical influences, weighed against the market objectives the business sets."
+  },
+  "coreAnswer": {
+    "mode": "judgement",
+    "pattern": "an influence → the market objective it moves → how far that settles the outcome",
+    "statement": "Influences on marketing significantly shape customer behaviour and constrain what the business may do, though how far they determine success depends on how well the business understands them and responds.",
+    "judging": "how far influences on marketing determine business success",
+    "criteria": [
+      {
+        "id": "objective",
+        "label": "against a named market objective",
+        "note": "Market share, sales revenue, product range, customer service or entering a new market. Success has to be read off one of these before it can be weighed."
+      },
+      {
+        "id": "reach",
+        "label": "how much of the choice it drives",
+        "note": "Some influences change what the customer will buy at all. Others change only when, where or at what price. That difference is degree."
+      },
+      {
+        "id": "response",
+        "label": "whether the business can respond",
+        "note": "Every business in the market meets the same influence. Where the response changes the result, the influence did not determine it on its own."
+      },
+      {
+        "id": "overall",
+        "label": "what the objective means for the business",
+        "note": "A movement in market share or revenue is the measurable part. Say what it means for the business overall, which is what the question asks about."
+      }
+    ],
+    "positions": [
+      {
+        "id": "largely",
+        "label": "Largely determined by the influences",
+        "lean": "positive",
+        "note": "Take this if your influences reach market objectives directly and the responses available to the business are narrow."
+      },
+      {
+        "id": "conditions",
+        "label": "The influences set the conditions; the response decides the result",
+        "lean": "qualified",
+        "note": "Take this if you can show two businesses meeting the same influence and finishing in different places."
+      },
+      {
+        "id": "varies",
+        "label": "Determined for some influences and not for others",
+        "lean": "qualified",
+        "note": "Take this if some of your influences can only be responded to while others can be answered, and you can say which is which."
+      },
+      {
+        "id": "limited",
+        "label": "Only to a limited extent; the response decides the outcome",
+        "lean": "negative",
+        "note": "Take this if you can show businesses meeting the same influences and finishing in different places, and can say what made the difference."
+      }
+    ]
+  },
+  "workingAnswer": {
+    "base": "Influences on marketing shape business success.",
+    "lead": "Influences on marketing shape business success by",
+    "join": ", and by",
+    "qualifier": "although how far they determine it depends on how the business responds"
+  },
+  "reasoning": {
+    "cause": {
+      "label": "an influence on marketing",
+      "terms": [
+        "psychological",
+        "perception",
+        "motives",
+        "attitudes",
+        "sociocultural",
+        "family",
+        "peers",
+        "social class",
+        "culture",
+        "economic",
+        "downturn",
+        "boom",
+        "government",
+        "regulation",
+        "consumer law",
+        "consumer laws",
+        "ethical",
+        "ethics",
+        "advertising standards"
+      ]
+    },
+    "effect": {
+      "label": "a market objective, or business success",
+      "terms": [
+        "market share",
+        "sales",
+        "sales revenue",
+        "revenue",
+        "customer service",
+        "product range",
+        "new market",
+        "loyalty",
+        "repeat purchase",
+        "reputation",
+        "profit",
+        "business success"
+      ]
+    },
+    "forward": "The question asks how far an influence determines success.",
+    "backward": "Your point currently explains how the business changes the influence. These influences are external: the business responds to them.",
+    "degree": {
+      "ask": "This says the influence matters. To what extent asks how far it determines the outcome, so your point needs to land somewhere on a scale.",
+      "terms": [
+        "highly",
+        "very",
+        "largely",
+        "significantly",
+        "significant",
+        "substantially",
+        "substantial",
+        "considerably",
+        "considerable",
+        "moderately",
+        "moderate",
+        "somewhat",
+        "slightly",
+        "slight",
+        "marginally",
+        "marginal",
+        "limited",
+        "little",
+        "only where",
+        "only when",
+        "only if",
+        "strongly",
+        "strong",
+        "greatly",
+        "great",
+        "most",
+        "least",
+        "far more",
+        "far less",
+        "rarely",
+        "partly",
+        "in part",
+        "to a large extent",
+        "to a limited extent",
+        "outweigh"
+      ]
+    }
+  },
+  "areas": [],
+  "areasLabel": null,
+  "pathways": [
+    {
+      "id": "mkt03-econ-tradedown",
+      "areaRef": "influences-on-marketing",
+      "short": "Economic conditions → customers trade down",
+      "adds": "changing what customers can afford to buy",
+      "relationship": "Economic conditions change spending directly: in a downturn customers trade down to cheaper brands, so pricing and promotion must change or sales are lost",
+      "left": null,
+      "choiceMeaning": "When household budgets tighten, the same customer buys a cheaper version of the same thing, and the business finds out through its sales.",
+      "whatToProve": "household budgets tighten → customers move to cheaper brands → sales revenue falls unless price and promotion change",
+      "commonMistake": "Saying a downturn is bad for business. The point is which market objective moved, and by how much.",
+      "mechanism": {
+        "status": "unreviewed",
+        "text": null,
+        "note": null
+      },
+      "conceptRef": "business.marketing.influences-on-marketing.factors-influencing-customer-choice",
+      "learningRef": null,
+      "learning": {
+        "status": "unreviewed"
+      },
+      "evidenceRefs": [],
+      "guidance": {
+        "explain": {
+          "direct": "Explain what changes in the customer's decision, not in the economy."
+        },
+        "effect": {
+          "direct": "Name the market objective this moves and say how far."
+        },
+        "link": {
+          "direct": "Say how much of your overall degree this influence carries."
+        }
+      },
+      "contribution": {
+        "role": "support",
+        "note": "The strongest of the influences for this question: it reaches sales revenue without needing anything else to happen."
+      }
+    },
+    {
+      "id": "mkt03-psych",
+      "areaRef": "influences-on-marketing",
+      "short": "Psychological factors → which segment can be reached",
+      "adds": "deciding which customers the offer can reach at all",
+      "relationship": "Perception, motives, attitudes, personality and learning shape which product the customer chooses, so they decide which segment can be reached at all",
+      "left": null,
+      "choiceMeaning": "What is inside the buyer decides whether the product is even considered, before price or promotion get a say.",
+      "whatToProve": "buyers hold perceptions and motives → these decide which offers are considered → the business must target the segment whose motives its product already fits",
+      "commonMistake": "Describing the psychology and stopping. The influence has to reach a decision the business made about who it sells to.",
+      "mechanism": {
+        "status": "unreviewed",
+        "text": null,
+        "note": null
+      },
+      "conceptRef": "business.marketing.influences-on-marketing.factors-influencing-customer-choice",
+      "learningRef": null,
+      "learning": {
+        "status": "unreviewed"
+      },
+      "evidenceRefs": [],
+      "guidance": {
+        "explain": {
+          "direct": "Explain which motive or perception is at work and what it rules in or out."
+        },
+        "effect": {
+          "direct": "Say which market objective follows from targeting that segment."
+        },
+        "link": {
+          "direct": "Say how far this influence settles the outcome by itself."
+        }
+      },
+      "contribution": {
+        "role": "support",
+        "note": "It determines who can be sold to, which is a strong claim, but it is slower to show up in a market objective than the economic one."
+      }
+    },
+    {
+      "id": "mkt03-socio",
+      "areaRef": "influences-on-marketing",
+      "short": "Sociocultural factors → choice made in a group",
+      "adds": "showing choice being made socially rather than individually",
+      "relationship": "Family, peers, social class and culture apply pressure from outside the buyer, so choice is not made by the individual alone",
+      "left": null,
+      "choiceMeaning": "People buy what the people around them buy, which is why a segment defined socially behaves differently from one defined by age or income.",
+      "whatToProve": "social groups set what is normal to buy → individual choice follows the group → segments defined socially behave differently from segments defined by age or income alone",
+      "commonMistake": "Treating culture as a general background. Name the group and what it makes normal.",
+      "mechanism": {
+        "status": "unreviewed",
+        "text": null,
+        "note": null
+      },
+      "conceptRef": "business.marketing.influences-on-marketing.factors-influencing-customer-choice",
+      "learningRef": null,
+      "learning": {
+        "status": "unreviewed"
+      },
+      "evidenceRefs": [],
+      "guidance": {
+        "explain": {
+          "direct": "Explain whose expectations are acting on the buyer."
+        },
+        "effect": {
+          "direct": "Say what the business did about it and which objective moved."
+        },
+        "link": {
+          "direct": "Say how far this influence reaches compared with the others you have used."
+        }
+      },
+      "contribution": {
+        "role": "support",
+        "note": "Useful where your business sells to groups rather than individuals; weaker where the purchase is private."
+      }
+    },
+    {
+      "id": "mkt03-govt",
+      "areaRef": "influences-on-marketing",
+      "short": "Government → what the business is allowed to do",
+      "adds": "removing some of the responses the business could make",
+      "relationship": "Government laws, taxes and regulations shape what can be sold, to whom, and how it may be advertised, so they constrain the response rather than change the customer's preference",
+      "left": null,
+      "choiceMeaning": "The customer may still want it; the business may simply not be allowed to sell it that way.",
+      "whatToProve": "a rule applies to the product or its advertising → some responses become unavailable → success depends on what the business can still do, not on what the customer wants",
+      "commonMistake": "Treating regulation as the same kind of influence as customer psychology. One changes what people want; the other changes what the business may do about it.",
+      "mechanism": {
+        "status": "unreviewed",
+        "text": null,
+        "note": null
+      },
+      "conceptRef": "business.marketing.influences-on-marketing.factors-influencing-customer-choice",
+      "learningRef": null,
+      "learning": {
+        "status": "unreviewed"
+      },
+      "evidenceRefs": [],
+      "guidance": {
+        "explain": {
+          "direct": "Explain which response is closed off, and to whom."
+        },
+        "effect": {
+          "direct": "Say what the business does with what is left, and which objective that reaches."
+        },
+        "link": {
+          "direct": "Say whether this changed the outcome or only the method."
+        }
+      },
+      "contribution": {
+        "role": "conditional",
+        "note": "It acts on the business rather than on the customer, so it determines the outcome only where it takes away the response the business needed."
+      }
+    },
+    {
+      "id": "mkt03-consumerlaw",
+      "areaRef": "influences-on-marketing",
+      "short": "Consumer law → what may be claimed, and repeat purchase",
+      "adds": "fixing what may be claimed and what the buyer is owed",
+      "relationship": "Consumer law sets what may be claimed and what every sale must deliver, so a breach brings penalties and publicity that damages the brand, while honouring implied conditions and warranties builds the trust that produces repeat purchase",
+      "left": null,
+      "choiceMeaning": "The law is a floor under the promise: it decides what the business may say, and what the customer gets whether it was promised or not.",
+      "whatToProve": "a claim or a sale falls under consumer law → the business either breaches it or honours it → reputation and repeat purchase move accordingly",
+      "commonMistake": "Listing the parts of consumer law. Choose the one that touches your business and follow it to a market objective.",
+      "mechanism": {
+        "status": "unreviewed",
+        "text": null,
+        "note": null
+      },
+      "conceptRef": "business.marketing.influences-on-marketing.consumer-laws",
+      "learningRef": null,
+      "learning": {
+        "status": "unreviewed"
+      },
+      "evidenceRefs": [],
+      "guidance": {
+        "explain": {
+          "direct": "Explain which requirement applies and what it obliges the business to do or not say."
+        },
+        "effect": {
+          "direct": "Say what followed for reputation or repeat purchase, and which objective that reaches."
+        },
+        "link": {
+          "direct": "Say how far this influence determines the outcome for a business that complies."
+        }
+      },
+      "contribution": {
+        "role": "conditional",
+        "note": "It determines success sharply at the point of breach and slowly through trust, so its degree depends on which of the two your business shows."
+      }
+    },
+    {
+      "id": "mkt03-ethical",
+      "areaRef": "influences-on-marketing",
+      "short": "Ethical choices → short-term sales against long-term loyalty",
+      "adds": "trading short-term sales against long-term loyalty",
+      "relationship": "Ethical marketing goes beyond what the law requires, so unethical conduct may lift short-term sales while risking backlash, boycotts and tighter regulation, and ethical conduct supports loyalty and market share while raising costs and ruling out profitable segments",
+      "left": null,
+      "choiceMeaning": "The choice is not between right and profitable: it is between money now and a position later, and the business has to pick.",
+      "whatToProve": "the business chooses conduct the law does not require → short-term sales and long-term standing move in opposite directions → which objective you measure decides how far this determined success",
+      "commonMistake": "Arguing that ethical marketing is simply better. The authored tension is that it can raise costs and rule out profitable segments, and the question asks you to weigh that.",
+      "mechanism": {
+        "status": "unreviewed",
+        "text": null,
+        "note": null
+      },
+      "conceptRef": "business.marketing.influences-on-marketing.ethical",
+      "learningRef": null,
+      "learning": {
+        "status": "unreviewed"
+      },
+      "evidenceRefs": [],
+      "guidance": {
+        "explain": {
+          "direct": "Explain the choice being made and what the law would have allowed instead."
+        },
+        "effect": {
+          "direct": "Say which objective gains and which loses, over which time."
+        },
+        "link": {
+          "direct": "Say what the two together are worth to your overall degree."
+        }
+      },
+      "contribution": {
+        "role": "conditional",
+        "note": "This is where the degree lives on the ethical side: the same choice pays over one horizon and costs over another."
+      }
+    },
+    {
+      "id": "mkt03-response",
+      "areaRef": "influences-on-marketing",
+      "short": "The response → the same influence, different results",
+      "adds": "showing the response producing the difference in outcome",
+      "relationship": "Understanding the influences lets a business target the right segment and time its campaigns, so two businesses meeting the same influence do not get the same result",
+      "left": null,
+      "choiceMeaning": "If the influence settled it, every business in the market would end up in the same place, and they do not.",
+      "whatToProve": "the influence is the same for every business in the market → the responses differ → the difference in outcome was produced by the response, which limits how far the influence itself determined success",
+      "commonMistake": "Turning this into an argument that influences do not matter. It limits the degree; it does not reverse it.",
+      "mechanism": {
+        "status": "unreviewed",
+        "text": null,
+        "note": null
+      },
+      "conceptRef": "business.marketing.marketing-process.developing-marketing-strategies",
+      "learningRef": null,
+      "learning": {
+        "status": "unreviewed"
+      },
+      "evidenceRefs": [],
+      "guidance": {
+        "explain": {
+          "direct": "Explain what one business did with the influence that another did not."
+        },
+        "effect": {
+          "direct": "Say which objective separated them."
+        },
+        "link": {
+          "direct": "Say how much this takes off the degree you would otherwise give."
+        }
+      },
+      "contribution": {
+        "role": "limitation",
+        "note": "This is the pathway that makes the degree real. Without it the response has six arguments for one side and a conclusion asserting the other."
+      }
+    },
+    {
+      "id": "mkt03-uncontrollable",
+      "areaRef": "influences-on-marketing",
+      "short": "What cannot be answered → the response runs out",
+      "adds": "naming an influence no response can remove",
+      "relationship": "Some influences can only be responded to and not countered, so beyond a point no marketing response recovers the position",
+      "left": null,
+      "choiceMeaning": "There is a limit to what marketing can do about the world, and knowing where that limit falls is the answer to how far.",
+      "whatToProve": "the influence is outside the business's control → the response can adapt to it but not remove it → for that influence the degree of determination is high",
+      "commonMistake": "Using this for every influence. It only holds where you can say what the business tried and why it could not work.",
+      "mechanism": {
+        "status": "unreviewed",
+        "text": null,
+        "note": null
+      },
+      "conceptRef": "business.marketing.marketing-process.situational-analysis",
+      "learningRef": null,
+      "learning": {
+        "status": "unreviewed"
+      },
+      "evidenceRefs": [],
+      "guidance": {
+        "explain": {
+          "direct": "Explain what the business could and could not do about this one."
+        },
+        "effect": {
+          "direct": "Say which objective moved anyway."
+        },
+        "link": {
+          "direct": "Say what this adds back to your degree."
+        }
+      },
+      "contribution": {
+        "role": "support",
+        "note": "The counterweight to the response pathway, and the reason the degree is not simply low."
+      }
+    }
+  ],
+  "marking": {
+    "source": "generated",
+    "bands": null,
+    "bandSource": null,
+    "text": null
+  },
+  "provenance": {
+    "origin": null,
+    "reviewState": "in-source",
+    "publication": "published",
+    "notes": null
+  }
+}

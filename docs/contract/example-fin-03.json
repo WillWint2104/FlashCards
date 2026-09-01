@@ -1,0 +1,92 @@
+{
+  "schema": "marginal.question-package",
+  "version": 1,
+  "question": {
+    "id": "fin-03",
+    "subject": "business_studies",
+    "topic": "Finance",
+    "directive": "Assess",
+    "text": "Assess the impact of influences on the financial management of a business.",
+    "marks": 20,
+    "terms": {
+      "first": "Influences on financial management",
+      "second": "Financial management and performance"
+    },
+    "overallArgument": "The significance of each influence depends on the business's financial position and activities, though global market conditions can be particularly significant for large and international businesses."
+  },
+  "origin": {
+    "type": "bundled",
+    "packageId": null,
+    "author": null,
+    "authoredAt": null
+  },
+  "relationship": {
+    "intro": null,
+    "claims": [
+      {
+        "id": "fin-03-claim-1",
+        "line": "Sources of finance",
+        "left": {
+          "label": "Sources of finance",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [],
+        "pathwayRefs": []
+      },
+      {
+        "id": "fin-03-claim-2",
+        "line": "Financial institutions",
+        "left": {
+          "label": "Financial institutions",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [],
+        "pathwayRefs": []
+      },
+      {
+        "id": "fin-03-claim-3",
+        "line": "Government",
+        "left": {
+          "label": "Government",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [],
+        "pathwayRefs": []
+      },
+      {
+        "id": "fin-03-claim-4",
+        "line": "Global market influences",
+        "left": {
+          "label": "Global market influences",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [],
+        "pathwayRefs": []
+      }
+    ]
+  },
+  "decode": null,
+  "requirements": null,
+  "coreAnswer": null,
+  "workingAnswer": null,
+  "reasoning": null,
+  "areas": [],
+  "areasLabel": null,
+  "pathways": [],
+  "marking": {
+    "source": "generated",
+    "bands": null,
+    "bandSource": null,
+    "text": null
+  },
+  "provenance": {
+    "origin": null,
+    "reviewState": "in-source",
+    "publication": "published",
+    "notes": null
+  }
+}

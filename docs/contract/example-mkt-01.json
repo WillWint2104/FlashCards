@@ -1,0 +1,1432 @@
+{
+  "schema": "marginal.question-package",
+  "version": 1,
+  "question": {
+    "id": "mkt-01",
+    "subject": "business_studies",
+    "topic": "Marketing",
+    "directive": "Explain",
+    "text": "Explain how target markets affect e-marketing, people, processes and physical evidence.",
+    "marks": 20,
+    "terms": {
+      "first": "Target markets",
+      "second": "Marketing strategies"
+    },
+    "overallArgument": "The chosen target market shapes each of these four elements so that the strategy fits the customer."
+  },
+  "origin": {
+    "type": "bundled",
+    "packageId": null,
+    "author": null,
+    "authoredAt": null
+  },
+  "relationship": {
+    "intro": "This question asks how the characteristics of a target market shape the marketing strategies a business chooses. Each argument below links one characteristic to one part of the marketing mix.",
+    "claims": [
+      {
+        "id": "mkt-01-claim-1",
+        "line": "Target market to e-marketing",
+        "left": {
+          "label": "Target market",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "e-marketing",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
+      },
+      {
+        "id": "mkt-01-claim-2",
+        "line": "Target market to people",
+        "left": {
+          "label": "Target market",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "people",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
+      },
+      {
+        "id": "mkt-01-claim-3",
+        "line": "Target market to processes",
+        "left": {
+          "label": "Target market",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "processes",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
+      },
+      {
+        "id": "mkt-01-claim-4",
+        "line": "Target market to physical evidence",
+        "left": {
+          "label": "Target market",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "physical evidence",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
+      }
+    ]
+  },
+  "decode": {
+    "verbMeaning": "Explain means show how or why. For each area you have to establish a cause and an effect, not describe the strategy on its own.",
+    "plainEnglish": "Show how knowing who the customers are changes the way a business uses digital marketing, its staff, its service processes and its physical surroundings.",
+    "coreRelationship": "A business identifies characteristics and expectations within its target market, then adapts each marketing strategy to suit those customers.",
+    "highlights": [
+      {
+        "anchor": "Explain",
+        "kind": "directive",
+        "label": "what you need to do",
+        "note": "Show how or why one thing affects another. Describing each strategy on its own will not answer this question, however accurate the description is. Explain is the directive verb here."
+      },
+      {
+        "anchor": "target markets",
+        "kind": "cause",
+        "label": "the cause in the question",
+        "note": "Ask what characteristics, behaviours and expectations this group of customers has, because everything else in your answer follows from that."
+      },
+      {
+        "anchor": "e-marketing",
+        "kind": "requiredArea",
+        "ref": "e-marketing",
+        "label": "must cover",
+        "note": "Show how a characteristic of the target market causes the business's digital marketing to take the form it does."
+      },
+      {
+        "anchor": "people",
+        "kind": "requiredArea",
+        "ref": "people",
+        "label": "must cover",
+        "note": "Show how what customers expect of the staff who serve them causes changes to training, skills and service standards."
+      },
+      {
+        "anchor": "processes",
+        "kind": "requiredArea",
+        "ref": "processes",
+        "label": "must cover",
+        "note": "Show how customer characteristics cause the ordering, service or collection process to be built the way it is."
+      },
+      {
+        "anchor": "physical evidence",
+        "kind": "requiredArea",
+        "ref": "physical evidence",
+        "label": "must cover",
+        "note": "Show how customer characteristics cause the physical surroundings, layout and presentation to be designed as they are."
+      }
+    ],
+    "cover": {
+      "forEach": "target-market characteristic → strategy change → case-study evidence → what that evidence demonstrates",
+      "consistency": "Use one business consistently across the whole response."
+    }
+  },
+  "requirements": {
+    "concepts": [
+      "target market",
+      "e-marketing",
+      "people as a marketing strategy",
+      "processes as a marketing strategy",
+      "physical evidence as a marketing strategy"
+    ],
+    "requiredAreas": [
+      {
+        "id": "e-marketing",
+        "label": "e-marketing"
+      },
+      {
+        "id": "people",
+        "label": "people"
+      },
+      {
+        "id": "processes",
+        "label": "processes"
+      },
+      {
+        "id": "physical evidence",
+        "label": "physical evidence"
+      }
+    ],
+    "relationships": [
+      "the characteristics of the chosen target market cause each strategy to take the form it does",
+      "the same target market pulls the four elements in a consistent direction, rather than each being decided separately",
+      "a strategy is a response to what the target market expects, not simply a feature the business happens to have"
+    ],
+    "accomplish": [
+      "covers all four named elements, since the question fixes them",
+      "for each element, shows the causal step from a target-market characteristic to the strategy, rather than describing the strategy alone",
+      "uses one business consistently so the four relationships hold together",
+      "makes the case study evidence do work, saying what each detail demonstrates about the target market"
+    ],
+    "syllabus": "Marketing: market segmentation and target markets, and the marketing strategies of e-marketing, people, processes and physical evidence."
+  },
+  "coreAnswer": {
+    "mode": "causal",
+    "pattern": "target-market characteristic → strategy change → what it achieves",
+    "statement": "A business identifies characteristics and expectations within its target market, then adapts each marketing strategy to suit those customers.",
+    "explain": [
+      "A target market is not everyone who might buy. It is the group a business has chosen, described by what those people are actually like: what they can spend, how they buy, how much time they will give it, what they will not put up with. Choosing that group is a decision, and every marketing decision after it is downstream of that one.",
+      "So the four elements this question names are not free choices. Each is built to suit somebody in particular. Change who the customer is and the same business would promote differently, staff differently, run its service differently and look different inside. That is the relationship you have to explain, four times over."
+    ],
+    "thesisIdea": "Say that the customer group comes first and that the strategies follow from it, then name the four elements you are going to show it in.",
+    "acceptableThesis": "Target markets affect e-marketing, people, processes and physical evidence because a business adapts each of these strategies to suit the characteristics, behaviours and expectations of the customers it has chosen to serve.",
+    "checklist": [
+      "makes the target market the cause, not one factor among several",
+      "says the marketing strategies change in response to it",
+      "carries the relationship across all four named elements",
+      "answers explain, rather than listing what the four elements are"
+    ]
+  },
+  "workingAnswer": {
+    "base": "Target markets affect the marketing strategies a business develops.",
+    "lead": "Target markets affect the marketing strategies a business develops, by shaping",
+    "join": ", and"
+  },
+  "reasoning": {
+    "cause": {
+      "label": "something about the target market",
+      "terms": [
+        "target market",
+        "customers who",
+        "customers want",
+        "customers expect",
+        "convenience",
+        "price sensitivity",
+        "price sensitive",
+        "time poor",
+        "expectations",
+        "segment",
+        "segments",
+        "younger customers",
+        "families",
+        "demographic",
+        "what customers value"
+      ]
+    },
+    "effect": {
+      "label": "a marketing decision",
+      "terms": [
+        "e-marketing",
+        "digital marketing",
+        "people",
+        "processes",
+        "physical evidence",
+        "marketing mix",
+        "promotion",
+        "service standards",
+        "staffing",
+        "ordering",
+        "layout",
+        "the store",
+        "training",
+        "surroundings"
+      ]
+    },
+    "forward": "The question asks you to explain how the target market shapes a marketing decision.",
+    "backward": "Your point currently explains how the marketing decision shapes the target market."
+  },
+  "areas": [
+    {
+      "id": "e-marketing",
+      "label": "e-marketing",
+      "kind": "question-area",
+      "syllabusRefs": [],
+      "guidance": {
+        "topic": {
+          "direct": "State which characteristic of the target market is acting, and say that it acts on the business's digital marketing."
+        },
+        "define": {
+          "direct": "Show what e-marketing covers: reaching and selling to customers through digital channels such as a website, an app, social media and email."
+        },
+        "explain": {
+          "direct": "Explain why that customer characteristic makes digital channels the ones worth using. The customer comes first in the chain, not the technology."
+        },
+        "example": {
+          "direct": "Apply your evidence. Say what the business actually does digitally, then what it shows about who it is selling to."
+        },
+        "effect": {
+          "direct": "Say what the digital strategy achieves for the customer and for the business, and name what it costs."
+        },
+        "link": {
+          "direct": "Return to the question: this is one way the target market shapes e-marketing."
+        }
+      }
+    },
+    {
+      "id": "people",
+      "label": "people",
+      "kind": "question-area",
+      "syllabusRefs": [],
+      "guidance": {
+        "topic": {
+          "direct": "State which characteristic of the target market is acting, and say that it acts on the staff who deliver the service."
+        },
+        "define": {
+          "direct": "Show what people covers: the staff the customer deals with, and the skills, training, attitude and service standards they bring."
+        },
+        "explain": {
+          "direct": "Explain why that characteristic forces the business to change who it hires, how it trains them, or what standard it holds them to."
+        },
+        "example": {
+          "direct": "Apply your evidence to the staff themselves, not to the product they hand over."
+        },
+        "effect": {
+          "direct": "Say what the change in people achieves for the customer experience and for the business, and name its cost."
+        },
+        "link": {
+          "direct": "Return to the question: this is one way the target market shapes the people element."
+        }
+      }
+    },
+    {
+      "id": "processes",
+      "label": "processes",
+      "kind": "question-area",
+      "syllabusRefs": [],
+      "guidance": {
+        "topic": {
+          "direct": "State which characteristic of the target market is acting, and say that it acts on the processes the customer moves through."
+        },
+        "define": {
+          "direct": "Show what processes covers: the steps that deliver the service, such as ordering, payment, preparation and collection."
+        },
+        "explain": {
+          "direct": "Explain why that characteristic forces a step to be removed, moved or rebuilt. The customer is the cause, not the technology."
+        },
+        "example": {
+          "direct": "Apply your evidence to a step in the process, and name which step it changed."
+        },
+        "effect": {
+          "direct": "Say what the changed process achieves for the customer and for the business, and be honest about its cost."
+        },
+        "link": {
+          "direct": "Return to the question: this is one way the target market shapes processes."
+        }
+      }
+    },
+    {
+      "id": "physical-evidence",
+      "label": "physical evidence",
+      "kind": "question-area",
+      "syllabusRefs": [],
+      "guidance": {
+        "topic": {
+          "direct": "State which characteristic of the target market is acting, and say that it acts on the physical evidence the business provides."
+        },
+        "define": {
+          "direct": "Show what physical evidence covers: the tangible surroundings a customer judges the service by, such as layout, fittings, signage, uniforms and packaging."
+        },
+        "explain": {
+          "direct": "Explain why that characteristic causes the business to design the space and its presentation deliberately rather than by accident."
+        },
+        "example": {
+          "direct": "Apply your evidence to something the customer can actually see, and say what it signals to them."
+        },
+        "effect": {
+          "direct": "Say what the designed setting achieves for the customer and for the business, and name what it costs."
+        },
+        "link": {
+          "direct": "Return to the question: this is one way the target market shapes physical evidence."
+        }
+      }
+    }
+  ],
+  "areasLabel": null,
+  "pathways": [
+    {
+      "id": "mkt01-em-digital",
+      "areaRef": "e-marketing",
+      "short": "Digital engagement → digital marketing",
+      "adds": "the digital channels it markets through",
+      "relationship": "Digitally engaged customers lead to greater use of digital marketing",
+      "left": {
+        "label": "customers already on digital channels",
+        "conceptRef": null
+      },
+      "choiceMeaning": "These customers already spend their attention on digital channels, so that is where the business has to buy it.",
+      "whatToProve": "customers are already on digital channels → the business moves its promotion there → why that reaches them better than the alternative",
+      "commonMistake": "Listing the business's digital channels without saying what it is about these customers that made digital the right choice.",
+      "mechanism": {
+        "status": "none-required",
+        "text": null,
+        "note": null
+      },
+      "conceptRef": "business.marketing.marketing-strategies.e",
+      "learningRef": null,
+      "learning": {
+        "status": "unreviewed"
+      },
+      "evidenceRefs": [
+        {
+          "ref": "mcdonalds.marketing.app-loyalty-rewards-and-mobile-ordering",
+          "role": null,
+          "why": null,
+          "limits": null,
+          "published": false
+        },
+        {
+          "ref": "mcdonalds.marketing.promotion-mix-from-advertising-to-sponsorshi",
+          "role": null,
+          "why": null,
+          "limits": null,
+          "published": false
+        }
+      ],
+      "guidance": {
+        "topic": {
+          "direct": "State the relationship: a target market that spends its time on digital channels pushes the business towards e-marketing."
+        },
+        "explain": {
+          "direct": "Explain WHY a target market that is highly engaged with digital technology would cause the business to market through digital channels. Name the mechanism, not the outcome.",
+          "ladder": [
+            {
+              "rung": "hint",
+              "text": "Think about where this target market spends its time, and how a business can reach them there."
+            },
+            {
+              "rung": "needs",
+              "text": "Show the cause and effect between the target market's digital behaviour and the business's choice of marketing channel. The customer habit is the cause."
+            },
+            {
+              "rung": "frame",
+              "text": "Because [target-market characteristic], the business uses [strategy] to [effect]."
+            },
+            {
+              "rung": "starter",
+              "text": "A target market that is highly engaged with digital technology can influence a business's choice of marketing channel because"
+            },
+            {
+              "rung": "example",
+              "context": "a gym and time-poor professionals",
+              "text": "A target market of time-poor professionals may encourage a gym to offer online booking, because this lets customers arrange a session without phoning during business hours.",
+              "pattern": "target-market characteristic, then strategy, then why it suits that market"
+            }
+          ]
+        },
+        "example": {
+          "direct": "Apply the evidence you selected. State the relevant fact accurately first, then say what it demonstrates about the target market.",
+          "ladder": [
+            {
+              "rung": "hint",
+              "text": "Give the detail first. A marker cannot credit a claim about evidence they have not been shown."
+            },
+            {
+              "rung": "needs",
+              "text": "State the fact accurately, then say what it demonstrates. Two moves, in that order."
+            },
+            {
+              "rung": "frame",
+              "text": "[specific detail from the evidence], which shows [what it demonstrates about the target market]."
+            },
+            {
+              "rung": "example",
+              "context": "a bookshop and its loyalty card",
+              "text": "The bookshop's loyalty card records what each member buys, which shows that its target market is willing to trade some privacy for a discount.",
+              "pattern": "the detail, then what the detail proves"
+            }
+          ]
+        },
+        "effect": {
+          "direct": "Say what this achieves for the business, in marketing terms rather than general benefit."
+        },
+        "link": {
+          "direct": "Tie it back to the question: this is one way the target market affects e-marketing."
+        }
+      }
+    },
+    {
+      "id": "mkt01-em-value",
+      "areaRef": "e-marketing",
+      "short": "Price sensitivity → digital offers and loyalty",
+      "adds": "the offers and loyalty schemes it runs digitally",
+      "relationship": "Value-conscious customers lead to digital promotions and loyalty offers",
+      "left": {
+        "label": "customers who decide on price",
+        "conceptRef": null
+      },
+      "choiceMeaning": "These customers decide on price, and digital channels are the cheapest way to put an offer in front of them again and again.",
+      "whatToProve": "customers respond to price → the business needs a cheap and repeatable way to reach them with offers → digital promotions and loyalty schemes become the tool",
+      "commonMistake": "Arguing that discounts attract customers, which is a pricing point, rather than arguing why the offer is delivered digitally.",
+      "mechanism": {
+        "status": "unreviewed",
+        "text": null,
+        "note": "The authored e-marketing content explains that digital channels cut promotion costs and carry personalised offers. That is a capability of the strategy once chosen, not a reason a price-conscious market forces it. Bridging the two would mean inventing the step in between."
+      },
+      "conceptRef": "business.marketing.marketing-strategies.promotion",
+      "learningRef": null,
+      "learning": {
+        "status": "unreviewed"
+      },
+      "evidenceRefs": [
+        {
+          "ref": "mcdonalds.marketing.app-loyalty-rewards-and-mobile-ordering",
+          "role": null,
+          "why": null,
+          "limits": null,
+          "published": false
+        },
+        {
+          "ref": "mcdonalds.marketing.price-points-from-value-range-to-mccafe",
+          "role": null,
+          "why": null,
+          "limits": null,
+          "published": false
+        }
+      ],
+      "guidance": {
+        "explain": {
+          "direct": "Explain why a target market that weighs price closely would push the business towards discounting and loyalty offers delivered digitally."
+        },
+        "example": {
+          "direct": "Apply the evidence you selected, stating the fact before what it shows."
+        },
+        "effect": {
+          "direct": "Say what this achieves: which marketing objective it serves and at what cost."
+        }
+      }
+    },
+    {
+      "id": "mkt01-em-convenience",
+      "areaRef": "e-marketing",
+      "short": "Wanting to act at once → marketing inside the ordering channel",
+      "adds": "where its marketing sits relative to ordering",
+      "relationship": "Convenience-oriented customers lead to marketing through ordering apps and digital channels",
+      "left": {
+        "label": "customers who want to act at once",
+        "conceptRef": null
+      },
+      "choiceMeaning": "These customers want to act on an offer immediately, so the marketing has to sit inside the channel they already order through.",
+      "whatToProve": "customers want to act with the least effort → marketing has to sit where the order is placed → the ordering channel becomes a promotion channel",
+      "commonMistake": "Describing the app as convenient to order with, which is a processes argument, instead of arguing that it is where the marketing reaches them.",
+      "mechanism": {
+        "status": "unreviewed",
+        "text": null,
+        "note": "The source says customers browse, order and pay in one place, which describes what the channel does rather than why this market selects it. The bridging step, that an extra action loses a customer who chooses by effort, is not authored anywhere."
+      },
+      "conceptRef": "business.marketing.marketing-strategies.e",
+      "learningRef": null,
+      "learning": {
+        "status": "unreviewed"
+      },
+      "evidenceRefs": [
+        {
+          "ref": "mcdonalds.marketing.app-loyalty-rewards-and-mobile-ordering",
+          "role": null,
+          "why": null,
+          "limits": null,
+          "published": false
+        }
+      ],
+      "guidance": {
+        "explain": {
+          "direct": "Explain why customers who value convenience make it worth marketing inside the same app they order in."
+        }
+      }
+    },
+    {
+      "id": "mkt01-pe-service",
+      "areaRef": "people",
+      "short": "Expecting personal service → training and service standards",
+      "adds": "the training and service standards it sets for staff",
+      "relationship": "Customers who expect personal service lead to investment in staff training and service standards",
+      "left": {
+        "label": "customers who expect personal service",
+        "conceptRef": null
+      },
+      "choiceMeaning": "Customers who judge the business on the person serving them can lead it to train staff to a set standard.",
+      "whatToProve": "customers expect to be dealt with personally → staff are part of the product → the business invests in training and service standards",
+      "commonMistake": "Saying good staff are important, which is true of every business, instead of saying what THIS target market expects that forced the investment.",
+      "mechanism": {
+        "status": "authored",
+        "text": "the staff member is part of what the customer is buying, so their skill and manner are the thing being judged",
+        "note": null
+      },
+      "conceptRef": "business.marketing.marketing-strategies.people-processes-and-physical-evidence",
+      "learningRef": "business.lesson.mkt01-pe-service",
+      "learning": {
+        "status": "authored"
+      },
+      "evidenceRefs": [
+        {
+          "ref": "mcdonalds.marketing.intensive-distribution-and-standardised-serv",
+          "role": null,
+          "why": null,
+          "limits": null,
+          "published": false
+        }
+      ],
+      "guidance": {
+        "explain": {
+          "direct": "Explain why what this target market expects of an interaction changes how staff are trained and what they are asked to do."
+        },
+        "example": {
+          "direct": "Apply the evidence you selected. Say what it shows about the people element specifically."
+        }
+      }
+    },
+    {
+      "id": "mkt01-pe-speed",
+      "areaRef": "people",
+      "short": "Expecting speed → staffing and rostering",
+      "adds": "how it staffs and rosters for demand",
+      "relationship": "Customers who expect speed lead to staffing and rostering built around peak demand",
+      "left": {
+        "label": "customers who expect speed",
+        "conceptRef": null
+      },
+      "choiceMeaning": "These customers count waiting as a cost, so the business has to have the right number of staff on at the right hour.",
+      "whatToProve": "customers will not wait → service capacity has to match demand hour by hour → staffing and rostering change",
+      "commonMistake": "Arguing about the ordering system, which is processes, rather than about the people who have to be there to deliver it.",
+      "mechanism": {
+        "status": "unreviewed",
+        "text": null,
+        "note": "The relationship holds, but the middle step is about matching service capacity to demand, which is authored under Operations rather than Marketing. Naming it here would import a mechanism this topic does not carry."
+      },
+      "conceptRef": "business.marketing.marketing-strategies.people-processes-and-physical-evidence",
+      "learningRef": null,
+      "learning": {
+        "status": "unreviewed"
+      },
+      "evidenceRefs": [
+        {
+          "ref": "mcdonalds.marketing.intensive-distribution-and-standardised-serv",
+          "role": null,
+          "why": null,
+          "limits": null,
+          "published": false
+        }
+      ],
+      "guidance": {
+        "explain": {
+          "direct": "Explain the link between what the target market will wait for and how the business staffs its service."
+        }
+      }
+    },
+    {
+      "id": "mkt01-pe-consistency",
+      "areaRef": "people",
+      "short": "Expecting consistency → standardised training",
+      "adds": "how consistently it trains staff across the network",
+      "relationship": "Customers who expect the same experience everywhere lead to standardised service training",
+      "left": {
+        "label": "customers who expect the same experience everywhere",
+        "conceptRef": null
+      },
+      "choiceMeaning": "These customers are buying predictability, so what the staff do has to be the same in every store.",
+      "whatToProve": "customers are buying predictability → variation between staff breaks it → training and service standards are standardised",
+      "commonMistake": "Describing standard uniforms, signage or layout, which is physical evidence, rather than what the staff are trained to do.",
+      "mechanism": {
+        "status": "authored",
+        "text": "if the staff are part of the product, differences between staff are differences in the product itself",
+        "note": null
+      },
+      "conceptRef": "business.marketing.marketing-strategies.people-processes-and-physical-evidence",
+      "learningRef": null,
+      "learning": {
+        "status": "unreviewed"
+      },
+      "evidenceRefs": [
+        {
+          "ref": "mcdonalds.marketing.standardisation-with-local-customisation",
+          "role": null,
+          "why": null,
+          "limits": null,
+          "published": false
+        },
+        {
+          "ref": "mcdonalds.marketing.intensive-distribution-and-standardised-serv",
+          "role": null,
+          "why": null,
+          "limits": null,
+          "published": false
+        }
+      ],
+      "guidance": {
+        "explain": {
+          "direct": "Explain why an expectation of consistency forces the business to standardise what its people do."
+        }
+      }
+    },
+    {
+      "id": "mkt01-pr-convenience",
+      "areaRef": "processes",
+      "short": "Wanting less effort → faster, more flexible ordering",
+      "adds": "how much effort ordering takes",
+      "relationship": "Convenience-oriented customers lead to faster and more flexible ordering processes",
+      "left": {
+        "label": "customers who want the least effort",
+        "conceptRef": null
+      },
+      "choiceMeaning": "Customers wanting an easier buying experience can lead a business to simplify ordering, payment or collection.",
+      "whatToProve": "customer expectation → the process change it forces → why the new process suits this market better",
+      "commonMistake": "Describing an app or a kiosk without explaining what it was about these customers that caused the process to change.",
+      "mechanism": {
+        "status": "authored",
+        "text": "ordering, queuing and paying are steps the customer performs personally, so effort left in them is effort spent by the customer",
+        "note": null
+      },
+      "conceptRef": "business.concept.processes",
+      "learningRef": "business.lesson.mkt01-pr-convenience",
+      "learning": {
+        "status": "authored"
+      },
+      "evidenceRefs": [
+        {
+          "ref": "mcdonalds.marketing.app-loyalty-rewards-and-mobile-ordering",
+          "role": null,
+          "why": "It moves ordering and payment off the counter and onto the customer's own device, which is exactly the process step this argument is about.",
+          "limits": "It shows the ordering process changed. It does not by itself prove customers are more satisfied, so do not claim a result you cannot support.",
+          "published": false
+        },
+        {
+          "ref": "mcdonalds.marketing.intensive-distribution-and-standardised-serv",
+          "role": null,
+          "why": "Drive through lanes, delivery platforms and self service kiosks are alternative ways to place and receive the same order, which is the flexibility half of this argument.",
+          "limits": "This is about place as well as process, so say plainly that you are using it for the ordering steps and not for how many outlets there are.",
+          "published": false
+        }
+      ],
+      "guidance": {
+        "topic": {
+          "direct": "State the relationship between what this target market will not spend and the way the business organises ordering. Name processes as the element you are arguing about.",
+          "ladder": [
+            {
+              "rung": "hint",
+              "text": "In one line, what does this group refuse to spend, and what does the business change because of it?"
+            },
+            {
+              "rung": "needs",
+              "text": "Open the paragraph by naming the target market's expectation and the marketing element it acts on. No evidence yet, and no explanation yet."
+            },
+            {
+              "rung": "direction",
+              "text": "Put the customer first in the sentence and the business second, so it reads as a cause rather than a coincidence. Name processes explicitly, so the marker knows which element of the mix you are arguing about."
+            },
+            {
+              "rung": "starter",
+              "text": "A target market that is unwilling to spend time or effort on ordering pushes a business to"
+            },
+            {
+              "rung": "example",
+              "context": "a bank and customers who work full time",
+              "text": "A customer group that will not queue for routine transactions pushes a bank to redesign how those transactions are started.",
+              "pattern": "the group, what they will not do, then the process the business changes"
+            }
+          ]
+        },
+        "define": {
+          "direct": "Show what processes are in the marketing mix, and that ordering and payment are process steps rather than product or place.",
+          "ladder": [
+            {
+              "rung": "hint",
+              "text": "If someone asked you what counts as a process here, which steps would you list?"
+            },
+            {
+              "rung": "needs",
+              "text": "Show the marker you know what processes are, in one sentence, before you argue anything with them."
+            },
+            {
+              "rung": "direction",
+              "text": "Define processes as the steps a customer moves through to obtain the service, then name the two or three steps this paragraph is actually about. Keep it to the knowledge; the argument comes in the next line."
+            },
+            {
+              "rung": "starter",
+              "text": "Processes are the systems a customer moves through to obtain a service, including"
+            },
+            {
+              "rung": "example",
+              "context": "a dental practice",
+              "text": "Processes are the steps a patient moves through to obtain treatment, including booking, arrival, waiting, treatment and payment.",
+              "pattern": "the definition, then the specific steps this paragraph will use"
+            }
+          ]
+        },
+        "explain": {
+          "direct": "Explain WHY a preference for convenience causes the ordering process to change. The cause is the customer expectation, not the availability of the technology.",
+          "ladder": [
+            {
+              "rung": "hint",
+              "text": "Ask what this customer is unwilling to spend, and what the business changes so they do not have to."
+            },
+            {
+              "rung": "needs",
+              "text": "Establish the causal step from the customer expectation to the process. The expectation comes first and causes the change."
+            },
+            {
+              "rung": "direction",
+              "text": "Trace the chain in order: this group treats effort as a cost, so a business that wants their repeat custom takes steps out of ordering, so the ordering process itself is rebuilt. Say why the business had no real alternative if it wanted this group."
+            },
+            {
+              "rung": "starter",
+              "text": "Because this target market treats time and effort as a cost of buying, a business competing for it has to"
+            },
+            {
+              "rung": "example",
+              "context": "a pharmacy and shift workers",
+              "text": "Because shift workers cannot visit during ordinary hours, the pharmacy moved repeat prescriptions to an online request, so an order can be placed at any time.",
+              "pattern": "the expectation, then the process changed, then the result"
+            }
+          ]
+        },
+        "example": {
+          "direct": "Apply the evidence you chose. State what the business actually does, then say which ordering step it removed, and for whom.",
+          "ladder": [
+            {
+              "rung": "hint",
+              "text": "What does the business actually do, and which ordering step does it take away?"
+            },
+            {
+              "rung": "needs",
+              "text": "Use the evidence as proof of the process change, not as a mention. The fact first, then what it demonstrates."
+            },
+            {
+              "rung": "direction",
+              "text": "State the practice in one clause, then in the next say which step of ordering it removed and for whom. If the sentence would still make sense with the business's name taken out, it is not applied yet."
+            },
+            {
+              "rung": "starter",
+              "text": "The business allows an order to be placed and paid for before the customer arrives, which removes"
+            },
+            {
+              "rung": "example",
+              "context": "a supermarket and parents with young children",
+              "text": "The supermarket lets an order be assembled online and collected from a bay in the car park, which removes the trip through the aisles for a customer who cannot easily make it.",
+              "pattern": "the practice, the step removed, then the customer it was removed for"
+            }
+          ]
+        },
+        "effect": {
+          "direct": "Say what the changed ordering process achieves for the customer and for the business, and name what it costs.",
+          "ladder": [
+            {
+              "rung": "hint",
+              "text": "Who gains, and what does the business give up to get it?"
+            },
+            {
+              "rung": "needs",
+              "text": "Say what the changed process achieves, and be honest about its cost. A gain with no cost reads as advertising."
+            },
+            {
+              "rung": "direction",
+              "text": "Name the gain for the customer, then the gain for the business, then one genuine trade-off, such as work shifted onto the customer or a group that finds the new process harder than the old one."
+            },
+            {
+              "rung": "starter",
+              "text": "The result is that this target market spends less effort to buy, which for the business means"
+            },
+            {
+              "rung": "example",
+              "context": "a council library",
+              "text": "The result is that borrowers collect reserved items without queuing, which raises the number served at peak, although members who are less confident with the system now need help they did not need before.",
+              "pattern": "customer gain, business gain, then the honest cost"
+            }
+          ]
+        },
+        "link": {
+          "direct": "Return to the question: identifying what this target market expects is what produced this process strategy.",
+          "ladder": [
+            {
+              "rung": "hint",
+              "text": "What did this paragraph prove about the question, in one line?"
+            },
+            {
+              "rung": "needs",
+              "text": "Return to the question. The point is that identifying the target market is what produced the strategy."
+            },
+            {
+              "rung": "direction",
+              "text": "Say what the paragraph has demonstrated rather than repeating what the business did, and use the words of the question so the marker can see the claim being answered."
+            },
+            {
+              "rung": "starter",
+              "text": "This shows that identifying a convenience-driven target market is what led the business to"
+            },
+            {
+              "rung": "example",
+              "context": "a bank and customers who work full time",
+              "text": "This shows that identifying who the customers were is what led the bank to redesign the process, rather than the technology arriving first.",
+              "pattern": "the judgement, put in the question's own terms"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "mkt01-pr-speed",
+      "areaRef": "processes",
+      "short": "Expecting speed → streamlined service and collection",
+      "adds": "how service and collection are organised",
+      "relationship": "Customers who expect speed lead to streamlined service and collection processes",
+      "left": {
+        "label": "customers who count waiting as a cost",
+        "conceptRef": null
+      },
+      "choiceMeaning": "Customers who expect a short wait can lead a business to reorganise what happens after they have paid.",
+      "whatToProve": "customers count waiting as a cost → steps are separated or run alongside each other → the wait falls, especially at peak",
+      "commonMistake": "Claiming the business is faster without naming which step was taken out of the queue.",
+      "mechanism": {
+        "status": "authored",
+        "text": "the customer spends the process waiting, so its length is part of what they are judging",
+        "note": null
+      },
+      "conceptRef": "business.concept.processes",
+      "learningRef": "business.lesson.mkt01-pr-speed",
+      "learning": {
+        "status": "authored"
+      },
+      "evidenceRefs": [
+        {
+          "ref": "mcdonalds.marketing.app-loyalty-rewards-and-mobile-ordering",
+          "role": null,
+          "why": "An order placed before arrival means preparation can start earlier, which is how the wait at the counter is cut rather than merely moved.",
+          "limits": "The app changes when the order is placed. Say how that shortens the wait, or the link to speed is assumed rather than argued.",
+          "published": false
+        },
+        {
+          "ref": "mcdonalds.marketing.intensive-distribution-and-standardised-serv",
+          "role": null,
+          "why": "Drive through lanes, separate collection points and standardised service steps exist to move a queue, which is the collection half of this argument.",
+          "limits": "Use it for how service is organised, not for how many outlets there are.",
+          "published": false
+        }
+      ],
+      "guidance": {
+        "topic": {
+          "direct": "State that this target market's expectation is about time, and that it acts on how service and collection are organised.",
+          "ladder": [
+            {
+              "rung": "hint",
+              "text": "What exactly is this customer buying, besides the product itself?"
+            },
+            {
+              "rung": "needs",
+              "text": "Open by naming the expectation as a time expectation, and name processes as the element it acts on."
+            },
+            {
+              "rung": "direction",
+              "text": "Make time the subject of the sentence, so the paragraph cannot drift into being about the product or the price, and say which part of the process, service or collection, you are going to argue about."
+            },
+            {
+              "rung": "starter",
+              "text": "A target market that treats waiting as the main cost of buying pushes a business to"
+            },
+            {
+              "rung": "example",
+              "context": "a printing shop and small businesses",
+              "text": "A customer group that is paying for turnaround as much as for the print pushes the shop to reorganise how jobs are queued and collected.",
+              "pattern": "the expectation named as time, then the process it acts on"
+            }
+          ]
+        },
+        "define": {
+          "direct": "Show what processes cover, and that preparation, handover and collection are process steps.",
+          "ladder": [
+            {
+              "rung": "hint",
+              "text": "Which steps happen after the customer has already paid?"
+            },
+            {
+              "rung": "needs",
+              "text": "Show what processes are, and locate preparation, handover and collection inside them."
+            },
+            {
+              "rung": "direction",
+              "text": "Define processes as the delivery sequence, then name the steps that happen after payment, because those are the ones this paragraph changes. Define the process, not speed."
+            },
+            {
+              "rung": "starter",
+              "text": "Processes are the sequence that delivers a service, and the steps that follow payment are"
+            },
+            {
+              "rung": "example",
+              "context": "a dental practice",
+              "text": "Processes are the sequence that delivers the service, and the steps after booking are arrival, waiting, treatment and follow-up.",
+              "pattern": "define the sequence, then name the steps in scope"
+            }
+          ]
+        },
+        "explain": {
+          "direct": "Explain the causal step from an expectation of speed to the way service and collection are organised. Speed is part of what is being sold.",
+          "ladder": [
+            {
+              "rung": "hint",
+              "text": "Why can a business chasing this group not simply do the same thing faster?"
+            },
+            {
+              "rung": "needs",
+              "text": "Establish that the expectation forces a structural change to the sequence, not just more effort from the staff."
+            },
+            {
+              "rung": "direction",
+              "text": "Trace it: this group counts waiting as a cost, so a business competing for them takes steps out of the queue or runs them alongside each other, so preparation and collection separate from ordering. Say why working harder is not the same as redesigning."
+            },
+            {
+              "rung": "starter",
+              "text": "Because this target market counts waiting as part of the price, a business competing for it has to"
+            },
+            {
+              "rung": "example",
+              "context": "an airport cafe",
+              "text": "Because travellers count minutes against a departure time, the cafe separated ordering from collection so drinks are made while the next customer is still paying.",
+              "pattern": "the expectation, the step separated, then the time saved"
+            }
+          ]
+        },
+        "example": {
+          "direct": "Apply your evidence to the wait itself. Name the step that was moved, separated or run alongside another.",
+          "ladder": [
+            {
+              "rung": "hint",
+              "text": "Which step now happens somewhere else, or at the same time as another?"
+            },
+            {
+              "rung": "needs",
+              "text": "Use the evidence to show a step that was moved, separated or run in parallel. The fact, then what it demonstrates about the wait."
+            },
+            {
+              "rung": "direction",
+              "text": "State what the business does, then name the step it took out of the queue. Aim at the wait itself: if your sentence never mentions time or order, it is describing a channel rather than a process."
+            },
+            {
+              "rung": "starter",
+              "text": "The business takes the order and the payment before the customer arrives, so that"
+            },
+            {
+              "rung": "example",
+              "context": "a supermarket",
+              "text": "The supermarket routes online orders to a separate picking team, so the trolleys never enter the checkout queue that walk-in customers are standing in.",
+              "pattern": "the practice, the step separated, then the queue it protects"
+            }
+          ]
+        },
+        "effect": {
+          "direct": "Say what shorter waiting does for the customer and for the business at peak, and what it costs.",
+          "ladder": [
+            {
+              "rung": "hint",
+              "text": "What happens at the busiest hour, and who pays for it?"
+            },
+            {
+              "rung": "needs",
+              "text": "Say what shorter waiting does for the customer and for the business, and name the cost of achieving it."
+            },
+            {
+              "rung": "direction",
+              "text": "Put the gain in terms of how many customers can be served at peak, because that is where speed is worth money, then name a real cost such as extra space, extra staff, or a second queue that has to be managed."
+            },
+            {
+              "rung": "starter",
+              "text": "The effect is that more customers can be served in the same peak hour, which matters because"
+            },
+            {
+              "rung": "example",
+              "context": "a council library",
+              "text": "The effect is that the desk clears faster at closing time, which lets the same staff handle more borrowers, although the separate collection shelf takes floor space the branch does not really have.",
+              "pattern": "the gain at peak, why it matters, then the honest cost"
+            }
+          ]
+        },
+        "link": {
+          "direct": "Return to the question: the expectation of speed is what shaped this process strategy.",
+          "ladder": [
+            {
+              "rung": "hint",
+              "text": "What has this paragraph shown about the question itself?"
+            },
+            {
+              "rung": "needs",
+              "text": "Return to the question and say what the expectation of speed produced."
+            },
+            {
+              "rung": "direction",
+              "text": "Name the target market characteristic and the strategy it produced in the same sentence, so the causal claim the question makes is the thing you actually land."
+            },
+            {
+              "rung": "starter",
+              "text": "This demonstrates that reading the target market's expectation of speed is what produced"
+            },
+            {
+              "rung": "example",
+              "context": "an airport cafe",
+              "text": "This demonstrates that reading who the customers were, and what they were short of, is what produced the change in how the service was organised.",
+              "pattern": "the characteristic, then the strategy it produced"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "mkt01-pr-customisation",
+      "areaRef": "processes",
+      "short": "Wanting to customise → ordering built for variations",
+      "adds": "how the ordering system handles variations",
+      "relationship": "Customers who want to customise orders lead to ordering systems built to take variations",
+      "left": {
+        "label": "customers who want to change the order",
+        "conceptRef": null
+      },
+      "choiceMeaning": "Customers who expect to change their order can lead a business to build ordering that carries variations without errors.",
+      "whatToProve": "customers expect to change the order → no two orders are identical → the ordering system has to capture the variation accurately",
+      "commonMistake": "Arguing about choice on the menu, which is a product point, instead of about how the process carries a non-standard order.",
+      "mechanism": {
+        "status": "unreviewed",
+        "text": null,
+        "note": "No authored marketing content connects customising an order to what the ordering system has to capture. The step is plausible but would have to be invented here."
+      },
+      "conceptRef": "business.concept.processes",
+      "learningRef": "business.lesson.mkt01-pr-customisation",
+      "learning": {
+        "status": "authored"
+      },
+      "evidenceRefs": [
+        {
+          "ref": "mcdonalds.marketing.app-loyalty-rewards-and-mobile-ordering",
+          "role": null,
+          "why": "An order entered by the customer records a variation exactly and carries it through without a spoken exchange, which is the accuracy problem this argument turns on.",
+          "limits": "Show the variation being captured. Saying the app exists does not prove the ordering system was built to take variations.",
+          "published": false
+        },
+        {
+          "ref": "mcdonalds.marketing.standardisation-with-local-customisation",
+          "role": null,
+          "why": "It shows the business already varies what it offers between markets, so you can argue that variation has to be handled somewhere in the process.",
+          "limits": "This is variation in the menu, not variation in one customer's order. Say which of the two you mean or the example will not land.",
+          "published": false
+        },
+        {
+          "ref": "mcdonalds.marketing.segments-served-by-happy-meal-and-mccafe",
+          "role": null,
+          "why": "Different ranges for different segments mean one ordering process has to carry several kinds of order at once.",
+          "limits": "This sits closer to segmentation than to processes, so make the process point explicitly rather than assuming it.",
+          "published": false
+        }
+      ],
+      "guidance": {
+        "topic": {
+          "direct": "State that this target market expects to alter its order, and that this acts on how the ordering system is built.",
+          "ladder": [
+            {
+              "rung": "hint",
+              "text": "What does this customer expect to be able to change, and where in the process does that land?"
+            },
+            {
+              "rung": "needs",
+              "text": "Open by naming the expectation as an expectation of choice, and name the ordering system as what it acts on."
+            },
+            {
+              "rung": "direction",
+              "text": "Make the expectation about variation rather than about speed or effort, so this paragraph is clearly a different argument from a convenience one, and name the ordering system as the process under pressure."
+            },
+            {
+              "rung": "starter",
+              "text": "A target market that expects to alter what it orders pushes a business to build an ordering system that"
+            },
+            {
+              "rung": "example",
+              "context": "a paint retailer and trade customers",
+              "text": "A customer group that expects a colour mixed to its own specification pushes the retailer to build an ordering system that can record and repeat that specification.",
+              "pattern": "the expectation as variation, then the system it forces"
+            }
+          ]
+        },
+        "define": {
+          "direct": "Show what processes cover, and that capturing an order and passing it on accurately are process steps.",
+          "ladder": [
+            {
+              "rung": "hint",
+              "text": "What has to happen to an order between the customer saying it and the kitchen making it?"
+            },
+            {
+              "rung": "needs",
+              "text": "Show what processes are, and that recording an order and passing it on accurately are process steps."
+            },
+            {
+              "rung": "direction",
+              "text": "Define processes as the delivery sequence, then isolate the step that records what was asked for, because that is where variation is won or lost. Define the process, not customisation."
+            },
+            {
+              "rung": "starter",
+              "text": "Processes are the systems that deliver a service, and the step that records what the customer asked for is"
+            },
+            {
+              "rung": "example",
+              "context": "a tailor",
+              "text": "Processes are the systems that deliver the service, and the step that records the measurements and passes them to the workroom is where an error becomes expensive.",
+              "pattern": "define the sequence, then isolate the step at risk"
+            }
+          ]
+        },
+        "explain": {
+          "direct": "Explain why a target market that expects to change an order shapes how the ordering system has to work, and why accuracy is the pressure point.",
+          "ladder": [
+            {
+              "rung": "hint",
+              "text": "What goes wrong if the process cannot carry the variation accurately?"
+            },
+            {
+              "rung": "needs",
+              "text": "Establish that the expectation of choice creates an accuracy problem, and that the process is where it has to be solved."
+            },
+            {
+              "rung": "direction",
+              "text": "Trace it: this group expects to change the order, so no two orders are identical, so a process built for identical orders starts producing mistakes and delays. Say why the system had to change rather than the staff being asked to remember more."
+            },
+            {
+              "rung": "starter",
+              "text": "Because this target market expects to change what it receives, every order becomes slightly different, which means"
+            },
+            {
+              "rung": "example",
+              "context": "a paint retailer",
+              "text": "Because each trade customer expects a mix to their own specification, no two orders are identical, so a process that relied on staff memory began producing the wrong colour.",
+              "pattern": "the expectation, the variety it creates, then the failure the old process produced"
+            }
+          ]
+        },
+        "example": {
+          "direct": "Apply your evidence to the capture of a variation. State what the business does, then what it proves about handling variety.",
+          "ladder": [
+            {
+              "rung": "hint",
+              "text": "How does the variation get recorded, and who records it?"
+            },
+            {
+              "rung": "needs",
+              "text": "Use the evidence to show a variation being captured, not simply an order being placed."
+            },
+            {
+              "rung": "direction",
+              "text": "State what the business does, then say what happens to a non-standard order inside it. If your sentence would read exactly the same for an ordinary order, it has not shown customisation yet."
+            },
+            {
+              "rung": "starter",
+              "text": "The business lets the customer build the order themselves before it is sent through, which means a change to it is"
+            },
+            {
+              "rung": "example",
+              "context": "a supermarket deli counter",
+              "text": "The counter takes the thickness and the quantity on the ticket itself, so an unusual request is carried through to the slicer instead of being repeated across a queue.",
+              "pattern": "the practice, the variation captured, then the error avoided"
+            }
+          ]
+        },
+        "effect": {
+          "direct": "Say what handling variation reliably achieves, and what it costs the rest of the queue.",
+          "ladder": [
+            {
+              "rung": "hint",
+              "text": "What does the business gain, and what does the customer behind them lose?"
+            },
+            {
+              "rung": "needs",
+              "text": "Say what handling variation reliably achieves, and name what it costs the rest of the queue."
+            },
+            {
+              "rung": "direction",
+              "text": "Name the gain as accuracy and repeat custom rather than speed, then be honest that choice at the ordering step slows the people waiting, and say how the business manages that tension."
+            },
+            {
+              "rung": "starter",
+              "text": "The effect is that a non-standard order is filled correctly the first time, which matters because"
+            },
+            {
+              "rung": "example",
+              "context": "a tailor",
+              "text": "The effect is that alterations are right the first time, which protects a reputation built on fit, although taking the detail properly makes each appointment longer than a simple sale.",
+              "pattern": "the accuracy gain, why it matters, then the honest cost in time"
+            }
+          ]
+        },
+        "link": {
+          "direct": "Return to the question: the expectation of choice is what shaped the ordering process.",
+          "ladder": [
+            {
+              "rung": "hint",
+              "text": "What does this paragraph prove about the question?"
+            },
+            {
+              "rung": "needs",
+              "text": "Return to the question and name what the expectation of choice produced."
+            },
+            {
+              "rung": "direction",
+              "text": "Land the judgement on the direction of cause: the target market's appetite for variation produced the ordering system, and not the other way round."
+            },
+            {
+              "rung": "starter",
+              "text": "This shows that the expectation of choice within the target market is what shaped"
+            },
+            {
+              "rung": "example",
+              "context": "a paint retailer",
+              "text": "This shows that what the customers expected to be able to change is what shaped the ordering system, rather than the system arriving first and then offering choice.",
+              "pattern": "the characteristic, the strategy, then the direction of cause"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "mkt01-ph-servicescape",
+      "areaRef": "physical-evidence",
+      "short": "Judging by surroundings → a designed servicescape",
+      "adds": "how deliberately its surroundings are designed",
+      "relationship": "Customers who judge a business by its surroundings lead to a designed servicescape",
+      "left": {
+        "label": "customers who judge by surroundings",
+        "conceptRef": null
+      },
+      "choiceMeaning": "These customers cannot test the service before buying it, so they judge it by the room, and the room has to be designed.",
+      "whatToProve": "the service is intangible → customers judge it by what they can see → the setting is designed rather than left to chance",
+      "commonMistake": "Listing what the premises look like without saying what the customer concludes from it.",
+      "mechanism": {
+        "status": "authored",
+        "text": "the service itself cannot be seen or tested before it is bought, so the surroundings are what the customer inspects instead",
+        "note": null
+      },
+      "conceptRef": "business.marketing.marketing-strategies.people-processes-and-physical-evidence",
+      "learningRef": null,
+      "learning": {
+        "status": "unreviewed"
+      },
+      "evidenceRefs": [
+        {
+          "ref": "mcdonalds.marketing.standardisation-with-local-customisation",
+          "role": null,
+          "why": null,
+          "limits": null,
+          "published": false
+        },
+        {
+          "ref": "mcdonalds.marketing.segments-served-by-happy-meal-and-mccafe",
+          "role": null,
+          "why": null,
+          "limits": null,
+          "published": false
+        }
+      ],
+      "guidance": {
+        "explain": {
+          "direct": "Explain why what this target market reads into a physical space causes the business to design that space deliberately."
+        },
+        "example": {
+          "direct": "Apply the evidence you selected, stating the fact before what it shows about physical evidence."
+        }
+      }
+    },
+    {
+      "id": "mkt01-ph-segments",
+      "areaRef": "physical-evidence",
+      "short": "Serving several segments → a setting for each",
+      "adds": "how the space is divided between segments",
+      "relationship": "Serving different segments leads to different physical settings for each",
+      "left": {
+        "label": "several segments served at once",
+        "conceptRef": null
+      },
+      "choiceMeaning": "More than one group is being served and they do not want the same surroundings, so the space is divided between them.",
+      "whatToProve": "more than one segment is served → one setting cannot suit both → the space is divided so each gets its own",
+      "commonMistake": "Naming the segments and the products built for them, which is segmentation, without ever getting to the physical space.",
+      "mechanism": {
+        "status": "unreviewed",
+        "text": null,
+        "note": "The source establishes that a segmentation approach means a separate mix per segment, which is the definition of the approach rather than a reason one setting cannot serve both groups. That reason is not authored."
+      },
+      "conceptRef": "business.marketing.marketing-strategies.market-segmentation-product-service-differen",
+      "learningRef": null,
+      "learning": {
+        "status": "unreviewed"
+      },
+      "evidenceRefs": [
+        {
+          "ref": "mcdonalds.marketing.segments-served-by-happy-meal-and-mccafe",
+          "role": null,
+          "why": null,
+          "limits": null,
+          "published": false
+        }
+      ],
+      "guidance": {
+        "explain": {
+          "direct": "Explain why serving more than one segment forces the physical setting to differ between them."
+        }
+      }
+    },
+    {
+      "id": "mkt01-ph-selfservice",
+      "areaRef": "physical-evidence",
+      "short": "Preferring self-service → self-explaining surroundings",
+      "adds": "how far the surroundings explain themselves",
+      "relationship": "Customers who prefer to serve themselves lead to physical evidence built around self-service",
+      "left": {
+        "label": "customers who prefer to serve themselves",
+        "conceptRef": null
+      },
+      "choiceMeaning": "These customers would rather use a machine than ask someone, so what they can see has to explain itself.",
+      "whatToProve": "customers prefer to serve themselves → the surroundings have to do the explaining → screens, signage and layout are built to be self-explanatory",
+      "commonMistake": "Arguing that self-service is faster, which is a processes point, rather than about what the customer sees and touches.",
+      "mechanism": {
+        "status": "unreviewed",
+        "text": null,
+        "note": "The authored content lists signage and layout as physical evidence but never links them to serving yourself. Naming the middle step would assert a connection the source does not make."
+      },
+      "conceptRef": "business.marketing.marketing-strategies.people-processes-and-physical-evidence",
+      "learningRef": null,
+      "learning": {
+        "status": "unreviewed"
+      },
+      "evidenceRefs": [
+        {
+          "ref": "mcdonalds.marketing.app-loyalty-rewards-and-mobile-ordering",
+          "role": null,
+          "why": null,
+          "limits": null,
+          "published": false
+        },
+        {
+          "ref": "mcdonalds.marketing.intensive-distribution-and-standardised-serv",
+          "role": null,
+          "why": null,
+          "limits": null,
+          "published": false
+        }
+      ],
+      "guidance": {
+        "explain": {
+          "direct": "Explain why a preference for serving themselves changes what the business puts in front of the customer."
+        }
+      }
+    }
+  ],
+  "marking": {
+    "source": "generated",
+    "bands": null,
+    "bandSource": "general HSC band expectations",
+    "text": null
+  },
+  "provenance": {
+    "origin": null,
+    "reviewState": "in-source",
+    "publication": "published",
+    "notes": null
+  }
+}

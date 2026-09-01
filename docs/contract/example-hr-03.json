@@ -1,0 +1,128 @@
+{
+  "schema": "marginal.question-package",
+  "version": 1,
+  "question": {
+    "id": "hr-03",
+    "subject": "business_studies",
+    "topic": "Human Resources",
+    "directive": "To what extent",
+    "text": "To what extent can human resource processes contribute to effective human resource management?",
+    "marks": 20,
+    "terms": {
+      "first": "Human resource processes",
+      "second": "Effective human resource management"
+    },
+    "overallArgument": "Human resource processes contribute substantially to effective management, though their effect depends on how well each stage is carried out."
+  },
+  "origin": {
+    "type": "bundled",
+    "packageId": null,
+    "author": null,
+    "authoredAt": null
+  },
+  "relationship": {
+    "intro": null,
+    "claims": [
+      {
+        "id": "hr-03-claim-1",
+        "line": "Acquisition to an appropriate workforce",
+        "left": {
+          "label": "Acquisition",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "an appropriate workforce",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
+      },
+      {
+        "id": "hr-03-claim-2",
+        "line": "Development to skills and productivity",
+        "left": {
+          "label": "Development",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "skills",
+            "criterionRef": null
+          },
+          {
+            "label": "productivity",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
+      },
+      {
+        "id": "hr-03-claim-3",
+        "line": "Maintenance to retention and satisfaction",
+        "left": {
+          "label": "Maintenance",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "retention",
+            "criterionRef": null
+          },
+          {
+            "label": "satisfaction",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
+      },
+      {
+        "id": "hr-03-claim-4",
+        "line": "Separation to restructuring, costs and culture",
+        "left": {
+          "label": "Separation",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "restructuring",
+            "criterionRef": null
+          },
+          {
+            "label": "costs",
+            "criterionRef": null
+          },
+          {
+            "label": "culture",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
+      }
+    ]
+  },
+  "decode": null,
+  "requirements": null,
+  "coreAnswer": null,
+  "workingAnswer": null,
+  "reasoning": null,
+  "areas": [],
+  "areasLabel": null,
+  "pathways": [],
+  "marking": {
+    "source": "generated",
+    "bands": null,
+    "bandSource": null,
+    "text": null
+  },
+  "provenance": {
+    "origin": null,
+    "reviewState": "in-source",
+    "publication": "published",
+    "notes": null
+  }
+}

@@ -1,0 +1,120 @@
+{
+  "schema": "marginal.question-package",
+  "version": 1,
+  "question": {
+    "id": "mkt-02",
+    "subject": "business_studies",
+    "topic": "Marketing",
+    "directive": "Assess",
+    "text": "Assess the effectiveness of marketing strategies in achieving marketing objectives.",
+    "marks": 20,
+    "terms": {
+      "first": "Marketing strategies",
+      "second": "Marketing objectives"
+    },
+    "overallArgument": "Marketing strategies can be effective in achieving objectives, though their success depends on fit with the market and on competitors' responses."
+  },
+  "origin": {
+    "type": "bundled",
+    "packageId": null,
+    "author": null,
+    "authoredAt": null
+  },
+  "relationship": {
+    "intro": null,
+    "claims": [
+      {
+        "id": "mkt-02-claim-1",
+        "line": "Product differentiation to market share",
+        "left": {
+          "label": "Product differentiation",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "market share",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
+      },
+      {
+        "id": "mkt-02-claim-2",
+        "line": "Pricing to sales and profitability",
+        "left": {
+          "label": "Pricing",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "sales",
+            "criterionRef": null
+          },
+          {
+            "label": "profitability",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
+      },
+      {
+        "id": "mkt-02-claim-3",
+        "line": "Promotion to awareness and sales",
+        "left": {
+          "label": "Promotion",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "awareness",
+            "criterionRef": null
+          },
+          {
+            "label": "sales",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
+      },
+      {
+        "id": "mkt-02-claim-4",
+        "line": "Distribution and e-marketing to market expansion",
+        "left": {
+          "label": "Distribution and e-marketing",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "market expansion",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
+      }
+    ]
+  },
+  "decode": null,
+  "requirements": null,
+  "coreAnswer": null,
+  "workingAnswer": null,
+  "reasoning": null,
+  "areas": [],
+  "areasLabel": null,
+  "pathways": [],
+  "marking": {
+    "source": "generated",
+    "bands": null,
+    "bandSource": null,
+    "text": null
+  },
+  "provenance": {
+    "origin": null,
+    "reviewState": "in-source",
+    "publication": "published",
+    "notes": null
+  }
+}

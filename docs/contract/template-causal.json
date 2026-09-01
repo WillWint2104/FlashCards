@@ -1,0 +1,87 @@
+{
+  "schema": "marginal.question-package",
+  "version": 1,
+  "question": {
+    "id": "",
+    "subject": "business_studies",
+    "topic": "",
+    "directive": "",
+    "text": "",
+    "marks": 20,
+    "terms": { "first": "", "second": "" },
+    "overallArgument": ""
+  },
+  "origin": { "type": "imported", "packageId": "", "author": "", "authoredAt": "" },
+  "relationship": {
+    "intro": "",
+    "claims": [
+      {
+        "id": "",
+        "line": "",
+        "left": { "label": "", "conceptRef": null },
+        "relation": "shapes",
+        "right": [{ "label": "", "criterionRef": null }],
+        "pathwayRefs": []
+      }
+    ]
+  },
+  "decode": {
+    "verbMeaning": "",
+    "plainEnglish": "",
+    "highlights": [{ "anchor": "", "kind": "directive", "label": "", "note": "" }],
+    "cover": { "forEach": "", "consistency": "" }
+  },
+  "requirements": { "concepts": [], "relationships": [], "accomplish": [], "syllabusSummary": "" },
+  "coreAnswer": {
+    "mode": "causal",
+    "pattern": "",
+    "statement": "",
+    "explain": [],
+    "thesisIdea": "",
+    "acceptableThesis": "",
+    "checklist": []
+  },
+  "workingAnswer": { "base": "", "lead": "", "join": ", and by" },
+  "reasoning": {
+    "cause": { "label": "", "terms": [] },
+    "effect": { "label": "", "terms": [] },
+    "forward": "",
+    "backward": ""
+  },
+  "areas": [
+    { "id": "", "label": "", "kind": "question-area", "syllabusRefs": [], "guidance": {} }
+  ],
+  "areasLabel": null,
+  "pathways": [
+    {
+      "id": "",
+      "areaRef": null,
+      "short": "",
+      "adds": "",
+      "relationship": "",
+      "left": { "label": "", "conceptRef": null },
+      "choiceMeaning": "",
+      "whatToProve": "",
+      "commonMistake": "",
+      "mechanism": { "status": "unreviewed", "text": null, "note": null },
+      "conceptRef": "",
+      "learningRef": null,
+      "learning": { "status": "unreviewed" },
+      "evidenceRefs": [],
+      "guidance": {
+        "explain": {
+          "direct": "",
+          "ladder": [
+            { "rung": "hint", "text": "" },
+            { "rung": "needs", "text": "" },
+            { "rung": "direction", "text": "" },
+            { "rung": "starter", "text": "" },
+            { "rung": "example", "context": "", "text": "", "pattern": "" }
+          ]
+        }
+      }
+    }
+  ],
+  "marking": { "source": "generated", "bands": null, "bandSource": null, "text": null },
+  "provenance": { "origin": "", "reviewState": "draft", "publication": "unpublished", "notes": null }
+}

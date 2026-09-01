@@ -1,0 +1,120 @@
+{
+  "schema": "marginal.question-package",
+  "version": 1,
+  "question": {
+    "id": "ops-03",
+    "subject": "business_studies",
+    "topic": "Operations",
+    "directive": "How can",
+    "text": "How can operations strategies affect corporate social responsibility?",
+    "marks": 20,
+    "terms": {
+      "first": "Operations strategies",
+      "second": "Corporate social responsibility"
+    },
+    "overallArgument": "Operations strategies shape a business's social and environmental responsibilities as much as its efficiency."
+  },
+  "origin": {
+    "type": "bundled",
+    "packageId": null,
+    "author": null,
+    "authoredAt": null
+  },
+  "relationship": {
+    "intro": null,
+    "claims": [
+      {
+        "id": "ops-03-claim-1",
+        "line": "Supply chain and global sourcing to social responsibility",
+        "left": {
+          "label": "Supply chain and global sourcing",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "social responsibility",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
+      },
+      {
+        "id": "ops-03-claim-2",
+        "line": "Outsourcing to employee and community responsibilities",
+        "left": {
+          "label": "Outsourcing",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "employee",
+            "criterionRef": null
+          },
+          {
+            "label": "community responsibilities",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
+      },
+      {
+        "id": "ops-03-claim-3",
+        "line": "Inventory and waste management to environmental sustainability",
+        "left": {
+          "label": "Inventory and waste management",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "environmental sustainability",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
+      },
+      {
+        "id": "ops-03-claim-4",
+        "line": "Technology and design to environmental and social consequences",
+        "left": {
+          "label": "Technology and design",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "environmental",
+            "criterionRef": null
+          },
+          {
+            "label": "social consequences",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
+      }
+    ]
+  },
+  "decode": null,
+  "requirements": null,
+  "coreAnswer": null,
+  "workingAnswer": null,
+  "reasoning": null,
+  "areas": [],
+  "areasLabel": null,
+  "pathways": [],
+  "marking": {
+    "source": "generated",
+    "bands": null,
+    "bandSource": null,
+    "text": null
+  },
+  "provenance": {
+    "origin": null,
+    "reviewState": "in-source",
+    "publication": "published",
+    "notes": null
+  }
+}

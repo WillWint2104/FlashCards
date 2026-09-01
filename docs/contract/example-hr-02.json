@@ -1,0 +1,435 @@
+{
+  "schema": "marginal.question-package",
+  "version": 1,
+  "question": {
+    "id": "hr-02",
+    "subject": "business_studies",
+    "topic": "Human Resources",
+    "directive": "Analyse",
+    "text": "Analyse how key influences affect human resource management.",
+    "marks": 20,
+    "terms": {
+      "first": "Key influences",
+      "second": "Human resource management"
+    },
+    "overallArgument": "Key influences shape human resource decisions by changing the expectations, constraints and conditions managers must respond to."
+  },
+  "origin": {
+    "type": "bundled",
+    "packageId": null,
+    "author": null,
+    "authoredAt": null
+  },
+  "relationship": {
+    "intro": null,
+    "claims": [
+      {
+        "id": "hr-02-claim-1",
+        "line": "Stakeholders",
+        "left": {
+          "label": "Stakeholders",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [],
+        "pathwayRefs": []
+      },
+      {
+        "id": "hr-02-claim-2",
+        "line": "Legal influences",
+        "left": {
+          "label": "Legal influences",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [],
+        "pathwayRefs": []
+      },
+      {
+        "id": "hr-02-claim-3",
+        "line": "Economic influences",
+        "left": {
+          "label": "Economic influences",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [],
+        "pathwayRefs": []
+      },
+      {
+        "id": "hr-02-claim-4",
+        "line": "Technological influences",
+        "left": {
+          "label": "Technological influences",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [],
+        "pathwayRefs": []
+      },
+      {
+        "id": "hr-02-claim-5",
+        "line": "Social influences",
+        "left": {
+          "label": "Social influences",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [],
+        "pathwayRefs": []
+      },
+      {
+        "id": "hr-02-claim-6",
+        "line": "Ethics and corporate social responsibility",
+        "left": {
+          "label": "Ethics and corporate social responsibility",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [],
+        "pathwayRefs": []
+      }
+    ]
+  },
+  "decode": {
+    "verbMeaning": "Analyse asks you to take the relationship apart and show how the parts connect: name the influence, say what it changes for the manager, and follow that through to what human resource management then does. It does not ask whether the result is good.",
+    "plainEnglish": "Show how things outside a manager's control end up changing what they actually do about hiring, training, paying and keeping staff.",
+    "highlights": [
+      {
+        "anchor": "Analyse",
+        "kind": "directive",
+        "label": "what you need to do",
+        "note": "Show the connection between the parts. This is not a judgement question: an answer that decides which influence matters most has answered a different one."
+      },
+      {
+        "anchor": "key influences",
+        "kind": "cause",
+        "label": "what is doing the changing",
+        "note": "Stakeholders, the legal framework, economic conditions, technology, social change, and ethics and corporate social responsibility. Which ones you use is your choice."
+      },
+      {
+        "anchor": "affect",
+        "kind": "supporting",
+        "label": "the link you have to show",
+        "note": "The middle step. An influence does not reach human resource management directly: it changes an expectation, a constraint or a condition first."
+      },
+      {
+        "anchor": "human resource management",
+        "kind": "effect",
+        "label": "where it lands",
+        "note": "A named process or strategy: acquisition, development, maintenance, separation, or the strategies inside them. Managers having to respond is not yet an effect."
+      }
+    ],
+    "cover": {
+      "forEach": "an influence → what it changes for the manager → what human resource management then does",
+      "consistency": "Choose the influences yourself and use one workplace throughout, so the influences act on the same decisions."
+    }
+  },
+  "requirements": {
+    "concepts": [
+      "key influences",
+      "human resource management",
+      "stakeholders",
+      "the legal framework",
+      "acquisition",
+      "development",
+      "maintenance",
+      "separation"
+    ],
+    "relationships": [
+      "an influence is external, so human resource management responds to it rather than choosing it",
+      "an influence reaches human resource management by changing an expectation, a constraint or a condition",
+      "the change shows up in a named process or strategy, not in the abstract"
+    ],
+    "accomplish": [
+      "names the influence specifically rather than writing about the law or the economy in general",
+      "says what the influence changes for the manager, which is the middle of the relationship",
+      "follows that through to a named human resource process or strategy",
+      "keeps to how the influence works, without judging whether the outcome is good",
+      "uses one workplace consistently so the influences can be seen acting on the same decisions"
+    ],
+    "syllabus": "Human resources: the key influences of stakeholders, legal, economic, technological and social factors, and ethics and corporate social responsibility."
+  },
+  "coreAnswer": {
+    "mode": "causal",
+    "pattern": "influence → what it changes for the manager → what human resource management does",
+    "statement": "Key influences are external, so human resource management responds to them. In each paragraph, name the influence, say what it changes for the manager, and show that change reaching a named human resource process or strategy.",
+    "explain": [
+      "The key influences are stakeholders, the legal framework, economic conditions, technology, social change, and ethics and corporate social responsibility. None of them is chosen by the business, which is what makes them influences rather than strategies.",
+      "An influence never reaches human resource management directly. It changes an expectation, a constraint or a condition first, and that change is what the manager actually responds to. The middle step is where the marks are: naming the influence and then naming a process leaves out the part that connects them.",
+      "Analyse asks for that connection, not for a verdict. Saying an influence matters most, or that a business handled it well, is a different question."
+    ]
+  },
+  "workingAnswer": {
+    "base": "Key influences change what human resource management has to do.",
+    "lead": "Key influences change what human resource management has to do by",
+    "join": ", and by"
+  },
+  "reasoning": {
+    "cause": {
+      "label": "a key influence",
+      "terms": [
+        "stakeholders",
+        "stakeholder",
+        "unions",
+        "union",
+        "employer associations",
+        "legal",
+        "law",
+        "legislation",
+        "award",
+        "enterprise agreement",
+        "economic",
+        "business cycle",
+        "labour market",
+        "technology",
+        "technological",
+        "automation",
+        "social",
+        "work patterns",
+        "casualisation",
+        "ethics",
+        "ethical",
+        "corporate social responsibility"
+      ]
+    },
+    "effect": {
+      "label": "something human resource management does",
+      "terms": [
+        "recruitment",
+        "acquisition",
+        "training",
+        "development",
+        "maintenance",
+        "separation",
+        "retrenchment",
+        "job design",
+        "rewards",
+        "pay",
+        "performance management",
+        "workplace disputes",
+        "retention",
+        "turnover",
+        "hiring",
+        "rostering",
+        "conditions"
+      ]
+    },
+    "forward": "The question asks how an influence changes what human resource management does.",
+    "backward": "Your point currently explains how human resource management changes the influence, which is the reverse: these influences are external and the business responds to them."
+  },
+  "areas": [],
+  "areasLabel": null,
+  "pathways": [
+    {
+      "id": "hr02-stake-conflict",
+      "areaRef": "key-influences",
+      "short": "Conflicting stakeholder interests → decisions made to balance them",
+      "adds": "balancing interests that cannot all be satisfied",
+      "relationship": "Stakeholder interests conflict, so managers must balance them: employees want higher wages and employers want lower costs",
+      "left": null,
+      "choiceMeaning": "Every human resource decision has more than one group with a stake in it, and they do not want the same thing.",
+      "whatToProve": "named groups hold opposed interests → the manager cannot satisfy both → the decision is made to balance them, or disputes and reputational damage follow",
+      "commonMistake": "Listing who the stakeholders are. The list is not the analysis; the conflict between two of them is.",
+      "mechanism": {
+        "status": "unreviewed",
+        "text": null,
+        "note": null
+      },
+      "conceptRef": "business.hr.key-influences.stakeholders",
+      "learningRef": null,
+      "learning": {
+        "status": "unreviewed"
+      },
+      "evidenceRefs": [],
+      "guidance": {
+        "topic": {
+          "direct": "State which two groups are pulling against each other in this decision."
+        },
+        "explain": {
+          "direct": "Explain what each of them wants and why the manager cannot give both."
+        },
+        "effect": {
+          "direct": "Say what the manager did about it, and what follows if the balance fails."
+        }
+      }
+    },
+    {
+      "id": "hr02-legal-floor",
+      "areaRef": "key-influences",
+      "short": "The legal framework → a floor beneath every decision",
+      "adds": "setting a minimum the decision cannot go below",
+      "relationship": "The legal framework fixes minimum pay, conditions, safety and non-discrimination, so it sets the floor beneath every human resource decision rather than influencing it at the margin",
+      "left": null,
+      "choiceMeaning": "Some of what a manager might do is simply unavailable, and the law decides which parts.",
+      "whatToProve": "a named part of the framework applies → the decision has a legal minimum it cannot go below → compliance is built into recruitment, pay or safety, or penalties follow",
+      "commonMistake": "Writing about the law in general. Name the part you are using: the award, the enterprise agreement, work health and safety, or antidiscrimination.",
+      "mechanism": {
+        "status": "unreviewed",
+        "text": null,
+        "note": null
+      },
+      "conceptRef": "business.hr.key-influences.legal",
+      "learningRef": null,
+      "learning": {
+        "status": "unreviewed"
+      },
+      "evidenceRefs": [],
+      "guidance": {
+        "topic": {
+          "direct": "Name the specific part of the framework this paragraph is about."
+        },
+        "explain": {
+          "direct": "Explain what it requires and therefore what the manager can no longer decide."
+        },
+        "effect": {
+          "direct": "Say where that shows up in a human resource process."
+        }
+      }
+    },
+    {
+      "id": "hr02-econ-cycle",
+      "areaRef": "key-influences",
+      "short": "Economic conditions → recruiting, or managing separation",
+      "adds": "deciding whether the work is growing the workforce or shrinking it",
+      "relationship": "Economic conditions decide whether human resource management is recruiting and training or shrinking and managing separation",
+      "left": null,
+      "choiceMeaning": "The same department does opposite work in an upswing and a downturn, and it does not get to choose which.",
+      "whatToProve": "the business cycle and labour market move → labour cost and skill availability change → the work switches between acquisition and separation, affecting morale and skill retention",
+      "commonMistake": "Saying a downturn is bad for staff. The analysis is about which human resource work the conditions create, not about how it feels.",
+      "mechanism": {
+        "status": "unreviewed",
+        "text": null,
+        "note": null
+      },
+      "conceptRef": "business.hr.key-influences.economic",
+      "learningRef": null,
+      "learning": {
+        "status": "unreviewed"
+      },
+      "evidenceRefs": [],
+      "guidance": {
+        "topic": {
+          "direct": "State which economic condition this paragraph is about."
+        },
+        "explain": {
+          "direct": "Explain how it changes the cost of labour or the supply of the skills the business needs."
+        },
+        "effect": {
+          "direct": "Say which human resource process the business is doing more of as a result."
+        }
+      }
+    },
+    {
+      "id": "hr02-tech-skills",
+      "areaRef": "key-influences",
+      "short": "Automation → a changed skill mix, and retraining",
+      "adds": "changing which skills the work needs",
+      "relationship": "Technology automates routine tasks, removing some jobs and creating others that need higher skills, and deskilling the roles it leaves behind",
+      "left": null,
+      "choiceMeaning": "The machine does not simply take work away: it takes the judgement out of some jobs and adds it to others.",
+      "whatToProve": "a task is automated → the skill mix of the role changes → retraining and consultation become the manager's work, or resistance to change follows",
+      "commonMistake": "Saying technology replaces workers and stopping there. The point is what happens to the jobs that remain.",
+      "mechanism": {
+        "status": "unreviewed",
+        "text": null,
+        "note": null
+      },
+      "conceptRef": "business.hr.key-influences.technological",
+      "learningRef": null,
+      "learning": {
+        "status": "unreviewed"
+      },
+      "evidenceRefs": [],
+      "guidance": {
+        "topic": {
+          "direct": "State which task the technology took over."
+        },
+        "explain": {
+          "direct": "Explain what that did to the skill the job needs, upwards or downwards."
+        },
+        "effect": {
+          "direct": "Say what human resource management then had to do about the people in that job."
+        }
+      }
+    },
+    {
+      "id": "hr02-social-retention",
+      "areaRef": "key-influences",
+      "short": "Changed expectations of work → arrangements that keep staff",
+      "adds": "making flexible arrangements a condition of keeping staff",
+      "relationship": "Changing work patterns and rising expectations about security and work life balance mean a business that ignores them cannot attract or keep staff",
+      "left": null,
+      "choiceMeaning": "What counted as a normal job changes over time, and a workplace that does not move with it is comparing itself to ones that did.",
+      "whatToProve": "community expectations shift → the same conditions become less acceptable than they were → flexible arrangements become a retention tool, or turnover and absenteeism rise",
+      "commonMistake": "Describing how society has changed without reaching the workplace. The change has to arrive at something the business does.",
+      "mechanism": {
+        "status": "unreviewed",
+        "text": null,
+        "note": null
+      },
+      "conceptRef": "business.hr.key-influences.social",
+      "learningRef": null,
+      "learning": {
+        "status": "unreviewed"
+      },
+      "evidenceRefs": [],
+      "guidance": {
+        "topic": {
+          "direct": "State which expectation has changed."
+        },
+        "explain": {
+          "direct": "Explain why the conditions that used to be acceptable no longer are."
+        },
+        "effect": {
+          "direct": "Say what the business changed in response, and where that shows up."
+        }
+      }
+    },
+    {
+      "id": "hr02-ethics-beyondlaw",
+      "areaRef": "key-influences",
+      "short": "Going beyond compliance → decisions the law does not reach",
+      "adds": "changing decisions no law required it to change",
+      "relationship": "Ethical responsibility is voluntary and goes beyond legal compliance, so it changes decisions the law does not reach: pay above the award, the privacy of employee records, auditing overseas contractors",
+      "left": null,
+      "choiceMeaning": "Compliance is the minimum. Anything the business does past it, it chose, and that choice is the influence.",
+      "whatToProve": "the law sets a minimum → the business chooses to go beyond it → conditions, monitoring or supplier standards change in ways no law required",
+      "commonMistake": "Arguing that the business should go further. Analyse asks what changes when it does, not whether it ought to.",
+      "mechanism": {
+        "status": "unreviewed",
+        "text": null,
+        "note": null
+      },
+      "conceptRef": "business.hr.key-influences.ethics-and-corporate-social-responsibility",
+      "learningRef": null,
+      "learning": {
+        "status": "unreviewed"
+      },
+      "evidenceRefs": [],
+      "guidance": {
+        "topic": {
+          "direct": "State the decision this paragraph is about, and where the legal minimum sits on it."
+        },
+        "explain": {
+          "direct": "Explain the gap between what the law requires and what the business chose to do."
+        },
+        "effect": {
+          "direct": "Say what is different in the workplace as a result. Stop there: this question does not ask whether it was worth it."
+        }
+      }
+    }
+  ],
+  "marking": {
+    "source": "generated",
+    "bands": null,
+    "bandSource": null,
+    "text": null
+  },
+  "provenance": {
+    "origin": null,
+    "reviewState": "in-source",
+    "publication": "published",
+    "notes": null
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "schema": "marginal.question-package",
+  "version": 1,
+  "question": {
+    "id": "",
+    "subject": "business_studies",
+    "topic": "",
+    "directive": "",
+    "text": "",
+    "marks": 20,
+    "terms": {
+      "first": "",
+      "second": ""
+    },
+    "overallArgument": ""
+  },
+  "origin": {
+    "type": "imported",
+    "packageId": "",
+    "author": "",
+    "authoredAt": ""
+  },
+  "relationship": {
+    "intro": null,
+    "claims": [
+      {
+        "id": "",
+        "line": "",
+        "left": {
+          "label": "",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
+      }
+    ]
+  },
+  "decode": null,
+  "requirements": null,
+  "coreAnswer": null,
+  "workingAnswer": null,
+  "reasoning": null,
+  "areas": [],
+  "areasLabel": null,
+  "pathways": [],
+  "marking": {
+    "source": "generated",
+    "bands": null,
+    "bandSource": null,
+    "text": null
+  },
+  "provenance": {
+    "origin": "",
+    "reviewState": "draft",
+    "publication": "unpublished",
+    "notes": null
+  }
+}
