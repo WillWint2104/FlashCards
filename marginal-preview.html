@@ -5232,7 +5232,13 @@ window.ESSAY = {
               { id: "conditions", label: "The influences set the conditions; the response decides the result", lean: "qualified",
                 note: "Take this if you can show two businesses meeting the same influence and finishing in different places." },
               { id: "varies", label: "Determined for some influences and not for others", lean: "qualified",
-                note: "Take this if some of your influences can only be responded to while others can be answered, and you can say which is which." }
+                note: "Take this if some of your influences can only be responded to while others can be answered, and you can say which is which." },
+              // A question asking how far something is true has to let the answer
+              // be "not far". This one is authored rather than assumed: the
+              // question's own argument line says management's response
+              // ultimately determines the effect on success.
+              { id: "limited", label: "Only to a limited extent; the response decides the outcome", lean: "negative",
+                note: "Take this if you can show businesses meeting the same influences and finishing in different places, and can say what made the difference." }
             ]
           },
           pathways: [
