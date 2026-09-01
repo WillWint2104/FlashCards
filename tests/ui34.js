@@ -64,7 +64,7 @@ async function toComposer(p){
     sel:document.querySelector('#esline').selectionStart}));
 
   console.log('--- switching tools rebuilds nothing ---');
-  // Learn opens the Learning Centre now, which is a modal rather than a tool the
+  // Learn opens the study resources window now, which is a modal rather than a tool the
   // belt swaps in place, so it is exercised separately below. The cycle here is
   // the four writing tools, which do switch inside one window.
   const cycle = ['evidence','structure','vocabulary','evidence'].filter(t=>tools.includes(t));
@@ -91,11 +91,11 @@ async function toComposer(p){
   if (tools.includes('understand')) {
     await p.$$eval('[data-estool="understand"]', es => es[0].click()); await settled(p);
     const cst = await p.evaluate(()=>({
-      centre: !!document.querySelector('.esl-panel'),
+      centre: !!document.querySelector('.es-study'),
       recreated:['.es-scrim','.es-shell','.es-wrap','.es-belt','.es-compose','#esline']
         .filter(s=>document.querySelector(s)!==window.__ref[s]),
       v: document.querySelector('#esline')?.value }));
-    ok(cst.centre,'Learn opens the Learning Centre');
+    ok(cst.centre,'Learn opens the study resources window');
     ok(cst.recreated.length===0,'and the workspace under it is the same DOM: '+JSON.stringify(cst.recreated));
     ok(cst.v===before.v,'with the sentence untouched: '+JSON.stringify((cst.v||'').slice(0,30)));
     await p.keyboard.press('Escape'); await settled(p);

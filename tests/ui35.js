@@ -49,10 +49,12 @@ async function openTool(p, c, tool) {
   // A click can land while the drawer fails to render. Returning true there sends
   // the geometry reads into a null and kills the run before its summary, so the
   // suite reports a crash rather than a failure.
-  // Learn opens the Learning Centre; the other four open the writing tool window.
+  // Learn opens the study resources window; the other four open the writing tool window.
   // Verifying the drawer for all of them reported "Learn did not open" when what
   // had actually happened was that Learn opened something else.
-  if (tool === 'understand') return !!(await p.$('.esl-panel')) && !!(await p.$('.esl-main')) && !!(await p.$('.esl-foot'));
+  // The study window's footer is conditional: it only exists when resources are
+  // authored, and none are yet. Its body is not, so that is what is checked.
+  if (tool === 'understand') return !!(await p.$('.es-study')) && !!(await p.$('.es-stbody'));
   return !!(await p.$('.es-drawer')) && !!(await p.$('.es-drawer-body')) && !!(await p.$('.es-drawer-foot'));
 }
 
@@ -100,14 +102,14 @@ const reachLast = p => p.evaluate(() => {
       ok(opened, `${at}: Learn opens on the ${name}`);
       if (!opened) continue;
       const c = await p.evaluate(() => {
-        const panel = document.querySelector('.esl-panel');
-        const main = document.querySelector('.esl-main');
-        const foot = document.querySelector('.esl-foot');
+        const panel = document.querySelector('.es-study');
+        const main = document.querySelector('.es-stbody');
+        const foot = document.querySelector('.es-stfoot');
         const line = document.querySelector('#esline');
         const r = panel ? panel.getBoundingClientRect() : null;
         const f = foot ? foot.getBoundingClientRect() : null;
         return {
-          panels: document.querySelectorAll('.esl-panel').length,
+          panels: document.querySelectorAll('.es-study').length,
           essayStillMounted: !!document.querySelector('.es-compose'),
           lineStillMounted: !!line,
           lineValue: line ? line.value : null,
@@ -115,21 +117,21 @@ const reachLast = p => p.evaluate(() => {
           vh: window.innerHeight,
           scrolls: main ? main.scrollHeight > main.clientHeight + 1 : null,
           mainOverflow: main ? getComputedStyle(main).overflowY : null,
-          footInside: (f && r) ? f.bottom <= r.bottom + 1 : null
+          footInside: (f && r) ? f.bottom <= r.bottom + 1 : true
         };
       });
       console.log(`    ${name}: panel ${c.top}-${c.bottom} in ${c.vh}px, main scrolls ${c.scrolls}`);
-      ok(c.panels === 1, `${at} ${name}: exactly one Learning Centre is open: ${c.panels}`);
+      ok(c.panels === 1, `${at} ${name}: exactly one study window is open: ${c.panels}`);
       ok(c.essayStillMounted && c.lineStillMounted, `${at} ${name}: the essay stays mounted underneath it`);
-      ok(c.top >= 0 && c.bottom <= c.vh, `${at} ${name}: the modal is on screen: ${c.top}-${c.bottom} in ${c.vh}`);
+      ok(c.top >= 0 && c.bottom <= c.vh, `${at} ${name}: the window is on screen: ${c.top}-${c.bottom} in ${c.vh}`);
       ok(c.mainOverflow === 'auto' || c.mainOverflow === 'scroll',
-        `${at} ${name}: long content scrolls inside the modal rather than off it: ${c.mainOverflow}`);
-      ok(c.footInside === true, `${at} ${name}: the footer is inside the modal, not below it`);
+        `${at} ${name}: long content scrolls inside the window rather than off it: ${c.mainOverflow}`);
+      ok(c.footInside === true, `${at} ${name}: the footer, where there is one, is inside the window`);
       // Closing puts the student back where they were, which is the whole reason
       // the modal is allowed to cover the page in the first place.
       await p.keyboard.press('Escape'); await settled(p);
       const after = await p.evaluate(() => ({
-        gone: !document.querySelector('.esl-panel'),
+        gone: !document.querySelector('.es-study'),
         line: document.querySelector('#esline') ? document.querySelector('#esline').value : null
       }));
       ok(after.gone, `${at} ${name}: Escape closes it`);

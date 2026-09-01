@@ -3226,8 +3226,12 @@
   function esStructureLabel(key) { return esStructureDef(key).label; }
 
   const ES = { subject: null, code: "", demo: false, screen: "setup", draft: null, list: [], form: null, pending: false,
-    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, planAll: false, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false, tryPick: null, lessonMore: false, lessonJump: null },  // transient guided-view state, reset on paragraph change
+    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, planAll: false, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false, tryPick: null, lessonMore: false, lessonJump: null,
+      studyOpen: false, studyPreview: null, studyPos: null },  // transient guided-view state, reset on paragraph change
     hint: { open: false, tab: "know" },          // study hints: persists across paragraphs on purpose
+    // The Learning Centre is off the student route. This is the only way back to
+    // it, for the suites that keep its teaching proven until it is rebuilt.
+    legacyCentre: /[?&]eslegacy=1/.test(String(location.search || "")),
     quiz: { revealed: false, peeked: false, attempt: "", result: null } };
   const ES_KEY = "marginal.essay.v1";
   function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, planAll: false, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false, tryPick: null, lessonMore: false, lessonJump: null }; }
@@ -3466,6 +3470,183 @@
     }
   }
 
+  // ---- STUDY RESOURCES ------------------------------------------------------
+  //
+  // Reading, not teaching. The Learning Centre tried to teach inside the app and
+  // is out of the student route while it is rebuilt; this sends the student to
+  // the material their class already has, at the point they need it, and gets
+  // out of the way.
+  //
+  // Everything it shows is authored. A resource is a label somebody wrote and a
+  // link somebody supplied. Nothing is derived from the question's prose, no
+  // page number is inferred, and where nothing has been authored the window says
+  // so rather than showing a plausible-looking row.
+  //
+  // A peer of the notebook: its own host at the end of <body>, floating over the
+  // essay, so opening it cannot move the writing.
+  const ES_STUDY_POS = "marginal.study.pos";
+  function esStudyMap() { return (window.ESSAY && window.ESSAY.resources) || {}; }
+  // Ids in, records out, and the ids that resolved to nothing kept separately.
+  // A missing id is a fault in the content, not something to hide from the
+  // person who could fix it, so it is counted and reported rather than skipped.
+  function esStudyResolve(ids) {
+    const map = esStudyMap(), ok = [], missing = [];
+    (ids || []).forEach(id => { const r = map[id]; if (r && r.url) ok.push(r); else missing.push(id); });
+    return { ok: ok, missing: missing };
+  }
+  function esStudyQuestionRefs() { const q = esQuestionDef(); return (q && q.studyRefs) || []; }
+  // What the student's CHOSEN argument reads for. Only the pathway they took,
+  // and the area it belongs to where that area authors its own: never the whole
+  // question's set relabelled as though it were about their argument.
+  function esStudyArgumentRefs(p) {
+    const path = esPathway(p); if (!path) return [];
+    const q = esQuestionDef();
+    const area = (q && q.areas && path.area && q.areas[path.area]) || null;
+    return (path.studyRefs || []).concat((area && area.studyRefs) || []);
+  }
+  function esStudyRow(r) {
+    const sub = [r.provider, r.note].filter(Boolean).join(" · ");
+    return '<div class="es-stres">' +
+      '<span class="es-stico">' + esIcon("book") + '</span>' +
+      '<span class="es-sttext"><span class="es-stlabel">' + esc(r.label || r.id) + '</span>' +
+      (sub ? '<span class="es-stsub">' + esc(sub) + '</span>' : '') + '</span>' +
+      // The guaranteed route. Everything else in this window is an enhancement
+      // on top of a plain link that works whatever the host allows.
+      '<a class="es-stopen" href="' + esc(r.url) + '" target="_blank" rel="noopener noreferrer"' +
+      ' data-esstopen="' + esc(r.id) + '" title="Open in a new tab">' + esIcon("open") + '</a>' +
+      (r.embeddable === false ? '' : '<button type="button" class="es-stprev" data-esstprev="' + esc(r.id) + '">preview</button>') +
+      '</div>';
+  }
+  function esStudyHTML(p) {
+    const qr = esStudyResolve(esStudyQuestionRefs());
+    const ar = esStudyResolve(esStudyArgumentRefs(p));
+    const path = esPathway(p);
+    const where = p && p.role ? p.role : "";
+    const prev = ES.ui.studyPreview ? esStudyMap()[ES.ui.studyPreview] : null;
+    const pos = ES.ui.studyPos;
+    const box = pos || esStudyBox();
+    const style = ' style="left:' + box.left + 'px;top:' + box.top + 'px;right:auto;bottom:auto'
+      + (box.w ? ';width:' + box.w + 'px' : "") + '"';
+    const nothing = !qr.ok.length && !ar.ok.length;
+    return '<aside class="es-study" role="dialog" aria-label="Study resources"' + style + '>' +
+      '<div class="es-sthead">' + esIcon("book") +
+        '<span class="es-sttitle">Study resources</span>' +
+        '<button type="button" class="es-nbact" data-esstudyhome title="Put the window back where it opens">reset position</button>' +
+        '<button type="button" class="es-nbx" data-esstudyclose aria-label="Close">' + esIcon("close") + '</button></div>' +
+      '<div class="es-stbody">' +
+      (prev ? '<div class="es-stprevwrap">' +
+          '<div class="es-stprevhead"><button type="button" class="es-linkbtn" data-esstback>&larr; All resources</button>' +
+            '<a class="es-linkbtn" href="' + esc(prev.url) + '" target="_blank" rel="noopener noreferrer">Open in new tab</a></div>' +
+          '<div class="es-stlabel">' + esc(prev.label || prev.id) + '</div>' +
+          // Embedded viewing is an enhancement. A restricted Drive file, or a
+          // workspace that refuses framing, fails silently in an iframe, so the
+          // fallback is revealed on a timer rather than left as a blank rectangle.
+          '<div class="es-stframe" data-esstframe><iframe src="' + esc(esStudyEmbedUrl(prev)) + '" title="' + esc(prev.label || "Resource") + '" loading="lazy" referrerpolicy="no-referrer"></iframe></div>' +
+          // Standing, not triggered. A cross-origin frame that a workspace policy
+          // refuses to render still fires load, and its document cannot be read
+          // from here, so failure is not reliably detectable: a message that
+          // waits to be certain would sometimes never arrive. This one is always
+          // there, costs a line, and is right in every case.
+          '<p class="es-stfall" data-esstfall>Nothing showing? Some resources cannot be opened inside Marginal, and some need you to be signed in. Open it in a new tab instead.</p>' +
+        '</div>'
+      : nothing
+        ? '<p class="es-sthelp">No study resources have been added for this question yet. When your teacher adds them they will appear here.</p>'
+        : '<div class="es-stsec"><div class="es-sthd">For this question</div>' +
+            '<p class="es-sthelp">Recommended reading to help you understand the topic and build your argument.</p>' +
+            (qr.ok.length ? qr.ok.map(esStudyRow).join("")
+              : '<p class="es-sthelp">Nothing has been added for the question itself.</p>') +
+          '</div>' +
+          (path
+            ? '<div class="es-stsec"><div class="es-sthd">For your argument' + (where ? " (" + esc(where) + ")" : "") + '</div>' +
+                (ar.ok.length
+                  ? '<p class="es-sthelp">Resources relevant to the argument you chose.</p>' + ar.ok.map(esStudyRow).join("")
+                  // Never fabricated. An argument with nothing authored against it
+                  // says nothing has been added, and does not borrow the
+                  // question's list to look populated.
+                  : '<p class="es-sthelp">Nothing has been added for this argument yet.</p>') +
+              '</div>'
+            : '<div class="es-stnote">' + esIcon("info") +
+              '<span>Choose an argument for a body paragraph to see reading for that argument.</span></div>')) +
+      '</div>' +
+      ((!prev && (qr.ok.length || ar.ok.length))
+        ? '<div class="es-stfoot"><button type="button" class="es-btn ghost sm" data-esstall>Open all in new tabs</button></div>' : "") +
+      '</aside>';
+  }
+  // Drive share links open a viewer, not a file. /preview is the embeddable form
+  // of the same link, so a student who can open it in a tab can usually see it
+  // here too. Anything else is embedded as given.
+  function esStudyEmbedUrl(r) {
+    const u = String(r.url || "");
+    const m = u.match(/^https:\/\/drive\.google\.com\/file\/d\/([^/]+)/);
+    return m ? "https://drive.google.com/file/d/" + m[1] + "/preview" : u;
+  }
+  // Placed beside the writing rather than on top of it, by the same rule the tool
+  // window uses: what has to be cleared is the writing card, not the page. Where
+  // the space left is narrower than the window is allowed to be, it takes the
+  // edge, which covers the least, and can be dragged anywhere from there.
+  function esStudyBox() {
+    const WANT = 400, FLOOR = 320, GAP = 16, EDGE = 12;
+    const rights = [".es-flow", ".es-parahead"].map(x => document.querySelector(x))
+      .filter(Boolean).map(e => e.getBoundingClientRect().right);
+    const writing = rights.length ? Math.max.apply(null, rights) : null;
+    const cols = document.querySelector(".es-cols");
+    const top = cols ? Math.max(12, Math.round(cols.getBoundingClientRect().top + 46)) : 96;
+    const room = writing == null ? 0 : window.innerWidth - writing - GAP - EDGE;
+    const beside = room >= FLOOR;
+    const w = beside ? Math.min(WANT, Math.round(room)) : WANT;
+    const left = beside ? Math.round(writing + GAP) : Math.max(EDGE, window.innerWidth - w - EDGE);
+    return { left: left, top: top, w: w };
+  }
+  function esStudyMount(p) {
+    let host = document.getElementById("esstudyhost");
+    if (!host) { host = document.createElement("div"); host.id = "esstudyhost"; document.body.appendChild(host); }
+    host.innerHTML = esStudyHTML(p);
+    esStudyBind(host, p);
+  }
+  function esStudyUnmount() {
+    const host = document.getElementById("esstudyhost"); if (host) host.remove();
+    ES.ui.studyOpen = false; ES.ui.studyPreview = null;
+    document.querySelectorAll('[data-estool="understand"]').forEach(b => b.setAttribute("aria-expanded", "false"));
+  }
+  function esStudyBind(host, p) {
+    const panel = host.querySelector(".es-study"); if (!panel) return;
+    const x = panel.querySelector("[data-esstudyclose]");
+    if (x) x.onclick = () => { esStudyUnmount(); esFocusComposer(); };
+    const home = panel.querySelector("[data-esstudyhome]");
+    if (home) home.onclick = () => { ES.ui.studyPos = null; try { sessionStorage.removeItem(ES_STUDY_POS); } catch (e) { /* private mode */ } esStudyMount(p); };
+    panel.querySelectorAll("[data-esstprev]").forEach(b => b.onclick = () => { ES.ui.studyPreview = b.dataset.esstprev; esStudyMount(p); });
+    const back = panel.querySelector("[data-esstback]");
+    if (back) back.onclick = () => { ES.ui.studyPreview = null; esStudyMount(p); };
+    const all = panel.querySelector("[data-esstall]");
+    if (all) all.onclick = () => panel.querySelectorAll("[data-esstopen]").forEach(a => window.open(a.href, "_blank", "noopener"));
+    // Escape closes it, the way every temporary surface in the essay closes.
+    // Bound while open and dropped on close, so nothing accumulates.
+    const esc2 = e => {
+      if (e.key !== "Escape") return;
+      document.removeEventListener("keydown", esc2);
+      esStudyUnmount(); esFocusComposer();
+    };
+    document.addEventListener("keydown", esc2);
+    const head = panel.querySelector(".es-sthead");
+    if (head) head.onmousedown = e => {
+      if (e.target.closest("button") || e.target.closest("a")) return;
+      e.preventDefault();
+      const r = panel.getBoundingClientRect();
+      const dx = e.clientX - r.left, dy = e.clientY - r.top;
+      const move = ev => {
+        const w = panel.offsetWidth, h = panel.offsetHeight;
+        const left = Math.max(6, Math.min(window.innerWidth - w - 6, ev.clientX - dx));
+        const top = Math.max(6, Math.min(window.innerHeight - h - 6, ev.clientY - dy));
+        panel.style.left = left + "px"; panel.style.top = top + "px";
+        panel.style.right = "auto"; panel.style.bottom = "auto";
+        ES.ui.studyPos = { left: left, top: top };
+        try { sessionStorage.setItem(ES_STUDY_POS, JSON.stringify(ES.ui.studyPos)); } catch (e2) { /* private mode */ }
+      };
+      const up = () => { document.removeEventListener("mousemove", move); document.removeEventListener("mouseup", up); };
+      document.addEventListener("mousemove", move); document.addEventListener("mouseup", up);
+    };
+  }
+
   function esSaveDraft() {
     if (!ES.draft) return;
     ES.draft.updatedAt = new Date().toISOString(); // most-recent-first ordering
@@ -3633,6 +3814,19 @@
     const nowScrim = host.querySelector(".es-scrim"); if (nowScrim && sy) nowScrim.scrollTop = sy;
     // Defensive: no essay button should ever act as a form submit.
     host.querySelectorAll("button:not([type])").forEach(b => b.type = "button");
+    // The study window floats outside this host, so a render cannot destroy it,
+    // but what it should be showing depends on the paragraph and on the argument
+    // the student has chosen. Choosing one with the window open has to change
+    // what is in it, so it is rebuilt against the current paragraph and left
+    // exactly where it was. Its own preview stays open across the rebuild.
+    if (ES.ui.studyOpen && document.getElementById("esstudyhost")) esStudyMount(esCurrentPara());
+  }
+  // The paragraph the student is on, or nothing when the screen has no paragraph.
+  // Reading it from the draft rather than being handed it lets a surface outside
+  // #eshost stay in step with the essay without the essay knowing it exists.
+  function esCurrentPara() {
+    const d = ES.draft; if (!d || !Array.isArray(d.paras)) return null;
+    return d.paras[d.pos] || null;
   }
   // Defensive only: the essay content file failed to load, so there is no slot model
   // or fallback content to run on. The core is otherwise subject-agnostic and always
@@ -4599,6 +4793,9 @@
     type: '<path d="M4 7V5h16v2M12 5v14M9 19h6"/>',
     close: '<path d="M6 6l12 12M18 6 6 18"/>',
     check: '<path d="m5 12.5 4.5 4.5L19 7"/>',
+    // A link that leaves Marginal, and a note that is not a warning.
+    open: '<path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+    info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/>',
   };
   function esIcon(name) {
     return '<svg class="es-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ES_ICONS[name] || "") + '</svg>';
@@ -5320,18 +5517,32 @@
     const host = document.getElementById("eshost"); if (!host) return;
     host.querySelectorAll("[data-estool]").forEach(b => b.onclick = () => {
       const key = b.dataset.estool;
-      // Learn opens the Learning Centre. It is teaching, not a writing tool, and
-      // giving it a tab in the tool window put two different classes of activity
-      // behind one control set.
+      // Learn opens the study resources window. It used to open the Learning
+      // Centre; the Centre is out of the student route while it is rebuilt, and
+      // its code is left in place for that rebuild rather than deleted.
+      //
+      // A floating window rather than a tool tab, for the same reason the
+      // notebook is: reading is not one of the four writing tools, and opening
+      // it must not take the tool window away from the student.
       if (key === "understand") {
-        ES.centre = ES.centre || { route: "choose", dock: "right" };
-        ES.centre.open = true;
-        // Straight to the concept this paragraph's argument names, where one is
-        // authored. Landing on a chooser when the app already knows what the
-        // student is arguing about makes them pick something it could have opened.
-        ES.centre.route = esToolData("understand", p) ? "concept" : "choose";
-        ES.ui.tool = null; ES.ui.contextView = null; esRenderKeepingPlace(p);
-        eslMount(p); return;
+        // The Centre is preserved for its rebuild, and a preserved thing no test
+        // covers rots. ?eslegacy=1 is the only route left to it: not a student
+        // route, not linked from anywhere, and the suites that assert its
+        // teaching use it so the content stays proven while the surface is out.
+        if (ES.legacyCentre) {
+          ES.centre = ES.centre || { route: "choose", dock: "right" };
+          ES.centre.open = true;
+          ES.centre.route = esToolData("understand", p) ? "concept" : "choose";
+          ES.ui.tool = null; ES.ui.contextView = null; esRenderKeepingPlace(p);
+          eslMount(p); return;
+        }
+        if (ES.ui.studyOpen) { esStudyUnmount(); esFocusComposer(); return; }
+        try { const v = JSON.parse(sessionStorage.getItem(ES_STUDY_POS) || "null"); if (v && v.left != null) ES.ui.studyPos = v; }
+        catch (e) { /* private mode */ }
+        ES.ui.studyOpen = true; ES.ui.studyPreview = null;
+        esStudyMount(p);
+        document.querySelectorAll('[data-estool="understand"]').forEach(x2 => x2.setAttribute("aria-expanded", "true"));
+        return;
       }
       if (ES.ui.tool === key) { ES.ui.tool = null; esRenderKeepingPlace(p); esFocusComposer(); return; }
       esCaptureContext(p);
@@ -5395,7 +5606,7 @@
         // meant to be usable beside a tool, so neither it nor the control that
         // opens it dismisses this one.
         if (e.target.closest && (e.target.closest("[data-estool]") || e.target.closest("#esnbhost")
-          || e.target.closest("[data-esnbtoggle]"))) return;
+          || e.target.closest("#esstudyhost") || e.target.closest("[data-esnbtoggle]"))) return;
         shut();
       };
       const key2 = e => { if (e.key === "Escape") { e.preventDefault(); shut(); } };

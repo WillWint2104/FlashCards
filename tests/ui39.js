@@ -103,37 +103,44 @@ async function toWriting(p, qre) {
   });
   ok(page && !/rgba\(.*0\.\d+\)/.test(page.bg), 'the essay surface is opaque, not a scrim over something else: ' + (page && page.bg));
 
-  console.log('--- Learning is one modal, and the essay stays mounted under it ---');
+  console.log('--- Learn opens study resources, and the essay stays mounted under it ---');
+  // This block used to assert the Learning Centre. The Centre is out of the
+  // student route while it is rebuilt, so the route it tested no longer exists.
+  // What it was really protecting survives unchanged and is asserted here
+  // against the surface that replaced it: opening support does not move the
+  // writing, and the essay is still there underneath.
   const learn = await p.$('[data-estool="understand"]');
   ok(!!learn, 'the Learn control is reachable');
   if (learn) {
-    await learn.click(); await here(p, '.esl-panel');
+    await learn.click(); await here(p, '.es-study');
     const c = await p.evaluate(() => ({
-      panels: document.querySelectorAll('.esl-panel').length,
+      panels: document.querySelectorAll('.es-study').length,
+      centre: document.querySelectorAll('.esl-panel').length,
       essay: !!document.querySelector('.es-compose'),
-      drawer: !!document.querySelector('.es-drawer')
+      drawer: !!document.querySelector('.es-drawer'),
+      outside: !!document.querySelector('#esstudyhost') && !document.querySelector('#eshost .es-study'),
     }));
-    ok(c.panels === 1, 'exactly one Learning Centre: ' + c.panels);
+    ok(c.panels === 1, 'exactly one study window: ' + c.panels);
+    ok(c.centre === 0, 'and the Learning Centre is not on the student route: ' + c.centre);
     ok(c.essay, 'the essay is still mounted underneath it');
     ok(!c.drawer, 'and Learn did not open a writing tool drawer');
-    await stable(p, base, 'Learning open');
+    ok(c.outside, 'it floats in its own host, so a render cannot destroy it');
+    await stable(p, base, 'study resources open');
 
-    console.log('--- a detail inside it expands locally ---');
-    // Not just any .esl-tab: the notebook toggle is one, and pressing it here
-    // opened the notebook and made the next block's assertions measure a close.
-    const layer = await p.evaluate(() => {
-      const t = [...document.querySelectorAll('.esl-layerh, .esl-tab')]
-        .find(x => !x.hasAttribute('data-esnbtoggle'));
-      if (t) { t.click(); return t.textContent.trim().slice(0, 30); } return null;
+    console.log('--- it does not cover the writing where there is room beside it ---');
+    const cover = await p.evaluate(() => {
+      const d = document.querySelector('.es-study').getBoundingClientRect();
+      const rights = ['.es-flow', '.es-parahead'].map(s2 => document.querySelector(s2))
+        .filter(Boolean).map(e => e.getBoundingClientRect().right);
+      const writing = rights.length ? Math.max.apply(null, rights) : 0;
+      return { over: Math.round(Math.max(0, writing - d.left)), onScreen: Math.round(d.right) <= window.innerWidth };
     });
-    ok(!!layer, 'the Centre has something to expand or navigate: ' + JSON.stringify(layer));
-    if (layer) {
-      await settled(p);
-      await stable(p, base, 'Learning detail expanded');
-    }
-    await p.keyboard.press('Escape'); await gone(p, '.esl-panel');
-    ok(!(await p.$('.esl-panel')), 'Escape closes the Centre');
-    await stable(p, base, 'Learning closed');
+    ok(cover.over === 0, 'the study window opens beside the writing, not on top of it: ' + cover.over + 'px');
+    ok(cover.onScreen, 'and is fully on screen');
+
+    await p.click('[data-esstudyclose]'); await gone(p, '.es-study');
+    ok(!(await p.$('.es-study')), 'it closes on its own control');
+    await stable(p, base, 'study resources closed');
   }
 
   console.log('--- the notebook is its own window ---');
@@ -277,25 +284,35 @@ async function toWriting(p, qre) {
     ok(undone !== beforeShape.v, 'and undo still reaches the typing: ' + JSON.stringify(undone.slice(0, 24)));
   }
 
-  console.log('--- authored teaching is never orphaned by moving Learn ---');
-  // A question whose paragraph names an authored concept must still be able to
-  // reach it. Moving Learn to the Centre once left this with no route at all.
+  console.log('--- what Learn reaches is authored, never derived from the prose ---');
+  // This block used to assert that the concept teaching a pathway names was
+  // reachable through the Learning Centre. It is not any more: the Centre is off
+  // the student route, and the authored syllabus explanations behind it are
+  // unreachable in essay mode until it is rebuilt. That is a consequence of the
+  // decision and is recorded in docs/study-resources.md, not hidden here.
+  //
+  // The principle the old block protected does survive: what a student is sent
+  // to is authored against their argument and never inferred. It is asserted
+  // against the surface that replaced it.
   const reached2 = await toWriting(p, 'target markets affect');
   ok(reached2, 'a question with authored arguments is reachable');
   if (reached2) {
     const l2 = await p.$('[data-estool="understand"]:not([disabled])');
-    ok(!!l2, 'Learn is offered where a concept is authored');
+    ok(!!l2, 'Learn is offered');
     if (l2) {
-      await l2.click(); await here(p, '.esl-panel');
-      const taught = await p.evaluate(() => {
-        const panel = document.querySelector('.esl-panel');
-        return { open: !!panel, title: (document.querySelector('.es-drawer-h') || {}).textContent || '',
-          body: (document.querySelector('.es-drawer-p') || {}).textContent || '' };
+      await l2.click(); await here(p, '.es-study');
+      const shown = await p.evaluate(() => {
+        const panel = document.querySelector('.es-study');
+        return { rows: panel.querySelectorAll('.es-stres').length,
+          text: panel.innerText.replace(/\s+/g, ' ').trim() };
       });
-      ok(taught.open, 'it opens the Learning Centre');
-      ok(taught.title.trim().length > 0, 'on a named concept rather than a chooser: ' + JSON.stringify(taught.title.trim().slice(0, 40)));
-      ok(taught.body.trim().length > 30, 'with an explanation of it: ' + taught.body.trim().length + ' chars');
-      await p.keyboard.press('Escape'); await gone(p, '.esl-panel');
+      // No resource has been authored for any question yet, so the honest state
+      // is the empty one. A window that invented a plausible row here would be
+      // the exact failure this suite exists to catch.
+      ok(shown.rows === 0, 'it shows no resources, because none are authored: ' + shown.rows);
+      ok(/no study resources have been added/i.test(shown.text),
+        'and says so plainly rather than showing a placeholder');
+      await p.click('[data-esstudyclose]'); await gone(p, '.es-study');
     }
   }
 
