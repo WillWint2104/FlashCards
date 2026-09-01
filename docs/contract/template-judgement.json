@@ -1,0 +1,88 @@
+{
+  "schema": "marginal.question-package",
+  "version": 1,
+  "question": {
+    "id": "",
+    "subject": "business_studies",
+    "topic": "",
+    "directive": "",
+    "text": "",
+    "marks": 20,
+    "terms": { "first": "", "second": "" },
+    "overallArgument": "",
+    "plan": [{ "line": "", "strategy": "", "objectives": [] }]
+  },
+  "decode": {
+    "verbMeaning": "",
+    "plainEnglish": "",
+    "highlights": [{ "anchor": "", "kind": "directive", "label": "", "note": "" }],
+    "cover": { "forEach": "", "consistency": "" }
+  },
+  "requirements": {
+    "concepts": [],
+    "relationships": [],
+    "accomplish": [],
+    "syllabusSummary": ""
+  },
+  "coreAnswer": {
+    "mode": "judgement",
+    "pattern": "",
+    "statement": "",
+    "judging": "",
+    "criteria": [{ "id": "", "label": "", "note": "" }],
+    "positions": [
+      { "id": "", "label": "", "lean": "positive", "note": "" },
+      { "id": "", "label": "", "lean": "qualified", "note": "" }
+    ]
+  },
+  "workingAnswer": { "base": "", "lead": "", "join": ", and by", "qualifier": "" },
+  "reasoning": {
+    "cause": { "label": "", "terms": [] },
+    "effect": { "label": "", "terms": [] },
+    "forward": "",
+    "backward": "",
+    "degree": { "ask": "", "terms": [] }
+  },
+  "areas": [],
+  "pathways": [
+    {
+      "id": "",
+      "areaRef": null,
+      "short": "",
+      "adds": "",
+      "relationship": "",
+      "choiceMeaning": "",
+      "whatToProve": "",
+      "commonMistake": "",
+      "contribution": { "role": "support", "note": "" },
+      "conceptRef": "",
+      "learning": { "status": "unreviewed" },
+      "evidenceRefs": [],
+      "guides": { "explain": "", "effect": "", "link": "" }
+    },
+    {
+      "id": "",
+      "areaRef": null,
+      "short": "",
+      "adds": "",
+      "relationship": "",
+      "choiceMeaning": "",
+      "whatToProve": "",
+      "commonMistake": "",
+      "contribution": { "role": "limitation", "note": "" },
+      "conceptRef": "",
+      "learning": { "status": "unreviewed" },
+      "evidenceRefs": [],
+      "guides": { "explain": "", "effect": "", "link": "" }
+    }
+  ],
+  "marking": { "source": "generated", "bands": null, "bandSource": null, "text": null },
+  "provenance": {
+    "origin": "",
+    "author": "",
+    "authoredAt": "",
+    "reviewState": "draft",
+    "publication": "unpublished",
+    "notes": null
+  }
+}

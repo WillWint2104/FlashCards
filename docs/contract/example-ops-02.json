@@ -1,0 +1,435 @@
+{
+  "schema": "marginal.question-package",
+  "version": 1,
+  "question": {
+    "id": "ops-02",
+    "subject": "business_studies",
+    "topic": "Operations",
+    "directive": "Assess",
+    "text": "Assess the impact of globalisation on operations management.",
+    "marks": 20,
+    "terms": {
+      "first": "Globalisation",
+      "second": "Operations management"
+    },
+    "overallArgument": "Globalisation can substantially improve cost competitiveness and innovation but exposes businesses to greater supply-chain and global risk.",
+    "plan": [
+      {
+        "line": "Global sourcing to costs and supply",
+        "strategy": "Global sourcing",
+        "objectives": [
+          "costs",
+          "supply"
+        ]
+      },
+      {
+        "line": "Economies of scale to cost leadership",
+        "strategy": "Economies of scale",
+        "objectives": [
+          "cost leadership"
+        ]
+      },
+      {
+        "line": "Scanning and learning to innovation",
+        "strategy": "Scanning and learning",
+        "objectives": [
+          "innovation"
+        ]
+      },
+      {
+        "line": "Research and development to differentiation",
+        "strategy": "Research and development",
+        "objectives": [
+          "differentiation"
+        ]
+      },
+      {
+        "line": "Longer supply chains to dependability and cost",
+        "strategy": "Longer supply chains",
+        "objectives": [
+          "dependability",
+          "cost"
+        ]
+      },
+      {
+        "line": "Standardising or adapting the output for each market",
+        "strategy": "Standardising or adapting the output for each market",
+        "objectives": []
+      },
+      {
+        "line": "Overseas competitors arriving in the home market",
+        "strategy": "Overseas competitors arriving in the home market",
+        "objectives": []
+      }
+    ]
+  },
+  "decode": {
+    "verbMeaning": "Assess asks you to weigh something up and say how significant it is. Listing what globalisation does is not an assessment; saying how far it changes operations, on which objectives, and what it costs, is.",
+    "plainEnglish": "Work out how much the world operating as one market actually changes the way a business makes and delivers what it sells, and be straight about the parts that hurt as well as the parts that help.",
+    "highlights": [
+      {
+        "anchor": "Assess",
+        "kind": "directive",
+        "label": "what you need to do",
+        "note": "Weigh it up and reach a position. A list of effects is not an assessment, and a position that only appears in the last paragraph is not one either."
+      },
+      {
+        "anchor": "impact",
+        "kind": "judgement",
+        "label": "what you are weighing",
+        "note": "How far globalisation reaches operations. An impact has a size, and the size is what you are being asked for."
+      },
+      {
+        "anchor": "globalisation",
+        "kind": "cause",
+        "label": "what is doing the changing",
+        "note": "The world operating as one market: the business can buy inputs and sell overseas, and it also meets overseas competitors at home."
+      },
+      {
+        "anchor": "operations management",
+        "kind": "effect",
+        "label": "what changes",
+        "note": "Weigh it against the performance objectives: quality, speed, dependability, flexibility, customisation and cost. Operations improving is not one of them."
+      }
+    ],
+    "cover": {
+      "forEach": "an impact of globalisation → the performance objective it moves → how significant that is, and what it costs",
+      "consistency": "Choose the impacts yourself, use one business throughout, and hold one position across the whole response."
+    }
+  },
+  "requirements": {
+    "concepts": [
+      "globalisation",
+      "operations management",
+      "global factors",
+      "performance objectives",
+      "cost per unit"
+    ],
+    "relationships": [
+      "globalisation is an influence, so operations responds to it rather than choosing it",
+      "the same global reach that lowers cost per unit also lengthens the supply chain, so one impact carries the other",
+      "an impact is significant to the degree that it moves a named performance objective"
+    ],
+    "accomplish": [
+      "states an overall position on how far globalisation changes operations, and holds it across the response",
+      "for each impact, names the performance objective it moves rather than describing globalisation",
+      "weighs at least one favourable impact against at least one that is not, where the material supports it",
+      "keeps globalisation as the influence being assessed rather than drifting into a general operations strategies answer",
+      "uses one business consistently so the impacts can be weighed against each other"
+    ],
+    "syllabus": "Operations: globalisation as an influence on operations management, and the global factors of global sourcing, economies of scale, scanning and learning, and research and development."
+  },
+  "coreAnswer": {
+    "mode": "judgement",
+    "pattern": "an impact of globalisation → the performance objective it moves → how significant, and at what cost",
+    "statement": "Globalisation substantially changes operations, lowering cost per unit and widening access to ideas and inputs, while the same reach makes supply less predictable and forces the business to decide what to standardise and what to adapt.",
+    "judging": "how far globalisation changes operations management",
+    "criteria": [
+      {
+        "id": "cost",
+        "label": "against cost per unit",
+        "note": "Cost per unit is the number a cost leader attacks, and it is the objective global sourcing and economies of scale move most directly."
+      },
+      {
+        "id": "capability",
+        "label": "against quality and new products",
+        "note": "Scanning and learning reaches quality; research and development reaches new products. These are separate gains from the cost ones and worth separating."
+      },
+      {
+        "id": "dependability",
+        "label": "against dependability of supply",
+        "note": "A longer chain has more points of failure and more exposure to rates and tariffs, so the same decision that cut cost can cost predictability."
+      },
+      {
+        "id": "fit",
+        "label": "against fit with the local market",
+        "note": "What is accepted in one market may be rejected in another, so scale gains are partly given back wherever the output has to be adapted."
+      }
+    ],
+    "positions": [
+      {
+        "id": "substantial",
+        "label": "A substantial and mostly favourable impact",
+        "lean": "positive",
+        "note": "Take this if your business buys or sells globally and you can show the cost and capability gains reaching named objectives."
+      },
+      {
+        "id": "bothsides",
+        "label": "Substantial on both sides",
+        "lean": "qualified",
+        "note": "Take this if the same global reach that lowered cost also made supply or market fit harder, and you can show both."
+      },
+      {
+        "id": "exposed",
+        "label": "Significant only where the business is exposed to it",
+        "lean": "qualified",
+        "note": "Take this if the impact runs mainly through competitors arriving here rather than through anything the business does overseas."
+      }
+    ]
+  },
+  "workingAnswer": {
+    "base": "Globalisation changes how operations is run.",
+    "lead": "Globalisation changes how operations is run by",
+    "join": ", and by",
+    "qualifier": "although the same global reach carries risks operations cannot control"
+  },
+  "reasoning": {
+    "cause": {
+      "label": "globalisation, or a global factor it makes possible",
+      "terms": [
+        "globalisation",
+        "global sourcing",
+        "economies of scale",
+        "scanning and learning",
+        "research and development",
+        "overseas suppliers",
+        "global supply chain",
+        "supply chain",
+        "overseas competitors",
+        "global market",
+        "best practice"
+      ]
+    },
+    "effect": {
+      "label": "something operations is judged on",
+      "terms": [
+        "cost",
+        "cost per unit",
+        "quality",
+        "speed",
+        "dependability",
+        "flexibility",
+        "customisation",
+        "supply",
+        "inputs",
+        "new products",
+        "processes"
+      ]
+    },
+    "forward": "The question asks you to weigh how far globalisation changes operations.",
+    "backward": "Your point currently explains how operations shapes globalisation, which runs the influence backwards.",
+    "degree": {
+      "ask": "This says globalisation has an effect. Assess asks how significant, so your point needs to land somewhere on a scale.",
+      "terms": [
+        "highly",
+        "very",
+        "largely",
+        "significantly",
+        "significant",
+        "substantially",
+        "substantial",
+        "considerably",
+        "considerable",
+        "moderately",
+        "moderate",
+        "somewhat",
+        "slightly",
+        "slight",
+        "marginally",
+        "marginal",
+        "limited",
+        "little",
+        "only where",
+        "only when",
+        "only if",
+        "strongly",
+        "strong",
+        "greatly",
+        "great",
+        "most",
+        "least",
+        "far more",
+        "far less",
+        "rarely",
+        "outweigh",
+        "outweighs",
+        "outweighed"
+      ]
+    }
+  },
+  "areas": [],
+  "pathways": [
+    {
+      "id": "ops02-gs-cost",
+      "areaRef": "globalisation",
+      "short": "Global sourcing → input cost and supplier choice",
+      "adds": "lowering input cost by buying anywhere in the world",
+      "relationship": "Global sourcing lowers input cost and widens supplier choice, because suppliers are chosen on price, quality, capability or availability rather than on where they are",
+      "choiceMeaning": "Once the whole world is the supplier list, the business is no longer paying whatever the nearest supplier charges.",
+      "whatToProve": "inputs can be bought worldwide → suppliers are chosen on price and capability → cost per unit falls, or input quality rises",
+      "commonMistake": "Calling ordinary bulk buying global sourcing. Global sourcing is about where the supplier is, not how much is ordered.",
+      "conceptRef": "bus.ops.operations-strategies.global-factors",
+      "learning": {
+        "status": "unreviewed"
+      },
+      "evidenceRefs": [],
+      "guides": {
+        "explain": "Explain what changes when the supplier can be anywhere: which criterion the business now chooses on, and what that does to the input.",
+        "effect": "Say which performance objective moved, and by enough to matter.",
+        "link": "Say how much of your overall position this impact carries."
+      },
+      "contribution": {
+        "role": "support",
+        "note": "The most direct of the favourable impacts: it reaches cost per unit without depending on scale."
+      }
+    },
+    {
+      "id": "ops02-es-cost",
+      "areaRef": "globalisation",
+      "short": "Economies of scale → cost per unit",
+      "adds": "spreading fixed costs across a larger output",
+      "relationship": "Economies of scale cut cost per unit, because fixed costs are spread across more units and larger orders earn supplier discounts",
+      "choiceMeaning": "The same design, equipment and administration are paid for once and then divided by a much larger number.",
+      "whatToProve": "output rises → fixed costs are spread further and orders earn discounts → cost per unit falls",
+      "commonMistake": "Treating a fall in total cost as a fall in cost per unit. Only the cost of one unit tells you whether scale worked.",
+      "conceptRef": "bus.ops.operations-strategies.global-factors",
+      "learning": {
+        "status": "unreviewed"
+      },
+      "evidenceRefs": [],
+      "guides": {
+        "explain": "Explain the mechanism: which costs are fixed, and what dividing them by a larger output does to the cost of one unit.",
+        "effect": "Name the objective this serves and say how far it goes.",
+        "link": "Say whether this impact would exist at all without global scale."
+      },
+      "contribution": {
+        "role": "support",
+        "note": "Strong, but it depends on the business actually operating at world scale, which is worth saying."
+      }
+    },
+    {
+      "id": "ops02-sl-quality",
+      "areaRef": "globalisation",
+      "short": "Scanning and learning → better processes",
+      "adds": "adopting the best practice found anywhere in the industry",
+      "relationship": "Scanning and learning improves processes, because the business adopts the best practice found anywhere in the industry rather than only what it can see at home",
+      "choiceMeaning": "Watching a whole world of competitors gives the business methods it would never have arrived at on its own.",
+      "whatToProve": "global markets and rivals are watched → a better method is identified → the process is changed and quality rises",
+      "commonMistake": "Saying the business learns from overseas without naming what it changed. Learning that changes no process changes no objective.",
+      "conceptRef": "bus.ops.operations-strategies.global-factors",
+      "learning": {
+        "status": "unreviewed"
+      },
+      "evidenceRefs": [],
+      "guides": {
+        "explain": "Explain what was seen, what was adopted, and what the process does differently now.",
+        "effect": "Name the objective it moved, which is usually quality rather than cost.",
+        "link": "Say how this compares in size with the cost impacts."
+      },
+      "contribution": {
+        "role": "support",
+        "note": "A capability gain rather than a cost one, so it is worth weighing separately from the two cost impacts."
+      }
+    },
+    {
+      "id": "ops02-rd-newproducts",
+      "areaRef": "globalisation",
+      "short": "Research and development → new products, trialled in one market",
+      "adds": "creating new products and trialling them in one market first",
+      "relationship": "Research and development produces new products and better processes, and a global business can trial them in one market before using them everywhere",
+      "choiceMeaning": "Being in many markets turns one of them into a test: the business finds out whether something works before it commits everywhere.",
+      "whatToProve": "spending creates a new product or process → it is trialled in one market → it is adopted more widely only if it works there",
+      "commonMistake": "Describing research and development as a cost saving. It buys new products and better methods; the saving, if it comes, comes later.",
+      "conceptRef": "bus.ops.operations-strategies.new-product-or-service-design-and-develo",
+      "learning": {
+        "status": "unreviewed"
+      },
+      "evidenceRefs": [],
+      "guides": {
+        "explain": "Explain what being global adds to research and development that a single-market business does not have.",
+        "effect": "Say what this produces, and be honest that it is not guaranteed to transfer.",
+        "link": "Say what this impact is worth once you allow for the trials that fail."
+      },
+      "contribution": {
+        "role": "conditional",
+        "note": "Real, but it only pays where the trial market actually resembles the others. Say so rather than assuming it transfers."
+      }
+    },
+    {
+      "id": "ops02-supply-risk",
+      "areaRef": "globalisation",
+      "short": "A longer supply chain → less predictable supply",
+      "adds": "exposing supply to disruption, exchange rates and tariffs",
+      "relationship": "The same global reach exposes operations to disruption, exchange rates and tariffs, because a global supply chain is longer than a domestic one",
+      "choiceMeaning": "Every extra step between the input and the business is another place the supply can fail or the price can move.",
+      "whatToProve": "inputs travel further → the chain has more points of failure and more exposure to rates and tariffs → dependability and cost become less predictable",
+      "commonMistake": "Treating this as a reason not to source globally. The question asks how significant the impact is, not what the business should do.",
+      "conceptRef": "bus.ops.operations-strategies.global-factors",
+      "learning": {
+        "status": "unreviewed"
+      },
+      "evidenceRefs": [],
+      "guides": {
+        "explain": "Explain why length itself is the problem: what a longer chain exposes the business to that a short one does not.",
+        "effect": "Name the objective this costs, which is dependability before it is cost.",
+        "link": "Weigh this against the cost gain that came from the same decision."
+      },
+      "contribution": {
+        "role": "limitation",
+        "note": "This is the impact that makes the question an Assess. It is produced by the same decision that produced the cost gain."
+      }
+    },
+    {
+      "id": "ops02-adapt",
+      "areaRef": "globalisation",
+      "short": "Standardise or adapt → scale given back",
+      "adds": "forcing a choice between one standard output and a local one",
+      "relationship": "A product or method accepted in one market may be rejected in another, so the business must decide what to standardise and what to adapt",
+      "choiceMeaning": "Selling everywhere does not mean selling the same thing everywhere, and every adaptation costs some of the scale that made it cheap.",
+      "whatToProve": "the world is one market → the same output meets different expectations → scale gains are given back wherever the output has to be adapted",
+      "commonMistake": "Describing cultural differences without saying what operations had to change. The impact is on the process, not on the marketing.",
+      "conceptRef": "bus.ops.influences.globalisation-technology-quality-expecta",
+      "learning": {
+        "status": "unreviewed"
+      },
+      "evidenceRefs": [],
+      "guides": {
+        "explain": "Explain the decision the business is forced into, and what each side of it costs.",
+        "effect": "Say which objective is traded for which, rather than saying it is difficult.",
+        "link": "Say how much of the earlier cost gain survives this."
+      },
+      "contribution": {
+        "role": "limitation",
+        "note": "It limits the cost impact directly: the more the output is adapted, the less of the scale gain survives."
+      }
+    },
+    {
+      "id": "ops02-home-competition",
+      "areaRef": "globalisation",
+      "short": "Overseas competitors here → price pressure at home",
+      "adds": "bringing overseas competitors into the home market",
+      "relationship": "Globalisation brings overseas competitors into the home market, so operations meets price pressure it did not choose and must standardise, cut waste and find cheaper inputs to survive at a lower price",
+      "choiceMeaning": "The business does not have to trade globally to be changed by globalisation: the competition arrives whether or not it goes anywhere.",
+      "whatToProve": "overseas rivals sell here → price competition intensifies → operations standardises and strips cost whether or not it trades globally itself",
+      "commonMistake": "Turning this into a general answer about cost-based competition. Cost-based competition is the mechanism; globalisation is what brought it, and globalisation is what you are assessing.",
+      "conceptRef": "bus.ops.influences.globalisation-technology-quality-expecta",
+      "learning": {
+        "status": "unreviewed"
+      },
+      "evidenceRefs": [],
+      "guides": {
+        "explain": "Explain how a business that never leaves home is still changed: who arrived, and what that did to what it can charge.",
+        "effect": "Name what operations had to do about it.",
+        "link": "Say whether this impact is larger or smaller than the ones that need the business to trade globally."
+      },
+      "contribution": {
+        "role": "support",
+        "note": "The impact that reaches a business with no overseas operations at all, which is why it is worth arguing rather than assuming."
+      }
+    }
+  ],
+  "marking": {
+    "source": "generated",
+    "bands": null,
+    "bandSource": null,
+    "text": null
+  },
+  "provenance": {
+    "origin": null,
+    "author": null,
+    "authoredAt": null,
+    "reviewState": "in-source",
+    "publication": "published",
+    "notes": null
+  }
+}

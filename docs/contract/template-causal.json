@@ -1,0 +1,66 @@
+{
+  "schema": "marginal.question-package",
+  "version": 1,
+  "question": {
+    "id": "",
+    "subject": "business_studies",
+    "topic": "",
+    "directive": "",
+    "text": "",
+    "marks": 20,
+    "terms": { "first": "", "second": "" },
+    "overallArgument": "",
+    "plan": [{ "line": "", "strategy": "", "objectives": [] }]
+  },
+  "decode": {
+    "verbMeaning": "",
+    "plainEnglish": "",
+    "highlights": [{ "anchor": "", "kind": "directive", "label": "", "note": "" }],
+    "cover": { "forEach": "", "consistency": "" }
+  },
+  "requirements": {
+    "concepts": [],
+    "relationships": [],
+    "accomplish": [],
+    "syllabusSummary": ""
+  },
+  "coreAnswer": {
+    "mode": "causal",
+    "pattern": "",
+    "statement": "",
+    "explain": []
+  },
+  "workingAnswer": { "base": "", "lead": "", "join": ", and by" },
+  "reasoning": {
+    "cause": { "label": "", "terms": [] },
+    "effect": { "label": "", "terms": [] },
+    "forward": "",
+    "backward": ""
+  },
+  "areas": [],
+  "pathways": [
+    {
+      "id": "",
+      "areaRef": null,
+      "short": "",
+      "adds": "",
+      "relationship": "",
+      "choiceMeaning": "",
+      "whatToProve": "",
+      "commonMistake": "",
+      "conceptRef": "",
+      "learning": { "status": "unreviewed" },
+      "evidenceRefs": [],
+      "guides": { "topic": "", "explain": "", "effect": "" }
+    }
+  ],
+  "marking": { "source": "generated", "bands": null, "bandSource": null, "text": null },
+  "provenance": {
+    "origin": "",
+    "author": "",
+    "authoredAt": "",
+    "reviewState": "draft",
+    "publication": "unpublished",
+    "notes": null
+  }
+}
