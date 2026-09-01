@@ -12,54 +12,126 @@
       "first": "Globalisation",
       "second": "Operations management"
     },
-    "overallArgument": "Globalisation can substantially improve cost competitiveness and innovation but exposes businesses to greater supply-chain and global risk.",
-    "plan": [
+    "overallArgument": "Globalisation can substantially improve cost competitiveness and innovation but exposes businesses to greater supply-chain and global risk."
+  },
+  "origin": {
+    "type": "bundled",
+    "packageId": null,
+    "author": null,
+    "authoredAt": null
+  },
+  "relationship": {
+    "intro": null,
+    "claims": [
       {
+        "id": "ops-02-claim-1",
         "line": "Global sourcing to costs and supply",
-        "strategy": "Global sourcing",
-        "objectives": [
-          "costs",
-          "supply"
-        ]
+        "left": {
+          "label": "Global sourcing",
+          "conceptRef": null
+        },
+        "relation": "affects",
+        "right": [
+          {
+            "label": "costs",
+            "criterionRef": null
+          },
+          {
+            "label": "supply",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
       },
       {
+        "id": "ops-02-claim-2",
         "line": "Economies of scale to cost leadership",
-        "strategy": "Economies of scale",
-        "objectives": [
-          "cost leadership"
-        ]
+        "left": {
+          "label": "Economies of scale",
+          "conceptRef": null
+        },
+        "relation": "affects",
+        "right": [
+          {
+            "label": "cost leadership",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
       },
       {
+        "id": "ops-02-claim-3",
         "line": "Scanning and learning to innovation",
-        "strategy": "Scanning and learning",
-        "objectives": [
-          "innovation"
-        ]
+        "left": {
+          "label": "Scanning and learning",
+          "conceptRef": null
+        },
+        "relation": "affects",
+        "right": [
+          {
+            "label": "innovation",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
       },
       {
+        "id": "ops-02-claim-4",
         "line": "Research and development to differentiation",
-        "strategy": "Research and development",
-        "objectives": [
-          "differentiation"
-        ]
+        "left": {
+          "label": "Research and development",
+          "conceptRef": null
+        },
+        "relation": "affects",
+        "right": [
+          {
+            "label": "differentiation",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
       },
       {
+        "id": "ops-02-claim-5",
         "line": "Longer supply chains to dependability and cost",
-        "strategy": "Longer supply chains",
-        "objectives": [
-          "dependability",
-          "cost"
-        ]
+        "left": {
+          "label": "Longer supply chains",
+          "conceptRef": null
+        },
+        "relation": "affects",
+        "right": [
+          {
+            "label": "dependability",
+            "criterionRef": null
+          },
+          {
+            "label": "cost",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
       },
       {
+        "id": "ops-02-claim-6",
         "line": "Standardising or adapting the output for each market",
-        "strategy": "Standardising or adapting the output for each market",
-        "objectives": []
+        "left": {
+          "label": "Standardising or adapting the output for each market",
+          "conceptRef": null
+        },
+        "relation": "affects",
+        "right": [],
+        "pathwayRefs": []
       },
       {
+        "id": "ops-02-claim-7",
         "line": "Overseas competitors arriving in the home market",
-        "strategy": "Overseas competitors arriving in the home market",
-        "objectives": []
+        "left": {
+          "label": "Overseas competitors arriving in the home market",
+          "conceptRef": null
+        },
+        "relation": "affects",
+        "right": [],
+        "pathwayRefs": []
       }
     ]
   },
@@ -248,6 +320,7 @@
     }
   },
   "areas": [],
+  "areasLabel": null,
   "pathways": [
     {
       "id": "ops02-gs-cost",
@@ -255,18 +328,31 @@
       "short": "Global sourcing → input cost and supplier choice",
       "adds": "lowering input cost by buying anywhere in the world",
       "relationship": "Global sourcing lowers input cost and widens supplier choice, because suppliers are chosen on price, quality, capability or availability rather than on where they are",
+      "left": null,
       "choiceMeaning": "Once the whole world is the supplier list, the business is no longer paying whatever the nearest supplier charges.",
       "whatToProve": "inputs can be bought worldwide → suppliers are chosen on price and capability → cost per unit falls, or input quality rises",
       "commonMistake": "Calling ordinary bulk buying global sourcing. Global sourcing is about where the supplier is, not how much is ordered.",
-      "conceptRef": "bus.ops.operations-strategies.global-factors",
+      "mechanism": {
+        "status": "unreviewed",
+        "text": null,
+        "note": null
+      },
+      "conceptRef": "business.operations.operations-strategies.global-factors",
+      "learningRef": null,
       "learning": {
         "status": "unreviewed"
       },
       "evidenceRefs": [],
-      "guides": {
-        "explain": "Explain what changes when the supplier can be anywhere: which criterion the business now chooses on, and what that does to the input.",
-        "effect": "Say which performance objective moved, and by enough to matter.",
-        "link": "Say how much of your overall position this impact carries."
+      "guidance": {
+        "explain": {
+          "direct": "Explain what changes when the supplier can be anywhere: which criterion the business now chooses on, and what that does to the input."
+        },
+        "effect": {
+          "direct": "Say which performance objective moved, and by enough to matter."
+        },
+        "link": {
+          "direct": "Say how much of your overall position this impact carries."
+        }
       },
       "contribution": {
         "role": "support",
@@ -279,18 +365,31 @@
       "short": "Economies of scale → cost per unit",
       "adds": "spreading fixed costs across a larger output",
       "relationship": "Economies of scale cut cost per unit, because fixed costs are spread across more units and larger orders earn supplier discounts",
+      "left": null,
       "choiceMeaning": "The same design, equipment and administration are paid for once and then divided by a much larger number.",
       "whatToProve": "output rises → fixed costs are spread further and orders earn discounts → cost per unit falls",
       "commonMistake": "Treating a fall in total cost as a fall in cost per unit. Only the cost of one unit tells you whether scale worked.",
-      "conceptRef": "bus.ops.operations-strategies.global-factors",
+      "mechanism": {
+        "status": "unreviewed",
+        "text": null,
+        "note": null
+      },
+      "conceptRef": "business.operations.operations-strategies.global-factors",
+      "learningRef": null,
       "learning": {
         "status": "unreviewed"
       },
       "evidenceRefs": [],
-      "guides": {
-        "explain": "Explain the mechanism: which costs are fixed, and what dividing them by a larger output does to the cost of one unit.",
-        "effect": "Name the objective this serves and say how far it goes.",
-        "link": "Say whether this impact would exist at all without global scale."
+      "guidance": {
+        "explain": {
+          "direct": "Explain the mechanism: which costs are fixed, and what dividing them by a larger output does to the cost of one unit."
+        },
+        "effect": {
+          "direct": "Name the objective this serves and say how far it goes."
+        },
+        "link": {
+          "direct": "Say whether this impact would exist at all without global scale."
+        }
       },
       "contribution": {
         "role": "support",
@@ -303,18 +402,31 @@
       "short": "Scanning and learning → better processes",
       "adds": "adopting the best practice found anywhere in the industry",
       "relationship": "Scanning and learning improves processes, because the business adopts the best practice found anywhere in the industry rather than only what it can see at home",
+      "left": null,
       "choiceMeaning": "Watching a whole world of competitors gives the business methods it would never have arrived at on its own.",
       "whatToProve": "global markets and rivals are watched → a better method is identified → the process is changed and quality rises",
       "commonMistake": "Saying the business learns from overseas without naming what it changed. Learning that changes no process changes no objective.",
-      "conceptRef": "bus.ops.operations-strategies.global-factors",
+      "mechanism": {
+        "status": "unreviewed",
+        "text": null,
+        "note": null
+      },
+      "conceptRef": "business.operations.operations-strategies.global-factors",
+      "learningRef": null,
       "learning": {
         "status": "unreviewed"
       },
       "evidenceRefs": [],
-      "guides": {
-        "explain": "Explain what was seen, what was adopted, and what the process does differently now.",
-        "effect": "Name the objective it moved, which is usually quality rather than cost.",
-        "link": "Say how this compares in size with the cost impacts."
+      "guidance": {
+        "explain": {
+          "direct": "Explain what was seen, what was adopted, and what the process does differently now."
+        },
+        "effect": {
+          "direct": "Name the objective it moved, which is usually quality rather than cost."
+        },
+        "link": {
+          "direct": "Say how this compares in size with the cost impacts."
+        }
       },
       "contribution": {
         "role": "support",
@@ -327,18 +439,31 @@
       "short": "Research and development → new products, trialled in one market",
       "adds": "creating new products and trialling them in one market first",
       "relationship": "Research and development produces new products and better processes, and a global business can trial them in one market before using them everywhere",
+      "left": null,
       "choiceMeaning": "Being in many markets turns one of them into a test: the business finds out whether something works before it commits everywhere.",
       "whatToProve": "spending creates a new product or process → it is trialled in one market → it is adopted more widely only if it works there",
       "commonMistake": "Describing research and development as a cost saving. It buys new products and better methods; the saving, if it comes, comes later.",
-      "conceptRef": "bus.ops.operations-strategies.new-product-or-service-design-and-develo",
+      "mechanism": {
+        "status": "unreviewed",
+        "text": null,
+        "note": null
+      },
+      "conceptRef": "business.operations.operations-strategies.new-product-or-service-design-and-developmen",
+      "learningRef": null,
       "learning": {
         "status": "unreviewed"
       },
       "evidenceRefs": [],
-      "guides": {
-        "explain": "Explain what being global adds to research and development that a single-market business does not have.",
-        "effect": "Say what this produces, and be honest that it is not guaranteed to transfer.",
-        "link": "Say what this impact is worth once you allow for the trials that fail."
+      "guidance": {
+        "explain": {
+          "direct": "Explain what being global adds to research and development that a single-market business does not have."
+        },
+        "effect": {
+          "direct": "Say what this produces, and be honest that it is not guaranteed to transfer."
+        },
+        "link": {
+          "direct": "Say what this impact is worth once you allow for the trials that fail."
+        }
       },
       "contribution": {
         "role": "conditional",
@@ -351,18 +476,31 @@
       "short": "A longer supply chain → less predictable supply",
       "adds": "exposing supply to disruption, exchange rates and tariffs",
       "relationship": "The same global reach exposes operations to disruption, exchange rates and tariffs, because a global supply chain is longer than a domestic one",
+      "left": null,
       "choiceMeaning": "Every extra step between the input and the business is another place the supply can fail or the price can move.",
       "whatToProve": "inputs travel further → the chain has more points of failure and more exposure to rates and tariffs → dependability and cost become less predictable",
       "commonMistake": "Treating this as a reason not to source globally. The question asks how significant the impact is, not what the business should do.",
-      "conceptRef": "bus.ops.operations-strategies.global-factors",
+      "mechanism": {
+        "status": "unreviewed",
+        "text": null,
+        "note": null
+      },
+      "conceptRef": "business.operations.operations-strategies.global-factors",
+      "learningRef": null,
       "learning": {
         "status": "unreviewed"
       },
       "evidenceRefs": [],
-      "guides": {
-        "explain": "Explain why length itself is the problem: what a longer chain exposes the business to that a short one does not.",
-        "effect": "Name the objective this costs, which is dependability before it is cost.",
-        "link": "Weigh this against the cost gain that came from the same decision."
+      "guidance": {
+        "explain": {
+          "direct": "Explain why length itself is the problem: what a longer chain exposes the business to that a short one does not."
+        },
+        "effect": {
+          "direct": "Name the objective this costs, which is dependability before it is cost."
+        },
+        "link": {
+          "direct": "Weigh this against the cost gain that came from the same decision."
+        }
       },
       "contribution": {
         "role": "limitation",
@@ -375,18 +513,31 @@
       "short": "Standardise or adapt → scale given back",
       "adds": "forcing a choice between one standard output and a local one",
       "relationship": "A product or method accepted in one market may be rejected in another, so the business must decide what to standardise and what to adapt",
+      "left": null,
       "choiceMeaning": "Selling everywhere does not mean selling the same thing everywhere, and every adaptation costs some of the scale that made it cheap.",
       "whatToProve": "the world is one market → the same output meets different expectations → scale gains are given back wherever the output has to be adapted",
       "commonMistake": "Describing cultural differences without saying what operations had to change. The impact is on the process, not on the marketing.",
-      "conceptRef": "bus.ops.influences.globalisation-technology-quality-expecta",
+      "mechanism": {
+        "status": "unreviewed",
+        "text": null,
+        "note": null
+      },
+      "conceptRef": "business.operations.influences.globalisation-technology-quality-expectation",
+      "learningRef": null,
       "learning": {
         "status": "unreviewed"
       },
       "evidenceRefs": [],
-      "guides": {
-        "explain": "Explain the decision the business is forced into, and what each side of it costs.",
-        "effect": "Say which objective is traded for which, rather than saying it is difficult.",
-        "link": "Say how much of the earlier cost gain survives this."
+      "guidance": {
+        "explain": {
+          "direct": "Explain the decision the business is forced into, and what each side of it costs."
+        },
+        "effect": {
+          "direct": "Say which objective is traded for which, rather than saying it is difficult."
+        },
+        "link": {
+          "direct": "Say how much of the earlier cost gain survives this."
+        }
       },
       "contribution": {
         "role": "limitation",
@@ -399,18 +550,31 @@
       "short": "Overseas competitors here → price pressure at home",
       "adds": "bringing overseas competitors into the home market",
       "relationship": "Globalisation brings overseas competitors into the home market, so operations meets price pressure it did not choose and must standardise, cut waste and find cheaper inputs to survive at a lower price",
+      "left": null,
       "choiceMeaning": "The business does not have to trade globally to be changed by globalisation: the competition arrives whether or not it goes anywhere.",
       "whatToProve": "overseas rivals sell here → price competition intensifies → operations standardises and strips cost whether or not it trades globally itself",
       "commonMistake": "Turning this into a general answer about cost-based competition. Cost-based competition is the mechanism; globalisation is what brought it, and globalisation is what you are assessing.",
-      "conceptRef": "bus.ops.influences.globalisation-technology-quality-expecta",
+      "mechanism": {
+        "status": "unreviewed",
+        "text": null,
+        "note": null
+      },
+      "conceptRef": "business.operations.influences.globalisation-technology-quality-expectation",
+      "learningRef": null,
       "learning": {
         "status": "unreviewed"
       },
       "evidenceRefs": [],
-      "guides": {
-        "explain": "Explain how a business that never leaves home is still changed: who arrived, and what that did to what it can charge.",
-        "effect": "Name what operations had to do about it.",
-        "link": "Say whether this impact is larger or smaller than the ones that need the business to trade globally."
+      "guidance": {
+        "explain": {
+          "direct": "Explain how a business that never leaves home is still changed: who arrived, and what that did to what it can charge."
+        },
+        "effect": {
+          "direct": "Name what operations had to do about it."
+        },
+        "link": {
+          "direct": "Say whether this impact is larger or smaller than the ones that need the business to trade globally."
+        }
       },
       "contribution": {
         "role": "support",
@@ -426,8 +590,6 @@
   },
   "provenance": {
     "origin": null,
-    "author": null,
-    "authoredAt": null,
     "reviewState": "in-source",
     "publication": "published",
     "notes": null

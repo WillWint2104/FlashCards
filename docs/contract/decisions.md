@@ -82,8 +82,54 @@ guided tiers already in the bank, `mkt-01`/`fin-01`/`hr-01` with areas, per-area
 guides, bands and thesis help against `ops-02`/`hr-02`/`mkt-03` without them,
 must not report as identical.
 
-## Open
+**7. One canonical question-id namespace, for bundled and imported alike.**
+A collision is an import-blocking error in v1 and never an implicit overwrite:
 
-Six decisions remain, and are listed in the design report rather than here so
-that the report holds one copy of each question. They are not to be answered by
-inference from the six above.
+    Question id "mkt-01" already exists.
+
+Where a question came from is metadata beside the id, not part of it, and lives
+in `origin`. Update and replacement semantics are a later design; they are not
+smuggled into first import.
+
+**8. Areas are question-local, and are never validated by vocabulary matching.**
+An area has its own stable question-local id and an authored label, and the
+label may be whatever the question genuinely needs. If the author claims a
+syllabus relationship, it is stated as explicit `syllabusRefs` and those must
+resolve. So:
+
+    custom area, no syllabus ref                -> valid
+    custom area, resolving syllabus ref         -> valid
+    custom area, non-existent syllabus ref      -> error
+    label not found verbatim in syllabus text   -> nothing; not even a warning
+
+Matching a label against syllabus prose is the inference this work exists to
+remove, and it is not reintroduced in the validator.
+
+**9. The ten write-only questions are exported at their current capability.**
+No pathways authored, no support manufactured, nothing enriched to make them
+look guided. Their readiness report says plainly what they are. They become the
+fixtures that prove a valid package can honestly sit at a write-only capability,
+and the long-term target is that bundled and imported questions use the same
+loader rather than maintaining a second hard-coded bank.
+
+**10. Authored meaning is preserved; legacy field names are not.**
+A singleton property does not become a first-class v1 field because one question
+uses it. Each was audited by what it does:
+
+| legacy | what it actually is | v1 |
+| --- | --- | --- |
+| `mechanism` | the authored middle step of a relationship | formal field, `{ status, text, note }` |
+| `help` | a five rung escalating support ladder per slot, 99 rungs across 4 pathways | merged with `guides` into `guidance.<slot>.{direct, ladder[]}` |
+| `fromLabel` | the authored cause end of the relationship, explicitly never derived | `pathway.left.{label, conceptRef}` |
+| `connectIntro` | what this question's two ends ARE, replacing a synthesised sentence that is only true of Operations | `relationship.intro` |
+
+None of the four is renderer-only. `help` in particular is 99 authored rungs of
+graduated support, and `fromLabel` carries a comment in the engine saying it is
+never derived from `short` or `relationship`, which is precisely the property
+that makes it semantic rather than presentational.
+
+## All ten are settled
+
+Nothing in the design is now waiting on a decision. What remains is the
+contradiction list in the report, which is work the decisions create rather than
+questions they leave open.

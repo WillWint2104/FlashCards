@@ -1,0 +1,47 @@
+{
+  "schema": "marginal.question-package",
+  "version": 1,
+  "question": {
+    "id": "ah-women",
+    "subject": "ancient_history",
+    "topic": "Investigating ancient history: reliability and usefulness",
+    "directive": "Evaluate",
+    "text": "Evaluate the usefulness of the available sources for reconstructing the role of women in one ancient society you have studied.",
+    "marks": 20,
+    "terms": {
+      "first": "",
+      "second": ""
+    },
+    "overallArgument": ""
+  },
+  "origin": {
+    "type": "bundled",
+    "packageId": null,
+    "author": null,
+    "authoredAt": null
+  },
+  "relationship": {
+    "intro": null,
+    "claims": []
+  },
+  "decode": null,
+  "requirements": null,
+  "coreAnswer": null,
+  "workingAnswer": null,
+  "reasoning": null,
+  "areas": [],
+  "areasLabel": null,
+  "pathways": [],
+  "marking": {
+    "source": "generated",
+    "bands": null,
+    "bandSource": null,
+    "text": null
+  },
+  "provenance": {
+    "origin": null,
+    "reviewState": "in-source",
+    "publication": "published",
+    "notes": null
+  }
+}
