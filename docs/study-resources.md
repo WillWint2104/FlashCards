@@ -78,3 +78,10 @@ Structure and Evidence. The explanations do not.
 route and is linked from nowhere. It exists so that `ui13`, `ui16` and `ui38`
 keep proving the Centre's teaching is correct while its surface is out; a
 preserved thing that no test covers rots.
+
+**It is a migration crutch and not part of the architecture.** Keeping a hidden
+second teaching system alive because tests exist for it would be the wrong trade
+once there is something to replace it. The target is removal: when Study and
+Vocabulary are established, the Centre is archived, the flag goes, and any
+teaching worth keeping moves into the shared content library rather than staying
+behind a query string. Nothing new should be built against `?eslegacy=1`.

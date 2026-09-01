@@ -3504,6 +3504,15 @@
     const area = (q && q.areas && path.area && q.areas[path.area]) || null;
     return (path.studyRefs || []).concat((area && area.studyRefs) || []);
   }
+  // Offered only where embedding has a chance of working: a Drive file link,
+  // which has a /preview form, or a resource whose author said it embeds. A
+  // control that is usually going to fail is worse than no control, so
+  // everything else shows the link out and nothing else.
+  function esStudyEmbeddable(r) {
+    if (r.embeddable === true) return true;
+    if (r.embeddable === false) return false;
+    return /^https:\/\/drive\.google\.com\/file\/d\//.test(String(r.url || ""));
+  }
   function esStudyRow(r) {
     const sub = [r.provider, r.note].filter(Boolean).join(" · ");
     return '<div class="es-stres">' +
@@ -3514,7 +3523,7 @@
       // on top of a plain link that works whatever the host allows.
       '<a class="es-stopen" href="' + esc(r.url) + '" target="_blank" rel="noopener noreferrer"' +
       ' data-esstopen="' + esc(r.id) + '" title="Open in a new tab">' + esIcon("open") + '</a>' +
-      (r.embeddable === false ? '' : '<button type="button" class="es-stprev" data-esstprev="' + esc(r.id) + '">preview</button>') +
+      (esStudyEmbeddable(r) ? '<button type="button" class="es-stprev" data-esstprev="' + esc(r.id) + '">Preview</button>' : '') +
       '</div>';
   }
   function esStudyHTML(p) {
@@ -3528,7 +3537,9 @@
     const style = ' style="left:' + box.left + 'px;top:' + box.top + 'px;right:auto;bottom:auto'
       + (box.w ? ';width:' + box.w + 'px' : "") + '"';
     const nothing = !qr.ok.length && !ar.ok.length;
-    return '<aside class="es-study" role="dialog" aria-label="Study resources"' + style + '>' +
+    // One sentence does not need a 400 by 220 window. Empty, it sizes to what it
+    // has to say, the way the tool window does.
+    return '<aside class="es-study' + (nothing && !prev ? " empty" : "") + '" role="dialog" aria-label="Study resources"' + style + '>' +
       '<div class="es-sthead">' + esIcon("book") +
         '<span class="es-sttitle">Study resources</span>' +
         '<button type="button" class="es-nbact" data-esstudyhome title="Put the window back where it opens">reset position</button>' +
@@ -3569,7 +3580,7 @@
               '<span>Choose an argument for a body paragraph to see reading for that argument.</span></div>')) +
       '</div>' +
       ((!prev && (qr.ok.length || ar.ok.length))
-        ? '<div class="es-stfoot"><button type="button" class="es-btn ghost sm" data-esstall>Open all in new tabs</button></div>' : "") +
+        ? '<div class="es-stfoot"><button type="button" class="es-linkbtn es-stall" data-esstall>Open all in new tabs</button></div>' : "") +
       '</aside>';
   }
   // Drive share links open a viewer, not a file. /preview is the embeddable form

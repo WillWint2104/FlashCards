@@ -676,6 +676,8 @@
     width:400px;min-width:320px;min-height:220px;max-width:92vw;max-height:82vh;
     background:var(--card);border:1.5px solid var(--line);border-radius:14px;
     box-shadow:0 26px 70px rgba(28,40,40,.30);display:flex;flex-direction:column}
+  /* Nothing to list: the window is the size of the sentence it has to say. */
+  .es-study.empty{height:auto;min-height:0;width:auto;max-width:360px;resize:none}
   .es-sthead{display:flex;align-items:center;gap:9px;padding:11px 13px;border-bottom:1px solid var(--line);flex:0 0 auto;cursor:move}
   .es-sttitle{font-family:var(--disp);font-weight:600;font-size:14.5px;color:var(--ink);flex:1}
   .es-stbody{flex:1 1 auto;min-height:0;overflow:auto;padding:13px}
@@ -685,28 +687,36 @@
   /* One row per resource: what it is, where it lives, and the link out. The
      open control is an anchor and not a button, so it behaves like a link:
      middle click, open in new window, copy address. */
-  .es-stres{display:flex;align-items:center;gap:10px;padding:10px 11px;margin-bottom:8px;
-    border:1px solid var(--line);border-radius:11px;background:var(--card);flex-wrap:wrap}
+  /* The name of the resource is what the student is choosing between, so it
+     carries the weight. What kind of file it is, and the actions, sit under it
+     quietly: three things at the same weight is a list with no shape. */
+  .es-stres{display:flex;align-items:center;gap:10px;padding:8px 10px;margin-bottom:6px;
+    border:1px solid var(--line);border-radius:11px;background:var(--card)}
   .es-stres:hover{border-color:var(--green);background:var(--green-soft)}
-  .es-stico{flex:none;width:30px;height:30px;display:grid;place-items:center;border-radius:8px;
+  .es-stico{flex:none;width:26px;height:26px;display:grid;place-items:center;border-radius:7px;
     background:var(--green-soft);color:var(--green-dk)}
-  .es-sttext{flex:1;min-width:0;display:flex;flex-direction:column}
-  .es-stlabel{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--ink)}
-  .es-stsub{font-size:11.5px;color:var(--ink-2);font-weight:700}
-  .es-stopen{flex:none;color:var(--ink-2);padding:5px;border-radius:8px;display:grid;place-items:center;text-decoration:none}
+  .es-sttext{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+  .es-stlabel{font-family:var(--disp);font-weight:600;font-size:14.5px;color:var(--ink);line-height:1.25}
+  .es-stsub{font-size:11px;color:var(--ink-3);font-weight:700;letter-spacing:.01em}
+  .es-stopen{flex:none;color:var(--ink-3);padding:5px;border-radius:8px;display:grid;place-items:center;text-decoration:none}
   .es-stopen:hover{background:var(--card);color:var(--green-dk)}
-  /* Secondary to the link out, which is the guaranteed route. Small, quiet, and
-     not competing with the resource's own name. */
-  .es-stprev{flex:none;background:none;border:none;cursor:pointer;font:inherit;font-size:11.5px;
-    font-weight:800;color:var(--ink-3);padding:4px 6px;border-radius:7px}
-  .es-stprev:hover{color:var(--green-dk);background:var(--card)}
+  /* Secondary to the link out, which is the guaranteed route, but a real action
+     and drawn like one. It appears only where embedding can actually work, so a
+     visible preview control is always a live one. */
+  .es-stprev{flex:none;background:none;border:1px solid var(--line);cursor:pointer;font:inherit;
+    font-size:11.5px;font-weight:800;color:var(--green-dk);padding:4px 9px;border-radius:8px;white-space:nowrap}
+  .es-stprev:hover{background:var(--green-soft);border-color:var(--green)}
   /* No argument chosen yet. It says what would reveal more rather than showing
      an empty heading that looks like something failed. */
   .es-stnote{display:flex;gap:9px;align-items:flex-start;margin-top:14px;padding:11px 12px;
     border:1px solid var(--line);border-radius:11px;background:var(--bg);
     font-size:12.5px;font-weight:700;color:var(--ink-2)}
   .es-stnote .es-ico{flex:none;color:var(--ink-3)}
-  .es-stfoot{flex:0 0 auto;padding:10px 13px;border-top:1px solid var(--line)}
+  /* Tertiary. Opening six tabs at once is occasionally useful and never the
+     thing a student should be led towards. */
+  .es-stfoot{flex:0 0 auto;padding:8px 13px;border-top:1px solid var(--line)}
+  .es-stall{font-size:12px;color:var(--ink-2);text-decoration-color:var(--line)}
+  .es-stall:hover{color:var(--green-dk)}
   .es-stprevwrap{display:flex;flex-direction:column;gap:9px;height:100%}
   .es-stprevhead{display:flex;align-items:center;justify-content:space-between;gap:10px}
   .es-stframe{flex:1 1 auto;min-height:220px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg)}
@@ -11076,6 +11086,15 @@ window.BUSCONTENT = {
     const area = (q && q.areas && path.area && q.areas[path.area]) || null;
     return (path.studyRefs || []).concat((area && area.studyRefs) || []);
   }
+  // Offered only where embedding has a chance of working: a Drive file link,
+  // which has a /preview form, or a resource whose author said it embeds. A
+  // control that is usually going to fail is worse than no control, so
+  // everything else shows the link out and nothing else.
+  function esStudyEmbeddable(r) {
+    if (r.embeddable === true) return true;
+    if (r.embeddable === false) return false;
+    return /^https:\/\/drive\.google\.com\/file\/d\//.test(String(r.url || ""));
+  }
   function esStudyRow(r) {
     const sub = [r.provider, r.note].filter(Boolean).join(" · ");
     return '<div class="es-stres">' +
@@ -11086,7 +11105,7 @@ window.BUSCONTENT = {
       // on top of a plain link that works whatever the host allows.
       '<a class="es-stopen" href="' + esc(r.url) + '" target="_blank" rel="noopener noreferrer"' +
       ' data-esstopen="' + esc(r.id) + '" title="Open in a new tab">' + esIcon("open") + '</a>' +
-      (r.embeddable === false ? '' : '<button type="button" class="es-stprev" data-esstprev="' + esc(r.id) + '">preview</button>') +
+      (esStudyEmbeddable(r) ? '<button type="button" class="es-stprev" data-esstprev="' + esc(r.id) + '">Preview</button>' : '') +
       '</div>';
   }
   function esStudyHTML(p) {
@@ -11100,7 +11119,9 @@ window.BUSCONTENT = {
     const style = ' style="left:' + box.left + 'px;top:' + box.top + 'px;right:auto;bottom:auto'
       + (box.w ? ';width:' + box.w + 'px' : "") + '"';
     const nothing = !qr.ok.length && !ar.ok.length;
-    return '<aside class="es-study" role="dialog" aria-label="Study resources"' + style + '>' +
+    // One sentence does not need a 400 by 220 window. Empty, it sizes to what it
+    // has to say, the way the tool window does.
+    return '<aside class="es-study' + (nothing && !prev ? " empty" : "") + '" role="dialog" aria-label="Study resources"' + style + '>' +
       '<div class="es-sthead">' + esIcon("book") +
         '<span class="es-sttitle">Study resources</span>' +
         '<button type="button" class="es-nbact" data-esstudyhome title="Put the window back where it opens">reset position</button>' +
@@ -11141,7 +11162,7 @@ window.BUSCONTENT = {
               '<span>Choose an argument for a body paragraph to see reading for that argument.</span></div>')) +
       '</div>' +
       ((!prev && (qr.ok.length || ar.ok.length))
-        ? '<div class="es-stfoot"><button type="button" class="es-btn ghost sm" data-esstall>Open all in new tabs</button></div>' : "") +
+        ? '<div class="es-stfoot"><button type="button" class="es-linkbtn es-stall" data-esstall>Open all in new tabs</button></div>' : "") +
       '</aside>';
   }
   // Drive share links open a viewer, not a file. /preview is the embeddable form
