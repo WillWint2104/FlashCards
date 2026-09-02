@@ -665,6 +665,65 @@
      Centre, and never part of any grid: opening it cannot move the writing
      because the writing does not know it exists. Paper rather than UI cards,
      because the student is meant to write on it, not administer it. */
+  /* THE STUDY RESOURCES WINDOW. A peer of the notebook and of the tool window:
+     floating, its own host at the end of the body, so opening it cannot move the
+     writing. Below the notebook and above the tool sheet, because a student who
+     opens both is reading and taking notes, and the notes go on top.
+     Marginal's own surface, not a paper metaphor: this is a list of links, not
+     something to write on. */
+  #esstudyhost{position:fixed;inset:0;z-index:250;pointer-events:none}
+  .es-study{position:absolute;right:26px;top:96px;pointer-events:auto;resize:both;overflow:hidden;
+    width:400px;min-width:320px;min-height:220px;max-width:92vw;max-height:82vh;
+    background:var(--card);border:1.5px solid var(--line);border-radius:14px;
+    box-shadow:0 26px 70px rgba(28,40,40,.30);display:flex;flex-direction:column}
+  /* Nothing to list: the window is the size of the sentence it has to say. */
+  .es-study.empty{height:auto;min-height:0;width:auto;max-width:360px;resize:none}
+  .es-sthead{display:flex;align-items:center;gap:9px;padding:11px 13px;border-bottom:1px solid var(--line);flex:0 0 auto;cursor:move}
+  .es-sttitle{font-family:var(--disp);font-weight:600;font-size:14.5px;color:var(--ink);flex:1}
+  .es-stbody{flex:1 1 auto;min-height:0;overflow:auto;padding:13px}
+  .es-stsec + .es-stsec{margin-top:16px;padding-top:14px;border-top:1px solid var(--line-2,#EFF4F4)}
+  .es-sthd{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--ink);margin-bottom:3px}
+  .es-sthelp{font-size:12.5px;color:var(--ink-2);font-weight:700;margin:0 0 10px}
+  /* One row per resource: what it is, where it lives, and the link out. The
+     open control is an anchor and not a button, so it behaves like a link:
+     middle click, open in new window, copy address. */
+  /* The name of the resource is what the student is choosing between, so it
+     carries the weight. What kind of file it is, and the actions, sit under it
+     quietly: three things at the same weight is a list with no shape. */
+  .es-stres{display:flex;align-items:center;gap:10px;padding:8px 10px;margin-bottom:6px;
+    border:1px solid var(--line);border-radius:11px;background:var(--card)}
+  .es-stres:hover{border-color:var(--green);background:var(--green-soft)}
+  .es-stico{flex:none;width:26px;height:26px;display:grid;place-items:center;border-radius:7px;
+    background:var(--green-soft);color:var(--green-dk)}
+  .es-sttext{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+  .es-stlabel{font-family:var(--disp);font-weight:600;font-size:14.5px;color:var(--ink);line-height:1.25}
+  .es-stsub{font-size:11px;color:var(--ink-3);font-weight:700;letter-spacing:.01em}
+  .es-stopen{flex:none;color:var(--ink-3);padding:5px;border-radius:8px;display:grid;place-items:center;text-decoration:none}
+  .es-stopen:hover{background:var(--card);color:var(--green-dk)}
+  /* Secondary to the link out, which is the guaranteed route, but a real action
+     and drawn like one. It appears only where embedding can actually work, so a
+     visible preview control is always a live one. */
+  .es-stprev{flex:none;background:none;border:1px solid var(--line);cursor:pointer;font:inherit;
+    font-size:11.5px;font-weight:800;color:var(--green-dk);padding:4px 9px;border-radius:8px;white-space:nowrap}
+  .es-stprev:hover{background:var(--green-soft);border-color:var(--green)}
+  /* No argument chosen yet. It says what would reveal more rather than showing
+     an empty heading that looks like something failed. */
+  .es-stnote{display:flex;gap:9px;align-items:flex-start;margin-top:14px;padding:11px 12px;
+    border:1px solid var(--line);border-radius:11px;background:var(--bg);
+    font-size:12.5px;font-weight:700;color:var(--ink-2)}
+  .es-stnote .es-ico{flex:none;color:var(--ink-3)}
+  /* Tertiary. Opening six tabs at once is occasionally useful and never the
+     thing a student should be led towards. */
+  .es-stfoot{flex:0 0 auto;padding:8px 13px;border-top:1px solid var(--line)}
+  .es-stall{font-size:12px;color:var(--ink-2);text-decoration-color:var(--line)}
+  .es-stall:hover{color:var(--green-dk)}
+  .es-stprevwrap{display:flex;flex-direction:column;gap:9px;height:100%}
+  .es-stprevhead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .es-stframe{flex:1 1 auto;min-height:220px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg)}
+  .es-stframe iframe{width:100%;height:100%;min-height:220px;border:0;display:block}
+  .es-stfall{font-size:12.5px;font-weight:700;color:var(--ink-2);margin:0;padding:12px;
+    border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+
   #esnbhost{position:fixed;inset:0;z-index:300;pointer-events:none}
   .es-nb{position:absolute;right:26px;bottom:26px;pointer-events:auto;resize:both;overflow:hidden;
     min-width:300px;min-height:280px;max-width:92vw;max-height:88vh;
@@ -1752,6 +1811,320 @@
   .exam-ressech{font-family:var(--disp);font-weight:700;color:var(--green-dk);display:flex;justify-content:space-between;margin-bottom:6px}
   .exam-resq{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--ink-2);padding:3px 0}
   .exam-resm{font-weight:800;color:var(--ink);white-space:nowrap}
+
+  /* ==========================================================================
+     PR B — THE WRITING WORKSPACE
+     A visual system for the essay page, scoped to .es-scrim so the flashcards
+     app around it is untouched. Tokens are sampled from the approved mockup
+     rather than inherited: the page recedes to near-white, white surfaces do
+     the work, text is charcoal rather than grey-green, and green is used for
+     state and primary action instead of as an outline around everything.
+     ========================================================================== */
+  .es-scrim{
+    --page:#F6F9F9; --surface:#FFFFFF; --sunk:#FAFCFC;
+    --e-ink:#18272D; --e-ink2:#63787F; --e-ink3:#95A7AD;
+    --e-green:#12B27A; --e-green-dk:#0E9765; --e-mint:#E7F8F0; --e-mint2:#F2FBF7;
+    --e-line:#E8EEEF; --e-line2:#F1F6F6;
+    --e-shadow:0 1px 2px rgba(18,48,58,.04), 0 10px 28px rgba(18,48,58,.05);
+    --main:1088px; --rail:330px; --e-gap:22px;
+    background:var(--page);color:var(--e-ink)
+  }
+  /* The workspace does its own centring, from the viewport, so the legacy shell
+     cap must not also constrain it: at 1920 it pinned the whole page to a
+     1480px box at x=20 while the offsets below were computing for a centred one. */
+  .es-scrim .es-shell{max-width:none;width:100%}
+  .es-scrim .es-wrap{padding-bottom:84px;background:transparent}
+  /* The canvas used to be a white card. The cards are the cards now, and the
+     page behind them is the page. */
+  .es-scrim .es-wrap.es-canvas,.es-scrim .es-cols{background:transparent;box-shadow:none;border:0}
+  .es-scrim .es-wrap > *{max-width:calc(var(--main) + var(--rail) + var(--e-gap))}
+  .es-scrim .es-wrap > .es-top{max-width:none}
+  /* The question and the belt belong to the writing column, not to the whole
+     workspace. Centred at workspace width they spanned 1440 above a 1088 writer,
+     which is the loose, unrelated-widths look the redesign is meant to remove.
+     They are capped at the writer's width and pushed to the workspace's own left
+     edge, the same offset the sticky header pads to. */
+  /* On the plan, review and full-attempt screens the question card is still a
+     child of the wrap, so it is aligned to the writing column by hand. On the
+     writing screen it is a grid item and the grid does this. */
+  .es-scrim .es-wrap > .es-qbar, .es-scrim .es-wrap > .es-belt{
+    max-width:var(--main);
+    margin-left:max(clamp(16px,2.4vw,26px), calc((100% - (var(--main) + var(--rail) + var(--e-gap)))/2));
+    margin-right:auto}
+
+  /* ---- header: brand left, utilities right ---- */
+  .es-scrim .es-wrap > .es-top{background:var(--surface);border-bottom:1px solid var(--e-line);
+    padding:0 max(clamp(16px,2.4vw,26px),calc((100% - (var(--main) + var(--rail) + var(--e-gap)))/2));
+    margin-bottom:22px;height:62px;align-items:center}
+  .es-scrim .es-brand{font-size:16.5px;color:var(--e-ink);gap:12px}
+  .es-scrim .es-mark{width:32px;height:32px;border-radius:10px;background:var(--e-green);color:#fff;
+    display:grid;place-items:center;font-family:var(--disp);font-weight:600;font-size:17px;
+    box-shadow:0 2px 0 var(--e-green-dk)}
+  .es-scrim .es-subj{font-size:14.5px;font-weight:500;color:var(--e-ink2)}
+  .es-scrim .es-topbtns{gap:8px}
+  .es-util{display:inline-flex;align-items:center;gap:8px;background:var(--surface);
+    border:1px solid var(--e-line);border-radius:11px;padding:8px 14px;font-family:var(--body);
+    font-size:13.5px;font-weight:600;color:var(--e-ink);cursor:pointer}
+  .es-util .es-ico{width:17px;height:17px;color:var(--e-ink2)}
+  .es-util:hover{border-color:var(--e-green);color:var(--e-green-dk)}
+  .es-util:hover .es-ico{color:var(--e-green-dk)}
+  .es-util[aria-expanded="true"]{background:var(--e-mint);border-color:var(--e-green);color:var(--e-green-dk)}
+  .es-util[aria-expanded="true"] .es-ico{color:var(--e-green-dk)}
+  .es-scrim .es-linkbtn,.es-scrim .es-x{color:var(--e-ink2);font-family:var(--body);font-weight:600;
+    font-size:13.5px;text-decoration:none}
+  .es-scrim .es-linkbtn:hover,.es-scrim .es-x:hover{color:var(--e-ink);background:none}
+
+  /* ---- question card ---- */
+  .es-scrim .es-qbar{background:var(--surface);border:1px solid var(--e-line);border-left:1px solid var(--e-line);
+    border-radius:16px;box-shadow:var(--e-shadow);padding:17px 22px;margin-bottom:16px;display:block}
+  .es-scrim .es-restag{display:inline-block;background:var(--e-mint);color:var(--e-green-dk);border-radius:8px;
+    padding:4px 10px;font-size:12px;font-weight:700;margin-bottom:9px}
+  .es-scrim .es-qbar-q{font-family:var(--disp);font-weight:500;font-size:19px;line-height:1.4;color:var(--e-ink)}
+  .es-qmetarow{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .es-scrim .es-qchange{font-family:var(--body);font-size:12.5px;font-weight:600;color:var(--e-green-dk);
+    margin-top:10px;text-decoration:none;padding:0}
+  .es-scrim .es-qchange:hover{text-decoration:underline;text-underline-offset:3px;color:var(--e-green-dk)}
+  .es-qmeta{display:flex;align-items:center;gap:9px;margin-top:10px;font-size:12.5px;color:var(--e-ink3);font-weight:500}
+  .es-qmeta b{color:var(--e-ink2);font-weight:600}
+  .es-qmeta i{font-style:normal;color:var(--e-line)}
+  .es-scrim .es-qchip{background:var(--surface);border:1px solid var(--e-line);color:var(--e-ink);
+    font-family:var(--body);font-weight:600;font-size:12.5px;border-radius:9px}
+  .es-scrim .es-qchip:hover{border-color:var(--e-green);color:var(--e-green-dk);background:var(--e-mint2)}
+
+  /* ---- writing-support belt: one control group, not four pills ---- */
+  /* One support surface the width of the writing column, not a shrink-wrapped
+     island: it reads as the same document as the question above and the writer
+     below because all three share an edge. */
+  .es-scrim .es-belt{background:var(--surface);border:1px solid var(--e-line);border-radius:16px;
+    box-shadow:var(--e-shadow);padding:5px;gap:2px;margin-bottom:16px;flex-wrap:nowrap;width:auto}
+  .es-scrim .es-belt-b{background:none;border:none;border-radius:11px;padding:10px 16px;
+    font-family:var(--body);font-size:13.5px;font-weight:600;color:var(--e-ink2);gap:8px}
+  .es-scrim .es-belt-b .es-ico{color:var(--e-ink3)}
+  .es-scrim .es-belt-b:hover:not([disabled]){background:var(--sunk);color:var(--e-ink)}
+  .es-scrim .es-belt-b.on{background:var(--e-mint);color:var(--e-green-dk)}
+  .es-scrim .es-belt-b.on .es-ico{color:var(--e-green-dk)}
+
+  /* ---- the workspace grid ----
+     Question, belt, decode box and writer are one column; the rail is the other
+     and spans all four rows, so it begins beside the question rather than
+     appearing halfway down the page next to the writer. That empty upper-right
+     region was the last large piece of dead space on a wide screen. */
+  .es-scrim .es-cols{grid-template-columns:minmax(0,var(--main)) var(--rail);
+    grid-template-rows:auto auto auto auto;gap:0 var(--e-gap);
+    justify-content:center;margin-top:0}
+  .es-scrim .es-cols > .es-qbar{grid-column:1;grid-row:1;margin:0 0 16px;max-width:none}
+  .es-scrim .es-cols > .es-belt{grid-column:1;grid-row:2;margin:0 0 16px;max-width:none}
+  .es-scrim .es-cols > .es-dechost{grid-column:1;grid-row:3}
+  .es-scrim .es-cols > .es-compose{grid-column:1;grid-row:4}
+  .es-scrim .es-cols > .es-rail{grid-column:2;grid-row:1 / -1;align-self:start}
+  /* the paragraph panel, when it has something in it, belongs under the rail */
+  .es-scrim .es-cols > .es-rest{grid-column:2;grid-row:4;align-self:start}
+  .es-rail{display:flex;flex-direction:column;gap:14px;position:sticky;top:78px;min-width:0}
+
+  /* ---- the writer ----
+     One surface, not four. The white card is the writer; everything inside it
+     sits directly on that white. Mint appears exactly once, on the strip that
+     names the sentence being written, and nowhere else: it identifies the task,
+     it is not the background of the composer. */
+  .es-scrim .es-compose{background:var(--surface);border:1px solid var(--e-line);border-radius:16px;
+    box-shadow:var(--e-shadow);padding:18px 22px 20px}
+  .es-scrim .es-parahead{margin:0 0 4px}
+  .es-scrim .es-pararole{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--e-ink)}
+  .es-scrim .es-parameta,.es-scrim .es-headacts{color:var(--e-ink3);font-weight:500;font-size:12.5px}
+  /* the flow used to be a bordered card inside the writer card, holding another
+     tinted card. Both inner surfaces are gone. */
+  /* A legacy rule caps every direct child of the writer at 940px and centres it.
+     Inside a 1088px card that reads as an accident, not a measure: it left 74px
+     of white on both sides of the prompt and the editor while the card edge sat
+     somewhere else. The reading measure belongs to the accepted prose, which
+     carries its own, and to nothing else in here. */
+  .es-scrim .es-compose > *{max-width:none;margin-left:0;margin-right:0}
+  .es-scrim .es-flow{background:transparent;border:0;border-radius:0;padding:0;margin-top:12px}
+  .es-scrim .es-active{background:transparent;border:0;border-radius:0;padding:0;margin-top:16px}
+
+  /* the current-sentence prompt: the one mint element on the page */
+  .es-scrim .es-guide{position:relative;background:var(--e-mint);border:0;border-radius:12px;
+    padding:11px 15px 12px;margin:0 0 16px}
+  .es-scrim .es-guidetop{align-items:flex-start}
+  .es-scrim .es-guideh{font-family:var(--body);font-size:10.5px;font-weight:700;letter-spacing:.09em;
+    text-transform:uppercase;color:var(--e-green-dk);flex:1;line-height:1.5}
+  .es-scrim .es-guideh i{font-style:normal;color:#4E8F76;font-weight:600}
+  .es-scrim .es-guidejob{font-family:var(--disp);font-weight:500;font-size:15.5px;line-height:1.5;
+    color:var(--e-ink);margin-top:4px}
+  .es-scrim .es-guidetop .es-steps{display:inline-flex;align-items:center;gap:4px;flex:none;margin-top:-1px}
+  .es-scrim .es-guidetop .es-step{background:none;border:0;color:var(--e-green-dk);font-size:15px;
+    line-height:1;padding:0 3px;cursor:pointer}
+  .es-scrim .es-guidetop .es-step[disabled]{opacity:.3;cursor:default}
+  .es-scrim .es-guidetop .es-stepn{font-size:11px;font-weight:700;color:#4E8F76;letter-spacing:.03em}
+  .es-scrim .es-active > .es-steplbl,.es-scrim .es-slotlbl{font-size:10.5px;font-weight:700;letter-spacing:.09em;
+    text-transform:uppercase;color:var(--e-green-dk)}
+  .es-scrim .es-active h3,.es-scrim .es-stepjob{font-family:var(--disp);font-weight:500;font-size:15.5px;
+    color:var(--e-ink);line-height:1.45;border:none;padding:0;margin:5px 0 0}
+
+  /* The empty evidence chip and edit my point are both live controls, and both
+     were drawn at the weight of a disabled one. A control that does something
+     looks like it does something. */
+  .es-scrim .es-chips{gap:8px;margin:12px 0 0}
+  .es-scrim .es-chip-ev.empty,.es-scrim .es-chip-more{background:var(--surface);border:1px solid var(--e-line);
+    color:var(--e-ink2);font-family:var(--body);font-weight:600;font-size:12.5px;border-radius:10px;
+    padding:7px 12px;opacity:1}
+  .es-scrim .es-chip-ev.empty .es-ico{color:var(--e-ink2)}
+  .es-scrim .es-chip-ev.empty:hover,.es-scrim .es-chip-more:hover{border-color:var(--e-green);
+    color:var(--e-green-dk);background:var(--e-mint2)}
+  .es-scrim .es-chip-arg{background:var(--e-mint);border:1px solid transparent;color:var(--e-ink);
+    font-weight:600;font-size:12.5px;border-radius:10px;padding:7px 12px}
+  .es-scrim .es-chip-arg .es-ico{color:var(--e-green-dk)}
+  .es-scrim .es-chip-arg:hover{border-color:var(--e-green)}
+
+  /* When the menu says "what this sentence has to do" and the authored answer is
+     the instruction already on screen, this is what points at it. */
+  @keyframes es-lookhere{0%{box-shadow:0 0 0 0 rgba(18,178,122,0)}
+    18%{box-shadow:0 0 0 4px rgba(18,178,122,.34)}100%{box-shadow:0 0 0 0 rgba(18,178,122,0)}}
+  .es-scrim .es-guide.lookhere{animation:es-lookhere 1.5s ease-out}
+
+  /* ---- the help ladder, in the page's own language ---- */
+  .es-scrim .es-help{margin-top:14px}
+  .es-scrim .es-rung{background:var(--surface);border:1px solid var(--e-line);border-radius:12px;
+    padding:12px 15px;margin-bottom:8px;gap:12px}
+  .es-scrim .es-rungn{background:var(--e-mint);color:var(--e-green-dk);font-weight:700}
+  .es-scrim .es-runglbl{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--e-ink3)}
+  .es-scrim .es-rungctx{font-weight:600;letter-spacing:0;text-transform:none;color:var(--e-ink3)}
+  .es-scrim .es-rungtext{font-size:14.5px;line-height:1.7;color:var(--e-ink);font-weight:400;margin-top:4px;max-width:74ch}
+  .es-scrim .es-rungnote{font-size:12.5px;font-weight:500;color:var(--e-ink2);line-height:1.55;margin-top:7px;max-width:74ch}
+  .es-scrim .es-helpend{font-size:12.5px;font-weight:500;color:var(--e-ink3)}
+  /* the example route shows one thing, and it is the one thing the menu named:
+     no rung number, because there is no ladder of five on screen to number it in */
+  .es-scrim .es-rung.example{border-color:var(--e-line)}
+  .es-scrim .es-help.exonly .es-rung{border-left:3px solid var(--e-green);padding-left:15px}
+
+  /* local sentence actions, side by side under the prompt */
+  .es-promptacts{display:flex;align-items:center;gap:18px;margin-top:9px;flex-wrap:wrap}
+  .es-scrim .es-shapebtn,.es-scrim .es-stuckbtn{font-family:var(--body);font-size:12.5px;font-weight:600;
+    color:var(--e-green-dk);text-decoration:none;padding:0}
+  .es-scrim .es-shapebtn:hover,.es-scrim .es-stuckbtn:hover{text-decoration:underline;text-underline-offset:3px}
+  .es-scrim .es-shapes{margin-top:10px;gap:6px}
+  .es-scrim .es-shape{background:var(--surface);border:1px solid #D7EEE3;border-radius:9px;
+    padding:9px 12px;font-size:13px;line-height:1.6;color:var(--e-ink2)}
+
+  /* the stuck helper: a router over help that already exists, anchored to the
+     sentence it is about. It floats, so opening it does not move the editor. */
+  .es-stuck{position:absolute;left:12px;top:100%;margin-top:6px;width:min(430px,calc(100% - 24px));
+    z-index:60;background:var(--surface);border:1px solid var(--e-line);border-radius:14px;
+    box-shadow:0 2px 6px rgba(18,48,58,.06), 0 18px 40px rgba(18,48,58,.14);padding:14px 15px 12px;
+    /* the action bar is fixed, so on a short viewport the last row would sit
+       under it; the menu scrolls inside itself rather than behind the bar */
+    max-height:min(420px, calc(100vh - 260px));overflow:auto}
+  .es-stuck-hd{display:flex;align-items:center;gap:10px}
+  .es-stuck-t{font-family:var(--disp);font-weight:600;font-size:14.5px;color:var(--e-ink);flex:1}
+  .es-stuck-x{background:none;border:0;color:var(--e-ink3);cursor:pointer;padding:2px;line-height:0}
+  .es-stuck-x:hover{color:var(--e-ink)}
+  .es-stuck-x svg,.es-stuck-x .es-ico{width:15px;height:15px}
+  .es-stuck-s{font-size:12.5px;color:var(--e-ink2);margin:4px 0 11px;font-weight:500;line-height:1.5}
+  .es-stuck-list{display:flex;flex-direction:column;gap:5px}
+  /* Title over caption, not beside it: side by side, three of the five captions
+     wrapped onto three lines each and the menu stopped scanning as a list. */
+  .es-stuck-row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:0 10px;width:100%;
+    text-align:left;background:none;border:1px solid transparent;border-radius:10px;padding:8px 11px;
+    font-family:var(--body);cursor:pointer}
+  .es-stuck-row:hover:not([disabled]){background:var(--e-mint2);border-color:#D7EEE3}
+  .es-stuck-rt{grid-column:1;font-size:13px;font-weight:600;color:var(--e-ink);line-height:1.35}
+  .es-stuck-rs{grid-column:1;font-size:11.5px;color:var(--e-ink3);font-weight:500;line-height:1.4;margin-top:2px}
+  .es-stuck-go{grid-column:2;grid-row:1 / span 2;color:var(--e-green-dk);font-size:16px;line-height:1}
+  /* a row with nothing behind it stays in the menu and says so, because a menu
+     that changes length teaches nothing about what help exists */
+  .es-stuck-row.off{cursor:default}
+  .es-stuck-row.off .es-stuck-rt{color:var(--e-ink3)}
+
+  /* accepted prose: on white, at a reading measure, quieter than the task */
+  .es-scrim .es-prose{font-size:15.5px;line-height:1.8;color:#3D525A;font-weight:400;max-width:72ch;margin:0}
+  .es-scrim .es-linehost{margin-top:14px}
+  .es-scrim .es-line,.es-scrim .es-para-text{font-size:14.5px;line-height:1.7;color:var(--e-ink2);
+    font-weight:400;max-width:74ch}
+  /* the composer: calm, with the accent kept for focus */
+  .es-scrim .es-linebox{border:1px solid var(--e-line);border-radius:13px;background:var(--surface);
+    font-size:15px;line-height:1.7;color:var(--e-ink);padding:15px 17px;max-width:none}
+  .es-scrim .es-linebox:focus{border-color:var(--e-green);box-shadow:0 0 0 3px var(--e-mint);outline:none}
+  .es-scrim .es-linebox::placeholder{color:var(--e-ink3)}
+  /* One sentence, not an essay box. Two hundred pixels of empty field under a
+     prompt that asks for a single sentence told the student the wrong thing
+     about how much to write, and it did it before they typed anything. */
+  .es-scrim .es-linebox{min-height:92px}
+  .es-scrim .es-linerow{margin-top:12px;gap:14px}
+  /* nothing to add yet reads as nothing to add yet, rather than as a live button */
+  .es-scrim .es-btn.primary[disabled]{background:var(--e-mint);color:#6FAF94;box-shadow:none;cursor:default}
+  .es-scrim .es-btn.primary{background:var(--e-green);box-shadow:0 2px 0 var(--e-green-dk);border-radius:11px;
+    font-family:var(--body);font-weight:600;font-size:13.5px;padding:11px 20px}
+  .es-scrim .es-btn.ghost,.es-scrim .es-btn.sm{border:1px solid var(--e-line);background:var(--surface);
+    color:var(--e-ink);border-radius:11px;font-family:var(--body);font-weight:600}
+  .es-scrim .es-btn.ghost:hover{border-color:var(--e-green);color:var(--e-green-dk)}
+
+  /* ---- rail panel ---- */
+  .es-rp{background:var(--surface);border:1px solid var(--e-line);border-radius:16px;
+    box-shadow:var(--e-shadow);padding:16px 18px}
+  .es-rp-hd{display:flex;align-items:center;gap:9px;margin-bottom:11px}
+  .es-rp-ico{width:28px;height:28px;border-radius:9px;background:var(--e-mint);color:var(--e-green-dk);
+    display:grid;place-items:center;flex:none}
+  .es-rp-t{font-family:var(--disp);font-weight:600;font-size:14.5px;color:var(--e-ink)}
+  .es-rp-prov{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--e-ink3)}
+  .es-rp-lead{font-size:13px;color:var(--e-ink2);line-height:1.6;margin:0 0 13px;font-weight:500}
+  .es-rp-list{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-direction:column;gap:9px}
+  .es-rp-list li{display:flex;gap:9px;font-size:12.5px;color:var(--e-ink2);font-weight:500;line-height:1.45}
+  .es-rp-ck{width:16px;height:16px;border-radius:5px;background:var(--e-mint);color:var(--e-green-dk);
+    display:grid;place-items:center;font-size:10px;flex:none;margin-top:1px}
+  .es-rp-btn{display:block;width:100%;background:var(--surface);border:1px solid var(--e-line);border-radius:10px;
+    padding:9px;font-family:var(--body);font-size:13px;font-weight:600;color:var(--e-ink);cursor:pointer}
+  .es-rp-btn:hover{border-color:var(--e-green);color:var(--e-green-dk)}
+
+  /* ---- response status navigator: where you are, not a second planner ---- */
+  .es-resp{background:var(--surface);border:1px solid var(--e-line);border-radius:16px;
+    box-shadow:var(--e-shadow);padding:15px 20px 17px;margin-top:16px}
+  .es-resp-lab{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--e-ink3)}
+  .es-resp-row{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
+  .es-resp-b{flex:1 1 120px;min-width:0;text-align:left;background:var(--surface);border:1px solid var(--e-line);
+    border-radius:12px;padding:10px 12px;font-family:var(--body);cursor:pointer}
+  .es-resp-b:hover{border-color:var(--e-green)}
+  .es-resp-b.on{border-color:var(--e-green);background:var(--e-mint2)}
+  .es-resp-n{font-family:var(--disp);font-weight:600;font-size:13.5px;color:var(--e-ink);display:flex;align-items:center;gap:7px}
+  .es-resp-dot{width:7px;height:7px;border-radius:99px;background:var(--e-line);flex:none}
+  .es-resp-b.on .es-resp-dot{background:var(--e-green)}
+  .es-resp-b.done .es-resp-dot{background:var(--e-green-dk)}
+  .es-resp-w{font-size:11.5px;color:var(--e-ink3);font-weight:600;margin-top:6px}
+
+  /* ---- sticky action bar: one line, save status quietest ---- */
+  .es-footbar{position:fixed;left:0;right:0;bottom:0;z-index:140;background:var(--surface);
+    border-top:1px solid var(--e-line)}
+  .es-footbar-in{max-width:calc(var(--main) + var(--rail) + var(--e-gap));margin:0 auto;
+    padding:8px clamp(16px,2.4vw,26px);display:flex;align-items:center;gap:10px}
+  .es-footsave{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--e-ink3);font-weight:500}
+  .es-footsave .es-ico{width:15px;height:15px}
+  .es-footbar .es-sp{flex:1}
+  .es-footbar .es-btn{padding:7px 13px;font-size:13px}
+  .es-footbar .es-btn.primary{padding:8px 16px}
+
+  /* ---- responsive ---- */
+  @media(max-width:1700px){ .es-scrim{--main:1040px;--rail:300px} }
+  @media(max-width:1499px){ .es-scrim{--main:958px;--rail:286px;--e-gap:18px} }
+  /* The rail goes before the writing does. Everything in it stays reachable
+     through Learn and the marking guide control, so collapsing it loses nothing. */
+  @media(max-width:1399px){
+    /* The rail is gone, so it must stop contributing width to the offset the
+       question and belt are aligned by. */
+    /* The writer keeps the size it had at the tier above: dropping the rail
+       takes the rail away, it does not make the writing column grow as the
+       window gets smaller. The percentage keeps it from overflowing further
+       down, where there is no more gutter to give. The viewport unit is
+       deliberate: a percentage would re-resolve against whichever box reads the
+       variable, and inside .es-cols that box is already this width, so the
+       column shrank by the gutter a second time. */
+    .es-scrim{--main:min(958px, calc(100vw - 110px));--rail:0px;--e-gap:0px}
+    .es-scrim .es-cols{grid-template-columns:minmax(0,var(--main))}
+    .es-scrim .es-cols > .es-rest{grid-column:1;grid-row:auto}
+    .es-rail{display:none}
+    .es-scrim .es-guide{padding:10px 13px 11px}
+    .es-scrim .es-compose{padding:16px 18px 18px}
+    .es-stuck{width:min(400px,calc(100% - 20px))}
+  }
 </style>
 </head>
 <body>

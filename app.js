@@ -3226,8 +3226,12 @@
   function esStructureLabel(key) { return esStructureDef(key).label; }
 
   const ES = { subject: null, code: "", demo: false, screen: "setup", draft: null, list: [], form: null, pending: false,
-    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, planAll: false, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false, tryPick: null, lessonMore: false, lessonJump: null },  // transient guided-view state, reset on paragraph change
+    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, planAll: false, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false, tryPick: null, lessonMore: false, lessonJump: null,
+      studyOpen: false, studyPreview: null, studyPos: null, stuckOpen: false },  // transient guided-view state, reset on paragraph change
     hint: { open: false, tab: "know" },          // study hints: persists across paragraphs on purpose
+    // The Learning Centre is off the student route. This is the only way back to
+    // it, for the suites that keep its teaching proven until it is rebuilt.
+    legacyCentre: /[?&]eslegacy=1/.test(String(location.search || "")),
     quiz: { revealed: false, peeked: false, attempt: "", result: null } };
   const ES_KEY = "marginal.essay.v1";
   function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, planAll: false, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false, tryPick: null, lessonMore: false, lessonJump: null }; }
@@ -3466,6 +3470,194 @@
     }
   }
 
+  // ---- STUDY RESOURCES ------------------------------------------------------
+  //
+  // Reading, not teaching. The Learning Centre tried to teach inside the app and
+  // is out of the student route while it is rebuilt; this sends the student to
+  // the material their class already has, at the point they need it, and gets
+  // out of the way.
+  //
+  // Everything it shows is authored. A resource is a label somebody wrote and a
+  // link somebody supplied. Nothing is derived from the question's prose, no
+  // page number is inferred, and where nothing has been authored the window says
+  // so rather than showing a plausible-looking row.
+  //
+  // A peer of the notebook: its own host at the end of <body>, floating over the
+  // essay, so opening it cannot move the writing.
+  const ES_STUDY_POS = "marginal.study.pos";
+  function esStudyMap() { return (window.ESSAY && window.ESSAY.resources) || {}; }
+  // Ids in, records out, and the ids that resolved to nothing kept separately.
+  // A missing id is a fault in the content, not something to hide from the
+  // person who could fix it, so it is counted and reported rather than skipped.
+  function esStudyResolve(ids) {
+    const map = esStudyMap(), ok = [], missing = [];
+    (ids || []).forEach(id => { const r = map[id]; if (r && r.url) ok.push(r); else missing.push(id); });
+    return { ok: ok, missing: missing };
+  }
+  function esStudyQuestionRefs() { const q = esQuestionDef(); return (q && q.studyRefs) || []; }
+  // What the student's CHOSEN argument reads for. Only the pathway they took,
+  // and the area it belongs to where that area authors its own: never the whole
+  // question's set relabelled as though it were about their argument.
+  function esStudyArgumentRefs(p) {
+    const path = esPathway(p); if (!path) return [];
+    const q = esQuestionDef();
+    const area = (q && q.areas && path.area && q.areas[path.area]) || null;
+    return (path.studyRefs || []).concat((area && area.studyRefs) || []);
+  }
+  // Offered only where embedding has a chance of working: a Drive file link,
+  // which has a /preview form, or a resource whose author said it embeds. A
+  // control that is usually going to fail is worse than no control, so
+  // everything else shows the link out and nothing else.
+  function esStudyEmbeddable(r) {
+    if (r.embeddable === true) return true;
+    if (r.embeddable === false) return false;
+    return /^https:\/\/drive\.google\.com\/file\/d\//.test(String(r.url || ""));
+  }
+  function esStudyRow(r) {
+    const sub = [r.provider, r.note].filter(Boolean).join(" · ");
+    return '<div class="es-stres">' +
+      '<span class="es-stico">' + esIcon("book") + '</span>' +
+      '<span class="es-sttext"><span class="es-stlabel">' + esc(r.label || r.id) + '</span>' +
+      (sub ? '<span class="es-stsub">' + esc(sub) + '</span>' : '') + '</span>' +
+      // The guaranteed route. Everything else in this window is an enhancement
+      // on top of a plain link that works whatever the host allows.
+      '<a class="es-stopen" href="' + esc(r.url) + '" target="_blank" rel="noopener noreferrer"' +
+      ' data-esstopen="' + esc(r.id) + '" title="Open in a new tab">' + esIcon("open") + '</a>' +
+      (esStudyEmbeddable(r) ? '<button type="button" class="es-stprev" data-esstprev="' + esc(r.id) + '">Preview</button>' : '') +
+      '</div>';
+  }
+  function esStudyHTML(p) {
+    const qr = esStudyResolve(esStudyQuestionRefs());
+    const ar = esStudyResolve(esStudyArgumentRefs(p));
+    const path = esPathway(p);
+    const where = p && p.role ? p.role : "";
+    const prev = ES.ui.studyPreview ? esStudyMap()[ES.ui.studyPreview] : null;
+    const pos = ES.ui.studyPos;
+    const box = pos || esStudyBox();
+    const style = ' style="left:' + box.left + 'px;top:' + box.top + 'px;right:auto;bottom:auto'
+      + (box.w ? ';width:' + box.w + 'px' : "") + '"';
+    const nothing = !qr.ok.length && !ar.ok.length;
+    // One sentence does not need a 400 by 220 window. Empty, it sizes to what it
+    // has to say, the way the tool window does.
+    return '<aside class="es-study' + (nothing && !prev ? " empty" : "") + '" role="dialog" aria-label="Study resources"' + style + '>' +
+      '<div class="es-sthead">' + esIcon("book") +
+        '<span class="es-sttitle">Study resources</span>' +
+        '<button type="button" class="es-nbact" data-esstudyhome title="Put the window back where it opens">reset position</button>' +
+        '<button type="button" class="es-nbx" data-esstudyclose aria-label="Close">' + esIcon("close") + '</button></div>' +
+      '<div class="es-stbody">' +
+      (prev ? '<div class="es-stprevwrap">' +
+          '<div class="es-stprevhead"><button type="button" class="es-linkbtn" data-esstback>&larr; All resources</button>' +
+            '<a class="es-linkbtn" href="' + esc(prev.url) + '" target="_blank" rel="noopener noreferrer">Open in new tab</a></div>' +
+          '<div class="es-stlabel">' + esc(prev.label || prev.id) + '</div>' +
+          // Embedded viewing is an enhancement. A restricted Drive file, or a
+          // workspace that refuses framing, fails silently in an iframe, so the
+          // fallback is revealed on a timer rather than left as a blank rectangle.
+          '<div class="es-stframe" data-esstframe><iframe src="' + esc(esStudyEmbedUrl(prev)) + '" title="' + esc(prev.label || "Resource") + '" loading="lazy" referrerpolicy="no-referrer"></iframe></div>' +
+          // Standing, not triggered. A cross-origin frame that a workspace policy
+          // refuses to render still fires load, and its document cannot be read
+          // from here, so failure is not reliably detectable: a message that
+          // waits to be certain would sometimes never arrive. This one is always
+          // there, costs a line, and is right in every case.
+          '<p class="es-stfall" data-esstfall>Nothing showing? Some resources cannot be opened inside Marginal, and some need you to be signed in. Open it in a new tab instead.</p>' +
+        '</div>'
+      : nothing
+        ? '<p class="es-sthelp">No study resources have been added for this question yet. When your teacher adds them they will appear here.</p>'
+        : '<div class="es-stsec"><div class="es-sthd">For this question</div>' +
+            '<p class="es-sthelp">Recommended reading to help you understand the topic and build your argument.</p>' +
+            (qr.ok.length ? qr.ok.map(esStudyRow).join("")
+              : '<p class="es-sthelp">Nothing has been added for the question itself.</p>') +
+          '</div>' +
+          (path
+            ? '<div class="es-stsec"><div class="es-sthd">For your argument' + (where ? " (" + esc(where) + ")" : "") + '</div>' +
+                (ar.ok.length
+                  ? '<p class="es-sthelp">Resources relevant to the argument you chose.</p>' + ar.ok.map(esStudyRow).join("")
+                  // Never fabricated. An argument with nothing authored against it
+                  // says nothing has been added, and does not borrow the
+                  // question's list to look populated.
+                  : '<p class="es-sthelp">Nothing has been added for this argument yet.</p>') +
+              '</div>'
+            : '<div class="es-stnote">' + esIcon("info") +
+              '<span>Choose an argument for a body paragraph to see reading for that argument.</span></div>')) +
+      '</div>' +
+      ((!prev && (qr.ok.length || ar.ok.length))
+        ? '<div class="es-stfoot"><button type="button" class="es-linkbtn es-stall" data-esstall>Open all in new tabs</button></div>' : "") +
+      '</aside>';
+  }
+  // Drive share links open a viewer, not a file. /preview is the embeddable form
+  // of the same link, so a student who can open it in a tab can usually see it
+  // here too. Anything else is embedded as given.
+  function esStudyEmbedUrl(r) {
+    const u = String(r.url || "");
+    const m = u.match(/^https:\/\/drive\.google\.com\/file\/d\/([^/]+)/);
+    return m ? "https://drive.google.com/file/d/" + m[1] + "/preview" : u;
+  }
+  // Placed beside the writing rather than on top of it, by the same rule the tool
+  // window uses: what has to be cleared is the writing card, not the page. Where
+  // the space left is narrower than the window is allowed to be, it takes the
+  // edge, which covers the least, and can be dragged anywhere from there.
+  function esStudyBox() {
+    const WANT = 400, FLOOR = 320, GAP = 16, EDGE = 12;
+    const rights = [".es-flow", ".es-parahead"].map(x => document.querySelector(x))
+      .filter(Boolean).map(e => e.getBoundingClientRect().right);
+    const writing = rights.length ? Math.max.apply(null, rights) : null;
+    const cols = document.querySelector(".es-cols");
+    const top = cols ? Math.max(12, Math.round(cols.getBoundingClientRect().top + 46)) : 96;
+    const room = writing == null ? 0 : window.innerWidth - writing - GAP - EDGE;
+    const beside = room >= FLOOR;
+    const w = beside ? Math.min(WANT, Math.round(room)) : WANT;
+    const left = beside ? Math.round(writing + GAP) : Math.max(EDGE, window.innerWidth - w - EDGE);
+    return { left: left, top: top, w: w };
+  }
+  function esStudyMount(p) {
+    let host = document.getElementById("esstudyhost");
+    if (!host) { host = document.createElement("div"); host.id = "esstudyhost"; document.body.appendChild(host); }
+    host.innerHTML = esStudyHTML(p);
+    esStudyBind(host, p);
+  }
+  function esStudyUnmount() {
+    const host = document.getElementById("esstudyhost"); if (host) host.remove();
+    ES.ui.studyOpen = false; ES.ui.studyPreview = null;
+    document.querySelectorAll('[data-estool="understand"]').forEach(b => b.setAttribute("aria-expanded", "false"));
+  }
+  function esStudyBind(host, p) {
+    const panel = host.querySelector(".es-study"); if (!panel) return;
+    const x = panel.querySelector("[data-esstudyclose]");
+    if (x) x.onclick = () => { esStudyUnmount(); esFocusComposer(); };
+    const home = panel.querySelector("[data-esstudyhome]");
+    if (home) home.onclick = () => { ES.ui.studyPos = null; try { sessionStorage.removeItem(ES_STUDY_POS); } catch (e) { /* private mode */ } esStudyMount(p); };
+    panel.querySelectorAll("[data-esstprev]").forEach(b => b.onclick = () => { ES.ui.studyPreview = b.dataset.esstprev; esStudyMount(p); });
+    const back = panel.querySelector("[data-esstback]");
+    if (back) back.onclick = () => { ES.ui.studyPreview = null; esStudyMount(p); };
+    const all = panel.querySelector("[data-esstall]");
+    if (all) all.onclick = () => panel.querySelectorAll("[data-esstopen]").forEach(a => window.open(a.href, "_blank", "noopener"));
+    // Escape closes it, the way every temporary surface in the essay closes.
+    // Bound while open and dropped on close, so nothing accumulates.
+    const esc2 = e => {
+      if (e.key !== "Escape") return;
+      document.removeEventListener("keydown", esc2);
+      esStudyUnmount(); esFocusComposer();
+    };
+    document.addEventListener("keydown", esc2);
+    const head = panel.querySelector(".es-sthead");
+    if (head) head.onmousedown = e => {
+      if (e.target.closest("button") || e.target.closest("a")) return;
+      e.preventDefault();
+      const r = panel.getBoundingClientRect();
+      const dx = e.clientX - r.left, dy = e.clientY - r.top;
+      const move = ev => {
+        const w = panel.offsetWidth, h = panel.offsetHeight;
+        const left = Math.max(6, Math.min(window.innerWidth - w - 6, ev.clientX - dx));
+        const top = Math.max(6, Math.min(window.innerHeight - h - 6, ev.clientY - dy));
+        panel.style.left = left + "px"; panel.style.top = top + "px";
+        panel.style.right = "auto"; panel.style.bottom = "auto";
+        ES.ui.studyPos = { left: left, top: top };
+        try { sessionStorage.setItem(ES_STUDY_POS, JSON.stringify(ES.ui.studyPos)); } catch (e2) { /* private mode */ }
+      };
+      const up = () => { document.removeEventListener("mousemove", move); document.removeEventListener("mouseup", up); };
+      document.addEventListener("mousemove", move); document.addEventListener("mouseup", up);
+    };
+  }
+
   function esSaveDraft() {
     if (!ES.draft) return;
     ES.draft.updatedAt = new Date().toISOString(); // most-recent-first ordering
@@ -3618,6 +3810,14 @@
 
   function esRender() {
     const host = document.getElementById("eshost"); if (!host) return;
+    // A menu does not survive the thing it was a menu for. The section popover
+    // carried its open state across screen and section changes, so choosing a
+    // section from it left it standing over the next paragraph's composer, where
+    // it covered Add this sentence and made the primary action unclickable.
+    if (ES.ui && ES.ui.mapPop) {
+      const at = ES.draft ? ES.draft.pos : null;
+      if (ES.ui.mapPopAt !== at || ES.ui.mapPopScreen !== ES.screen) ES.ui.mapPop = false;
+    }
     // Preserve scroll across a full re-render so nothing flashes/jumps to the top.
     // (Frequent toggles use targeted updates instead and never reach here.)
     const prevScrim = host.querySelector(".es-scrim");
@@ -3633,6 +3833,19 @@
     const nowScrim = host.querySelector(".es-scrim"); if (nowScrim && sy) nowScrim.scrollTop = sy;
     // Defensive: no essay button should ever act as a form submit.
     host.querySelectorAll("button:not([type])").forEach(b => b.type = "button");
+    // The study window floats outside this host, so a render cannot destroy it,
+    // but what it should be showing depends on the paragraph and on the argument
+    // the student has chosen. Choosing one with the window open has to change
+    // what is in it, so it is rebuilt against the current paragraph and left
+    // exactly where it was. Its own preview stays open across the rebuild.
+    if (ES.ui.studyOpen && document.getElementById("esstudyhost")) esStudyMount(esCurrentPara());
+  }
+  // The paragraph the student is on, or nothing when the screen has no paragraph.
+  // Reading it from the draft rather than being handed it lets a surface outside
+  // #eshost stay in step with the essay without the essay knowing it exists.
+  function esCurrentPara() {
+    const d = ES.draft; if (!d || !Array.isArray(d.paras)) return null;
+    return d.paras[d.pos] || null;
   }
   // Defensive only: the essay content file failed to load, so there is no slot model
   // or fallback content to run on. The core is otherwise subject-agnostic and always
@@ -4036,6 +4249,14 @@
     $("#esstart").onclick = () => {
       const question = (f.question || "").trim();
       if (!question) { toast("Add your essay question to start."); const el = $("#esq"); if (el) el.focus(); return; }
+      // Starting replaces the draft outright. That is fine on an empty one and is
+      // the loss of an afternoon's work on a written one, and Change question puts
+      // this route one press from the writing, so a written draft is asked first.
+      const cur = ES.draft;
+      const written = cur ? esResponseWords(cur) : 0;
+      if (written > 0 && (cur.question || "").trim() !== question &&
+          !window.confirm("Start \"" + question.slice(0, 70) + (question.length > 70 ? "\u2026" : "") +
+            "\"? Your current response has " + written + " words in it and starting a different question replaces it.")) return;
       ES.draft = {
         id: esId(), subject: ES.subject, code: ES.code,
         question, topic: (f.topic || "").trim(), rubric: (f.rubric || "").trim(),
@@ -4183,26 +4404,56 @@
   }
 
   // ---- shared header for the two writing screens (question + topic + switch) ----
+  // The head is two things: the page header, which is the same on every essay
+  // screen, and the question card, which the writing screen places inside its own
+  // grid so the rail can start beside it rather than halfway down the page.
   function esWritingHead(sc, modeLabel, switchLabel, switchTo, boxElsewhere) {
+    return esTopBarHTML(sc, switchLabel) + esQuestionCardHTML(modeLabel, boxElsewhere);
+  }
+  function esTopBarHTML(sc, switchLabel) {
+    return `
+      <div class="es-top">
+        <div class="es-brand"><span class="es-mark">M</span>Marginal ${sc.label ? `<span class="es-subj">${esc(sc.label)}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}</div>
+        <div class="es-topbtns">
+          ${/* Learn and Notebook are utilities: they make sense whatever sentence
+                the student is on, they open their own floating windows, and they
+                stay open across the writing. The four writing tools are not
+                utilities and stay on the belt above the writer. */ ""}
+          <button type="button" class="es-util" data-estool="understand" aria-expanded="${ES.ui.studyOpen ? "true" : "false"}">${esIcon("book")}<span>Learn</span></button>
+          <button type="button" class="es-util" data-esnbtoggle aria-expanded="${ES.ui.nbOpen ? "true" : "false"}">${esIcon("note")}<span>Notebook</span></button>
+          <button class="es-linkbtn" id="esmodeswitch">${esc(switchLabel)}</button>
+          <button class="es-x" id="esx" aria-label="Back to setup">setup</button>
+        </div>
+      </div>`;
+  }
+  function esQuestionCardHTML(modeLabel, boxElsewhere) {
     // The question is the one thing on screen at every stage, so the decoder
     // lives on it rather than being a stage the student passes through once.
     const qdef = esQuestionDef();
     const qdec = esDecodeOf(qdef);
+    // Metadata is rendered only where the value exists. A question that carries
+    // no mark total loses the number AND its separator, rather than the layout
+    // being kept by assuming one: an invented 20 looks exactly like a real 20.
+    const marks = ES.draft.marks || (qdef && qdef.marks) || null;
+    const cmd = (qdef && qdef.command) || (ES.draft && ES.draft.command) || "";
+    const bits = [];
+    if (cmd) bits.push('<b>' + esc(cmd) + '</b>');
+    if (marks) bits.push(esc(String(marks)) + ' marks');
+    if (modeLabel) bits.push(esc(String(modeLabel).toLowerCase()));
     return `
-      <div class="es-top">
-        <div class="es-brand">Marginal · essay practice ${sc.label ? `<span class="es-subj">${esc(sc.label)}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}</div>
-        <div class="es-topbtns">
-          <button class="es-linkbtn" id="esmodeswitch">${esc(switchLabel)}</button>
-          <button class="es-x" id="esx" aria-label="Back to setup">setup</button>
-        </div>
-      </div>
       <div class="es-qbar">
         <div class="es-qbar-main">
-          <div class="es-qbar-mode">${esc(modeLabel)}</div>
+          ${ES.draft.topic ? `<span class="es-restag">${esc(ES.draft.topic)}</span>` : ""}
           <div class="es-qbar-q">${qdec ? esDecodeStem(ES.draft.question, qdec.highlights) : esc(ES.draft.question)}</div>
+          <div class="es-qmetarow">
+            ${bits.length ? '<div class="es-qmeta">' + bits.join('<i>\u2022</i>') + '</div>' : '<span></span>'}
+            ${/* Changing which question you are answering is an essay-workspace
+                  action and belongs on the question. Setup is the broader
+                  configuration and stays in the header. */ ""}
+            <button type="button" class="es-linkbtn es-qchange" id="esqchange">Change question</button>
+          </div>
           ${qdec ? esDecodeChips(qdef) + (boxElsewhere ? "" : esDecodeHost(qdef)) : ""}
         </div>
-        ${ES.draft.topic ? `<span class="es-restag">${esc(ES.draft.topic)}</span>` : ""}
       </div>`;
   }
 
@@ -4599,6 +4850,13 @@
     type: '<path d="M4 7V5h16v2M12 5v14M9 19h6"/>',
     close: '<path d="M6 6l12 12M18 6 6 18"/>',
     check: '<path d="m5 12.5 4.5 4.5L19 7"/>',
+    // A link that leaves Marginal, and a note that is not a warning.
+    open: '<path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+    info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/>',
+    note: '<rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8.5 3v18"/>',
+    cloud: '<path d="M17.5 19H7a5 5 0 0 1-.5-9.98A6 6 0 0 1 18 8.5a4.5 4.5 0 0 1-.5 10.5z"/><path d="m9.5 13.5 2 2 3.5-4"/>',
+    note: '<rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8.5 3v18"/>',
+    cloud: '<path d="M17.5 19H7a5 5 0 0 1-.5-9.98A6 6 0 0 1 18 8.5a4.5 4.5 0 0 1-.5 10.5z"/><path d="m9.5 13.5 2 2 3.5-4"/>',
   };
   function esIcon(name) {
     return '<svg class="es-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ES_ICONS[name] || "") + '</svg>';
@@ -5069,7 +5327,7 @@
 
   // ---- the drawer ------------------------------------------------------------
   function esToolbeltHTML(p) {
-    return `<div class="es-belt" role="toolbar" aria-label="Writing support">` + ES_TOOLS.map(t => {
+    return `<div class="es-belt" role="toolbar" aria-label="Writing support">` + ES_TOOLS.filter(t => t.key !== "understand").map(t => {
       const has = !!esToolData(t.key, p);
       const on = ES.ui.tool === t.key;
       // Nothing authored behind it means the tool is disabled, not filled with filler.
@@ -5320,18 +5578,32 @@
     const host = document.getElementById("eshost"); if (!host) return;
     host.querySelectorAll("[data-estool]").forEach(b => b.onclick = () => {
       const key = b.dataset.estool;
-      // Learn opens the Learning Centre. It is teaching, not a writing tool, and
-      // giving it a tab in the tool window put two different classes of activity
-      // behind one control set.
+      // Learn opens the study resources window. It used to open the Learning
+      // Centre; the Centre is out of the student route while it is rebuilt, and
+      // its code is left in place for that rebuild rather than deleted.
+      //
+      // A floating window rather than a tool tab, for the same reason the
+      // notebook is: reading is not one of the four writing tools, and opening
+      // it must not take the tool window away from the student.
       if (key === "understand") {
-        ES.centre = ES.centre || { route: "choose", dock: "right" };
-        ES.centre.open = true;
-        // Straight to the concept this paragraph's argument names, where one is
-        // authored. Landing on a chooser when the app already knows what the
-        // student is arguing about makes them pick something it could have opened.
-        ES.centre.route = esToolData("understand", p) ? "concept" : "choose";
-        ES.ui.tool = null; ES.ui.contextView = null; esRenderKeepingPlace(p);
-        eslMount(p); return;
+        // The Centre is preserved for its rebuild, and a preserved thing no test
+        // covers rots. ?eslegacy=1 is the only route left to it: not a student
+        // route, not linked from anywhere, and the suites that assert its
+        // teaching use it so the content stays proven while the surface is out.
+        if (ES.legacyCentre) {
+          ES.centre = ES.centre || { route: "choose", dock: "right" };
+          ES.centre.open = true;
+          ES.centre.route = esToolData("understand", p) ? "concept" : "choose";
+          ES.ui.tool = null; ES.ui.contextView = null; esRenderKeepingPlace(p);
+          eslMount(p); return;
+        }
+        if (ES.ui.studyOpen) { esStudyUnmount(); esFocusComposer(); return; }
+        try { const v = JSON.parse(sessionStorage.getItem(ES_STUDY_POS) || "null"); if (v && v.left != null) ES.ui.studyPos = v; }
+        catch (e) { /* private mode */ }
+        ES.ui.studyOpen = true; ES.ui.studyPreview = null;
+        esStudyMount(p);
+        document.querySelectorAll('[data-estool="understand"]').forEach(x2 => x2.setAttribute("aria-expanded", "true"));
+        return;
       }
       if (ES.ui.tool === key) { ES.ui.tool = null; esRenderKeepingPlace(p); esFocusComposer(); return; }
       esCaptureContext(p);
@@ -5395,7 +5667,7 @@
         // meant to be usable beside a tool, so neither it nor the control that
         // opens it dismisses this one.
         if (e.target.closest && (e.target.closest("[data-estool]") || e.target.closest("#esnbhost")
-          || e.target.closest("[data-esnbtoggle]"))) return;
+          || e.target.closest("#esstudyhost") || e.target.closest("[data-esnbtoggle]"))) return;
         shut();
       };
       const key2 = e => { if (e.key === "Escape") { e.preventDefault(); shut(); } };
@@ -7035,6 +7307,202 @@
   // margin, and any toggled-open missing-element frames as ghosts beneath the box.
   // The stepper is a POSITION INDICATOR only; Back / Next move one paragraph.
   const ES_WHERE = { point: "as the opening sentence", analysis: "right after your point", evidence: "to back the point up", link: "at the end, tying back to the question", thesis: "as your opening line", methods: "right after your thesis", restate: "to open the conclusion", judgement: "as your final line" };
+  // ---- THE CONTEXTUAL RAIL ---------------------------------------------------
+  //
+  // Only where real data exists. A panel that says a thing is unavailable fills
+  // the screen for the sake of filling it, so a panel with nothing behind it is
+  // not rendered at all and the rail simply gets shorter.
+  function esMarkingPanel() {
+    const q = esQuestionDef();
+    const sc = esSubjectContent(ES.subject);
+    const dec = q && q.decode;
+    const lead = (dec && dec.verbMeaning) || "";
+    const crit = (sc && sc.markingCriteria) || [];
+    const own = (ES.draft && ES.draft.rubric) || "";
+    // Provenance, said the way the rubric resolver says it, never guessed.
+    const prov = own ? "yours" : (q && q.criteria && q.criteria.source) ? "general" : (crit.length ? "general" : "");
+    if (!lead && !crit.length && !own) return "";
+    return `<div class="es-rp">
+      <div class="es-rp-hd"><span class="es-rp-ico">${esIcon("check")}</span>
+        <span class="es-rp-t">Marking guidance</span>
+        ${prov ? `<span class="es-rp-prov">${esc(prov)}</span>` : ""}</div>
+      ${lead ? `<p class="es-rp-lead">${esc(lead)}</p>` : ""}
+      ${crit.length ? `<ul class="es-rp-list">${crit.map(c =>
+        `<li><span class="es-rp-ck">✓</span>${esc(c)}</li>`).join("")}</ul>` : ""}
+      <button type="button" class="es-rp-btn" id="esmarkfull">View full marking guide</button>
+    </div>`;
+  }
+  // ---- STUCK ON THIS SENTENCE -----------------------------------------------
+  //
+  // A router over support that already exists, anchored to the sentence it is
+  // about. Nothing on it writes, inserts or rewrites a sentence: the furthest it
+  // goes is the authored worked example, which is deliberately set in a
+  // different topic so the shape transfers and the words cannot.
+  //
+  // The menu is the same length whatever is available. A row with nothing behind
+  // it is shown disabled and says why, because a menu that changes shape teaches
+  // the student nothing about what help exists.
+  function esStuckHTML(p) {
+    const study = esStudyResolve(esStudyArgumentRefs(p));
+    const rungs = esRungs(p, esStepDef(p));
+    const jobAt = rungs.findIndex(r => /what this part has to do/i.test(r.label || ""));
+    const exAt = rungs.findIndex(r => r.kind === "example");
+    const hasShape = !!esShapesFor((esStepDef(p) || {}).key || "").length;
+    // The screen is already showing what this sentence has to do, in the prompt
+    // above this menu. So this route can never be unavailable: at worst it takes
+    // the student back to the instruction they are looking at. It is only when a
+    // longer authored explanation exists that it opens one.
+    const rows = [
+      // data-esjob says which of the two this row will do, because "an authored
+      // explanation exists here" and "the instruction is already on screen" are
+      // different facts and nothing else on the page distinguishes them.
+      { k: "job", t: "What this sentence has to do", s: "understand the job of this sentence",
+        d: jobAt >= 0 ? "ladder" : "prompt" },
+      { k: "shape", t: "Show a sentence shape", s: hasShape ? "a frame with the parts named" : "no shape written for this stage yet", off: !hasShape },
+      { k: "example", t: "See the same shape used elsewhere", s: exAt < 0 ? "no worked example authored here" : "worked in another topic, not in your question", off: exAt < 0 },
+      { k: "words", t: "Words this sentence needs", s: "terms with an authored meaning" },
+      { k: "reading", t: "Reading for this argument", s: study.ok.length ? study.ok.length + " resource" + (study.ok.length === 1 ? "" : "s") : "no study resource added yet", off: !study.ok.length },
+    ];
+    return `<div class="es-stuck" id="esstuckpop"${ES.ui.stuckOpen ? "" : " hidden"}>
+      <div class="es-stuck-hd"><span class="es-stuck-t">Stuck on this sentence</span>
+        <button type="button" class="es-stuck-x" id="esstuckx" aria-label="Close">${esIcon("close")}</button></div>
+      <p class="es-stuck-s">Five ways in. None of them writes it for you.</p>
+      <div class="es-stuck-list">${rows.map(r => `
+        <button type="button" class="es-stuck-row${r.off ? " off" : ""}" data-esstuck="${r.k}"${r.d ? ` data-esjob="${r.d}"` : ""}${r.off ? " disabled" : ""}>
+          <span class="es-stuck-rt">${esc(r.t)}</span><span class="es-stuck-rs">${esc(r.s)}</span>
+          ${r.off ? "" : '<span class="es-stuck-go">\u203a</span>'}
+        </button>`).join("")}</div>
+    </div>`;
+  }
+  function esBindStuck(host, p) {
+    const b = host.querySelector("#esstuck"), pop = host.querySelector("#esstuckpop");
+    if (!b || !pop) return;
+    // Opening the menu is a disclosure inside one component, so it touches its own
+    // button and its own panel and nothing else. It must not re-render: the writing
+    // screen swaps only its side column on a keeping-place render, so a render here
+    // would leave the panel in whatever state the last full render gave it.
+    const shut = () => {
+      ES.ui.stuckOpen = false; pop.hidden = true; b.setAttribute("aria-expanded", "false");
+      document.removeEventListener("mousedown", away, true);
+      document.removeEventListener("keydown", key, true);
+    };
+    const away = e => { if (!pop.contains(e.target) && !(e.target.closest && e.target.closest("#esstuck"))) shut(); };
+    const key = e => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); shut(); esFocusComposer(); } };
+    const open = () => {
+      ES.ui.stuckOpen = true; pop.hidden = false; b.setAttribute("aria-expanded", "true");
+      document.addEventListener("mousedown", away, true);
+      document.addEventListener("keydown", key, true);
+    };
+    if (ES.ui.stuckOpen) open();
+    b.onclick = () => { ES.ui.stuckOpen ? shut() : open(); };
+    const x = host.querySelector("#esstuckx");
+    if (x) x.onclick = () => { shut(); esFocusComposer(); };
+    host.querySelectorAll("[data-esstuck]").forEach(r => r.onclick = () => {
+      const k = r.dataset.esstuck;
+      shut();
+      // Every one of these is a route into support that already exists. None of
+      // them writes, inserts or rewrites a sentence.
+      if (k === "shape") {
+        // the same in-place disclosure the Show sentence shape control does
+        ES.ui.shapeOpen = true;
+        const box = document.getElementById("esshapes"); if (box) box.hidden = false;
+        const sh = document.getElementById("esshape");
+        if (sh) { sh.setAttribute("aria-expanded", "true"); sh.textContent = "Hide sentence shape"; }
+        esFocusComposer(); return;
+      }
+      if (k === "job") {
+        // A longer authored explanation opens where one exists. Where none does,
+        // the answer is the instruction already on screen, so this points at it
+        // rather than claiming the app does not know what the sentence is for.
+        const at = esRungs(p, esStepDef(p)).findIndex(x2 => /what this part has to do/i.test(x2.label || ""));
+        if (at >= 0) {
+          ES.ui.exampleOnly = false;
+          esSetHelpLevel(p, ES.ui.editBlock, Math.max(esHelpLevel(p, ES.ui.editBlock), at + 1));
+          esRender(); return;
+        }
+        const g = document.querySelector(".es-guide");
+        if (g) {
+          g.scrollIntoView({ block: "nearest" });
+          g.classList.remove("lookhere");
+          void g.offsetWidth;             // restart the animation on a repeat press
+          g.classList.add("lookhere");
+          setTimeout(() => g.classList.remove("lookhere"), 1600);
+        }
+        esFocusComposer(); return;
+      }
+      if (k === "example") {
+        // Exactly what the row promises: the authored cross-topic example, on its
+        // own. Not the ladder, and not the start-you-finish rung above it.
+        ES.ui.exampleOnly = true;
+        esRender(); return;
+      }
+      if (k === "words") { esCaptureContext(p); ES.ui.tool = "vocabulary"; esRenderKeepingPlace(p); return; }
+      if (k === "reading") { ES.ui.studyOpen = true; esStudyMount(p); return; }
+    });
+  }
+
+  function esRailHTML() {
+    const panels = [esMarkingPanel()].filter(Boolean);
+    if (!panels.length) return "";
+    return `<div class="es-rail">${panels.join("")}</div>`;
+  }
+  // ---- THE RESPONSE NAVIGATOR ------------------------------------------------
+  //
+  // Where you are and what is written, and nothing else. Not a second planner:
+  // no arguments, no structure guidance, no evidence. Pressing one moves there.
+  function esRespNavHTML(d) {
+    if (!d || !Array.isArray(d.paras) || d.paras.length < 2) return "";
+    return `<div class="es-resp">
+      <div class="es-resp-lab">Your response</div>
+      <div class="es-resp-row">${d.paras.map((pp, i) => {
+        const w = esWordsOf(pp.text);
+        const on = i === d.pos;
+        return `<button type="button" class="es-resp-b ${on ? "on" : ""}${!on && w ? " done" : ""}" data-esrespgo="${i}">
+          <span class="es-resp-n"><span class="es-resp-dot"></span>${esc(pp.role)}</span>
+          <span class="es-resp-w">${w ? w + " words" : "not started"}</span></button>`;
+      }).join("")}</div>
+    </div>`;
+  }
+  // ---- THE ACTION BAR --------------------------------------------------------
+  //
+  // The primary action names the section it would check, because "check this
+  // paragraph" is wrong on an introduction. Where checking is not available for
+  // the current state there is no primary action rather than a dead one.
+  function esFootBarHTML(d, p, canAsk) {
+    const role = (p && p.role) || "";
+    const can = !!canAsk;
+    const label = ES.pending ? "Checking\u2026"
+      : /introduction/i.test(role) ? "Check introduction"
+      : /conclusion/i.test(role) ? "Check conclusion" : "Check this paragraph";
+    return `<div class="es-footbar"><div class="es-footbar-in">
+      <span class="es-footsave">${esIcon("cloud")}Saved</span>
+      <span class="es-sp"></span>
+      <button type="button" class="es-btn ghost sm" id="esfootoutline">Outline</button>
+      <button type="button" class="es-btn ghost sm" id="esfootpreview">Preview response</button>
+      ${can ? `<button type="button" class="es-btn primary" id="esask" ${ES.pending ? "disabled" : ""}>${esc(label)}</button>` : ""}
+    </div></div>`;
+  }
+  function esBindWorkspace(host, d) {
+    host.querySelectorAll("[data-esrespgo]").forEach(b => b.onclick = () => {
+      d.pos = Number(b.dataset.esrespgo); ES.ui.tool = null; esSaveDraft(); esRender();
+    });
+    // Two controls that both opened the review is the same duplication the bar was
+    // built to remove. Preview response reads the whole response; Outline opens
+    // the section list, which is the outline, and is where the working answer and
+    // the word counts live.
+    const pv = host.querySelector("#esfootpreview");
+    if (pv) pv.onclick = () => { ES.screen = "review"; esRender(); };
+    const ol = host.querySelector("#esfootoutline");
+    if (ol) ol.onclick = () => {
+      const mp = document.getElementById("esmappop"); if (!mp) return;
+      if (!ES.ui.mapPop) mp.click();
+      const aside = document.querySelector(".es-map");
+      if (aside) aside.scrollIntoView({ block: "nearest" });
+    };
+    const mg = host.querySelector("#esmarkfull");
+    if (mg) mg.onclick = () => { ES.screen = "review"; esRender(); };
+  }
+
   function esRenderCoached(host, sc) {
     const d = ES.draft;
     if (d.pos < 0) d.pos = 0; if (d.pos > d.paras.length - 1) d.pos = d.paras.length - 1;
@@ -7111,10 +7579,17 @@
       : step;
     const rungs = esRungs(p, helpStep);
     const shown = Math.min(esHelpLevel(p, editing), rungs.length);
+    // "See the same shape used elsewhere" promises an example, so it shows the
+    // example and nothing else. Reaching it through the ladder would also uncover
+    // the start-you-finish rung below it, which is scaffolding on the sentence the
+    // student is actually writing rather than a structure demonstrated somewhere
+    // else. The deeper ladder still exists; it is asked for separately.
+    const exRung = rungs.find(r => r.kind === "example");
+    const exOnly = !!ES.ui.exampleOnly && !!exRung;
     const blanks = t => esc(t).replace(/\[[^\]]+\]/g, m => `<span class="es-hole">${m.slice(1, -1)}</span>`).replace(/_{3,}/g, '<span class="es-blank">____</span>');
-    const helpRows = rungs.slice(0, shown).map(r => `
+    const helpRows = (exOnly ? [exRung] : rungs.slice(0, shown)).map(r => `
       <div class="es-rung ${r.kind || ""}">
-        <span class="es-rungn">${r.level}</span>
+        ${exOnly ? "" : `<span class="es-rungn">${r.level}</span>`}
         <div class="es-rungbody">
           <div class="es-runglbl">${esc(r.label)}${r.context ? ` <span class="es-rungctx">${esc(r.context)}</span>` : ""}</div>
           <div class="es-rungtext ${r.kind || ""}">${(r.kind === "frame") ? blanks(r.text) : esc(r.text)}</div>
@@ -7123,13 +7598,19 @@
         </div>
       </div>`).join("");
     const next = rungs[shown];
-    const help = !esGuidanceOn() || !rungs.length ? "" : `
-      <div class="es-help">
+    const help = !esGuidanceOn() || !rungs.length || (!shown && !exOnly) ? "" : `
+      <div class="es-help${exOnly ? " exonly" : ""}">
         ${helpRows}
         <div class="es-helpbtns">
-          ${next ? `<button type="button" class="es-helpask ${shown ? "on" : ""}" id="esmorehelp">${esc(shown === 0 ? "Help me" : (rungs[shown - 1].cta || "Show me more"))}</button>`
-                 : `<span class="es-helpend">That is as far as the help goes. The sentence is yours to write.</span>`}
-          ${shown ? `<button type="button" class="es-linkbtn" id="eshidehelp">Hide help</button>` : ""}
+          ${/* The first rung is reached through "I am stuck on this sentence" on the
+                prompt now, so the generic opener is gone from the normal route and
+                what is left is the escalation once help is already open. The
+                example route offers no escalation at all: it is one thing, and it
+                is the thing the menu named. */ ""}
+          ${exOnly ? ""
+            : next ? `<button type="button" class="es-helpask on" id="esmorehelp">${esc(rungs[shown - 1].cta || "Show me more")}</button>`
+                   : `<span class="es-helpend">That is as far as the help goes. The sentence is yours to write.</span>`}
+          <button type="button" class="es-linkbtn" id="eshidehelp">${exOnly ? "Hide the example" : "Hide help"}</button>
         </div>
       </div>`;
 
@@ -7158,9 +7639,13 @@
       ${/* The writing screen owns the host itself, in the columns below, in every
             state including setup. The old flag made the stem render a second one
             whenever the argument picker was showing. */ ""}
-      ${esWritingHead(sc, "Guided", "full attempt", "full", true)}
-      ${esToolbeltHTML(p)}
+      ${esTopBarHTML(sc, "full attempt")}
+      ${/* The question card and the belt are inside the workspace grid, not above
+            it, so the rail can begin beside the question rather than halfway down
+            the page next to the writer. */ ""}
       <div class="es-cols ${ES.ui.tool ? "withdrawer" : ES.ui.contextView ? "withctx" : esDecodeOf(esQuestionDef()) ? "withdec" : ""}">
+        ${esQuestionCardHTML("Guided", true)}
+        ${esToolbeltHTML(p)}
         ${esDecodeHost(esQuestionDef())}
         <div class="es-compose">
           <div class="es-parahead">
@@ -7183,8 +7668,9 @@
               return ""; })()}
             <span class="es-headacts">
               ${(esIsIntro(p) || esIsConcl(p)) ? `<button type="button" class="es-linkbtn es-ctxbtn" id="esctx" data-esctxview="${esIsConcl(p) ? "judgement" : "plan"}" aria-expanded="${ES.ui.contextView ? "true" : "false"}">${esIsConcl(p) ? "Review my arguments" : "View plan"}</button>` : ""}
-              <button type="button" class="es-linkbtn" data-esnbtoggle aria-expanded="${ES.ui.nbOpen ? "true" : "false"}">notebook</button>
-              <button type="button" class="es-mapall" id="esreview">read all</button>
+              ${/* The notebook is a header utility and reading the whole response
+                    is Preview response in the action bar. Both used to be here as
+                    well, which is two controls for one purpose, twice. */ ""}
             </span>
           </div>
           ${inSetup ? "" : chips}
@@ -7196,13 +7682,13 @@
           ${inSetup ? esSetupHTML(p) : ""}
           ${inSetup ? "" : `<div class="es-flow">
             ${esReviewBannerHTML(blocks)}
-            ${blocks.length ? `<p class="es-prose">${prose}</p>` : `<p class="es-prose empty">Your paragraph builds here, one sentence at a time.</p>`}
-            ${editing != null ? help : ""}
-            ${editing != null ? "" : complete ? doneCard : `
-            <div class="es-active">
+            ${/* The prompt is a header for the sentence in hand, so it sits above the
+                  paragraph rather than wrapping the composer. Mint marks that one
+                  strip and stops there: the prose and the editor are on white. */ ""}
+            ${(editing != null || complete) ? "" : `
               <div class="es-guide">
                 <div class="es-guidetop">
-                  <span class="es-guideh">${esc(guide.head)}</span>
+                  <span class="es-guideh">${esc(guide.head)} <i>\u00b7 the sentence you are writing</i></span>
                   <span class="es-steps">
                     <button type="button" class="es-step" id="esbackstep" ${si === 0 && !blocks.length ? "disabled" : ""} title="Back a step" aria-label="Back a step">&lsaquo;</button>
                     <span class="es-stepn">${si + 1}/${steps.length}</span>
@@ -7222,11 +7708,19 @@
                   // state, so it must not re-enter the render pipeline: that is what
                   // made a two-word control feel like the page reloading.
                   const open = !!ES.ui.shapeOpen;
-                  return `<button type="button" class="es-linkbtn es-shapebtn" id="esshape" aria-expanded="${open}">${open ? "Hide sentence shape" : "Show sentence shape"}</button>
+                  return `<div class="es-promptacts">
+                      <button type="button" class="es-linkbtn es-shapebtn" id="esshape" aria-expanded="${open}">${open ? "Hide sentence shape" : "Show sentence shape"}</button>
+                      <button type="button" class="es-linkbtn es-stuckbtn" id="esstuck" aria-expanded="${ES.ui.stuckOpen ? "true" : "false"}">I am stuck on this sentence</button>
+                    </div>
+                    ${esStuckHTML(p)}
                     <div class="es-shapes" id="esshapes"${open ? "" : " hidden"}>${all.map(x =>
                       `<p class="es-shape">${esc(x).replace(/\[[^\]]+\]/g, m => `<span class="es-hole">${m.slice(1, -1)}</span>`).replace(/_{2,}/g, '<span class="es-blank">____</span>')}</p>`).join("")}</div>`;
                 })()}
-              </div>
+              </div>`}
+            ${blocks.length ? `<p class="es-prose">${prose}</p>` : `<p class="es-prose empty">Your paragraph builds here, one sentence at a time.</p>`}
+            ${editing != null ? help : ""}
+            ${editing != null ? "" : complete ? doneCard : `
+            <div class="es-active">
               <textarea id="esline" class="es-input es-linebox" rows="2" placeholder="Type your next sentence..."></textarea>
               ${help}
               <div class="es-linerow">
@@ -7235,17 +7729,22 @@
               </div>
             </div>`}
           </div>`}
-          <div class="es-navrow">
-            ${canAsk ? `<button class="es-btn ghost sm" id="esask" ${ES.pending ? "disabled" : ""}>${askLabel}</button>` : ""}
-
-          </div>
+          ${/* The checking action lives in the action bar now. Rendering it here
+                too put the same button on screen twice, which is the duplication
+                the bar was supposed to remove. */ ""}
+          <div class="es-navrow"></div>
           <div class="es-linehost" data-linehost>${esLinesBlock(p)}</div>
           <div class="es-seqhost">${esSeqNudge(p)}</div>
+          ${esRespNavHTML(d)}
         </div>
+        ${esRailHTML()}
         ${ES.ui.tool ? esDrawerHTML(p) : esRestHTML(p)}
       </div>
-    </div></div></div>`;
+    </div></div></div>
+    ${esFootBarHTML(d, p, canAsk)}`;
 
+    esBindWorkspace(host, d);
+    esBindStuck(host, p);
     esBindWritingHead();
     esBindReasoning(host, p, "#espoint");
     const pt = $("#espoint");
@@ -7346,8 +7845,8 @@
     };
     const ng = $("#esnextguide"); if (ng) ng.onclick = () => { p.step = Math.min(si + 1, steps.length - 1); esSaveDraft(); esRender(); };
     const bs = $("#esbackstep"); if (bs) bs.onclick = () => { p.step = Math.max(0, si - 1); esSaveDraft(); esRender(); };
-    const mh = $("#esmorehelp"); if (mh) mh.onclick = () => { esSetHelpLevel(p, editing, esHelpLevel(p, editing) + 1); esRender(); };
-    const hh = $("#eshidehelp"); if (hh) hh.onclick = () => { esSetHelpLevel(p, editing, 0); esRender(); };
+    const mh = $("#esmorehelp"); if (mh) mh.onclick = () => { ES.ui.exampleOnly = false; esSetHelpLevel(p, editing, esHelpLevel(p, editing) + 1); esRender(); };
+    const hh = $("#eshidehelp"); if (hh) hh.onclick = () => { ES.ui.exampleOnly = false; esSetHelpLevel(p, editing, 0); esRender(); };
 
     // Moving between sections is the response map's job, so the two buttons that
     // duplicated it are gone. These stay bound when something else renders them.
@@ -7384,6 +7883,9 @@
     const mp = $("#esmappop");
     if (mp) mp.onclick = () => {
       ES.ui.mapPop = !ES.ui.mapPop;
+      // what it was opened for, so a render that changes either can close it
+      ES.ui.mapPopAt = ES.draft ? ES.draft.pos : null;
+      ES.ui.mapPopScreen = ES.screen;
       const aside = host.querySelector(".es-map");
       if (aside) aside.hidden = !ES.ui.mapPop;
       mp.setAttribute("aria-expanded", ES.ui.mapPop ? "true" : "false");
@@ -7417,7 +7919,8 @@
       esCaptureContext(p); ES.ui.pointOpen = !ES.ui.pointOpen; esRender(); esRestoreContext();
       const el = $("#espoint"); if (el) el.focus();
     };
-    const rv = $("#esreview"); if (rv) rv.onclick = () => { ES.screen = "review"; esSaveDraft(); esRender(); };
+        // "read all" left the paragraph head: Preview response in the action bar is
+    // the one control that reads the whole response now.
     const mw = $("#esmapwa"); if (mw) mw.onclick = () => { ES.ui.planAll = false; ES.screen = "plan"; esSaveDraft(); esRender(); };
     const ml = $("#esmoreline"); if (ml) ml.onclick = () => { ES.ui.moreLine = true; esRender(); };
     const dn = $("#esdonenext"); if (dn) dn.onclick = () => {
@@ -8297,6 +8800,22 @@
   function esBindWritingHead() {
     esBindDecode();
     const x = $("#esx"); if (x) x.onclick = () => { ES.screen = "setup"; esRender(); };
+    // Change question lands on the chooser with the current question in it, in the
+    // mode it was chosen from, so the student is looking at the list they picked
+    // from rather than at a blank configuration screen.
+    const cq = $("#esqchange"); if (cq) cq.onclick = () => {
+      const d = ES.draft, sc = esView();
+      ES.form = {
+        question: (d && d.question) || "", topic: (d && d.topic) || "",
+        rubric: (d && d.rubric) || "", marks: (d && d.marks) || 20,
+        structure: (d && d.structure) || sc.defaultStructure,
+        paraModel: (d && d.paraModel) || (sc.paraModels[0] || null),
+        questionId: (d && d.questionId) || null,
+        setupMode: (d && d.questionId) ? "practice" : "own",
+        rubricOpen: false,
+      };
+      ES.screen = "setup"; esRender();
+    };
     const sw = $("#esmodeswitch"); if (sw) sw.onclick = () => {
       ES.draft.mode = ES.draft.mode === "full" ? "coached" : "full";
       ES.screen = ES.draft.mode; esSaveDraft(); esRender();

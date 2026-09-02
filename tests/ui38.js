@@ -33,9 +33,9 @@ const OPS_COPY = /are actions a business takes/i;
 const MKT_INTRO = /characteristics of a target market shape the marketing strategies/i;
 
 async function openQuestion(p, qre, bodyIndex) {
-  await p.goto(T); await here(p, '.navtab');
+  await p.goto(T + '?eslegacy=1'); await here(p, '.navtab');
   await p.evaluate(() => localStorage.removeItem('marginal.essay.v1'));
-  await p.goto(T); await here(p, '.navtab');
+  await p.goto(T + '?eslegacy=1'); await here(p, '.navtab');
   await p.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await settled(p);
   await p.selectOption('#essubject', 'business_studies').catch(() => {});

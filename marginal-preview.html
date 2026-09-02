@@ -665,6 +665,65 @@
      Centre, and never part of any grid: opening it cannot move the writing
      because the writing does not know it exists. Paper rather than UI cards,
      because the student is meant to write on it, not administer it. */
+  /* THE STUDY RESOURCES WINDOW. A peer of the notebook and of the tool window:
+     floating, its own host at the end of the body, so opening it cannot move the
+     writing. Below the notebook and above the tool sheet, because a student who
+     opens both is reading and taking notes, and the notes go on top.
+     Marginal's own surface, not a paper metaphor: this is a list of links, not
+     something to write on. */
+  #esstudyhost{position:fixed;inset:0;z-index:250;pointer-events:none}
+  .es-study{position:absolute;right:26px;top:96px;pointer-events:auto;resize:both;overflow:hidden;
+    width:400px;min-width:320px;min-height:220px;max-width:92vw;max-height:82vh;
+    background:var(--card);border:1.5px solid var(--line);border-radius:14px;
+    box-shadow:0 26px 70px rgba(28,40,40,.30);display:flex;flex-direction:column}
+  /* Nothing to list: the window is the size of the sentence it has to say. */
+  .es-study.empty{height:auto;min-height:0;width:auto;max-width:360px;resize:none}
+  .es-sthead{display:flex;align-items:center;gap:9px;padding:11px 13px;border-bottom:1px solid var(--line);flex:0 0 auto;cursor:move}
+  .es-sttitle{font-family:var(--disp);font-weight:600;font-size:14.5px;color:var(--ink);flex:1}
+  .es-stbody{flex:1 1 auto;min-height:0;overflow:auto;padding:13px}
+  .es-stsec + .es-stsec{margin-top:16px;padding-top:14px;border-top:1px solid var(--line-2,#EFF4F4)}
+  .es-sthd{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--ink);margin-bottom:3px}
+  .es-sthelp{font-size:12.5px;color:var(--ink-2);font-weight:700;margin:0 0 10px}
+  /* One row per resource: what it is, where it lives, and the link out. The
+     open control is an anchor and not a button, so it behaves like a link:
+     middle click, open in new window, copy address. */
+  /* The name of the resource is what the student is choosing between, so it
+     carries the weight. What kind of file it is, and the actions, sit under it
+     quietly: three things at the same weight is a list with no shape. */
+  .es-stres{display:flex;align-items:center;gap:10px;padding:8px 10px;margin-bottom:6px;
+    border:1px solid var(--line);border-radius:11px;background:var(--card)}
+  .es-stres:hover{border-color:var(--green);background:var(--green-soft)}
+  .es-stico{flex:none;width:26px;height:26px;display:grid;place-items:center;border-radius:7px;
+    background:var(--green-soft);color:var(--green-dk)}
+  .es-sttext{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+  .es-stlabel{font-family:var(--disp);font-weight:600;font-size:14.5px;color:var(--ink);line-height:1.25}
+  .es-stsub{font-size:11px;color:var(--ink-3);font-weight:700;letter-spacing:.01em}
+  .es-stopen{flex:none;color:var(--ink-3);padding:5px;border-radius:8px;display:grid;place-items:center;text-decoration:none}
+  .es-stopen:hover{background:var(--card);color:var(--green-dk)}
+  /* Secondary to the link out, which is the guaranteed route, but a real action
+     and drawn like one. It appears only where embedding can actually work, so a
+     visible preview control is always a live one. */
+  .es-stprev{flex:none;background:none;border:1px solid var(--line);cursor:pointer;font:inherit;
+    font-size:11.5px;font-weight:800;color:var(--green-dk);padding:4px 9px;border-radius:8px;white-space:nowrap}
+  .es-stprev:hover{background:var(--green-soft);border-color:var(--green)}
+  /* No argument chosen yet. It says what would reveal more rather than showing
+     an empty heading that looks like something failed. */
+  .es-stnote{display:flex;gap:9px;align-items:flex-start;margin-top:14px;padding:11px 12px;
+    border:1px solid var(--line);border-radius:11px;background:var(--bg);
+    font-size:12.5px;font-weight:700;color:var(--ink-2)}
+  .es-stnote .es-ico{flex:none;color:var(--ink-3)}
+  /* Tertiary. Opening six tabs at once is occasionally useful and never the
+     thing a student should be led towards. */
+  .es-stfoot{flex:0 0 auto;padding:8px 13px;border-top:1px solid var(--line)}
+  .es-stall{font-size:12px;color:var(--ink-2);text-decoration-color:var(--line)}
+  .es-stall:hover{color:var(--green-dk)}
+  .es-stprevwrap{display:flex;flex-direction:column;gap:9px;height:100%}
+  .es-stprevhead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .es-stframe{flex:1 1 auto;min-height:220px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg)}
+  .es-stframe iframe{width:100%;height:100%;min-height:220px;border:0;display:block}
+  .es-stfall{font-size:12.5px;font-weight:700;color:var(--ink-2);margin:0;padding:12px;
+    border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+
   #esnbhost{position:fixed;inset:0;z-index:300;pointer-events:none}
   .es-nb{position:absolute;right:26px;bottom:26px;pointer-events:auto;resize:both;overflow:hidden;
     min-width:300px;min-height:280px;max-width:92vw;max-height:88vh;
@@ -1752,6 +1811,320 @@
   .exam-ressech{font-family:var(--disp);font-weight:700;color:var(--green-dk);display:flex;justify-content:space-between;margin-bottom:6px}
   .exam-resq{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--ink-2);padding:3px 0}
   .exam-resm{font-weight:800;color:var(--ink);white-space:nowrap}
+
+  /* ==========================================================================
+     PR B — THE WRITING WORKSPACE
+     A visual system for the essay page, scoped to .es-scrim so the flashcards
+     app around it is untouched. Tokens are sampled from the approved mockup
+     rather than inherited: the page recedes to near-white, white surfaces do
+     the work, text is charcoal rather than grey-green, and green is used for
+     state and primary action instead of as an outline around everything.
+     ========================================================================== */
+  .es-scrim{
+    --page:#F6F9F9; --surface:#FFFFFF; --sunk:#FAFCFC;
+    --e-ink:#18272D; --e-ink2:#63787F; --e-ink3:#95A7AD;
+    --e-green:#12B27A; --e-green-dk:#0E9765; --e-mint:#E7F8F0; --e-mint2:#F2FBF7;
+    --e-line:#E8EEEF; --e-line2:#F1F6F6;
+    --e-shadow:0 1px 2px rgba(18,48,58,.04), 0 10px 28px rgba(18,48,58,.05);
+    --main:1088px; --rail:330px; --e-gap:22px;
+    background:var(--page);color:var(--e-ink)
+  }
+  /* The workspace does its own centring, from the viewport, so the legacy shell
+     cap must not also constrain it: at 1920 it pinned the whole page to a
+     1480px box at x=20 while the offsets below were computing for a centred one. */
+  .es-scrim .es-shell{max-width:none;width:100%}
+  .es-scrim .es-wrap{padding-bottom:84px;background:transparent}
+  /* The canvas used to be a white card. The cards are the cards now, and the
+     page behind them is the page. */
+  .es-scrim .es-wrap.es-canvas,.es-scrim .es-cols{background:transparent;box-shadow:none;border:0}
+  .es-scrim .es-wrap > *{max-width:calc(var(--main) + var(--rail) + var(--e-gap))}
+  .es-scrim .es-wrap > .es-top{max-width:none}
+  /* The question and the belt belong to the writing column, not to the whole
+     workspace. Centred at workspace width they spanned 1440 above a 1088 writer,
+     which is the loose, unrelated-widths look the redesign is meant to remove.
+     They are capped at the writer's width and pushed to the workspace's own left
+     edge, the same offset the sticky header pads to. */
+  /* On the plan, review and full-attempt screens the question card is still a
+     child of the wrap, so it is aligned to the writing column by hand. On the
+     writing screen it is a grid item and the grid does this. */
+  .es-scrim .es-wrap > .es-qbar, .es-scrim .es-wrap > .es-belt{
+    max-width:var(--main);
+    margin-left:max(clamp(16px,2.4vw,26px), calc((100% - (var(--main) + var(--rail) + var(--e-gap)))/2));
+    margin-right:auto}
+
+  /* ---- header: brand left, utilities right ---- */
+  .es-scrim .es-wrap > .es-top{background:var(--surface);border-bottom:1px solid var(--e-line);
+    padding:0 max(clamp(16px,2.4vw,26px),calc((100% - (var(--main) + var(--rail) + var(--e-gap)))/2));
+    margin-bottom:22px;height:62px;align-items:center}
+  .es-scrim .es-brand{font-size:16.5px;color:var(--e-ink);gap:12px}
+  .es-scrim .es-mark{width:32px;height:32px;border-radius:10px;background:var(--e-green);color:#fff;
+    display:grid;place-items:center;font-family:var(--disp);font-weight:600;font-size:17px;
+    box-shadow:0 2px 0 var(--e-green-dk)}
+  .es-scrim .es-subj{font-size:14.5px;font-weight:500;color:var(--e-ink2)}
+  .es-scrim .es-topbtns{gap:8px}
+  .es-util{display:inline-flex;align-items:center;gap:8px;background:var(--surface);
+    border:1px solid var(--e-line);border-radius:11px;padding:8px 14px;font-family:var(--body);
+    font-size:13.5px;font-weight:600;color:var(--e-ink);cursor:pointer}
+  .es-util .es-ico{width:17px;height:17px;color:var(--e-ink2)}
+  .es-util:hover{border-color:var(--e-green);color:var(--e-green-dk)}
+  .es-util:hover .es-ico{color:var(--e-green-dk)}
+  .es-util[aria-expanded="true"]{background:var(--e-mint);border-color:var(--e-green);color:var(--e-green-dk)}
+  .es-util[aria-expanded="true"] .es-ico{color:var(--e-green-dk)}
+  .es-scrim .es-linkbtn,.es-scrim .es-x{color:var(--e-ink2);font-family:var(--body);font-weight:600;
+    font-size:13.5px;text-decoration:none}
+  .es-scrim .es-linkbtn:hover,.es-scrim .es-x:hover{color:var(--e-ink);background:none}
+
+  /* ---- question card ---- */
+  .es-scrim .es-qbar{background:var(--surface);border:1px solid var(--e-line);border-left:1px solid var(--e-line);
+    border-radius:16px;box-shadow:var(--e-shadow);padding:17px 22px;margin-bottom:16px;display:block}
+  .es-scrim .es-restag{display:inline-block;background:var(--e-mint);color:var(--e-green-dk);border-radius:8px;
+    padding:4px 10px;font-size:12px;font-weight:700;margin-bottom:9px}
+  .es-scrim .es-qbar-q{font-family:var(--disp);font-weight:500;font-size:19px;line-height:1.4;color:var(--e-ink)}
+  .es-qmetarow{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .es-scrim .es-qchange{font-family:var(--body);font-size:12.5px;font-weight:600;color:var(--e-green-dk);
+    margin-top:10px;text-decoration:none;padding:0}
+  .es-scrim .es-qchange:hover{text-decoration:underline;text-underline-offset:3px;color:var(--e-green-dk)}
+  .es-qmeta{display:flex;align-items:center;gap:9px;margin-top:10px;font-size:12.5px;color:var(--e-ink3);font-weight:500}
+  .es-qmeta b{color:var(--e-ink2);font-weight:600}
+  .es-qmeta i{font-style:normal;color:var(--e-line)}
+  .es-scrim .es-qchip{background:var(--surface);border:1px solid var(--e-line);color:var(--e-ink);
+    font-family:var(--body);font-weight:600;font-size:12.5px;border-radius:9px}
+  .es-scrim .es-qchip:hover{border-color:var(--e-green);color:var(--e-green-dk);background:var(--e-mint2)}
+
+  /* ---- writing-support belt: one control group, not four pills ---- */
+  /* One support surface the width of the writing column, not a shrink-wrapped
+     island: it reads as the same document as the question above and the writer
+     below because all three share an edge. */
+  .es-scrim .es-belt{background:var(--surface);border:1px solid var(--e-line);border-radius:16px;
+    box-shadow:var(--e-shadow);padding:5px;gap:2px;margin-bottom:16px;flex-wrap:nowrap;width:auto}
+  .es-scrim .es-belt-b{background:none;border:none;border-radius:11px;padding:10px 16px;
+    font-family:var(--body);font-size:13.5px;font-weight:600;color:var(--e-ink2);gap:8px}
+  .es-scrim .es-belt-b .es-ico{color:var(--e-ink3)}
+  .es-scrim .es-belt-b:hover:not([disabled]){background:var(--sunk);color:var(--e-ink)}
+  .es-scrim .es-belt-b.on{background:var(--e-mint);color:var(--e-green-dk)}
+  .es-scrim .es-belt-b.on .es-ico{color:var(--e-green-dk)}
+
+  /* ---- the workspace grid ----
+     Question, belt, decode box and writer are one column; the rail is the other
+     and spans all four rows, so it begins beside the question rather than
+     appearing halfway down the page next to the writer. That empty upper-right
+     region was the last large piece of dead space on a wide screen. */
+  .es-scrim .es-cols{grid-template-columns:minmax(0,var(--main)) var(--rail);
+    grid-template-rows:auto auto auto auto;gap:0 var(--e-gap);
+    justify-content:center;margin-top:0}
+  .es-scrim .es-cols > .es-qbar{grid-column:1;grid-row:1;margin:0 0 16px;max-width:none}
+  .es-scrim .es-cols > .es-belt{grid-column:1;grid-row:2;margin:0 0 16px;max-width:none}
+  .es-scrim .es-cols > .es-dechost{grid-column:1;grid-row:3}
+  .es-scrim .es-cols > .es-compose{grid-column:1;grid-row:4}
+  .es-scrim .es-cols > .es-rail{grid-column:2;grid-row:1 / -1;align-self:start}
+  /* the paragraph panel, when it has something in it, belongs under the rail */
+  .es-scrim .es-cols > .es-rest{grid-column:2;grid-row:4;align-self:start}
+  .es-rail{display:flex;flex-direction:column;gap:14px;position:sticky;top:78px;min-width:0}
+
+  /* ---- the writer ----
+     One surface, not four. The white card is the writer; everything inside it
+     sits directly on that white. Mint appears exactly once, on the strip that
+     names the sentence being written, and nowhere else: it identifies the task,
+     it is not the background of the composer. */
+  .es-scrim .es-compose{background:var(--surface);border:1px solid var(--e-line);border-radius:16px;
+    box-shadow:var(--e-shadow);padding:18px 22px 20px}
+  .es-scrim .es-parahead{margin:0 0 4px}
+  .es-scrim .es-pararole{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--e-ink)}
+  .es-scrim .es-parameta,.es-scrim .es-headacts{color:var(--e-ink3);font-weight:500;font-size:12.5px}
+  /* the flow used to be a bordered card inside the writer card, holding another
+     tinted card. Both inner surfaces are gone. */
+  /* A legacy rule caps every direct child of the writer at 940px and centres it.
+     Inside a 1088px card that reads as an accident, not a measure: it left 74px
+     of white on both sides of the prompt and the editor while the card edge sat
+     somewhere else. The reading measure belongs to the accepted prose, which
+     carries its own, and to nothing else in here. */
+  .es-scrim .es-compose > *{max-width:none;margin-left:0;margin-right:0}
+  .es-scrim .es-flow{background:transparent;border:0;border-radius:0;padding:0;margin-top:12px}
+  .es-scrim .es-active{background:transparent;border:0;border-radius:0;padding:0;margin-top:16px}
+
+  /* the current-sentence prompt: the one mint element on the page */
+  .es-scrim .es-guide{position:relative;background:var(--e-mint);border:0;border-radius:12px;
+    padding:11px 15px 12px;margin:0 0 16px}
+  .es-scrim .es-guidetop{align-items:flex-start}
+  .es-scrim .es-guideh{font-family:var(--body);font-size:10.5px;font-weight:700;letter-spacing:.09em;
+    text-transform:uppercase;color:var(--e-green-dk);flex:1;line-height:1.5}
+  .es-scrim .es-guideh i{font-style:normal;color:#4E8F76;font-weight:600}
+  .es-scrim .es-guidejob{font-family:var(--disp);font-weight:500;font-size:15.5px;line-height:1.5;
+    color:var(--e-ink);margin-top:4px}
+  .es-scrim .es-guidetop .es-steps{display:inline-flex;align-items:center;gap:4px;flex:none;margin-top:-1px}
+  .es-scrim .es-guidetop .es-step{background:none;border:0;color:var(--e-green-dk);font-size:15px;
+    line-height:1;padding:0 3px;cursor:pointer}
+  .es-scrim .es-guidetop .es-step[disabled]{opacity:.3;cursor:default}
+  .es-scrim .es-guidetop .es-stepn{font-size:11px;font-weight:700;color:#4E8F76;letter-spacing:.03em}
+  .es-scrim .es-active > .es-steplbl,.es-scrim .es-slotlbl{font-size:10.5px;font-weight:700;letter-spacing:.09em;
+    text-transform:uppercase;color:var(--e-green-dk)}
+  .es-scrim .es-active h3,.es-scrim .es-stepjob{font-family:var(--disp);font-weight:500;font-size:15.5px;
+    color:var(--e-ink);line-height:1.45;border:none;padding:0;margin:5px 0 0}
+
+  /* The empty evidence chip and edit my point are both live controls, and both
+     were drawn at the weight of a disabled one. A control that does something
+     looks like it does something. */
+  .es-scrim .es-chips{gap:8px;margin:12px 0 0}
+  .es-scrim .es-chip-ev.empty,.es-scrim .es-chip-more{background:var(--surface);border:1px solid var(--e-line);
+    color:var(--e-ink2);font-family:var(--body);font-weight:600;font-size:12.5px;border-radius:10px;
+    padding:7px 12px;opacity:1}
+  .es-scrim .es-chip-ev.empty .es-ico{color:var(--e-ink2)}
+  .es-scrim .es-chip-ev.empty:hover,.es-scrim .es-chip-more:hover{border-color:var(--e-green);
+    color:var(--e-green-dk);background:var(--e-mint2)}
+  .es-scrim .es-chip-arg{background:var(--e-mint);border:1px solid transparent;color:var(--e-ink);
+    font-weight:600;font-size:12.5px;border-radius:10px;padding:7px 12px}
+  .es-scrim .es-chip-arg .es-ico{color:var(--e-green-dk)}
+  .es-scrim .es-chip-arg:hover{border-color:var(--e-green)}
+
+  /* When the menu says "what this sentence has to do" and the authored answer is
+     the instruction already on screen, this is what points at it. */
+  @keyframes es-lookhere{0%{box-shadow:0 0 0 0 rgba(18,178,122,0)}
+    18%{box-shadow:0 0 0 4px rgba(18,178,122,.34)}100%{box-shadow:0 0 0 0 rgba(18,178,122,0)}}
+  .es-scrim .es-guide.lookhere{animation:es-lookhere 1.5s ease-out}
+
+  /* ---- the help ladder, in the page's own language ---- */
+  .es-scrim .es-help{margin-top:14px}
+  .es-scrim .es-rung{background:var(--surface);border:1px solid var(--e-line);border-radius:12px;
+    padding:12px 15px;margin-bottom:8px;gap:12px}
+  .es-scrim .es-rungn{background:var(--e-mint);color:var(--e-green-dk);font-weight:700}
+  .es-scrim .es-runglbl{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--e-ink3)}
+  .es-scrim .es-rungctx{font-weight:600;letter-spacing:0;text-transform:none;color:var(--e-ink3)}
+  .es-scrim .es-rungtext{font-size:14.5px;line-height:1.7;color:var(--e-ink);font-weight:400;margin-top:4px;max-width:74ch}
+  .es-scrim .es-rungnote{font-size:12.5px;font-weight:500;color:var(--e-ink2);line-height:1.55;margin-top:7px;max-width:74ch}
+  .es-scrim .es-helpend{font-size:12.5px;font-weight:500;color:var(--e-ink3)}
+  /* the example route shows one thing, and it is the one thing the menu named:
+     no rung number, because there is no ladder of five on screen to number it in */
+  .es-scrim .es-rung.example{border-color:var(--e-line)}
+  .es-scrim .es-help.exonly .es-rung{border-left:3px solid var(--e-green);padding-left:15px}
+
+  /* local sentence actions, side by side under the prompt */
+  .es-promptacts{display:flex;align-items:center;gap:18px;margin-top:9px;flex-wrap:wrap}
+  .es-scrim .es-shapebtn,.es-scrim .es-stuckbtn{font-family:var(--body);font-size:12.5px;font-weight:600;
+    color:var(--e-green-dk);text-decoration:none;padding:0}
+  .es-scrim .es-shapebtn:hover,.es-scrim .es-stuckbtn:hover{text-decoration:underline;text-underline-offset:3px}
+  .es-scrim .es-shapes{margin-top:10px;gap:6px}
+  .es-scrim .es-shape{background:var(--surface);border:1px solid #D7EEE3;border-radius:9px;
+    padding:9px 12px;font-size:13px;line-height:1.6;color:var(--e-ink2)}
+
+  /* the stuck helper: a router over help that already exists, anchored to the
+     sentence it is about. It floats, so opening it does not move the editor. */
+  .es-stuck{position:absolute;left:12px;top:100%;margin-top:6px;width:min(430px,calc(100% - 24px));
+    z-index:60;background:var(--surface);border:1px solid var(--e-line);border-radius:14px;
+    box-shadow:0 2px 6px rgba(18,48,58,.06), 0 18px 40px rgba(18,48,58,.14);padding:14px 15px 12px;
+    /* the action bar is fixed, so on a short viewport the last row would sit
+       under it; the menu scrolls inside itself rather than behind the bar */
+    max-height:min(420px, calc(100vh - 260px));overflow:auto}
+  .es-stuck-hd{display:flex;align-items:center;gap:10px}
+  .es-stuck-t{font-family:var(--disp);font-weight:600;font-size:14.5px;color:var(--e-ink);flex:1}
+  .es-stuck-x{background:none;border:0;color:var(--e-ink3);cursor:pointer;padding:2px;line-height:0}
+  .es-stuck-x:hover{color:var(--e-ink)}
+  .es-stuck-x svg,.es-stuck-x .es-ico{width:15px;height:15px}
+  .es-stuck-s{font-size:12.5px;color:var(--e-ink2);margin:4px 0 11px;font-weight:500;line-height:1.5}
+  .es-stuck-list{display:flex;flex-direction:column;gap:5px}
+  /* Title over caption, not beside it: side by side, three of the five captions
+     wrapped onto three lines each and the menu stopped scanning as a list. */
+  .es-stuck-row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:0 10px;width:100%;
+    text-align:left;background:none;border:1px solid transparent;border-radius:10px;padding:8px 11px;
+    font-family:var(--body);cursor:pointer}
+  .es-stuck-row:hover:not([disabled]){background:var(--e-mint2);border-color:#D7EEE3}
+  .es-stuck-rt{grid-column:1;font-size:13px;font-weight:600;color:var(--e-ink);line-height:1.35}
+  .es-stuck-rs{grid-column:1;font-size:11.5px;color:var(--e-ink3);font-weight:500;line-height:1.4;margin-top:2px}
+  .es-stuck-go{grid-column:2;grid-row:1 / span 2;color:var(--e-green-dk);font-size:16px;line-height:1}
+  /* a row with nothing behind it stays in the menu and says so, because a menu
+     that changes length teaches nothing about what help exists */
+  .es-stuck-row.off{cursor:default}
+  .es-stuck-row.off .es-stuck-rt{color:var(--e-ink3)}
+
+  /* accepted prose: on white, at a reading measure, quieter than the task */
+  .es-scrim .es-prose{font-size:15.5px;line-height:1.8;color:#3D525A;font-weight:400;max-width:72ch;margin:0}
+  .es-scrim .es-linehost{margin-top:14px}
+  .es-scrim .es-line,.es-scrim .es-para-text{font-size:14.5px;line-height:1.7;color:var(--e-ink2);
+    font-weight:400;max-width:74ch}
+  /* the composer: calm, with the accent kept for focus */
+  .es-scrim .es-linebox{border:1px solid var(--e-line);border-radius:13px;background:var(--surface);
+    font-size:15px;line-height:1.7;color:var(--e-ink);padding:15px 17px;max-width:none}
+  .es-scrim .es-linebox:focus{border-color:var(--e-green);box-shadow:0 0 0 3px var(--e-mint);outline:none}
+  .es-scrim .es-linebox::placeholder{color:var(--e-ink3)}
+  /* One sentence, not an essay box. Two hundred pixels of empty field under a
+     prompt that asks for a single sentence told the student the wrong thing
+     about how much to write, and it did it before they typed anything. */
+  .es-scrim .es-linebox{min-height:92px}
+  .es-scrim .es-linerow{margin-top:12px;gap:14px}
+  /* nothing to add yet reads as nothing to add yet, rather than as a live button */
+  .es-scrim .es-btn.primary[disabled]{background:var(--e-mint);color:#6FAF94;box-shadow:none;cursor:default}
+  .es-scrim .es-btn.primary{background:var(--e-green);box-shadow:0 2px 0 var(--e-green-dk);border-radius:11px;
+    font-family:var(--body);font-weight:600;font-size:13.5px;padding:11px 20px}
+  .es-scrim .es-btn.ghost,.es-scrim .es-btn.sm{border:1px solid var(--e-line);background:var(--surface);
+    color:var(--e-ink);border-radius:11px;font-family:var(--body);font-weight:600}
+  .es-scrim .es-btn.ghost:hover{border-color:var(--e-green);color:var(--e-green-dk)}
+
+  /* ---- rail panel ---- */
+  .es-rp{background:var(--surface);border:1px solid var(--e-line);border-radius:16px;
+    box-shadow:var(--e-shadow);padding:16px 18px}
+  .es-rp-hd{display:flex;align-items:center;gap:9px;margin-bottom:11px}
+  .es-rp-ico{width:28px;height:28px;border-radius:9px;background:var(--e-mint);color:var(--e-green-dk);
+    display:grid;place-items:center;flex:none}
+  .es-rp-t{font-family:var(--disp);font-weight:600;font-size:14.5px;color:var(--e-ink)}
+  .es-rp-prov{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--e-ink3)}
+  .es-rp-lead{font-size:13px;color:var(--e-ink2);line-height:1.6;margin:0 0 13px;font-weight:500}
+  .es-rp-list{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-direction:column;gap:9px}
+  .es-rp-list li{display:flex;gap:9px;font-size:12.5px;color:var(--e-ink2);font-weight:500;line-height:1.45}
+  .es-rp-ck{width:16px;height:16px;border-radius:5px;background:var(--e-mint);color:var(--e-green-dk);
+    display:grid;place-items:center;font-size:10px;flex:none;margin-top:1px}
+  .es-rp-btn{display:block;width:100%;background:var(--surface);border:1px solid var(--e-line);border-radius:10px;
+    padding:9px;font-family:var(--body);font-size:13px;font-weight:600;color:var(--e-ink);cursor:pointer}
+  .es-rp-btn:hover{border-color:var(--e-green);color:var(--e-green-dk)}
+
+  /* ---- response status navigator: where you are, not a second planner ---- */
+  .es-resp{background:var(--surface);border:1px solid var(--e-line);border-radius:16px;
+    box-shadow:var(--e-shadow);padding:15px 20px 17px;margin-top:16px}
+  .es-resp-lab{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--e-ink3)}
+  .es-resp-row{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
+  .es-resp-b{flex:1 1 120px;min-width:0;text-align:left;background:var(--surface);border:1px solid var(--e-line);
+    border-radius:12px;padding:10px 12px;font-family:var(--body);cursor:pointer}
+  .es-resp-b:hover{border-color:var(--e-green)}
+  .es-resp-b.on{border-color:var(--e-green);background:var(--e-mint2)}
+  .es-resp-n{font-family:var(--disp);font-weight:600;font-size:13.5px;color:var(--e-ink);display:flex;align-items:center;gap:7px}
+  .es-resp-dot{width:7px;height:7px;border-radius:99px;background:var(--e-line);flex:none}
+  .es-resp-b.on .es-resp-dot{background:var(--e-green)}
+  .es-resp-b.done .es-resp-dot{background:var(--e-green-dk)}
+  .es-resp-w{font-size:11.5px;color:var(--e-ink3);font-weight:600;margin-top:6px}
+
+  /* ---- sticky action bar: one line, save status quietest ---- */
+  .es-footbar{position:fixed;left:0;right:0;bottom:0;z-index:140;background:var(--surface);
+    border-top:1px solid var(--e-line)}
+  .es-footbar-in{max-width:calc(var(--main) + var(--rail) + var(--e-gap));margin:0 auto;
+    padding:8px clamp(16px,2.4vw,26px);display:flex;align-items:center;gap:10px}
+  .es-footsave{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--e-ink3);font-weight:500}
+  .es-footsave .es-ico{width:15px;height:15px}
+  .es-footbar .es-sp{flex:1}
+  .es-footbar .es-btn{padding:7px 13px;font-size:13px}
+  .es-footbar .es-btn.primary{padding:8px 16px}
+
+  /* ---- responsive ---- */
+  @media(max-width:1700px){ .es-scrim{--main:1040px;--rail:300px} }
+  @media(max-width:1499px){ .es-scrim{--main:958px;--rail:286px;--e-gap:18px} }
+  /* The rail goes before the writing does. Everything in it stays reachable
+     through Learn and the marking guide control, so collapsing it loses nothing. */
+  @media(max-width:1399px){
+    /* The rail is gone, so it must stop contributing width to the offset the
+       question and belt are aligned by. */
+    /* The writer keeps the size it had at the tier above: dropping the rail
+       takes the rail away, it does not make the writing column grow as the
+       window gets smaller. The percentage keeps it from overflowing further
+       down, where there is no more gutter to give. The viewport unit is
+       deliberate: a percentage would re-resolve against whichever box reads the
+       variable, and inside .es-cols that box is already this width, so the
+       column shrank by the gutter a second time. */
+    .es-scrim{--main:min(958px, calc(100vw - 110px));--rail:0px;--e-gap:0px}
+    .es-scrim .es-cols{grid-template-columns:minmax(0,var(--main))}
+    .es-scrim .es-cols > .es-rest{grid-column:1;grid-row:auto}
+    .es-rail{display:none}
+    .es-scrim .es-guide{padding:10px 13px 11px}
+    .es-scrim .es-compose{padding:16px 18px 18px}
+    .es-stuck{width:min(400px,calc(100% - 20px))}
+  }
 </style>
 </head>
 <body>
@@ -3891,6 +4264,38 @@ window.CONTENT.charts = {
 // Loaded as window.ESSAY before app.js. Economics (window.CONTENT) is untouched.
 // =============================================================================
 window.ESSAY = {
+  // ---------------------------------------------------------------------------
+  // STUDY RESOURCES
+  //
+  // Reading a student can be sent to, held once and referenced by id, so a
+  // resource used by four questions is described in one place and changing its
+  // link changes it everywhere.
+  //
+  // Deliberately NOT textbook-specific. A resource is a label and a URL that
+  // somebody authored: a chapter in a school's licensed copy on Drive, a page in
+  // a learning management system, a set of notes written for this app later. The
+  // field is `studyRefs` and not `textbookPdf` for that reason.
+  //
+  // NOTHING IS AUTHORED HERE YET, and nothing may be invented. A link nobody has
+  // given us is not a resource, and a page number nobody has checked is not a
+  // reference. The map is empty until real links are supplied, and every surface
+  // that reads it is written to say so plainly rather than to show a
+  // placeholder. See docs/study-resources.md.
+  //
+  //   resources: {
+  //     "business.operations.strategies": {
+  //       id: "business.operations.strategies",
+  //       label: "Operations strategies",
+  //       url: "https://drive.google.com/file/d/…/view",
+  //       provider: "Google Drive",          // shown under the label
+  //       note: "Chapter 6",                 // optional, authored, never derived
+  //     },
+  //   }
+  //
+  // Questions reference these with studyRefs: ["business.operations.strategies"].
+  // Pathways and areas may reference their own, which is what makes the "for
+  // your argument" section of the Study window possible without inference.
+  resources: {},
   // Subjects keyed by the value the client subject map resolves a class code to.
   // Only ancient_history ships today; the shape is ready for more.
   subjects: {
@@ -10717,8 +11122,12 @@ window.BUSCONTENT = {
   function esStructureLabel(key) { return esStructureDef(key).label; }
 
   const ES = { subject: null, code: "", demo: false, screen: "setup", draft: null, list: [], form: null, pending: false,
-    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, planAll: false, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false, tryPick: null, lessonMore: false, lessonJump: null },  // transient guided-view state, reset on paragraph change
+    ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, planAll: false, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false, tryPick: null, lessonMore: false, lessonJump: null,
+      studyOpen: false, studyPreview: null, studyPos: null, stuckOpen: false },  // transient guided-view state, reset on paragraph change
     hint: { open: false, tab: "know" },          // study hints: persists across paragraphs on purpose
+    // The Learning Centre is off the student route. This is the only way back to
+    // it, for the suites that keep its teaching proven until it is rebuilt.
+    legacyCentre: /[?&]eslegacy=1/.test(String(location.search || "")),
     quiz: { revealed: false, peeked: false, attempt: "", result: null } };
   const ES_KEY = "marginal.essay.v1";
   function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, planAll: false, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false, tryPick: null, lessonMore: false, lessonJump: null }; }
@@ -10957,6 +11366,194 @@ window.BUSCONTENT = {
     }
   }
 
+  // ---- STUDY RESOURCES ------------------------------------------------------
+  //
+  // Reading, not teaching. The Learning Centre tried to teach inside the app and
+  // is out of the student route while it is rebuilt; this sends the student to
+  // the material their class already has, at the point they need it, and gets
+  // out of the way.
+  //
+  // Everything it shows is authored. A resource is a label somebody wrote and a
+  // link somebody supplied. Nothing is derived from the question's prose, no
+  // page number is inferred, and where nothing has been authored the window says
+  // so rather than showing a plausible-looking row.
+  //
+  // A peer of the notebook: its own host at the end of <body>, floating over the
+  // essay, so opening it cannot move the writing.
+  const ES_STUDY_POS = "marginal.study.pos";
+  function esStudyMap() { return (window.ESSAY && window.ESSAY.resources) || {}; }
+  // Ids in, records out, and the ids that resolved to nothing kept separately.
+  // A missing id is a fault in the content, not something to hide from the
+  // person who could fix it, so it is counted and reported rather than skipped.
+  function esStudyResolve(ids) {
+    const map = esStudyMap(), ok = [], missing = [];
+    (ids || []).forEach(id => { const r = map[id]; if (r && r.url) ok.push(r); else missing.push(id); });
+    return { ok: ok, missing: missing };
+  }
+  function esStudyQuestionRefs() { const q = esQuestionDef(); return (q && q.studyRefs) || []; }
+  // What the student's CHOSEN argument reads for. Only the pathway they took,
+  // and the area it belongs to where that area authors its own: never the whole
+  // question's set relabelled as though it were about their argument.
+  function esStudyArgumentRefs(p) {
+    const path = esPathway(p); if (!path) return [];
+    const q = esQuestionDef();
+    const area = (q && q.areas && path.area && q.areas[path.area]) || null;
+    return (path.studyRefs || []).concat((area && area.studyRefs) || []);
+  }
+  // Offered only where embedding has a chance of working: a Drive file link,
+  // which has a /preview form, or a resource whose author said it embeds. A
+  // control that is usually going to fail is worse than no control, so
+  // everything else shows the link out and nothing else.
+  function esStudyEmbeddable(r) {
+    if (r.embeddable === true) return true;
+    if (r.embeddable === false) return false;
+    return /^https:\/\/drive\.google\.com\/file\/d\//.test(String(r.url || ""));
+  }
+  function esStudyRow(r) {
+    const sub = [r.provider, r.note].filter(Boolean).join(" · ");
+    return '<div class="es-stres">' +
+      '<span class="es-stico">' + esIcon("book") + '</span>' +
+      '<span class="es-sttext"><span class="es-stlabel">' + esc(r.label || r.id) + '</span>' +
+      (sub ? '<span class="es-stsub">' + esc(sub) + '</span>' : '') + '</span>' +
+      // The guaranteed route. Everything else in this window is an enhancement
+      // on top of a plain link that works whatever the host allows.
+      '<a class="es-stopen" href="' + esc(r.url) + '" target="_blank" rel="noopener noreferrer"' +
+      ' data-esstopen="' + esc(r.id) + '" title="Open in a new tab">' + esIcon("open") + '</a>' +
+      (esStudyEmbeddable(r) ? '<button type="button" class="es-stprev" data-esstprev="' + esc(r.id) + '">Preview</button>' : '') +
+      '</div>';
+  }
+  function esStudyHTML(p) {
+    const qr = esStudyResolve(esStudyQuestionRefs());
+    const ar = esStudyResolve(esStudyArgumentRefs(p));
+    const path = esPathway(p);
+    const where = p && p.role ? p.role : "";
+    const prev = ES.ui.studyPreview ? esStudyMap()[ES.ui.studyPreview] : null;
+    const pos = ES.ui.studyPos;
+    const box = pos || esStudyBox();
+    const style = ' style="left:' + box.left + 'px;top:' + box.top + 'px;right:auto;bottom:auto'
+      + (box.w ? ';width:' + box.w + 'px' : "") + '"';
+    const nothing = !qr.ok.length && !ar.ok.length;
+    // One sentence does not need a 400 by 220 window. Empty, it sizes to what it
+    // has to say, the way the tool window does.
+    return '<aside class="es-study' + (nothing && !prev ? " empty" : "") + '" role="dialog" aria-label="Study resources"' + style + '>' +
+      '<div class="es-sthead">' + esIcon("book") +
+        '<span class="es-sttitle">Study resources</span>' +
+        '<button type="button" class="es-nbact" data-esstudyhome title="Put the window back where it opens">reset position</button>' +
+        '<button type="button" class="es-nbx" data-esstudyclose aria-label="Close">' + esIcon("close") + '</button></div>' +
+      '<div class="es-stbody">' +
+      (prev ? '<div class="es-stprevwrap">' +
+          '<div class="es-stprevhead"><button type="button" class="es-linkbtn" data-esstback>&larr; All resources</button>' +
+            '<a class="es-linkbtn" href="' + esc(prev.url) + '" target="_blank" rel="noopener noreferrer">Open in new tab</a></div>' +
+          '<div class="es-stlabel">' + esc(prev.label || prev.id) + '</div>' +
+          // Embedded viewing is an enhancement. A restricted Drive file, or a
+          // workspace that refuses framing, fails silently in an iframe, so the
+          // fallback is revealed on a timer rather than left as a blank rectangle.
+          '<div class="es-stframe" data-esstframe><iframe src="' + esc(esStudyEmbedUrl(prev)) + '" title="' + esc(prev.label || "Resource") + '" loading="lazy" referrerpolicy="no-referrer"></iframe></div>' +
+          // Standing, not triggered. A cross-origin frame that a workspace policy
+          // refuses to render still fires load, and its document cannot be read
+          // from here, so failure is not reliably detectable: a message that
+          // waits to be certain would sometimes never arrive. This one is always
+          // there, costs a line, and is right in every case.
+          '<p class="es-stfall" data-esstfall>Nothing showing? Some resources cannot be opened inside Marginal, and some need you to be signed in. Open it in a new tab instead.</p>' +
+        '</div>'
+      : nothing
+        ? '<p class="es-sthelp">No study resources have been added for this question yet. When your teacher adds them they will appear here.</p>'
+        : '<div class="es-stsec"><div class="es-sthd">For this question</div>' +
+            '<p class="es-sthelp">Recommended reading to help you understand the topic and build your argument.</p>' +
+            (qr.ok.length ? qr.ok.map(esStudyRow).join("")
+              : '<p class="es-sthelp">Nothing has been added for the question itself.</p>') +
+          '</div>' +
+          (path
+            ? '<div class="es-stsec"><div class="es-sthd">For your argument' + (where ? " (" + esc(where) + ")" : "") + '</div>' +
+                (ar.ok.length
+                  ? '<p class="es-sthelp">Resources relevant to the argument you chose.</p>' + ar.ok.map(esStudyRow).join("")
+                  // Never fabricated. An argument with nothing authored against it
+                  // says nothing has been added, and does not borrow the
+                  // question's list to look populated.
+                  : '<p class="es-sthelp">Nothing has been added for this argument yet.</p>') +
+              '</div>'
+            : '<div class="es-stnote">' + esIcon("info") +
+              '<span>Choose an argument for a body paragraph to see reading for that argument.</span></div>')) +
+      '</div>' +
+      ((!prev && (qr.ok.length || ar.ok.length))
+        ? '<div class="es-stfoot"><button type="button" class="es-linkbtn es-stall" data-esstall>Open all in new tabs</button></div>' : "") +
+      '</aside>';
+  }
+  // Drive share links open a viewer, not a file. /preview is the embeddable form
+  // of the same link, so a student who can open it in a tab can usually see it
+  // here too. Anything else is embedded as given.
+  function esStudyEmbedUrl(r) {
+    const u = String(r.url || "");
+    const m = u.match(/^https:\/\/drive\.google\.com\/file\/d\/([^/]+)/);
+    return m ? "https://drive.google.com/file/d/" + m[1] + "/preview" : u;
+  }
+  // Placed beside the writing rather than on top of it, by the same rule the tool
+  // window uses: what has to be cleared is the writing card, not the page. Where
+  // the space left is narrower than the window is allowed to be, it takes the
+  // edge, which covers the least, and can be dragged anywhere from there.
+  function esStudyBox() {
+    const WANT = 400, FLOOR = 320, GAP = 16, EDGE = 12;
+    const rights = [".es-flow", ".es-parahead"].map(x => document.querySelector(x))
+      .filter(Boolean).map(e => e.getBoundingClientRect().right);
+    const writing = rights.length ? Math.max.apply(null, rights) : null;
+    const cols = document.querySelector(".es-cols");
+    const top = cols ? Math.max(12, Math.round(cols.getBoundingClientRect().top + 46)) : 96;
+    const room = writing == null ? 0 : window.innerWidth - writing - GAP - EDGE;
+    const beside = room >= FLOOR;
+    const w = beside ? Math.min(WANT, Math.round(room)) : WANT;
+    const left = beside ? Math.round(writing + GAP) : Math.max(EDGE, window.innerWidth - w - EDGE);
+    return { left: left, top: top, w: w };
+  }
+  function esStudyMount(p) {
+    let host = document.getElementById("esstudyhost");
+    if (!host) { host = document.createElement("div"); host.id = "esstudyhost"; document.body.appendChild(host); }
+    host.innerHTML = esStudyHTML(p);
+    esStudyBind(host, p);
+  }
+  function esStudyUnmount() {
+    const host = document.getElementById("esstudyhost"); if (host) host.remove();
+    ES.ui.studyOpen = false; ES.ui.studyPreview = null;
+    document.querySelectorAll('[data-estool="understand"]').forEach(b => b.setAttribute("aria-expanded", "false"));
+  }
+  function esStudyBind(host, p) {
+    const panel = host.querySelector(".es-study"); if (!panel) return;
+    const x = panel.querySelector("[data-esstudyclose]");
+    if (x) x.onclick = () => { esStudyUnmount(); esFocusComposer(); };
+    const home = panel.querySelector("[data-esstudyhome]");
+    if (home) home.onclick = () => { ES.ui.studyPos = null; try { sessionStorage.removeItem(ES_STUDY_POS); } catch (e) { /* private mode */ } esStudyMount(p); };
+    panel.querySelectorAll("[data-esstprev]").forEach(b => b.onclick = () => { ES.ui.studyPreview = b.dataset.esstprev; esStudyMount(p); });
+    const back = panel.querySelector("[data-esstback]");
+    if (back) back.onclick = () => { ES.ui.studyPreview = null; esStudyMount(p); };
+    const all = panel.querySelector("[data-esstall]");
+    if (all) all.onclick = () => panel.querySelectorAll("[data-esstopen]").forEach(a => window.open(a.href, "_blank", "noopener"));
+    // Escape closes it, the way every temporary surface in the essay closes.
+    // Bound while open and dropped on close, so nothing accumulates.
+    const esc2 = e => {
+      if (e.key !== "Escape") return;
+      document.removeEventListener("keydown", esc2);
+      esStudyUnmount(); esFocusComposer();
+    };
+    document.addEventListener("keydown", esc2);
+    const head = panel.querySelector(".es-sthead");
+    if (head) head.onmousedown = e => {
+      if (e.target.closest("button") || e.target.closest("a")) return;
+      e.preventDefault();
+      const r = panel.getBoundingClientRect();
+      const dx = e.clientX - r.left, dy = e.clientY - r.top;
+      const move = ev => {
+        const w = panel.offsetWidth, h = panel.offsetHeight;
+        const left = Math.max(6, Math.min(window.innerWidth - w - 6, ev.clientX - dx));
+        const top = Math.max(6, Math.min(window.innerHeight - h - 6, ev.clientY - dy));
+        panel.style.left = left + "px"; panel.style.top = top + "px";
+        panel.style.right = "auto"; panel.style.bottom = "auto";
+        ES.ui.studyPos = { left: left, top: top };
+        try { sessionStorage.setItem(ES_STUDY_POS, JSON.stringify(ES.ui.studyPos)); } catch (e2) { /* private mode */ }
+      };
+      const up = () => { document.removeEventListener("mousemove", move); document.removeEventListener("mouseup", up); };
+      document.addEventListener("mousemove", move); document.addEventListener("mouseup", up);
+    };
+  }
+
   function esSaveDraft() {
     if (!ES.draft) return;
     ES.draft.updatedAt = new Date().toISOString(); // most-recent-first ordering
@@ -11109,6 +11706,14 @@ window.BUSCONTENT = {
 
   function esRender() {
     const host = document.getElementById("eshost"); if (!host) return;
+    // A menu does not survive the thing it was a menu for. The section popover
+    // carried its open state across screen and section changes, so choosing a
+    // section from it left it standing over the next paragraph's composer, where
+    // it covered Add this sentence and made the primary action unclickable.
+    if (ES.ui && ES.ui.mapPop) {
+      const at = ES.draft ? ES.draft.pos : null;
+      if (ES.ui.mapPopAt !== at || ES.ui.mapPopScreen !== ES.screen) ES.ui.mapPop = false;
+    }
     // Preserve scroll across a full re-render so nothing flashes/jumps to the top.
     // (Frequent toggles use targeted updates instead and never reach here.)
     const prevScrim = host.querySelector(".es-scrim");
@@ -11124,6 +11729,19 @@ window.BUSCONTENT = {
     const nowScrim = host.querySelector(".es-scrim"); if (nowScrim && sy) nowScrim.scrollTop = sy;
     // Defensive: no essay button should ever act as a form submit.
     host.querySelectorAll("button:not([type])").forEach(b => b.type = "button");
+    // The study window floats outside this host, so a render cannot destroy it,
+    // but what it should be showing depends on the paragraph and on the argument
+    // the student has chosen. Choosing one with the window open has to change
+    // what is in it, so it is rebuilt against the current paragraph and left
+    // exactly where it was. Its own preview stays open across the rebuild.
+    if (ES.ui.studyOpen && document.getElementById("esstudyhost")) esStudyMount(esCurrentPara());
+  }
+  // The paragraph the student is on, or nothing when the screen has no paragraph.
+  // Reading it from the draft rather than being handed it lets a surface outside
+  // #eshost stay in step with the essay without the essay knowing it exists.
+  function esCurrentPara() {
+    const d = ES.draft; if (!d || !Array.isArray(d.paras)) return null;
+    return d.paras[d.pos] || null;
   }
   // Defensive only: the essay content file failed to load, so there is no slot model
   // or fallback content to run on. The core is otherwise subject-agnostic and always
@@ -11527,6 +12145,14 @@ window.BUSCONTENT = {
     $("#esstart").onclick = () => {
       const question = (f.question || "").trim();
       if (!question) { toast("Add your essay question to start."); const el = $("#esq"); if (el) el.focus(); return; }
+      // Starting replaces the draft outright. That is fine on an empty one and is
+      // the loss of an afternoon's work on a written one, and Change question puts
+      // this route one press from the writing, so a written draft is asked first.
+      const cur = ES.draft;
+      const written = cur ? esResponseWords(cur) : 0;
+      if (written > 0 && (cur.question || "").trim() !== question &&
+          !window.confirm("Start \"" + question.slice(0, 70) + (question.length > 70 ? "\u2026" : "") +
+            "\"? Your current response has " + written + " words in it and starting a different question replaces it.")) return;
       ES.draft = {
         id: esId(), subject: ES.subject, code: ES.code,
         question, topic: (f.topic || "").trim(), rubric: (f.rubric || "").trim(),
@@ -11674,26 +12300,56 @@ window.BUSCONTENT = {
   }
 
   // ---- shared header for the two writing screens (question + topic + switch) ----
+  // The head is two things: the page header, which is the same on every essay
+  // screen, and the question card, which the writing screen places inside its own
+  // grid so the rail can start beside it rather than halfway down the page.
   function esWritingHead(sc, modeLabel, switchLabel, switchTo, boxElsewhere) {
+    return esTopBarHTML(sc, switchLabel) + esQuestionCardHTML(modeLabel, boxElsewhere);
+  }
+  function esTopBarHTML(sc, switchLabel) {
+    return `
+      <div class="es-top">
+        <div class="es-brand"><span class="es-mark">M</span>Marginal ${sc.label ? `<span class="es-subj">${esc(sc.label)}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}</div>
+        <div class="es-topbtns">
+          ${/* Learn and Notebook are utilities: they make sense whatever sentence
+                the student is on, they open their own floating windows, and they
+                stay open across the writing. The four writing tools are not
+                utilities and stay on the belt above the writer. */ ""}
+          <button type="button" class="es-util" data-estool="understand" aria-expanded="${ES.ui.studyOpen ? "true" : "false"}">${esIcon("book")}<span>Learn</span></button>
+          <button type="button" class="es-util" data-esnbtoggle aria-expanded="${ES.ui.nbOpen ? "true" : "false"}">${esIcon("note")}<span>Notebook</span></button>
+          <button class="es-linkbtn" id="esmodeswitch">${esc(switchLabel)}</button>
+          <button class="es-x" id="esx" aria-label="Back to setup">setup</button>
+        </div>
+      </div>`;
+  }
+  function esQuestionCardHTML(modeLabel, boxElsewhere) {
     // The question is the one thing on screen at every stage, so the decoder
     // lives on it rather than being a stage the student passes through once.
     const qdef = esQuestionDef();
     const qdec = esDecodeOf(qdef);
+    // Metadata is rendered only where the value exists. A question that carries
+    // no mark total loses the number AND its separator, rather than the layout
+    // being kept by assuming one: an invented 20 looks exactly like a real 20.
+    const marks = ES.draft.marks || (qdef && qdef.marks) || null;
+    const cmd = (qdef && qdef.command) || (ES.draft && ES.draft.command) || "";
+    const bits = [];
+    if (cmd) bits.push('<b>' + esc(cmd) + '</b>');
+    if (marks) bits.push(esc(String(marks)) + ' marks');
+    if (modeLabel) bits.push(esc(String(modeLabel).toLowerCase()));
     return `
-      <div class="es-top">
-        <div class="es-brand">Marginal · essay practice ${sc.label ? `<span class="es-subj">${esc(sc.label)}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}</div>
-        <div class="es-topbtns">
-          <button class="es-linkbtn" id="esmodeswitch">${esc(switchLabel)}</button>
-          <button class="es-x" id="esx" aria-label="Back to setup">setup</button>
-        </div>
-      </div>
       <div class="es-qbar">
         <div class="es-qbar-main">
-          <div class="es-qbar-mode">${esc(modeLabel)}</div>
+          ${ES.draft.topic ? `<span class="es-restag">${esc(ES.draft.topic)}</span>` : ""}
           <div class="es-qbar-q">${qdec ? esDecodeStem(ES.draft.question, qdec.highlights) : esc(ES.draft.question)}</div>
+          <div class="es-qmetarow">
+            ${bits.length ? '<div class="es-qmeta">' + bits.join('<i>\u2022</i>') + '</div>' : '<span></span>'}
+            ${/* Changing which question you are answering is an essay-workspace
+                  action and belongs on the question. Setup is the broader
+                  configuration and stays in the header. */ ""}
+            <button type="button" class="es-linkbtn es-qchange" id="esqchange">Change question</button>
+          </div>
           ${qdec ? esDecodeChips(qdef) + (boxElsewhere ? "" : esDecodeHost(qdef)) : ""}
         </div>
-        ${ES.draft.topic ? `<span class="es-restag">${esc(ES.draft.topic)}</span>` : ""}
       </div>`;
   }
 
@@ -12090,6 +12746,13 @@ window.BUSCONTENT = {
     type: '<path d="M4 7V5h16v2M12 5v14M9 19h6"/>',
     close: '<path d="M6 6l12 12M18 6 6 18"/>',
     check: '<path d="m5 12.5 4.5 4.5L19 7"/>',
+    // A link that leaves Marginal, and a note that is not a warning.
+    open: '<path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+    info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/>',
+    note: '<rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8.5 3v18"/>',
+    cloud: '<path d="M17.5 19H7a5 5 0 0 1-.5-9.98A6 6 0 0 1 18 8.5a4.5 4.5 0 0 1-.5 10.5z"/><path d="m9.5 13.5 2 2 3.5-4"/>',
+    note: '<rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8.5 3v18"/>',
+    cloud: '<path d="M17.5 19H7a5 5 0 0 1-.5-9.98A6 6 0 0 1 18 8.5a4.5 4.5 0 0 1-.5 10.5z"/><path d="m9.5 13.5 2 2 3.5-4"/>',
   };
   function esIcon(name) {
     return '<svg class="es-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ES_ICONS[name] || "") + '</svg>';
@@ -12560,7 +13223,7 @@ window.BUSCONTENT = {
 
   // ---- the drawer ------------------------------------------------------------
   function esToolbeltHTML(p) {
-    return `<div class="es-belt" role="toolbar" aria-label="Writing support">` + ES_TOOLS.map(t => {
+    return `<div class="es-belt" role="toolbar" aria-label="Writing support">` + ES_TOOLS.filter(t => t.key !== "understand").map(t => {
       const has = !!esToolData(t.key, p);
       const on = ES.ui.tool === t.key;
       // Nothing authored behind it means the tool is disabled, not filled with filler.
@@ -12811,18 +13474,32 @@ window.BUSCONTENT = {
     const host = document.getElementById("eshost"); if (!host) return;
     host.querySelectorAll("[data-estool]").forEach(b => b.onclick = () => {
       const key = b.dataset.estool;
-      // Learn opens the Learning Centre. It is teaching, not a writing tool, and
-      // giving it a tab in the tool window put two different classes of activity
-      // behind one control set.
+      // Learn opens the study resources window. It used to open the Learning
+      // Centre; the Centre is out of the student route while it is rebuilt, and
+      // its code is left in place for that rebuild rather than deleted.
+      //
+      // A floating window rather than a tool tab, for the same reason the
+      // notebook is: reading is not one of the four writing tools, and opening
+      // it must not take the tool window away from the student.
       if (key === "understand") {
-        ES.centre = ES.centre || { route: "choose", dock: "right" };
-        ES.centre.open = true;
-        // Straight to the concept this paragraph's argument names, where one is
-        // authored. Landing on a chooser when the app already knows what the
-        // student is arguing about makes them pick something it could have opened.
-        ES.centre.route = esToolData("understand", p) ? "concept" : "choose";
-        ES.ui.tool = null; ES.ui.contextView = null; esRenderKeepingPlace(p);
-        eslMount(p); return;
+        // The Centre is preserved for its rebuild, and a preserved thing no test
+        // covers rots. ?eslegacy=1 is the only route left to it: not a student
+        // route, not linked from anywhere, and the suites that assert its
+        // teaching use it so the content stays proven while the surface is out.
+        if (ES.legacyCentre) {
+          ES.centre = ES.centre || { route: "choose", dock: "right" };
+          ES.centre.open = true;
+          ES.centre.route = esToolData("understand", p) ? "concept" : "choose";
+          ES.ui.tool = null; ES.ui.contextView = null; esRenderKeepingPlace(p);
+          eslMount(p); return;
+        }
+        if (ES.ui.studyOpen) { esStudyUnmount(); esFocusComposer(); return; }
+        try { const v = JSON.parse(sessionStorage.getItem(ES_STUDY_POS) || "null"); if (v && v.left != null) ES.ui.studyPos = v; }
+        catch (e) { /* private mode */ }
+        ES.ui.studyOpen = true; ES.ui.studyPreview = null;
+        esStudyMount(p);
+        document.querySelectorAll('[data-estool="understand"]').forEach(x2 => x2.setAttribute("aria-expanded", "true"));
+        return;
       }
       if (ES.ui.tool === key) { ES.ui.tool = null; esRenderKeepingPlace(p); esFocusComposer(); return; }
       esCaptureContext(p);
@@ -12886,7 +13563,7 @@ window.BUSCONTENT = {
         // meant to be usable beside a tool, so neither it nor the control that
         // opens it dismisses this one.
         if (e.target.closest && (e.target.closest("[data-estool]") || e.target.closest("#esnbhost")
-          || e.target.closest("[data-esnbtoggle]"))) return;
+          || e.target.closest("#esstudyhost") || e.target.closest("[data-esnbtoggle]"))) return;
         shut();
       };
       const key2 = e => { if (e.key === "Escape") { e.preventDefault(); shut(); } };
@@ -14526,6 +15203,202 @@ window.BUSCONTENT = {
   // margin, and any toggled-open missing-element frames as ghosts beneath the box.
   // The stepper is a POSITION INDICATOR only; Back / Next move one paragraph.
   const ES_WHERE = { point: "as the opening sentence", analysis: "right after your point", evidence: "to back the point up", link: "at the end, tying back to the question", thesis: "as your opening line", methods: "right after your thesis", restate: "to open the conclusion", judgement: "as your final line" };
+  // ---- THE CONTEXTUAL RAIL ---------------------------------------------------
+  //
+  // Only where real data exists. A panel that says a thing is unavailable fills
+  // the screen for the sake of filling it, so a panel with nothing behind it is
+  // not rendered at all and the rail simply gets shorter.
+  function esMarkingPanel() {
+    const q = esQuestionDef();
+    const sc = esSubjectContent(ES.subject);
+    const dec = q && q.decode;
+    const lead = (dec && dec.verbMeaning) || "";
+    const crit = (sc && sc.markingCriteria) || [];
+    const own = (ES.draft && ES.draft.rubric) || "";
+    // Provenance, said the way the rubric resolver says it, never guessed.
+    const prov = own ? "yours" : (q && q.criteria && q.criteria.source) ? "general" : (crit.length ? "general" : "");
+    if (!lead && !crit.length && !own) return "";
+    return `<div class="es-rp">
+      <div class="es-rp-hd"><span class="es-rp-ico">${esIcon("check")}</span>
+        <span class="es-rp-t">Marking guidance</span>
+        ${prov ? `<span class="es-rp-prov">${esc(prov)}</span>` : ""}</div>
+      ${lead ? `<p class="es-rp-lead">${esc(lead)}</p>` : ""}
+      ${crit.length ? `<ul class="es-rp-list">${crit.map(c =>
+        `<li><span class="es-rp-ck">✓</span>${esc(c)}</li>`).join("")}</ul>` : ""}
+      <button type="button" class="es-rp-btn" id="esmarkfull">View full marking guide</button>
+    </div>`;
+  }
+  // ---- STUCK ON THIS SENTENCE -----------------------------------------------
+  //
+  // A router over support that already exists, anchored to the sentence it is
+  // about. Nothing on it writes, inserts or rewrites a sentence: the furthest it
+  // goes is the authored worked example, which is deliberately set in a
+  // different topic so the shape transfers and the words cannot.
+  //
+  // The menu is the same length whatever is available. A row with nothing behind
+  // it is shown disabled and says why, because a menu that changes shape teaches
+  // the student nothing about what help exists.
+  function esStuckHTML(p) {
+    const study = esStudyResolve(esStudyArgumentRefs(p));
+    const rungs = esRungs(p, esStepDef(p));
+    const jobAt = rungs.findIndex(r => /what this part has to do/i.test(r.label || ""));
+    const exAt = rungs.findIndex(r => r.kind === "example");
+    const hasShape = !!esShapesFor((esStepDef(p) || {}).key || "").length;
+    // The screen is already showing what this sentence has to do, in the prompt
+    // above this menu. So this route can never be unavailable: at worst it takes
+    // the student back to the instruction they are looking at. It is only when a
+    // longer authored explanation exists that it opens one.
+    const rows = [
+      // data-esjob says which of the two this row will do, because "an authored
+      // explanation exists here" and "the instruction is already on screen" are
+      // different facts and nothing else on the page distinguishes them.
+      { k: "job", t: "What this sentence has to do", s: "understand the job of this sentence",
+        d: jobAt >= 0 ? "ladder" : "prompt" },
+      { k: "shape", t: "Show a sentence shape", s: hasShape ? "a frame with the parts named" : "no shape written for this stage yet", off: !hasShape },
+      { k: "example", t: "See the same shape used elsewhere", s: exAt < 0 ? "no worked example authored here" : "worked in another topic, not in your question", off: exAt < 0 },
+      { k: "words", t: "Words this sentence needs", s: "terms with an authored meaning" },
+      { k: "reading", t: "Reading for this argument", s: study.ok.length ? study.ok.length + " resource" + (study.ok.length === 1 ? "" : "s") : "no study resource added yet", off: !study.ok.length },
+    ];
+    return `<div class="es-stuck" id="esstuckpop"${ES.ui.stuckOpen ? "" : " hidden"}>
+      <div class="es-stuck-hd"><span class="es-stuck-t">Stuck on this sentence</span>
+        <button type="button" class="es-stuck-x" id="esstuckx" aria-label="Close">${esIcon("close")}</button></div>
+      <p class="es-stuck-s">Five ways in. None of them writes it for you.</p>
+      <div class="es-stuck-list">${rows.map(r => `
+        <button type="button" class="es-stuck-row${r.off ? " off" : ""}" data-esstuck="${r.k}"${r.d ? ` data-esjob="${r.d}"` : ""}${r.off ? " disabled" : ""}>
+          <span class="es-stuck-rt">${esc(r.t)}</span><span class="es-stuck-rs">${esc(r.s)}</span>
+          ${r.off ? "" : '<span class="es-stuck-go">\u203a</span>'}
+        </button>`).join("")}</div>
+    </div>`;
+  }
+  function esBindStuck(host, p) {
+    const b = host.querySelector("#esstuck"), pop = host.querySelector("#esstuckpop");
+    if (!b || !pop) return;
+    // Opening the menu is a disclosure inside one component, so it touches its own
+    // button and its own panel and nothing else. It must not re-render: the writing
+    // screen swaps only its side column on a keeping-place render, so a render here
+    // would leave the panel in whatever state the last full render gave it.
+    const shut = () => {
+      ES.ui.stuckOpen = false; pop.hidden = true; b.setAttribute("aria-expanded", "false");
+      document.removeEventListener("mousedown", away, true);
+      document.removeEventListener("keydown", key, true);
+    };
+    const away = e => { if (!pop.contains(e.target) && !(e.target.closest && e.target.closest("#esstuck"))) shut(); };
+    const key = e => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); shut(); esFocusComposer(); } };
+    const open = () => {
+      ES.ui.stuckOpen = true; pop.hidden = false; b.setAttribute("aria-expanded", "true");
+      document.addEventListener("mousedown", away, true);
+      document.addEventListener("keydown", key, true);
+    };
+    if (ES.ui.stuckOpen) open();
+    b.onclick = () => { ES.ui.stuckOpen ? shut() : open(); };
+    const x = host.querySelector("#esstuckx");
+    if (x) x.onclick = () => { shut(); esFocusComposer(); };
+    host.querySelectorAll("[data-esstuck]").forEach(r => r.onclick = () => {
+      const k = r.dataset.esstuck;
+      shut();
+      // Every one of these is a route into support that already exists. None of
+      // them writes, inserts or rewrites a sentence.
+      if (k === "shape") {
+        // the same in-place disclosure the Show sentence shape control does
+        ES.ui.shapeOpen = true;
+        const box = document.getElementById("esshapes"); if (box) box.hidden = false;
+        const sh = document.getElementById("esshape");
+        if (sh) { sh.setAttribute("aria-expanded", "true"); sh.textContent = "Hide sentence shape"; }
+        esFocusComposer(); return;
+      }
+      if (k === "job") {
+        // A longer authored explanation opens where one exists. Where none does,
+        // the answer is the instruction already on screen, so this points at it
+        // rather than claiming the app does not know what the sentence is for.
+        const at = esRungs(p, esStepDef(p)).findIndex(x2 => /what this part has to do/i.test(x2.label || ""));
+        if (at >= 0) {
+          ES.ui.exampleOnly = false;
+          esSetHelpLevel(p, ES.ui.editBlock, Math.max(esHelpLevel(p, ES.ui.editBlock), at + 1));
+          esRender(); return;
+        }
+        const g = document.querySelector(".es-guide");
+        if (g) {
+          g.scrollIntoView({ block: "nearest" });
+          g.classList.remove("lookhere");
+          void g.offsetWidth;             // restart the animation on a repeat press
+          g.classList.add("lookhere");
+          setTimeout(() => g.classList.remove("lookhere"), 1600);
+        }
+        esFocusComposer(); return;
+      }
+      if (k === "example") {
+        // Exactly what the row promises: the authored cross-topic example, on its
+        // own. Not the ladder, and not the start-you-finish rung above it.
+        ES.ui.exampleOnly = true;
+        esRender(); return;
+      }
+      if (k === "words") { esCaptureContext(p); ES.ui.tool = "vocabulary"; esRenderKeepingPlace(p); return; }
+      if (k === "reading") { ES.ui.studyOpen = true; esStudyMount(p); return; }
+    });
+  }
+
+  function esRailHTML() {
+    const panels = [esMarkingPanel()].filter(Boolean);
+    if (!panels.length) return "";
+    return `<div class="es-rail">${panels.join("")}</div>`;
+  }
+  // ---- THE RESPONSE NAVIGATOR ------------------------------------------------
+  //
+  // Where you are and what is written, and nothing else. Not a second planner:
+  // no arguments, no structure guidance, no evidence. Pressing one moves there.
+  function esRespNavHTML(d) {
+    if (!d || !Array.isArray(d.paras) || d.paras.length < 2) return "";
+    return `<div class="es-resp">
+      <div class="es-resp-lab">Your response</div>
+      <div class="es-resp-row">${d.paras.map((pp, i) => {
+        const w = esWordsOf(pp.text);
+        const on = i === d.pos;
+        return `<button type="button" class="es-resp-b ${on ? "on" : ""}${!on && w ? " done" : ""}" data-esrespgo="${i}">
+          <span class="es-resp-n"><span class="es-resp-dot"></span>${esc(pp.role)}</span>
+          <span class="es-resp-w">${w ? w + " words" : "not started"}</span></button>`;
+      }).join("")}</div>
+    </div>`;
+  }
+  // ---- THE ACTION BAR --------------------------------------------------------
+  //
+  // The primary action names the section it would check, because "check this
+  // paragraph" is wrong on an introduction. Where checking is not available for
+  // the current state there is no primary action rather than a dead one.
+  function esFootBarHTML(d, p, canAsk) {
+    const role = (p && p.role) || "";
+    const can = !!canAsk;
+    const label = ES.pending ? "Checking\u2026"
+      : /introduction/i.test(role) ? "Check introduction"
+      : /conclusion/i.test(role) ? "Check conclusion" : "Check this paragraph";
+    return `<div class="es-footbar"><div class="es-footbar-in">
+      <span class="es-footsave">${esIcon("cloud")}Saved</span>
+      <span class="es-sp"></span>
+      <button type="button" class="es-btn ghost sm" id="esfootoutline">Outline</button>
+      <button type="button" class="es-btn ghost sm" id="esfootpreview">Preview response</button>
+      ${can ? `<button type="button" class="es-btn primary" id="esask" ${ES.pending ? "disabled" : ""}>${esc(label)}</button>` : ""}
+    </div></div>`;
+  }
+  function esBindWorkspace(host, d) {
+    host.querySelectorAll("[data-esrespgo]").forEach(b => b.onclick = () => {
+      d.pos = Number(b.dataset.esrespgo); ES.ui.tool = null; esSaveDraft(); esRender();
+    });
+    // Two controls that both opened the review is the same duplication the bar was
+    // built to remove. Preview response reads the whole response; Outline opens
+    // the section list, which is the outline, and is where the working answer and
+    // the word counts live.
+    const pv = host.querySelector("#esfootpreview");
+    if (pv) pv.onclick = () => { ES.screen = "review"; esRender(); };
+    const ol = host.querySelector("#esfootoutline");
+    if (ol) ol.onclick = () => {
+      const mp = document.getElementById("esmappop"); if (!mp) return;
+      if (!ES.ui.mapPop) mp.click();
+      const aside = document.querySelector(".es-map");
+      if (aside) aside.scrollIntoView({ block: "nearest" });
+    };
+    const mg = host.querySelector("#esmarkfull");
+    if (mg) mg.onclick = () => { ES.screen = "review"; esRender(); };
+  }
+
   function esRenderCoached(host, sc) {
     const d = ES.draft;
     if (d.pos < 0) d.pos = 0; if (d.pos > d.paras.length - 1) d.pos = d.paras.length - 1;
@@ -14602,10 +15475,17 @@ window.BUSCONTENT = {
       : step;
     const rungs = esRungs(p, helpStep);
     const shown = Math.min(esHelpLevel(p, editing), rungs.length);
+    // "See the same shape used elsewhere" promises an example, so it shows the
+    // example and nothing else. Reaching it through the ladder would also uncover
+    // the start-you-finish rung below it, which is scaffolding on the sentence the
+    // student is actually writing rather than a structure demonstrated somewhere
+    // else. The deeper ladder still exists; it is asked for separately.
+    const exRung = rungs.find(r => r.kind === "example");
+    const exOnly = !!ES.ui.exampleOnly && !!exRung;
     const blanks = t => esc(t).replace(/\[[^\]]+\]/g, m => `<span class="es-hole">${m.slice(1, -1)}</span>`).replace(/_{3,}/g, '<span class="es-blank">____</span>');
-    const helpRows = rungs.slice(0, shown).map(r => `
+    const helpRows = (exOnly ? [exRung] : rungs.slice(0, shown)).map(r => `
       <div class="es-rung ${r.kind || ""}">
-        <span class="es-rungn">${r.level}</span>
+        ${exOnly ? "" : `<span class="es-rungn">${r.level}</span>`}
         <div class="es-rungbody">
           <div class="es-runglbl">${esc(r.label)}${r.context ? ` <span class="es-rungctx">${esc(r.context)}</span>` : ""}</div>
           <div class="es-rungtext ${r.kind || ""}">${(r.kind === "frame") ? blanks(r.text) : esc(r.text)}</div>
@@ -14614,13 +15494,19 @@ window.BUSCONTENT = {
         </div>
       </div>`).join("");
     const next = rungs[shown];
-    const help = !esGuidanceOn() || !rungs.length ? "" : `
-      <div class="es-help">
+    const help = !esGuidanceOn() || !rungs.length || (!shown && !exOnly) ? "" : `
+      <div class="es-help${exOnly ? " exonly" : ""}">
         ${helpRows}
         <div class="es-helpbtns">
-          ${next ? `<button type="button" class="es-helpask ${shown ? "on" : ""}" id="esmorehelp">${esc(shown === 0 ? "Help me" : (rungs[shown - 1].cta || "Show me more"))}</button>`
-                 : `<span class="es-helpend">That is as far as the help goes. The sentence is yours to write.</span>`}
-          ${shown ? `<button type="button" class="es-linkbtn" id="eshidehelp">Hide help</button>` : ""}
+          ${/* The first rung is reached through "I am stuck on this sentence" on the
+                prompt now, so the generic opener is gone from the normal route and
+                what is left is the escalation once help is already open. The
+                example route offers no escalation at all: it is one thing, and it
+                is the thing the menu named. */ ""}
+          ${exOnly ? ""
+            : next ? `<button type="button" class="es-helpask on" id="esmorehelp">${esc(rungs[shown - 1].cta || "Show me more")}</button>`
+                   : `<span class="es-helpend">That is as far as the help goes. The sentence is yours to write.</span>`}
+          <button type="button" class="es-linkbtn" id="eshidehelp">${exOnly ? "Hide the example" : "Hide help"}</button>
         </div>
       </div>`;
 
@@ -14649,9 +15535,13 @@ window.BUSCONTENT = {
       ${/* The writing screen owns the host itself, in the columns below, in every
             state including setup. The old flag made the stem render a second one
             whenever the argument picker was showing. */ ""}
-      ${esWritingHead(sc, "Guided", "full attempt", "full", true)}
-      ${esToolbeltHTML(p)}
+      ${esTopBarHTML(sc, "full attempt")}
+      ${/* The question card and the belt are inside the workspace grid, not above
+            it, so the rail can begin beside the question rather than halfway down
+            the page next to the writer. */ ""}
       <div class="es-cols ${ES.ui.tool ? "withdrawer" : ES.ui.contextView ? "withctx" : esDecodeOf(esQuestionDef()) ? "withdec" : ""}">
+        ${esQuestionCardHTML("Guided", true)}
+        ${esToolbeltHTML(p)}
         ${esDecodeHost(esQuestionDef())}
         <div class="es-compose">
           <div class="es-parahead">
@@ -14674,8 +15564,9 @@ window.BUSCONTENT = {
               return ""; })()}
             <span class="es-headacts">
               ${(esIsIntro(p) || esIsConcl(p)) ? `<button type="button" class="es-linkbtn es-ctxbtn" id="esctx" data-esctxview="${esIsConcl(p) ? "judgement" : "plan"}" aria-expanded="${ES.ui.contextView ? "true" : "false"}">${esIsConcl(p) ? "Review my arguments" : "View plan"}</button>` : ""}
-              <button type="button" class="es-linkbtn" data-esnbtoggle aria-expanded="${ES.ui.nbOpen ? "true" : "false"}">notebook</button>
-              <button type="button" class="es-mapall" id="esreview">read all</button>
+              ${/* The notebook is a header utility and reading the whole response
+                    is Preview response in the action bar. Both used to be here as
+                    well, which is two controls for one purpose, twice. */ ""}
             </span>
           </div>
           ${inSetup ? "" : chips}
@@ -14687,13 +15578,13 @@ window.BUSCONTENT = {
           ${inSetup ? esSetupHTML(p) : ""}
           ${inSetup ? "" : `<div class="es-flow">
             ${esReviewBannerHTML(blocks)}
-            ${blocks.length ? `<p class="es-prose">${prose}</p>` : `<p class="es-prose empty">Your paragraph builds here, one sentence at a time.</p>`}
-            ${editing != null ? help : ""}
-            ${editing != null ? "" : complete ? doneCard : `
-            <div class="es-active">
+            ${/* The prompt is a header for the sentence in hand, so it sits above the
+                  paragraph rather than wrapping the composer. Mint marks that one
+                  strip and stops there: the prose and the editor are on white. */ ""}
+            ${(editing != null || complete) ? "" : `
               <div class="es-guide">
                 <div class="es-guidetop">
-                  <span class="es-guideh">${esc(guide.head)}</span>
+                  <span class="es-guideh">${esc(guide.head)} <i>\u00b7 the sentence you are writing</i></span>
                   <span class="es-steps">
                     <button type="button" class="es-step" id="esbackstep" ${si === 0 && !blocks.length ? "disabled" : ""} title="Back a step" aria-label="Back a step">&lsaquo;</button>
                     <span class="es-stepn">${si + 1}/${steps.length}</span>
@@ -14713,11 +15604,19 @@ window.BUSCONTENT = {
                   // state, so it must not re-enter the render pipeline: that is what
                   // made a two-word control feel like the page reloading.
                   const open = !!ES.ui.shapeOpen;
-                  return `<button type="button" class="es-linkbtn es-shapebtn" id="esshape" aria-expanded="${open}">${open ? "Hide sentence shape" : "Show sentence shape"}</button>
+                  return `<div class="es-promptacts">
+                      <button type="button" class="es-linkbtn es-shapebtn" id="esshape" aria-expanded="${open}">${open ? "Hide sentence shape" : "Show sentence shape"}</button>
+                      <button type="button" class="es-linkbtn es-stuckbtn" id="esstuck" aria-expanded="${ES.ui.stuckOpen ? "true" : "false"}">I am stuck on this sentence</button>
+                    </div>
+                    ${esStuckHTML(p)}
                     <div class="es-shapes" id="esshapes"${open ? "" : " hidden"}>${all.map(x =>
                       `<p class="es-shape">${esc(x).replace(/\[[^\]]+\]/g, m => `<span class="es-hole">${m.slice(1, -1)}</span>`).replace(/_{2,}/g, '<span class="es-blank">____</span>')}</p>`).join("")}</div>`;
                 })()}
-              </div>
+              </div>`}
+            ${blocks.length ? `<p class="es-prose">${prose}</p>` : `<p class="es-prose empty">Your paragraph builds here, one sentence at a time.</p>`}
+            ${editing != null ? help : ""}
+            ${editing != null ? "" : complete ? doneCard : `
+            <div class="es-active">
               <textarea id="esline" class="es-input es-linebox" rows="2" placeholder="Type your next sentence..."></textarea>
               ${help}
               <div class="es-linerow">
@@ -14726,17 +15625,22 @@ window.BUSCONTENT = {
               </div>
             </div>`}
           </div>`}
-          <div class="es-navrow">
-            ${canAsk ? `<button class="es-btn ghost sm" id="esask" ${ES.pending ? "disabled" : ""}>${askLabel}</button>` : ""}
-
-          </div>
+          ${/* The checking action lives in the action bar now. Rendering it here
+                too put the same button on screen twice, which is the duplication
+                the bar was supposed to remove. */ ""}
+          <div class="es-navrow"></div>
           <div class="es-linehost" data-linehost>${esLinesBlock(p)}</div>
           <div class="es-seqhost">${esSeqNudge(p)}</div>
+          ${esRespNavHTML(d)}
         </div>
+        ${esRailHTML()}
         ${ES.ui.tool ? esDrawerHTML(p) : esRestHTML(p)}
       </div>
-    </div></div></div>`;
+    </div></div></div>
+    ${esFootBarHTML(d, p, canAsk)}`;
 
+    esBindWorkspace(host, d);
+    esBindStuck(host, p);
     esBindWritingHead();
     esBindReasoning(host, p, "#espoint");
     const pt = $("#espoint");
@@ -14837,8 +15741,8 @@ window.BUSCONTENT = {
     };
     const ng = $("#esnextguide"); if (ng) ng.onclick = () => { p.step = Math.min(si + 1, steps.length - 1); esSaveDraft(); esRender(); };
     const bs = $("#esbackstep"); if (bs) bs.onclick = () => { p.step = Math.max(0, si - 1); esSaveDraft(); esRender(); };
-    const mh = $("#esmorehelp"); if (mh) mh.onclick = () => { esSetHelpLevel(p, editing, esHelpLevel(p, editing) + 1); esRender(); };
-    const hh = $("#eshidehelp"); if (hh) hh.onclick = () => { esSetHelpLevel(p, editing, 0); esRender(); };
+    const mh = $("#esmorehelp"); if (mh) mh.onclick = () => { ES.ui.exampleOnly = false; esSetHelpLevel(p, editing, esHelpLevel(p, editing) + 1); esRender(); };
+    const hh = $("#eshidehelp"); if (hh) hh.onclick = () => { ES.ui.exampleOnly = false; esSetHelpLevel(p, editing, 0); esRender(); };
 
     // Moving between sections is the response map's job, so the two buttons that
     // duplicated it are gone. These stay bound when something else renders them.
@@ -14875,6 +15779,9 @@ window.BUSCONTENT = {
     const mp = $("#esmappop");
     if (mp) mp.onclick = () => {
       ES.ui.mapPop = !ES.ui.mapPop;
+      // what it was opened for, so a render that changes either can close it
+      ES.ui.mapPopAt = ES.draft ? ES.draft.pos : null;
+      ES.ui.mapPopScreen = ES.screen;
       const aside = host.querySelector(".es-map");
       if (aside) aside.hidden = !ES.ui.mapPop;
       mp.setAttribute("aria-expanded", ES.ui.mapPop ? "true" : "false");
@@ -14908,7 +15815,8 @@ window.BUSCONTENT = {
       esCaptureContext(p); ES.ui.pointOpen = !ES.ui.pointOpen; esRender(); esRestoreContext();
       const el = $("#espoint"); if (el) el.focus();
     };
-    const rv = $("#esreview"); if (rv) rv.onclick = () => { ES.screen = "review"; esSaveDraft(); esRender(); };
+        // "read all" left the paragraph head: Preview response in the action bar is
+    // the one control that reads the whole response now.
     const mw = $("#esmapwa"); if (mw) mw.onclick = () => { ES.ui.planAll = false; ES.screen = "plan"; esSaveDraft(); esRender(); };
     const ml = $("#esmoreline"); if (ml) ml.onclick = () => { ES.ui.moreLine = true; esRender(); };
     const dn = $("#esdonenext"); if (dn) dn.onclick = () => {
@@ -15788,6 +16696,22 @@ window.BUSCONTENT = {
   function esBindWritingHead() {
     esBindDecode();
     const x = $("#esx"); if (x) x.onclick = () => { ES.screen = "setup"; esRender(); };
+    // Change question lands on the chooser with the current question in it, in the
+    // mode it was chosen from, so the student is looking at the list they picked
+    // from rather than at a blank configuration screen.
+    const cq = $("#esqchange"); if (cq) cq.onclick = () => {
+      const d = ES.draft, sc = esView();
+      ES.form = {
+        question: (d && d.question) || "", topic: (d && d.topic) || "",
+        rubric: (d && d.rubric) || "", marks: (d && d.marks) || 20,
+        structure: (d && d.structure) || sc.defaultStructure,
+        paraModel: (d && d.paraModel) || (sc.paraModels[0] || null),
+        questionId: (d && d.questionId) || null,
+        setupMode: (d && d.questionId) ? "practice" : "own",
+        rubricOpen: false,
+      };
+      ES.screen = "setup"; esRender();
+    };
     const sw = $("#esmodeswitch"); if (sw) sw.onclick = () => {
       ES.draft.mode = ES.draft.mode === "full" ? "coached" : "full";
       ES.screen = ES.draft.mode; esSaveDraft(); esRender();

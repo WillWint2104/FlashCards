@@ -1,6 +1,6 @@
 // The verification gate: evidence without a recorded source is never offered to a
 // student, and everything else about the paragraph keeps working without it.
-const { chromium, T, OUT, BASE, fileUrl, usePractice } = require('./env');
+const { chromium, T, OUT, BASE, fileUrl, usePractice, climbLadder } = require('./env');
 
 // Waits that name their condition. This app fetches nothing and renders
 // synchronously, so the effect of a click is present on the next frame:
@@ -37,7 +37,9 @@ async function run(sourced){
   if (!evTool) { await p.$eval('[data-estool="evidence"]',e=>e.click()); await settled(p);
     drawer=await p.$eval('.es-drawer-body',e=>e.innerText.replace(/\s+/g,' ').trim()); await p.click('#esdrawerx'); await settled(p); }
   const belt=await p.$$eval('.es-belt-b',es=>es.map(e=>({l:e.textContent.trim(),off:e.disabled})));
-  const rungs=await (async()=>{ for(let k=0;k<6;k++){const btn=await p.$('#esmorehelp'); if(!btn)break; await btn.click(); await settled(p);} return p.$$eval('.es-rung',es=>es.length); })();
+  // Climbed through the route that opens it: the first rung is behind "I am
+  // stuck on this sentence" now, and #esmorehelp is the escalation after that.
+  const rungs=await climbLadder(p);
   const guide=await p.$eval('.es-guidejob',e=>e.textContent.trim());
   const shot=OUT+'shot-evgate-'+(sourced?'sourced':'withheld')+'.png';
   await p.screenshot({path:shot});

@@ -88,7 +88,12 @@ async function writeParagraph(p, tr, led, vocab, prof, need, unexplained, cs) {
   while (n < 6) {
     if (!(await has(p, "#esline"))) break;
     slotsSeen++;
-    if (await has(p, "#esmorehelp")) { ladderSeen = true; slotsWithLadder++; }
+    // The generic opener is gone from the writing screen: the first rung is
+    // reached through "I am stuck on this sentence" on the prompt, and
+    // #esmorehelp is now only the escalation once help is already open. So the
+    // question "is a ladder available at this sentence" is asked of the route
+    // that offers it, not of the button that used to open it.
+    if (await ladderOffered(p)) { ladderSeen = true; slotsWithLadder++; }
     let missing = led.missing(need);
     let guard = 0;
     while (missing.length && guard < 6) {
@@ -104,8 +109,12 @@ async function writeParagraph(p, tr, led, vocab, prof, need, unexplained, cs) {
         tr.say("open", "Learn");
         await read(p, tr, led, vocab, ".esl-panel", "Learn");
         await p.keyboard.press("Escape").catch(() => {}); await wait(p, 320);
-      } else if (prof.usesHelp && await has(p, "#esmorehelp")) {
-        await p.click("#esmorehelp"); await wait(p, 340);
+      } else if (prof.usesHelp && (await has(p, "#esmorehelp") || await ladderOffered(p))) {
+        // Opening help now costs a surface, because it is behind the stuck menu.
+        if (!(await has(p, "#esmorehelp"))) {
+          await openLadder(p); tr.m.surfacesOpened++; tr.say("open", "I am stuck on this sentence");
+        } else { await p.click("#esmorehelp"); }
+        await wait(p, 340);
         tr.m.helpRungs++;
         const rungs = await allTxt(p, ".es-rung");
         tr.say("help", "rung " + rungs.length + ": " + (rungs[rungs.length - 1] || "").slice(0, 72));
@@ -148,6 +157,22 @@ async function writeParagraph(p, tr, led, vocab, prof, need, unexplained, cs) {
   if (ladderSeen) tr.m.ladderHere++;
   else { tr.m.noLadderHere++; if (prof.usesHelp) tr.demand("this paragraph offered no help ladder at any sentence"); }
   tr.say("support", "help was offered at " + slotsWithLadder + " of " + slotsSeen + " sentences in this paragraph");
+}
+
+// Is there an authored ladder at the sentence on screen? The stuck menu shows
+// every route at a fixed length and disables the ones with nothing behind them,
+// so an enabled "what this sentence has to do" row IS the ladder being offered.
+async function ladderOffered(p) {
+  if (await has(p, "#esmorehelp")) return true;
+  return await has(p, '[data-esstuck="job"][data-esjob="ladder"]:not([disabled])');
+}
+async function openLadder(p) {
+  const b = await p.$("#esstuck"); if (!b) return false;
+  await b.click(); await wait(p, 200);
+  const r = await p.$('[data-esstuck="job"][data-esjob="ladder"]:not([disabled])');
+  if (!r) { await p.keyboard.press("Escape").catch(() => {}); return false; }
+  await r.click(); await wait(p, 340);
+  return true;
 }
 
 async function runJourney(p, o) {
@@ -370,7 +395,7 @@ async function runJourney(p, o) {
     }
   }
 
-  if (await has(p, "#esreview")) { await p.click("#esreview"); await wait(p, 550); }
+  if (await has(p, "#esfootpreview")) { await p.click("#esfootpreview"); await wait(p, 550); }
   const cover = await txt(p, ".es-cover.missing");
   tr.m.coverageGaps = await p.$$eval("[data-escover]", es => es.length).catch(() => 0);
   if (cover) tr.say("review", cover.slice(0, 130));

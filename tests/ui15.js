@@ -141,7 +141,9 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   // O1: the map no longer stands the argument under every row. What each section
   // argues is one click away, through the row itself or "read all".
   ok((await p.$$('.es-maparg')).length===0,'no argument text stands permanently in the map');
-  ok(!!(await p.$('#esreview')),'and reading the whole response is offered from the map');
+  // "read all" used to sit in the paragraph head, beside the notebook, doing the
+  // same job as Preview response in the action bar. One of the two survived.
+  ok(!!(await p.$('#esfootpreview')),'and reading the whole response is offered from the action bar');
   // Open a BODY row: the intro opened above has no argument line, so reading
   // .es-maparg after it can only ever be empty, and length>=0 is true of every
   // array. Body 1 argues /Digitally engaged/ (pinned at section 4).
@@ -152,7 +154,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
 
   console.log('8. the whole response is read and submitted inside guided mode');
   const c0=await clicks();
-  await p.click('#esreview'); await settled(p);
+  await p.click('#esfootpreview'); await settled(p);
   const secs=await p.$$eval('.es-rvsec',es=>es.length);
   const shown=await p.$$eval('.es-rvtext',es=>es.map(e=>e.textContent.length));
   ok(secs===6,'every section is on one page: '+secs);

@@ -143,7 +143,7 @@ const okline = m => console.log('  ok:', m);
     }
 
     // --- review and submit
-    if (!(await p.$('.es-rvwrap'))) { const r = await p.$('#esreview'); if (r) { await r.click(); await p.waitForTimeout(500); } }
+    if (!(await p.$('.es-rvwrap'))) { const r = await p.$('#esfootpreview'); if (r) { await r.click(); await p.waitForTimeout(500); } }
     if (!(await p.$('.es-rvwrap'))) bad('could not reach the whole-response review');
     else {
       const secs = await p.$$eval('.es-rvsec', es=>es.length);

@@ -1,6 +1,6 @@
 // The reference area works on BOTH paragraph models, so choosing TDECC does not
 // drop the student onto generic guidance.
-const { chromium, T, OUT, BASE, fileUrl, usePractice } = require('./env');
+const { chromium, T, OUT, BASE, fileUrl, usePractice, ladderOffered, climbLadder } = require('./env');
 
 // Waits that name their condition. This app fetches nothing and renders
 // synchronously, so the effect of a click is present on the next frame:
@@ -47,8 +47,11 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   for (let i=0;i<7;i++){
     const head=await p.$eval('.es-guideh',e=>e.textContent.trim()).catch(()=>null); if(!head) break;
     const job=await p.$eval('.es-guidejob',e=>e.textContent.trim());
-    const offered=!!(await p.$('#esmorehelp'));
-    let n=0; if(offered){ for(let k=0;k<6;k++){const btn=await p.$('#esmorehelp'); if(!btn)break; await btn.click(); await settled(p);} n=await p.$$eval('.es-rung',es=>es.length); }
+    // The ladder opens from the stuck menu now, not from a generic control under
+    // the guide. Asked through the route, so this still measures whether help is
+    // authored here and how deep it goes.
+    const offered=await ladderOffered(p);
+    let n=0; if(offered){ n=await climbLadder(p); }
     steps.push({head,job,offered,n});
     const hide=await p.$('#eshidehelp'); if(hide){await hide.click(); await settled(p);}
     const ng=await p.$('#esnextguide'); if(!ng||await ng.evaluate(e=>e.disabled)) break;

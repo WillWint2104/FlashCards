@@ -320,7 +320,7 @@ if (!P) {
   // ================================================================ READ IT BACK
   {
     const t0 = await since();
-    const rvBtn = await p.$('#esreview');
+    const rvBtn = await p.$('#esfootpreview');
     if (rvBtn) {
       await rvBtn.click(); await p.waitForTimeout(500);
       const secs = await p.$$eval('.es-rvsec', es => es.length);

@@ -13,7 +13,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   const p=await (await b.newContext({viewport:{width:1500,height:1080},deviceScaleFactor:2})).newPage();
   const errs=[]; p.on('pageerror',e=>errs.push(String(e).slice(0,220)));
   let calls=0; await p.route(/workers\.dev/, r=>{ calls++; r.abort(); });
-  await p.goto(T); await here(p, '.navtab');
+  await p.goto(T + '?eslegacy=1'); await here(p, '.navtab');
   // TEST FIXTURE: unsourced evidence is withheld by design, so the suite supplies
   // sources of its own rather than weakening the rule under test.
   await p.evaluate(()=>{ Object.keys((window.BUSCONTENT||{}).evidence||{}).forEach(k=>

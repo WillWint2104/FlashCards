@@ -11,6 +11,38 @@
 // Loaded as window.ESSAY before app.js. Economics (window.CONTENT) is untouched.
 // =============================================================================
 window.ESSAY = {
+  // ---------------------------------------------------------------------------
+  // STUDY RESOURCES
+  //
+  // Reading a student can be sent to, held once and referenced by id, so a
+  // resource used by four questions is described in one place and changing its
+  // link changes it everywhere.
+  //
+  // Deliberately NOT textbook-specific. A resource is a label and a URL that
+  // somebody authored: a chapter in a school's licensed copy on Drive, a page in
+  // a learning management system, a set of notes written for this app later. The
+  // field is `studyRefs` and not `textbookPdf` for that reason.
+  //
+  // NOTHING IS AUTHORED HERE YET, and nothing may be invented. A link nobody has
+  // given us is not a resource, and a page number nobody has checked is not a
+  // reference. The map is empty until real links are supplied, and every surface
+  // that reads it is written to say so plainly rather than to show a
+  // placeholder. See docs/study-resources.md.
+  //
+  //   resources: {
+  //     "business.operations.strategies": {
+  //       id: "business.operations.strategies",
+  //       label: "Operations strategies",
+  //       url: "https://drive.google.com/file/d/…/view",
+  //       provider: "Google Drive",          // shown under the label
+  //       note: "Chapter 6",                 // optional, authored, never derived
+  //     },
+  //   }
+  //
+  // Questions reference these with studyRefs: ["business.operations.strategies"].
+  // Pathways and areas may reference their own, which is what makes the "for
+  // your argument" section of the Study window possible without inference.
+  resources: {},
   // Subjects keyed by the value the client subject map resolves a class code to.
   // Only ancient_history ships today; the shape is ready for more.
   subjects: {
