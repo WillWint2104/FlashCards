@@ -1844,7 +1844,10 @@
      which is the loose, unrelated-widths look the redesign is meant to remove.
      They are capped at the writer's width and pushed to the workspace's own left
      edge, the same offset the sticky header pads to. */
-  .es-scrim .es-qbar, .es-scrim .es-belt{
+  /* On the plan, review and full-attempt screens the question card is still a
+     child of the wrap, so it is aligned to the writing column by hand. On the
+     writing screen it is a grid item and the grid does this. */
+  .es-scrim .es-wrap > .es-qbar, .es-scrim .es-wrap > .es-belt{
     max-width:var(--main);
     margin-left:max(clamp(16px,2.4vw,26px), calc((100% - (var(--main) + var(--rail) + var(--e-gap)))/2));
     margin-right:auto}
@@ -1877,6 +1880,10 @@
   .es-scrim .es-restag{display:inline-block;background:var(--e-mint);color:var(--e-green-dk);border-radius:8px;
     padding:4px 10px;font-size:12px;font-weight:700;margin-bottom:9px}
   .es-scrim .es-qbar-q{font-family:var(--disp);font-weight:500;font-size:19px;line-height:1.4;color:var(--e-ink)}
+  .es-qmetarow{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .es-scrim .es-qchange{font-family:var(--body);font-size:12.5px;font-weight:600;color:var(--e-green-dk);
+    margin-top:10px;text-decoration:none;padding:0}
+  .es-scrim .es-qchange:hover{text-decoration:underline;text-underline-offset:3px;color:var(--e-green-dk)}
   .es-qmeta{display:flex;align-items:center;gap:9px;margin-top:10px;font-size:12.5px;color:var(--e-ink3);font-weight:500}
   .es-qmeta b{color:var(--e-ink2);font-weight:600}
   .es-qmeta i{font-style:normal;color:var(--e-line)}
@@ -1897,10 +1904,21 @@
   .es-scrim .es-belt-b.on{background:var(--e-mint);color:var(--e-green-dk)}
   .es-scrim .es-belt-b.on .es-ico{color:var(--e-green-dk)}
 
-  /* ---- the workspace grid: writer and rail on one centred grid ---- */
-  .es-scrim .es-cols{grid-template-columns:minmax(0,var(--main)) var(--rail);gap:var(--e-gap);
+  /* ---- the workspace grid ----
+     Question, belt, decode box and writer are one column; the rail is the other
+     and spans all four rows, so it begins beside the question rather than
+     appearing halfway down the page next to the writer. That empty upper-right
+     region was the last large piece of dead space on a wide screen. */
+  .es-scrim .es-cols{grid-template-columns:minmax(0,var(--main)) var(--rail);
+    grid-template-rows:auto auto auto auto;gap:0 var(--e-gap);
     justify-content:center;margin-top:0}
-  .es-scrim .es-cols > .es-dechost{grid-column:1 / -1}
+  .es-scrim .es-cols > .es-qbar{grid-column:1;grid-row:1;margin:0 0 16px;max-width:none}
+  .es-scrim .es-cols > .es-belt{grid-column:1;grid-row:2;margin:0 0 16px;max-width:none}
+  .es-scrim .es-cols > .es-dechost{grid-column:1;grid-row:3}
+  .es-scrim .es-cols > .es-compose{grid-column:1;grid-row:4}
+  .es-scrim .es-cols > .es-rail{grid-column:2;grid-row:1 / -1;align-self:start}
+  /* the paragraph panel, when it has something in it, belongs under the rail */
+  .es-scrim .es-cols > .es-rest{grid-column:2;grid-row:4;align-self:start}
   .es-rail{display:flex;flex-direction:column;gap:14px;position:sticky;top:78px;min-width:0}
 
   /* ---- the writer ----
@@ -1942,6 +1960,43 @@
     text-transform:uppercase;color:var(--e-green-dk)}
   .es-scrim .es-active h3,.es-scrim .es-stepjob{font-family:var(--disp);font-weight:500;font-size:15.5px;
     color:var(--e-ink);line-height:1.45;border:none;padding:0;margin:5px 0 0}
+
+  /* The empty evidence chip and edit my point are both live controls, and both
+     were drawn at the weight of a disabled one. A control that does something
+     looks like it does something. */
+  .es-scrim .es-chips{gap:8px;margin:12px 0 0}
+  .es-scrim .es-chip-ev.empty,.es-scrim .es-chip-more{background:var(--surface);border:1px solid var(--e-line);
+    color:var(--e-ink2);font-family:var(--body);font-weight:600;font-size:12.5px;border-radius:10px;
+    padding:7px 12px;opacity:1}
+  .es-scrim .es-chip-ev.empty .es-ico{color:var(--e-ink2)}
+  .es-scrim .es-chip-ev.empty:hover,.es-scrim .es-chip-more:hover{border-color:var(--e-green);
+    color:var(--e-green-dk);background:var(--e-mint2)}
+  .es-scrim .es-chip-arg{background:var(--e-mint);border:1px solid transparent;color:var(--e-ink);
+    font-weight:600;font-size:12.5px;border-radius:10px;padding:7px 12px}
+  .es-scrim .es-chip-arg .es-ico{color:var(--e-green-dk)}
+  .es-scrim .es-chip-arg:hover{border-color:var(--e-green)}
+
+  /* When the menu says "what this sentence has to do" and the authored answer is
+     the instruction already on screen, this is what points at it. */
+  @keyframes es-lookhere{0%{box-shadow:0 0 0 0 rgba(18,178,122,0)}
+    18%{box-shadow:0 0 0 4px rgba(18,178,122,.34)}100%{box-shadow:0 0 0 0 rgba(18,178,122,0)}}
+  .es-scrim .es-guide.lookhere{animation:es-lookhere 1.5s ease-out}
+
+  /* ---- the help ladder, in the page's own language ---- */
+  .es-scrim .es-help{margin-top:14px}
+  .es-scrim .es-rung{background:var(--surface);border:1px solid var(--e-line);border-radius:12px;
+    padding:12px 15px;margin-bottom:8px;gap:12px}
+  .es-scrim .es-rungn{background:var(--e-mint);color:var(--e-green-dk);font-weight:700}
+  .es-scrim .es-runglbl{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--e-ink3)}
+  .es-scrim .es-rungctx{font-weight:600;letter-spacing:0;text-transform:none;color:var(--e-ink3)}
+  .es-scrim .es-rungtext{font-size:14.5px;line-height:1.7;color:var(--e-ink);font-weight:400;margin-top:4px;max-width:74ch}
+  .es-scrim .es-rungnote{font-size:12.5px;font-weight:500;color:var(--e-ink2);line-height:1.55;margin-top:7px;max-width:74ch}
+  .es-scrim .es-helpend{font-size:12.5px;font-weight:500;color:var(--e-ink3)}
+  /* the example route shows one thing, and it is the one thing the menu named:
+     no rung number, because there is no ladder of five on screen to number it in */
+  .es-scrim .es-rung.example{border-color:var(--e-line)}
+  .es-scrim .es-help.exonly .es-rung{border-left:3px solid var(--e-green);padding-left:15px}
 
   /* local sentence actions, side by side under the prompt */
   .es-promptacts{display:flex;align-items:center;gap:18px;margin-top:9px;flex-wrap:wrap}
@@ -2064,6 +2119,7 @@
        column shrank by the gutter a second time. */
     .es-scrim{--main:min(958px, calc(100vw - 110px));--rail:0px;--e-gap:0px}
     .es-scrim .es-cols{grid-template-columns:minmax(0,var(--main))}
+    .es-scrim .es-cols > .es-rest{grid-column:1;grid-row:auto}
     .es-rail{display:none}
     .es-scrim .es-guide{padding:10px 13px 11px}
     .es-scrim .es-compose{padding:16px 18px 18px}
@@ -12089,6 +12145,14 @@ window.BUSCONTENT = {
     $("#esstart").onclick = () => {
       const question = (f.question || "").trim();
       if (!question) { toast("Add your essay question to start."); const el = $("#esq"); if (el) el.focus(); return; }
+      // Starting replaces the draft outright. That is fine on an empty one and is
+      // the loss of an afternoon's work on a written one, and Change question puts
+      // this route one press from the writing, so a written draft is asked first.
+      const cur = ES.draft;
+      const written = cur ? esResponseWords(cur) : 0;
+      if (written > 0 && (cur.question || "").trim() !== question &&
+          !window.confirm("Start \"" + question.slice(0, 70) + (question.length > 70 ? "\u2026" : "") +
+            "\"? Your current response has " + written + " words in it and starting a different question replaces it.")) return;
       ES.draft = {
         id: esId(), subject: ES.subject, code: ES.code,
         question, topic: (f.topic || "").trim(), rubric: (f.rubric || "").trim(),
@@ -12236,7 +12300,29 @@ window.BUSCONTENT = {
   }
 
   // ---- shared header for the two writing screens (question + topic + switch) ----
+  // The head is two things: the page header, which is the same on every essay
+  // screen, and the question card, which the writing screen places inside its own
+  // grid so the rail can start beside it rather than halfway down the page.
   function esWritingHead(sc, modeLabel, switchLabel, switchTo, boxElsewhere) {
+    return esTopBarHTML(sc, switchLabel) + esQuestionCardHTML(modeLabel, boxElsewhere);
+  }
+  function esTopBarHTML(sc, switchLabel) {
+    return `
+      <div class="es-top">
+        <div class="es-brand"><span class="es-mark">M</span>Marginal ${sc.label ? `<span class="es-subj">${esc(sc.label)}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}</div>
+        <div class="es-topbtns">
+          ${/* Learn and Notebook are utilities: they make sense whatever sentence
+                the student is on, they open their own floating windows, and they
+                stay open across the writing. The four writing tools are not
+                utilities and stay on the belt above the writer. */ ""}
+          <button type="button" class="es-util" data-estool="understand" aria-expanded="${ES.ui.studyOpen ? "true" : "false"}">${esIcon("book")}<span>Learn</span></button>
+          <button type="button" class="es-util" data-esnbtoggle aria-expanded="${ES.ui.nbOpen ? "true" : "false"}">${esIcon("note")}<span>Notebook</span></button>
+          <button class="es-linkbtn" id="esmodeswitch">${esc(switchLabel)}</button>
+          <button class="es-x" id="esx" aria-label="Back to setup">setup</button>
+        </div>
+      </div>`;
+  }
+  function esQuestionCardHTML(modeLabel, boxElsewhere) {
     // The question is the one thing on screen at every stage, so the decoder
     // lives on it rather than being a stage the student passes through once.
     const qdef = esQuestionDef();
@@ -12251,24 +12337,17 @@ window.BUSCONTENT = {
     if (marks) bits.push(esc(String(marks)) + ' marks');
     if (modeLabel) bits.push(esc(String(modeLabel).toLowerCase()));
     return `
-      <div class="es-top">
-        <div class="es-brand"><span class="es-mark">M</span>Marginal ${sc.label ? `<span class="es-subj">${esc(sc.label)}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}</div>
-        <div class="es-topbtns">
-          ${/* Learn and Notebook are utilities: they make sense whatever sentence
-                the student is on, they open their own floating windows, and they
-                stay open across the writing. The four writing tools are not
-                utilities and stay on the belt above the writer. */ ""}
-          <button type="button" class="es-util" data-estool="understand" aria-expanded="${ES.ui.studyOpen ? "true" : "false"}">${esIcon("book")}<span>Learn</span></button>
-          <button type="button" class="es-util" data-esnbtoggle aria-expanded="${ES.ui.nbOpen ? "true" : "false"}">${esIcon("note")}<span>Notebook</span></button>
-          <button class="es-linkbtn" id="esmodeswitch">${esc(switchLabel)}</button>
-          <button class="es-x" id="esx" aria-label="Back to setup">setup</button>
-        </div>
-      </div>
       <div class="es-qbar">
         <div class="es-qbar-main">
           ${ES.draft.topic ? `<span class="es-restag">${esc(ES.draft.topic)}</span>` : ""}
           <div class="es-qbar-q">${qdec ? esDecodeStem(ES.draft.question, qdec.highlights) : esc(ES.draft.question)}</div>
-          ${bits.length ? '<div class="es-qmeta">' + bits.join('<i>\u2022</i>') + '</div>' : ""}
+          <div class="es-qmetarow">
+            ${bits.length ? '<div class="es-qmeta">' + bits.join('<i>\u2022</i>') + '</div>' : '<span></span>'}
+            ${/* Changing which question you are answering is an essay-workspace
+                  action and belongs on the question. Setup is the broader
+                  configuration and stays in the header. */ ""}
+            <button type="button" class="es-linkbtn es-qchange" id="esqchange">Change question</button>
+          </div>
           ${qdec ? esDecodeChips(qdef) + (boxElsewhere ? "" : esDecodeHost(qdef)) : ""}
         </div>
       </div>`;
@@ -15164,9 +15243,18 @@ window.BUSCONTENT = {
     const rungs = esRungs(p, esStepDef(p));
     const jobAt = rungs.findIndex(r => /what this part has to do/i.test(r.label || ""));
     const exAt = rungs.findIndex(r => r.kind === "example");
+    const hasShape = !!esShapesFor((esStepDef(p) || {}).key || "").length;
+    // The screen is already showing what this sentence has to do, in the prompt
+    // above this menu. So this route can never be unavailable: at worst it takes
+    // the student back to the instruction they are looking at. It is only when a
+    // longer authored explanation exists that it opens one.
     const rows = [
-      { k: "job", t: "What this sentence has to do", s: jobAt < 0 ? "not written for this sentence yet" : "the job of this part, in place", off: jobAt < 0 },
-      { k: "shape", t: "Show a sentence shape", s: esShapesFor((esStepDef(p) || {}).key || "").length ? "a frame with the parts named" : "no shape written for this stage yet", off: !esShapesFor((esStepDef(p) || {}).key || "").length },
+      // data-esjob says which of the two this row will do, because "an authored
+      // explanation exists here" and "the instruction is already on screen" are
+      // different facts and nothing else on the page distinguishes them.
+      { k: "job", t: "What this sentence has to do", s: "understand the job of this sentence",
+        d: jobAt >= 0 ? "ladder" : "prompt" },
+      { k: "shape", t: "Show a sentence shape", s: hasShape ? "a frame with the parts named" : "no shape written for this stage yet", off: !hasShape },
       { k: "example", t: "See the same shape used elsewhere", s: exAt < 0 ? "no worked example authored here" : "worked in another topic, not in your question", off: exAt < 0 },
       { k: "words", t: "Words this sentence needs", s: "terms with an authored meaning" },
       { k: "reading", t: "Reading for this argument", s: study.ok.length ? study.ok.length + " resource" + (study.ok.length === 1 ? "" : "s") : "no study resource added yet", off: !study.ok.length },
@@ -15176,7 +15264,7 @@ window.BUSCONTENT = {
         <button type="button" class="es-stuck-x" id="esstuckx" aria-label="Close">${esIcon("close")}</button></div>
       <p class="es-stuck-s">Five ways in. None of them writes it for you.</p>
       <div class="es-stuck-list">${rows.map(r => `
-        <button type="button" class="es-stuck-row${r.off ? " off" : ""}" data-esstuck="${r.k}"${r.off ? " disabled" : ""}>
+        <button type="button" class="es-stuck-row${r.off ? " off" : ""}" data-esstuck="${r.k}"${r.d ? ` data-esjob="${r.d}"` : ""}${r.off ? " disabled" : ""}>
           <span class="es-stuck-rt">${esc(r.t)}</span><span class="es-stuck-rs">${esc(r.s)}</span>
           ${r.off ? "" : '<span class="es-stuck-go">\u203a</span>'}
         </button>`).join("")}</div>
@@ -15218,16 +15306,30 @@ window.BUSCONTENT = {
         if (sh) { sh.setAttribute("aria-expanded", "true"); sh.textContent = "Hide sentence shape"; }
         esFocusComposer(); return;
       }
-      if (k === "job" || k === "example") {
-        // The authored ladder, opened at the rung the row names. This is the same
-        // disclosure pressing the escalation button that many times gives, so the
-        // rungs below it come with it, exactly as they do on that route.
-        const rungs = esRungs(p, esStepDef(p));
-        const at = k === "job"
-          ? rungs.findIndex(x => /what this part has to do/i.test(x.label || ""))
-          : rungs.findIndex(x => x.kind === "example");
-        if (at < 0) return;
-        esSetHelpLevel(p, ES.ui.editBlock, Math.max(esHelpLevel(p, ES.ui.editBlock), at + 1));
+      if (k === "job") {
+        // A longer authored explanation opens where one exists. Where none does,
+        // the answer is the instruction already on screen, so this points at it
+        // rather than claiming the app does not know what the sentence is for.
+        const at = esRungs(p, esStepDef(p)).findIndex(x2 => /what this part has to do/i.test(x2.label || ""));
+        if (at >= 0) {
+          ES.ui.exampleOnly = false;
+          esSetHelpLevel(p, ES.ui.editBlock, Math.max(esHelpLevel(p, ES.ui.editBlock), at + 1));
+          esRender(); return;
+        }
+        const g = document.querySelector(".es-guide");
+        if (g) {
+          g.scrollIntoView({ block: "nearest" });
+          g.classList.remove("lookhere");
+          void g.offsetWidth;             // restart the animation on a repeat press
+          g.classList.add("lookhere");
+          setTimeout(() => g.classList.remove("lookhere"), 1600);
+        }
+        esFocusComposer(); return;
+      }
+      if (k === "example") {
+        // Exactly what the row promises: the authored cross-topic example, on its
+        // own. Not the ladder, and not the start-you-finish rung above it.
+        ES.ui.exampleOnly = true;
         esRender(); return;
       }
       if (k === "words") { esCaptureContext(p); ES.ui.tool = "vocabulary"; esRenderKeepingPlace(p); return; }
@@ -15373,10 +15475,17 @@ window.BUSCONTENT = {
       : step;
     const rungs = esRungs(p, helpStep);
     const shown = Math.min(esHelpLevel(p, editing), rungs.length);
+    // "See the same shape used elsewhere" promises an example, so it shows the
+    // example and nothing else. Reaching it through the ladder would also uncover
+    // the start-you-finish rung below it, which is scaffolding on the sentence the
+    // student is actually writing rather than a structure demonstrated somewhere
+    // else. The deeper ladder still exists; it is asked for separately.
+    const exRung = rungs.find(r => r.kind === "example");
+    const exOnly = !!ES.ui.exampleOnly && !!exRung;
     const blanks = t => esc(t).replace(/\[[^\]]+\]/g, m => `<span class="es-hole">${m.slice(1, -1)}</span>`).replace(/_{3,}/g, '<span class="es-blank">____</span>');
-    const helpRows = rungs.slice(0, shown).map(r => `
+    const helpRows = (exOnly ? [exRung] : rungs.slice(0, shown)).map(r => `
       <div class="es-rung ${r.kind || ""}">
-        <span class="es-rungn">${r.level}</span>
+        ${exOnly ? "" : `<span class="es-rungn">${r.level}</span>`}
         <div class="es-rungbody">
           <div class="es-runglbl">${esc(r.label)}${r.context ? ` <span class="es-rungctx">${esc(r.context)}</span>` : ""}</div>
           <div class="es-rungtext ${r.kind || ""}">${(r.kind === "frame") ? blanks(r.text) : esc(r.text)}</div>
@@ -15385,16 +15494,19 @@ window.BUSCONTENT = {
         </div>
       </div>`).join("");
     const next = rungs[shown];
-    const help = !esGuidanceOn() || !rungs.length ? "" : `
-      <div class="es-help">
+    const help = !esGuidanceOn() || !rungs.length || (!shown && !exOnly) ? "" : `
+      <div class="es-help${exOnly ? " exonly" : ""}">
         ${helpRows}
         <div class="es-helpbtns">
           ${/* The first rung is reached through "I am stuck on this sentence" on the
                 prompt now, so the generic opener is gone from the normal route and
-                what is left is the escalation once help is already open. */ ""}
-          ${next ? (shown === 0 ? "" : `<button type="button" class="es-helpask on" id="esmorehelp">${esc(rungs[shown - 1].cta || "Show me more")}</button>`)
-                 : `<span class="es-helpend">That is as far as the help goes. The sentence is yours to write.</span>`}
-          ${shown ? `<button type="button" class="es-linkbtn" id="eshidehelp">Hide help</button>` : ""}
+                what is left is the escalation once help is already open. The
+                example route offers no escalation at all: it is one thing, and it
+                is the thing the menu named. */ ""}
+          ${exOnly ? ""
+            : next ? `<button type="button" class="es-helpask on" id="esmorehelp">${esc(rungs[shown - 1].cta || "Show me more")}</button>`
+                   : `<span class="es-helpend">That is as far as the help goes. The sentence is yours to write.</span>`}
+          <button type="button" class="es-linkbtn" id="eshidehelp">${exOnly ? "Hide the example" : "Hide help"}</button>
         </div>
       </div>`;
 
@@ -15423,9 +15535,13 @@ window.BUSCONTENT = {
       ${/* The writing screen owns the host itself, in the columns below, in every
             state including setup. The old flag made the stem render a second one
             whenever the argument picker was showing. */ ""}
-      ${esWritingHead(sc, "Guided", "full attempt", "full", true)}
-      ${esToolbeltHTML(p)}
+      ${esTopBarHTML(sc, "full attempt")}
+      ${/* The question card and the belt are inside the workspace grid, not above
+            it, so the rail can begin beside the question rather than halfway down
+            the page next to the writer. */ ""}
       <div class="es-cols ${ES.ui.tool ? "withdrawer" : ES.ui.contextView ? "withctx" : esDecodeOf(esQuestionDef()) ? "withdec" : ""}">
+        ${esQuestionCardHTML("Guided", true)}
+        ${esToolbeltHTML(p)}
         ${esDecodeHost(esQuestionDef())}
         <div class="es-compose">
           <div class="es-parahead">
@@ -15625,8 +15741,8 @@ window.BUSCONTENT = {
     };
     const ng = $("#esnextguide"); if (ng) ng.onclick = () => { p.step = Math.min(si + 1, steps.length - 1); esSaveDraft(); esRender(); };
     const bs = $("#esbackstep"); if (bs) bs.onclick = () => { p.step = Math.max(0, si - 1); esSaveDraft(); esRender(); };
-    const mh = $("#esmorehelp"); if (mh) mh.onclick = () => { esSetHelpLevel(p, editing, esHelpLevel(p, editing) + 1); esRender(); };
-    const hh = $("#eshidehelp"); if (hh) hh.onclick = () => { esSetHelpLevel(p, editing, 0); esRender(); };
+    const mh = $("#esmorehelp"); if (mh) mh.onclick = () => { ES.ui.exampleOnly = false; esSetHelpLevel(p, editing, esHelpLevel(p, editing) + 1); esRender(); };
+    const hh = $("#eshidehelp"); if (hh) hh.onclick = () => { ES.ui.exampleOnly = false; esSetHelpLevel(p, editing, 0); esRender(); };
 
     // Moving between sections is the response map's job, so the two buttons that
     // duplicated it are gone. These stay bound when something else renders them.
@@ -16580,6 +16696,22 @@ window.BUSCONTENT = {
   function esBindWritingHead() {
     esBindDecode();
     const x = $("#esx"); if (x) x.onclick = () => { ES.screen = "setup"; esRender(); };
+    // Change question lands on the chooser with the current question in it, in the
+    // mode it was chosen from, so the student is looking at the list they picked
+    // from rather than at a blank configuration screen.
+    const cq = $("#esqchange"); if (cq) cq.onclick = () => {
+      const d = ES.draft, sc = esView();
+      ES.form = {
+        question: (d && d.question) || "", topic: (d && d.topic) || "",
+        rubric: (d && d.rubric) || "", marks: (d && d.marks) || 20,
+        structure: (d && d.structure) || sc.defaultStructure,
+        paraModel: (d && d.paraModel) || (sc.paraModels[0] || null),
+        questionId: (d && d.questionId) || null,
+        setupMode: (d && d.questionId) ? "practice" : "own",
+        rubricOpen: false,
+      };
+      ES.screen = "setup"; esRender();
+    };
     const sw = $("#esmodeswitch"); if (sw) sw.onclick = () => {
       ES.draft.mode = ES.draft.mode === "full" ? "coached" : "full";
       ES.screen = ES.draft.mode; esSaveDraft(); esRender();

@@ -1844,7 +1844,10 @@
      which is the loose, unrelated-widths look the redesign is meant to remove.
      They are capped at the writer's width and pushed to the workspace's own left
      edge, the same offset the sticky header pads to. */
-  .es-scrim .es-qbar, .es-scrim .es-belt{
+  /* On the plan, review and full-attempt screens the question card is still a
+     child of the wrap, so it is aligned to the writing column by hand. On the
+     writing screen it is a grid item and the grid does this. */
+  .es-scrim .es-wrap > .es-qbar, .es-scrim .es-wrap > .es-belt{
     max-width:var(--main);
     margin-left:max(clamp(16px,2.4vw,26px), calc((100% - (var(--main) + var(--rail) + var(--e-gap)))/2));
     margin-right:auto}
@@ -1877,6 +1880,10 @@
   .es-scrim .es-restag{display:inline-block;background:var(--e-mint);color:var(--e-green-dk);border-radius:8px;
     padding:4px 10px;font-size:12px;font-weight:700;margin-bottom:9px}
   .es-scrim .es-qbar-q{font-family:var(--disp);font-weight:500;font-size:19px;line-height:1.4;color:var(--e-ink)}
+  .es-qmetarow{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .es-scrim .es-qchange{font-family:var(--body);font-size:12.5px;font-weight:600;color:var(--e-green-dk);
+    margin-top:10px;text-decoration:none;padding:0}
+  .es-scrim .es-qchange:hover{text-decoration:underline;text-underline-offset:3px;color:var(--e-green-dk)}
   .es-qmeta{display:flex;align-items:center;gap:9px;margin-top:10px;font-size:12.5px;color:var(--e-ink3);font-weight:500}
   .es-qmeta b{color:var(--e-ink2);font-weight:600}
   .es-qmeta i{font-style:normal;color:var(--e-line)}
@@ -1897,10 +1904,21 @@
   .es-scrim .es-belt-b.on{background:var(--e-mint);color:var(--e-green-dk)}
   .es-scrim .es-belt-b.on .es-ico{color:var(--e-green-dk)}
 
-  /* ---- the workspace grid: writer and rail on one centred grid ---- */
-  .es-scrim .es-cols{grid-template-columns:minmax(0,var(--main)) var(--rail);gap:var(--e-gap);
+  /* ---- the workspace grid ----
+     Question, belt, decode box and writer are one column; the rail is the other
+     and spans all four rows, so it begins beside the question rather than
+     appearing halfway down the page next to the writer. That empty upper-right
+     region was the last large piece of dead space on a wide screen. */
+  .es-scrim .es-cols{grid-template-columns:minmax(0,var(--main)) var(--rail);
+    grid-template-rows:auto auto auto auto;gap:0 var(--e-gap);
     justify-content:center;margin-top:0}
-  .es-scrim .es-cols > .es-dechost{grid-column:1 / -1}
+  .es-scrim .es-cols > .es-qbar{grid-column:1;grid-row:1;margin:0 0 16px;max-width:none}
+  .es-scrim .es-cols > .es-belt{grid-column:1;grid-row:2;margin:0 0 16px;max-width:none}
+  .es-scrim .es-cols > .es-dechost{grid-column:1;grid-row:3}
+  .es-scrim .es-cols > .es-compose{grid-column:1;grid-row:4}
+  .es-scrim .es-cols > .es-rail{grid-column:2;grid-row:1 / -1;align-self:start}
+  /* the paragraph panel, when it has something in it, belongs under the rail */
+  .es-scrim .es-cols > .es-rest{grid-column:2;grid-row:4;align-self:start}
   .es-rail{display:flex;flex-direction:column;gap:14px;position:sticky;top:78px;min-width:0}
 
   /* ---- the writer ----
@@ -1942,6 +1960,43 @@
     text-transform:uppercase;color:var(--e-green-dk)}
   .es-scrim .es-active h3,.es-scrim .es-stepjob{font-family:var(--disp);font-weight:500;font-size:15.5px;
     color:var(--e-ink);line-height:1.45;border:none;padding:0;margin:5px 0 0}
+
+  /* The empty evidence chip and edit my point are both live controls, and both
+     were drawn at the weight of a disabled one. A control that does something
+     looks like it does something. */
+  .es-scrim .es-chips{gap:8px;margin:12px 0 0}
+  .es-scrim .es-chip-ev.empty,.es-scrim .es-chip-more{background:var(--surface);border:1px solid var(--e-line);
+    color:var(--e-ink2);font-family:var(--body);font-weight:600;font-size:12.5px;border-radius:10px;
+    padding:7px 12px;opacity:1}
+  .es-scrim .es-chip-ev.empty .es-ico{color:var(--e-ink2)}
+  .es-scrim .es-chip-ev.empty:hover,.es-scrim .es-chip-more:hover{border-color:var(--e-green);
+    color:var(--e-green-dk);background:var(--e-mint2)}
+  .es-scrim .es-chip-arg{background:var(--e-mint);border:1px solid transparent;color:var(--e-ink);
+    font-weight:600;font-size:12.5px;border-radius:10px;padding:7px 12px}
+  .es-scrim .es-chip-arg .es-ico{color:var(--e-green-dk)}
+  .es-scrim .es-chip-arg:hover{border-color:var(--e-green)}
+
+  /* When the menu says "what this sentence has to do" and the authored answer is
+     the instruction already on screen, this is what points at it. */
+  @keyframes es-lookhere{0%{box-shadow:0 0 0 0 rgba(18,178,122,0)}
+    18%{box-shadow:0 0 0 4px rgba(18,178,122,.34)}100%{box-shadow:0 0 0 0 rgba(18,178,122,0)}}
+  .es-scrim .es-guide.lookhere{animation:es-lookhere 1.5s ease-out}
+
+  /* ---- the help ladder, in the page's own language ---- */
+  .es-scrim .es-help{margin-top:14px}
+  .es-scrim .es-rung{background:var(--surface);border:1px solid var(--e-line);border-radius:12px;
+    padding:12px 15px;margin-bottom:8px;gap:12px}
+  .es-scrim .es-rungn{background:var(--e-mint);color:var(--e-green-dk);font-weight:700}
+  .es-scrim .es-runglbl{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--e-ink3)}
+  .es-scrim .es-rungctx{font-weight:600;letter-spacing:0;text-transform:none;color:var(--e-ink3)}
+  .es-scrim .es-rungtext{font-size:14.5px;line-height:1.7;color:var(--e-ink);font-weight:400;margin-top:4px;max-width:74ch}
+  .es-scrim .es-rungnote{font-size:12.5px;font-weight:500;color:var(--e-ink2);line-height:1.55;margin-top:7px;max-width:74ch}
+  .es-scrim .es-helpend{font-size:12.5px;font-weight:500;color:var(--e-ink3)}
+  /* the example route shows one thing, and it is the one thing the menu named:
+     no rung number, because there is no ladder of five on screen to number it in */
+  .es-scrim .es-rung.example{border-color:var(--e-line)}
+  .es-scrim .es-help.exonly .es-rung{border-left:3px solid var(--e-green);padding-left:15px}
 
   /* local sentence actions, side by side under the prompt */
   .es-promptacts{display:flex;align-items:center;gap:18px;margin-top:9px;flex-wrap:wrap}
@@ -2064,6 +2119,7 @@
        column shrank by the gutter a second time. */
     .es-scrim{--main:min(958px, calc(100vw - 110px));--rail:0px;--e-gap:0px}
     .es-scrim .es-cols{grid-template-columns:minmax(0,var(--main))}
+    .es-scrim .es-cols > .es-rest{grid-column:1;grid-row:auto}
     .es-rail{display:none}
     .es-scrim .es-guide{padding:10px 13px 11px}
     .es-scrim .es-compose{padding:16px 18px 18px}

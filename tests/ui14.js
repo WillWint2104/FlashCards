@@ -52,7 +52,7 @@ const rungs = p => p.$$eval('.es-rung',es=>es.map(e=>({n:e.querySelector('.es-ru
   // ladder is revealed a rung at a time, never all at once.
   ok(!!(await p.$('#esstuck')),'help is offered but not given');
   await p.click('#esstuck'); await settled(p);
-  const jobRow = await p.$('[data-esstuck="job"]:not([disabled])');
+  const jobRow = await p.$('[data-esstuck="job"][data-esjob="ladder"]:not([disabled])');
   ok(!!jobRow,'the stuck menu offers the rung that says what this sentence has to do');
   await jobRow.click(); await here(p,'.es-rung'); await settled(p);
   const opened = (await rungs(p)).length;

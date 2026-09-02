@@ -4249,6 +4249,14 @@
     $("#esstart").onclick = () => {
       const question = (f.question || "").trim();
       if (!question) { toast("Add your essay question to start."); const el = $("#esq"); if (el) el.focus(); return; }
+      // Starting replaces the draft outright. That is fine on an empty one and is
+      // the loss of an afternoon's work on a written one, and Change question puts
+      // this route one press from the writing, so a written draft is asked first.
+      const cur = ES.draft;
+      const written = cur ? esResponseWords(cur) : 0;
+      if (written > 0 && (cur.question || "").trim() !== question &&
+          !window.confirm("Start \"" + question.slice(0, 70) + (question.length > 70 ? "\u2026" : "") +
+            "\"? Your current response has " + written + " words in it and starting a different question replaces it.")) return;
       ES.draft = {
         id: esId(), subject: ES.subject, code: ES.code,
         question, topic: (f.topic || "").trim(), rubric: (f.rubric || "").trim(),
@@ -4396,7 +4404,29 @@
   }
 
   // ---- shared header for the two writing screens (question + topic + switch) ----
+  // The head is two things: the page header, which is the same on every essay
+  // screen, and the question card, which the writing screen places inside its own
+  // grid so the rail can start beside it rather than halfway down the page.
   function esWritingHead(sc, modeLabel, switchLabel, switchTo, boxElsewhere) {
+    return esTopBarHTML(sc, switchLabel) + esQuestionCardHTML(modeLabel, boxElsewhere);
+  }
+  function esTopBarHTML(sc, switchLabel) {
+    return `
+      <div class="es-top">
+        <div class="es-brand"><span class="es-mark">M</span>Marginal ${sc.label ? `<span class="es-subj">${esc(sc.label)}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}</div>
+        <div class="es-topbtns">
+          ${/* Learn and Notebook are utilities: they make sense whatever sentence
+                the student is on, they open their own floating windows, and they
+                stay open across the writing. The four writing tools are not
+                utilities and stay on the belt above the writer. */ ""}
+          <button type="button" class="es-util" data-estool="understand" aria-expanded="${ES.ui.studyOpen ? "true" : "false"}">${esIcon("book")}<span>Learn</span></button>
+          <button type="button" class="es-util" data-esnbtoggle aria-expanded="${ES.ui.nbOpen ? "true" : "false"}">${esIcon("note")}<span>Notebook</span></button>
+          <button class="es-linkbtn" id="esmodeswitch">${esc(switchLabel)}</button>
+          <button class="es-x" id="esx" aria-label="Back to setup">setup</button>
+        </div>
+      </div>`;
+  }
+  function esQuestionCardHTML(modeLabel, boxElsewhere) {
     // The question is the one thing on screen at every stage, so the decoder
     // lives on it rather than being a stage the student passes through once.
     const qdef = esQuestionDef();
@@ -4411,24 +4441,17 @@
     if (marks) bits.push(esc(String(marks)) + ' marks');
     if (modeLabel) bits.push(esc(String(modeLabel).toLowerCase()));
     return `
-      <div class="es-top">
-        <div class="es-brand"><span class="es-mark">M</span>Marginal ${sc.label ? `<span class="es-subj">${esc(sc.label)}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}</div>
-        <div class="es-topbtns">
-          ${/* Learn and Notebook are utilities: they make sense whatever sentence
-                the student is on, they open their own floating windows, and they
-                stay open across the writing. The four writing tools are not
-                utilities and stay on the belt above the writer. */ ""}
-          <button type="button" class="es-util" data-estool="understand" aria-expanded="${ES.ui.studyOpen ? "true" : "false"}">${esIcon("book")}<span>Learn</span></button>
-          <button type="button" class="es-util" data-esnbtoggle aria-expanded="${ES.ui.nbOpen ? "true" : "false"}">${esIcon("note")}<span>Notebook</span></button>
-          <button class="es-linkbtn" id="esmodeswitch">${esc(switchLabel)}</button>
-          <button class="es-x" id="esx" aria-label="Back to setup">setup</button>
-        </div>
-      </div>
       <div class="es-qbar">
         <div class="es-qbar-main">
           ${ES.draft.topic ? `<span class="es-restag">${esc(ES.draft.topic)}</span>` : ""}
           <div class="es-qbar-q">${qdec ? esDecodeStem(ES.draft.question, qdec.highlights) : esc(ES.draft.question)}</div>
-          ${bits.length ? '<div class="es-qmeta">' + bits.join('<i>\u2022</i>') + '</div>' : ""}
+          <div class="es-qmetarow">
+            ${bits.length ? '<div class="es-qmeta">' + bits.join('<i>\u2022</i>') + '</div>' : '<span></span>'}
+            ${/* Changing which question you are answering is an essay-workspace
+                  action and belongs on the question. Setup is the broader
+                  configuration and stays in the header. */ ""}
+            <button type="button" class="es-linkbtn es-qchange" id="esqchange">Change question</button>
+          </div>
           ${qdec ? esDecodeChips(qdef) + (boxElsewhere ? "" : esDecodeHost(qdef)) : ""}
         </div>
       </div>`;
@@ -7324,9 +7347,18 @@
     const rungs = esRungs(p, esStepDef(p));
     const jobAt = rungs.findIndex(r => /what this part has to do/i.test(r.label || ""));
     const exAt = rungs.findIndex(r => r.kind === "example");
+    const hasShape = !!esShapesFor((esStepDef(p) || {}).key || "").length;
+    // The screen is already showing what this sentence has to do, in the prompt
+    // above this menu. So this route can never be unavailable: at worst it takes
+    // the student back to the instruction they are looking at. It is only when a
+    // longer authored explanation exists that it opens one.
     const rows = [
-      { k: "job", t: "What this sentence has to do", s: jobAt < 0 ? "not written for this sentence yet" : "the job of this part, in place", off: jobAt < 0 },
-      { k: "shape", t: "Show a sentence shape", s: esShapesFor((esStepDef(p) || {}).key || "").length ? "a frame with the parts named" : "no shape written for this stage yet", off: !esShapesFor((esStepDef(p) || {}).key || "").length },
+      // data-esjob says which of the two this row will do, because "an authored
+      // explanation exists here" and "the instruction is already on screen" are
+      // different facts and nothing else on the page distinguishes them.
+      { k: "job", t: "What this sentence has to do", s: "understand the job of this sentence",
+        d: jobAt >= 0 ? "ladder" : "prompt" },
+      { k: "shape", t: "Show a sentence shape", s: hasShape ? "a frame with the parts named" : "no shape written for this stage yet", off: !hasShape },
       { k: "example", t: "See the same shape used elsewhere", s: exAt < 0 ? "no worked example authored here" : "worked in another topic, not in your question", off: exAt < 0 },
       { k: "words", t: "Words this sentence needs", s: "terms with an authored meaning" },
       { k: "reading", t: "Reading for this argument", s: study.ok.length ? study.ok.length + " resource" + (study.ok.length === 1 ? "" : "s") : "no study resource added yet", off: !study.ok.length },
@@ -7336,7 +7368,7 @@
         <button type="button" class="es-stuck-x" id="esstuckx" aria-label="Close">${esIcon("close")}</button></div>
       <p class="es-stuck-s">Five ways in. None of them writes it for you.</p>
       <div class="es-stuck-list">${rows.map(r => `
-        <button type="button" class="es-stuck-row${r.off ? " off" : ""}" data-esstuck="${r.k}"${r.off ? " disabled" : ""}>
+        <button type="button" class="es-stuck-row${r.off ? " off" : ""}" data-esstuck="${r.k}"${r.d ? ` data-esjob="${r.d}"` : ""}${r.off ? " disabled" : ""}>
           <span class="es-stuck-rt">${esc(r.t)}</span><span class="es-stuck-rs">${esc(r.s)}</span>
           ${r.off ? "" : '<span class="es-stuck-go">\u203a</span>'}
         </button>`).join("")}</div>
@@ -7378,16 +7410,30 @@
         if (sh) { sh.setAttribute("aria-expanded", "true"); sh.textContent = "Hide sentence shape"; }
         esFocusComposer(); return;
       }
-      if (k === "job" || k === "example") {
-        // The authored ladder, opened at the rung the row names. This is the same
-        // disclosure pressing the escalation button that many times gives, so the
-        // rungs below it come with it, exactly as they do on that route.
-        const rungs = esRungs(p, esStepDef(p));
-        const at = k === "job"
-          ? rungs.findIndex(x => /what this part has to do/i.test(x.label || ""))
-          : rungs.findIndex(x => x.kind === "example");
-        if (at < 0) return;
-        esSetHelpLevel(p, ES.ui.editBlock, Math.max(esHelpLevel(p, ES.ui.editBlock), at + 1));
+      if (k === "job") {
+        // A longer authored explanation opens where one exists. Where none does,
+        // the answer is the instruction already on screen, so this points at it
+        // rather than claiming the app does not know what the sentence is for.
+        const at = esRungs(p, esStepDef(p)).findIndex(x2 => /what this part has to do/i.test(x2.label || ""));
+        if (at >= 0) {
+          ES.ui.exampleOnly = false;
+          esSetHelpLevel(p, ES.ui.editBlock, Math.max(esHelpLevel(p, ES.ui.editBlock), at + 1));
+          esRender(); return;
+        }
+        const g = document.querySelector(".es-guide");
+        if (g) {
+          g.scrollIntoView({ block: "nearest" });
+          g.classList.remove("lookhere");
+          void g.offsetWidth;             // restart the animation on a repeat press
+          g.classList.add("lookhere");
+          setTimeout(() => g.classList.remove("lookhere"), 1600);
+        }
+        esFocusComposer(); return;
+      }
+      if (k === "example") {
+        // Exactly what the row promises: the authored cross-topic example, on its
+        // own. Not the ladder, and not the start-you-finish rung above it.
+        ES.ui.exampleOnly = true;
         esRender(); return;
       }
       if (k === "words") { esCaptureContext(p); ES.ui.tool = "vocabulary"; esRenderKeepingPlace(p); return; }
@@ -7533,10 +7579,17 @@
       : step;
     const rungs = esRungs(p, helpStep);
     const shown = Math.min(esHelpLevel(p, editing), rungs.length);
+    // "See the same shape used elsewhere" promises an example, so it shows the
+    // example and nothing else. Reaching it through the ladder would also uncover
+    // the start-you-finish rung below it, which is scaffolding on the sentence the
+    // student is actually writing rather than a structure demonstrated somewhere
+    // else. The deeper ladder still exists; it is asked for separately.
+    const exRung = rungs.find(r => r.kind === "example");
+    const exOnly = !!ES.ui.exampleOnly && !!exRung;
     const blanks = t => esc(t).replace(/\[[^\]]+\]/g, m => `<span class="es-hole">${m.slice(1, -1)}</span>`).replace(/_{3,}/g, '<span class="es-blank">____</span>');
-    const helpRows = rungs.slice(0, shown).map(r => `
+    const helpRows = (exOnly ? [exRung] : rungs.slice(0, shown)).map(r => `
       <div class="es-rung ${r.kind || ""}">
-        <span class="es-rungn">${r.level}</span>
+        ${exOnly ? "" : `<span class="es-rungn">${r.level}</span>`}
         <div class="es-rungbody">
           <div class="es-runglbl">${esc(r.label)}${r.context ? ` <span class="es-rungctx">${esc(r.context)}</span>` : ""}</div>
           <div class="es-rungtext ${r.kind || ""}">${(r.kind === "frame") ? blanks(r.text) : esc(r.text)}</div>
@@ -7545,16 +7598,19 @@
         </div>
       </div>`).join("");
     const next = rungs[shown];
-    const help = !esGuidanceOn() || !rungs.length ? "" : `
-      <div class="es-help">
+    const help = !esGuidanceOn() || !rungs.length || (!shown && !exOnly) ? "" : `
+      <div class="es-help${exOnly ? " exonly" : ""}">
         ${helpRows}
         <div class="es-helpbtns">
           ${/* The first rung is reached through "I am stuck on this sentence" on the
                 prompt now, so the generic opener is gone from the normal route and
-                what is left is the escalation once help is already open. */ ""}
-          ${next ? (shown === 0 ? "" : `<button type="button" class="es-helpask on" id="esmorehelp">${esc(rungs[shown - 1].cta || "Show me more")}</button>`)
-                 : `<span class="es-helpend">That is as far as the help goes. The sentence is yours to write.</span>`}
-          ${shown ? `<button type="button" class="es-linkbtn" id="eshidehelp">Hide help</button>` : ""}
+                what is left is the escalation once help is already open. The
+                example route offers no escalation at all: it is one thing, and it
+                is the thing the menu named. */ ""}
+          ${exOnly ? ""
+            : next ? `<button type="button" class="es-helpask on" id="esmorehelp">${esc(rungs[shown - 1].cta || "Show me more")}</button>`
+                   : `<span class="es-helpend">That is as far as the help goes. The sentence is yours to write.</span>`}
+          <button type="button" class="es-linkbtn" id="eshidehelp">${exOnly ? "Hide the example" : "Hide help"}</button>
         </div>
       </div>`;
 
@@ -7583,9 +7639,13 @@
       ${/* The writing screen owns the host itself, in the columns below, in every
             state including setup. The old flag made the stem render a second one
             whenever the argument picker was showing. */ ""}
-      ${esWritingHead(sc, "Guided", "full attempt", "full", true)}
-      ${esToolbeltHTML(p)}
+      ${esTopBarHTML(sc, "full attempt")}
+      ${/* The question card and the belt are inside the workspace grid, not above
+            it, so the rail can begin beside the question rather than halfway down
+            the page next to the writer. */ ""}
       <div class="es-cols ${ES.ui.tool ? "withdrawer" : ES.ui.contextView ? "withctx" : esDecodeOf(esQuestionDef()) ? "withdec" : ""}">
+        ${esQuestionCardHTML("Guided", true)}
+        ${esToolbeltHTML(p)}
         ${esDecodeHost(esQuestionDef())}
         <div class="es-compose">
           <div class="es-parahead">
@@ -7785,8 +7845,8 @@
     };
     const ng = $("#esnextguide"); if (ng) ng.onclick = () => { p.step = Math.min(si + 1, steps.length - 1); esSaveDraft(); esRender(); };
     const bs = $("#esbackstep"); if (bs) bs.onclick = () => { p.step = Math.max(0, si - 1); esSaveDraft(); esRender(); };
-    const mh = $("#esmorehelp"); if (mh) mh.onclick = () => { esSetHelpLevel(p, editing, esHelpLevel(p, editing) + 1); esRender(); };
-    const hh = $("#eshidehelp"); if (hh) hh.onclick = () => { esSetHelpLevel(p, editing, 0); esRender(); };
+    const mh = $("#esmorehelp"); if (mh) mh.onclick = () => { ES.ui.exampleOnly = false; esSetHelpLevel(p, editing, esHelpLevel(p, editing) + 1); esRender(); };
+    const hh = $("#eshidehelp"); if (hh) hh.onclick = () => { ES.ui.exampleOnly = false; esSetHelpLevel(p, editing, 0); esRender(); };
 
     // Moving between sections is the response map's job, so the two buttons that
     // duplicated it are gone. These stay bound when something else renders them.
@@ -8740,6 +8800,22 @@
   function esBindWritingHead() {
     esBindDecode();
     const x = $("#esx"); if (x) x.onclick = () => { ES.screen = "setup"; esRender(); };
+    // Change question lands on the chooser with the current question in it, in the
+    // mode it was chosen from, so the student is looking at the list they picked
+    // from rather than at a blank configuration screen.
+    const cq = $("#esqchange"); if (cq) cq.onclick = () => {
+      const d = ES.draft, sc = esView();
+      ES.form = {
+        question: (d && d.question) || "", topic: (d && d.topic) || "",
+        rubric: (d && d.rubric) || "", marks: (d && d.marks) || 20,
+        structure: (d && d.structure) || sc.defaultStructure,
+        paraModel: (d && d.paraModel) || (sc.paraModels[0] || null),
+        questionId: (d && d.questionId) || null,
+        setupMode: (d && d.questionId) ? "practice" : "own",
+        rubricOpen: false,
+      };
+      ES.screen = "setup"; esRender();
+    };
     const sw = $("#esmodeswitch"); if (sw) sw.onclick = () => {
       ES.draft.mode = ES.draft.mode === "full" ? "coached" : "full";
       ES.screen = ES.draft.mode; esSaveDraft(); esRender();

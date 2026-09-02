@@ -8,15 +8,24 @@ What the essay page is made of, and which rules the layout is allowed to break.
 | --- | --- | --- |
 | Page | `.es-scrim` | The scroller. Near-white ground, never a dimmed layer over something else. |
 | Header | `.es-wrap > .es-top` | Full bleed. Global utilities only: Learn, Notebook, full attempt, setup. |
-| Question | `.es-qbar` | The question, its metadata, and the decode controls. |
+| Question | `.es-qbar` | The question, its metadata, the decode controls, and Change question. |
 | Support belt | `.es-belt` | Arguments, Evidence, Structure, Vocabulary. Nothing else. |
 | Writer | `.es-compose` | The only card the writing lives in. |
 | Rail | `.es-rail` | Panels that have something in them. Never a placeholder. |
 | Action bar | `.es-footbar` | Fixed. Save state, outline, preview, check. |
 
-The question, the belt and the writer share a left edge and a width. They are one
-column, and they are aligned by the same expression, so a change to one has to be
-a change to all three.
+On the writing screen the question, the belt, the decode box and the writer are
+four rows of one grid column, and the rail is the other column spanning all four.
+So they share a left edge and a width by construction, and the rail begins beside
+the question rather than halfway down the page beside the writer.
+
+On the plan, review and full-attempt screens the question card is still a child of
+the wrap and is aligned to the writing column by hand.
+
+Change question lives on the question card, because changing which question you
+are answering is an essay-workspace action. Setup, in the header, is the broader
+configuration. Starting a different question replaces the draft, so a draft with
+words in it is asked first.
 
 ## Inside the writer
 
@@ -48,9 +57,9 @@ about. Nothing on it writes, inserts or rewrites a sentence.
 
 | Row | Goes to |
 | --- | --- |
-| What this sentence has to do | the authored ladder, at its "what this part has to do" rung |
+| What this sentence has to do | the authored explanation where one exists, and otherwise the instruction already on screen |
 | Show a sentence shape | the content-free frames for this stage |
-| See the same shape used elsewhere | the authored worked example, deliberately in another topic |
+| See the same shape used elsewhere | the authored worked example, on its own |
 | Words this sentence needs | the vocabulary tool |
 | Reading for this argument | the study resources authored for this pathway |
 
@@ -58,6 +67,22 @@ The menu is always five rows. A row with nothing behind it is shown disabled and
 says why, because a menu that changes length teaches the student nothing about
 what help exists. On an unreviewed pathway most of the rows are unavailable, and
 that is the honest report of the content gap, not a bug in the menu.
+
+Two of the rows need care.
+
+**What this sentence has to do** can never be unavailable, because the prompt
+above the menu is already telling the student what the sentence has to do. Where a
+longer explanation is authored it opens the ladder at that rung; where none is, it
+points at the instruction on screen. `data-esjob` on the row says which of the two
+it will do, so "is an authored ladder available here" stays answerable without
+opening anything.
+
+**See the same shape used elsewhere** shows the worked example and nothing else.
+Reaching it through the ladder would also uncover the start-you-finish rung below
+it, which is scaffolding on the sentence the student is actually writing rather
+than a structure demonstrated somewhere else. The example is safe precisely
+because it is in another topic. The deeper ladder still exists and is asked for
+separately.
 
 Opening and closing it is a disclosure inside one component: it toggles its own
 panel and never re-renders. On the writing screen a keeping-place render swaps

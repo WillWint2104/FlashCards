@@ -163,16 +163,13 @@ async function writeParagraph(p, tr, led, vocab, prof, need, unexplained, cs) {
 // every route at a fixed length and disables the ones with nothing behind them,
 // so an enabled "what this sentence has to do" row IS the ladder being offered.
 async function ladderOffered(p) {
-  const b = await p.$("#esstuck"); if (!b) return false;
-  return await p.evaluate(() => {
-    const r = document.querySelector('[data-esstuck="job"]');
-    return !!r && !r.disabled;
-  });
+  if (await has(p, "#esmorehelp")) return true;
+  return await has(p, '[data-esstuck="job"][data-esjob="ladder"]:not([disabled])');
 }
 async function openLadder(p) {
   const b = await p.$("#esstuck"); if (!b) return false;
   await b.click(); await wait(p, 200);
-  const r = await p.$('[data-esstuck="job"]:not([disabled])');
+  const r = await p.$('[data-esstuck="job"][data-esjob="ladder"]:not([disabled])');
   if (!r) { await p.keyboard.press("Escape").catch(() => {}); return false; }
   await r.click(); await wait(p, 340);
   return true;

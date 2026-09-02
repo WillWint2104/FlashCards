@@ -159,13 +159,13 @@ async function usePractice(page) {
 // already showing. These two helpers are the ladder's route, so a suite asks the
 // question it means to ask -- is help available here, and how deep does it go --
 // without also encoding which control opens it.
+// The job row is never disabled, because the sentence's instruction is on screen
+// whether or not a longer explanation is authored. data-esjob is the app saying
+// which of the two this row will do, so "is an authored ladder available here"
+// stays answerable without opening anything.
 async function ladderOffered(page) {
   if (await page.$('#esmorehelp')) return true;
-  if (!(await page.$('#esstuck'))) return false;
-  return page.evaluate(() => {
-    const r = document.querySelector('[data-esstuck="job"]');
-    return !!r && !r.disabled;
-  });
+  return !!(await page.$('[data-esstuck="job"][data-esjob="ladder"]:not([disabled])'));
 }
 // Opens the ladder and climbs it as far as it goes. Returns the number of rungs
 // on screen at the top, which is 0 when no ladder is authored for this sentence.
@@ -174,7 +174,7 @@ async function climbLadder(page) {
     const b = await page.$('#esstuck');
     if (!b) return 0;
     await b.click();
-    const row = await page.$('[data-esstuck="job"]:not([disabled])');
+    const row = await page.$('[data-esstuck="job"][data-esjob="ladder"]:not([disabled])');
     if (!row) { await page.keyboard.press('Escape').catch(() => {}); return 0; }
     await row.click();
     await page.waitForSelector('.es-rung', { timeout: 8000 }).catch(() => {});
