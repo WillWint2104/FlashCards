@@ -376,7 +376,7 @@ window.ESSAY = {
               short: "Digital engagement → digital marketing",
               adds: "the digital channels it markets through",
               meaning: "These customers already spend their attention on digital channels, so that is where the business has to buy it.",
-              whatToProve: "customers are already on digital channels \u2192 the business moves its promotion there \u2192 why that reaches them better than the alternative",
+              whatToProve: "customers are already on digital channels \u2192 the business moves its promotion there \u2192 why that is where this market can be reached",
               mechanism: { state: "none-required", reason: "The two ends already meet. Nothing sits between a customer being on a channel and the business promoting there, and a middle step would restate the relationship rather than explain it." },
               fromLabel: "customers already on digital channels",
               commonMistake: "Listing the business's digital channels without saying what it is about these customers that made digital the right choice.",
@@ -1608,7 +1608,11 @@ window.ESSAY = {
             { key: "explain", label: "explanation",     job: "explain how the strategy works, using business terminology" },
             { key: "example", label: "example",         job: "apply a real case study or business example" },
             { key: "effect",  label: "effect",          job: "explain the effect on the objective and why it matters to the business" },
-            { key: "link",    label: "concluding link", job: "link back to the question with a clear judgement" }
+            // A concluding link on an Explain question links; it does not judge.
+            { key: "link",    label: "concluding link", job: "link back to the question with a clear judgement",
+              byFamily: {
+                causal:    { job: "link back to the question and say what this paragraph has established" },
+                judgement: { job: "link back to the question with a clear judgement" } } }
           ],
           templates: {
             topic:   { tier1: "[strategy] can affect [objective] because [main relationship].",
@@ -1825,9 +1829,18 @@ window.ESSAY = {
         { key: "thesis",  label: "thesis",   job: "state your overall line of argument" },
         { key: "methods", label: "approach", job: "signpost how the essay will get there" }
       ],
+      // The KEY is durable: it is written into every saved sentence and is the
+      // contract with the coach worker, so it stays "judgement" whatever the
+      // directive is. What the STUDENT is shown follows the directive, because a
+      // causal question never asked them to weigh anything and a slot headed
+      // JUDGEMENT telling them to do so is the question being changed underneath
+      // them.
       conclusion: [
         { key: "restate",   label: "restatement", job: "draw the argument together without simply repeating" },
-        { key: "judgement", label: "judgement",   job: "land a clear, weighed judgement" }
+        { key: "judgement", label: "judgement",   job: "land a clear, weighed judgement",
+          byFamily: {
+            causal:    { label: "the answer", job: "answer the question directly, from what the body established" },
+            judgement: { label: "judgement",  job: "land a clear, weighed judgement" } } }
       ]
     },
     templates: {
@@ -1847,9 +1860,20 @@ window.ESSAY = {
         judgement: ["evaluate", "assess", "to what extent", "discuss", "critically"],
         causal: ["explain", "how can", "how do", "how does", "describe", "outline", "analyse", "account for", "examine"]
       },
+      // "Weigh it" asks the student to establish that something ELSE mattered less,
+      // which is a second claim and a second burden of proof. A judgement question
+      // asks for exactly that. A causal one does not, and the frame was being
+      // offered on every question because only thesis carried a family gate.
       link:      { tier1: "Therefore, [method or factor] was a key method because [reason].",
                    tier2: [ { type: "answer the question", frame: "This shows that [your claim], which directly addresses [the question]." },
-                            { type: "weigh it", frame: "This mattered more than [the alternative] because [reason]." } ] },
+                            { type: "weigh it", frame: "This mattered more than [the alternative] because [reason]." } ],
+                   byFamily: {
+                     causal: { tier1: "Therefore, [method or factor] was a key method because [reason].",
+                               tier2: [ { type: "answer the question", frame: "This shows that [your claim], which directly addresses [the question]." },
+                                        { type: "name what it establishes", frame: "This establishes that [your claim], which is one of the ways [the concept in the question] affects [the result in the question]." } ] },
+                     judgement: { tier1: "Therefore, [method or factor] was a key method because [reason].",
+                               tier2: [ { type: "answer the question", frame: "This shows that [your claim], which directly addresses [the question]." },
+                                        { type: "weigh it", frame: "This mattered more than [the alternative] because [reason]." } ] } } },
       // The shape of a thesis follows the directive. An Explain or How question wants
       // a causal line; an Evaluate or Assess question wants a weighed one. Offering
       // judgement frames for a How question teaches the wrong sentence, so the
@@ -1862,7 +1886,7 @@ window.ESSAY = {
                      // relationship. Sharing frames between them teaches a student
                      // to write a paragraph opener where an essay opener belongs,
                      // so these signpost and the topic frames do not.
-                     causal: { tier1: "Overall, [concept from the question] can contribute to [result from the question] through [argument 1] and [argument 2].",
+                     causal: { tier1: "[concept from the question] can contribute to [result from the question] through [argument 1] and [argument 2].",
                                // Neutral by directive. A How can... question asks how something happens, not
                                // which of two things matters more, so no frame here asks for a ranking.
                                // "most importantly", "strongest" and "to a lesser extent" are claims about
@@ -1871,15 +1895,23 @@ window.ESSAY = {
                                // being assessed.
                                tier2: [ { type: "signpost the ways", frame: "[concept from the question] affects [result from the question] in several ways, including [argument 1] and [argument 2]." },
                                         { type: "name the second way", frame: "[concept from the question] shapes [result from the question] through [argument 1], and also through [argument 2]." } ] },
-                     judgement: { tier1: "Overall, [the subject of the question] is [your judgement] because [main reason], although [the qualification].",
+                     judgement: { tier1: "[the subject of the question] is [your judgement] because [main reason], although [the qualification].",
                                tier2: [ { type: "line of argument", frame: "While [the other side], ultimately [your position] because [main reason]." },
                                         { type: "weigh two sides", frame: "[the subject of the question] can be assessed by weighing [one side] against [the other side], and on balance [your judgement]." } ] } } },
       methods:   { tier1: "This will be shown through [first argument] and [second argument].",
                    tier2: [ { type: "signpost", frame: "By examining [first argument] and [second argument], this essay will argue [your position]." } ] },
       restate:   { tier1: "Overall, [what you examined] shows that [your conclusion].",
                    tier2: [ { type: "draw together", frame: "Taken together, [argument 1] and [argument 2] reveal [your conclusion]." } ] },
+      // Same slot, two families. A causal conclusion answers the question from what
+      // the body established; it does not reach a verdict, because no verdict was
+      // asked for. The judgement frames are unchanged and stay where they belong.
       judgement: { tier1: "On balance, [the subject of the question] was [your judgement] because [main reason].",
-                   tier2: [ { type: "weighed judgement", frame: "Although [the qualification], on balance [your judgement] because [main reason]." } ] }
+                   tier2: [ { type: "weighed judgement", frame: "Although [the qualification], on balance [your judgement] because [main reason]." } ],
+                   byFamily: {
+                     causal: { tier1: "Therefore, [concept from the question] affects [result from the question] because [the overall reason your paragraphs established].",
+                               tier2: [ { type: "answer the question", frame: "[concept from the question] shapes [result from the question] because [the reason established across your paragraphs]." } ] },
+                     judgement: { tier1: "On balance, [the subject of the question] was [your judgement] because [main reason].",
+                               tier2: [ { type: "weighed judgement", frame: "Although [the qualification], on balance [your judgement] because [main reason]." } ] } } }
     },
     // Worked examples for the optional "see a worked example" reference. These are
     // FIXED, pre-written (never generated, so no invented history), and ALWAYS on a

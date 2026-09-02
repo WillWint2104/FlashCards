@@ -3252,13 +3252,23 @@
   // Map a paragraph's role to its slot set. Intro/Conclusion use the shared light
   // sets; the BODY set is the subject scaffold's when present (TEEEC/TDECC),
   // otherwise the shared body slots (window.ESSAY.slots).
+  // A slot's KEY is durable: it is written into every saved sentence and is the
+  // contract with the coach worker. Its label and job are what the student reads,
+  // and those follow the directive where the content says they should, so a causal
+  // question never heads a slot JUDGEMENT and tells the student to weigh.
+  function esSlotByFamily(s) {
+    if (!s || !s.byFamily) return s;
+    const fam = s.byFamily[esDirectiveFamily()];
+    return fam ? Object.assign({}, s, fam) : s;
+  }
   function slotsForRole(role) {
     const sets = (window.ESSAY && window.ESSAY.slots && window.ESSAY.slots.roleSets) || {};
     const r = String(role || "").toLowerCase();
-    if (r.indexOf("introduction") === 0 || r === "intro") return sets.introduction || [];
-    if (r.indexOf("conclusion") === 0) return sets.conclusion || [];
+    const pick = list => (list || []).map(esSlotByFamily);
+    if (r.indexOf("introduction") === 0 || r === "intro") return pick(sets.introduction);
+    if (r.indexOf("conclusion") === 0) return pick(sets.conclusion);
     const scaf = esActiveScaffold();
-    return (scaf && scaf.body) || sets.body || [];
+    return pick((scaf && scaf.body) || sets.body);
   }
   function slotDef(role, key) { return slotsForRole(role).find(s => s.key === key) || null; }
   // Frame templates for a slot: the active scaffold's when it defines the key,
@@ -3281,11 +3291,19 @@
     }
     return "causal";
   }
-  // The frames for a slot, after the directive has chosen the family.
-  function esShapesFor(key) {
+  // The templates for a slot AFTER the directive has chosen the family. Every
+  // surface that renders a frame goes through this one function. It used not to:
+  // the family gate lived inside esShapesFor, and the skeleton read slotTemplates
+  // directly, so the ungated frames were served there whatever the directive was.
+  // A gate that one caller can walk around is not a gate.
+  function slotTemplatesFor(key) {
     const t = slotTemplates(key) || {};
     const fam = t.byFamily && t.byFamily[esDirectiveFamily()];
-    const use = fam || t;
+    return fam || t;
+  }
+  // The frames for a slot, after the directive has chosen the family.
+  function esShapesFor(key) {
+    const use = slotTemplatesFor(key);
     return [use.tier1].concat((use.tier2 || []).map(x => x.frame)).filter(Boolean);
   }
   function esBagKey() { return ES.subject + "|" + ES.code; }
@@ -8057,7 +8075,7 @@
     const blanks = t => esc(t).replace(/_{2,}/g, '<span class="es-blank">____</span>');
     const rows = slots.map(sdef => {
       const done = graded && !missing[sdef.key];
-      const t = slotTemplates(sdef.key) || {};
+      const t = slotTemplatesFor(sdef.key);
       const tier2 = t.tier2 || [];
       const hasFrames = !!(t.tier1 || tier2.length);
       // opened by the student, or opened for a gap the coach just named
