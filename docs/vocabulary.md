@@ -12,6 +12,17 @@ sentence shapes resolve.
 is worse than an empty panel: a student cannot tell a term the app is teaching from
 a word somebody typed next to a heading.
 
+## Still broken elsewhere
+
+The rule is **do not display undefined vocabulary**, and this document is about one
+tool. `esHintHTML` (app.js:8528) still renders the same `points[].terms` strings as
+`.es-hintterm` chips on the **full-attempt screen** — 477 of them, undefined, in
+green. Vocabulary v1 removed the pattern from the writing tool and not from the app.
+
+It is recorded here rather than fixed because the two ways out are a product
+decision: delete the chips, or author 477 records. Neither belongs in a branch that
+was deliberately kept clear of content authoring.
+
 ## What this replaced
 
 `BUSCONTENT` holds 405 distinct term strings across 83 section points. The tool
