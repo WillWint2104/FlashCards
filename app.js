@@ -3227,6 +3227,7 @@
 
   const ES = { subject: null, code: "", demo: false, screen: "setup", draft: null, list: [], form: null, pending: false,
     ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, planAll: false, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false, tryPick: null, lessonMore: false, lessonJump: null,
+      shapeSlot: null, shapeEx: false, shapeAlts: false, shapeAlt: null,
       studyOpen: false, studyPreview: null, studyPos: null, stuckOpen: false },  // transient guided-view state, reset on paragraph change
     hint: { open: false, tab: "know" },          // study hints: persists across paragraphs on purpose
     // The Learning Centre is off the student route. This is the only way back to
@@ -3234,7 +3235,8 @@
     legacyCentre: /[?&]eslegacy=1/.test(String(location.search || "")),
     quiz: { revealed: false, peeked: false, attempt: "", result: null } };
   const ES_KEY = "marginal.essay.v1";
-  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, planAll: false, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false, tryPick: null, lessonMore: false, lessonJump: null }; }
+  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, planAll: false, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false, tryPick: null, lessonMore: false, lessonJump: null,
+    shapeSlot: null, shapeEx: false, shapeAlts: false, shapeAlt: null }; }
   // peeked persists for the whole attempt: revealing once disqualifies mastery even
   // if the answer is hidden again before checking. Cleared only on a new attempt.
   function esResetQuiz() { ES.quiz = { revealed: false, peeked: false, attempt: "", result: null }; }
@@ -3301,6 +3303,203 @@
     const fam = t.byFamily && t.byFamily[esDirectiveFamily()];
     return fam || t;
   }
+  // ===========================================================================
+  // SENTENCE SHAPES v2
+  //
+  // A structure for the sentence in hand, resolved by directive family, paragraph
+  // role and stage. Local scaffolding under the prompt: it is not another place to
+  // go and read, and nothing in it writes, inserts or rewrites a sentence.
+  //
+  // The invariant that makes it safe to show a half-filled sentence: a mint slot
+  // is only ever an AUTHORED string the student already has, and if one cannot be
+  // resolved the whole shape is withheld. A mint slot rendering empty would tell
+  // the student the app knows something it does not.
+  // ===========================================================================
+  function esShapeRole(p) {
+    if (esIsIntro(p)) return "introduction";
+    if (esIsConcl(p)) return "conclusion";
+    return "body";
+  }
+  function esShapeLib() { return ((window.ESSAY || {}).shapes || {}).library || []; }
+  // The recommended shape: family, then role, then stage. Variants are reached
+  // through the shape they belong to, never resolved directly.
+  function esShapeFor(p, step) {
+    if (!step) return null;
+    const fam = esDirectiveFamily(), role = esShapeRole(p), stage = step.key;
+    return esShapeLib().find(x => !x.variantOf && x.family === fam && x.role === role && x.stage === stage) || null;
+  }
+  function esShapeVariants(shape) {
+    if (!shape || !(shape.alternatives || []).length) return [];
+    return shape.alternatives.map(id => esShapeLib().find(x => x.id === id)).filter(Boolean);
+  }
+  // Names an authored field. Never computes one: app.js already refuses to derive
+  // the cause end by splitting `short` or `relationship`, and a shape that worked
+  // it out here would walk around that rule from a second direction.
+  function esShapeBind(binding, p) {
+    const q = esQuestionDef();
+    if (binding === "question.concept") return String((q && q.term1) || "").trim();
+    if (binding === "question.areas") {
+      const a = esRequiredAreas(q) || [];
+      if (!a.length) return "";
+      return a.length === 1 ? a[0] : a.slice(0, -1).join(", ") + " and " + a[a.length - 1];
+    }
+    if (binding === "question.area") {
+      const path = esPathway(p);
+      const key = String((path && path.area) || p.area || "").trim();
+      if (!key) return "";
+      const areas = ((q && q.requirements) || {}).requiredAreas || [];
+      const hit = areas.find(x => x.id === key || x.label === key);
+      return hit ? String(hit.label || hit.id) : key;
+    }
+    if (binding === "pathway.fromLabel") {
+      const path = esPathway(p);
+      return String((path && path.fromLabel) || "").trim();
+    }
+    return "";
+  }
+  // Every resolved slot, or nothing. A shape is all-or-nothing on purpose.
+  function esShapeValues(shape, p) {
+    if (!shape) return null;
+    const out = {};
+    for (const sl of (shape.slots || [])) {
+      if (sl.treatment !== "resolved") continue;
+      const v = esShapeBind(sl.binding, p);
+      if (!v) return null;
+      out[sl.id] = v;
+    }
+    return out;
+  }
+  // An example must not be able to answer the live question. The check is
+  // mechanical rather than editorial: it may not contain the question's own terms
+  // or any area the question fixes. No example passing is a normal outcome and
+  // shows nothing rather than the nearest thing.
+  function esShapeExample(shapeId) {
+    const all = (((window.ESSAY || {}).shapes || {}).examples || {})[shapeId] || [];
+    if (!all.length) return null;
+    const q = esQuestionDef();
+    const banned = (esRequiredAreas(q) || [])
+      .concat([(q && q.term1) || "", (q && q.term2) || ""])
+      .map(x => String(x || "").toLowerCase().trim()).filter(x => x.length > 2);
+    return all.find(ex => {
+      const t = String(ex.text || "").toLowerCase();
+      return !banned.some(b => t.indexOf(b) >= 0);
+    }) || null;
+  }
+  // The frame, with its slots rendered. `fills` swaps the labels for an example's
+  // own words, which is what lets a student see which part of the example is which
+  // part of the shape.
+  function esShapeFrameHTML(shape, values, opts) {
+    const o = opts || {};
+    const byId = {};
+    (shape.slots || []).forEach(sl => { byId[sl.id] = sl; });
+    return String(shape.frame || "").replace(/\{([a-zA-Z0-9_-]+)\}/g, (m, id) => {
+      const sl = byId[id]; if (!sl) return m;
+      const kind = sl.treatment === "resolved" ? "res" : "you";
+      const text = sl.treatment === "resolved" ? String((values && values[id]) || "") : "[" + (sl.label || id) + "]";
+      if (!o.pressable) return `<span class="es-sl ${kind}">${esc(text)}</span>`;
+      return `<button type="button" class="es-sl ${kind}" data-esslot="${esc(id)}">${esc(text)}</button>`;
+    });
+  }
+  function esShapePanelHTML(p, step) {
+    const shape = esShapeFor(p, step); if (!shape) return "";
+    const values = esShapeValues(shape, p); if (!values) return "";
+    const ui = ES.ui;
+    // an alternative the student picked, otherwise the recommended one
+    const variants = esShapeVariants(shape);
+    const picked = ui.shapeAlt ? variants.find(v => v.id === ui.shapeAlt) : null;
+    const showing = picked || shape;
+    const showVals = picked ? esShapeValues(picked, p) : values;
+    if (!showVals) return "";
+    const noteSlot = ui.shapeSlot ? (showing.slots || []).find(x => x.id === ui.shapeSlot) : null;
+    const ex = ui.shapeEx ? esShapeExample(shape.id) : null;
+    const key = [shape.family, shape.role, shape.stage].join(" \u00b7 ");
+    const alts = ui.shapeAlts && variants.length ? `
+      <div class="es-alts">${[shape].concat(variants).map(v => {
+        const vv = v === shape ? values : esShapeValues(v, p);
+        if (!vv) return "";
+        const on = (v === shape) ? !ui.shapeAlt : ui.shapeAlt === v.id;
+        return `<button type="button" class="es-alt${on ? " on" : ""}" data-esalt="${esc(v === shape ? "" : v.id)}">
+          <span class="es-altlbl">${esc(v.name || "The relationship first")}${v === shape ? '<span class="es-alttag">recommended</span>' : ""}</span>
+          <span class="es-altframe">${esShapeFrameHTML(v, vv, {})}</span>
+          <span class="es-altwhy">${esc(v.why || "")}</span>
+        </button>`;
+      }).join("")}</div>
+      <p class="es-altfoot">Picking one does not write anything. It changes which structure is shown, and the example follows it.</p>` : "";
+    return `<div class="es-shape2">
+      <div class="es-shape2hd"><span class="es-shape2lbl">${ui.shapeAlts ? "Other ways to phrase this" : "Recommended shape"}</span>
+        <span class="es-shape2key">${esc(key)}</span></div>
+      ${ui.shapeAlts ? "" : `<div class="es-shape2frame">${esShapeFrameHTML(showing, showVals, { pressable: true })}</div>`}
+      ${noteSlot && !ui.shapeAlts ? `<div class="es-slotnote"><b>${esc(noteSlot.treatment === "resolved" ? showVals[noteSlot.id] : "[" + (noteSlot.label || noteSlot.id) + "]")}</b> \u00b7 ${esc(noteSlot.note || "")}</div>` : ""}
+      ${ui.shapeAlts ? "" : `<p class="es-shape2why">${esc(showing.why || "")}</p>`}
+      ${ui.shapeAlts ? "" : (() => {
+        // Only the halves that are on screen. A conclusion's answer is all the
+        // student's, and a key to a colour that is not in the sentence is one more
+        // thing to read for nothing.
+        const has = t => (showing.slots || []).some(x => (x.treatment === "resolved") === (t === "res"));
+        const bits = [];
+        if (has("res")) bits.push('<span class="es-sldot res"></span>supplied by your question or your argument');
+        if (has("you")) bits.push('<span class="es-sldot you"></span>you supply this');
+        if (!bits.length) return "";
+        return `<div class="es-shape2legend">${bits.join('<span class="es-slsep">\u00b7</span>')}</div>`;
+      })()}
+      ${alts}
+      ${ex ? `<div class="es-shapeex">
+        <div class="es-shapeexhd">The same shape, somewhere else <span>\u00b7 ${esc(ex.context || "")}</span></div>
+        <p class="es-shapeextext">${esShapeExFilled(showing, ex)}</p>
+        <p class="es-shapeexnote">Deliberately a different situation, so the shape transfers and the words cannot. Nothing here can be pasted into your paragraph.</p>
+      </div>` : ""}
+      <div class="es-shape2acts">
+        ${esShapeExample(shape.id) ? `<button type="button" class="es-linkbtn" id="esshapeex">${ui.shapeEx ? "Hide the example" : "See this shape used elsewhere"}</button>` : ""}
+        ${variants.length ? `<button type="button" class="es-linkbtn" id="esshapealts">${ui.shapeAlts ? "Back to the recommended shape" : "Other ways to phrase this"}</button>` : ""}
+      </div>
+    </div>`;
+  }
+  // The example sentence, with the parts that map onto slots marked. Where a fill
+  // is not authored for a slot the sentence still reads, unmarked.
+  function esShapeExFilled(shape, ex) {
+    let out = esc(String(ex.text || ""));
+    const byId = {};
+    (shape.slots || []).forEach(sl => { byId[sl.id] = sl; });
+    Object.keys(ex.fills || {}).forEach(id => {
+      const sl = byId[id]; if (!sl) return;
+      const w = esc(String(ex.fills[id] || "")); if (!w) return;
+      const at = out.indexOf(w); if (at < 0) return;
+      out = out.slice(0, at) + `<span class="es-sl ${sl.treatment === "resolved" ? "res" : "you"} plain">` + w + "</span>" + out.slice(at + w.length);
+    });
+    return out;
+  }
+  // Every control in the panel is a disclosure inside one component. It rebuilds
+  // its own box and rebinds, and never re-renders: the writing screen swaps only
+  // its side column on a keeping-place render, so a render here would leave the
+  // panel in whatever state the last full render gave it, and would cost the
+  // student their caret for a hint.
+  function esShapeRefresh(p) {
+    const box = document.getElementById("esshapes"); if (!box) return;
+    const st = esStepDef(p); if (!st) return;
+    const html = esShapePanelHTML(p, st);
+    if (!html) return;
+    box.innerHTML = html;
+    box.querySelectorAll("button:not([type])").forEach(b => b.type = "button");
+    esBindShapePanel(p);
+  }
+  function esBindShapePanel(p) {
+    const box = document.getElementById("esshapes"); if (!box) return;
+    box.querySelectorAll("[data-esslot]").forEach(b => b.onclick = () => {
+      const id = b.dataset.esslot;
+      ES.ui.shapeSlot = ES.ui.shapeSlot === id ? null : id;
+      esShapeRefresh(p);
+    });
+    const exb = box.querySelector("#esshapeex");
+    if (exb) exb.onclick = () => { ES.ui.shapeEx = !ES.ui.shapeEx; esShapeRefresh(p); };
+    const ab = box.querySelector("#esshapealts");
+    if (ab) ab.onclick = () => { ES.ui.shapeAlts = !ES.ui.shapeAlts; ES.ui.shapeSlot = null; esShapeRefresh(p); };
+    box.querySelectorAll("[data-esalt]").forEach(b => b.onclick = () => {
+      ES.ui.shapeAlt = b.dataset.esalt || null;
+      ES.ui.shapeAlts = false; ES.ui.shapeSlot = null;
+      esShapeRefresh(p);
+    });
+  }
+
   // The frames for a slot, after the directive has chosen the family.
   function esShapesFor(key) {
     const use = slotTemplatesFor(key);
@@ -7719,8 +7918,14 @@
                   // the grammar of the sentence, which is a different thing from the
                   // instruction telling the student what it has to say.
                   const st = esStepDef(p); if (!st) return "";
-                  const all = esShapesFor(st.key);
-                  if (!all.length) return "";
+                  // Sentence Shapes v2 where a shape resolves for this family, role
+                  // and stage, and the authored frames where none does. A question
+                  // with no pathways cannot fill a mint slot, so it keeps the frames
+                  // rather than being shown a shape with a hole where a known value
+                  // was promised.
+                  const v2 = esShapePanelHTML(p, st);
+                  const all = v2 ? [] : esShapesFor(st.key);
+                  if (!v2 && !all.length) return "";
                   // Rendered once and revealed in place. Showing the shape is a
                   // disclosure inside one component, not a change of application
                   // state, so it must not re-enter the render pipeline: that is what
@@ -7731,7 +7936,7 @@
                       <button type="button" class="es-linkbtn es-stuckbtn" id="esstuck" aria-expanded="${ES.ui.stuckOpen ? "true" : "false"}">I am stuck on this sentence</button>
                     </div>
                     ${esStuckHTML(p)}
-                    <div class="es-shapes" id="esshapes"${open ? "" : " hidden"}>${all.map(x =>
+                    <div class="es-shapes${v2 ? " v2" : ""}" id="esshapes"${open ? "" : " hidden"}>${v2 || all.map(x =>
                       `<p class="es-shape">${esc(x).replace(/\[[^\]]+\]/g, m => `<span class="es-hole">${m.slice(1, -1)}</span>`).replace(/_{2,}/g, '<span class="es-blank">____</span>')}</p>`).join("")}</div>`;
                 })()}
               </div>`}
@@ -7763,6 +7968,7 @@
 
     esBindWorkspace(host, d);
     esBindStuck(host, p);
+    esBindShapePanel(p);
     esBindWritingHead();
     esBindReasoning(host, p, "#espoint");
     const pt = $("#espoint");

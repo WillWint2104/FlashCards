@@ -1,0 +1,86 @@
+# Sentence Shapes v2
+
+A structure for the sentence in hand, shown under the prompt it belongs to.
+Local scaffolding: not another place to go and read, and nothing in it writes,
+inserts or rewrites a sentence.
+
+## How a shape is chosen
+
+Directive family, then paragraph role, then the stage of the paragraph the student
+is on. Nothing is keyed to a question. A question contributes VALUES, never
+structures, and never a model answer to itself.
+
+```
+causal · body         · topic       the relationship, and why it holds
+causal · introduction · thesis      what the response will establish
+causal · conclusion   · restate     what the paragraphs had in common
+causal · conclusion   · judgement   the answer, in the question's words
+```
+
+Variants (`variantOf`) are reached through the shape they belong to, never
+resolved directly, so "other ways to phrase this" cannot become the default.
+
+## Two treatments, four sources
+
+A slot declares both, and they must not be collapsed:
+
+| field | what it is for |
+| --- | --- |
+| `treatment` | what the STUDENT sees. `resolved` is mint, `student` is amber. Two, because a student needs to know which parts are theirs, not a taxonomy. |
+| `source` | where a resolved value CAME from: `question`, `pathway`, `student`. Kept so validation can enforce it. |
+| `binding` | the authored field the value is read from. |
+
+The separation is load-bearing. `app.js` forbids deriving the cause end of a
+relationship by splitting `short` or `relationship`, and that rule is only
+enforceable if the shape records that the value must come from
+`pathway.fromLabel`. Flattening provenance into the treatment would lose it.
+
+Bindings name an authored field and never compute one:
+
+| binding | reads |
+| --- | --- |
+| `question.concept` | `question.term1` |
+| `question.areas` | `requirements.requiredAreas` labels, joined |
+| `question.area` | the label for this paragraph's area |
+| `pathway.fromLabel` | the chosen argument's authored cause end |
+
+**A verb is never a slot.** Wrapping *affect* or *lead* in a chip makes the
+sentence look fragmented and over-encoded, and a verb is not a value a student
+recognises as having come from anywhere. Connecting words are prose in the frame.
+
+## All or nothing
+
+If a resolved slot's binding yields nothing, the whole shape is withheld and the
+authored frames stand in. A mint slot rendering empty would tell the student the
+app knows something it does not. A subject with no pathways therefore keeps the
+old frames rather than being shown a shape with a hole where a known value was
+promised.
+
+## The mechanism is not a slot
+
+It is optional metadata. Twenty-three of twenty-eight pathways do not carry a
+usable one, and one of them declares positively that a middle step *"would restate
+the relationship rather than explain it"*. A shape demanding a mechanism would
+contradict its own content on the first screen a student reaches. The student slot
+is named for the reasoning, not for a step the author ruled out.
+
+## Examples
+
+Held in `shapes.examples`, keyed by shape, never on a question. One example serves
+every question that uses the shape, and a question never authors an answer to
+itself.
+
+The guard is mechanical rather than editorial: an example may not contain the live
+question's own terms or any area it fixes. No example passing is a normal outcome
+and shows nothing rather than the nearest thing. `fills` maps the example's own
+words back onto the slots, which is what lets a student see which part is which —
+rendered as prose with coloured underlines, because a finished sentence has to read
+as a sentence.
+
+## What is not built yet
+
+- **Only the causal family is authored.** A judgement question falls back to the
+  authored frames. That is the honest state, not a silent gap.
+- **Only the TEEEC `topic` stage** carries a body shape. Other stages fall back.
+- Shapes are authored in `essay-content.js`. They are shaped to be importable, and
+  belong in the question-package system when that lands.
