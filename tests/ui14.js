@@ -45,18 +45,28 @@ const rungs = p => p.$$eval('.es-rung',es=>es.map(e=>({n:e.querySelector('.es-ru
   const step = await p.$eval('.es-guideh',e=>e.textContent.trim());
   ok(/EXPLANATION|EXPLAIN/i.test(step),'on the explain step: '+step);
   ok((await rungs(p)).length===0,'nothing but the guide shows by default');
-  ok(!!(await p.$('#esmorehelp')),'help is offered but not given');
-  ok((await p.$eval('#esmorehelp',e=>e.textContent.trim()))==='Help me','first press is Help me');
+  // The generic opener is gone. Help is reached through "I am stuck on this
+  // sentence", a menu of routes anchored to the sentence, and #esmorehelp is the
+  // escalation once the ladder is showing. What this block still checks is what
+  // it always checked: nothing is given until it is asked for, and after that the
+  // ladder is revealed a rung at a time, never all at once.
+  ok(!!(await p.$('#esstuck')),'help is offered but not given');
+  await p.click('#esstuck'); await settled(p);
+  const jobRow = await p.$('[data-esstuck="job"]:not([disabled])');
+  ok(!!jobRow,'the stuck menu offers the rung that says what this sentence has to do');
+  await jobRow.click(); await here(p,'.es-rung'); await settled(p);
+  const opened = (await rungs(p)).length;
+  ok(opened>0 && opened<5,'it opens the ladder at that rung, not at the end of it: '+opened+' rung(s)');
 
-  console.log('5. reveal L1 to L5, one at a time');
+  console.log('5. reveal the rest, one at a time');
   const seen=[];
-  for (let i=0;i<6;i++){
+  for (let i=opened;i<6;i++){
     const btn=await p.$('#esmorehelp'); if(!btn) break;
     const label=await btn.textContent();
     await btn.click(); await settled(p);
     const r=await rungs(p);
     seen.push({pressed:label.trim(), count:r.length});
-    ok(r.length===i+1,'press '+(i+1)+' shows exactly '+(i+1)+' rung(s), got '+r.length);
+    ok(r.length===i+1,'press '+(i+1-opened+1)+' shows exactly '+(i+1)+' rung(s), got '+r.length);
   }
   const all=await rungs(p);
   console.log('    ladder:', all.map(r=>r.n+' '+r.lbl.split(' ').slice(0,4).join(' ')).join(' | '));

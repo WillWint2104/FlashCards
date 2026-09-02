@@ -1,6 +1,6 @@
 // P1 reference area: Processes, end to end. Every component, every rung, every
 // layer of support, and proof that the four help needs stay distinct.
-const { chromium, T, OUT, BASE, fileUrl, usePractice } = require('./env');
+const { chromium, T, OUT, BASE, fileUrl, usePractice, ladderOffered, climbLadder } = require('./env');
 
 // Waits that name their condition. This app fetches nothing and renders
 // synchronously, so the effect of a click is present on the next frame:
@@ -54,9 +54,12 @@ const rungs = p => p.$$eval('.es-rung',es=>es.map(e=>({n:e.querySelector('.es-ru
     const head=await p.$eval('.es-guideh',e=>e.textContent.trim()).catch(()=>null);
     if (!head) break;
     const job=await p.$eval('.es-guidejob',e=>e.textContent.trim());
-    const offered=!!(await p.$('#esmorehelp'));
+    // The ladder opens from the stuck menu now; #esmorehelp is the escalation
+    // once it is showing. Asked through the route, so this still measures
+    // whether help is authored here and how deep it goes.
+    const offered=await ladderOffered(p);
     let n=0;
-    if (offered) { for(let k=0;k<7;k++){ const btn=await p.$('#esmorehelp'); if(!btn) break; await btn.click(); await settled(p);} n=(await rungs(p)).length; }
+    if (offered) { n=await climbLadder(p); }
     const kinds=(await rungs(p)).map(r=>r.kind).join(',');
     steps.push({head,job,offered,n,kinds});
     const hide=await p.$('#eshidehelp'); if (hide) { await hide.click(); await settled(p); }
@@ -91,14 +94,17 @@ const rungs = p => p.$$eval('.es-rung',es=>es.map(e=>({n:e.querySelector('.es-ru
   console.log('    components whose guidance changed with the argument:',changed,'of',before.length);
   ok(changed===before.length,'all five components differ by pathway, not just explanation');
   // and so do the ladders
-  const h1=await p.$('#esmorehelp'); if (h1) { for(let k=0;k<5;k++){const btn=await p.$('#esmorehelp'); if(!btn)break; await btn.click(); await settled(p);} }
+  await climbLadder(p);
   const speedLink=(await rungs(p)).map(r=>r.txt).join(' ');
   ok(/speed/i.test(speedLink),'the ladder itself is written for the chosen argument: '+speedLink.slice(0,60));
 
   console.log('4. the four help needs stay separate');
   const tools=await p.$$eval('.es-belt-b',es=>es.map(e=>({label:e.textContent.trim(),off:e.disabled})));
   console.log('    toolbelt:',JSON.stringify(tools.map(t=>t.label+(t.off?'(off)':''))));
-  ok(tools.some(t=>/Learn/.test(t.label)&&!t.off),'Learn is live: I do not understand the content');
+  // Learn left the belt for the page header, where the global utilities live. The
+  // need it answers is unchanged, so the assertion follows it there.
+  const learnUtil=await p.$('[data-estool="understand"]');
+  ok(!!learnUtil && !(await learnUtil.evaluate(e=>e.disabled)),'Learn is live: I do not understand the content');
   ok(tools.some(t=>/Arguments/.test(t.label)&&!t.off),'Arguments is live: I do not know what to argue');
   ok(tools.some(t=>/Evidence/.test(t.label)&&!t.off),'Evidence is live: I do not know what to use');
   // Not the button: by this point the ladder has been walked to its end, so

@@ -126,7 +126,7 @@ async function plan(p, area, id){
   await p.click('#esstartintro'); await settled(p);
   await p.fill('#esline','Target markets shape every marketing decision a business makes.');
   await p.click('#esaccept'); await settled(p);
-  await p.click('#esreview'); await settled(p);
+  await p.click('#esfootpreview'); await settled(p);
   const miss=await text(p,'.es-cover.missing');
   console.log('   ',miss.slice(0,190));
   ok(/does not yet address/i.test(miss),'it says what the response does not do');
@@ -146,7 +146,7 @@ async function plan(p, area, id){
   ok(/body/i.test(head),'a body paragraph: '+head);
   const para=await text(p,'.es-compose');
   ok(/physical evidence/i.test(para),'and that paragraph is now the one covering physical evidence');
-  await p.click('#esreview'); await settled(p);
+  await p.click('#esfootpreview'); await settled(p);
   const miss2=await text(p,'.es-cover.missing');
   ok(/physical evidence/i.test(miss2),'still counted as unaddressed until something is written there');
 

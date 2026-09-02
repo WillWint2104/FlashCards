@@ -39,7 +39,10 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   ok(!!(await p.$('.es-belt')),'the toolbelt is present');
   const tools = await p.$$eval('.es-belt-b',es=>es.map(e=>({t:e.textContent.trim(),off:e.disabled})));
   console.log('    tools:', tools.map(t=>t.t+(t.off?' (off)':'')).join(' | '));
-  ok(tools.length===5,'five tools, help is not one of them: '+tools.length);
+  // Learn left the belt for the page header, where the global utilities live, so
+  // the belt is the four writing-support tools. What this line has always been
+  // guarding is that help is not one of them, and that is asserted next.
+  ok(tools.length===4,'four writing-support tools, help is not one of them: '+tools.length);
   ok(!tools.some(t=>/help/i.test(t.t)),'help stays with the sentence, not in the toolbelt');
   const beltH = await p.$eval('.es-belt',e=>e.getBoundingClientRect().height);
   ok(beltH<60,'it is a strip, not a row of cards: '+Math.round(beltH)+'px');
@@ -48,9 +51,12 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   ok(!emoji,'no emoji in the toolbelt');
 
   console.log('--- the tools wake up when the paragraph says what it argues ---');
-  ok(tools.filter(t=>!t.off).length>=4,'most tools now have authored content behind them: '+tools.filter(t=>!t.off).length+'/5');
-  const understand = tools.find(t=>/Learn/.test(t.t));
-  ok(understand && !understand.off,'Learn resolved from the authored content layer');
+  ok(tools.filter(t=>!t.off).length>=3,'most tools now have authored content behind them: '+tools.filter(t=>!t.off).length+'/'+tools.length);
+  // Learn is a header utility now, and it opens study resources rather than
+  // resolving a Learning Centre out of the content layer. It is still reachable
+  // from the writing screen, which is what this line was protecting.
+  const understand = await p.$('[data-estool="understand"]');
+  ok(!!understand && !(await understand.evaluate(e=>e.disabled)),'Learn is reachable from the writing screen');
 
   console.log('--- a subject with no authored content layer fails cleanly ---');
   {

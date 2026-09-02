@@ -353,11 +353,18 @@ async function toWriting(p, qre) {
 
   // The notebook control looked identical whether pressing it would open the
   // notebook or close it. aria-expanded was already right; the styling ignored it.
-  const nb3 = await p.$('.es-headacts [data-esnbtoggle]');
-  ok(!!nb3, 'the notebook control is in the writing head');
+  //
+  // It used to sit in the paragraph head as well as the page header, which is one
+  // control for one purpose rendered twice. The notebook belongs to the response,
+  // not to the paragraph, so the header utility is the one that stayed; this
+  // suite follows it there. What is asserted is unchanged: it exists, it reports
+  // its state, and it looks different when the notebook is open.
+  const NBSEL = '.es-topbtns [data-esnbtoggle]';
+  const nb3 = await p.$(NBSEL);
+  ok(!!nb3, 'the notebook control is in the page header');
   if (nb3) {
-    const look = () => p.evaluate(() => { const t = document.querySelector('.es-headacts [data-esnbtoggle]');
-      const c = getComputedStyle(t); return { expanded: t.getAttribute('aria-expanded'), bg: c.backgroundColor, shadow: c.boxShadow }; });
+    const look = () => p.evaluate(sel => { const t = document.querySelector(sel);
+      const c = getComputedStyle(t); return { expanded: t.getAttribute('aria-expanded'), bg: c.backgroundColor, shadow: c.boxShadow }; }, NBSEL);
     const shut = await look();
     await nb3.click(); await here(p, '.es-nb'); await settled(p);
     const open = await look();

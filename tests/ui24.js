@@ -107,7 +107,7 @@ const wa = p => p.$eval('.es-watext',e=>e.textContent.trim()).catch(()=>'');
   await p.click('#esstartintro'); await settled(p);
   await p.fill('#esline','Target markets shape every marketing decision a business makes.');
   await p.click('#esaccept'); await settled(p);
-  await p.click('#esreview'); await settled(p);
+  await p.click('#esfootpreview'); await settled(p);
   const miss=await p.$eval('.es-cover.missing',e=>e.innerText.replace(/\s+/g,' ')).catch(()=>'');
   console.log('   ',miss.slice(0,140));
   ok(/not yet addressed/i.test(miss),'at review, what is missing is named');

@@ -3227,7 +3227,7 @@
 
   const ES = { subject: null, code: "", demo: false, screen: "setup", draft: null, list: [], form: null, pending: false,
     ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, planAll: false, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false, tryPick: null, lessonMore: false, lessonJump: null,
-      studyOpen: false, studyPreview: null, studyPos: null },  // transient guided-view state, reset on paragraph change
+      studyOpen: false, studyPreview: null, studyPos: null, stuckOpen: false },  // transient guided-view state, reset on paragraph change
     hint: { open: false, tab: "know" },          // study hints: persists across paragraphs on purpose
     // The Learning Centre is off the student route. This is the only way back to
     // it, for the suites that keep its teaching proven until it is rebuilt.
@@ -3810,6 +3810,14 @@
 
   function esRender() {
     const host = document.getElementById("eshost"); if (!host) return;
+    // A menu does not survive the thing it was a menu for. The section popover
+    // carried its open state across screen and section changes, so choosing a
+    // section from it left it standing over the next paragraph's composer, where
+    // it covered Add this sentence and made the primary action unclickable.
+    if (ES.ui && ES.ui.mapPop) {
+      const at = ES.draft ? ES.draft.pos : null;
+      if (ES.ui.mapPopAt !== at || ES.ui.mapPopScreen !== ES.screen) ES.ui.mapPop = false;
+    }
     // Preserve scroll across a full re-render so nothing flashes/jumps to the top.
     // (Frequent toggles use targeted updates instead and never reach here.)
     const prevScrim = host.querySelector(".es-scrim");
@@ -7301,6 +7309,92 @@
       <button type="button" class="es-rp-btn" id="esmarkfull">View full marking guide</button>
     </div>`;
   }
+  // ---- STUCK ON THIS SENTENCE -----------------------------------------------
+  //
+  // A router over support that already exists, anchored to the sentence it is
+  // about. Nothing on it writes, inserts or rewrites a sentence: the furthest it
+  // goes is the authored worked example, which is deliberately set in a
+  // different topic so the shape transfers and the words cannot.
+  //
+  // The menu is the same length whatever is available. A row with nothing behind
+  // it is shown disabled and says why, because a menu that changes shape teaches
+  // the student nothing about what help exists.
+  function esStuckHTML(p) {
+    const study = esStudyResolve(esStudyArgumentRefs(p));
+    const rungs = esRungs(p, esStepDef(p));
+    const jobAt = rungs.findIndex(r => /what this part has to do/i.test(r.label || ""));
+    const exAt = rungs.findIndex(r => r.kind === "example");
+    const rows = [
+      { k: "job", t: "What this sentence has to do", s: jobAt < 0 ? "not written for this sentence yet" : "the job of this part, in place", off: jobAt < 0 },
+      { k: "shape", t: "Show a sentence shape", s: esShapesFor((esStepDef(p) || {}).key || "").length ? "a frame with the parts named" : "no shape written for this stage yet", off: !esShapesFor((esStepDef(p) || {}).key || "").length },
+      { k: "example", t: "See the same shape used elsewhere", s: exAt < 0 ? "no worked example authored here" : "worked in another topic, not in your question", off: exAt < 0 },
+      { k: "words", t: "Words this sentence needs", s: "terms with an authored meaning" },
+      { k: "reading", t: "Reading for this argument", s: study.ok.length ? study.ok.length + " resource" + (study.ok.length === 1 ? "" : "s") : "no study resource added yet", off: !study.ok.length },
+    ];
+    return `<div class="es-stuck" id="esstuckpop"${ES.ui.stuckOpen ? "" : " hidden"}>
+      <div class="es-stuck-hd"><span class="es-stuck-t">Stuck on this sentence</span>
+        <button type="button" class="es-stuck-x" id="esstuckx" aria-label="Close">${esIcon("close")}</button></div>
+      <p class="es-stuck-s">Five ways in. None of them writes it for you.</p>
+      <div class="es-stuck-list">${rows.map(r => `
+        <button type="button" class="es-stuck-row${r.off ? " off" : ""}" data-esstuck="${r.k}"${r.off ? " disabled" : ""}>
+          <span class="es-stuck-rt">${esc(r.t)}</span><span class="es-stuck-rs">${esc(r.s)}</span>
+          ${r.off ? "" : '<span class="es-stuck-go">\u203a</span>'}
+        </button>`).join("")}</div>
+    </div>`;
+  }
+  function esBindStuck(host, p) {
+    const b = host.querySelector("#esstuck"), pop = host.querySelector("#esstuckpop");
+    if (!b || !pop) return;
+    // Opening the menu is a disclosure inside one component, so it touches its own
+    // button and its own panel and nothing else. It must not re-render: the writing
+    // screen swaps only its side column on a keeping-place render, so a render here
+    // would leave the panel in whatever state the last full render gave it.
+    const shut = () => {
+      ES.ui.stuckOpen = false; pop.hidden = true; b.setAttribute("aria-expanded", "false");
+      document.removeEventListener("mousedown", away, true);
+      document.removeEventListener("keydown", key, true);
+    };
+    const away = e => { if (!pop.contains(e.target) && !(e.target.closest && e.target.closest("#esstuck"))) shut(); };
+    const key = e => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); shut(); esFocusComposer(); } };
+    const open = () => {
+      ES.ui.stuckOpen = true; pop.hidden = false; b.setAttribute("aria-expanded", "true");
+      document.addEventListener("mousedown", away, true);
+      document.addEventListener("keydown", key, true);
+    };
+    if (ES.ui.stuckOpen) open();
+    b.onclick = () => { ES.ui.stuckOpen ? shut() : open(); };
+    const x = host.querySelector("#esstuckx");
+    if (x) x.onclick = () => { shut(); esFocusComposer(); };
+    host.querySelectorAll("[data-esstuck]").forEach(r => r.onclick = () => {
+      const k = r.dataset.esstuck;
+      shut();
+      // Every one of these is a route into support that already exists. None of
+      // them writes, inserts or rewrites a sentence.
+      if (k === "shape") {
+        // the same in-place disclosure the Show sentence shape control does
+        ES.ui.shapeOpen = true;
+        const box = document.getElementById("esshapes"); if (box) box.hidden = false;
+        const sh = document.getElementById("esshape");
+        if (sh) { sh.setAttribute("aria-expanded", "true"); sh.textContent = "Hide sentence shape"; }
+        esFocusComposer(); return;
+      }
+      if (k === "job" || k === "example") {
+        // The authored ladder, opened at the rung the row names. This is the same
+        // disclosure pressing the escalation button that many times gives, so the
+        // rungs below it come with it, exactly as they do on that route.
+        const rungs = esRungs(p, esStepDef(p));
+        const at = k === "job"
+          ? rungs.findIndex(x => /what this part has to do/i.test(x.label || ""))
+          : rungs.findIndex(x => x.kind === "example");
+        if (at < 0) return;
+        esSetHelpLevel(p, ES.ui.editBlock, Math.max(esHelpLevel(p, ES.ui.editBlock), at + 1));
+        esRender(); return;
+      }
+      if (k === "words") { esCaptureContext(p); ES.ui.tool = "vocabulary"; esRenderKeepingPlace(p); return; }
+      if (k === "reading") { ES.ui.studyOpen = true; esStudyMount(p); return; }
+    });
+  }
+
   function esRailHTML() {
     const panels = [esMarkingPanel()].filter(Boolean);
     if (!panels.length) return "";
@@ -7346,10 +7440,19 @@
     host.querySelectorAll("[data-esrespgo]").forEach(b => b.onclick = () => {
       d.pos = Number(b.dataset.esrespgo); ES.ui.tool = null; esSaveDraft(); esRender();
     });
-    const rev = host.querySelector("#esfootpreview") || host.querySelector("#esfootoutline");
-    host.querySelectorAll("#esfootpreview,#esfootoutline").forEach(b => b.onclick = () => {
-      ES.screen = "review"; esRender();
-    });
+    // Two controls that both opened the review is the same duplication the bar was
+    // built to remove. Preview response reads the whole response; Outline opens
+    // the section list, which is the outline, and is where the working answer and
+    // the word counts live.
+    const pv = host.querySelector("#esfootpreview");
+    if (pv) pv.onclick = () => { ES.screen = "review"; esRender(); };
+    const ol = host.querySelector("#esfootoutline");
+    if (ol) ol.onclick = () => {
+      const mp = document.getElementById("esmappop"); if (!mp) return;
+      if (!ES.ui.mapPop) mp.click();
+      const aside = document.querySelector(".es-map");
+      if (aside) aside.scrollIntoView({ block: "nearest" });
+    };
     const mg = host.querySelector("#esmarkfull");
     if (mg) mg.onclick = () => { ES.screen = "review"; esRender(); };
   }
@@ -7446,7 +7549,10 @@
       <div class="es-help">
         ${helpRows}
         <div class="es-helpbtns">
-          ${next ? `<button type="button" class="es-helpask ${shown ? "on" : ""}" id="esmorehelp">${esc(shown === 0 ? "Help me" : (rungs[shown - 1].cta || "Show me more"))}</button>`
+          ${/* The first rung is reached through "I am stuck on this sentence" on the
+                prompt now, so the generic opener is gone from the normal route and
+                what is left is the escalation once help is already open. */ ""}
+          ${next ? (shown === 0 ? "" : `<button type="button" class="es-helpask on" id="esmorehelp">${esc(rungs[shown - 1].cta || "Show me more")}</button>`)
                  : `<span class="es-helpend">That is as far as the help goes. The sentence is yours to write.</span>`}
           ${shown ? `<button type="button" class="es-linkbtn" id="eshidehelp">Hide help</button>` : ""}
         </div>
@@ -7502,8 +7608,9 @@
               return ""; })()}
             <span class="es-headacts">
               ${(esIsIntro(p) || esIsConcl(p)) ? `<button type="button" class="es-linkbtn es-ctxbtn" id="esctx" data-esctxview="${esIsConcl(p) ? "judgement" : "plan"}" aria-expanded="${ES.ui.contextView ? "true" : "false"}">${esIsConcl(p) ? "Review my arguments" : "View plan"}</button>` : ""}
-              <button type="button" class="es-linkbtn" data-esnbtoggle aria-expanded="${ES.ui.nbOpen ? "true" : "false"}">notebook</button>
-              <button type="button" class="es-mapall" id="esreview">read all</button>
+              ${/* The notebook is a header utility and reading the whole response
+                    is Preview response in the action bar. Both used to be here as
+                    well, which is two controls for one purpose, twice. */ ""}
             </span>
           </div>
           ${inSetup ? "" : chips}
@@ -7515,13 +7622,13 @@
           ${inSetup ? esSetupHTML(p) : ""}
           ${inSetup ? "" : `<div class="es-flow">
             ${esReviewBannerHTML(blocks)}
-            ${blocks.length ? `<p class="es-prose">${prose}</p>` : `<p class="es-prose empty">Your paragraph builds here, one sentence at a time.</p>`}
-            ${editing != null ? help : ""}
-            ${editing != null ? "" : complete ? doneCard : `
-            <div class="es-active">
+            ${/* The prompt is a header for the sentence in hand, so it sits above the
+                  paragraph rather than wrapping the composer. Mint marks that one
+                  strip and stops there: the prose and the editor are on white. */ ""}
+            ${(editing != null || complete) ? "" : `
               <div class="es-guide">
                 <div class="es-guidetop">
-                  <span class="es-guideh">${esc(guide.head)}</span>
+                  <span class="es-guideh">${esc(guide.head)} <i>\u00b7 the sentence you are writing</i></span>
                   <span class="es-steps">
                     <button type="button" class="es-step" id="esbackstep" ${si === 0 && !blocks.length ? "disabled" : ""} title="Back a step" aria-label="Back a step">&lsaquo;</button>
                     <span class="es-stepn">${si + 1}/${steps.length}</span>
@@ -7541,11 +7648,19 @@
                   // state, so it must not re-enter the render pipeline: that is what
                   // made a two-word control feel like the page reloading.
                   const open = !!ES.ui.shapeOpen;
-                  return `<button type="button" class="es-linkbtn es-shapebtn" id="esshape" aria-expanded="${open}">${open ? "Hide sentence shape" : "Show sentence shape"}</button>
+                  return `<div class="es-promptacts">
+                      <button type="button" class="es-linkbtn es-shapebtn" id="esshape" aria-expanded="${open}">${open ? "Hide sentence shape" : "Show sentence shape"}</button>
+                      <button type="button" class="es-linkbtn es-stuckbtn" id="esstuck" aria-expanded="${ES.ui.stuckOpen ? "true" : "false"}">I am stuck on this sentence</button>
+                    </div>
+                    ${esStuckHTML(p)}
                     <div class="es-shapes" id="esshapes"${open ? "" : " hidden"}>${all.map(x =>
                       `<p class="es-shape">${esc(x).replace(/\[[^\]]+\]/g, m => `<span class="es-hole">${m.slice(1, -1)}</span>`).replace(/_{2,}/g, '<span class="es-blank">____</span>')}</p>`).join("")}</div>`;
                 })()}
-              </div>
+              </div>`}
+            ${blocks.length ? `<p class="es-prose">${prose}</p>` : `<p class="es-prose empty">Your paragraph builds here, one sentence at a time.</p>`}
+            ${editing != null ? help : ""}
+            ${editing != null ? "" : complete ? doneCard : `
+            <div class="es-active">
               <textarea id="esline" class="es-input es-linebox" rows="2" placeholder="Type your next sentence..."></textarea>
               ${help}
               <div class="es-linerow">
@@ -7569,6 +7684,7 @@
     ${esFootBarHTML(d, p, canAsk)}`;
 
     esBindWorkspace(host, d);
+    esBindStuck(host, p);
     esBindWritingHead();
     esBindReasoning(host, p, "#espoint");
     const pt = $("#espoint");
@@ -7707,6 +7823,9 @@
     const mp = $("#esmappop");
     if (mp) mp.onclick = () => {
       ES.ui.mapPop = !ES.ui.mapPop;
+      // what it was opened for, so a render that changes either can close it
+      ES.ui.mapPopAt = ES.draft ? ES.draft.pos : null;
+      ES.ui.mapPopScreen = ES.screen;
       const aside = host.querySelector(".es-map");
       if (aside) aside.hidden = !ES.ui.mapPop;
       mp.setAttribute("aria-expanded", ES.ui.mapPop ? "true" : "false");
@@ -7740,7 +7859,8 @@
       esCaptureContext(p); ES.ui.pointOpen = !ES.ui.pointOpen; esRender(); esRestoreContext();
       const el = $("#espoint"); if (el) el.focus();
     };
-    const rv = $("#esreview"); if (rv) rv.onclick = () => { ES.screen = "review"; esSaveDraft(); esRender(); };
+        // "read all" left the paragraph head: Preview response in the action bar is
+    // the one control that reads the whole response now.
     const mw = $("#esmapwa"); if (mw) mw.onclick = () => { ES.ui.planAll = false; ES.screen = "plan"; esSaveDraft(); esRender(); };
     const ml = $("#esmoreline"); if (ml) ml.onclick = () => { ES.ui.moreLine = true; esRender(); };
     const dn = $("#esdonenext"); if (dn) dn.onclick = () => {

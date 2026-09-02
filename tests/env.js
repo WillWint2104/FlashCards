@@ -153,7 +153,42 @@ async function usePractice(page) {
   await page.waitForSelector('.es-qrow', { timeout: 8000 }).catch(() => {});
 }
 
-module.exports = { usePractice, ownQuestion, closeMap,
+// The help ladder used to open from a generic control sitting under the guide.
+// It opens from "I am stuck on this sentence" now, which is a menu of routes
+// anchored to the sentence, and #esmorehelp is only the escalation once help is
+// already showing. These two helpers are the ladder's route, so a suite asks the
+// question it means to ask -- is help available here, and how deep does it go --
+// without also encoding which control opens it.
+async function ladderOffered(page) {
+  if (await page.$('#esmorehelp')) return true;
+  if (!(await page.$('#esstuck'))) return false;
+  return page.evaluate(() => {
+    const r = document.querySelector('[data-esstuck="job"]');
+    return !!r && !r.disabled;
+  });
+}
+// Opens the ladder and climbs it as far as it goes. Returns the number of rungs
+// on screen at the top, which is 0 when no ladder is authored for this sentence.
+async function climbLadder(page) {
+  if (!(await page.$('#esmorehelp'))) {
+    const b = await page.$('#esstuck');
+    if (!b) return 0;
+    await b.click();
+    const row = await page.$('[data-esstuck="job"]:not([disabled])');
+    if (!row) { await page.keyboard.press('Escape').catch(() => {}); return 0; }
+    await row.click();
+    await page.waitForSelector('.es-rung', { timeout: 8000 }).catch(() => {});
+  }
+  for (let k = 0; k < 6; k++) {
+    const btn = await page.$('#esmorehelp');
+    if (!btn) break;
+    await btn.click();
+    await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+  }
+  return page.$$eval('.es-rung', es => es.length).catch(() => 0);
+}
+
+module.exports = { usePractice, ownQuestion, closeMap, ladderOffered, climbLadder,
   nextSection, prevSection, planAll, openMap,
   chromium, ROOT, OUT, BASE: OUT,
   WALK, T: url(WALK),

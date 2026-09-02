@@ -31,14 +31,15 @@ const sections = p => p.$$eval('.es-startrow',es=>es.map(e=>e.innerText.replace(
 const covBtns = p => p.$$eval('[data-escover]',es=>es.map(e=>({label:e.textContent.trim(),area:e.dataset.escover})));
 const rvSecs = p => p.$$eval('.es-rvsec',es=>es.map(e=>e.innerText.replace(/\s+/g,' ').trim()));
 async function toStart(p){ await openMap(p); const m=await p.$('.es-mapwa'); if (m) { await m.click(); await settled(p); } }
-// read all lives in the composer, so from the start surface step into a
-// paragraph first rather than silently doing nothing
+// Reading the whole response is Preview response in the action bar now, and the
+// bar belongs to the writing screen, so from the start surface step into a
+// paragraph first rather than silently doing nothing.
 async function review(p){
-  if (!(await p.$('#esreview'))) {
+  if (!(await p.$('#esfootpreview'))) {
     await p.$$eval('.es-startrow',es=>es[0]&&es[0].click());
     await settled(p);
   }
-  const r=await p.$('#esreview'); if(r){ await r.click(); await settled(p);} }
+  const r=await p.$('#esfootpreview'); if(r){ await r.click(); await settled(p);} }
 async function intro(p, line){
   await p.click('#esstartintro'); await settled(p);
   await p.fill('#esline',line); await p.click('#esaccept'); await settled(p);
