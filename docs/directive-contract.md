@@ -53,17 +53,18 @@ touches `key`.
 Both take the shape `byFamily: { causal: {...}, judgement: {...} }`, and a slot or
 template without one is family-neutral.
 
+Under a causal directive, *better* asserts superiority over an alternative even
+where no alternative is named, so it is inside the contract and `ui45` fails on it.
+Both fields that carry that kind of claim are swept: `whatToProve`, which drives
+the guidance, and `learning.chain`, which is read out in the lesson.
+
 ## What this contract does NOT cover
 
-One authored line reads comparatively but names nothing to compare against, so
-whether it is leakage is an authoring judgement rather than a contract breach.
-`tests/ui45.js` prints it rather than failing on it:
-
-- `mkt-01 / mkt01-pr-convenience` — *"customer expectation → the process change it
-  forces → why the new process suits this market better"*
-
-Two more sit outside the three defects this contract was written for, and are
-recorded so they are not mistaken for oversights:
+Two frames sit outside the three defects this contract was written for, and are
+recorded so they are not mistaken for oversights. Both are OFFERED rather than
+required, which is the distinction that matters: advanced phrasing a student may
+reach for is not the app telling an Explain student that comparison is part of the
+task. They stay logged unless a causal route starts requiring them.
 
 - the TEEEC `effect` template offers a trade-off frame (*"although it can reduce
   [the objective it trades against]"*) on causal questions. Naming a counter-effect

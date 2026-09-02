@@ -214,33 +214,34 @@ async function nextStage(p) {
     const found = await p.evaluate(() => {
       const fams = window.ESSAY.slots.templates.directiveFamilies || {};
       const causal = fams.causal || [];
-      const hits = [], soft = [];
+      const hits = [];
       Object.keys(window.ESSAY.subjects).forEach(sk => {
         (window.ESSAY.subjects[sk].questions || []).forEach(q => {
           const cmd = String(q.command || '').toLowerCase();
           const isCausal = causal.some(x => cmd === x || cmd.indexOf(x) === 0);
           if (!isCausal) return;
           (q.pathways || []).forEach(pa => {
-            const w = String(pa.whatToProve || '');
-            // "more than one segment is served" is a quantity, not a claim that
-            // one thing beats another. The contract is about the second claim,
-            // so the pattern names it rather than matching the words loosely.
-            if (/\bbetter than\b|mattered more than|\bmore (?:important|effective|significant|valuable)\b|\bthe alternative\b|\boutweigh/i.test(w))
-              hits.push(q.id + '/' + pa.id + ': ' + w);
-            else if (/\bbetter\b|\bstronger\b|\bmore important\b/i.test(w)) soft.push(q.id + '/' + pa.id + ': ' + w);
+            // Both fields carry the same kind of claim and both reach the student,
+            // so both are swept: whatToProve drives the guidance, and the learning
+            // chain is read out in the lesson.
+            const lines = [String(pa.whatToProve || '')]
+              .concat(((pa.learning || {}).chain) || []);
+            lines.filter(Boolean).forEach(w => {
+              // "more than one segment is served" is a quantity, not a claim that
+              // one thing beats another, so the pattern names the claim rather than
+              // matching the words loosely. "better" IS in it: under a causal
+              // directive it asserts superiority over an alternative even when no
+              // alternative is named.
+              if (/\bbetter\b|\bstronger\b|mattered more than|\bmore (?:important|effective|significant|valuable)\b|\bthe alternative\b|\boutweigh/i.test(w))
+                hits.push(q.id + '/' + pa.id + ': ' + w);
+            });
           });
         });
       });
-      return { hits: hits, soft: soft };
+      return { hits: hits };
     });
     ok(found.hits.length === 0,
-      'no causal pathway requires the student to beat an alternative: ' + JSON.stringify(found.hits));
-    // Reported, not asserted. These read comparatively but name nothing to compare
-    // against, so whether each is leakage is an authoring judgement, not a contract.
-    if (found.soft.length) {
-      console.log('    comparative-sounding, for an author to rule on:');
-      found.soft.forEach(x => console.log('      ' + x));
-    }
+      'no causal pathway asks the student to establish superiority: ' + JSON.stringify(found.hits));
   }
 
   console.log('pageerrors:', errs.length ? errs : 'none');

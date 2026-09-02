@@ -545,7 +545,7 @@ window.ESSAY = {
                 status: "authored",
                 concepts: { primary: ["processes"], supporting: [], optional: ["servicescape"] },
                 know: "Changing a process changes what the customer has to do, not what they are buying.",
-                chain: ["customers value convenience", "the business simplifies ordering", "less time and effort to buy", "the experience suits this market better"],
+                chain: ["customers value convenience", "the business simplifies ordering", "less time and effort to buy", "the experience suits this market"],
                 misconception: {
                   head: "Two of the elements are easy to swap",
                   a: { term: "Processes", line: "the systems a customer moves through to buy." },
@@ -569,7 +569,7 @@ window.ESSAY = {
                 },
                 explore: { concept: "processes", label: "Read more about processes" }
               },
-              whatToProve: "customer expectation \u2192 the process change it forces \u2192 why the new process suits this market better",
+              whatToProve: "customer expectation \u2192 the process change it forces \u2192 why that characteristic of the market makes the new process suitable",
               mechanism: { state: "authored", text: "ordering, queuing and paying are steps the customer performs personally, so effort left in them is effort spent by the customer" },
               fromLabel: "customers who want the least effort",
               commonMistake: "Describing an app or a kiosk without explaining what it was about these customers that caused the process to change.",
