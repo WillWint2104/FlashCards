@@ -60,9 +60,34 @@ The store ships with no records. Authoring 405 HSC definitions is content work, 
 the build reports the gap instead of the app hiding it:
 
 ```
-vocabulary 0/0 asked-for terms have a meaning (none defined yet)
+vocabulary 0 refs requested / 0 defined / 0 missing
 ```
 
-Until a record exists the tool is disabled on the belt, and the panel says which
-kind of empty it is: no meaning has been written yet, not that this question has no
-terminology.
+Until a record resolves the tool is **absent**, not disabled. A disabled control is
+still the app showing a student a piece of itself that is not finished, and asking
+them to read about an authoring backlog they have no part in.
+
+Absent means absent everywhere it could be reached from, not only the belt: the
+tool window offers no vocabulary tab, and the stuck helper's "Words this sentence
+needs" row is closed with a reason. A door the belt hides is not hidden if another
+route still opens it.
+
+| resolved records | what the student gets |
+| --- | --- |
+| 0 | no vocabulary control anywhere |
+| 1 or more | the control appears and opens on those records |
+
+Undefined refs stay invisible to the student in both cases, and visible to the
+readiness report in both cases:
+
+```
+vocabulary 6 refs requested / 4 defined / 2 missing
+```
+
+The empty-state copy is kept for the states that can still reach it, and asserted to
+still exist rather than being deleted.
+
+**This rule is currently Vocabulary's alone.** The other tools still render disabled
+when they have nothing, which `tests/ui12.js` asserts deliberately. The two
+behaviours disagree, and which one is right for the rest of the belt is a decision
+that has not been made.

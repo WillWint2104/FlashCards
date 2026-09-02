@@ -263,9 +263,12 @@ function vocabCoverage() {
     const id = typeof x === "string" ? x : (x && x.id); if (!id) return;
     asked.add(id); if (!complete(id)) unmet.add(id);
   });
+  // The scopes the RESOLVER reads, and only those. esVocabRefs walks pathway ->
+  // esAreaDef -> question, and esAreaDef resolves against q.areas, so a subject-level
+  // area is not a place the app looks. Counting refs there would report an authoring
+  // gap for terms no student route can ever ask for.
   Object.keys(ESSAY.subjects || {}).forEach(k => {
     const sub = ESSAY.subjects[k] || {};
-    Object.keys(sub.areas || {}).forEach(a => take((sub.areas[a] || {}).vocabRefs));
     (sub.questions || []).forEach(q => {
       take(q.vocabRefs);
       Object.keys(q.areas || {}).forEach(a => take((q.areas[a] || {}).vocabRefs));
@@ -286,8 +289,11 @@ function summary(rows) {
   return "support: " + frac(d, p) + " pathways reviewed, " + frac(s, p) + " teach themselves, " + frac(l, p) + " carry a full ladder, " + frac(e, p) + " have sourced evidence, " +
     c + " concepts are named but never explained, " + frac(ready, rows.length) + " questions are Learn & Build ready" +
     (() => { const v = vocabCoverage();
-      return ", vocabulary " + frac(v.asked - v.unmet, v.asked) + " asked-for terms have a meaning" +
-        (v.defined ? " (" + v.defined + " defined in all)" : " (none defined yet)"); })();
+      // Said as three numbers rather than a fraction, because a student sees none
+      // of this: what an author needs to know is how many terms were asked for and
+      // how many of those have nothing behind them.
+      return ", vocabulary " + v.asked + " refs requested / " + (v.asked - v.unmet) + " defined / " +
+        v.unmet + " missing" + (v.defined ? " (" + v.defined + " records in all)" : ""); })();
 }
 module.exports = { report, format, summary, teachable, vocabulary, vocabCoverage, termsOf, readinessOf, FULL_LADDER };
 if (require.main === module) {

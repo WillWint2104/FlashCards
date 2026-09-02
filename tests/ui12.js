@@ -39,10 +39,16 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   ok(!!(await p.$('.es-belt')),'the toolbelt is present');
   const tools = await p.$$eval('.es-belt-b',es=>es.map(e=>({t:e.textContent.trim(),off:e.disabled})));
   console.log('    tools:', tools.map(t=>t.t+(t.off?' (off)':'')).join(' | '));
-  // Learn left the belt for the page header, where the global utilities live, so
-  // the belt is the four writing-support tools. What this line has always been
-  // guarding is that help is not one of them, and that is asserted next.
-  ok(tools.length===4,'four writing-support tools, help is not one of them: '+tools.length);
+  // Learn left the belt for the page header, where the global utilities live, and a
+  // tool whose only content would be an apology for itself is now absent rather
+  // than disabled, so the belt is a SUBSET of the writing-support tools rather than
+  // a fixed four. Counting them stopped meaning anything; what this line has always
+  // been guarding is that nothing else creeps onto the belt, and that help is not
+  // one of them, which is asserted next.
+  const SUPPORT = ['Arguments', 'Evidence', 'Structure', 'Vocabulary'];
+  const strays = tools.map(t=>t.t).filter(t=>SUPPORT.indexOf(t)<0);
+  ok(strays.length===0,'the belt holds only writing-support tools: '+JSON.stringify(strays));
+  ok(tools.length>=3 && tools.length<=SUPPORT.length,'and between three and four of them: '+tools.length);
   ok(!tools.some(t=>/help/i.test(t.t)),'help stays with the sentence, not in the toolbelt');
   const beltH = await p.$eval('.es-belt',e=>e.getBoundingClientRect().height);
   ok(beltH<60,'it is a strip, not a row of cards: '+Math.round(beltH)+'px');

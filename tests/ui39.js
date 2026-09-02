@@ -190,7 +190,13 @@ async function toWriting(p, qre) {
     ok(!!(await p.$('.es-nb')), 'opening a writing tool did not dismiss the notebook');
     const box = await p.evaluate(() => { const d = document.querySelector('.es-drawer'); const r = d.getBoundingClientRect();
       return { left: Math.round(r.left), top: Math.round(r.top) }; });
-    for (const t of ['structure', 'vocabulary', 'ideas', 'evidence']) {
+    // A tool with nothing behind it that would only say so is not shown at all, so
+    // the tabs on screen are what this walks. What is being protected is that
+    // switching between them does not move or rebuild the window, not which tools a
+    // particular question happens to have.
+    const tabs = await p.$$eval('.es-drawer-tab[data-estool]', es => es.map(e => e.dataset.estool));
+    ok(tabs.length >= 3, 'the window offers at least three tools to switch between: ' + JSON.stringify(tabs));
+    for (const t of tabs) {
       const tab = await p.$(`.es-drawer-tab[data-estool="${t}"]`);
       if (!tab) { ok(false, 'the ' + t + ' tab is present in the window'); continue; }
       await tab.click();

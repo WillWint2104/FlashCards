@@ -59,7 +59,13 @@ async function enter(p, opts) {
   const go = await p.$('#esstartwriting'); if (go) { await go.click(); await rf(p); }
   return !!(await p.$('#esline'));
 }
-const beltVocab = p => p.$eval('[data-estool="vocabulary"]', e => ({ off: e.disabled }));
+// Present on the belt at all, and if so whether it is live. A disabled control is
+// still the app showing a student an unfinished piece of itself, so with nothing
+// resolved the answer has to be "not there".
+const beltVocab = p => p.evaluate(() => {
+  const b = document.querySelector('.es-belt [data-estool="vocabulary"]');
+  return { present: !!b, off: !!(b && b.disabled) };
+});
 async function openVocab(p) {
   const b = await p.$('[data-estool="vocabulary"]');
   if (!b || await b.evaluate(e => e.disabled)) return false;
@@ -73,43 +79,68 @@ const drawer = p => p.$eval('.es-drawer-body', e => e.innerText.replace(/\s+/g, 
   const errs = []; p.on('pageerror', e => errs.push(String(e).slice(0, 200)));
 
   // ==========================================================================
-  console.log('1. with nothing defined, nothing is offered, and it says which empty this is');
+  console.log('1. with nothing defined, the student is not shown the tool at all');
   // ==========================================================================
+  // The application knows the gap. The student is not asked to read about our
+  // authoring backlog, and cannot navigate into a panel whose only content is an
+  // apology for itself.
   ok(await enter(p), 'the writing screen is reachable');
   const cold = await beltVocab(p);
-  ok(cold.off, 'the vocabulary tool is disabled rather than filled: ' + JSON.stringify(cold));
-  // the tab still exists in the tool window, so the tool is reachable to be told why
+  ok(!cold.present, 'the vocabulary control is absent from the belt, not disabled on it: ' + JSON.stringify(cold));
+  const belt = await p.$$eval('.es-belt-b', es => es.map(e => e.textContent.trim()));
+  console.log('    belt:', JSON.stringify(belt));
+  ok(belt.length >= 3, 'the other tools are unaffected: ' + JSON.stringify(belt));
+
+  // and every other way in is closed too, or the belt would be hiding a door that
+  // is still open somewhere else
   const other = await p.$('[data-estool="structure"]:not([disabled])');
   if (other) {
     await other.click(); await rf(p);
     const tab = await p.$('.es-drawer-tab[data-estool="vocabulary"]');
-    ok(!!tab, 'the vocabulary tab is still in the tool window');
-    if (tab) {
-      await tab.click(); await rf(p);
-      const t = await drawer(p);
-      console.log('    empty state:', JSON.stringify(t.slice(0, 120)));
-      ok(/no vocabulary has been given a meaning/i.test(t),
-        'and it says no meaning has been written yet, not that the question has no terminology');
-      ok(!/\bpsychographic\b|\bpositioning\b|\bbrand loyalty\b/i.test(t),
-        'no undefined term is listed as a consolation: ' + JSON.stringify(t.slice(0, 160)));
-    }
+    ok(!tab, 'the tool window offers no vocabulary tab either');
     await p.keyboard.press('Escape'); await rf(p);
+  }
+  {
+    const st = await p.$('#esstuck');
+    if (st) {
+      await st.click(); await rf(p);
+      const row = await p.$eval('[data-esstuck="words"]', e => ({
+        off: e.disabled, sub: (e.querySelector('.es-stuck-rs') || {}).textContent.trim() })).catch(() => null);
+      console.log('    stuck menu words row:', JSON.stringify(row));
+      ok(row && row.off, 'the stuck helper cannot walk into it either: ' + JSON.stringify(row));
+      ok(row && /no term here has a written meaning/i.test(row.sub),
+        'and says why, in the one place a student asked for help: ' + JSON.stringify(row && row.sub));
+      await p.keyboard.press('Escape'); await rf(p);
+    }
   }
 
   // ==========================================================================
   console.log('2. the 405 undefined terms are gone from the student route');
   // ==========================================================================
   {
-    const strays = await p.evaluate(() => document.querySelectorAll('.es-term').length);
-    ok(strays === 0, 'no bare term chip is rendered anywhere: ' + strays);
-    const inContent = await p.evaluate(() => {
+    // Not "the old class is absent" — nothing emits it, so that could not fail.
+    // And not "no term string appears on the page" either: "physical evidence" is
+    // in the question stem and "knowledge and understanding" is in the marking
+    // rail, so that scan reports leaks that are not leaks. The contract is about
+    // this TOOL, so it is stated as the pairing that used to be false: the section
+    // this paragraph sits in is full of term strings, and the tool is not offering
+    // them.
+    const pairing = await p.evaluate(() => {
       let n = 0;
       Object.keys(window.BUSCONTENT.topics || {}).forEach(t =>
         (window.BUSCONTENT.topics[t].sections || []).forEach(s =>
           (s.points || []).forEach(x => { n += (x.terms || []).length; })));
-      return n;
+      return { termsInContent: n,
+               toolOffered: !!document.querySelector('.es-belt [data-estool="vocabulary"]'),
+               rows: document.querySelectorAll('.es-vocab').length };
     });
-    ok(inContent > 100, 'the term strings are still in the content, unused by this tool: ' + inContent);
+    console.log('    pairing:', JSON.stringify(pairing));
+    ok(pairing.termsInContent > 100, 'the content is still full of term strings: ' + pairing.termsInContent);
+    ok(!pairing.toolOffered && pairing.rows === 0,
+      'and not one of them reaches the student through this tool: ' + JSON.stringify(pairing));
+    const leaked = [];
+
+
   }
 
   // ==========================================================================
@@ -117,7 +148,7 @@ const drawer = p => p.$eval('.es-drawer-body', e => e.innerText.replace(/\s+/g, 
   // ==========================================================================
   ok(await enter(p, { seed: SEED }), 'reopened with fixture records');
   const warm = await beltVocab(p);
-  ok(!warm.off, 'the tool wakes up once something has a meaning: ' + JSON.stringify(warm));
+  ok(warm.present && !warm.off, 'the tool appears once something has a meaning: ' + JSON.stringify(warm));
   ok(await openVocab(p), 'and it opens');
   const shown = await p.$$eval('.es-vocab', es => es.map(e => ({
     term: (e.querySelector('.es-vocabterm') || {}).textContent.trim(),
@@ -189,6 +220,84 @@ const drawer = p => p.$eval('.es-drawer-body', e => e.innerText.replace(/\s+/g, 
         ok(t2.indexOf('positioning') >= 0, 'and the question\'s own term still applies: ' + JSON.stringify(t2));
       } else { console.log('    (could not switch argument; skipped)'); }
     } else { console.log('    (no argument control on screen; skipped)'); }
+  }
+
+  // ==========================================================================
+  console.log('6b. an unrecognised role loses neither the term nor the guarantee');
+  // ==========================================================================
+  // Two failures in one, both found by probing rather than by reading: the tool
+  // appeared with an empty panel, and a record that WAS complete vanished because
+  // its ref named a role that is not one of the four. A defined term the student
+  // never sees is undefined vocabulary's mirror image.
+  {
+    ok(await enter(p, { seed: () => {
+      window.ESSAY.vocab.records = { 'x.one': { id: 'x.one', term: 'market segmentation',
+        plain: 'splitting a group into smaller alike groups', subject: 'dividing a market into subgroups',
+        example: 'The business segments by age.' } };
+      const qs = []; Object.keys(window.ESSAY.subjects).forEach(k =>
+        (window.ESSAY.subjects[k].questions || []).forEach(q => qs.push(q)));
+      const q = qs.find(x => x.id === 'mkt-01');
+      q.vocabRefs = [{ id: 'x.one', role: 'not-a-real-role' }];
+      q.pathways.forEach(pa => { pa.vocabRefs = []; });
+    } }), 'reopened with a ref naming a role that does not exist');
+    const b2 = await beltVocab(p);
+    ok(b2.present && !b2.off, 'the tool is offered, because a complete record did resolve: ' + JSON.stringify(b2));
+    ok(await openVocab(p), 'it opens');
+    const rows = await p.$$eval('.es-vocabterm', es => es.map(e => e.textContent.trim()));
+    ok(rows.length === 1, 'the record survives the bad role rather than being dropped: ' + JSON.stringify(rows));
+    const grp = await p.$$eval('.es-drawer-sub', es => es.map(e => e.textContent.trim()));
+    ok(grp.length === 1 && /background for this topic/i.test(grp[0]),
+      'it falls back to the neutral bucket: ' + JSON.stringify(grp));
+    await p.keyboard.press('Escape').catch(() => {}); await rf(p);
+  }
+  // the inverse: refs that resolve but produce no group must not offer the tool
+  {
+    ok(await enter(p, { seed: () => {
+      window.ESSAY.vocab.records = { 'x.two': { id: 'x.two', term: 't', plain: 'p', subject: 's', example: 'e' } };
+      window.ESSAY.vocab.roles = [];              // no bucket can match
+      const qs = []; Object.keys(window.ESSAY.subjects).forEach(k =>
+        (window.ESSAY.subjects[k].questions || []).forEach(q => qs.push(q)));
+      const q = qs.find(x => x.id === 'mkt-01');
+      q.vocabRefs = [{ id: 'x.two', role: 'topic-context' }];
+      q.pathways.forEach(pa => { pa.vocabRefs = []; });
+    } }), 'reopened with no bucket a term could land in');
+    const b3 = await beltVocab(p);
+    ok(!b3.present, 'a panel that would render nothing does not offer the tool: ' + JSON.stringify(b3));
+  }
+
+  // ==========================================================================
+  console.log('7. the gap is visible to us, and only to us');
+  // ==========================================================================
+  {
+    // Back to the cold page. enter() reloads, which resets window.ESSAY, so the
+    // fixtures seeded above are gone and the store is empty again. That is the state
+    // this section is about: with records defined the word SHOULD be on screen, and
+    // asserting its absence then would be asserting a bug.
+    ok(await enter(p), 'reopened with nothing defined');
+    // Scoped to the essay page. The flashcards app underneath carries its own
+    // "Coming soon" chips, and a whole-document scan was measuring those rather
+    // than anything this change is responsible for.
+    const seen = await p.$eval('.es-scrim', e => e.innerText).catch(() => '');
+    ok(seen.length > 100, 'the essay page has text to scan: ' + seen.length);
+    ok(!/vocab/i.test(seen), 'the word vocabulary is not on screen at all when none resolves: ' +
+      JSON.stringify((seen.match(/.{0,40}vocab.{0,40}/i) || [''])[0]));
+    ok(!/no vocabulary has been given a meaning|nothing has been written for this question/i.test(seen),
+      'and no panel is telling the student the content is unfinished');
+    // The drawer guard is the hunk no student route reaches, because the belt and
+    // the tabs hide the tool before the window is ever asked to render it. What is
+    // worth asserting is the absence it produces, not the presence of copy that is
+    // now dead: the vocabulary empty state was removed with it.
+    const other2 = await p.$('[data-estool="structure"]:not([disabled])');
+    if (other2) {
+      await other2.click(); await rf(p);
+      const st2 = await p.evaluate(() => ({
+        vocabTab: !!document.querySelector('.es-drawer-tab[data-estool="vocabulary"]'),
+        drawers: document.querySelectorAll('.es-drawer').length }));
+      console.log('    tool window:', JSON.stringify(st2));
+      ok(!st2.vocabTab, 'the window offers no vocabulary tab to switch to');
+      ok(st2.drawers === 1, 'and exactly one tool window is open: ' + st2.drawers);
+      await p.keyboard.press('Escape').catch(() => {}); await rf(p);
+    }
   }
 
   console.log('pageerrors:', errs.length ? errs : 'none');
