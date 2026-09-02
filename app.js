@@ -5080,8 +5080,20 @@
     { key: "ideas",      label: "Arguments", icon: "bulb" },
     { key: "evidence",   label: "Evidence",   icon: "search" },
     { key: "structure",  label: "Structure",  icon: "blocks" },
-    { key: "vocabulary", label: "Vocabulary", icon: "type" },
+    // hideWhenEmpty: a disabled control is still the app showing a student a piece
+    // of itself that is not finished. A tool with nothing behind it that would only
+    // ever say "nothing has been written yet" is better absent: the application
+    // knows the gap, the readiness report says so, and the student is not asked to
+    // read about our authoring backlog.
+    { key: "vocabulary", label: "Vocabulary", icon: "type", hideWhenEmpty: true },
   ];
+  // The tools a student may see right now. A hidden tool is hidden everywhere it
+  // could be reached from, not just the belt, or the routes that bypass the belt
+  // would walk them into the empty panel the belt was hiding.
+  function esToolsVisible(p) {
+    return ES_TOOLS.filter(t => t.key !== "understand")
+      .filter(t => !t.hideWhenEmpty || !!esToolData(t.key, p));
+  }
   // One inline SVG set, defined once. No icon font and no CDN: the app ships as a
   // single self-contained file.
   const ES_ICONS = {
@@ -5505,15 +5517,72 @@
   }
   // Terms for the point being written, then the rest of the section behind them, so
   // the closest vocabulary comes first rather than an alphabetical glossary.
-  function esToolVocabulary(p) {
-    const hit = esSectionFor(p); if (!hit) return null;
-    const pt = esBestPoint(p, hit);
-    const terms = [];
-    const add = t => { if (t && terms.indexOf(t) < 0) terms.push(t); };
-    (pt ? (pt.terms || []) : []).forEach(add);
-    (hit.section.points || []).forEach(x => (x.terms || []).forEach(add));
-    return terms.length ? { title: pt ? String(pt.point).replace(/\s+[-\u2013\u2014]\s+.*$/, "").trim() : hit.section.name, terms: terms.slice(0, 16) } : null;
+  // ---- VOCABULARY -----------------------------------------------------------
+  //
+  // Terms that have a meaning, asked for by name. Two rules do all the work here:
+  // nothing is found by scanning prose, and nothing without a meaning is shown.
+  //
+  // What this replaced was 405 term strings living beside the subject's points,
+  // rendered as chips with no meaning attached to any of them. A student could not
+  // tell a term the app was teaching from a word somebody typed next to a heading,
+  // and neither could the app.
+  function esVocabStore() { return ((window.ESSAY || {}).vocab) || { roles: [], records: {} }; }
+  // A record resolves only when it is complete. A partial one is a term with a gap
+  // where its meaning goes, which is the thing this is here to prevent.
+  function esVocabRecord(id) {
+    const r = esVocabStore().records[String(id || "")];
+    if (!r) return null;
+    const need = ["term", "plain", "subject", "example"];
+    for (const k of need) if (!String(r[k] || "").trim()) return null;
+    return r;
   }
+  // Refs in, rows out. A ref naming a record that does not exist, or one that is
+  // incomplete, never becomes a row: it is counted so the build can report it, and
+  // it is not shown to anybody.
+  function esVocabResolve(refs) {
+    const ok = [], missing = [], seen = {};
+    (refs || []).forEach(ref => {
+      const id = typeof ref === "string" ? ref : (ref && ref.id);
+      if (!id || seen[id]) return;
+      seen[id] = true;
+      const rec = esVocabRecord(id);
+      if (!rec) { missing.push(id); return; }
+      // An unrecognised role is an authoring slip, and dropping the term over it
+      // would lose a record that IS complete: undefined vocabulary's mirror image,
+      // a defined term the student never sees. It falls back to the neutral bucket,
+      // which is also where a bare-string ref goes.
+      const roles = (esVocabStore().roles || []).map(r => r.id);
+      const asked = (typeof ref === "object" && ref.role) || "";
+      ok.push({ rec: rec, role: roles.indexOf(asked) >= 0 ? asked : "topic-context" });
+    });
+    return { ok: ok, missing: missing };
+  }
+  // Who may ask for a term, nearest first: the argument the student chose, then the
+  // area this paragraph covers, then the question. Nothing walks the subject's
+  // content looking for words.
+  function esVocabRefs(p) {
+    const out = [];
+    const push = list => (list || []).forEach(x => out.push(x));
+    const path = esPathway(p); if (path) push(path.vocabRefs);
+    const area = esAreaDef(p); if (area) push(area.vocabRefs);
+    const q = esQuestionDef(); if (q) push(q.vocabRefs);
+    return out;
+  }
+  function esToolVocabulary(p) {
+    const res = esVocabResolve(esVocabRefs(p));
+    const roles = esVocabStore().roles || [];
+    const groups = roles.map(r => ({
+      role: r,
+      terms: res.ok.filter(x => x.role === r.id).map(x => x.rec),
+    })).filter(g => g.terms.length);
+    // Whether the tool EXISTS is decided by what the panel would actually render,
+    // not by how many refs resolved. Those are different numbers the moment a role
+    // does not land in a bucket, and gating on the second showed the student a tool
+    // that opened on nothing.
+    if (!groups.length) return null;
+    return { groups: groups, count: groups.reduce((n, g) => n + g.terms.length, 0) };
+  }
+
   // "I do not know what I could argue". The pathways written for THIS part of the
   // question, each with what the argument actually means, plus whatever the student
   // has already chosen. Reading it never changes anything: choosing is a separate,
@@ -5569,7 +5638,7 @@
 
   // ---- the drawer ------------------------------------------------------------
   function esToolbeltHTML(p) {
-    return `<div class="es-belt" role="toolbar" aria-label="Writing support">` + ES_TOOLS.filter(t => t.key !== "understand").map(t => {
+    return `<div class="es-belt" role="toolbar" aria-label="Writing support">` + esToolsVisible(p).map(t => {
       const has = !!esToolData(t.key, p);
       const on = ES.ui.tool === t.key;
       // Nothing authored behind it means the tool is disabled, not filled with filler.
@@ -5617,8 +5686,15 @@
   function esDrawerHTML(p) {
     const key = ES.ui.tool; if (!key) return "";
     const tool = ES_TOOLS.find(t => t.key === key); if (!tool) return "";
+    // A tool that is hidden for this paragraph cannot be the open one. Saved state
+    // and a change of argument can both leave a key here that has since gone.
+    if (tool.hideWhenEmpty && !esToolData(key, p)) { ES.ui.tool = null; return ""; }
     const d = esToolData(key, p);
     let body = "";
+    // A hideWhenEmpty tool never reaches this line: the guard above closes it
+    // rather than letting the window render an apology for itself. So there is no
+    // vocabulary empty state to write, and one kept here would be dead copy that a
+    // reader would take for a live path.
     if (!d) body = `<p class="es-drawer-none">Nothing has been written for this part of the question yet.</p>`;
     else if (key === "understand") {
       const para = x => `<p class="es-drawer-p">${esc(x)}</p>`;
@@ -5647,8 +5723,19 @@
         ${deep ? `<button type="button" class="es-linkbtn" id="esmoreread">${ES.ui.readMore ? "Show less" : "Read more"}</button>
           <div class="es-drawer-more"${ES.ui.readMore ? "" : " hidden"}>${deep}</div>` : ""}`;
     } else if (key === "vocabulary") {
-      body = `<h4 class="es-drawer-h">${esc(d.title)}</h4><p class="es-drawer-note">Terms that fit what you are writing now. You still choose which to use.</p>
-        <div class="es-terms">${d.terms.map(t => `<span class="es-term">${esc(t)}</span>`).join("")}</div>`;
+      // Four fields, because knowing a definition and being able to use a word are
+      // different things. Nothing here writes into the sentence, and there is no
+      // control that could: a student reads a term and then writes their own line.
+      body = `<h4 class="es-drawer-h">Words this sentence can use</h4>
+        <p class="es-drawer-note">Terms someone has written a meaning for, asked for by this question or by the argument you chose. You still decide which to use, and nothing here can be put into your sentence for you.</p>
+        ${d.groups.map(g => `<div class="es-drawer-block">
+          <div class="es-drawer-sub">${esc(g.role.label)}</div>
+          ${g.terms.map(t => `<div class="es-vocab">
+            <div class="es-vocabterm">${esc(t.term)}</div>
+            <div class="es-vocabline"><span class="es-vocablbl">in plain English</span>${esc(t.plain)}</div>
+            <div class="es-vocabline"><span class="es-vocablbl">in this course</span>${esc(t.subject)}</div>
+            <div class="es-vocabex">${esc(t.example)}</div>
+          </div>`).join("")}</div>`).join("")}`;
     } else if (key === "ideas") {
       if (d.kind === "plan") {
         body = `<h4 class="es-drawer-h">What your response argues</h4>
@@ -5778,7 +5865,7 @@
         <button type="button" class="es-nbact" data-estoolhome title="Put the window back where it opens">reset position</button>
         <button type="button" class="es-drawer-x" id="esdrawerx" aria-label="Close and return to your sentence">${esIcon("close")}</button></div>
       ${ctx ? `<div class="es-drawer-ctx">${esc(ctx)}</div>` : ""}
-      <div class="es-drawer-tabs">${ES_TOOLS.filter(t => t.key !== "understand").map(t => `<button type="button" class="es-drawer-tab ${t.key === key ? "on" : ""}" data-estool="${esc(t.key)}">${esc(t.label)}</button>`).join("")}</div>
+      <div class="es-drawer-tabs">${esToolsVisible(p).map(t => `<button type="button" class="es-drawer-tab ${t.key === key ? "on" : ""}" data-estool="${esc(t.key)}">${esc(t.label)}</button>`).join("")}</div>
       ${key === "understand" && d ? `<div class="es-drawer-open"><button type="button" class="es-linkbtn" id="eslopen">Open learning centre ↗</button></div>` : ""}
       <div class="es-drawer-body">${body}</div>
       ${/* The old line promised a return to "the word you were on", which is not
@@ -7602,7 +7689,9 @@
         d: jobAt >= 0 ? "ladder" : "prompt" },
       { k: "shape", t: "Show a sentence shape", s: hasShape ? "a frame with the parts named" : "no shape written for this stage yet", off: !hasShape },
       { k: "example", t: "See the same shape used elsewhere", s: exAt < 0 ? "no worked example authored here" : "worked in another topic, not in your question", off: exAt < 0 },
-      { k: "words", t: "Words this sentence needs", s: "terms with an authored meaning" },
+      { k: "words", t: "Words this sentence needs",
+        s: esToolVocabulary(p) ? "terms with an authored meaning" : "no term here has a written meaning yet",
+        off: !esToolVocabulary(p) },
       { k: "reading", t: "Reading for this argument", s: study.ok.length ? study.ok.length + " resource" + (study.ok.length === 1 ? "" : "s") : "no study resource added yet", off: !study.ok.length },
     ];
     return `<div class="es-stuck" id="esstuckpop"${ES.ui.stuckOpen ? "" : " hidden"}>

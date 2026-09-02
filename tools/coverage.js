@@ -246,6 +246,38 @@ function format(rows) {
   out.push("");
   return out.join("\n");
 }
+// Vocabulary is asked for by name and shown only when it has a meaning, so the gap
+// worth reporting is not how many words exist in the content: it is how many terms
+// something ASKED for that nobody has written a meaning for. A ref with no complete
+// record behind it is silently not shown to a student, which is correct, and would
+// otherwise be invisible to us too.
+function vocabCoverage() {
+  const ESSAY = load("essay-content.js").ESSAY;
+  const store = ESSAY.vocab || { records: {} };
+  const complete = id => {
+    const r = store.records[id];
+    return !!r && ["term", "plain", "subject", "example"].every(k => String(r[k] || "").trim());
+  };
+  const asked = new Set(), unmet = new Set();
+  const take = list => (list || []).forEach(x => {
+    const id = typeof x === "string" ? x : (x && x.id); if (!id) return;
+    asked.add(id); if (!complete(id)) unmet.add(id);
+  });
+  // The scopes the RESOLVER reads, and only those. esVocabRefs walks pathway ->
+  // esAreaDef -> question, and esAreaDef resolves against q.areas, so a subject-level
+  // area is not a place the app looks. Counting refs there would report an authoring
+  // gap for terms no student route can ever ask for.
+  Object.keys(ESSAY.subjects || {}).forEach(k => {
+    const sub = ESSAY.subjects[k] || {};
+    (sub.questions || []).forEach(q => {
+      take(q.vocabRefs);
+      Object.keys(q.areas || {}).forEach(a => take((q.areas[a] || {}).vocabRefs));
+      (q.pathways || []).forEach(pa => take(pa.vocabRefs));
+    });
+  });
+  const defined = Object.keys(store.records).filter(complete).length;
+  return { asked: asked.size, unmet: unmet.size, defined: defined };
+}
 function summary(rows) {
   const p = rows.reduce((n, r) => n + r.pathways, 0);
   const l = rows.reduce((n, r) => n + r.laddersFull, 0);
@@ -255,9 +287,15 @@ function summary(rows) {
   const s = rows.reduce((n, r) => n + r.lessons, 0);
   const d = rows.reduce((n, r) => n + r.reviewed, 0);
   return "support: " + frac(d, p) + " pathways reviewed, " + frac(s, p) + " teach themselves, " + frac(l, p) + " carry a full ladder, " + frac(e, p) + " have sourced evidence, " +
-    c + " concepts are named but never explained, " + frac(ready, rows.length) + " questions are Learn & Build ready";
+    c + " concepts are named but never explained, " + frac(ready, rows.length) + " questions are Learn & Build ready" +
+    (() => { const v = vocabCoverage();
+      // Said as three numbers rather than a fraction, because a student sees none
+      // of this: what an author needs to know is how many terms were asked for and
+      // how many of those have nothing behind them.
+      return ", vocabulary " + v.asked + " refs requested / " + (v.asked - v.unmet) + " defined / " +
+        v.unmet + " missing" + (v.defined ? " (" + v.defined + " records in all)" : ""); })();
 }
-module.exports = { report, format, summary, teachable, vocabulary, termsOf, readinessOf, FULL_LADDER };
+module.exports = { report, format, summary, teachable, vocabulary, vocabCoverage, termsOf, readinessOf, FULL_LADDER };
 if (require.main === module) {
   const rows = report();
   console.log(format(rows));
