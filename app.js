@@ -5505,15 +5505,62 @@
   }
   // Terms for the point being written, then the rest of the section behind them, so
   // the closest vocabulary comes first rather than an alphabetical glossary.
-  function esToolVocabulary(p) {
-    const hit = esSectionFor(p); if (!hit) return null;
-    const pt = esBestPoint(p, hit);
-    const terms = [];
-    const add = t => { if (t && terms.indexOf(t) < 0) terms.push(t); };
-    (pt ? (pt.terms || []) : []).forEach(add);
-    (hit.section.points || []).forEach(x => (x.terms || []).forEach(add));
-    return terms.length ? { title: pt ? String(pt.point).replace(/\s+[-\u2013\u2014]\s+.*$/, "").trim() : hit.section.name, terms: terms.slice(0, 16) } : null;
+  // ---- VOCABULARY -----------------------------------------------------------
+  //
+  // Terms that have a meaning, asked for by name. Two rules do all the work here:
+  // nothing is found by scanning prose, and nothing without a meaning is shown.
+  //
+  // What this replaced was 405 term strings living beside the subject's points,
+  // rendered as chips with no meaning attached to any of them. A student could not
+  // tell a term the app was teaching from a word somebody typed next to a heading,
+  // and neither could the app.
+  function esVocabStore() { return ((window.ESSAY || {}).vocab) || { roles: [], records: {} }; }
+  // A record resolves only when it is complete. A partial one is a term with a gap
+  // where its meaning goes, which is the thing this is here to prevent.
+  function esVocabRecord(id) {
+    const r = esVocabStore().records[String(id || "")];
+    if (!r) return null;
+    const need = ["term", "plain", "subject", "example"];
+    for (const k of need) if (!String(r[k] || "").trim()) return null;
+    return r;
   }
+  // Refs in, rows out. A ref naming a record that does not exist, or one that is
+  // incomplete, never becomes a row: it is counted so the build can report it, and
+  // it is not shown to anybody.
+  function esVocabResolve(refs) {
+    const ok = [], missing = [], seen = {};
+    (refs || []).forEach(ref => {
+      const id = typeof ref === "string" ? ref : (ref && ref.id);
+      if (!id || seen[id]) return;
+      seen[id] = true;
+      const rec = esVocabRecord(id);
+      if (!rec) { missing.push(id); return; }
+      ok.push({ rec: rec, role: (typeof ref === "object" && ref.role) || "topic-context" });
+    });
+    return { ok: ok, missing: missing };
+  }
+  // Who may ask for a term, nearest first: the argument the student chose, then the
+  // area this paragraph covers, then the question. Nothing walks the subject's
+  // content looking for words.
+  function esVocabRefs(p) {
+    const out = [];
+    const push = list => (list || []).forEach(x => out.push(x));
+    const path = esPathway(p); if (path) push(path.vocabRefs);
+    const area = esAreaDef(p); if (area) push(area.vocabRefs);
+    const q = esQuestionDef(); if (q) push(q.vocabRefs);
+    return out;
+  }
+  function esToolVocabulary(p) {
+    const res = esVocabResolve(esVocabRefs(p));
+    if (!res.ok.length) return null;
+    const roles = esVocabStore().roles || [];
+    const groups = roles.map(r => ({
+      role: r,
+      terms: res.ok.filter(x => x.role === r.id).map(x => x.rec),
+    })).filter(g => g.terms.length);
+    return { groups: groups, count: res.ok.length };
+  }
+
   // "I do not know what I could argue". The pathways written for THIS part of the
   // question, each with what the argument actually means, plus whatever the student
   // has already chosen. Reading it never changes anything: choosing is a separate,
@@ -5619,7 +5666,12 @@
     const tool = ES_TOOLS.find(t => t.key === key); if (!tool) return "";
     const d = esToolData(key, p);
     let body = "";
-    if (!d) body = `<p class="es-drawer-none">Nothing has been written for this part of the question yet.</p>`;
+    if (!d) body = key === "vocabulary"
+      // Undefined vocabulary is never displayed, so an empty panel here means no
+      // term has a written meaning yet, NOT that this question has no terminology.
+      // Saying which is the difference between an honest gap and a broken tool.
+      ? `<p class="es-drawer-none">No vocabulary has been given a meaning for this question yet. Terms appear here once somebody writes what they mean, so this stays empty rather than listing words nothing explains.</p>`
+      : `<p class="es-drawer-none">Nothing has been written for this part of the question yet.</p>`;
     else if (key === "understand") {
       const para = x => `<p class="es-drawer-p">${esc(x)}</p>`;
       const block = (label, inner) => `<div class="es-drawer-block"><div class="es-drawer-sub">${esc(label)}</div>${inner}</div>`;
@@ -5647,8 +5699,19 @@
         ${deep ? `<button type="button" class="es-linkbtn" id="esmoreread">${ES.ui.readMore ? "Show less" : "Read more"}</button>
           <div class="es-drawer-more"${ES.ui.readMore ? "" : " hidden"}>${deep}</div>` : ""}`;
     } else if (key === "vocabulary") {
-      body = `<h4 class="es-drawer-h">${esc(d.title)}</h4><p class="es-drawer-note">Terms that fit what you are writing now. You still choose which to use.</p>
-        <div class="es-terms">${d.terms.map(t => `<span class="es-term">${esc(t)}</span>`).join("")}</div>`;
+      // Four fields, because knowing a definition and being able to use a word are
+      // different things. Nothing here writes into the sentence, and there is no
+      // control that could: a student reads a term and then writes their own line.
+      body = `<h4 class="es-drawer-h">Words this sentence can use</h4>
+        <p class="es-drawer-note">Terms someone has written a meaning for, asked for by this question or by the argument you chose. You still decide which to use, and nothing here can be put into your sentence for you.</p>
+        ${d.groups.map(g => `<div class="es-drawer-block">
+          <div class="es-drawer-sub">${esc(g.role.label)}</div>
+          ${g.terms.map(t => `<div class="es-vocab">
+            <div class="es-vocabterm">${esc(t.term)}</div>
+            <div class="es-vocabline"><span class="es-vocablbl">in plain English</span>${esc(t.plain)}</div>
+            <div class="es-vocabline"><span class="es-vocablbl">in this course</span>${esc(t.subject)}</div>
+            <div class="es-vocabex">${esc(t.example)}</div>
+          </div>`).join("")}</div>`).join("")}`;
     } else if (key === "ideas") {
       if (d.kind === "plan") {
         body = `<h4 class="es-drawer-h">What your response argues</h4>
