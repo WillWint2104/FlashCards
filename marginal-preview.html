@@ -6198,6 +6198,7 @@ window.ESSAY = {
     library: [
       // ---- introduction ----------------------------------------------------
       { id: "causal.introduction.thesis", family: "causal", role: "introduction", stage: "thesis",
+        stageLabel: "thesis",
         frame: "{concept} affect {areas} because {principle}.",
         why: "A thesis for a causal question says what the whole response will establish. The reason has to be broad enough to cover every area the question names.",
         slots: [
@@ -6213,6 +6214,10 @@ window.ESSAY = {
         ] },
       // ---- body ------------------------------------------------------------
       { id: "causal.body.topic", family: "causal", role: "body", stage: "topic",
+        // TOPIC is the TEEEC slot key and stays in the composer. It is not what
+        // this stage is FOR: "write a topic sentence" is a instruction about
+        // position, and the job here is to state one relationship.
+        stageLabel: "state the relationship",
         frame: "{cause} lead a business to shape its {effect}, because {reasoning}.",
         why: "You chose this argument, so both ends of it are already known. What the app cannot supply is why one follows from the other, and that is the reasoning Explain requires you to establish.",
         alternatives: ["causal.body.topic.reasoning-first", "causal.body.topic.conditional"],
@@ -6228,7 +6233,7 @@ window.ESSAY = {
             note: "Why the first leads to the second. One step, in your own words. Not what the business gains from it, and not the same relationship said again." }
         ] },
       { id: "causal.body.topic.reasoning-first", family: "causal", role: "body", stage: "topic",
-        variantOf: "causal.body.topic", name: "Your reasoning first",
+        variantOf: "causal.body.topic", name: "Your reasoning first", stageLabel: "state the relationship",
         frame: "Because {reasoning}, a business serving {cause} shapes its {effect} around them.",
         why: "You cannot finish this sentence without having said why. Use it when the reasoning is the part you are avoiding.",
         slots: [
@@ -6240,7 +6245,7 @@ window.ESSAY = {
             label: "the element this paragraph is about", note: "The element the question fixes and this paragraph covers." }
         ] },
       { id: "causal.body.topic.conditional", family: "causal", role: "body", stage: "topic",
-        variantOf: "causal.body.topic", name: "Conditional form",
+        variantOf: "causal.body.topic", name: "Conditional form", stageLabel: "state the relationship",
         frame: "When a business serves {cause}, it may shape its {effect} because {reasoning}.",
         why: "More cautious than the recommended form. Use it where the relationship is genuinely conditional rather than certain.",
         slots: [
@@ -6253,6 +6258,7 @@ window.ESSAY = {
         ] },
       // ---- conclusion, two stages -----------------------------------------
       { id: "causal.conclusion.restate", family: "causal", role: "conclusion", stage: "restate",
+        stageLabel: "draw together",
         frame: "Across {areas}, {pattern}.",
         why: "Synthesis, not a list. The marker has just read your paragraphs, so repeating them earns nothing; what earns something is the pattern they turned out to share.",
         slots: [
@@ -6264,6 +6270,7 @@ window.ESSAY = {
             note: "What did your paragraphs collectively show? One claim, not four." }
         ] },
       { id: "causal.conclusion.judgement", family: "causal", role: "conclusion", stage: "judgement",
+        stageLabel: "answer the question",
         frame: "Therefore, {answer}.",
         why: "A causal answer, in the words the question used. Explain does not ask which element mattered most, so this is not a verdict.",
         slots: [
@@ -11543,7 +11550,11 @@ window.BUSCONTENT = {
     if (!showVals) return "";
     const noteSlot = ui.shapeSlot ? (showing.slots || []).find(x => x.id === ui.shapeSlot) : null;
     const ex = ui.shapeEx ? esShapeExample(shape.id) : null;
-    const key = [shape.family, shape.role, shape.stage].join(" \u00b7 ");
+    // The scaffold's slot key is durable and internal. What a student reads is the
+    // stage LABEL, which follows the directive like everything else: the causal
+    // conclusion's second stage answers the question, and only a judgement question
+    // is ever headed JUDGEMENT.
+    const key = [shape.family, shape.role, shape.stageLabel || shape.stage].join(" \u00b7 ");
     const alts = ui.shapeAlts && variants.length ? `
       <div class="es-alts">${[shape].concat(variants).map(v => {
         const vv = v === shape ? values : esShapeValues(v, p);
@@ -11561,11 +11572,13 @@ window.BUSCONTENT = {
         <span class="es-shape2key">${esc(key)}</span></div>
       ${ui.shapeAlts ? "" : `<div class="es-shape2frame">${esShapeFrameHTML(showing, showVals, { pressable: true })}</div>`}
       ${noteSlot && !ui.shapeAlts ? `<div class="es-slotnote"><b>${esc(noteSlot.treatment === "resolved" ? showVals[noteSlot.id] : "[" + (noteSlot.label || noteSlot.id) + "]")}</b> \u00b7 ${esc(noteSlot.note || "")}</div>` : ""}
-      ${ui.shapeAlts ? "" : `<p class="es-shape2why">${esc(showing.why || "")}</p>`}
-      ${ui.shapeAlts ? "" : (() => {
-        // Only the halves that are on screen. A conclusion's answer is all the
-        // student's, and a key to a colour that is not in the sentence is one more
-        // thing to read for nothing.
+      ${(ui.shapeAlts || noteSlot || ex) ? "" : `<p class="es-shape2why">${esc(showing.why || "")}</p>`}
+      ${(!noteSlot || ui.shapeAlts) ? "" : (() => {
+        // The key to the colours, shown when the student is investigating one. In
+        // the base state the shape speaks for itself and this is one more line to
+        // read for nothing.
+        // Only the halves that are on screen: a conclusion's answer is all the
+        // student's, so a key to a colour that is not in the sentence is noise.
         const has = t => (showing.slots || []).some(x => (x.treatment === "resolved") === (t === "res"));
         const bits = [];
         if (has("res")) bits.push('<span class="es-sldot res"></span>supplied by your question or your argument');
@@ -11618,10 +11631,11 @@ window.BUSCONTENT = {
     box.querySelectorAll("[data-esslot]").forEach(b => b.onclick = () => {
       const id = b.dataset.esslot;
       ES.ui.shapeSlot = ES.ui.shapeSlot === id ? null : id;
+      ES.ui.shapeEx = false;                 // one thing at a time
       esShapeRefresh(p);
     });
     const exb = box.querySelector("#esshapeex");
-    if (exb) exb.onclick = () => { ES.ui.shapeEx = !ES.ui.shapeEx; esShapeRefresh(p); };
+    if (exb) exb.onclick = () => { ES.ui.shapeEx = !ES.ui.shapeEx; ES.ui.shapeSlot = null; esShapeRefresh(p); };
     const ab = box.querySelector("#esshapealts");
     if (ab) ab.onclick = () => { ES.ui.shapeAlts = !ES.ui.shapeAlts; ES.ui.shapeSlot = null; esShapeRefresh(p); };
     box.querySelectorAll("[data-esalt]").forEach(b => b.onclick = () => {

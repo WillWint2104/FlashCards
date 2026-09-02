@@ -1880,6 +1880,7 @@ window.ESSAY = {
     library: [
       // ---- introduction ----------------------------------------------------
       { id: "causal.introduction.thesis", family: "causal", role: "introduction", stage: "thesis",
+        stageLabel: "thesis",
         frame: "{concept} affect {areas} because {principle}.",
         why: "A thesis for a causal question says what the whole response will establish. The reason has to be broad enough to cover every area the question names.",
         slots: [
@@ -1895,6 +1896,10 @@ window.ESSAY = {
         ] },
       // ---- body ------------------------------------------------------------
       { id: "causal.body.topic", family: "causal", role: "body", stage: "topic",
+        // TOPIC is the TEEEC slot key and stays in the composer. It is not what
+        // this stage is FOR: "write a topic sentence" is a instruction about
+        // position, and the job here is to state one relationship.
+        stageLabel: "state the relationship",
         frame: "{cause} lead a business to shape its {effect}, because {reasoning}.",
         why: "You chose this argument, so both ends of it are already known. What the app cannot supply is why one follows from the other, and that is the reasoning Explain requires you to establish.",
         alternatives: ["causal.body.topic.reasoning-first", "causal.body.topic.conditional"],
@@ -1910,7 +1915,7 @@ window.ESSAY = {
             note: "Why the first leads to the second. One step, in your own words. Not what the business gains from it, and not the same relationship said again." }
         ] },
       { id: "causal.body.topic.reasoning-first", family: "causal", role: "body", stage: "topic",
-        variantOf: "causal.body.topic", name: "Your reasoning first",
+        variantOf: "causal.body.topic", name: "Your reasoning first", stageLabel: "state the relationship",
         frame: "Because {reasoning}, a business serving {cause} shapes its {effect} around them.",
         why: "You cannot finish this sentence without having said why. Use it when the reasoning is the part you are avoiding.",
         slots: [
@@ -1922,7 +1927,7 @@ window.ESSAY = {
             label: "the element this paragraph is about", note: "The element the question fixes and this paragraph covers." }
         ] },
       { id: "causal.body.topic.conditional", family: "causal", role: "body", stage: "topic",
-        variantOf: "causal.body.topic", name: "Conditional form",
+        variantOf: "causal.body.topic", name: "Conditional form", stageLabel: "state the relationship",
         frame: "When a business serves {cause}, it may shape its {effect} because {reasoning}.",
         why: "More cautious than the recommended form. Use it where the relationship is genuinely conditional rather than certain.",
         slots: [
@@ -1935,6 +1940,7 @@ window.ESSAY = {
         ] },
       // ---- conclusion, two stages -----------------------------------------
       { id: "causal.conclusion.restate", family: "causal", role: "conclusion", stage: "restate",
+        stageLabel: "draw together",
         frame: "Across {areas}, {pattern}.",
         why: "Synthesis, not a list. The marker has just read your paragraphs, so repeating them earns nothing; what earns something is the pattern they turned out to share.",
         slots: [
@@ -1946,6 +1952,7 @@ window.ESSAY = {
             note: "What did your paragraphs collectively show? One claim, not four." }
         ] },
       { id: "causal.conclusion.judgement", family: "causal", role: "conclusion", stage: "judgement",
+        stageLabel: "answer the question",
         frame: "Therefore, {answer}.",
         why: "A causal answer, in the words the question used. Explain does not ask which element mattered most, so this is not a verdict.",
         slots: [

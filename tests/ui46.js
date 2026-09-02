@@ -258,6 +258,109 @@ const slots = p => p.$$eval('.es-shape2frame .es-sl', es => es.map(e => ({
     ok(bad.studentBound.length === 0, 'no student slot is bound to anything: ' + JSON.stringify(bad.studentBound));
   }
 
+  // ==========================================================================
+  console.log('10. a causal shape never shows a student judgement language');
+  // ==========================================================================
+  // The slot key stays `judgement` for compatibility, and PR #53 fixed what the
+  // COMPOSER heads that stage. The shape panel had its own copy of the same leak:
+  // it rendered the raw stage key, so an Explain student read
+  // "CAUSAL · CONCLUSION · JUDGEMENT" over a shape whose own words said answer the
+  // question directly.
+  const VERDICT = /judgement|judgment|\bweigh|on balance|strongest|most effective|verdict|more important/i;
+  {
+    const lib = await p.evaluate(() => window.ESSAY.shapes.library);
+    const leaks = lib.filter(sh => sh.family === 'causal')
+      .filter(sh => VERDICT.test([sh.family, sh.role, sh.stageLabel || sh.stage].join(' ')))
+      .map(sh => sh.id + ' -> ' + (sh.stageLabel || sh.stage));
+    ok(leaks.length === 0, 'no causal shape renders verdict language in its metadata: ' + JSON.stringify(leaks));
+    const unlabelled = lib.filter(sh => VERDICT.test(sh.stage) && !sh.stageLabel).map(sh => sh.id);
+    ok(unlabelled.length === 0, 'any shape on a verdict-named slot carries its own label: ' + JSON.stringify(unlabelled));
+  }
+  {
+    ok(await enterBus(p, 'target markets'), 'reopened for the rendered check');
+    ok(await section(p, 'Conclusion'), 'the causal conclusion opens');
+    await openShape(p);
+    const n = await p.$('#esnextguide');
+    if (n && !(await n.evaluate(e => e.disabled))) { await n.click(); await rf(p); await openShape(p); }
+    const key = await p.$eval('.es-shape2key', e => e.textContent.replace(/\s+/g, ' ').trim()).catch(() => '');
+    console.log('    causal conclusion stage 2 header:', JSON.stringify(key));
+    ok(!!key, 'the second stage renders a shape');
+    ok(!VERDICT.test(key), 'and its header is not verdict language: ' + JSON.stringify(key));
+    ok(/answer/i.test(key), 'it says what the sentence does: ' + JSON.stringify(key));
+  }
+  {
+    ok(await enterBus(p, 'target markets'), 'reopened for the body header');
+    ok(await section(p, 'Body 1'), 'a body paragraph opens');
+    await openShape(p);
+    const key = await p.$eval('.es-shape2key', e => e.textContent.replace(/\s+/g, ' ').trim()).catch(() => '');
+    console.log('    causal body header:', JSON.stringify(key));
+    ok(/state the relationship/i.test(key),
+      'the body header names what the stage does, not which scaffold slot it is: ' + JSON.stringify(key));
+  }
+
+  // ==========================================================================
+  console.log('11. one explanation at a time');
+  // ==========================================================================
+  // Individually every line in the panel earns its place. All of them at once is
+  // the mini-lesson this panel exists not to be, and three of them explain the
+  // same resolved-versus-student distinction.
+  {
+    const seen = () => p.evaluate(() => ({
+      why: document.querySelectorAll('.es-shape2why').length,
+      note: document.querySelectorAll('.es-slotnote').length,
+      legend: document.querySelectorAll('.es-shape2legend').length,
+      ex: document.querySelectorAll('.es-shapeex').length,
+    }));
+    const base = await seen();
+    console.log('    base:', JSON.stringify(base));
+    ok(base.why === 1 && base.note === 0 && base.ex === 0,
+      'the base state is the frame, one explanation and the actions: ' + JSON.stringify(base));
+    ok(base.legend === 0, 'and the colour key is not a third thing to read yet: ' + JSON.stringify(base));
+
+    await p.$$eval('.es-shape2frame [data-esslot]', es => { const t = es.find(x => /^\[/.test(x.textContent)); t && t.click(); });
+    await rf(p);
+    const pressed = await seen();
+    console.log('    slot pressed:', JSON.stringify(pressed));
+    ok(pressed.note === 1, 'pressing a slot explains that slot');
+    ok(pressed.why === 0, 'and replaces the general explanation rather than stacking on it');
+    ok(pressed.legend === 1, 'the colour key appears where the student is investigating colours');
+
+    await p.click('#esshapeex'); await rf(p);
+    const withEx = await seen();
+    console.log('    example open:', JSON.stringify(withEx));
+    ok(withEx.ex === 1, 'the example opens');
+    ok(withEx.why === 0 && withEx.note === 0,
+      'and nothing else is explaining at the same time: ' + JSON.stringify(withEx));
+    await p.click('#esshapeex'); await rf(p);
+  }
+
+  // ==========================================================================
+  console.log('12. the family split works in the other direction too');
+  // ==========================================================================
+  // No judgement shapes are authored. The test is that the engine says so rather
+  // than reaching for the nearest causal one, and that a judgement question is
+  // still headed JUDGEMENT, which is correct for it.
+  {
+    ok(await enterBus(p, 'effectiveness of human resource'), 'the judgement question is reachable');
+    const inIntro = await p.evaluate(() => {
+      const d = document.querySelector('#esposdefer'); if (d) d.click();
+      const t = [...document.querySelectorAll('.es-startrow')].find(x => /Introduction/i.test(x.textContent));
+      if (t) { t.click(); return true; } return false; });
+    await rf(p);
+    if (inIntro) {
+      const go = await p.$('#esstartwriting'); if (go) { await go.click(); await rf(p); }
+      await openShape(p);
+      const v2 = await p.$$eval('.es-shape2', es => es.length);
+      const legacy = await p.$$eval('.es-shape', es => es.length);
+      console.log('    judgement introduction: v2', v2, 'legacy', legacy);
+      ok(v2 === 0, 'no causal shape is borrowed for a judgement introduction: ' + v2);
+      ok(legacy > 0, 'the authored frames stand in instead: ' + legacy);
+      const head = await p.$eval('.es-guideh', e => e.textContent.replace(/\s+/g, ' ').trim()).catch(() => '');
+      ok(!/\boverall\b/i.test(await p.$eval('.es-shapes', e => e.textContent).catch(() => '')),
+        'and they still carry no conclusion language: ' + JSON.stringify(head));
+    } else { ok(false, 'the judgement introduction is reachable'); }
+  }
+
   console.log('pageerrors:', errs.length ? errs : 'none');
   ok(errs.length === 0, 'no page errors');
   console.log(`\n${pass} passed, ${fail} failed`);

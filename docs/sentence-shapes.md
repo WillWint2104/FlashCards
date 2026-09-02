@@ -10,12 +10,23 @@ Directive family, then paragraph role, then the stage of the paragraph the stude
 is on. Nothing is keyed to a question. A question contributes VALUES, never
 structures, and never a model answer to itself.
 
-```
-causal · body         · topic       the relationship, and why it holds
-causal · introduction · thesis      what the response will establish
-causal · conclusion   · restate     what the paragraphs had in common
-causal · conclusion   · judgement   the answer, in the question's words
-```
+| family | role | slot key | what the student reads |
+| --- | --- | --- | --- |
+| causal | introduction | `thesis` | thesis |
+| causal | body | `topic` | state the relationship |
+| causal | conclusion | `restate` | draw together |
+| causal | conclusion | `judgement` | answer the question |
+
+The slot KEY is the scaffold's and is durable; `stageLabel` is what a student
+reads, and it follows the directive like everything else. Two of these matter:
+
+- `topic` is a TEEEC position, not a job. "Write a topic sentence" is an
+  instruction about where the sentence goes; this stage's job is to state one
+  relationship.
+- `judgement` is the durable key, and a causal question must never be headed with
+  it. The composer stage was fixed in the directive contract; the shape panel had
+  its own copy of the same leak, rendering the raw key over a shape whose own words
+  said answer the question directly.
 
 Variants (`variantOf`) are reached through the shape they belong to, never
 resolved directly, so "other ways to phrase this" cannot become the default.
@@ -76,6 +87,21 @@ and shows nothing rather than the nearest thing. `fills` maps the example's own
 words back onto the slots, which is what lets a student see which part is which —
 rendered as prose with coloured underlines, because a finished sentence has to read
 as a sentence.
+
+## One explanation at a time
+
+Every line in the panel earns its place on its own. All of them at once is the
+mini-lesson this panel exists not to be, and three of them explain the same
+resolved-versus-student distinction. So they take turns:
+
+| state | what is on screen |
+| --- | --- |
+| base | the frame, one short explanation, the actions |
+| a slot pressed | the frame, that slot's note, the colour key |
+| the example open | the frame, the example, its warning |
+
+Pressing a slot closes the example and the reverse, because the shape is something
+a student glances at in a few seconds.
 
 ## What is not built yet
 

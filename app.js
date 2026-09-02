@@ -3412,7 +3412,11 @@
     if (!showVals) return "";
     const noteSlot = ui.shapeSlot ? (showing.slots || []).find(x => x.id === ui.shapeSlot) : null;
     const ex = ui.shapeEx ? esShapeExample(shape.id) : null;
-    const key = [shape.family, shape.role, shape.stage].join(" \u00b7 ");
+    // The scaffold's slot key is durable and internal. What a student reads is the
+    // stage LABEL, which follows the directive like everything else: the causal
+    // conclusion's second stage answers the question, and only a judgement question
+    // is ever headed JUDGEMENT.
+    const key = [shape.family, shape.role, shape.stageLabel || shape.stage].join(" \u00b7 ");
     const alts = ui.shapeAlts && variants.length ? `
       <div class="es-alts">${[shape].concat(variants).map(v => {
         const vv = v === shape ? values : esShapeValues(v, p);
@@ -3430,11 +3434,13 @@
         <span class="es-shape2key">${esc(key)}</span></div>
       ${ui.shapeAlts ? "" : `<div class="es-shape2frame">${esShapeFrameHTML(showing, showVals, { pressable: true })}</div>`}
       ${noteSlot && !ui.shapeAlts ? `<div class="es-slotnote"><b>${esc(noteSlot.treatment === "resolved" ? showVals[noteSlot.id] : "[" + (noteSlot.label || noteSlot.id) + "]")}</b> \u00b7 ${esc(noteSlot.note || "")}</div>` : ""}
-      ${ui.shapeAlts ? "" : `<p class="es-shape2why">${esc(showing.why || "")}</p>`}
-      ${ui.shapeAlts ? "" : (() => {
-        // Only the halves that are on screen. A conclusion's answer is all the
-        // student's, and a key to a colour that is not in the sentence is one more
-        // thing to read for nothing.
+      ${(ui.shapeAlts || noteSlot || ex) ? "" : `<p class="es-shape2why">${esc(showing.why || "")}</p>`}
+      ${(!noteSlot || ui.shapeAlts) ? "" : (() => {
+        // The key to the colours, shown when the student is investigating one. In
+        // the base state the shape speaks for itself and this is one more line to
+        // read for nothing.
+        // Only the halves that are on screen: a conclusion's answer is all the
+        // student's, so a key to a colour that is not in the sentence is noise.
         const has = t => (showing.slots || []).some(x => (x.treatment === "resolved") === (t === "res"));
         const bits = [];
         if (has("res")) bits.push('<span class="es-sldot res"></span>supplied by your question or your argument');
@@ -3487,10 +3493,11 @@
     box.querySelectorAll("[data-esslot]").forEach(b => b.onclick = () => {
       const id = b.dataset.esslot;
       ES.ui.shapeSlot = ES.ui.shapeSlot === id ? null : id;
+      ES.ui.shapeEx = false;                 // one thing at a time
       esShapeRefresh(p);
     });
     const exb = box.querySelector("#esshapeex");
-    if (exb) exb.onclick = () => { ES.ui.shapeEx = !ES.ui.shapeEx; esShapeRefresh(p); };
+    if (exb) exb.onclick = () => { ES.ui.shapeEx = !ES.ui.shapeEx; ES.ui.shapeSlot = null; esShapeRefresh(p); };
     const ab = box.querySelector("#esshapealts");
     if (ab) ab.onclick = () => { ES.ui.shapeAlts = !ES.ui.shapeAlts; ES.ui.shapeSlot = null; esShapeRefresh(p); };
     box.querySelectorAll("[data-esalt]").forEach(b => b.onclick = () => {
