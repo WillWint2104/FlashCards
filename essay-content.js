@@ -1817,6 +1817,168 @@ window.ESSAY = {
   // frame; tier2 offers a few frame TYPES that scaffold the KIND of analysis.
   // Keep the slot KEYS here in sync with proxy/worker.js COACH_SYSTEM.
   // ---------------------------------------------------------------------------
+  // ===========================================================================
+  // SENTENCE SHAPES v2
+  //
+  // A shape is a STRUCTURE for one sentence, resolved by directive family, then
+  // paragraph role, then the stage of the paragraph the student is on. It is not
+  // per question: a question contributes VALUES, never structures, and never a
+  // model answer to itself.
+  //
+  // Every slot declares two different things, and they must not be collapsed:
+  //
+  //   treatment  what the STUDENT sees. "resolved" is mint and means the app
+  //              already knows this; "student" is amber and means only they can
+  //              write it. Two treatments, because a student does not need a
+  //              taxonomy, they need to know which parts are theirs.
+  //   source     where a resolved value CAME from. Kept so validation can enforce
+  //              it: app.js forbids deriving the cause end by splitting `short` or
+  //              `relationship`, and that rule is only enforceable if the shape
+  //              records that the value must come from `pathway.fromLabel`.
+  //
+  // A binding names an authored field. It never computes one. If a binding
+  // resolves to nothing the whole shape is withheld, because a mint slot that
+  // renders empty tells the student the app knows something it does not.
+  //
+  // The mechanism is NOT a slot and never was. It is optional metadata that 23 of
+  // 28 pathways do not carry, one of them declaring positively that a middle step
+  // would restate the relationship rather than explain it. A shape that demanded
+  // one would contradict its own content.
+  shapes: {
+    // ---- CONNECTORS ------------------------------------------------------
+    // The sentence furniture that joins two resolved values. It is authored and
+    // NAMED, never inferred from the values themselves, because the natural verb
+    // depends on what the right-hand value IS and no string inspection can know
+    // that. "shape its e-marketing" is not English; "lead a business towards
+    // e-marketing" is, and a right-hand value that fits neither declares a
+    // different set rather than forcing every frame to be rewritten.
+    //
+    // A slot names the set it needs. A frame reaches into it with {@member}, so
+    // the same set serves the recommended form and its variants, where the same
+    // relationship has to be said in three different clause positions.
+    connectors: {
+      // a market characteristic to a strategy or element the business adopts
+      towards: { lead: "lead a business towards", serving: "turns towards", modal: "may turn to" },
+      // a characteristic to something the business already has and alters
+      changes: { lead: "lead a business to change its", serving: "changes its", modal: "may change its" }
+    },
+    // Cross-topic worked examples, keyed by shape. Held here rather than on a
+    // question so that a question never has to author an answer to itself, and so
+    // one example serves every question that uses the shape. `fills` maps the
+    // example's own words back onto the shape's slots, which is what lets the
+    // student see which part is which.
+    examples: {
+      "causal.body.topic": [
+        { id: "gym-timepoor", context: "a gym, and time-poor professionals",
+          text: "A gym targeting time-poor professionals may offer app-based booking because customers can arrange sessions without calling during business hours.",
+          fills: { cause: "time-poor professionals", effect: "app-based booking",
+                   reasoning: "customers can arrange sessions without calling during business hours" } }
+      ],
+      "causal.introduction.thesis": [
+        { id: "hr-motivation", context: "employee motivation, in human resources",
+          text: "Employee motivation affects productivity, retention and workplace culture because a business gets the behaviour its rewards actually encourage.",
+          fills: { concept: "Employee motivation", areas: "productivity, retention and workplace culture",
+                   principle: "a business gets the behaviour its rewards actually encourage" } }
+      ],
+      "causal.conclusion.restate": [
+        { id: "hr-motivation", context: "employee motivation, in human resources",
+          text: "Across productivity, retention and workplace culture, the same thing was doing the work: what the business chose to reward.",
+          fills: { areas: "productivity, retention and workplace culture",
+                   pattern: "the same thing was doing the work: what the business chose to reward" } }
+      ],
+      "causal.conclusion.judgement": [
+        { id: "hr-motivation", context: "employee motivation, in human resources",
+          text: "Therefore, employee motivation affects how a workforce performs, because the rewards a business sets are what its staff respond to.",
+          fills: { answer: "employee motivation affects how a workforce performs, because the rewards a business sets are what its staff respond to" } }
+      ]
+    },
+    // The library. Resolution is family, then role, then stage; nothing here is
+    // keyed to a question.
+    library: [
+      // ---- introduction ----------------------------------------------------
+      { id: "causal.introduction.thesis", family: "causal", role: "introduction", stage: "thesis",
+        stageLabel: "thesis",
+        frame: "{concept} affect {areas} because {principle}.",
+        why: "A thesis for a causal question says what the whole response will establish. The reason has to be broad enough to cover every area the question names.",
+        slots: [
+          { id: "concept", treatment: "resolved", source: "question", binding: "question.concept",
+            label: "the concept the question names",
+            note: "From the question stem. You did not choose it and you cannot get it wrong." },
+          { id: "areas", treatment: "resolved", source: "question", binding: "question.areas",
+            label: "the areas the question fixes",
+            note: "Every area the question names, because naming all of them is the first thing a marker checks." },
+          { id: "principle", treatment: "student", source: "student",
+            label: "the overall principle your response will establish",
+            note: "The broad reason the relationship exists across the response. Your paragraphs may establish it in different ways; this is what they have in common." }
+        ] },
+      // ---- body ------------------------------------------------------------
+      { id: "causal.body.topic", family: "causal", role: "body", stage: "topic",
+        // TOPIC is the TEEEC slot key and stays in the composer. It is not what
+        // this stage is FOR: "write a topic sentence" is a instruction about
+        // position, and the job here is to state one relationship.
+        stageLabel: "state the relationship",
+        frame: "{cause} {@lead} {effect}, because {reasoning}.",
+        why: "You chose this argument, so both ends of it are already known. What the app cannot supply is why one follows from the other, and that is the reasoning Explain requires you to establish.",
+        alternatives: ["causal.body.topic.reasoning-first", "causal.body.topic.conditional"],
+        slots: [
+          { id: "cause", treatment: "resolved", source: "pathway", binding: "pathway.fromLabel",
+            label: "the feature of the market you are arguing from",
+            note: "The characteristic your chosen argument runs from. Authored per argument, never worked out from the argument's title." },
+          { id: "effect", treatment: "resolved", source: "question", binding: "question.area", connector: "towards",
+            label: "the element this paragraph is about",
+            note: "The element the question fixes and this paragraph covers." },
+          { id: "reasoning", treatment: "student", source: "student",
+            label: "your reasoning",
+            note: "Why the first leads to the second. One step, in your own words. Not what the business gains from it, and not the same relationship said again." }
+        ] },
+      { id: "causal.body.topic.reasoning-first", family: "causal", role: "body", stage: "topic",
+        variantOf: "causal.body.topic", name: "Your reasoning first", stageLabel: "state the relationship",
+        frame: "Because {reasoning}, a business serving {cause} {@serving} {effect}.",
+        why: "You cannot finish this sentence without having said why. Use it when the reasoning is the part you are avoiding.",
+        slots: [
+          { id: "reasoning", treatment: "student", source: "student", label: "your reasoning",
+            note: "Why the market's feature leads to that element. One step, in your own words." },
+          { id: "cause", treatment: "resolved", source: "pathway", binding: "pathway.fromLabel",
+            label: "the feature of the market you are arguing from", note: "The characteristic your chosen argument runs from." },
+          { id: "effect", treatment: "resolved", source: "question", binding: "question.area", connector: "towards",
+            label: "the element this paragraph is about", note: "The element the question fixes and this paragraph covers." }
+        ] },
+      { id: "causal.body.topic.conditional", family: "causal", role: "body", stage: "topic",
+        variantOf: "causal.body.topic", name: "Conditional form", stageLabel: "state the relationship",
+        frame: "When a business serves {cause}, it {@modal} {effect} because {reasoning}.",
+        why: "More cautious than the recommended form. Use it where the relationship is genuinely conditional rather than certain.",
+        slots: [
+          { id: "cause", treatment: "resolved", source: "pathway", binding: "pathway.fromLabel",
+            label: "the feature of the market you are arguing from", note: "The characteristic your chosen argument runs from." },
+          { id: "effect", treatment: "resolved", source: "question", binding: "question.area", connector: "towards",
+            label: "the element this paragraph is about", note: "The element the question fixes and this paragraph covers." },
+          { id: "reasoning", treatment: "student", source: "student", label: "your reasoning",
+            note: "Why that follows, under those conditions. One step, in your own words." }
+        ] },
+      // ---- conclusion, two stages -----------------------------------------
+      { id: "causal.conclusion.restate", family: "causal", role: "conclusion", stage: "restate",
+        stageLabel: "draw together",
+        frame: "Across {areas}, {pattern}.",
+        why: "Synthesis, not a list. The marker has just read your paragraphs, so repeating them earns nothing; what earns something is the pattern they turned out to share.",
+        slots: [
+          { id: "areas", treatment: "resolved", source: "question", binding: "question.areas",
+            label: "the areas the question fixes",
+            note: "Naming them again is the marker's end-of-response coverage check." },
+          { id: "pattern", treatment: "student", source: "student",
+            label: "the overall pattern established by the body",
+            note: "What did your paragraphs collectively show? One claim, not four." }
+        ] },
+      { id: "causal.conclusion.judgement", family: "causal", role: "conclusion", stage: "judgement",
+        stageLabel: "answer the question",
+        frame: "Therefore, {answer}.",
+        why: "A causal answer, in the words the question used. Explain does not ask which element mattered most, so this is not a verdict.",
+        slots: [
+          { id: "answer", treatment: "student", source: "student",
+            label: "the answer, in the words the question used",
+            note: "Answer the question directly, from what the body established. If this sentence could be cut without loss, the conclusion has one move rather than two." }
+        ] }
+    ]
+  },
   slots: {
     roleSets: {
       body: [

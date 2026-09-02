@@ -56,12 +56,32 @@ async function section(p, re) {
   const go = await p.$('#esstartwriting'); if (go) { await go.click(); await rf(p); }
   return !!(await p.$('#esline'));
 }
-// Every frame the shapes panel offers at the stage on screen.
+// Every frame the shapes panel offers at the stage on screen, as PROSE: the words
+// the shape puts in the student's mouth, with the slots taken out.
+//
+// The distinction matters and is the contract itself. "Overall," offered as
+// sentence furniture in an introduction is the defect. A slot LABEL reading "the
+// overall principle your response will establish" is an instruction about what the
+// student must supply, and they would never copy it into their essay. Testing the
+// raw text would fail on the second while catching the first, so the slots come
+// out first.
+//
+// Both surfaces are read: the authored frames, and the Sentence Shapes v2 panel
+// that replaces them where a shape resolves.
 async function shapes(p) {
   const b = await p.$('#esshape'); if (!b) return [];
   const open = await b.evaluate(e => e.getAttribute('aria-expanded') === 'true');
   if (!open) { await b.click(); await rf(p); }
-  return p.$$eval('.es-shape', es => es.map(e => e.textContent.replace(/\s+/g, ' ').trim()));
+  return p.evaluate(() => {
+    const out = [];
+    document.querySelectorAll('.es-shape, .es-shape2frame, .es-altframe').forEach(e => {
+      const c = e.cloneNode(true);
+      c.querySelectorAll('.es-hole, .es-blank, .es-sl').forEach(x => x.remove());
+      const t = c.textContent.replace(/\s+/g, ' ').trim();
+      if (t) out.push(t);
+    });
+    return out;
+  });
 }
 const stage = p => p.evaluate(() => ({
   head: (document.querySelector('.es-guideh') || {}).textContent ? document.querySelector('.es-guideh').textContent.replace(/\s+/g, ' ').trim() : '',

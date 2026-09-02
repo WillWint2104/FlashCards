@@ -19,7 +19,7 @@ const TIERS = {
   // Does the shell still exist, does every question still enter it, does the
   // custom-question path still resolve a rubric, and does any of it now need
   // the network. Four questions worth asking before every commit.
-  fast: { budget: 30, suites: ["t1", "ui39", "ui40", "ui41", "ui42", "ui44", "ui45"] },
+  fast: { budget: 30, suites: ["t1", "ui39", "ui40", "ui41", "ui42", "ui44", "ui45", "ui46"] },
   // Adds the interaction surfaces that the shell rewrite touched, the setup
   // and marking paths, and the simulated students. This is the gate to pass
   // before pushing. The budget is 180s rather than 120s because the seven bot
@@ -28,7 +28,7 @@ const TIERS = {
   // other, so there is no honest subset of them to run.
   checkpoint: {
     budget: 180,
-    suites: ["t1", "t2", "ui13", "ui30", "ui35", "ui37", "ui38", "ui39", "ui40", "ui41", "ui42", "ui44", "ui45", "bots"],
+    suites: ["t1", "t2", "ui13", "ui30", "ui35", "ui37", "ui38", "ui39", "ui40", "ui41", "ui42", "ui44", "ui45", "ui46", "bots"],
   },
   // Everything run.js knows about. An empty list means "pass no filter".
   full: { budget: 360, suites: [] },

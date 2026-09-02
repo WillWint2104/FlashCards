@@ -2004,8 +2004,82 @@
     color:var(--e-green-dk);text-decoration:none;padding:0}
   .es-scrim .es-shapebtn:hover,.es-scrim .es-stuckbtn:hover{text-decoration:underline;text-underline-offset:3px}
   .es-scrim .es-shapes{margin-top:10px;gap:6px}
+
+  /* ---- SENTENCE SHAPES v2 ----
+     One structure for the sentence in hand, inside the prompt it belongs to. Two
+     slot treatments and no more: mint is what the app already knows, whether that
+     came from the question or from the argument the student picked, and amber is
+     the part only they can write. Provenance is kept in the data, not in a third
+     colour, because a student needs to know which parts are theirs, not a
+     taxonomy. */
+  .es-scrim .es-shapes.v2{display:block;margin-top:10px}
+  .es-shape2{background:var(--surface);border:1px solid #D7EEE3;border-radius:12px;padding:13px 15px 14px}
+  .es-shape2hd{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;margin-bottom:9px}
+  .es-shape2lbl{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--e-green-dk)}
+  .es-shape2key{font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--e-ink3)}
+  .es-shape2frame{font-size:15px;line-height:2.05;color:var(--e-ink);font-weight:400;max-width:74ch}
+  .es-shape2why{font-size:12.5px;line-height:1.6;color:var(--e-ink2);font-weight:500;margin:9px 0 0;max-width:72ch}
+  .es-shape2acts{display:flex;align-items:center;gap:16px;margin-top:11px;flex-wrap:wrap}
+  .es-scrim .es-shape2acts .es-linkbtn{font-family:var(--body);font-size:12.5px;font-weight:600;
+    color:var(--e-green-dk);text-decoration:none;padding:0}
+  .es-scrim .es-shape2acts .es-linkbtn:hover{text-decoration:underline;text-underline-offset:3px}
+
+  /* the slots. A verb is never one of these: wrapping "affect" would make the
+     sentence look fragmented and over-encoded, and it is not a value the student
+     recognises as having come from anywhere. */
+  .es-sl{display:inline-block;border-radius:7px;padding:2px 9px;font-size:13.5px;font-weight:600;
+    line-height:1.45;font-family:var(--body);border:0;cursor:pointer;text-align:left}
+  .es-sl.res{background:var(--e-mint);color:var(--e-green-dk);box-shadow:inset 0 -2px 0 rgba(18,178,122,.28)}
+  .es-sl.you{background:var(--surface);color:#B8791F;border:1px solid #F0DCBB;box-shadow:inset 0 -2px 0 #FDF3E2}
+  span.es-sl{cursor:default}
+  button.es-sl:hover{outline:2px solid var(--e-green);outline-offset:1px}
+  /* inside a finished example the slots are prose, not chips: a completed sentence
+     has to read as a sentence, with the colours kept only as the mapping back */
+  .es-sl.plain{background:none;border:0;box-shadow:none;padding:0;font-weight:400;font-size:inherit;
+    border-radius:0;border-bottom:2px solid;color:var(--e-ink)}
+  .es-sl.res.plain{border-color:rgba(18,178,122,.5)}
+  .es-sl.you.plain{border-color:#F0DCBB}
+
+  .es-shape2legend{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:11px;
+    font-size:11.5px;color:var(--e-ink3);font-weight:600}
+  .es-sldot{width:10px;height:10px;border-radius:3px;flex:none}
+  .es-sldot.res{background:var(--e-mint);box-shadow:inset 0 -3px 0 rgba(18,178,122,.35)}
+  .es-sldot.you{background:var(--surface);border:1px solid #F0DCBB;box-shadow:inset 0 -3px 0 #FDF3E2}
+  .es-slsep{color:var(--e-line)}
+  .es-scrim .es-slotnote{margin-top:10px;background:var(--sunk);border:1px solid var(--e-line);
+    border-radius:10px;padding:9px 12px;font-size:12.5px;color:var(--e-ink2);font-weight:500;
+    line-height:1.55;max-width:66ch}
+  .es-scrim .es-slotnote b{color:var(--e-ink)}
+
+  .es-shapeex{border:1px solid var(--e-line);border-left:3px solid var(--e-green);border-radius:12px;
+    padding:12px 15px;margin-top:10px}
+  .es-shapeexhd{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--e-ink3)}
+  .es-shapeexhd span{font-weight:600;letter-spacing:0;text-transform:none}
+  .es-shapeextext{font-size:14.5px;line-height:1.95;color:var(--e-ink);margin:6px 0 0;max-width:74ch}
+  .es-shapeexnote{font-size:12.5px;color:var(--e-ink2);font-weight:500;line-height:1.55;margin:8px 0 0;max-width:70ch}
+
+  .es-alts{display:flex;flex-direction:column;gap:8px}
+  .es-alt{display:block;width:100%;text-align:left;border:1px solid var(--e-line);border-radius:11px;
+    padding:11px 14px;background:var(--surface);font-family:var(--body);cursor:pointer}
+  .es-alt:hover{border-color:var(--e-green)}
+  .es-alt.on{border-color:#D7EEE3;background:var(--e-mint2)}
+  .es-altlbl{display:flex;align-items:center;gap:8px;font-size:10px;font-weight:700;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--e-ink3)}
+  .es-alttag{background:var(--e-mint);color:var(--e-green-dk);border-radius:6px;padding:2px 7px;letter-spacing:.04em}
+  .es-altframe{display:block;font-size:14.5px;line-height:1.95;margin-top:6px;color:var(--e-ink)}
+  .es-altwhy{display:block;font-size:12px;color:var(--e-ink2);font-weight:500;margin-top:5px;line-height:1.5}
+  .es-altfoot{font-size:12.5px;color:var(--e-ink2);font-weight:500;margin:11px 0 0;line-height:1.6;max-width:74ch}
   .es-scrim .es-shape{background:var(--surface);border:1px solid #D7EEE3;border-radius:9px;
     padding:9px 12px;font-size:13px;line-height:1.6;color:var(--e-ink2)}
+  /* Mint has ONE meaning in this application: the app already supplies this, from
+     the question or from the argument the student chose. A legacy frame carries no
+     provenance at all, so every hole in one is the student's, and a rule further up
+     the file was drawing them in the resolved colour. On an Evaluate question that
+     made "your judgement", "main reason" and "the qualification" look like values
+     already supplied, which is the exact opposite of what the student has to do. */
+  .es-scrim .es-shape .es-hole{background:var(--surface);color:#B8791F;border:1px solid #F0DCBB;
+    box-shadow:inset 0 -2px 0 #FDF3E2;font-size:13.5px;font-weight:600;border-radius:7px;padding:2px 9px}
+  .es-scrim .es-shape .es-blank{color:#B8791F;font-weight:700}
 
   /* the stuck helper: a router over help that already exists, anchored to the
      sentence it is about. It floats, so opening it does not move the editor. */
@@ -6070,6 +6144,168 @@ window.ESSAY = {
   // frame; tier2 offers a few frame TYPES that scaffold the KIND of analysis.
   // Keep the slot KEYS here in sync with proxy/worker.js COACH_SYSTEM.
   // ---------------------------------------------------------------------------
+  // ===========================================================================
+  // SENTENCE SHAPES v2
+  //
+  // A shape is a STRUCTURE for one sentence, resolved by directive family, then
+  // paragraph role, then the stage of the paragraph the student is on. It is not
+  // per question: a question contributes VALUES, never structures, and never a
+  // model answer to itself.
+  //
+  // Every slot declares two different things, and they must not be collapsed:
+  //
+  //   treatment  what the STUDENT sees. "resolved" is mint and means the app
+  //              already knows this; "student" is amber and means only they can
+  //              write it. Two treatments, because a student does not need a
+  //              taxonomy, they need to know which parts are theirs.
+  //   source     where a resolved value CAME from. Kept so validation can enforce
+  //              it: app.js forbids deriving the cause end by splitting `short` or
+  //              `relationship`, and that rule is only enforceable if the shape
+  //              records that the value must come from `pathway.fromLabel`.
+  //
+  // A binding names an authored field. It never computes one. If a binding
+  // resolves to nothing the whole shape is withheld, because a mint slot that
+  // renders empty tells the student the app knows something it does not.
+  //
+  // The mechanism is NOT a slot and never was. It is optional metadata that 23 of
+  // 28 pathways do not carry, one of them declaring positively that a middle step
+  // would restate the relationship rather than explain it. A shape that demanded
+  // one would contradict its own content.
+  shapes: {
+    // ---- CONNECTORS ------------------------------------------------------
+    // The sentence furniture that joins two resolved values. It is authored and
+    // NAMED, never inferred from the values themselves, because the natural verb
+    // depends on what the right-hand value IS and no string inspection can know
+    // that. "shape its e-marketing" is not English; "lead a business towards
+    // e-marketing" is, and a right-hand value that fits neither declares a
+    // different set rather than forcing every frame to be rewritten.
+    //
+    // A slot names the set it needs. A frame reaches into it with {@member}, so
+    // the same set serves the recommended form and its variants, where the same
+    // relationship has to be said in three different clause positions.
+    connectors: {
+      // a market characteristic to a strategy or element the business adopts
+      towards: { lead: "lead a business towards", serving: "turns towards", modal: "may turn to" },
+      // a characteristic to something the business already has and alters
+      changes: { lead: "lead a business to change its", serving: "changes its", modal: "may change its" }
+    },
+    // Cross-topic worked examples, keyed by shape. Held here rather than on a
+    // question so that a question never has to author an answer to itself, and so
+    // one example serves every question that uses the shape. `fills` maps the
+    // example's own words back onto the shape's slots, which is what lets the
+    // student see which part is which.
+    examples: {
+      "causal.body.topic": [
+        { id: "gym-timepoor", context: "a gym, and time-poor professionals",
+          text: "A gym targeting time-poor professionals may offer app-based booking because customers can arrange sessions without calling during business hours.",
+          fills: { cause: "time-poor professionals", effect: "app-based booking",
+                   reasoning: "customers can arrange sessions without calling during business hours" } }
+      ],
+      "causal.introduction.thesis": [
+        { id: "hr-motivation", context: "employee motivation, in human resources",
+          text: "Employee motivation affects productivity, retention and workplace culture because a business gets the behaviour its rewards actually encourage.",
+          fills: { concept: "Employee motivation", areas: "productivity, retention and workplace culture",
+                   principle: "a business gets the behaviour its rewards actually encourage" } }
+      ],
+      "causal.conclusion.restate": [
+        { id: "hr-motivation", context: "employee motivation, in human resources",
+          text: "Across productivity, retention and workplace culture, the same thing was doing the work: what the business chose to reward.",
+          fills: { areas: "productivity, retention and workplace culture",
+                   pattern: "the same thing was doing the work: what the business chose to reward" } }
+      ],
+      "causal.conclusion.judgement": [
+        { id: "hr-motivation", context: "employee motivation, in human resources",
+          text: "Therefore, employee motivation affects how a workforce performs, because the rewards a business sets are what its staff respond to.",
+          fills: { answer: "employee motivation affects how a workforce performs, because the rewards a business sets are what its staff respond to" } }
+      ]
+    },
+    // The library. Resolution is family, then role, then stage; nothing here is
+    // keyed to a question.
+    library: [
+      // ---- introduction ----------------------------------------------------
+      { id: "causal.introduction.thesis", family: "causal", role: "introduction", stage: "thesis",
+        stageLabel: "thesis",
+        frame: "{concept} affect {areas} because {principle}.",
+        why: "A thesis for a causal question says what the whole response will establish. The reason has to be broad enough to cover every area the question names.",
+        slots: [
+          { id: "concept", treatment: "resolved", source: "question", binding: "question.concept",
+            label: "the concept the question names",
+            note: "From the question stem. You did not choose it and you cannot get it wrong." },
+          { id: "areas", treatment: "resolved", source: "question", binding: "question.areas",
+            label: "the areas the question fixes",
+            note: "Every area the question names, because naming all of them is the first thing a marker checks." },
+          { id: "principle", treatment: "student", source: "student",
+            label: "the overall principle your response will establish",
+            note: "The broad reason the relationship exists across the response. Your paragraphs may establish it in different ways; this is what they have in common." }
+        ] },
+      // ---- body ------------------------------------------------------------
+      { id: "causal.body.topic", family: "causal", role: "body", stage: "topic",
+        // TOPIC is the TEEEC slot key and stays in the composer. It is not what
+        // this stage is FOR: "write a topic sentence" is a instruction about
+        // position, and the job here is to state one relationship.
+        stageLabel: "state the relationship",
+        frame: "{cause} {@lead} {effect}, because {reasoning}.",
+        why: "You chose this argument, so both ends of it are already known. What the app cannot supply is why one follows from the other, and that is the reasoning Explain requires you to establish.",
+        alternatives: ["causal.body.topic.reasoning-first", "causal.body.topic.conditional"],
+        slots: [
+          { id: "cause", treatment: "resolved", source: "pathway", binding: "pathway.fromLabel",
+            label: "the feature of the market you are arguing from",
+            note: "The characteristic your chosen argument runs from. Authored per argument, never worked out from the argument's title." },
+          { id: "effect", treatment: "resolved", source: "question", binding: "question.area", connector: "towards",
+            label: "the element this paragraph is about",
+            note: "The element the question fixes and this paragraph covers." },
+          { id: "reasoning", treatment: "student", source: "student",
+            label: "your reasoning",
+            note: "Why the first leads to the second. One step, in your own words. Not what the business gains from it, and not the same relationship said again." }
+        ] },
+      { id: "causal.body.topic.reasoning-first", family: "causal", role: "body", stage: "topic",
+        variantOf: "causal.body.topic", name: "Your reasoning first", stageLabel: "state the relationship",
+        frame: "Because {reasoning}, a business serving {cause} {@serving} {effect}.",
+        why: "You cannot finish this sentence without having said why. Use it when the reasoning is the part you are avoiding.",
+        slots: [
+          { id: "reasoning", treatment: "student", source: "student", label: "your reasoning",
+            note: "Why the market's feature leads to that element. One step, in your own words." },
+          { id: "cause", treatment: "resolved", source: "pathway", binding: "pathway.fromLabel",
+            label: "the feature of the market you are arguing from", note: "The characteristic your chosen argument runs from." },
+          { id: "effect", treatment: "resolved", source: "question", binding: "question.area", connector: "towards",
+            label: "the element this paragraph is about", note: "The element the question fixes and this paragraph covers." }
+        ] },
+      { id: "causal.body.topic.conditional", family: "causal", role: "body", stage: "topic",
+        variantOf: "causal.body.topic", name: "Conditional form", stageLabel: "state the relationship",
+        frame: "When a business serves {cause}, it {@modal} {effect} because {reasoning}.",
+        why: "More cautious than the recommended form. Use it where the relationship is genuinely conditional rather than certain.",
+        slots: [
+          { id: "cause", treatment: "resolved", source: "pathway", binding: "pathway.fromLabel",
+            label: "the feature of the market you are arguing from", note: "The characteristic your chosen argument runs from." },
+          { id: "effect", treatment: "resolved", source: "question", binding: "question.area", connector: "towards",
+            label: "the element this paragraph is about", note: "The element the question fixes and this paragraph covers." },
+          { id: "reasoning", treatment: "student", source: "student", label: "your reasoning",
+            note: "Why that follows, under those conditions. One step, in your own words." }
+        ] },
+      // ---- conclusion, two stages -----------------------------------------
+      { id: "causal.conclusion.restate", family: "causal", role: "conclusion", stage: "restate",
+        stageLabel: "draw together",
+        frame: "Across {areas}, {pattern}.",
+        why: "Synthesis, not a list. The marker has just read your paragraphs, so repeating them earns nothing; what earns something is the pattern they turned out to share.",
+        slots: [
+          { id: "areas", treatment: "resolved", source: "question", binding: "question.areas",
+            label: "the areas the question fixes",
+            note: "Naming them again is the marker's end-of-response coverage check." },
+          { id: "pattern", treatment: "student", source: "student",
+            label: "the overall pattern established by the body",
+            note: "What did your paragraphs collectively show? One claim, not four." }
+        ] },
+      { id: "causal.conclusion.judgement", family: "causal", role: "conclusion", stage: "judgement",
+        stageLabel: "answer the question",
+        frame: "Therefore, {answer}.",
+        why: "A causal answer, in the words the question used. Explain does not ask which element mattered most, so this is not a verdict.",
+        slots: [
+          { id: "answer", treatment: "student", source: "student",
+            label: "the answer, in the words the question used",
+            note: "Answer the question directly, from what the body established. If this sentence could be cut without loss, the conclusion has one move rather than two." }
+        ] }
+    ]
+  },
   slots: {
     roleSets: {
       body: [
@@ -11155,6 +11391,7 @@ window.BUSCONTENT = {
 
   const ES = { subject: null, code: "", demo: false, screen: "setup", draft: null, list: [], form: null, pending: false,
     ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, planAll: false, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false, tryPick: null, lessonMore: false, lessonJump: null,
+      shapeSlot: null, shapeEx: false, shapeAlts: false, shapeAlt: null,
       studyOpen: false, studyPreview: null, studyPos: null, stuckOpen: false },  // transient guided-view state, reset on paragraph change
     hint: { open: false, tab: "know" },          // study hints: persists across paragraphs on purpose
     // The Learning Centre is off the student route. This is the only way back to
@@ -11162,7 +11399,8 @@ window.BUSCONTENT = {
     legacyCentre: /[?&]eslegacy=1/.test(String(location.search || "")),
     quiz: { revealed: false, peeked: false, attempt: "", result: null } };
   const ES_KEY = "marginal.essay.v1";
-  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, planAll: false, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false, tryPick: null, lessonMore: false, lessonJump: null }; }
+  function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, planAll: false, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false, tryPick: null, lessonMore: false, lessonJump: null,
+    shapeSlot: null, shapeEx: false, shapeAlts: false, shapeAlt: null }; }
   // peeked persists for the whole attempt: revealing once disqualifies mastery even
   // if the answer is hidden again before checking. Cleared only on a new attempt.
   function esResetQuiz() { ES.quiz = { revealed: false, peeked: false, attempt: "", result: null }; }
@@ -11229,6 +11467,228 @@ window.BUSCONTENT = {
     const fam = t.byFamily && t.byFamily[esDirectiveFamily()];
     return fam || t;
   }
+  // ===========================================================================
+  // SENTENCE SHAPES v2
+  //
+  // A structure for the sentence in hand, resolved by directive family, paragraph
+  // role and stage. Local scaffolding under the prompt: it is not another place to
+  // go and read, and nothing in it writes, inserts or rewrites a sentence.
+  //
+  // The invariant that makes it safe to show a half-filled sentence: a mint slot
+  // is only ever an AUTHORED string the student already has, and if one cannot be
+  // resolved the whole shape is withheld. A mint slot rendering empty would tell
+  // the student the app knows something it does not.
+  // ===========================================================================
+  function esShapeRole(p) {
+    if (esIsIntro(p)) return "introduction";
+    if (esIsConcl(p)) return "conclusion";
+    return "body";
+  }
+  function esShapeLib() { return ((window.ESSAY || {}).shapes || {}).library || []; }
+  // The recommended shape: family, then role, then stage. Variants are reached
+  // through the shape they belong to, never resolved directly.
+  function esShapeFor(p, step) {
+    if (!step) return null;
+    const fam = esDirectiveFamily(), role = esShapeRole(p), stage = step.key;
+    return esShapeLib().find(x => !x.variantOf && x.family === fam && x.role === role && x.stage === stage) || null;
+  }
+  function esShapeVariants(shape) {
+    if (!shape || !(shape.alternatives || []).length) return [];
+    return shape.alternatives.map(id => esShapeLib().find(x => x.id === id)).filter(Boolean);
+  }
+  // Names an authored field. Never computes one: app.js already refuses to derive
+  // the cause end by splitting `short` or `relationship`, and a shape that worked
+  // it out here would walk around that rule from a second direction.
+  function esShapeBind(binding, p) {
+    const q = esQuestionDef();
+    if (binding === "question.concept") return String((q && q.term1) || "").trim();
+    if (binding === "question.areas") {
+      const a = esRequiredAreas(q) || [];
+      if (!a.length) return "";
+      return a.length === 1 ? a[0] : a.slice(0, -1).join(", ") + " and " + a[a.length - 1];
+    }
+    if (binding === "question.area") {
+      const path = esPathway(p);
+      const key = String((path && path.area) || p.area || "").trim();
+      if (!key) return "";
+      const areas = ((q && q.requirements) || {}).requiredAreas || [];
+      const hit = areas.find(x => x.id === key || x.label === key);
+      return hit ? String(hit.label || hit.id) : key;
+    }
+    if (binding === "pathway.fromLabel") {
+      const path = esPathway(p);
+      return String((path && path.fromLabel) || "").trim();
+    }
+    return "";
+  }
+  // Every resolved slot, or nothing. A shape is all-or-nothing on purpose, and its
+  // connector counts: a frame with an unresolved {@member} left in it would show a
+  // student a token instead of a sentence.
+  function esShapeValues(shape, p) {
+    if (!shape) return null;
+    const conn = esShapeConnector(shape);
+    const wanted = String(shape.frame || "").match(/\{@([a-zA-Z0-9_-]+)\}/g) || [];
+    for (const w of wanted) {
+      if (!Object.prototype.hasOwnProperty.call(conn, w.slice(2, -1))) return null;
+    }
+    const out = {};
+    for (const sl of (shape.slots || [])) {
+      if (sl.treatment !== "resolved") continue;
+      const v = esShapeBind(sl.binding, p);
+      if (!v) return null;
+      out[sl.id] = v;
+    }
+    return out;
+  }
+  // An example must not be able to answer the live question. The check is
+  // mechanical rather than editorial: it may not contain the question's own terms
+  // or any area the question fixes. No example passing is a normal outcome and
+  // shows nothing rather than the nearest thing.
+  function esShapeExample(shapeId) {
+    const all = (((window.ESSAY || {}).shapes || {}).examples || {})[shapeId] || [];
+    if (!all.length) return null;
+    const q = esQuestionDef();
+    const banned = (esRequiredAreas(q) || [])
+      .concat([(q && q.term1) || "", (q && q.term2) || ""])
+      .map(x => String(x || "").toLowerCase().trim()).filter(x => x.length > 2);
+    return all.find(ex => {
+      const t = String(ex.text || "").toLowerCase();
+      return !banned.some(b => t.indexOf(b) >= 0);
+    }) || null;
+  }
+  // The frame, with its slots rendered. `fills` swaps the labels for an example's
+  // own words, which is what lets a student see which part of the example is which
+  // part of the shape.
+  // The connector set a shape's frame reaches into, named by whichever slot declares
+  // one. Authored, never inferred: what verb joins two values depends on what the
+  // right-hand value IS, and no inspection of the string can know that.
+  function esShapeConnector(shape) {
+    const sl = (shape.slots || []).find(x => x.connector);
+    if (!sl) return {};
+    return (((window.ESSAY || {}).shapes || {}).connectors || {})[sl.connector] || {};
+  }
+  function esShapeFrameHTML(shape, values, opts) {
+    const o = opts || {};
+    const byId = {};
+    (shape.slots || []).forEach(sl => { byId[sl.id] = sl; });
+    const conn = esShapeConnector(shape);
+    return String(shape.frame || "").replace(/\{@([a-zA-Z0-9_-]+)\}/g, (m, name) =>
+      Object.prototype.hasOwnProperty.call(conn, name) ? esc(conn[name]) : m
+    ).replace(/\{([a-zA-Z0-9_-]+)\}/g, (m, id) => {
+      const sl = byId[id]; if (!sl) return m;
+      const kind = sl.treatment === "resolved" ? "res" : "you";
+      const text = sl.treatment === "resolved" ? String((values && values[id]) || "") : "[" + (sl.label || id) + "]";
+      if (!o.pressable) return `<span class="es-sl ${kind}">${esc(text)}</span>`;
+      return `<button type="button" class="es-sl ${kind}" data-esslot="${esc(id)}">${esc(text)}</button>`;
+    });
+  }
+  function esShapePanelHTML(p, step) {
+    const shape = esShapeFor(p, step); if (!shape) return "";
+    const values = esShapeValues(shape, p); if (!values) return "";
+    const ui = ES.ui;
+    // an alternative the student picked, otherwise the recommended one
+    const variants = esShapeVariants(shape);
+    const picked = ui.shapeAlt ? variants.find(v => v.id === ui.shapeAlt) : null;
+    const showing = picked || shape;
+    const showVals = picked ? esShapeValues(picked, p) : values;
+    if (!showVals) return "";
+    const noteSlot = ui.shapeSlot ? (showing.slots || []).find(x => x.id === ui.shapeSlot) : null;
+    const ex = ui.shapeEx ? esShapeExample(shape.id) : null;
+    // The scaffold's slot key is durable and internal. What a student reads is the
+    // stage LABEL, which follows the directive like everything else: the causal
+    // conclusion's second stage answers the question, and only a judgement question
+    // is ever headed JUDGEMENT.
+    const key = [shape.family, shape.role, shape.stageLabel || shape.stage].join(" \u00b7 ");
+    const alts = ui.shapeAlts && variants.length ? `
+      <div class="es-alts">${[shape].concat(variants).map(v => {
+        const vv = v === shape ? values : esShapeValues(v, p);
+        if (!vv) return "";
+        const on = (v === shape) ? !ui.shapeAlt : ui.shapeAlt === v.id;
+        return `<button type="button" class="es-alt${on ? " on" : ""}" data-esalt="${esc(v === shape ? "" : v.id)}">
+          <span class="es-altlbl">${esc(v.name || "The relationship first")}${v === shape ? '<span class="es-alttag">recommended</span>' : ""}</span>
+          <span class="es-altframe">${esShapeFrameHTML(v, vv, {})}</span>
+          <span class="es-altwhy">${esc(v.why || "")}</span>
+        </button>`;
+      }).join("")}</div>
+      <p class="es-altfoot">Picking one does not write anything. It changes which structure is shown, and the example follows it.</p>` : "";
+    return `<div class="es-shape2">
+      <div class="es-shape2hd"><span class="es-shape2lbl">${ui.shapeAlts ? "Other ways to phrase this" : "Recommended shape"}</span>
+        <span class="es-shape2key">${esc(key)}</span></div>
+      ${ui.shapeAlts ? "" : `<div class="es-shape2frame">${esShapeFrameHTML(showing, showVals, { pressable: true })}</div>`}
+      ${noteSlot && !ui.shapeAlts ? `<div class="es-slotnote"><b>${esc(noteSlot.treatment === "resolved" ? showVals[noteSlot.id] : "[" + (noteSlot.label || noteSlot.id) + "]")}</b> \u00b7 ${esc(noteSlot.note || "")}</div>` : ""}
+      ${(ui.shapeAlts || noteSlot || ex) ? "" : `<p class="es-shape2why">${esc(showing.why || "")}</p>`}
+      ${(!noteSlot || ui.shapeAlts) ? "" : (() => {
+        // The key to the colours, shown when the student is investigating one. In
+        // the base state the shape speaks for itself and this is one more line to
+        // read for nothing.
+        // Only the halves that are on screen: a conclusion's answer is all the
+        // student's, so a key to a colour that is not in the sentence is noise.
+        const has = t => (showing.slots || []).some(x => (x.treatment === "resolved") === (t === "res"));
+        const bits = [];
+        if (has("res")) bits.push('<span class="es-sldot res"></span>supplied by your question or your argument');
+        if (has("you")) bits.push('<span class="es-sldot you"></span>you supply this');
+        if (!bits.length) return "";
+        return `<div class="es-shape2legend">${bits.join('<span class="es-slsep">\u00b7</span>')}</div>`;
+      })()}
+      ${alts}
+      ${ex ? `<div class="es-shapeex">
+        <div class="es-shapeexhd">The same shape, somewhere else <span>\u00b7 ${esc(ex.context || "")}</span></div>
+        <p class="es-shapeextext">${esShapeExFilled(showing, ex)}</p>
+        <p class="es-shapeexnote">Deliberately a different situation, so the shape transfers and the words cannot. Nothing here can be pasted into your paragraph.</p>
+      </div>` : ""}
+      <div class="es-shape2acts">
+        ${esShapeExample(shape.id) ? `<button type="button" class="es-linkbtn" id="esshapeex">${ui.shapeEx ? "Hide the example" : "See this shape used elsewhere"}</button>` : ""}
+        ${variants.length ? `<button type="button" class="es-linkbtn" id="esshapealts">${ui.shapeAlts ? "Back to the recommended shape" : "Other ways to phrase this"}</button>` : ""}
+      </div>
+    </div>`;
+  }
+  // The example sentence, with the parts that map onto slots marked. Where a fill
+  // is not authored for a slot the sentence still reads, unmarked.
+  function esShapeExFilled(shape, ex) {
+    let out = esc(String(ex.text || ""));
+    const byId = {};
+    (shape.slots || []).forEach(sl => { byId[sl.id] = sl; });
+    Object.keys(ex.fills || {}).forEach(id => {
+      const sl = byId[id]; if (!sl) return;
+      const w = esc(String(ex.fills[id] || "")); if (!w) return;
+      const at = out.indexOf(w); if (at < 0) return;
+      out = out.slice(0, at) + `<span class="es-sl ${sl.treatment === "resolved" ? "res" : "you"} plain">` + w + "</span>" + out.slice(at + w.length);
+    });
+    return out;
+  }
+  // Every control in the panel is a disclosure inside one component. It rebuilds
+  // its own box and rebinds, and never re-renders: the writing screen swaps only
+  // its side column on a keeping-place render, so a render here would leave the
+  // panel in whatever state the last full render gave it, and would cost the
+  // student their caret for a hint.
+  function esShapeRefresh(p) {
+    const box = document.getElementById("esshapes"); if (!box) return;
+    const st = esStepDef(p); if (!st) return;
+    const html = esShapePanelHTML(p, st);
+    if (!html) return;
+    box.innerHTML = html;
+    box.querySelectorAll("button:not([type])").forEach(b => b.type = "button");
+    esBindShapePanel(p);
+  }
+  function esBindShapePanel(p) {
+    const box = document.getElementById("esshapes"); if (!box) return;
+    box.querySelectorAll("[data-esslot]").forEach(b => b.onclick = () => {
+      const id = b.dataset.esslot;
+      ES.ui.shapeSlot = ES.ui.shapeSlot === id ? null : id;
+      ES.ui.shapeEx = false;                 // one thing at a time
+      esShapeRefresh(p);
+    });
+    const exb = box.querySelector("#esshapeex");
+    if (exb) exb.onclick = () => { ES.ui.shapeEx = !ES.ui.shapeEx; ES.ui.shapeSlot = null; esShapeRefresh(p); };
+    const ab = box.querySelector("#esshapealts");
+    if (ab) ab.onclick = () => { ES.ui.shapeAlts = !ES.ui.shapeAlts; ES.ui.shapeSlot = null; esShapeRefresh(p); };
+    box.querySelectorAll("[data-esalt]").forEach(b => b.onclick = () => {
+      ES.ui.shapeAlt = b.dataset.esalt || null;
+      ES.ui.shapeAlts = false; ES.ui.shapeSlot = null;
+      esShapeRefresh(p);
+    });
+  }
+
   // The frames for a slot, after the directive has chosen the family.
   function esShapesFor(key) {
     const use = slotTemplatesFor(key);
@@ -15647,8 +16107,14 @@ window.BUSCONTENT = {
                   // the grammar of the sentence, which is a different thing from the
                   // instruction telling the student what it has to say.
                   const st = esStepDef(p); if (!st) return "";
-                  const all = esShapesFor(st.key);
-                  if (!all.length) return "";
+                  // Sentence Shapes v2 where a shape resolves for this family, role
+                  // and stage, and the authored frames where none does. A question
+                  // with no pathways cannot fill a mint slot, so it keeps the frames
+                  // rather than being shown a shape with a hole where a known value
+                  // was promised.
+                  const v2 = esShapePanelHTML(p, st);
+                  const all = v2 ? [] : esShapesFor(st.key);
+                  if (!v2 && !all.length) return "";
                   // Rendered once and revealed in place. Showing the shape is a
                   // disclosure inside one component, not a change of application
                   // state, so it must not re-enter the render pipeline: that is what
@@ -15659,8 +16125,8 @@ window.BUSCONTENT = {
                       <button type="button" class="es-linkbtn es-stuckbtn" id="esstuck" aria-expanded="${ES.ui.stuckOpen ? "true" : "false"}">I am stuck on this sentence</button>
                     </div>
                     ${esStuckHTML(p)}
-                    <div class="es-shapes" id="esshapes"${open ? "" : " hidden"}>${all.map(x =>
-                      `<p class="es-shape">${esc(x).replace(/\[[^\]]+\]/g, m => `<span class="es-hole">${m.slice(1, -1)}</span>`).replace(/_{2,}/g, '<span class="es-blank">____</span>')}</p>`).join("")}</div>`;
+                    <div class="es-shapes${v2 ? " v2" : ""}" id="esshapes"${open ? "" : " hidden"}>${v2 || all.map(x =>
+                      `<p class="es-shape">${esc(x).replace(/\[[^\]]+\]/g, m => `<span class="es-hole">${m}</span>`).replace(/_{2,}/g, '<span class="es-blank">____</span>')}</p>`).join("")}</div>`;
                 })()}
               </div>`}
             ${blocks.length ? `<p class="es-prose">${prose}</p>` : `<p class="es-prose empty">Your paragraph builds here, one sentence at a time.</p>`}
@@ -15691,6 +16157,7 @@ window.BUSCONTENT = {
 
     esBindWorkspace(host, d);
     esBindStuck(host, p);
+    esBindShapePanel(p);
     esBindWritingHead();
     esBindReasoning(host, p, "#espoint");
     const pt = $("#espoint");

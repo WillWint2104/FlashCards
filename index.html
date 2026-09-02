@@ -2004,8 +2004,82 @@
     color:var(--e-green-dk);text-decoration:none;padding:0}
   .es-scrim .es-shapebtn:hover,.es-scrim .es-stuckbtn:hover{text-decoration:underline;text-underline-offset:3px}
   .es-scrim .es-shapes{margin-top:10px;gap:6px}
+
+  /* ---- SENTENCE SHAPES v2 ----
+     One structure for the sentence in hand, inside the prompt it belongs to. Two
+     slot treatments and no more: mint is what the app already knows, whether that
+     came from the question or from the argument the student picked, and amber is
+     the part only they can write. Provenance is kept in the data, not in a third
+     colour, because a student needs to know which parts are theirs, not a
+     taxonomy. */
+  .es-scrim .es-shapes.v2{display:block;margin-top:10px}
+  .es-shape2{background:var(--surface);border:1px solid #D7EEE3;border-radius:12px;padding:13px 15px 14px}
+  .es-shape2hd{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;margin-bottom:9px}
+  .es-shape2lbl{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--e-green-dk)}
+  .es-shape2key{font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--e-ink3)}
+  .es-shape2frame{font-size:15px;line-height:2.05;color:var(--e-ink);font-weight:400;max-width:74ch}
+  .es-shape2why{font-size:12.5px;line-height:1.6;color:var(--e-ink2);font-weight:500;margin:9px 0 0;max-width:72ch}
+  .es-shape2acts{display:flex;align-items:center;gap:16px;margin-top:11px;flex-wrap:wrap}
+  .es-scrim .es-shape2acts .es-linkbtn{font-family:var(--body);font-size:12.5px;font-weight:600;
+    color:var(--e-green-dk);text-decoration:none;padding:0}
+  .es-scrim .es-shape2acts .es-linkbtn:hover{text-decoration:underline;text-underline-offset:3px}
+
+  /* the slots. A verb is never one of these: wrapping "affect" would make the
+     sentence look fragmented and over-encoded, and it is not a value the student
+     recognises as having come from anywhere. */
+  .es-sl{display:inline-block;border-radius:7px;padding:2px 9px;font-size:13.5px;font-weight:600;
+    line-height:1.45;font-family:var(--body);border:0;cursor:pointer;text-align:left}
+  .es-sl.res{background:var(--e-mint);color:var(--e-green-dk);box-shadow:inset 0 -2px 0 rgba(18,178,122,.28)}
+  .es-sl.you{background:var(--surface);color:#B8791F;border:1px solid #F0DCBB;box-shadow:inset 0 -2px 0 #FDF3E2}
+  span.es-sl{cursor:default}
+  button.es-sl:hover{outline:2px solid var(--e-green);outline-offset:1px}
+  /* inside a finished example the slots are prose, not chips: a completed sentence
+     has to read as a sentence, with the colours kept only as the mapping back */
+  .es-sl.plain{background:none;border:0;box-shadow:none;padding:0;font-weight:400;font-size:inherit;
+    border-radius:0;border-bottom:2px solid;color:var(--e-ink)}
+  .es-sl.res.plain{border-color:rgba(18,178,122,.5)}
+  .es-sl.you.plain{border-color:#F0DCBB}
+
+  .es-shape2legend{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:11px;
+    font-size:11.5px;color:var(--e-ink3);font-weight:600}
+  .es-sldot{width:10px;height:10px;border-radius:3px;flex:none}
+  .es-sldot.res{background:var(--e-mint);box-shadow:inset 0 -3px 0 rgba(18,178,122,.35)}
+  .es-sldot.you{background:var(--surface);border:1px solid #F0DCBB;box-shadow:inset 0 -3px 0 #FDF3E2}
+  .es-slsep{color:var(--e-line)}
+  .es-scrim .es-slotnote{margin-top:10px;background:var(--sunk);border:1px solid var(--e-line);
+    border-radius:10px;padding:9px 12px;font-size:12.5px;color:var(--e-ink2);font-weight:500;
+    line-height:1.55;max-width:66ch}
+  .es-scrim .es-slotnote b{color:var(--e-ink)}
+
+  .es-shapeex{border:1px solid var(--e-line);border-left:3px solid var(--e-green);border-radius:12px;
+    padding:12px 15px;margin-top:10px}
+  .es-shapeexhd{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--e-ink3)}
+  .es-shapeexhd span{font-weight:600;letter-spacing:0;text-transform:none}
+  .es-shapeextext{font-size:14.5px;line-height:1.95;color:var(--e-ink);margin:6px 0 0;max-width:74ch}
+  .es-shapeexnote{font-size:12.5px;color:var(--e-ink2);font-weight:500;line-height:1.55;margin:8px 0 0;max-width:70ch}
+
+  .es-alts{display:flex;flex-direction:column;gap:8px}
+  .es-alt{display:block;width:100%;text-align:left;border:1px solid var(--e-line);border-radius:11px;
+    padding:11px 14px;background:var(--surface);font-family:var(--body);cursor:pointer}
+  .es-alt:hover{border-color:var(--e-green)}
+  .es-alt.on{border-color:#D7EEE3;background:var(--e-mint2)}
+  .es-altlbl{display:flex;align-items:center;gap:8px;font-size:10px;font-weight:700;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--e-ink3)}
+  .es-alttag{background:var(--e-mint);color:var(--e-green-dk);border-radius:6px;padding:2px 7px;letter-spacing:.04em}
+  .es-altframe{display:block;font-size:14.5px;line-height:1.95;margin-top:6px;color:var(--e-ink)}
+  .es-altwhy{display:block;font-size:12px;color:var(--e-ink2);font-weight:500;margin-top:5px;line-height:1.5}
+  .es-altfoot{font-size:12.5px;color:var(--e-ink2);font-weight:500;margin:11px 0 0;line-height:1.6;max-width:74ch}
   .es-scrim .es-shape{background:var(--surface);border:1px solid #D7EEE3;border-radius:9px;
     padding:9px 12px;font-size:13px;line-height:1.6;color:var(--e-ink2)}
+  /* Mint has ONE meaning in this application: the app already supplies this, from
+     the question or from the argument the student chose. A legacy frame carries no
+     provenance at all, so every hole in one is the student's, and a rule further up
+     the file was drawing them in the resolved colour. On an Evaluate question that
+     made "your judgement", "main reason" and "the qualification" look like values
+     already supplied, which is the exact opposite of what the student has to do. */
+  .es-scrim .es-shape .es-hole{background:var(--surface);color:#B8791F;border:1px solid #F0DCBB;
+    box-shadow:inset 0 -2px 0 #FDF3E2;font-size:13.5px;font-weight:600;border-radius:7px;padding:2px 9px}
+  .es-scrim .es-shape .es-blank{color:#B8791F;font-weight:700}
 
   /* the stuck helper: a router over help that already exists, anchored to the
      sentence it is about. It floats, so opening it does not move the editor. */
