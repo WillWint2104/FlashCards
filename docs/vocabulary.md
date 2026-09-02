@@ -81,8 +81,19 @@ Undefined refs stay invisible to the student in both cases, and visible to the
 readiness report in both cases:
 
 ```
-vocabulary 6 refs requested / 4 defined / 2 missing
+vocabulary 6 refs requested / 4 usable, 2 unusable (1 naming no record, 1 half-written), 1 with an unknown role; store 5 records, 1 partial
 ```
+
+The line only says what is wrong, so a clean run stays short. It reports the three
+ways a ref can fail SEPARATELY, because they are opposite jobs to fix: a ref naming
+no record is a typo or a deleted record; a half-written one was started and not
+finished; and a ref whose role is not one of the four still works, because the
+runtime re-buckets it, which is exactly why the author would otherwise never learn
+they mistyped it.
+
+It also reports the store's own state whether or not anything references it. Fifty
+records with a blank field used to print the same line as fifty records that do not
+exist, and as no records at all.
 
 The empty-state copy is kept for the states that can still reach it, and asserted to
 still exist rather than being deleted.
