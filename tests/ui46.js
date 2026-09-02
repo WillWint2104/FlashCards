@@ -76,6 +76,19 @@ const slots = p => p.$$eval('.es-shape2frame .es-sl', es => es.map(e => ({
   const student = body.filter(x => x.kind === 'student');
   ok(student.length === 1, 'and exactly one slot is the student\'s: ' + JSON.stringify(student.map(x => x.text)));
   ok(/^\[.*\]$/.test(student[0].text), 'which is shown as a hole, not as a value: ' + student[0].text);
+  // The two colours mint and amber mean, kept to compare the legacy fallback against
+  const REF = await p.evaluate(() => {
+    const g = s => { const e = document.querySelector(s); return e ? getComputedStyle(e).backgroundColor : ''; };
+    return { resolved: g('.es-sl.res'), student: g('.es-sl.you') };
+  });
+  console.log('    treatments:', JSON.stringify(REF));
+  ok(!!REF.resolved && !!REF.student && REF.resolved !== REF.student,
+    'the two treatments are visually distinct: ' + JSON.stringify(REF));
+  {
+    const frame = await p.$eval('.es-shape2frame', e => e.textContent);
+    ok(!/\{@?[a-zA-Z0-9_-]+\}/.test(frame), 'no unresolved token is left in the frame: ' + JSON.stringify(frame));
+    ok(!/shape its/i.test(frame), 'the connector reads as English rather than one universal construction: ' + JSON.stringify(frame));
+  }
 
   // ==========================================================================
   console.log('2. a verb is prose, never a slot');
@@ -359,6 +372,55 @@ const slots = p => p.$$eval('.es-shape2frame .es-sl', es => es.map(e => ({
       ok(!/\boverall\b/i.test(await p.$eval('.es-shapes', e => e.textContent).catch(() => '')),
         'and they still carry no conclusion language: ' + JSON.stringify(head));
     } else { ok(false, 'the judgement introduction is reachable'); }
+  }
+
+  // ==========================================================================
+  console.log('13. every frame resolves, in every variant');
+  // ==========================================================================
+  // A connector that does not resolve would put "{@lead}" in front of a student.
+  {
+    ok(await enterBus(p, 'target markets'), 'reopened for the frame sweep');
+    ok(await section(p, 'Body 1'), 'a body paragraph opens');
+    await openShape(p);
+    await p.click('#esshapealts'); await rf(p);
+    const frames = await p.$$eval('.es-altframe', es => es.map(e => e.textContent.replace(/\s+/g, ' ').trim()));
+    console.log('    ' + frames.map(f => '· ' + f).join('\n    '));
+    ok(frames.length === 3, 'all three structures render: ' + frames.length);
+    const raw = frames.filter(f => /\{@?[a-zA-Z0-9_-]+\}/.test(f));
+    ok(raw.length === 0, 'none of them leaves a token unresolved: ' + JSON.stringify(raw));
+    ok(!frames.some(f => /shape its/i.test(f)), 'and none of them uses the old construction');
+  }
+
+  // ==========================================================================
+  console.log('14. mint means one thing, including on a legacy fallback');
+  // ==========================================================================
+  // A legacy frame carries no provenance, so every hole in it is the student's.
+  // Drawing them in the resolved colour told an Evaluate student that "your
+  // judgement" and "main reason" had already been supplied.
+  {
+    ok(await enterBus(p, 'effectiveness of human resource'), 'the judgement question is reachable');
+    const inIntro = await p.evaluate(() => {
+      const d = document.querySelector('#esposdefer'); if (d) d.click();
+      const t = [...document.querySelectorAll('.es-startrow')].find(x => /Introduction/i.test(x.textContent));
+      if (t) { t.click(); return true; } return false; });
+    await rf(p);
+    ok(inIntro, 'its introduction is reachable');
+    const go = await p.$('#esstartwriting'); if (go) { await go.click(); await rf(p); }
+    await openShape(p);
+    const holes = await p.$$eval('.es-shape .es-hole', es => es.map(e => ({
+      text: e.textContent.trim(), bg: getComputedStyle(e).backgroundColor })));
+    console.log('    legacy holes:', JSON.stringify(holes.map(h => h.text)));
+    ok(holes.length > 0, 'the fallback frames have holes in them: ' + holes.length);
+    const asResolved = holes.filter(h => h.bg === REF.resolved);
+    ok(asResolved.length === 0,
+      'none of them is drawn as a value the app supplied: ' + JSON.stringify(asResolved.map(h => h.text)));
+    ok(holes.every(h => h.bg === REF.student),
+      'every one of them is drawn as the student\'s to write: ' + JSON.stringify(holes.map(h => h.bg).filter((v, i, a) => a.indexOf(v) === i)));
+    // the exact placeholders that were mint before
+    const named = ['your judgement', 'main reason', 'qualification', 'one side', 'the other side'];
+    const seen = named.filter(n => holes.some(h => h.text.toLowerCase().indexOf(n) >= 0));
+    ok(seen.length >= 3, 'the placeholders that were mint are on screen and checked: ' + JSON.stringify(seen));
+    ok(holes.every(h => /^\[.*\]$/.test(h.text)), 'and each reads as a hole: ' + JSON.stringify(holes.map(h => h.text).slice(0, 3)));
   }
 
   console.log('pageerrors:', errs.length ? errs : 'none');

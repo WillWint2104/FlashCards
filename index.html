@@ -2071,6 +2071,15 @@
   .es-altfoot{font-size:12.5px;color:var(--e-ink2);font-weight:500;margin:11px 0 0;line-height:1.6;max-width:74ch}
   .es-scrim .es-shape{background:var(--surface);border:1px solid #D7EEE3;border-radius:9px;
     padding:9px 12px;font-size:13px;line-height:1.6;color:var(--e-ink2)}
+  /* Mint has ONE meaning in this application: the app already supplies this, from
+     the question or from the argument the student chose. A legacy frame carries no
+     provenance at all, so every hole in one is the student's, and a rule further up
+     the file was drawing them in the resolved colour. On an Evaluate question that
+     made "your judgement", "main reason" and "the qualification" look like values
+     already supplied, which is the exact opposite of what the student has to do. */
+  .es-scrim .es-shape .es-hole{background:var(--surface);color:#B8791F;border:1px solid #F0DCBB;
+    box-shadow:inset 0 -2px 0 #FDF3E2;font-size:13.5px;font-weight:600;border-radius:7px;padding:2px 9px}
+  .es-scrim .es-shape .es-blank{color:#B8791F;font-weight:700}
 
   /* the stuck helper: a router over help that already exists, anchored to the
      sentence it is about. It floats, so opening it does not move the editor. */

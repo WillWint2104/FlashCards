@@ -55,6 +55,27 @@ Bindings name an authored field and never compute one:
 | `question.area` | the label for this paragraph's area |
 | `pathway.fromLabel` | the chosen argument's authored cause end |
 
+## Connectors
+
+The furniture that joins two resolved values is authored and NAMED, never inferred.
+What verb joins them depends on what the right-hand value IS, and no inspection of
+the string can know that: *"shape its e-marketing"* is not English, *"lead a
+business towards e-marketing"* is.
+
+A slot names the connector set it needs; a frame reaches into it with `{@member}`,
+so one set serves the recommended form and its variants, where the same
+relationship has to be said in three clause positions.
+
+```
+towards   lead: "lead a business towards"   serving: "turns towards"   modal: "may turn to"
+changes   lead: "lead a business to change its" ...
+```
+
+A right-hand value that fits neither declares a different set. It does not force
+every frame to be rewritten, and nothing tries to work the verb out from the value.
+A frame whose `{@member}` cannot resolve withholds the shape, like an unresolvable
+slot: a student must never be shown a token instead of a sentence.
+
 **A verb is never a slot.** Wrapping *affect* or *lead* in a chip makes the
 sentence look fragmented and over-encoded, and a verb is not a value a student
 recognises as having come from anywhere. Connecting words are prose in the frame.
@@ -102,6 +123,18 @@ resolved-versus-student distinction. So they take turns:
 
 Pressing a slot closes the example and the reverse, because the shape is something
 a student glances at in a few seconds.
+
+## Mint means one thing
+
+Including on the fallback. A legacy frame carries no provenance at all, so every
+hole in one is the student's, and they are drawn in the student treatment. A rule
+in the old stylesheet drew them in the resolved colour, which on an Evaluate
+question made *"your judgement"*, *"main reason"* and *"the qualification"* look
+like values the app had already supplied — the exact opposite of what the student
+has to do.
+
+Where provenance cannot be established, the answer is the student treatment, never
+mint. Provenance is never inferred from prose.
 
 ## What is not built yet
 

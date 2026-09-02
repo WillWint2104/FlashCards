@@ -3357,9 +3357,16 @@
     }
     return "";
   }
-  // Every resolved slot, or nothing. A shape is all-or-nothing on purpose.
+  // Every resolved slot, or nothing. A shape is all-or-nothing on purpose, and its
+  // connector counts: a frame with an unresolved {@member} left in it would show a
+  // student a token instead of a sentence.
   function esShapeValues(shape, p) {
     if (!shape) return null;
+    const conn = esShapeConnector(shape);
+    const wanted = String(shape.frame || "").match(/\{@([a-zA-Z0-9_-]+)\}/g) || [];
+    for (const w of wanted) {
+      if (!Object.prototype.hasOwnProperty.call(conn, w.slice(2, -1))) return null;
+    }
     const out = {};
     for (const sl of (shape.slots || [])) {
       if (sl.treatment !== "resolved") continue;
@@ -3388,11 +3395,22 @@
   // The frame, with its slots rendered. `fills` swaps the labels for an example's
   // own words, which is what lets a student see which part of the example is which
   // part of the shape.
+  // The connector set a shape's frame reaches into, named by whichever slot declares
+  // one. Authored, never inferred: what verb joins two values depends on what the
+  // right-hand value IS, and no inspection of the string can know that.
+  function esShapeConnector(shape) {
+    const sl = (shape.slots || []).find(x => x.connector);
+    if (!sl) return {};
+    return (((window.ESSAY || {}).shapes || {}).connectors || {})[sl.connector] || {};
+  }
   function esShapeFrameHTML(shape, values, opts) {
     const o = opts || {};
     const byId = {};
     (shape.slots || []).forEach(sl => { byId[sl.id] = sl; });
-    return String(shape.frame || "").replace(/\{([a-zA-Z0-9_-]+)\}/g, (m, id) => {
+    const conn = esShapeConnector(shape);
+    return String(shape.frame || "").replace(/\{@([a-zA-Z0-9_-]+)\}/g, (m, name) =>
+      Object.prototype.hasOwnProperty.call(conn, name) ? esc(conn[name]) : m
+    ).replace(/\{([a-zA-Z0-9_-]+)\}/g, (m, id) => {
       const sl = byId[id]; if (!sl) return m;
       const kind = sl.treatment === "resolved" ? "res" : "you";
       const text = sl.treatment === "resolved" ? String((values && values[id]) || "") : "[" + (sl.label || id) + "]";
@@ -7944,7 +7962,7 @@
                     </div>
                     ${esStuckHTML(p)}
                     <div class="es-shapes${v2 ? " v2" : ""}" id="esshapes"${open ? "" : " hidden"}>${v2 || all.map(x =>
-                      `<p class="es-shape">${esc(x).replace(/\[[^\]]+\]/g, m => `<span class="es-hole">${m.slice(1, -1)}</span>`).replace(/_{2,}/g, '<span class="es-blank">____</span>')}</p>`).join("")}</div>`;
+                      `<p class="es-shape">${esc(x).replace(/\[[^\]]+\]/g, m => `<span class="es-hole">${m}</span>`).replace(/_{2,}/g, '<span class="es-blank">____</span>')}</p>`).join("")}</div>`;
                 })()}
               </div>`}
             ${blocks.length ? `<p class="es-prose">${prose}</p>` : `<p class="es-prose empty">Your paragraph builds here, one sentence at a time.</p>`}

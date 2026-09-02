@@ -1845,6 +1845,23 @@ window.ESSAY = {
   // would restate the relationship rather than explain it. A shape that demanded
   // one would contradict its own content.
   shapes: {
+    // ---- CONNECTORS ------------------------------------------------------
+    // The sentence furniture that joins two resolved values. It is authored and
+    // NAMED, never inferred from the values themselves, because the natural verb
+    // depends on what the right-hand value IS and no string inspection can know
+    // that. "shape its e-marketing" is not English; "lead a business towards
+    // e-marketing" is, and a right-hand value that fits neither declares a
+    // different set rather than forcing every frame to be rewritten.
+    //
+    // A slot names the set it needs. A frame reaches into it with {@member}, so
+    // the same set serves the recommended form and its variants, where the same
+    // relationship has to be said in three different clause positions.
+    connectors: {
+      // a market characteristic to a strategy or element the business adopts
+      towards: { lead: "lead a business towards", serving: "turns towards", modal: "may turn to" },
+      // a characteristic to something the business already has and alters
+      changes: { lead: "lead a business to change its", serving: "changes its", modal: "may change its" }
+    },
     // Cross-topic worked examples, keyed by shape. Held here rather than on a
     // question so that a question never has to author an answer to itself, and so
     // one example serves every question that uses the shape. `fills` maps the
@@ -1900,14 +1917,14 @@ window.ESSAY = {
         // this stage is FOR: "write a topic sentence" is a instruction about
         // position, and the job here is to state one relationship.
         stageLabel: "state the relationship",
-        frame: "{cause} lead a business to shape its {effect}, because {reasoning}.",
+        frame: "{cause} {@lead} {effect}, because {reasoning}.",
         why: "You chose this argument, so both ends of it are already known. What the app cannot supply is why one follows from the other, and that is the reasoning Explain requires you to establish.",
         alternatives: ["causal.body.topic.reasoning-first", "causal.body.topic.conditional"],
         slots: [
           { id: "cause", treatment: "resolved", source: "pathway", binding: "pathway.fromLabel",
             label: "the feature of the market you are arguing from",
             note: "The characteristic your chosen argument runs from. Authored per argument, never worked out from the argument's title." },
-          { id: "effect", treatment: "resolved", source: "question", binding: "question.area",
+          { id: "effect", treatment: "resolved", source: "question", binding: "question.area", connector: "towards",
             label: "the element this paragraph is about",
             note: "The element the question fixes and this paragraph covers." },
           { id: "reasoning", treatment: "student", source: "student",
@@ -1916,24 +1933,24 @@ window.ESSAY = {
         ] },
       { id: "causal.body.topic.reasoning-first", family: "causal", role: "body", stage: "topic",
         variantOf: "causal.body.topic", name: "Your reasoning first", stageLabel: "state the relationship",
-        frame: "Because {reasoning}, a business serving {cause} shapes its {effect} around them.",
+        frame: "Because {reasoning}, a business serving {cause} {@serving} {effect}.",
         why: "You cannot finish this sentence without having said why. Use it when the reasoning is the part you are avoiding.",
         slots: [
           { id: "reasoning", treatment: "student", source: "student", label: "your reasoning",
             note: "Why the market's feature leads to that element. One step, in your own words." },
           { id: "cause", treatment: "resolved", source: "pathway", binding: "pathway.fromLabel",
             label: "the feature of the market you are arguing from", note: "The characteristic your chosen argument runs from." },
-          { id: "effect", treatment: "resolved", source: "question", binding: "question.area",
+          { id: "effect", treatment: "resolved", source: "question", binding: "question.area", connector: "towards",
             label: "the element this paragraph is about", note: "The element the question fixes and this paragraph covers." }
         ] },
       { id: "causal.body.topic.conditional", family: "causal", role: "body", stage: "topic",
         variantOf: "causal.body.topic", name: "Conditional form", stageLabel: "state the relationship",
-        frame: "When a business serves {cause}, it may shape its {effect} because {reasoning}.",
+        frame: "When a business serves {cause}, it {@modal} {effect} because {reasoning}.",
         why: "More cautious than the recommended form. Use it where the relationship is genuinely conditional rather than certain.",
         slots: [
           { id: "cause", treatment: "resolved", source: "pathway", binding: "pathway.fromLabel",
             label: "the feature of the market you are arguing from", note: "The characteristic your chosen argument runs from." },
-          { id: "effect", treatment: "resolved", source: "question", binding: "question.area",
+          { id: "effect", treatment: "resolved", source: "question", binding: "question.area", connector: "towards",
             label: "the element this paragraph is about", note: "The element the question fixes and this paragraph covers." },
           { id: "reasoning", treatment: "student", source: "student", label: "your reasoning",
             note: "Why that follows, under those conditions. One step, in your own words." }

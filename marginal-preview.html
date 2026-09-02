@@ -2071,6 +2071,15 @@
   .es-altfoot{font-size:12.5px;color:var(--e-ink2);font-weight:500;margin:11px 0 0;line-height:1.6;max-width:74ch}
   .es-scrim .es-shape{background:var(--surface);border:1px solid #D7EEE3;border-radius:9px;
     padding:9px 12px;font-size:13px;line-height:1.6;color:var(--e-ink2)}
+  /* Mint has ONE meaning in this application: the app already supplies this, from
+     the question or from the argument the student chose. A legacy frame carries no
+     provenance at all, so every hole in one is the student's, and a rule further up
+     the file was drawing them in the resolved colour. On an Evaluate question that
+     made "your judgement", "main reason" and "the qualification" look like values
+     already supplied, which is the exact opposite of what the student has to do. */
+  .es-scrim .es-shape .es-hole{background:var(--surface);color:#B8791F;border:1px solid #F0DCBB;
+    box-shadow:inset 0 -2px 0 #FDF3E2;font-size:13.5px;font-weight:600;border-radius:7px;padding:2px 9px}
+  .es-scrim .es-shape .es-blank{color:#B8791F;font-weight:700}
 
   /* the stuck helper: a router over help that already exists, anchored to the
      sentence it is about. It floats, so opening it does not move the editor. */
@@ -6163,6 +6172,23 @@ window.ESSAY = {
   // would restate the relationship rather than explain it. A shape that demanded
   // one would contradict its own content.
   shapes: {
+    // ---- CONNECTORS ------------------------------------------------------
+    // The sentence furniture that joins two resolved values. It is authored and
+    // NAMED, never inferred from the values themselves, because the natural verb
+    // depends on what the right-hand value IS and no string inspection can know
+    // that. "shape its e-marketing" is not English; "lead a business towards
+    // e-marketing" is, and a right-hand value that fits neither declares a
+    // different set rather than forcing every frame to be rewritten.
+    //
+    // A slot names the set it needs. A frame reaches into it with {@member}, so
+    // the same set serves the recommended form and its variants, where the same
+    // relationship has to be said in three different clause positions.
+    connectors: {
+      // a market characteristic to a strategy or element the business adopts
+      towards: { lead: "lead a business towards", serving: "turns towards", modal: "may turn to" },
+      // a characteristic to something the business already has and alters
+      changes: { lead: "lead a business to change its", serving: "changes its", modal: "may change its" }
+    },
     // Cross-topic worked examples, keyed by shape. Held here rather than on a
     // question so that a question never has to author an answer to itself, and so
     // one example serves every question that uses the shape. `fills` maps the
@@ -6218,14 +6244,14 @@ window.ESSAY = {
         // this stage is FOR: "write a topic sentence" is a instruction about
         // position, and the job here is to state one relationship.
         stageLabel: "state the relationship",
-        frame: "{cause} lead a business to shape its {effect}, because {reasoning}.",
+        frame: "{cause} {@lead} {effect}, because {reasoning}.",
         why: "You chose this argument, so both ends of it are already known. What the app cannot supply is why one follows from the other, and that is the reasoning Explain requires you to establish.",
         alternatives: ["causal.body.topic.reasoning-first", "causal.body.topic.conditional"],
         slots: [
           { id: "cause", treatment: "resolved", source: "pathway", binding: "pathway.fromLabel",
             label: "the feature of the market you are arguing from",
             note: "The characteristic your chosen argument runs from. Authored per argument, never worked out from the argument's title." },
-          { id: "effect", treatment: "resolved", source: "question", binding: "question.area",
+          { id: "effect", treatment: "resolved", source: "question", binding: "question.area", connector: "towards",
             label: "the element this paragraph is about",
             note: "The element the question fixes and this paragraph covers." },
           { id: "reasoning", treatment: "student", source: "student",
@@ -6234,24 +6260,24 @@ window.ESSAY = {
         ] },
       { id: "causal.body.topic.reasoning-first", family: "causal", role: "body", stage: "topic",
         variantOf: "causal.body.topic", name: "Your reasoning first", stageLabel: "state the relationship",
-        frame: "Because {reasoning}, a business serving {cause} shapes its {effect} around them.",
+        frame: "Because {reasoning}, a business serving {cause} {@serving} {effect}.",
         why: "You cannot finish this sentence without having said why. Use it when the reasoning is the part you are avoiding.",
         slots: [
           { id: "reasoning", treatment: "student", source: "student", label: "your reasoning",
             note: "Why the market's feature leads to that element. One step, in your own words." },
           { id: "cause", treatment: "resolved", source: "pathway", binding: "pathway.fromLabel",
             label: "the feature of the market you are arguing from", note: "The characteristic your chosen argument runs from." },
-          { id: "effect", treatment: "resolved", source: "question", binding: "question.area",
+          { id: "effect", treatment: "resolved", source: "question", binding: "question.area", connector: "towards",
             label: "the element this paragraph is about", note: "The element the question fixes and this paragraph covers." }
         ] },
       { id: "causal.body.topic.conditional", family: "causal", role: "body", stage: "topic",
         variantOf: "causal.body.topic", name: "Conditional form", stageLabel: "state the relationship",
-        frame: "When a business serves {cause}, it may shape its {effect} because {reasoning}.",
+        frame: "When a business serves {cause}, it {@modal} {effect} because {reasoning}.",
         why: "More cautious than the recommended form. Use it where the relationship is genuinely conditional rather than certain.",
         slots: [
           { id: "cause", treatment: "resolved", source: "pathway", binding: "pathway.fromLabel",
             label: "the feature of the market you are arguing from", note: "The characteristic your chosen argument runs from." },
-          { id: "effect", treatment: "resolved", source: "question", binding: "question.area",
+          { id: "effect", treatment: "resolved", source: "question", binding: "question.area", connector: "towards",
             label: "the element this paragraph is about", note: "The element the question fixes and this paragraph covers." },
           { id: "reasoning", treatment: "student", source: "student", label: "your reasoning",
             note: "Why that follows, under those conditions. One step, in your own words." }
@@ -11495,9 +11521,16 @@ window.BUSCONTENT = {
     }
     return "";
   }
-  // Every resolved slot, or nothing. A shape is all-or-nothing on purpose.
+  // Every resolved slot, or nothing. A shape is all-or-nothing on purpose, and its
+  // connector counts: a frame with an unresolved {@member} left in it would show a
+  // student a token instead of a sentence.
   function esShapeValues(shape, p) {
     if (!shape) return null;
+    const conn = esShapeConnector(shape);
+    const wanted = String(shape.frame || "").match(/\{@([a-zA-Z0-9_-]+)\}/g) || [];
+    for (const w of wanted) {
+      if (!Object.prototype.hasOwnProperty.call(conn, w.slice(2, -1))) return null;
+    }
     const out = {};
     for (const sl of (shape.slots || [])) {
       if (sl.treatment !== "resolved") continue;
@@ -11526,11 +11559,22 @@ window.BUSCONTENT = {
   // The frame, with its slots rendered. `fills` swaps the labels for an example's
   // own words, which is what lets a student see which part of the example is which
   // part of the shape.
+  // The connector set a shape's frame reaches into, named by whichever slot declares
+  // one. Authored, never inferred: what verb joins two values depends on what the
+  // right-hand value IS, and no inspection of the string can know that.
+  function esShapeConnector(shape) {
+    const sl = (shape.slots || []).find(x => x.connector);
+    if (!sl) return {};
+    return (((window.ESSAY || {}).shapes || {}).connectors || {})[sl.connector] || {};
+  }
   function esShapeFrameHTML(shape, values, opts) {
     const o = opts || {};
     const byId = {};
     (shape.slots || []).forEach(sl => { byId[sl.id] = sl; });
-    return String(shape.frame || "").replace(/\{([a-zA-Z0-9_-]+)\}/g, (m, id) => {
+    const conn = esShapeConnector(shape);
+    return String(shape.frame || "").replace(/\{@([a-zA-Z0-9_-]+)\}/g, (m, name) =>
+      Object.prototype.hasOwnProperty.call(conn, name) ? esc(conn[name]) : m
+    ).replace(/\{([a-zA-Z0-9_-]+)\}/g, (m, id) => {
       const sl = byId[id]; if (!sl) return m;
       const kind = sl.treatment === "resolved" ? "res" : "you";
       const text = sl.treatment === "resolved" ? String((values && values[id]) || "") : "[" + (sl.label || id) + "]";
@@ -16082,7 +16126,7 @@ window.BUSCONTENT = {
                     </div>
                     ${esStuckHTML(p)}
                     <div class="es-shapes${v2 ? " v2" : ""}" id="esshapes"${open ? "" : " hidden"}>${v2 || all.map(x =>
-                      `<p class="es-shape">${esc(x).replace(/\[[^\]]+\]/g, m => `<span class="es-hole">${m.slice(1, -1)}</span>`).replace(/_{2,}/g, '<span class="es-blank">____</span>')}</p>`).join("")}</div>`;
+                      `<p class="es-shape">${esc(x).replace(/\[[^\]]+\]/g, m => `<span class="es-hole">${m}</span>`).replace(/_{2,}/g, '<span class="es-blank">____</span>')}</p>`).join("")}</div>`;
                 })()}
               </div>`}
             ${blocks.length ? `<p class="es-prose">${prose}</p>` : `<p class="es-prose empty">Your paragraph builds here, one sentence at a time.</p>`}
