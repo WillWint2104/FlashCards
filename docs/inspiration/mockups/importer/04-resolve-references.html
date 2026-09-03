@@ -1,0 +1,288 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Importer 4 of 8 · resolve references</title>
+<!--
+  IMPORTER SCREEN 4 OF 8. A mockup for review before anything is implemented.
+  Workflow stage 4 of 6.
+
+  ONE question: do the shared records these packages NAME actually exist?
+
+  Two problems this screen has to solve, and they pull against each other.
+
+  The happy path is 23 successful lookups. Twenty-three green rows is the
+  engineering dashboard we keep almost building; "23 of 23" alone tells a
+  teacher nothing about what the import leans on. So the count is per LIBRARY,
+  five rows rather than twenty-three, which is the smallest honest unit that
+  still says which parts of Marginal this question depends on.
+
+  And the state this stage exists for does not occur in this run. The only
+  package with a missing dependency stopped at Validate, so both packages here
+  resolve cleanly. Rather than invent a failure, the blocked state is taught in
+  the right column and shown in full underneath, using the real findings from
+  the package that stopped, clearly labelled as not part of this run.
+
+  ONE RISK THIS SHAPE CARRIES, recorded so the built screen inherits it rather
+  than rediscovering it. A shortfall is a fact about a RECORD, so organising by
+  library puts it in the right place. Blocked is a fact about a PACKAGE: it
+  decides which questions import. With two packages, one of which names nothing,
+  the merge is lossless. With five packages sharing a syllabus, a row reading
+  "Syllabus, 12 references, 2 waiting on the library" says nothing about WHICH
+  question is held up, which is the only thing a teacher can act on. So the rule
+  for the built screen: the library table is always first, because what an import
+  leans on is worth showing every time, and any blocked dependency PROMOTES a
+  package-shaped card above it. The shape of the screen changes with the state.
+
+  ALL NUMBERS ARE REAL, taken from the validator against the merged contract:
+  vocabulary 7, lessons 4, evidence 6, syllabus 5, concepts 1 = 23 references,
+  all resolving; 0 of 7 vocabulary records displayable; 0 of 6 evidence records
+  sourced; ah-religion declares none at all.
+-->
+<style>
+  :root{
+    --bg:#EEF3F5; --card:#FFFFFF;
+    --ink:#3C4A4A; --ink-2:#7A8A88; --ink-3:#AEBAB8;
+    --green:#1CC47D; --green-dk:#14A368; --green-soft:#E4F9EF;
+    --line:#E7EDED; --amber:#B3730C; --amber-soft:#FDF3E3;
+    --red:#B3403C; --red-soft:#FBEDEC;
+    --body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--body);background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
+  header{display:flex;align-items:center;gap:12px;padding:16px 32px;background:var(--card);border-bottom:1px solid var(--line)}
+  .mk{width:28px;height:28px;border-radius:9px;background:var(--green);flex:none;box-shadow:0 3px 0 var(--green-dk)}
+  .wordmark{font-weight:800;font-size:17px;letter-spacing:-.2px}
+  .where{margin-left:auto;font-size:13px;color:var(--ink-2);font-weight:700}
+  main{max-width:1080px;margin:0 auto;padding:26px 32px 56px}
+  h1{font-size:23px;font-weight:800;letter-spacing:-.3px;margin:0 0 4px}
+  .lede{font-size:14px;color:var(--ink-2);font-weight:600;margin:0 0 22px;max-width:72ch}
+
+  .rail{display:flex;gap:8px;margin:0 0 22px;flex-wrap:wrap}
+  .step{display:flex;align-items:center;gap:9px;background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:7px 15px 7px 8px;font-size:12.5px;font-weight:700;color:var(--ink-3)}
+  .step b{width:22px;height:22px;border-radius:50%;background:var(--bg);color:var(--ink-3);display:grid;place-items:center;font-size:11.5px;font-weight:800}
+  .step.on{border-color:var(--green);color:var(--ink)}
+  .step.on b{background:var(--green);color:#fff}
+  .step.done{color:var(--ink-2)}
+  .step.done b{background:var(--green-soft);color:var(--green-dk)}
+  .step.write{border-style:dashed}
+
+  .cols{display:grid;grid-template-columns:1.45fr 1fr;gap:18px;align-items:start}
+  .card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:18px 20px}
+  .card h2{font-size:14px;font-weight:800;margin:0 0 3px}
+  .card .sub{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:0 0 14px}
+  .count{font-size:19px;font-weight:800;letter-spacing:-.2px;margin:0 0 2px}
+  .count span{color:var(--green-dk)}
+
+  table.libs{width:100%;border-collapse:collapse;font-size:12.5px}
+  table.libs th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.55px;color:var(--ink-3);font-weight:800;padding:0 0 8px}
+  table.libs td{padding:10px 0;border-top:1px solid var(--line);font-weight:600;color:var(--ink-2);vertical-align:top}
+  table.libs td.n{font-weight:800;color:var(--ink);width:104px}
+  table.libs td.r{text-align:right;font-family:var(--mono);font-size:11.5px;font-weight:700;white-space:nowrap}
+  table.libs tr.off td{color:var(--ink-3)}
+  .more{font:inherit;font-size:11.5px;font-weight:800;color:var(--green-dk);background:none;border:0;padding:11px 0 0;cursor:default;text-decoration:underline}
+
+  .pkgrow{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line)}
+  .pkgrow:first-of-type{border-top:0}
+  .pkgrow .q{font-family:var(--mono);font-size:12.5px;font-weight:700;flex:1}
+  .pkgrow .q small{display:block;font-family:var(--body);font-size:11.5px;font-weight:600;color:var(--ink-3)}
+  .tag{font-size:11.5px;font-weight:800;border-radius:99px;padding:4px 11px;white-space:nowrap}
+  .good{background:var(--green-soft);color:var(--green-dk)}
+  .warnt{background:var(--amber-soft);color:var(--amber)}
+  .badt{background:var(--red-soft);color:var(--red)}
+  .neutral{background:var(--bg);color:var(--ink-2)}
+  /* Blocked is neither red nor amber. Red means the package is wrong; amber
+     means the import continues. Blocked is neither, so it takes the one
+     treatment this system already uses for "has not happened yet": the dashed
+     edge the Publish step wears in the rail. Three visual families, four
+     severities, and no fourth colour invented for the occasion. */
+  .blockt{background:var(--bg);color:var(--ink-2);border:1.5px dashed var(--ink-3);padding:3px 10px}
+
+  .item{padding:13px 0;border-top:1px solid var(--line)}
+  .item:first-of-type{border-top:0}
+  .item .h{display:flex;align-items:baseline;gap:10px}
+  .item .h .n{font-size:13px;font-weight:800;flex:1}
+  .item .w{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:4px 0 0}
+  .item .w b{color:var(--ink)}
+
+  .ex{font-size:12.5px;margin:8px 0 0;padding-left:13px;border-left:2px solid var(--line)}
+  .ex.blk{border-left:2px dashed var(--ink-3)}
+  .ex.err{border-left-color:var(--red)}
+  .ex .msg{color:var(--ink);font-weight:600;display:block}
+  .ex .at{font-family:var(--mono);font-size:10.5px;font-weight:600;color:var(--ink-3);display:block;margin-top:3px}
+
+  .btnrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px}
+  .btn{font:inherit;font-size:13px;font-weight:800;border-radius:12px;padding:10px 16px;border:1.5px solid var(--line);background:#fff;color:var(--ink);cursor:default}
+  .btn.primary{background:var(--green);border-color:var(--green);color:#fff;box-shadow:0 2px 0 var(--green-dk)}
+  .note{font-size:12px;color:var(--ink-2);font-weight:600;margin:10px 0 0}
+  .quiet{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:0 0 11px}
+  .quiet b{color:var(--ink)}
+  .rule{font-size:12.5px;color:var(--ink-2);font-weight:600;background:var(--bg);border-radius:12px;padding:11px 14px;margin:14px 0 0}
+  .rule b{color:var(--ink)}
+  details{font-size:12.5px}
+  summary{font-weight:800;font-size:12.5px;cursor:default;color:var(--ink)}
+  details p{color:var(--ink-2);font-weight:600;margin:9px 0 0}
+
+  .aside{background:var(--card);border:1.5px dashed var(--line);border-radius:18px;padding:18px 20px;margin-top:22px}
+  .aside .lbl{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-3);margin-bottom:6px}
+  .aside h2{font-size:14px;font-weight:800;margin:0 0 3px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:14px}
+</style>
+
+<header>
+  <div class="mk"></div>
+  <div class="wordmark">Marginal</div>
+  <div class="where">Teacher tools · import questions · 4 of 6</div>
+</header>
+
+<main>
+  <h1>Resolve references</h1>
+  <p class="lede">A package names shared content by id and never copies it. This step looks up every
+    id in Marginal's libraries. Nothing has been written.</p>
+
+  <div class="rail">
+    <div class="step done"><b>✓</b> Choose files</div>
+    <div class="step done"><b>✓</b> Parse</div>
+    <div class="step done"><b>✓</b> Validate</div>
+    <div class="step on"><b>4</b> Resolve references</div>
+    <div class="step"><b>5</b> Review changes</div>
+    <div class="step write"><b>6</b> Publish</div>
+  </div>
+
+  <div class="cols">
+    <div>
+      <div class="card">
+        <p class="count"><span>All 23 references</span> found</p>
+        <p class="sub">What this import leans on. Green is stated once, here: a row carries a mark
+          only where it differs from that.</p>
+        <table class="libs">
+          <tr><th>library</th><th>what this import touches</th><th class="r">refs</th></tr>
+          <tr><td class="n">Vocabulary</td><td>Seven business studies terms</td>
+              <td class="r">7 <span class="tag warnt">1 shortfall</span></td></tr>
+          <tr><td class="n">Evidence</td><td>Six McDonald's marketing records</td><td class="r">6</td></tr>
+          <tr><td class="n">Syllabus</td><td>The marketing topic and four points under marketing strategies</td><td class="r">5</td></tr>
+          <tr><td class="n">Lessons</td><td>Four lessons, one for each taught argument in this question</td><td class="r">4</td></tr>
+          <tr><td class="n">Concepts</td><td>One concept, processes in the marketing mix</td><td class="r">1</td></tr>
+          <tr class="off"><td class="n">Resources</td><td>Neither package asks for one</td><td class="r">none</td></tr>
+        </table>
+        <button class="more">Show the 23 records</button>
+        <div class="rule"><b>Nothing was created to make these resolve.</b> Marginal never invents an
+          id, a record, a role or a family to close a gap. A reference finds what an author named, or
+          it does not.</div>
+        <div class="rule" style="margin-top:10px">Nothing here is waiting on a library. When a package
+          declares a record Marginal does not hold yet, the package is right and the library has not
+          caught up, and it is never reported as an error. Neither of these packages is in that state.</div>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <h2>Per package</h2>
+        <div class="pkgrow">
+          <div class="q">mkt-01<small>23 references</small></div>
+          <span class="tag good">all found</span>
+          <span class="tag warnt">1 shortfall</span>
+        </div>
+        <div class="pkgrow">
+          <div class="q">ah-religion<small>no references</small></div>
+          <span class="tag neutral">nothing to resolve</span>
+        </div>
+        <p class="note">A question that names no shared content is not a lesser question. It simply
+          carries everything it needs.</p>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <h2>Found, and not fully usable yet</h2>
+        <p class="sub">The record exists. Something a student would see is still missing from it.
+          Neither stops the import, and neither is a fault in the package.</p>
+
+        <div class="item">
+          <div class="h"><span class="n">7 vocabulary terms cannot be shown yet</span><span class="tag warnt">shortfall</span></div>
+          <p class="w">All seven resolve and each one teaches on the Learn surface. None can be offered
+            in the vocabulary panel, because each is missing a plain meaning and an example, and a term
+            without a meaning a student can read is the thing that panel exists to prevent.</p>
+          <div class="ex"><span class="msg">Add a plain meaning and an example to each record.</span>
+            <span class="at">business.vocab.processes and 6 more</span></div>
+        </div>
+
+        <div class="item">
+          <div class="h"><span class="n">No evidence record carries a source</span><span class="tag neutral">capability</span></div>
+          <p class="w">All six resolve, and none names where its fact came from. This is not something
+            resolving reports: existence and provenance are different questions, and the validator
+            raises it as the capability <b>evidence complete</b>, which mkt-01 will not reach. It is
+            here because these are the six records this step just looked up.</p>
+          <div class="ex"><span class="msg">Add a checkable source to each record, in the evidence library.</span>
+            <span class="at">6 of 6 records, shared with every other question that uses them</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2>What happens to each</h2>
+        <p class="quiet"><b>mkt-01</b> and <b>ah-religion</b> continue to Review changes.</p>
+        <div class="btnrow">
+          <button class="btn primary">Continue with 2 packages</button>
+        </div>
+        <p class="note">Review changes lists every write before any of them happens.</p>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <h2>Two answers this step can give</h2>
+        <p class="quiet"><b>A reference to nothing.</b> The id exists in no library and the package
+          never declared it. The package is wrong, and an author fixes it.</p>
+        <p class="quiet"><b>A dependency Marginal does not have.</b> The package declared it properly
+          and this library has not caught up. The package is right. There is nothing in it to fix, and
+          it waits for the library rather than for its author.</p>
+        <div class="rule">Neither happens in this import. Both are shown below, so the difference is
+          visible before you meet it.</div>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <h2>Not checked here</h2>
+        <p class="quiet">Whether a record that resolved is the <b>right</b> record. Marginal matches
+          by id and never guesses from a label, which is what keeps an import predictable and also
+          means it cannot tell that an argument cites the wrong evidence. That reading is yours, and
+          the list above opens for it.</p>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <details>
+          <summary>How importing works</summary>
+          <p>Parse asks whether the file is a readable package. Validate asks whether what it says is
+            valid. Resolve references asks whether the things it names exist. Review shows what would
+            change. Publish writes it, and is the only step that does.</p>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <div class="aside">
+    <div class="lbl">Not part of this import</div>
+    <h2>What the two answers look like</h2>
+    <p class="sub">Taken from invalid-demo.json, the package that stopped at Validate. Shown here
+      because a distinction nobody has seen is a distinction nobody will believe.</p>
+    <div class="two">
+      <div>
+        <div class="item">
+          <div class="h"><span class="n">A reference to nothing</span><span class="tag badt">error</span></div>
+          <p class="w">The package does not import until an author changes it.</p>
+          <div class="ex err"><span class="msg">"mcdonalds.marketing.a-record-nobody-has" names no record
+            in the evidence library, and is not declared in requires.</span>
+            <span class="at">pathways[0].evidenceRefs[0].ref</span></div>
+        </div>
+      </div>
+      <div>
+        <div class="item">
+          <div class="h"><span class="n">A dependency Marginal does not have</span><span class="tag blockt">waiting on the library</span></div>
+          <p class="w">The package is correct. It waits for the library, and no edit to the file would
+            help.</p>
+          <div class="ex blk"><span class="msg">"business.vocab.nowhere" is declared, and the
+            vocabulary library does not hold it yet.</span></div>
+          <div class="ex blk"><span class="msg">"business.marketing.marketing-strategies.nonexistent" is
+            declared, and the syllabus library does not hold it yet.</span></div>
+          <p class="w" style="margin-top:9px">No path, no line and no file. Every error on these
+            screens points at somewhere in a package; the absence of a location is the signal that the
+            package is not where the problem is.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
