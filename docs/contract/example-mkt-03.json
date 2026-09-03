@@ -1,0 +1,105 @@
+{
+  "schema": "marginal.question-package",
+  "version": 1,
+  "origin": {
+    "type": "bundled",
+    "packageId": null,
+    "author": null,
+    "authoredAt": null
+  },
+  "provenance": {
+    "reviewState": "in-source",
+    "publication": "published",
+    "notes": null
+  },
+  "requires": {
+    "vocabulary": [],
+    "concepts": [],
+    "lessons": [],
+    "evidence": [],
+    "syllabus": [
+      "business.marketing"
+    ],
+    "resources": [],
+    "criteria": []
+  },
+  "provides": {},
+  "question": {
+    "id": "mkt-03",
+    "subject": "business_studies",
+    "topicRef": "business.marketing",
+    "topicLabel": null,
+    "directive": "to what extent",
+    "text": "To what extent do influences on marketing determine business success?",
+    "marks": 20,
+    "terms": {
+      "first": "Influences on marketing",
+      "second": "Business success"
+    },
+    "overallArgument": "Influences significantly shape customer behaviour and constrain decisions, though management's response ultimately determines their effect on success.",
+    "vocabRefs": [],
+    "studyRefs": []
+  },
+  "relationship": {
+    "intro": null,
+    "claims": [
+      {
+        "id": "mkt-03-claim-1",
+        "line": "Psychological influences",
+        "left": {
+          "label": "Psychological influences",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [],
+        "pathwayRefs": []
+      },
+      {
+        "id": "mkt-03-claim-2",
+        "line": "Sociocultural influences",
+        "left": {
+          "label": "Sociocultural influences",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [],
+        "pathwayRefs": []
+      },
+      {
+        "id": "mkt-03-claim-3",
+        "line": "Economic influences",
+        "left": {
+          "label": "Economic influences",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [],
+        "pathwayRefs": []
+      },
+      {
+        "id": "mkt-03-claim-4",
+        "line": "Government, legal and ethical influences",
+        "left": {
+          "label": "Government, legal and ethical influences",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [],
+        "pathwayRefs": []
+      }
+    ]
+  },
+  "decode": null,
+  "requirements": null,
+  "coreAnswer": null,
+  "workingAnswer": null,
+  "reasoning": null,
+  "areas": [],
+  "pathways": [],
+  "marking": {
+    "source": "generated",
+    "bands": null,
+    "bandSource": null,
+    "text": null
+  }
+}

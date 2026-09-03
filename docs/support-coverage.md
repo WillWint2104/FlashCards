@@ -8,7 +8,7 @@ A label that prints the word does not teach it.
 
 | question | mode | pathways | concepts explained | guidance | pathway lessons | full ladders | sourced evidence | wrong-turn recovery | readiness |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `mkt-01` | causal | 12 | 28/29 | 12/12 | 4/12 | 3/12 | 0/12 | yes | Guided practice |
+| `mkt-01` | causal | 12 | 28/29 | 12/12 | 4/12 | 4/12 | 0/12 | yes | Guided practice |
 | `fin-01` | causal | 8 | 24/26 | 8/8 | 0/8 | 0/8 | 0/8 | yes | Guided practice |
 | `hr-01` | judgement | 8 | 13/16 | 8/8 | 0/8 | 0/8 | 0/8 | yes | Guided practice |
 

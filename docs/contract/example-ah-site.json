@@ -1,0 +1,58 @@
+{
+  "schema": "marginal.question-package",
+  "version": 1,
+  "origin": {
+    "type": "bundled",
+    "packageId": null,
+    "author": null,
+    "authoredAt": null
+  },
+  "provenance": {
+    "reviewState": "in-source",
+    "publication": "published",
+    "notes": null
+  },
+  "requires": {
+    "vocabulary": [],
+    "concepts": [],
+    "lessons": [],
+    "evidence": [],
+    "syllabus": [],
+    "resources": [],
+    "criteria": []
+  },
+  "provides": {},
+  "question": {
+    "id": "ah-site",
+    "subject": "ancient_history",
+    "topicRef": null,
+    "topicLabel": "Features of ancient societies: significant sites",
+    "directive": "account for",
+    "text": "Account for the significance of one major site or monument to the society that built it.",
+    "marks": 20,
+    "terms": {
+      "first": null,
+      "second": null
+    },
+    "overallArgument": null,
+    "vocabRefs": [],
+    "studyRefs": []
+  },
+  "relationship": {
+    "intro": null,
+    "claims": []
+  },
+  "decode": null,
+  "requirements": null,
+  "coreAnswer": null,
+  "workingAnswer": null,
+  "reasoning": null,
+  "areas": [],
+  "pathways": [],
+  "marking": {
+    "source": "generated",
+    "bands": null,
+    "bandSource": null,
+    "text": null
+  }
+}

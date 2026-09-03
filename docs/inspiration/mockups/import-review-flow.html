@@ -115,9 +115,9 @@
     <div class="card">
       <h2>1 to 2 · what was opened</h2>
       <p class="sub">Read into memory. Nothing has been written and no registry has been touched.</p>
-      <div class="file"><span class="nm">bus.mkt-01.guided.json</span><span class="sz">65 KB</span><span class="pill ok">parsed</span></div>
-      <div class="file"><span class="nm">anc.ah-religion.write-only.json</span><span class="sz">1.7 KB</span><span class="pill ok">parsed</span></div>
-      <div class="file"><span class="nm">invalid-demo.json</span><span class="sz">3.6 KB</span><span class="pill ok">parsed</span></div>
+      <div class="file"><span class="nm">example-mkt-01.json</span><span class="sz">69 KB</span><span class="pill ok">parsed</span></div>
+      <div class="file"><span class="nm">example-ah-religion.json</span><span class="sz">2.3 KB</span><span class="pill ok">parsed</span></div>
+      <div class="file"><span class="nm">invalid-demo.json</span><span class="sz">6.3 KB</span><span class="pill ok">parsed</span></div>
       <div class="rule"><b>Fail before mutation.</b> All three are read and validated in full before any
         of them can publish. One broken package in a set does not leave the other two half imported,
         because none of them is imported until the set is settled.</div>
@@ -126,64 +126,69 @@
     <div class="card">
       <h2>3 · verdicts</h2>
       <p class="sub">One line each. The detail is below, and it is never collapsed into a count.</p>
-      <div class="file"><span class="nm">bus.mkt-01</span><span class="pill neutral">guided</span><span class="pill ok">accepted</span></div>
-      <div class="file"><span class="nm">anc.ah-religion</span><span class="pill neutral">write-only</span><span class="pill ok">accepted</span></div>
-      <div class="file"><span class="nm">bus.demo-invalid</span><span class="pill neutral">learn and build</span><span class="pill bad">rejected</span></div>
-      <p class="note">A write-only package is not told off for lacking scaffolding it never claimed.
-        Intent is what a package says it can do, and it is checked against that and nothing else.</p>
+      <div class="file"><span class="nm">mkt-01</span><span class="pill neutral">guided</span><span class="pill warn">shortfall</span></div>
+      <div class="file"><span class="nm">ah-religion</span><span class="pill neutral">importable</span><span class="pill ok">accepted</span></div>
+      <div class="file"><span class="nm">invalid-demo</span><span class="pill neutral">31 faults</span><span class="pill bad">rejected</span></div>
+      <p class="note">Capability is measured, never declared. A question carrying only a stem is not
+        told off for lacking scaffolding: it is reported as importable, which is what it is.</p>
     </div>
 
     <div class="card full">
-      <h2>4 · what is wrong with bus.demo-invalid, and who fixes each one</h2>
-      <p class="sub">22 errors, 2 blocked, 6 shortfalls, 1 warning. Four different answers, so four
+      <h2>4 · what is wrong with invalid-demo, and who fixes each one</h2>
+      <p class="sub">31 errors, 2 blocked, 1 shortfall, 1 warning. Four different answers, so four
         different lists.</p>
 
       <div class="grid">
         <div>
           <div class="sev e">
-            <h3>Errors · 22</h3>
+            <h3>Errors · 31</h3>
             <p>The package is wrong. It does not import.</p>
+            <div class="find"><code>LEGACY_EVIDENCE_BY_LABEL</code> <span class="at">pathways[0].evidence</span>
+              <span class="msg">Evidence matched by display label. Two records sharing a label silently
+                become one. Use evidenceRefs with ids.</span></div>
+            <div class="find"><code>LEGACY_CONCEPT_TRIPLE</code> <span class="at">pathways[0].concept</span>
+              <span class="msg">A topic, section and point triple matched by prefix. Use syllabusRef
+                and conceptRef.</span></div>
+            <div class="find"><code>DIRECTIVE_NO_FAMILY</code> <span class="at">question.directive</span>
+              <span class="msg">"compare" has an answer shape and is in neither directive family. The
+                engine resolves it to causal by fallback and an imported package may not depend on
+                that.</span></div>
             <div class="find"><code>VOCAB_REF_NOT_AN_ID</code> <span class="at">question.vocabRefs[0]</span>
               <span class="msg">"market segmentation" looks like a term rather than an id. Vocabulary is
                 named by id and never matched by its own text.</span></div>
             <div class="find"><code>VOCAB_RECORD_PARTIAL</code> <span class="at">question.vocabRefs[2]</span>
-              <span class="msg">bus.vocab.halfway exists and is half written: subject, example missing.</span></div>
+              <span class="msg">business.vocab.halfway is half written: subject missing.</span></div>
             <div class="find"><code>PROVIDES_CONFLICT</code> <span class="at">provides.concepts</span>
-              <span class="msg">bus.concept.people already exists. An import adds records; it does not
+              <span class="msg">business.concept.people already exists. An import adds records; it does not
                 overwrite them.</span></div>
             <div class="find"><code>BANDS_WITHOUT_SOURCE</code> <span class="at">question.criteria</span>
               <span class="msg">Band descriptors are present with no source named. Marking language is
                 quoted from somewhere or it is invented.</span></div>
-            <p class="note">18 more, each naming its own path.</p>
+            <p class="note">27 more, each naming its own path.</p>
           </div>
 
           <div class="sev b">
             <h3>Blocked · 2</h3>
             <p>The package is right. The library has not caught up. Nothing here is the author's to fix.</p>
             <div class="find"><code>DEPENDENCY_ABSENT</code> <span class="at">requires.vocabulary</span>
-              <span class="msg">bus.vocab.nowhere is declared, and this library does not have it.</span></div>
+              <span class="msg">business.vocab.nowhere is declared, and this library does not have it.</span></div>
             <div class="find"><code>DEPENDENCY_ABSENT</code> <span class="at">requires.syllabus</span>
-              <span class="msg">bus.syllabus.marketing.marketing-strategies.nonexistent-point is declared,
+              <span class="msg">business.marketing.marketing-strategies.nonexistent is declared,
                 and this library does not have it.</span></div>
           </div>
         </div>
 
         <div>
           <div class="sev s">
-            <h3>Shortfalls · 6</h3>
-            <p>Well formed, and below the level it claims. Importable at the level it reaches, once
-              somebody says so.</p>
-            <div class="find"><code>SHORTFALL_NO_TEACHING</code>
-              <span class="msg">0 of 2 pathways carry a lesson.</span></div>
-            <div class="find"><code>SHORTFALL_NO_LADDER</code>
-              <span class="msg">0 of 2 pathways carry a full help ladder.</span></div>
-            <div class="find"><code>SHORTFALL_EVIDENCE_UNSOURCED</code>
-              <span class="msg">0 of 2 pathways have evidence carrying a source.</span></div>
-            <div class="btnrow">
-              <button class="btn" disabled>Import as guided instead</button>
-            </div>
-            <p class="note">Offered, never taken automatically. A question quietly demoted is a question
-              nobody knows the state of.</p>
+            <h3>Shortfalls &middot; 1</h3>
+            <p>Well formed, and something it asks for cannot be given in full. It imports, and it
+              is recorded.</p>
+            <div class="find"><code>VOCAB_NOT_YET_DISPLAYABLE</code> <span class="at">requires.vocabulary</span>
+              <span class="msg">1 term this package asks for teaches on the Learn surface and is not
+                offered in the vocabulary panel: business.vocab.processes, missing plain and
+                example.</span></div>
+            <p class="note">Reported once, about the record. Not twenty-one times, about each place
+              a package happens to name it.</p>
           </div>
 
           <div class="sev w">
@@ -197,31 +202,59 @@
     </div>
 
     <div class="card">
-      <h2>5 · readiness for bus.mkt-01</h2>
-      <p class="sub">Measured from the package. Seven dimensions, because one number would average
-        away the row that matters.</p>
+      <h2>5 · what mkt-01 reaches</h2>
+      <p class="sub">Six capabilities, climbed independently. Falling short of one is not an error
+        and is never a silent downgrade.</p>
       <table>
-        <tr><th>dimension</th><th>have</th><th></th></tr>
+        <tr><th>capability</th><th></th><th></th></tr>
+        <tr><td class="d">importable</td><td><span class="pill ok">reached</span></td><td>parses, resolves, can be stored</td></tr>
+        <tr><td class="d">writing ready</td><td><span class="pill ok">reached</span></td><td>a student can write against it</td></tr>
+        <tr><td class="d">pathway guided</td><td><span class="pill ok">reached</span></td><td>twelve authored arguments</td></tr>
+        <tr><td class="d">learning complete</td><td><span class="pill bad">not reached</span></td><td>4 of 12 carry a lesson</td></tr>
+        <tr><td class="d">assessment complete</td><td><span class="pill ok">reached</span></td><td>decode, requirements, bands and a source</td></tr>
+        <tr><td class="d">evidence complete</td><td><span class="pill bad">not reached</span></td><td>0 of 12 carry a sourced item</td></tr>
+      </table>
+      <p class="note">Fully guided, and not one evidence item carries a source. That is the row a
+        single score would hide.</p>
+      <table style="margin-top:14px">
+        <tr><th>measured</th><th></th><th></th></tr>
         <tr><td class="d">guidance</td><td>12 of 12</td><td><span class="bar"><i style="width:100%"></i></span></td></tr>
         <tr><td class="d">teaching</td><td>4 of 12</td><td><span class="bar part"><i style="width:33%"></i></span></td></tr>
-        <tr><td class="d">concepts</td><td>5 of 5</td><td><span class="bar"><i style="width:100%"></i></span></td></tr>
-        <tr><td class="d">ladders</td><td>3 of 12</td><td><span class="bar part"><i style="width:25%"></i></span></td></tr>
+        <tr><td class="d">ladders</td><td>4 of 12</td><td><span class="bar part"><i style="width:33%"></i></span></td></tr>
         <tr><td class="d">evidence</td><td>0 of 12</td><td><span class="bar zero"><i style="width:100%"></i></span></td></tr>
-        <tr><td class="d">vocabulary</td><td>0 asked</td><td><span class="bar"><i style="width:0"></i></span></td></tr>
-        <tr><td class="d">recovery</td><td>yes</td><td><span class="bar"><i style="width:100%"></i></span></td></tr>
+        <tr><td class="d">evidence roles</td><td>0 of 21</td><td><span class="bar zero"><i style="width:100%"></i></span></td></tr>
+        <tr><td class="d">vocabulary</td><td>0 of 7</td><td><span class="bar zero"><i style="width:100%"></i></span></td></tr>
+        <tr><td class="d">recovery</td><td>1 of 1</td><td><span class="bar"><i style="width:100%"></i></span></td></tr>
       </table>
-      <p class="note">Fully guided, and not one evidence item carries a source. That is the row a single
-        score would hide, and it is the reason this question is not Learn and Build ready.</p>
+    </div>
+
+    <div class="card">
+      <h2>5 · support the engine cannot give</h2>
+      <p class="sub">Not a fault in any package. Reported so that nobody has to discover it from a
+        blank panel while a student is writing.</p>
+      <div class="diff"><span class="k stop">!</span><span class="t">mkt-02, and every judgement question
+        <small>sentence shapes: no shape is authored for the judgement family, so the shape panel is
+        withheld while a student writes</small></span></div>
+      <div class="diff"><span class="k stop">!</span><span class="t">invalid-demo
+        <small>directive family: "compare" is in no family, so every slot label, shape and piece of
+        guidance that depends on the family is withheld</small></span></div>
+      <div class="rule"><b>A capability gap is not a malformed package.</b> mkt-02 is structurally
+        valid and imports. What it cannot be given is a fact about the engine, and the report says
+        which support is missing rather than staying quiet about it.</div>
+      <div class="rule" style="margin-top:10px"><b>Shared library state, whether or not anything
+        references it.</b> 14 vocabulary records teach and 0 are displayable; 0 of 58 evidence
+        records carry a source. A half-written record nothing points at yet is invisible to any
+        report that only walks refs.</div>
     </div>
 
     <div class="card">
       <h2>5 · what publishing would change</h2>
       <p class="sub">Every write, listed before any of them happens.</p>
-      <div class="diff"><span class="k add">+</span><span class="t">bus.mkt-01<small>a new question in Business Studies, guided</small></span></div>
-      <div class="diff"><span class="k add">+</span><span class="t">anc.ah-religion<small>a new question in Ancient History, write only</small></span></div>
-      <div class="diff"><span class="k keep">=</span><span class="t">16 shared records referenced<small>concepts, evidence and syllabus points already in the libraries, unchanged</small></span></div>
+      <div class="diff"><span class="k add">+</span><span class="t">mkt-01<small>a new question in Business Studies, guided</small></span></div>
+      <div class="diff"><span class="k add">+</span><span class="t">ah-religion<small>a new question in Ancient History, importable</small></span></div>
+      <div class="diff"><span class="k keep">=</span><span class="t">23 shared records referenced<small>concepts, evidence and syllabus points already in the libraries, unchanged</small></span></div>
       <div class="diff"><span class="k keep">=</span><span class="t">0 shared records added<small>neither package provides one</small></span></div>
-      <div class="diff"><span class="k stop">x</span><span class="t">bus.demo-invalid<small>not published, and nothing from it is written</small></span></div>
+      <div class="diff"><span class="k stop">x</span><span class="t">invalid-demo<small>not published, and nothing from it is written</small></span></div>
       <div class="btnrow">
         <button class="btn primary">Publish 2 of 3</button>
         <button class="btn">Back to the files</button>

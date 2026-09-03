@@ -121,7 +121,14 @@ function questionRow(q, subject, evIndex) {
   // either the argument is too big or some of it belongs in supporting.
   const heavy = paths.filter(p => (((p.learning || {}).concepts || {}).primary || []).length >= 5)
     .map(p => p.id + " (" + ((p.learning.concepts.primary || []).length) + ")");
-  const ladder = paths.map(p => Object.keys(p.help || {}).length);
+  // The DEPTH of the deepest ladder, not the number of slots that have one.
+  // This counted Object.keys(p.help).length, which is how many slots carry help,
+  // and compared it to five: a pathway with one slot and a complete five rung
+  // ladder read as not having a full ladder, and a pathway with five slots of one
+  // rung each read as having one. mkt01-em-digital is the first of those.
+  const RUNGS = ["hint", "needs", "direction", "frame", "starter", "example"];
+  const depth = h => RUNGS.filter(k => h && h[k] && (typeof h[k] === "string" || h[k].text)).length;
+  const ladder = paths.map(p => Math.max(0, ...Object.keys(p.help || {}).map(s => depth(p.help[s]))));
   const full = ladder.filter(n => n >= FULL_LADDER).length;
   const some = ladder.filter(n => n > 0 && n < FULL_LADDER).length;
   const sourced = paths.filter(p => (p.evidence || []).some(e => {

@@ -577,7 +577,11 @@ const covSummary = coverage.summary(covRows);
 // drift from the content, and generated HERE for the same reason coverage is:
 // it loads and walks both content files, which is exactly the fallible work that
 // must finish before anything is published.
-const manText = JSON.stringify(require("./tools/package.js").manifest(), null, 1) + "\n";
+// The contract: the library manifest, the shared libraries, the JSON Schema, the
+// authoring guide, the three templates and the nineteen generated packages. All
+// of it derived from the two content files, so an authoring change that breaks
+// the format is caught here rather than by whoever tries to import next.
+const contract = require("./tools/contract/artefacts.js").artefacts(root);
 
 // Stage all three, then promote all three. Writing 1.1MB straight to the real path means
 // an interrupted write leaves a TRUNCATED marginal-preview.html sitting there
@@ -590,8 +594,7 @@ const manText = JSON.stringify(require("./tools/package.js").manifest(), null, 1
 const artefacts = [
   { dir: root, name: "marginal-preview.html", text: out },
   { dir: path.join(root, "docs"), name: "support-coverage.md", text: covText },
-  { dir: path.join(root, "packages"), name: "library-manifest.json", text: manText },
-].map(a => ({
+].concat(contract).map(a => ({
   text: a.text,
   dest: path.join(a.dir, a.name),
   tmp: path.join(a.dir, "." + a.name + ".tmp"),

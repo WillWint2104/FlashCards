@@ -1,0 +1,141 @@
+{
+  "schema": "marginal.question-package",
+  "version": 1,
+  "origin": {
+    "type": "bundled",
+    "packageId": null,
+    "author": null,
+    "authoredAt": null
+  },
+  "provenance": {
+    "reviewState": "in-source",
+    "publication": "published",
+    "notes": null
+  },
+  "requires": {
+    "vocabulary": [],
+    "concepts": [],
+    "lessons": [],
+    "evidence": [],
+    "syllabus": [
+      "business.marketing"
+    ],
+    "resources": [],
+    "criteria": []
+  },
+  "provides": {},
+  "question": {
+    "id": "mkt-04",
+    "subject": "business_studies",
+    "topicRef": "business.marketing",
+    "topicLabel": null,
+    "directive": "explain",
+    "text": "Explain how target markets influence the development of marketing strategies.",
+    "marks": 20,
+    "terms": {
+      "first": "Target markets",
+      "second": "Marketing strategies"
+    },
+    "overallArgument": "The chosen target market shapes every element of the marketing mix so that strategy fits the customer.",
+    "vocabRefs": [],
+    "studyRefs": []
+  },
+  "relationship": {
+    "intro": null,
+    "claims": [
+      {
+        "id": "mkt-04-claim-1",
+        "line": "Target market to product",
+        "left": {
+          "label": "Target market",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "product",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
+      },
+      {
+        "id": "mkt-04-claim-2",
+        "line": "Target market to price",
+        "left": {
+          "label": "Target market",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "price",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
+      },
+      {
+        "id": "mkt-04-claim-3",
+        "line": "Target market to promotion and e-marketing",
+        "left": {
+          "label": "Target market",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "promotion",
+            "criterionRef": null
+          },
+          {
+            "label": "e-marketing",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
+      },
+      {
+        "id": "mkt-04-claim-4",
+        "line": "Target market to place, people, processes and physical evidence",
+        "left": {
+          "label": "Target market",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "place",
+            "criterionRef": null
+          },
+          {
+            "label": "people",
+            "criterionRef": null
+          },
+          {
+            "label": "processes",
+            "criterionRef": null
+          },
+          {
+            "label": "physical evidence",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
+      }
+    ]
+  },
+  "decode": null,
+  "requirements": null,
+  "coreAnswer": null,
+  "workingAnswer": null,
+  "reasoning": null,
+  "areas": [],
+  "pathways": [],
+  "marking": {
+    "source": "generated",
+    "bands": null,
+    "bandSource": null,
+    "text": null
+  }
+}
