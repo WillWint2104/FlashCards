@@ -1,0 +1,140 @@
+{
+  "schema": "marginal.question-package",
+  "contractVersion": "1.0",
+  "origin": {
+    "type": "bundled",
+    "packageId": null,
+    "author": null,
+    "authoredAt": null
+  },
+  "provenance": {
+    "reviewState": "in-source",
+    "publication": "published",
+    "notes": null
+  },
+  "requires": {
+    "vocabulary": [],
+    "concepts": [],
+    "lessons": [],
+    "evidence": [],
+    "syllabus": [
+      "business.operations",
+      "business.operations.operations-strategies.performance-objectives.cost",
+      "business.operations.operations-strategies.performance-objectives.dependability",
+      "business.operations.operations-strategies.performance-objectives.quality",
+      "business.operations.operations-strategies.performance-objectives.speed"
+    ],
+    "resources": []
+  },
+  "provides": {},
+  "question": {
+    "id": "ops-01",
+    "subject": "business_studies",
+    "topicRef": "business.operations",
+    "topicLabel": null,
+    "directive": "how can",
+    "text": "How can operations strategies contribute to the achievement of performance objectives?",
+    "marks": 20,
+    "terms": {
+      "first": "Operations strategies",
+      "second": "Performance objectives"
+    },
+    "overallArgument": "Operations strategies influence business performance by changing the quality, speed, dependability, flexibility, customisation and cost of outputs.",
+    "vocabRefs": [],
+    "studyRefs": []
+  },
+  "relationship": {
+    "intro": null,
+    "claims": [
+      {
+        "id": "ops-01-claim-1",
+        "line": "Technology to speed and cost",
+        "left": {
+          "label": "Technology",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "speed",
+            "criterionRef": "business.operations.operations-strategies.performance-objectives.speed"
+          },
+          {
+            "label": "cost",
+            "criterionRef": "business.operations.operations-strategies.performance-objectives.cost"
+          }
+        ],
+        "pathwayRefs": []
+      },
+      {
+        "id": "ops-01-claim-2",
+        "line": "Inventory management to dependability and cost",
+        "left": {
+          "label": "Inventory management",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "dependability",
+            "criterionRef": "business.operations.operations-strategies.performance-objectives.dependability"
+          },
+          {
+            "label": "cost",
+            "criterionRef": "business.operations.operations-strategies.performance-objectives.cost"
+          }
+        ],
+        "pathwayRefs": []
+      },
+      {
+        "id": "ops-01-claim-3",
+        "line": "Quality management to quality",
+        "left": {
+          "label": "Quality management",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "quality",
+            "criterionRef": "business.operations.operations-strategies.performance-objectives.quality"
+          }
+        ],
+        "pathwayRefs": []
+      },
+      {
+        "id": "ops-01-claim-4",
+        "line": "Supply chain management to dependability and cost",
+        "left": {
+          "label": "Supply chain management",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "dependability",
+            "criterionRef": "business.operations.operations-strategies.performance-objectives.dependability"
+          },
+          {
+            "label": "cost",
+            "criterionRef": "business.operations.operations-strategies.performance-objectives.cost"
+          }
+        ],
+        "pathwayRefs": []
+      }
+    ]
+  },
+  "decode": null,
+  "requirements": null,
+  "coreAnswer": null,
+  "workingAnswer": null,
+  "reasoning": null,
+  "areas": [],
+  "pathways": [],
+  "marking": {
+    "source": "generated",
+    "bands": null,
+    "bandSource": null,
+    "text": null
+  }
+}

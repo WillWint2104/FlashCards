@@ -1,0 +1,88 @@
+{
+  "schema": "marginal.question-package",
+  "contractVersion": "1.0",
+  "origin": {
+    "type": "bundled",
+    "packageId": "",
+    "author": "",
+    "authoredAt": ""
+  },
+  "provenance": {
+    "reviewState": "draft",
+    "publication": "unpublished",
+    "notes": ""
+  },
+  "requires": {
+    "library": {}
+  },
+  "provides": {
+    "library": {}
+  },
+  "question": {
+    "id": "",
+    "subject": "",
+    "topicRef": null,
+    "topicLabel": "",
+    "directive": "account for",
+    "text": "",
+    "marks": 40,
+    "overallArgument": "",
+    "vocabRefs": [],
+    "studyRefs": []
+  },
+  "relationship": {
+    "intro": "",
+    "claims": [
+      {
+        "id": "",
+        "line": "",
+        "left": {
+          "label": ""
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
+      }
+    ]
+  },
+  "decode": {
+    "verbMeaning": "",
+    "plainEnglish": "",
+    "highlights": [
+      {
+        "anchor": "",
+        "note": ""
+      }
+    ],
+    "cover": {
+      "forEach": ""
+    }
+  },
+  "requirements": {
+    "concepts": [],
+    "relationships": [],
+    "accomplish": [],
+    "syllabusSummary": ""
+  },
+  "coreAnswer": {
+    "mode": "causal",
+    "statement": "",
+    "acceptableThesis": "",
+    "checklist": []
+  },
+  "workingAnswer": {
+    "base": ""
+  },
+  "marking": {
+    "source": "authored",
+    "bands": null,
+    "bandSource": ""
+  },
+  "areas": [],
+  "pathways": []
+}

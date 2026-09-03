@@ -1,0 +1,252 @@
+{
+  "schema": "marginal.question-package",
+  "contractVersion": "1.0",
+  "origin": {
+    "type": "imported",
+    "packageId": "demo.invalid",
+    "author": null,
+    "authoredAt": null
+  },
+  "provenance": {
+    "reviewState": "draft",
+    "publication": "unpublished",
+    "notes": "Authored to be wrong. Every fault is one an author could plausibly make and each is a different KIND of fault, so the report has to keep them apart rather than counting them. Half of them are the old prose joins, which is how a half-migrated package would look. The companion fixture unsupported-directive-demo.json is the opposite case: entirely valid, and asking for support that does not exist."
+  },
+  "requires": {
+    "vocabulary": [
+      "business.vocab.halfway",
+      "business.vocab.nowhere",
+      "business.vocab.positioning",
+      "business.vocab.processes"
+    ],
+    "concepts": [
+      "business.concept.people"
+    ],
+    "lessons": [],
+    "evidence": [],
+    "resources": [
+      "business.resource.chapter-six"
+    ],
+    "syllabus": [
+      "business.marketing",
+      "business.marketing.marketing-strategies.nonexistent"
+    ],
+    "criteria": []
+  },
+  "provides": {
+    "vocabulary": {
+      "business.vocab.halfway": {
+        "id": "business.vocab.halfway",
+        "term": "psychographic"
+      },
+      "business.vocab.positioning": {
+        "id": "business.vocab.positioning",
+        "term": "positioning",
+        "subject": "the place a product holds in the mind of the target market",
+        "plain": "where something sits compared with the things around it",
+        "example": "Its higher price positions it above the supermarket brands."
+      }
+    },
+    "concepts": {
+      "business.concept.people": {
+        "id": "business.concept.people",
+        "kind": "domain",
+        "requiresTeaching": "always",
+        "oneLine": "a rewritten copy of a record three questions already point at",
+        "title": "People",
+        "quick": "This would silently replace the one in the library.",
+        "terms": [
+          {
+            "term": "people",
+            "meaning": "a second definition system, arriving through an import"
+          }
+        ]
+      }
+    },
+    "resources": {
+      "business.resource.chapter-six": {
+        "id": "business.resource.chapter-six",
+        "label": "Chapter 6",
+        "provider": "school drive"
+      }
+    }
+  },
+  "question": {
+    "id": "Mkt 02!",
+    "subject": "business_studies",
+    "topic": "Marketing",
+    "qtype": "C",
+    "topicRef": "business.marketing",
+    "topicLabel": "Marketing",
+    "directive": "ponder",
+    "text": "Ponder how people and processes affect the customer experience.",
+    "marks": 0,
+    "terms": {
+      "first": "people",
+      "second": null
+    },
+    "overallArgument": "People and processes both shape what the customer gets \u2014 but not equally.",
+    "vocabRefs": [
+      "market segmentation",
+      {
+        "id": "business.vocab.nowhere",
+        "role": "topic-context"
+      },
+      {
+        "id": "business.vocab.halfway",
+        "role": "topic-context"
+      },
+      {
+        "id": "business.vocab.positioning",
+        "role": "key-term"
+      }
+    ],
+    "studyRefs": [
+      "business.resource.chapter-six"
+    ]
+  },
+  "relationship": {
+    "intro": "Two of the seven elements, and what each one changes.",
+    "claims": [
+      {
+        "id": "demo-claim-1",
+        "line": "training changes what the customer gets",
+        "left": {
+          "label": "training",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "service consistency",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": [
+          "demo-not-a-pathway"
+        ]
+      }
+    ]
+  },
+  "decode": {
+    "verbMeaning": "Show how or why one thing affects another.",
+    "highlights": [
+      {
+        "anchor": "Evaluate",
+        "kind": "directive",
+        "label": "what you need to do",
+        "note": "The anchor is highlighted in the stem, and this one is not in it."
+      }
+    ]
+  },
+  "requirements": null,
+  "coreAnswer": null,
+  "workingAnswer": null,
+  "reasoning": null,
+  "areas": [
+    {
+      "id": "people",
+      "label": "people",
+      "kind": "question-area",
+      "syllabusRefs": [],
+      "vocabRefs": [],
+      "guidance": {
+        "topic": {
+          "direct": "Name the staffing decision, then say what it changes."
+        }
+      }
+    },
+    {
+      "id": "people",
+      "label": "people again",
+      "kind": "question-area",
+      "syllabusRefs": [],
+      "vocabRefs": [],
+      "guidance": {}
+    }
+  ],
+  "pathways": [
+    {
+      "id": "demo-people-training",
+      "areaRef": "people",
+      "short": "training -> consistency",
+      "relationship": "training changes what the customer gets",
+      "fromLabel": "training",
+      "meaning": "A staffing decision reaches the customer through what those staff were taught to do.",
+      "whatToProve": "that the change was in what staff were taught",
+      "commonMistake": "describing the training instead of what it changed",
+      "mechanism": {
+        "status": "authored",
+        "text": "staff are trained to the standard",
+        "note": null
+      },
+      "concept": {
+        "topic": "marketing",
+        "section": "marketing strategies",
+        "point": "people"
+      },
+      "evidence": [
+        "App, loyalty rewards and mobile ordering"
+      ],
+      "evidenceRefs": [
+        {
+          "ref": "mcdonalds.marketing.a-record-nobody-has",
+          "role": "proof",
+          "why": null,
+          "limits": null
+        }
+      ],
+      "learning": {
+        "status": "draft",
+        "concepts": {
+          "primary": [
+            "people",
+            "rostering"
+          ]
+        }
+      },
+      "guides": {
+        "explain": "Say what the training changed."
+      },
+      "guidance": {}
+    },
+    {
+      "id": "demo-people-training",
+      "areaRef": "servicescape",
+      "short": "surroundings -> expectation",
+      "relationship": "the room changes what the customer expects",
+      "choiceMeaning": null,
+      "mechanism": {
+        "status": "done",
+        "text": null,
+        "note": null
+      },
+      "learning": {
+        "status": "unreviewed"
+      },
+      "contribution": {
+        "role": "proof",
+        "note": ""
+      },
+      "evidenceRefs": [],
+      "vocabRefs": [
+        {
+          "id": "business.vocab.processes",
+          "role": "topic-context"
+        }
+      ],
+      "guidance": {}
+    }
+  ],
+  "marking": {
+    "source": "authored",
+    "bands": [
+      {
+        "range": "17-20",
+        "text": "a band descriptor nobody sourced"
+      }
+    ],
+    "bandSource": null,
+    "text": null
+  }
+}

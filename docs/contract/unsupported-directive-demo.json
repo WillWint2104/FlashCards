@@ -1,0 +1,76 @@
+{
+  "schema": "marginal.question-package",
+  "contractVersion": "1.0",
+  "origin": {
+    "type": "imported",
+    "packageId": "demo.unsupported",
+    "author": null,
+    "authoredAt": null
+  },
+  "provenance": {
+    "reviewState": "draft",
+    "publication": "unpublished",
+    "notes": "Valid, and asking for something Marginal cannot do yet. Compare is a real directive with an authored answer shape and no directive family, so guided writing cannot serve it. The package imports; the argument scaffolding is withheld rather than defaulted to causal, which is what the engine does on its own."
+  },
+  "requires": {
+    "vocabulary": [],
+    "concepts": [],
+    "lessons": [],
+    "evidence": [],
+    "resources": [],
+    "syllabus": [
+      "business.marketing"
+    ]
+  },
+  "provides": {},
+  "question": {
+    "id": "demo-compare",
+    "subject": "business_studies",
+    "topicRef": "business.marketing",
+    "topicLabel": null,
+    "directive": "compare",
+    "marks": 12,
+    "text": "Compare the effect of price and promotion on the sales of one product.",
+    "terms": {
+      "first": null,
+      "second": null
+    },
+    "overallArgument": "Price and promotion move sales through different mechanisms, and one of them lasts longer than the other.",
+    "vocabRefs": [],
+    "studyRefs": []
+  },
+  "relationship": {
+    "intro": "Two elements of the mix, held side by side rather than one acting on the other.",
+    "claims": [
+      {
+        "id": "demo-compare-claim-1",
+        "line": "price moves sales faster than promotion does",
+        "left": {
+          "label": "price",
+          "conceptRef": null
+        },
+        "relation": "affects",
+        "right": [
+          {
+            "label": "sales",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
+      }
+    ]
+  },
+  "decode": null,
+  "requirements": null,
+  "coreAnswer": null,
+  "workingAnswer": null,
+  "reasoning": null,
+  "areas": [],
+  "pathways": [],
+  "marking": {
+    "source": "generated",
+    "bands": null,
+    "bandSource": "general HSC band expectations",
+    "text": null
+  }
+}

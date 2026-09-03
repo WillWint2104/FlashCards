@@ -1,0 +1,124 @@
+{
+  "schema": "marginal.question-package",
+  "contractVersion": "1.0",
+  "origin": {
+    "type": "bundled",
+    "packageId": null,
+    "author": null,
+    "authoredAt": null
+  },
+  "provenance": {
+    "reviewState": "in-source",
+    "publication": "published",
+    "notes": null
+  },
+  "requires": {
+    "vocabulary": [],
+    "concepts": [],
+    "lessons": [],
+    "evidence": [],
+    "syllabus": [
+      "business.finance"
+    ],
+    "resources": []
+  },
+  "provides": {},
+  "question": {
+    "id": "fin-02",
+    "subject": "business_studies",
+    "topicRef": "business.finance",
+    "topicLabel": null,
+    "directive": "explain",
+    "text": "Explain how financial strategies can achieve liquidity and profitability objectives.",
+    "marks": 20,
+    "terms": {
+      "first": "Financial management strategies",
+      "second": "Liquidity and profitability"
+    },
+    "overallArgument": "Financial strategies can achieve both liquidity and profitability, but the same strategy can help one objective while costing the other.",
+    "vocabRefs": [],
+    "studyRefs": []
+  },
+  "relationship": {
+    "intro": null,
+    "claims": [
+      {
+        "id": "fin-02-claim-1",
+        "line": "Distribution of payments to liquidity",
+        "left": {
+          "label": "Distribution of payments",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "liquidity",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
+      },
+      {
+        "id": "fin-02-claim-2",
+        "line": "Factoring and early-payment discounts to liquidity",
+        "left": {
+          "label": "Factoring and early-payment discounts",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "liquidity",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
+      },
+      {
+        "id": "fin-02-claim-3",
+        "line": "Working capital controls to liquidity",
+        "left": {
+          "label": "Working capital controls",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "liquidity",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
+      },
+      {
+        "id": "fin-02-claim-4",
+        "line": "Cost and revenue controls to profitability",
+        "left": {
+          "label": "Cost and revenue controls",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "profitability",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
+      }
+    ]
+  },
+  "decode": null,
+  "requirements": null,
+  "coreAnswer": null,
+  "workingAnswer": null,
+  "reasoning": null,
+  "areas": [],
+  "pathways": [],
+  "marking": {
+    "source": "generated",
+    "bands": null,
+    "bandSource": null,
+    "text": null
+  }
+}

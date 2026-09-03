@@ -1,0 +1,57 @@
+{
+  "schema": "marginal.question-package",
+  "contractVersion": "1.0",
+  "origin": {
+    "type": "bundled",
+    "packageId": null,
+    "author": null,
+    "authoredAt": null
+  },
+  "provenance": {
+    "reviewState": "in-source",
+    "publication": "published",
+    "notes": null
+  },
+  "requires": {
+    "vocabulary": [],
+    "concepts": [],
+    "lessons": [],
+    "evidence": [],
+    "syllabus": [],
+    "resources": []
+  },
+  "provides": {},
+  "question": {
+    "id": "ah-geography",
+    "subject": "ancient_history",
+    "topicRef": null,
+    "topicLabel": "Features of ancient societies: environment and economy",
+    "directive": "to what extent",
+    "text": "To what extent did geography shape the development of one ancient society you have studied?",
+    "marks": 20,
+    "terms": {
+      "first": null,
+      "second": null
+    },
+    "overallArgument": null,
+    "vocabRefs": [],
+    "studyRefs": []
+  },
+  "relationship": {
+    "intro": null,
+    "claims": []
+  },
+  "decode": null,
+  "requirements": null,
+  "coreAnswer": null,
+  "workingAnswer": null,
+  "reasoning": null,
+  "areas": [],
+  "pathways": [],
+  "marking": {
+    "source": "generated",
+    "bands": null,
+    "bandSource": null,
+    "text": null
+  }
+}

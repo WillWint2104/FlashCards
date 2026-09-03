@@ -121,7 +121,14 @@ function questionRow(q, subject, evIndex) {
   // either the argument is too big or some of it belongs in supporting.
   const heavy = paths.filter(p => (((p.learning || {}).concepts || {}).primary || []).length >= 5)
     .map(p => p.id + " (" + ((p.learning.concepts.primary || []).length) + ")");
-  const ladder = paths.map(p => Object.keys(p.help || {}).length);
+  // The DEPTH of the deepest ladder, not the number of slots that have one.
+  // This counted Object.keys(p.help).length, which is how many slots carry help,
+  // and compared it to five: a pathway with one slot and a complete five rung
+  // ladder read as not having a full ladder, and a pathway with five slots of one
+  // rung each read as having one. mkt01-em-digital is the first of those.
+  const RUNGS = ["hint", "needs", "direction", "frame", "starter", "example"];
+  const depth = h => RUNGS.filter(k => h && h[k] && (typeof h[k] === "string" || h[k].text)).length;
+  const ladder = paths.map(p => Math.max(0, ...Object.keys(p.help || {}).map(s => depth(p.help[s]))));
   const full = ladder.filter(n => n >= FULL_LADDER).length;
   const some = ladder.filter(n => n > 0 && n < FULL_LADDER).length;
   const sourced = paths.filter(p => (p.evidence || []).some(e => {
@@ -148,23 +155,37 @@ function questionRow(q, subject, evIndex) {
     ordinary: t.ordinary,
     routing: routing(q, subject),
   };
-  row.readiness = readinessOf(row);
+  row.capability = readinessOf(q.id);
+  row.readiness = row.capability.headline;
   return row;
 }
-// Thresholds by mode. A question can be perfectly usable for independent
-// practice and nowhere near ready to carry a student who knows nothing, and
-// saying so is the whole point.
-function readinessOf(r) {
-  const guided = r.pathways > 0 && r.guidance === r.pathways;
-  const learn = guided
-    && r.lessons === r.pathways
-    && r.conceptsExplained === r.conceptsNamed
-    && r.laddersFull === r.pathways
-    && r.evidenceSourced === r.pathways
-    && r.recovery;
-  if (learn) return "Learn & Build";
-  if (guided) return "Guided practice";
-  return "Independent practice";
+// Readiness is NOT decided here. tools/contract/capabilities.js holds the one
+// definition of what earns each state, and this file evaluates it against the
+// package a question converts to. Two implementations of "what counts as
+// guided" disagree the first time one of them is edited, and the disagreement
+// shows up as two tools reporting different states for the same question.
+//
+// This reads through the contract on purpose: the question is the same question
+// whether the runtime got it from source or from an import, so the answer has to
+// be too.
+let CONTRACT = null;
+function contract() {
+  if (CONTRACT) return CONTRACT;
+  const caps = require("./contract/capabilities.js");
+  const directives = require("./contract/directives.js");
+  const clib = require("./contract/libraries.js");
+  const { packagize } = require("./contract/packagize.js");
+  return (CONTRACT = { caps: caps, REG: directives.registry(), man: clib.manifest(),
+    rowFor: directives.rowFor, packagize: packagize });
+}
+function readinessOf(questionId) {
+  const c = contract();
+  const pkg = c.packagize(questionId).pkg;
+  const dims = c.caps.evaluate(pkg, c.man, c.rowFor(c.REG, (pkg.question || {}).directive), false);
+  const reached = k => dims[k].status === "reached";
+  return { headline: c.caps.headline(dims),
+    reached: c.caps.ORDER.filter(reached), missing: c.caps.ORDER.filter(k => !reached(k)),
+    fullyAuthored: c.caps.ORDER.every(reached) };
 }
 
 function report() {
@@ -326,11 +347,11 @@ function summary(rows) {
   const l = rows.reduce((n, r) => n + r.laddersFull, 0);
   const c = rows.reduce((n, r) => n + (r.conceptsNamed - r.conceptsExplained), 0);
   const e = rows.reduce((n, r) => n + r.evidenceSourced, 0);
-  const ready = rows.filter(r => r.readiness === "Learn & Build").length;
+  const ready = rows.filter(r => r.capability && r.capability.fullyAuthored).length;
   const s = rows.reduce((n, r) => n + r.lessons, 0);
   const d = rows.reduce((n, r) => n + r.reviewed, 0);
   return "support: " + frac(d, p) + " pathways reviewed, " + frac(s, p) + " teach themselves, " + frac(l, p) + " carry a full ladder, " + frac(e, p) + " have sourced evidence, " +
-    c + " concepts are named but never explained, " + frac(ready, rows.length) + " questions are Learn & Build ready" +
+    c + " concepts are named but never explained, " + frac(ready, rows.length) + " questions are fully authored" +
     ", " + vocabLine();
 }
 module.exports = { report, format, summary, teachable, vocabulary, vocabCoverage, vocabLine, termsOf, readinessOf, FULL_LADDER };

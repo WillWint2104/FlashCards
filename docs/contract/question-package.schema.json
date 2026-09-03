@@ -1,0 +1,954 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://marginal.app/contract/question-package-v1.json",
+  "title": "Marginal QuestionPackage v1",
+  "description": "Generated from tools/contract/fields.js. Structural validity only: capability is measured by the validator and reported by name, never enforced here, because a package that honestly sits at a lower capability is valid.",
+  "type": "object",
+  "properties": {
+    "schema": {
+      "description": "what kind of file this is: the package type. A validator reads this before anything else, so it never guesses at content it cannot interpret. Shared libraries and manifests carry their own value here, which is how one directory holds several kinds of file.",
+      "const": "marginal.question-package"
+    },
+    "contractVersion": {
+      "description": "the contract this package was authored against, as major.minor. The major number is the compatibility promise: a reader that does not know it refuses the file rather than interpreting fields it may be wrong about. The minor number rises when the contract gains something a v1 reader can safely ignore, so a package authored later than the reader still validates against what the reader does know, and says so.",
+      "type": "string",
+      "pattern": "^1\\.\\d+$"
+    },
+    "origin": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "description": "whether the question shipped with the application or arrived through an import. Where a question came from is metadata beside its id and never part of it.",
+          "enum": [
+            "bundled",
+            "imported"
+          ]
+        },
+        "packageId": {
+          "description": "the authoring bundle this question arrived in, for tracing a set back to its source.",
+          "type": "string",
+          "minLength": 1
+        },
+        "author": {
+          "description": "who authored the question, for review rather than for display.",
+          "type": "string",
+          "minLength": 1
+        },
+        "authoredAt": {
+          "description": "when it was authored. A date, not a timestamp: nothing needs the minute.",
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        }
+      },
+      "required": [
+        "type"
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "properties": {
+        "reviewState": {
+          "description": "how far through review this question is. A draft may be imported and is never served to a student.",
+          "enum": [
+            "draft",
+            "in-review",
+            "in-source",
+            "approved"
+          ]
+        },
+        "publication": {
+          "description": "whether a student may be given this question at all, independent of how complete it is.",
+          "enum": [
+            "unpublished",
+            "published",
+            "withdrawn"
+          ]
+        },
+        "notes": {
+          "description": "anything the next reviewer needs to know. Never rendered.",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "reviewState",
+        "publication"
+      ]
+    },
+    "requires": {
+      "type": "object",
+      "additionalProperties": {
+        "description": "every shared id this package references, by library. Generated from the package rather than authored beside it: a dependency list that can disagree with the package it describes is a second source of truth. The importer recomputes it and reports any difference in both directions, so an omitted library is caught as a mismatch rather than as a missing field.",
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "provides": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": {
+            "description": "shared records this package contributes to a library. A package may bring a record the library does not have. It may never replace one it does: a definition three other questions point at is not this import's to rewrite.",
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "May be null. Absent is a capability fact, reported by name, not a silent gap."
+    },
+    "question": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "description": "the stable name of this question in one namespace shared by bundled and imported questions alike. A collision is an import-blocking error and never an implicit overwrite.",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "subject": {
+          "description": "which subject's marking criteria, paragraph models and libraries apply.",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(_[a-z0-9]+)*$"
+        },
+        "topicRef": {
+          "description": "the syllabus node this question sits in. A ref, because the engine used to recover the topic from a display label with a keyword table: four word lists, first match wins, null if none hit. Names a record in the syllabus library.",
+          "type": "string",
+          "pattern": "^[a-z0-9]+([.-][a-z0-9]+)*$"
+        },
+        "topicLabel": {
+          "description": "the topic in words, for a subject that has no syllabus library at all. Never present beside topicRef: a question carries a ref or a label.",
+          "type": "string",
+          "minLength": 1
+        },
+        "directive": {
+          "description": "the command verb, which decides the directive family and therefore every slot label, sentence shape and piece of guidance downstream. Nothing else decides it. It must be in the directive registry: a command outside it does not import, and a command in it that assigns no family gives a valid question whose family-dependent guidance is withheld rather than defaulted.",
+          "enum": [
+            "account for",
+            "analyse",
+            "assess",
+            "critically",
+            "describe",
+            "discuss",
+            "evaluate",
+            "examine",
+            "explain",
+            "how can",
+            "how do",
+            "how does",
+            "outline",
+            "to what extent"
+          ]
+        },
+        "text": {
+          "description": "the question exactly as a student reads it. Every decode highlight anchors into this string.",
+          "type": "string",
+          "minLength": 1
+        },
+        "marks": {
+          "description": "what the question is worth, which sets the expected length and the band table.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 40
+        },
+        "terms": {
+          "type": "object",
+          "properties": {
+            "first": {
+              "description": "the first of the two ends this question joins. The sentence shapes bind to it by name. It is NOT vocabulary: it carries no meaning and is never displayed as a definition.",
+              "type": "string",
+              "minLength": 1
+            },
+            "second": {
+              "description": "the second end. Both are present or neither is.",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "overallArgument": {
+          "description": "the one line the whole essay is arguing, which every paragraph is held against.",
+          "type": "string",
+          "minLength": 1
+        },
+        "vocabRefs": {
+          "description": "the terms this question asks for by name. Vocabulary reaches a student because something named it, never because a term string appeared in prose.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/VocabRef"
+          }
+        },
+        "studyRefs": {
+          "description": "the reading for this question. A resource is a label and a link to material the school already holds; no resource bytes live in this repository. Each names a record in the resources library.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+([.-][a-z0-9]+)*$"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "subject",
+        "directive",
+        "text",
+        "marks"
+      ]
+    },
+    "relationship": {
+      "type": "object",
+      "properties": {
+        "intro": {
+          "description": "what this question's two ends actually are, in the author's words. It replaced a sentence the engine synthesised, which was only ever true of Operations questions.",
+          "type": "string",
+          "minLength": 1
+        },
+        "claims": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "description": "the stable name of one claim the essay makes, so a pathway can point at it.",
+                "type": "string",
+                "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+              },
+              "line": {
+                "description": "the claim as a student reads it in the planner.",
+                "type": "string",
+                "minLength": 1
+              },
+              "left": {
+                "type": "object",
+                "properties": {
+                  "label": {
+                    "description": "the cause end of the claim, authored. The engine used to recover it by splitting the line on the word \"to\".",
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "conceptRef": {
+                    "description": "the concept record behind the cause end, so a student can open it. Names a record in the concepts library.",
+                    "type": "string",
+                    "pattern": "^[a-z0-9]+([.-][a-z0-9]+)*$"
+                  }
+                },
+                "required": [
+                  "label"
+                ]
+              },
+              "relation": {
+                "description": "how the left end acts on the right end. Authored, because the difference between shaping and constraining is the argument.",
+                "enum": [
+                  "shapes",
+                  "affects",
+                  "constrains",
+                  "enables"
+                ]
+              },
+              "right": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "label": {
+                      "description": "the effect end of the claim.",
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "criterionRef": {
+                      "description": "the syllabus node the effect end names, so two questions arguing towards the same objective can be told they do. It points into the syllabus graph rather than at a separate criterion registry: a syllabus point that names its own parts in its title gives each part an id, and those are what a claim's right-hand end is. Names a record in the syllabus library.",
+                      "type": "string",
+                      "pattern": "^[a-z0-9]+([.-][a-z0-9]+)*$"
+                    }
+                  },
+                  "required": [
+                    "label"
+                  ]
+                }
+              },
+              "pathwayRefs": {
+                "description": "which authored arguments serve this claim, so the planner and the argument picker agree.",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "required": [
+              "id",
+              "line",
+              "relation"
+            ]
+          }
+        }
+      }
+    },
+    "decode": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "verbMeaning": {
+              "description": "what this directive verb demands, in this question, in plain words.",
+              "type": "string",
+              "minLength": 1
+            },
+            "plainEnglish": {
+              "description": "the question restated so a student who stalls on its wording can still start.",
+              "type": "string",
+              "minLength": 1
+            },
+            "highlights": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "anchor": {
+                    "description": "the exact substring of question.text this note attaches to. It must appear in the text or nothing on screen can be highlighted.",
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "note": {
+                    "description": "what that part of the stem is asking for.",
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "anchor",
+                  "note"
+                ]
+              }
+            },
+            "cover": {
+              "type": "object",
+              "properties": {
+                "forEach": {
+                  "description": "what has to be done for every element the question names.",
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "May be null. Absent is a capability fact, reported by name, not a silent gap."
+    },
+    "requirements": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "concepts": {
+              "description": "the ideas a full answer has to use. Labels, not refs: this is the requirement rail, and it states what the answer must contain rather than opening a lesson.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "relationships": {
+              "description": "the connections a full answer has to make, as distinct from the ideas it has to mention.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "accomplish": {
+              "description": "what the answer as a whole has to achieve, which is what separates a complete response from a correct one.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "syllabusSummary": {
+              "description": "the syllabus wording this question sits under, in the author's summary. Original words: syllabus text is not reproduced.",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "May be null. Absent is a capability fact, reported by name, not a silent gap."
+    },
+    "coreAnswer": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "description": "the shape the model answer takes. It does NOT decide the directive family: the command does, and a mode that disagrees with the command is the second answer to a settled question.",
+              "enum": [
+                "causal",
+                "judgement"
+              ]
+            },
+            "statement": {
+              "description": "the answer in one sentence, which the app compares a draft against.",
+              "type": "string",
+              "minLength": 1
+            },
+            "acceptableThesis": {
+              "description": "what any acceptable thesis must contain, so a student's own wording can be accepted rather than matched.",
+              "type": "string",
+              "minLength": 1
+            },
+            "checklist": {
+              "description": "what the finished answer must contain, item by item.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "positions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "lean": {
+                    "description": "which way a position leans. A judgement question that offers no qualified position is offering a choice between two absolutes.",
+                    "enum": [
+                      "positive",
+                      "qualified",
+                      "negative"
+                    ]
+                  }
+                }
+              }
+            },
+            "criteria": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "description": "the stable name of one criterion the judgement is made against.",
+                    "type": "string",
+                    "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "May be null. Absent is a capability fact, reported by name, not a silent gap."
+    },
+    "workingAnswer": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "base": {
+              "description": "the sentence the working answer builds from as the student picks arguments.",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "May be null. Absent is a capability fact, reported by name, not a silent gap."
+    },
+    "reasoning": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "cause": {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "description": "what the cause end of this question is called, so the app can tell a student their argument is running backwards.",
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "forward": {
+              "description": "the direction the argument must run, stated once.",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "May be null. Absent is a capability fact, reported by name, not a silent gap."
+    },
+    "areas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "the question-local name of one element this question names. Question-local by decision: an area is whatever the question genuinely needs.",
+            "type": "string",
+            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+          },
+          "label": {
+            "description": "the element in the words a student reads. It is never matched against syllabus prose: matching a label against text is the inference this contract exists to remove.",
+            "type": "string",
+            "minLength": 1
+          },
+          "syllabusRefs": {
+            "description": "the syllabus nodes this area claims to cover, if the author claims any. Claimed means resolved: a ref that names nothing is an error, and claiming nothing is valid. Each names a record in the syllabus library.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+([.-][a-z0-9]+)*$"
+            }
+          },
+          "guidance": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "direct": {
+                  "description": "the one line always shown for this slot when the student is writing about this area.",
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          "vocabRefs": {
+            "description": "terms this area asks for by name.",
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/VocabRef"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "label"
+        ]
+      }
+    },
+    "pathways": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "the stable name of one argument. It is written into saved sentences, so it can never change.",
+            "type": "string",
+            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+          },
+          "areaRef": {
+            "description": "which element of the question this argument belongs to.",
+            "type": "string",
+            "minLength": 1
+          },
+          "short": {
+            "description": "the argument in four or five words, as it appears on the choosing card.",
+            "type": "string",
+            "minLength": 1
+          },
+          "relationship": {
+            "description": "the relationship this argument asserts, in one line.",
+            "type": "string",
+            "minLength": 1
+          },
+          "left": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "description": "the cause end of this argument, authored. The engine carries an explicit rule that it is never derived from `short` or `relationship`, which is what makes it semantic rather than presentational.",
+                "type": "string",
+                "minLength": 1
+              },
+              "conceptRef": {
+                "description": "the concept record behind the cause end. Names a record in the concepts library.",
+                "type": "string",
+                "pattern": "^[a-z0-9]+([.-][a-z0-9]+)*$"
+              }
+            }
+          },
+          "choiceMeaning": {
+            "description": "what choosing this argument commits the student to. Without it the picker is a list of labels and a student cannot tell what they are choosing between.",
+            "type": "string",
+            "minLength": 1
+          },
+          "whatToProve": {
+            "description": "what this paragraph has to establish for the argument to hold.",
+            "type": "string",
+            "minLength": 1
+          },
+          "commonMistake": {
+            "description": "the mistake students actually make on this argument, named before they make it.",
+            "type": "string",
+            "minLength": 1
+          },
+          "mechanism": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "description": "whether the middle step of the relationship has been authored, is not needed, or has not been looked at.",
+                "enum": [
+                  "authored",
+                  "none-required",
+                  "unreviewed"
+                ]
+              },
+              "text": {
+                "description": "the middle step: how the cause reaches the effect. It is the difference between an argument and an assertion.",
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "conceptRef": {
+            "description": "the concept this argument sits on, which is what the Learn button opens. Names a record in the concepts library.",
+            "type": "string",
+            "pattern": "^[a-z0-9]+([.-][a-z0-9]+)*$"
+          },
+          "syllabusRef": {
+            "description": "the syllabus node this argument is written against. Replaces a {topic, section, point} prose triple matched by PREFIX: nine of the twenty-eight authored triples resolve only that way, so \"rewards\" finds \"rewards - monetary and non-monetary, individual or group, performance pay\". Names a record in the syllabus library.",
+            "type": "string",
+            "pattern": "^[a-z0-9]+([.-][a-z0-9]+)*$"
+          },
+          "learningRef": {
+            "description": "the lesson that teaches this argument to a student who does not know the content. A pathway may REFERENCE teaching; it may not contain a lesson. Names a record in the lessons library.",
+            "type": "string",
+            "pattern": "^[a-z0-9]+([.-][a-z0-9]+)*$"
+          },
+          "learning": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "description": "whether this argument has been through learning review. `none-required` is an authored decision that the argument needs no lesson, and is not the same as nobody having looked.",
+                "enum": [
+                  "authored",
+                  "none-required",
+                  "unreviewed"
+                ]
+              }
+            }
+          },
+          "evidenceRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "ref": {
+                  "description": "the evidence record this argument uses. Replaces a display LABEL matched case-insensitively against the bank, where two records sharing a label silently became one. Names a record in the evidence library.",
+                  "type": "string",
+                  "pattern": "^[a-z0-9]+([.-][a-z0-9]+)*$"
+                },
+                "role": {
+                  "description": "what this item is doing for THIS argument. Authored, never inferred: a record in the same topic is topic-context and nothing stronger, and even that is a claim the author makes.",
+                  "enum": [
+                    "relationship-support",
+                    "strategy-example",
+                    "outcome-evidence",
+                    "topic-context"
+                  ]
+                },
+                "why": {
+                  "description": "why this item supports this argument. It belongs to the pathway; the record belongs to the library.",
+                  "type": "string",
+                  "minLength": 1
+                },
+                "limits": {
+                  "description": "what this item does not prove, so a student does not claim more than it supports.",
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          "guidance": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "direct": {
+                  "description": "the one line always shown for this slot. `guides` and `help` were two fields for one idea; this is that idea with two depths.",
+                  "type": "string",
+                  "minLength": 1
+                },
+                "ladder": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "rung": {
+                        "description": "which step of the escalating ladder this is. Order is the meaning: each rung gives more than the one before it, and a full ladder is five rungs.",
+                        "enum": [
+                          "hint",
+                          "needs",
+                          "direction",
+                          "frame",
+                          "starter",
+                          "example"
+                        ]
+                      },
+                      "text": {
+                        "description": "what this rung actually offers.",
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "vocabRefs": {
+            "description": "terms this argument asks for by name.",
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/VocabRef"
+            }
+          },
+          "contribution": {
+            "type": "object",
+            "properties": {
+              "role": {
+                "description": "whether this argument supports the judgement, limits it, or holds conditionally. A judgement question offering only support is offering a case, not a judgement, so pathway-guided requires at least one limitation.",
+                "enum": [
+                  "support",
+                  "limitation",
+                  "conditional"
+                ]
+              }
+            }
+          }
+        },
+        "required": [
+          "id"
+        ]
+      }
+    },
+    "marking": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "description": "whether the marking guidance was authored for this question or assembled from the subject's criteria.",
+          "enum": [
+            "authored",
+            "generated"
+          ]
+        },
+        "bands": {
+          "description": "band descriptors. Present only with a source: marking language is quoted from somewhere or it is invented, and inventing it is the one thing this app may never do.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Band"
+          }
+        },
+        "bandSource": {
+          "description": "where the band descriptors came from.",
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  },
+  "required": [
+    "schema",
+    "contractVersion",
+    "origin",
+    "provenance",
+    "requires",
+    "question",
+    "relationship",
+    "areas",
+    "pathways",
+    "marking"
+  ],
+  "$defs": {
+    "VocabRef": {
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "description": "A term asked for by name. A bare term string here is the pattern the format replaced.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+([.-][a-z0-9]+)*$"
+        },
+        "role": {
+          "enum": [
+            "relationship-support",
+            "strategy-example",
+            "outcome-evidence",
+            "topic-context"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "Band": {
+      "type": "object",
+      "required": [
+        "range",
+        "text"
+      ],
+      "properties": {
+        "range": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        }
+      }
+    },
+    "VocabularyRecord": {
+      "type": "object",
+      "title": "VocabularyRecord",
+      "description": "Lives in the vocabulary library. Resolvable from: question, area, pathway.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+([.-][a-z0-9]+)*$"
+        },
+        "term": {
+          "description": "the term itself.",
+          "type": "string",
+          "minLength": 1
+        },
+        "subject": {
+          "description": "what it means in this course, which is usually narrower than the plain sense. A record with a term and no subject meaning is a word with nothing attached, which is the thing this library exists to prevent.",
+          "type": "string",
+          "minLength": 1
+        },
+        "plain": {
+          "description": "what the word means in ordinary English, for a student who has never met it. Without it the record still teaches on the Learn surface and is not offered in the vocabulary panel.",
+          "type": "string",
+          "minLength": 1
+        },
+        "example": {
+          "description": "the term doing its job in a sentence, in a context other than this question.",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "id",
+        "term",
+        "subject"
+      ]
+    },
+    "ConceptRecord": {
+      "type": "object",
+      "title": "ConceptRecord",
+      "description": "Lives in the concepts library. Resolvable from: pathway, learning.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+([.-][a-z0-9]+)*$"
+        },
+        "requiresTeaching": {
+          "description": "whether this concept always needs teaching, needs it only in context, or never does. It was authored as the boolean true and as the string \"contextual\", and a field with two types is an unknown-enum fault waiting to happen.",
+          "enum": [
+            "always",
+            "contextual",
+            "never"
+          ]
+        },
+        "vocabRefs": {
+          "description": "the terms this concept defines, as refs. Concepts used to own {term, meaning} pairs directly, which made two definition systems; vocabulary has one authority and this is how a concept points into it.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/VocabRef"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "requiresTeaching"
+      ]
+    },
+    "EvidenceRecord": {
+      "type": "object",
+      "title": "EvidenceRecord",
+      "description": "Lives in the evidence library. Resolvable from: pathway.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+([.-][a-z0-9]+)*$"
+        },
+        "source": {
+          "description": "where the fact came from. 0 of 58 records currently carry one, so no question can reach evidence-complete today. That is the report telling the truth about the content, and the requirement is not weakened to make the top state reachable.",
+          "type": "string",
+          "minLength": 1
+        },
+        "verify": {
+          "description": "that the figure moves and the student should check a current one themselves.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "SyllabusNode": {
+      "type": "object",
+      "title": "SyllabusNode",
+      "description": "Lives in the syllabus library. Resolvable from: question, area, pathway.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+([.-][a-z0-9]+)*$"
+        },
+        "legacyTerms": {
+          "description": "the term strings that sit beside a syllabus point in the source content. They have no meanings anywhere. Topic matching and the learning allowlist read them; nothing displays them, and they can never satisfy a vocabRef, because a ref names an id and a term string in a ref position is an error.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "ResourceRecord": {
+      "type": "object",
+      "title": "ResourceRecord",
+      "description": "Lives in the resources library. Resolvable from: question, area, pathway.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+([.-][a-z0-9]+)*$"
+        },
+        "url": {
+          "description": "where the material is. A link to what the school already holds, behind whatever access that platform applies. No resource bytes live in this repository.",
+          "type": "string",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "url"
+      ]
+    }
+  }
+}

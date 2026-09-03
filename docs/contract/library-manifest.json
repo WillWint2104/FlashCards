@@ -1,0 +1,1685 @@
+{
+  "schema": "marginal.library-manifest",
+  "version": 1,
+  "counts": {
+    "vocabulary": {
+      "records": 14,
+      "complete": 14,
+      "displayable": 0
+    },
+    "concepts": {
+      "records": 6,
+      "complete": 6
+    },
+    "lessons": {
+      "records": 4,
+      "complete": 4
+    },
+    "evidence": {
+      "records": 58,
+      "complete": 58,
+      "published": 0
+    },
+    "syllabus": {
+      "records": 197,
+      "complete": 197
+    },
+    "resources": {
+      "records": 0,
+      "complete": 0
+    },
+    "sentenceShapes": {
+      "records": 6,
+      "complete": 6
+    }
+  },
+  "enums": {
+    "vocabularyRoles": [
+      "relationship-support",
+      "strategy-example",
+      "outcome-evidence",
+      "topic-context"
+    ],
+    "directives": [
+      "account for",
+      "analyse",
+      "assess",
+      "critically",
+      "describe",
+      "discuss",
+      "evaluate",
+      "examine",
+      "explain",
+      "how can",
+      "how do",
+      "how does",
+      "outline",
+      "to what extent"
+    ],
+    "directiveFamilies": {
+      "judgement": [
+        "evaluate",
+        "assess",
+        "to what extent",
+        "discuss",
+        "critically"
+      ],
+      "causal": [
+        "explain",
+        "how can",
+        "how do",
+        "how does",
+        "describe",
+        "outline",
+        "analyse",
+        "account for",
+        "examine"
+      ]
+    },
+    "answerShapeCommands": [
+      "identify",
+      "list",
+      "outline",
+      "describe",
+      "explain",
+      "analyse",
+      "compare",
+      "distinguish",
+      "assess",
+      "evaluate",
+      "discuss",
+      "justify",
+      "recommend",
+      "propose",
+      "demonstrate",
+      "examine",
+      "account for",
+      "to what extent",
+      "how can"
+    ],
+    "connectors": [
+      "towards",
+      "changes"
+    ],
+    "slotKeys": [
+      "point",
+      "analysis",
+      "evidence",
+      "link",
+      "thesis",
+      "methods",
+      "restate",
+      "judgement"
+    ],
+    "shapeCoverage": [
+      "causal.body.topic",
+      "causal.conclusion.judgement",
+      "causal.conclusion.restate",
+      "causal.introduction.thesis"
+    ],
+    "shapeFamilies": [
+      "causal"
+    ],
+    "capability": [
+      "importable",
+      "writing-ready",
+      "pathway-guided",
+      "learning-complete",
+      "assessment-complete",
+      "evidence-complete"
+    ],
+    "originType": [
+      "bundled",
+      "imported"
+    ],
+    "reviewState": [
+      "draft",
+      "in-review",
+      "in-source",
+      "approved"
+    ],
+    "publication": [
+      "unpublished",
+      "published",
+      "withdrawn"
+    ],
+    "mechanismStatus": [
+      "authored",
+      "none-required",
+      "unreviewed"
+    ],
+    "learningStatus": [
+      "authored",
+      "none-required",
+      "unreviewed"
+    ],
+    "answerMode": [
+      "causal",
+      "judgement"
+    ],
+    "relation": [
+      "shapes",
+      "affects",
+      "constrains",
+      "enables"
+    ],
+    "contributionRole": [
+      "support",
+      "limitation",
+      "conditional"
+    ],
+    "lean": [
+      "positive",
+      "qualified",
+      "negative"
+    ],
+    "ladderRung": [
+      "hint",
+      "needs",
+      "direction",
+      "frame",
+      "starter",
+      "example"
+    ],
+    "markingSource": [
+      "authored",
+      "generated"
+    ],
+    "conceptKind": [
+      "domain",
+      "supporting"
+    ],
+    "requiresTeaching": [
+      "always",
+      "contextual",
+      "never"
+    ],
+    "evidenceRole": [
+      "relationship-support",
+      "strategy-example",
+      "outcome-evidence",
+      "topic-context"
+    ]
+  },
+  "notes": [],
+  "records": {
+    "vocabulary": {
+      "business.vocab.processes": {
+        "complete": true,
+        "missing": [],
+        "displayable": false,
+        "missingForDisplay": [
+          "plain",
+          "example"
+        ]
+      },
+      "business.vocab.services-marketing-mix": {
+        "complete": true,
+        "missing": [],
+        "displayable": false,
+        "missingForDisplay": [
+          "plain",
+          "example"
+        ]
+      },
+      "business.vocab.intangible": {
+        "complete": true,
+        "missing": [],
+        "displayable": false,
+        "missingForDisplay": [
+          "plain",
+          "example"
+        ]
+      },
+      "business.vocab.target-market": {
+        "complete": true,
+        "missing": [],
+        "displayable": false,
+        "missingForDisplay": [
+          "plain",
+          "example"
+        ]
+      },
+      "business.vocab.customer-service": {
+        "complete": true,
+        "missing": [],
+        "displayable": false,
+        "missingForDisplay": [
+          "plain",
+          "example"
+        ]
+      },
+      "business.vocab.self-service": {
+        "complete": true,
+        "missing": [],
+        "displayable": false,
+        "missingForDisplay": [
+          "plain",
+          "example"
+        ]
+      },
+      "business.vocab.throughput": {
+        "complete": true,
+        "missing": [],
+        "displayable": false,
+        "missingForDisplay": [
+          "plain",
+          "example"
+        ]
+      },
+      "business.vocab.people": {
+        "complete": true,
+        "missing": [],
+        "displayable": false,
+        "missingForDisplay": [
+          "plain",
+          "example"
+        ]
+      },
+      "business.vocab.inseparability": {
+        "complete": true,
+        "missing": [],
+        "displayable": false,
+        "missingForDisplay": [
+          "plain",
+          "example"
+        ]
+      },
+      "business.vocab.training": {
+        "complete": true,
+        "missing": [],
+        "displayable": false,
+        "missingForDisplay": [
+          "plain",
+          "example"
+        ]
+      },
+      "business.vocab.standardisation": {
+        "complete": true,
+        "missing": [],
+        "displayable": false,
+        "missingForDisplay": [
+          "plain",
+          "example"
+        ]
+      },
+      "business.vocab.service-standards": {
+        "complete": true,
+        "missing": [],
+        "displayable": false,
+        "missingForDisplay": [
+          "plain",
+          "example"
+        ]
+      },
+      "business.vocab.servicescape": {
+        "complete": true,
+        "missing": [],
+        "displayable": false,
+        "missingForDisplay": [
+          "plain",
+          "example"
+        ]
+      },
+      "business.vocab.customer-engagement": {
+        "complete": true,
+        "missing": [],
+        "displayable": false,
+        "missingForDisplay": [
+          "plain",
+          "example"
+        ]
+      }
+    },
+    "concepts": {
+      "business.concept.processes": {
+        "complete": true,
+        "missing": []
+      },
+      "business.concept.people": {
+        "complete": true,
+        "missing": []
+      },
+      "business.concept.training": {
+        "complete": true,
+        "missing": []
+      },
+      "business.concept.servicestandards": {
+        "complete": true,
+        "missing": []
+      },
+      "business.concept.servicescape": {
+        "complete": true,
+        "missing": []
+      },
+      "business.concept.customerengagement": {
+        "complete": true,
+        "missing": []
+      }
+    },
+    "lessons": {
+      "business.lesson.mkt01-pe-service": {
+        "complete": true,
+        "missing": []
+      },
+      "business.lesson.mkt01-pr-convenience": {
+        "complete": true,
+        "missing": []
+      },
+      "business.lesson.mkt01-pr-speed": {
+        "complete": true,
+        "missing": []
+      },
+      "business.lesson.mkt01-pr-customisation": {
+        "complete": true,
+        "missing": []
+      }
+    },
+    "evidence": {
+      "mcdonalds.operations.standardised-production-system": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.operations.interdependence-at-a-menu-launch": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.operations.a-good-and-a-service-in-one-transaction": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.operations.global-menu-localisation": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.operations.packaging-waste-the-law-and-voluntary-action": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.operations.inputs-transformed-and-transforming": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.operations.volume-variety-variation-and-visibility": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.operations.technology-task-design-and-process-layout": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.operations.outputs-order-accuracy-and-service-time": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.operations.approved-suppliers-and-distribution-centres": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.operations.frozen-stock-fifo-and-made-to-order": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.operations.quality-control-assurance-and-improvement": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.operations.performance-objectives-on-the-restaurant-floor": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.operations.kiosks-and-the-app-beside-the-grill": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.operations.outsourcing-and-why-franchising-is-not-outsourcing": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.operations.resistance-when-kiosks-and-table-service-arrived": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.operations.global-scale-menu-trials-and-test-kitchens": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.marketing.golden-arches-global-branding": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.marketing.economic-and-sociocultural-influences-on-customer-choice": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.marketing.kilojoule-labelling-and-advertising-to-children": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.marketing.consumer-law-and-advertising-claims": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.marketing.big-mac-in-the-maturity-stage": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.marketing.test-restaurants-and-customer-feedback-surveys": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.marketing.segments-served-by-happy-meal-and-mccafe": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.marketing.promotion-mix-from-advertising-to-sponsorship": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.marketing.price-points-from-value-range-to-mccafe": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.marketing.intensive-distribution-and-standardised-service": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.marketing.standardisation-with-local-customisation": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.marketing.app-loyalty-rewards-and-mobile-ordering": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.finance.franchising-funds-network-growth": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.finance.finance-funds-every-other-function": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.finance.listed-parent-using-retained-profits-and-borrowing": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.finance.australian-company-under-asic-and-company-tax": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.finance.interest-rates-overseas-funds-and-the-economic-outlook": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.finance.immediate-cash-sales-almost-no-customer-receivables": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.finance.two-levels-of-margin-restaurant-and-corporation": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.finance.choosing-debt-or-equity-for-expansion": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.finance.consolidated-global-reports-and-one-off-gains": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.finance.audited-accounts-and-disclosure-in-a-listed-group": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.finance.standardisation-as-cost-control-marketing-as-revenue-control": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.finance.property-leasing-and-working-capital": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.finance.exchange-rate-exposure-and-hedging": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.hr.franchise-model-splits-hr-responsibility": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.hr.outsourcing-and-use-of-contractors": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.hr.national-employment-standards-and-the-award-set-the-floor": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.hr.work-health-and-safety-in-the-restaurant": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.hr.technology-and-changing-work-patterns": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.hr.standardised-acquisition-and-development": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.hr.maintenance-through-rostering-and-grievance-handling": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.hr.separation-in-a-young-casual-workforce": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.hr.leadership-style-on-a-shift": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.hr.job-design-using-specific-tasks": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.hr.internal-recruitment-and-promotion-pathway": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.hr.performance-management-against-set-standards": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.hr.monetary-and-non-monetary-rewards": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.hr.global-staffing-with-local-employees": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.hr.workplace-disputes-in-fast-food": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      },
+      "mcdonalds.hr.turnover-and-benchmarking-across-stores": {
+        "complete": true,
+        "missing": [],
+        "published": false
+      }
+    },
+    "syllabus": {
+      "business.operations": {
+        "complete": true,
+        "missing": [],
+        "kind": "topic"
+      },
+      "business.operations.role-of-operations-management.strategic-role-of-operations-management": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.operations.role-of-operations-management.strategic-role-of-operations-management.cost-leadership": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.role-of-operations-management.strategic-role-of-operations-management.good-service-differentiation": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.role-of-operations-management.goods-and-or-services-in-different-industries": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.operations.role-of-operations-management.interdependence-with-other-key-business-functions": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.operations.influences.globalisation": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.operations.influences.corporate-social-responsibility": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.operations.operations-processes.inputs": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.operations.operations-processes.transformation-processes": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.operations.operations-processes.outputs": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.operations.operations-strategies.performance-objectives": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.operations.operations-strategies.performance-objectives.quality": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.performance-objectives.speed": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.performance-objectives.dependability": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.performance-objectives.flexibility": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.performance-objectives.customisation": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.performance-objectives.cost": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.new-product-or-service-design-and-development": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.operations.operations-strategies.supply-chain-management": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.operations.operations-strategies.supply-chain-management.logistics": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.supply-chain-management.e-commerce": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.supply-chain-management.global-sourcing": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.outsourcing": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.operations.operations-strategies.outsourcing.advantages": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.outsourcing.disadvantages": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.technology": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.operations.operations-strategies.technology.leading-edge": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.technology.established": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.inventory-management": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.operations.operations-strategies.inventory-management.advantages": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.inventory-management.disadvantages-of-holding-stock": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.inventory-management.lifo": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.inventory-management.fifo": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.inventory-management.jit": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.quality-management": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.operations.operations-strategies.overcoming-resistance-to-change": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.operations.operations-strategies.overcoming-resistance-to-change.financial-costs": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.overcoming-resistance-to-change.purchasing-new-equipment": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.overcoming-resistance-to-change.redundancy-payments": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.overcoming-resistance-to-change.retraining": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.overcoming-resistance-to-change.reorganising-plant-layout": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.overcoming-resistance-to-change.inertia": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.global-factors": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.operations.operations-strategies.global-factors.global-sourcing": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.global-factors.economies-of-scale": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.global-factors.scanning": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.global-factors.learning": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.global-factors.research": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.global-factors.development": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing": {
+        "complete": true,
+        "missing": [],
+        "kind": "topic"
+      },
+      "business.marketing.role-of-marketing.strategic-role-of-marketing-goods-and-services": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.marketing.role-of-marketing.interdependence-with-other-key-business-functions": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.marketing.role-of-marketing.production": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.marketing.role-of-marketing.types-of-markets": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.marketing.role-of-marketing.types-of-markets.resource": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.role-of-marketing.types-of-markets.industrial": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.role-of-marketing.types-of-markets.intermediate": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.role-of-marketing.types-of-markets.consumer": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.role-of-marketing.types-of-markets.mass": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.role-of-marketing.types-of-markets.niche": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.influences-on-marketing.factors-influencing-customer-choice": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.marketing.influences-on-marketing.factors-influencing-customer-choice.psychological": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.influences-on-marketing.factors-influencing-customer-choice.sociocultural": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.influences-on-marketing.factors-influencing-customer-choice.economic": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.influences-on-marketing.factors-influencing-customer-choice.government": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.influences-on-marketing.consumer-laws": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.marketing.influences-on-marketing.ethical": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.marketing.influences-on-marketing.ethical.truth": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.influences-on-marketing.ethical.accuracy": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.influences-on-marketing.ethical.good-taste-in-advertising": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.influences-on-marketing.ethical.products-that-may-damage-health": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.influences-on-marketing.ethical.engaging-in-fair-competition": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.influences-on-marketing.ethical.sugging": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.marketing-process.situational-analysis": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.marketing.marketing-process.situational-analysis.swot": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.marketing-process.situational-analysis.product-life-cycle": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.marketing-process.market-research": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.marketing.marketing-process.establishing-market-objectives": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.marketing.marketing-process.identifying-target-markets": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.marketing.marketing-process.developing-marketing-strategies": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.marketing.marketing-process.implementation": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.marketing.marketing-process.implementation.planned-results": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.marketing-process.implementation.revising-the-marketing-strategy": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.marketing-strategies.market-segmentation": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.marketing.marketing-strategies.products": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.marketing.marketing-strategies.products.goods-and-or-services": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.marketing-strategies.price-including-pricing-methods": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.marketing.marketing-strategies.price-including-pricing-methods.cost": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.marketing-strategies.price-including-pricing-methods.market": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.marketing-strategies.price-including-pricing-methods.competition-based": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.marketing-strategies.promotion": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.marketing.marketing-strategies.place-distribution": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.marketing.marketing-strategies.people": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.marketing.marketing-strategies.e-marketing": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.marketing.marketing-strategies.global-marketing": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.finance": {
+        "complete": true,
+        "missing": [],
+        "kind": "topic"
+      },
+      "business.finance.role-of-financial-management.strategic-role-of-financial-management": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.finance.role-of-financial-management.objectives-of-financial-management": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.finance.role-of-financial-management.interdependence-with-other-key-business-functions": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.finance.influences-on-financial-management.internal-sources-of-finance": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.finance.influences-on-financial-management.internal-sources-of-finance.retained-profits": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.influences-on-financial-management.external-sources-of-finance": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.finance.influences-on-financial-management.financial-institutions": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.finance.influences-on-financial-management.financial-institutions.banks": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.influences-on-financial-management.financial-institutions.investment-banks": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.influences-on-financial-management.financial-institutions.finance-companies": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.influences-on-financial-management.financial-institutions.superannuation-funds": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.influences-on-financial-management.financial-institutions.life-insurance-companies": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.influences-on-financial-management.financial-institutions.unit-trusts": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.influences-on-financial-management.financial-institutions.the-australian-securities-exchange": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.influences-on-financial-management.influence-of-government": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.finance.influences-on-financial-management.influence-of-government.australian-securities": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.influences-on-financial-management.influence-of-government.investments-commission": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.influences-on-financial-management.influence-of-government.company-taxation": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.influences-on-financial-management.global-market-influences": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.finance.influences-on-financial-management.global-market-influences.economic-outlook": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.influences-on-financial-management.global-market-influences.availability-of-funds": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.influences-on-financial-management.global-market-influences.interest-rates": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.processes-of-financial-management.planning-and-implementing": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.finance.processes-of-financial-management.planning-and-implementing.financial-needs": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.processes-of-financial-management.planning-and-implementing.budgets": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.processes-of-financial-management.planning-and-implementing.record-systems": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.processes-of-financial-management.planning-and-implementing.financial-risks": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.processes-of-financial-management.planning-and-implementing.financial-controls": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.processes-of-financial-management.monitoring-and-controlling": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.finance.processes-of-financial-management.monitoring-and-controlling.cash-flow-statement": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.processes-of-financial-management.monitoring-and-controlling.income-statement": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.processes-of-financial-management.monitoring-and-controlling.balance-sheet": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.processes-of-financial-management.financial-ratios": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.finance.processes-of-financial-management.limitations-of-financial-reports": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.finance.processes-of-financial-management.limitations-of-financial-reports.normalised-earnings": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.processes-of-financial-management.limitations-of-financial-reports.capitalising-expenses": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.processes-of-financial-management.limitations-of-financial-reports.valuing-assets": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.processes-of-financial-management.limitations-of-financial-reports.timing-issues": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.processes-of-financial-management.limitations-of-financial-reports.debt-repayments": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.processes-of-financial-management.limitations-of-financial-reports.notes-to-the-financial-statements": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.processes-of-financial-management.ethical-issues-related-to-financial-reports": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.finance.financial-management-strategies.cash-flow-management": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.finance.financial-management-strategies.working-capital-management": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.finance.financial-management-strategies.profitability-management": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.finance.financial-management-strategies.global-financial-management": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr": {
+        "complete": true,
+        "missing": [],
+        "kind": "topic"
+      },
+      "business.hr.role-of-human-resource-management.strategic-role-of-human-resources": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.role-of-human-resource-management.interdependence-with-other-key-business-functions": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.role-of-human-resource-management.outsourcing": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.key-influences.stakeholders": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.key-influences.stakeholders.employers": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.key-influences.stakeholders.employees": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.key-influences.stakeholders.employer-associations": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.key-influences.stakeholders.unions": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.key-influences.stakeholders.government-organisations": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.key-influences.stakeholders.society": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.key-influences.legal": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.key-influences.legal.the-current-legal-framework": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.key-influences.economic": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.key-influences.technological": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.key-influences.social": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.key-influences.social.changing-work-patterns": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.key-influences.social.living-standards": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.key-influences.ethics-and-corporate-social-responsibility": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.processes-of-human-resource-management.acquisition": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.processes-of-human-resource-management.development": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.processes-of-human-resource-management.maintenance": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.processes-of-human-resource-management.separation": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.strategies-in-human-resource-management.leadership-style": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.strategies-in-human-resource-management.job-design": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.strategies-in-human-resource-management.job-design.general": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.strategies-in-human-resource-management.job-design.specific-tasks": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.strategies-in-human-resource-management.recruitment": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.strategies-in-human-resource-management.recruitment.internal": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.strategies-in-human-resource-management.recruitment.external": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.strategies-in-human-resource-management.recruitment.general": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.strategies-in-human-resource-management.recruitment.specific-skills": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.strategies-in-human-resource-management.training-and-development": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.strategies-in-human-resource-management.training-and-development.current": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.strategies-in-human-resource-management.training-and-development.future-skills": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.strategies-in-human-resource-management.performance-management": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.strategies-in-human-resource-management.performance-management.developmental": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.strategies-in-human-resource-management.performance-management.administrative": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.strategies-in-human-resource-management.rewards": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.strategies-in-human-resource-management.rewards.monetary": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.strategies-in-human-resource-management.rewards.non-monetary": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.strategies-in-human-resource-management.rewards.individual": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.strategies-in-human-resource-management.rewards.group": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.strategies-in-human-resource-management.rewards.performance-pay": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.strategies-in-human-resource-management.global": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.strategies-in-human-resource-management.global.costs": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.strategies-in-human-resource-management.global.skills": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.strategies-in-human-resource-management.global.supply": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.strategies-in-human-resource-management.workplace-disputes": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.effectiveness-of-human-resource-management.indicators": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.effectiveness-of-human-resource-management.120-indicative-hours-are-required-to-complete-the-course": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.effectiveness-of-human-resource-management.the-preliminary-course-is-a-prerequisite": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.effectiveness-of-human-resource-management.suggested-components-and-weightings-for-the-internal-assessment-of-the-preliminary-course": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.effectiveness-of-human-resource-management.mandatory-components-and-weightings-for-the-internal-assessment-of-the-hsc-course": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.effectiveness-of-human-resource-management.the-hsc-examination-specifications": {
+        "complete": true,
+        "missing": [],
+        "kind": "point"
+      }
+    },
+    "resources": {},
+    "sentenceShapes": {
+      "shape.causal.introduction.thesis": {
+        "complete": true,
+        "missing": []
+      },
+      "shape.causal.body.topic": {
+        "complete": true,
+        "missing": []
+      },
+      "shape.causal.body.topic.reasoning-first": {
+        "complete": true,
+        "missing": []
+      },
+      "shape.causal.body.topic.conditional": {
+        "complete": true,
+        "missing": []
+      },
+      "shape.causal.conclusion.restate": {
+        "complete": true,
+        "missing": []
+      },
+      "shape.causal.conclusion.judgement": {
+        "complete": true,
+        "missing": []
+      }
+    }
+  }
+}

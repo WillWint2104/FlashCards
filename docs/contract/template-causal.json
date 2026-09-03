@@ -1,0 +1,155 @@
+{
+  "schema": "marginal.question-package",
+  "contractVersion": "1.0",
+  "origin": {
+    "type": "bundled",
+    "packageId": "",
+    "author": "",
+    "authoredAt": ""
+  },
+  "provenance": {
+    "reviewState": "draft",
+    "publication": "unpublished",
+    "notes": ""
+  },
+  "requires": {
+    "library": {}
+  },
+  "provides": {
+    "library": {}
+  },
+  "question": {
+    "id": "",
+    "subject": "",
+    "topicRef": null,
+    "topicLabel": "",
+    "directive": "explain",
+    "text": "",
+    "marks": 40,
+    "terms": {
+      "first": "",
+      "second": ""
+    },
+    "overallArgument": "",
+    "vocabRefs": [],
+    "studyRefs": []
+  },
+  "relationship": {
+    "intro": "",
+    "claims": [
+      {
+        "id": "",
+        "line": "",
+        "left": {
+          "label": "",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [
+          {
+            "label": "",
+            "criterionRef": null
+          }
+        ],
+        "pathwayRefs": []
+      }
+    ]
+  },
+  "decode": {
+    "verbMeaning": "",
+    "plainEnglish": "",
+    "highlights": [
+      {
+        "anchor": "",
+        "note": ""
+      }
+    ],
+    "cover": {
+      "forEach": ""
+    }
+  },
+  "requirements": {
+    "concepts": [],
+    "relationships": [],
+    "accomplish": [],
+    "syllabusSummary": ""
+  },
+  "coreAnswer": {
+    "mode": "causal",
+    "statement": "",
+    "acceptableThesis": "",
+    "checklist": []
+  },
+  "workingAnswer": {
+    "base": ""
+  },
+  "reasoning": {
+    "cause": {
+      "label": ""
+    },
+    "forward": ""
+  },
+  "areas": [
+    {
+      "id": "",
+      "label": "",
+      "syllabusRefs": [],
+      "guidance": {
+        "slot": {
+          "direct": ""
+        }
+      },
+      "vocabRefs": []
+    }
+  ],
+  "pathways": [
+    {
+      "id": "",
+      "areaRef": "",
+      "short": "",
+      "relationship": "",
+      "left": {
+        "label": "",
+        "conceptRef": null
+      },
+      "choiceMeaning": "",
+      "whatToProve": "",
+      "commonMistake": "",
+      "mechanism": {
+        "status": "authored",
+        "text": ""
+      },
+      "conceptRef": null,
+      "syllabusRef": null,
+      "learningRef": null,
+      "learning": {
+        "status": "authored"
+      },
+      "evidenceRefs": [
+        {
+          "ref": null,
+          "role": "relationship-support",
+          "why": "",
+          "limits": ""
+        }
+      ],
+      "guidance": {
+        "slot": {
+          "direct": "",
+          "ladder": [
+            {
+              "rung": "hint",
+              "text": ""
+            }
+          ]
+        }
+      },
+      "vocabRefs": []
+    }
+  ],
+  "marking": {
+    "source": "authored",
+    "bands": null,
+    "bandSource": ""
+  }
+}

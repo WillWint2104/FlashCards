@@ -1,0 +1,104 @@
+{
+  "schema": "marginal.question-package",
+  "contractVersion": "1.0",
+  "origin": {
+    "type": "bundled",
+    "packageId": null,
+    "author": null,
+    "authoredAt": null
+  },
+  "provenance": {
+    "reviewState": "in-source",
+    "publication": "published",
+    "notes": null
+  },
+  "requires": {
+    "vocabulary": [],
+    "concepts": [],
+    "lessons": [],
+    "evidence": [],
+    "syllabus": [
+      "business.finance"
+    ],
+    "resources": []
+  },
+  "provides": {},
+  "question": {
+    "id": "fin-03",
+    "subject": "business_studies",
+    "topicRef": "business.finance",
+    "topicLabel": null,
+    "directive": "assess",
+    "text": "Assess the impact of influences on the financial management of a business.",
+    "marks": 20,
+    "terms": {
+      "first": "Influences on financial management",
+      "second": "Financial management and performance"
+    },
+    "overallArgument": "The significance of each influence depends on the business's financial position and activities, though global market conditions can be particularly significant for large and international businesses.",
+    "vocabRefs": [],
+    "studyRefs": []
+  },
+  "relationship": {
+    "intro": null,
+    "claims": [
+      {
+        "id": "fin-03-claim-1",
+        "line": "Sources of finance",
+        "left": {
+          "label": "Sources of finance",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [],
+        "pathwayRefs": []
+      },
+      {
+        "id": "fin-03-claim-2",
+        "line": "Financial institutions",
+        "left": {
+          "label": "Financial institutions",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [],
+        "pathwayRefs": []
+      },
+      {
+        "id": "fin-03-claim-3",
+        "line": "Government",
+        "left": {
+          "label": "Government",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [],
+        "pathwayRefs": []
+      },
+      {
+        "id": "fin-03-claim-4",
+        "line": "Global market influences",
+        "left": {
+          "label": "Global market influences",
+          "conceptRef": null
+        },
+        "relation": "shapes",
+        "right": [],
+        "pathwayRefs": []
+      }
+    ]
+  },
+  "decode": null,
+  "requirements": null,
+  "coreAnswer": null,
+  "workingAnswer": null,
+  "reasoning": null,
+  "areas": [],
+  "pathways": [],
+  "marking": {
+    "source": "generated",
+    "bands": null,
+    "bandSource": null,
+    "text": null
+  }
+}
