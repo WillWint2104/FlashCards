@@ -8525,7 +8525,14 @@
               <div class="es-hintpth">${esc(pt.point)}</div>
               <p class="es-hintwhat">${esc(pt.what)}</p>
               <p class="es-hintwhy"><b>Why it matters:</b> ${esc(pt.why)}</p>
-              ${(pt.terms || []).length ? `<div class="es-hintterms">${pt.terms.map(x => `<span class="es-hintterm">${esc(x)}</span>`).join("")}</div>` : ""}
+              ${/* points[].terms is LEGACY CONTENT. It stays in the source data, where
+                    topic matching and the learning allowlist still read it, and it no
+                    longer produces vocabulary for a student here. 477 of these strings
+                    were rendered as chips with no meaning attached to any of them,
+                    which is the pattern Vocabulary v1 removed from the writing tool
+                    and had not removed from the app. Full attempt obeys the same rule
+                    as guided practice: a term reaches a student through an explicit
+                    ref to a complete record, or it does not reach them. */ ""}
               ${pt.exam ? `<p class="es-hintexam"><b>In the exam:</b> ${esc(pt.exam)}</p>` : ""}
             </div>`).join("") + `</details>`).join("");
     }

@@ -12,23 +12,36 @@ sentence shapes resolve.
 is worse than an empty panel: a student cannot tell a term the app is teaching from
 a word somebody typed next to a heading.
 
-## Still broken elsewhere
+## The second surface
 
-The rule is **do not display undefined vocabulary**, and this document is about one
-tool. `esHintHTML` (app.js:8528) still renders the same `points[].terms` strings as
-`.es-hintterm` chips on the **full-attempt screen** — 477 of them, undefined, in
-green. Vocabulary v1 removed the pattern from the writing tool and not from the app.
+Vocabulary v1 removed the pattern from the writing tool and not from the app.
+`esHintHTML` kept rendering the same `points[].terms` strings as `.es-hintterm`
+chips on the **full-attempt screen**: 477 of them, undefined, in green, to a
+student one control away from the tool that had just stopped doing it.
 
-It is recorded here rather than fixed because the two ways out are a product
-decision: delete the chips, or author 477 records. Neither belongs in a branch that
-was deliberately kept clear of content authoring.
+Of the two ways out, authoring 477 records to justify a chip rail is content work
+in service of a control nobody asked for. The chips are gone instead. Full attempt
+now obeys the same rule as guided practice.
+
+`points[].terms` is legacy content. It stays in the source data, where topic
+matching (app.js:4169) and the learning allowlist (app.js:5425) still read it, and
+it produces no student-facing vocabulary anywhere. A term reaches a student through
+an explicit ref to a complete record, or it does not reach them.
+
+`tests/ui47.js` section 2 holds this. It reaches the full-attempt Know panel, opens
+every section, and requires that no element inside a rendered point has as its
+entire text one of that point's own `terms[]`, while asserting on the same screen
+that all 21 points still carry those arrays and that there are 122 strings there to
+leak. Section 2b names `market segmentation` as one of them, which is the term
+section 3 then defines and refs by id: the same word, invisible as legacy content
+and visible once something asks for it by name.
 
 ## What this replaced
 
 `BUSCONTENT` holds 405 distinct term strings across 83 section points. The tool
 rendered them as chips. There is no glossary, no definitions object, and nothing
 anywhere that says what any of them means — so every one of the 405 was shown to a
-student undefined. They are still in the content and no longer drive this tool.
+student undefined. They are still in the content and no longer reach a student anywhere.
 
 ## A record
 
