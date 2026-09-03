@@ -76,9 +76,9 @@
   .grph .c{font-size:11.5px;font-weight:800;color:var(--red);background:var(--red-soft);border-radius:99px;padding:3px 10px}
   .grph .c.w{color:var(--amber);background:var(--amber-soft)}
   .grpw{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:4px 0 8px}
-  .ex{font-size:12.5px;margin:0 0 6px;padding-left:13px;border-left:2px solid var(--line)}
-  .ex .at{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--ink-3);display:block}
-  .ex .msg{color:var(--ink-2);font-weight:600}
+  .ex{font-size:12.5px;margin:0 0 9px;padding-left:13px;border-left:2px solid var(--line)}
+  .ex .msg{color:var(--ink);font-weight:600;display:block}
+  .ex .at{font-family:var(--mono);font-size:10.5px;font-weight:600;color:var(--ink-3);display:block;margin-top:3px}
   .more{font:inherit;font-size:11.5px;font-weight:800;color:var(--green-dk);background:none;border:0;padding:2px 0 0 13px;cursor:default;text-decoration:underline}
 
   .btnrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px}
@@ -129,8 +129,8 @@
         </div>
         <div class="verdict">
           <div class="q">Mkt 02!<small>invalid-demo.json</small></div>
-          <span class="tag warnt">1 to check</span>
-          <span class="tag bad">28 problems</span>
+          <span class="tag warnt">1 warning</span>
+          <span class="tag bad">28 errors</span>
         </div>
       </div>
 
@@ -142,60 +142,51 @@
           <div class="grph"><span class="n">Written against an older shape</span><span class="c">8</span></div>
           <p class="grpw">These fields were replaced. Each one still works inside Marginal today and
             cannot be expressed in a package, which is why the contract names them.</p>
-          <div class="ex"><span class="at">pathways[0].evidence</span>
-            <span class="msg">Evidence matched by display label. Two records sharing a label silently
-              become one. Use <code>evidenceRefs</code> with ids.</span></div>
-          <div class="ex"><span class="at">pathways[0].concept</span>
-            <span class="msg">A topic, section and point triple matched by prefix. Use
-              <code>syllabusRef</code> and <code>conceptRef</code>.</span></div>
+          <div class="ex"><span class="msg">Evidence matched by display label. Two records sharing a label silently
+              become one. Use <code>evidenceRefs</code> with ids.</span><span class="at">pathways[0].evidence</span></div>
+          <div class="ex"><span class="msg">A topic, section and point triple matched by prefix. Use
+              <code>syllabusRef</code> and <code>conceptRef</code>.</span><span class="at">pathways[0].concept</span></div>
           <button class="more">Show all 8</button>
         </div>
 
         <div class="grp">
           <div class="grph"><span class="n">A value outside what the contract allows</span><span class="c">6</span></div>
           <p class="grpw">Each names a list. Nothing is guessed at or mapped to a nearest match.</p>
-          <div class="ex"><span class="at">question.directive</span>
-            <span class="msg">"ponder" is not a command Marginal recognises. The registry lists 22.</span></div>
-          <div class="ex"><span class="at">question.marks</span>
-            <span class="msg">0 is outside 1 to 40.</span></div>
+          <div class="ex"><span class="msg">"ponder" is not a command Marginal recognises. The registry lists 22.</span><span class="at">question.directive</span></div>
+          <div class="ex"><span class="msg">0 is outside 1 to 40.</span><span class="at">question.marks</span></div>
           <button class="more">Show all 6</button>
         </div>
 
         <div class="grp">
           <div class="grph"><span class="n">Ids, and things naming other parts of this package</span><span class="c">5</span></div>
           <p class="grpw">All inside the file. Nothing here needed anything from Marginal to check.</p>
-          <div class="ex"><span class="at">question.id</span>
-            <span class="msg">"Mkt 02!" is not lower case with hyphens.</span></div>
-          <div class="ex"><span class="at">pathways[1].areaRef</span>
-            <span class="msg">"servicescape" is not an area this package defines.</span></div>
+          <div class="ex"><span class="msg">"Mkt 02!" is not lower case with hyphens.</span><span class="at">question.id</span></div>
+          <div class="ex"><span class="msg">"servicescape" is not an area this package defines.</span><span class="at">pathways[1].areaRef</span></div>
           <button class="more">Show all 5</button>
         </div>
 
         <div class="grp">
-          <div class="grph"><span class="n">Rules this app does not bend</span><span class="c">6</span></div>
-          <p class="grpw">Each of these protects something a student sees.</p>
-          <div class="ex"><span class="at">marking.bands</span>
-            <span class="msg">Band descriptors with no source named. Marking language is quoted from
-              somewhere or it is invented.</span></div>
-          <div class="ex"><span class="at">question.vocabRefs[0]</span>
-            <span class="msg">"market segmentation" looks like a term rather than an id. Vocabulary is
-              named by id and never matched by its own text.</span></div>
+          <div class="grph"><span class="n">Required content rules</span><span class="c">6</span></div>
+          <p class="grpw">Each of these protects something a student sees, and none of them has an exception.</p>
+          <div class="ex"><span class="msg">Band descriptors with no source named. Marking language is quoted from
+              somewhere or it is invented.</span><span class="at">marking.bands</span></div>
+          <div class="ex"><span class="msg">"market segmentation" looks like a term rather than an id. Vocabulary is
+              named by id and never matched by its own text.</span><span class="at">question.vocabRefs[0]</span></div>
           <button class="more">Show all 6</button>
         </div>
 
         <div class="grp">
           <div class="grph"><span class="n">The package disagrees with itself</span><span class="c">3</span></div>
           <p class="grpw">Its <code>requires</code> list and what it actually references are different.</p>
-          <div class="ex"><span class="at">requires.evidence</span>
-            <span class="msg">One id is referenced and not declared.</span></div>
+          <div class="ex"><span class="msg">An evidence id is referenced and never declared.</span><span class="at">requires.evidence</span></div>
+          <div class="ex"><span class="msg">A concept id is declared and never referenced.</span><span class="at">requires.concepts</span></div>
           <button class="more">Show all 3</button>
         </div>
 
         <div class="grp">
           <div class="grph"><span class="n">Worth checking, and not blocking</span><span class="c w">1</span></div>
           <p class="grpw">Recorded on the import and does not stop it.</p>
-          <div class="ex"><span class="at">question.overallArgument</span>
-            <span class="msg">An em dash reaches a student here.</span></div>
+          <div class="ex"><span class="msg">An em dash reaches a student here.</span><span class="at">question.overallArgument</span></div>
         </div>
       </div>
     </div>
@@ -203,8 +194,8 @@
     <div>
       <div class="card">
         <h2>What happens to each</h2>
-        <p class="quiet"><b>mkt-01</b> and <b>ah-religion</b> continue to the next step.</p>
-        <p class="quiet"><b>invalid-demo.json</b> stops here. One rejected package does not hold up the
+        <p class="quiet"><b>mkt-01</b> and <b>ah-religion</b> continue to Resolve references.</p>
+        <p class="quiet"><b>invalid-demo</b> stops here. One rejected package does not hold up the
           others, and nothing from it will be written.</p>
         <div class="btnrow">
           <button class="btn primary">Continue with 2 packages</button>
