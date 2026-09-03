@@ -115,22 +115,28 @@ const drawer = p => p.$eval('.es-drawer-body', e => e.innerText.replace(/\s+/g, 
   }
 
   // ==========================================================================
-  console.log('2. the undefined terms are gone from THIS TOOL, which is not the same as gone');
+  console.log('2. the legacy term arrays stay in the data and reach no student');
   // ==========================================================================
   {
-    // Scoped deliberately, and the scope is the point. These strings are still
-    // rendered to students by esHintHTML on the FULL-ATTEMPT screen (app.js:8528,
-    // .es-hintterm), 477 of them, undefined. Vocabulary v1 removed the pattern from
-    // this tool and not from the app, and a suite claiming otherwise would be the
-    // more comfortable lie.
+    // points[].terms is 477 strings sitting beside the syllabus content, none of
+    // which has a meaning written anywhere. They are not deleted: topic matching
+    // and the learning allowlist still read them, and deleting them would be a
+    // content migration rather than the compatibility cleanup this is. What is
+    // removed is their route to a student. Two surfaces used to have one, and both
+    // are checked here, because Vocabulary v1 closed the first and left the second
+    // open for a whole release.
     //
-    // Not "the old class is absent" — nothing emits it, so that could not fail.
-    // And not "no term string appears on the page" either: "physical evidence" is
-    // in the question stem and "knowledge and understanding" is in the marking
-    // rail, so that scan reports leaks that are not leaks. The contract is about
-    // this TOOL, so it is stated as the pairing that used to be false: the section
-    // this paragraph sits in is full of term strings, and the tool is not offering
-    // them.
+    // How the leak is detected matters. Not "the old class is absent" — nothing
+    // emits it, so that assertion could not fail. And not "no term string appears
+    // in the text" either: these strings are ordinary Business Studies words, so
+    // "physical evidence" is in the question stem, "marketing" is a topic tag, and
+    // several syllabus point headings ARE term strings. A scan like that reports
+    // leaks that are not leaks. What a chip was, and what prose is not, is an
+    // element whose ENTIRE text is the term and nothing else. So: for each point
+    // on screen, take that point's own terms[], and require that no element inside
+    // it renders one of them on its own.
+
+    // --- the writing tool, where Vocabulary v1 already closed it ---
     const pairing = await p.evaluate(() => {
       let n = 0;
       Object.keys(window.BUSCONTENT.topics || {}).forEach(t =>
@@ -143,10 +149,85 @@ const drawer = p => p.$eval('.es-drawer-body', e => e.innerText.replace(/\s+/g, 
     console.log('    pairing:', JSON.stringify(pairing));
     ok(pairing.termsInContent > 100, 'the content is still full of term strings: ' + pairing.termsInContent);
     ok(!pairing.toolOffered && pairing.rows === 0,
-      'and not one of them reaches the student through this tool: ' + JSON.stringify(pairing));
-    const leaked = [];
+      'and not one of them reaches the student through the writing tool: ' + JSON.stringify(pairing));
 
+    // --- the full attempt screen, where it stayed open ---
+    // Same student, one control away. esHintHTML renders the syllabus points here
+    // and used to end each one with its terms as chips.
+    await p.click('#esmodeswitch');
+    await p.waitForSelector('#esfull', { timeout: 8000 });
+    ok(!!(await p.$('#esfull')), 'the full attempt screen is reachable from the composer');
+    const fab = await p.$('#eshintfab');
+    ok(!!fab, 'the study hints panel is on it');
+    if (fab) {
+      await fab.click(); await rf(p);
+      // Collapsed <details> keep their content in the DOM but the panel is a
+      // student-facing surface either way: opened, so the check is about what is
+      // rendered rather than about what is currently scrolled into view.
+      await p.evaluate(() => document.querySelectorAll('.es-hintsec').forEach(d => { d.open = true; }));
+      await rf(p);
+      const scan = await p.evaluate(() => {
+        const norm = s => String(s || '').replace(/\s+/g, ' ').trim().toLowerCase();
+        const byPoint = {};
+        Object.keys(window.BUSCONTENT.topics || {}).forEach(t =>
+          (window.BUSCONTENT.topics[t].sections || []).forEach(s =>
+            (s.points || []).forEach(x => { byPoint[norm(x.point)] = (x.terms || []).map(norm); })));
+        const leaks = []; let pointsWithTerms = 0, termsOnThisScreen = 0;
+        document.querySelectorAll('.es-hintpt').forEach(pt => {
+          // The heading IS pt.point, and a few syllabus points are named the same
+          // as one of their own terms ("promotion", "e-marketing"). A heading is
+          // the authored name of a section of content, not a term presented to be
+          // learned, so it is excluded by identity rather than by string.
+          const head = norm((pt.querySelector('.es-hintpth') || {}).textContent);
+          const terms = byPoint[head] || [];
+          if (terms.length) { pointsWithTerms++; termsOnThisScreen += terms.length; }
+          pt.querySelectorAll('*').forEach(el => {
+            if (el.classList.contains('es-hintpth')) return;
+            const t = norm(el.textContent);
+            if (t && terms.indexOf(t) >= 0) leaks.push({ point: head, cls: el.className, text: t });
+          });
+        });
+        return { points: document.querySelectorAll('.es-hintpt').length,
+                 pointsWithTerms: pointsWithTerms, termsOnThisScreen: termsOnThisScreen,
+                 leaks: leaks.slice(0, 12), leakCount: leaks.length,
+                 oldChips: document.querySelectorAll('.es-hintterm').length };
+      });
+      console.log('    full attempt know panel:', JSON.stringify(scan));
+      ok(scan.points > 0, 'the panel is rendering syllabus points: ' + scan.points);
+      ok(scan.pointsWithTerms === scan.points,
+        'every point on this screen still carries a legacy terms[] array: ' +
+        scan.pointsWithTerms + ' of ' + scan.points);
+      ok(scan.termsOnThisScreen > 50,
+        'and there are plenty of them to leak: ' + scan.termsOnThisScreen);
+      ok(scan.leakCount === 0,
+        'not one is rendered as a term on its own: ' + JSON.stringify(scan.leaks));
+      ok(scan.oldChips === 0, 'and the chip class emits nowhere: ' + scan.oldChips);
+    }
+  }
 
+  // ==========================================================================
+  console.log('2b. the same string DOES reach a student when something names it');
+  // ==========================================================================
+  {
+    // The two halves of the rule need the same word or they are two rules. This
+    // one is legacy content on the screen just checked, so section 3 below, which
+    // seeds a complete record for it and refs it by id, is the "unless explicitly
+    // referenced to a valid definition" clause rather than an unrelated fixture.
+    const legacy = await p.evaluate(() => {
+      const hits = [];
+      Object.keys(window.BUSCONTENT.topics || {}).forEach(t =>
+        (window.BUSCONTENT.topics[t].sections || []).forEach(s =>
+          (s.points || []).forEach(x =>
+            (x.terms || []).forEach(v => {
+              if (String(v).trim().toLowerCase() === 'market segmentation') hits.push(t + '/' + x.point);
+            }))));
+      return hits;
+    });
+    console.log('    market segmentation as legacy content:', JSON.stringify(legacy));
+    ok(legacy.length > 0,
+      'the term section 3 defines is one of the legacy strings: ' + JSON.stringify(legacy));
+    ok(!!legacy.find(h => /^marketing\//.test(h)),
+      'and it is legacy content on the topic just scanned: ' + JSON.stringify(legacy));
   }
 
   // ==========================================================================
