@@ -90,6 +90,7 @@
   .row:first-of-type{border-top:0}
   .row .n{font-size:13px;font-weight:800;width:104px;flex:none}
   .row .d{font-size:12.5px;color:var(--ink-2);font-weight:600;flex:1}
+  .row .d b{color:var(--ink);font-weight:800}
   .row.none .n,.row.none .d{color:var(--ink-3)}
 
   .pkgrow{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line)}
@@ -177,12 +178,18 @@
         <p class="sub">What this import leans on. Nothing here is waiting on a library. These are 23
           distinct records; a question may cite the same record from several arguments, so the
           readiness report counts more reference sites than there are records.</p>
-        <div class="row"><span class="n">Vocabulary</span><span class="d">Seven business studies terms</span></div>
-        <div class="row"><span class="n">Evidence</span><span class="d">Six McDonald's marketing records</span></div>
-        <div class="row"><span class="n">Syllabus</span><span class="d">The marketing topic and four points under marketing strategies</span></div>
-        <div class="row"><span class="n">Lessons</span><span class="d">Four lessons, one for each taught argument in this question</span></div>
-        <div class="row"><span class="n">Concepts</span><span class="d">One concept, processes in the marketing mix</span></div>
-        <div class="row none"><span class="n">Resources</span><span class="d">Neither package asks for one</span></div>
+        <div class="row"><span class="n">Vocabulary</span><span class="d"><b>7 referenced, 7 found.</b>
+          Seven business studies terms.</span></div>
+        <div class="row"><span class="n">Evidence</span><span class="d"><b>6 referenced, 6 found.</b>
+          Six McDonald's marketing records.</span></div>
+        <div class="row"><span class="n">Syllabus</span><span class="d"><b>5 referenced, 5 found.</b>
+          The marketing topic and four points under marketing strategies.</span></div>
+        <div class="row"><span class="n">Lessons</span><span class="d"><b>4 referenced, 4 found.</b>
+          One for each taught argument in this question.</span></div>
+        <div class="row"><span class="n">Concepts</span><span class="d"><b>1 referenced, 1 found.</b>
+          Processes in the marketing mix.</span></div>
+        <div class="row none"><span class="n">Resources</span><span class="d">Neither package asks for
+          one.</span></div>
         <button class="btn" style="margin-top:14px">Show the 23 records</button>
         <div class="rule"><b>Exact ids, and nothing else.</b> A reference finds the record an author
           named, or it finds nothing. Marginal does not offer a nearest match, does not suggest a
@@ -296,10 +303,13 @@
           <div class="h"><span class="n">A dependency Marginal does not have</span><span class="tag blockt">waiting on the library</span></div>
           <p class="w">The package is correct. It waits for the library, and no edit to the file would
             help.</p>
-          <div class="ex blk"><span class="msg">"business.vocab.nowhere" is declared, and the
-            vocabulary library does not hold it yet.</span></div>
+          <div class="ex blk"><span class="msg">"business.vocab.nowhere" is declared as a required
+            dependency, and the vocabulary library does not currently contain it.</span></div>
           <div class="ex blk"><span class="msg">"business.marketing.marketing-strategies.nonexistent" is
-            declared, and the syllabus library does not hold it yet.</span></div>
+            declared as a required dependency, and the syllabus library does not currently contain
+            it.</span></div>
+          <p class="w" style="margin-top:9px"><b>This package is not wrong. It cannot continue until
+            the dependency exists.</b></p>
           <p class="w" style="margin-top:9px">No path, no line and no file. An error names where in the
             package to look; the absence of a location is the signal that the package is not where the
             problem is.</p>
