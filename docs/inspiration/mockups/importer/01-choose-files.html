@@ -1,0 +1,192 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Importer 1 of 8 · choose files</title>
+<!--
+  IMPORTER SCREEN 1 OF 8. A mockup for review before anything is implemented.
+  Nothing here is wired. The importer does not exist.
+
+  Screen 1 of 8 in the review set; workflow step 1 of 6.
+
+  This screen has one job: choose files and say, in advance, what pressing the
+  button will and will not do. Selecting a file reads its ENVELOPE and nothing
+  else, which is how the list can label each row with its package type and
+  contract version. No verdicts appear here, because no package has been
+  validated, and a screen that guesses at a verdict before validating is the
+  first place a "fail before mutation" promise gets quietly broken.
+-->
+<style>
+  :root{
+    --bg:#EEF3F5; --card:#FFFFFF;
+    --ink:#3C4A4A; --ink-2:#7A8A88; --ink-3:#AEBAB8;
+    --green:#1CC47D; --green-dk:#14A368; --green-soft:#E4F9EF;
+    --line:#E7EDED; --amber:#B3730C; --amber-soft:#FDF3E3;
+    --red:#B3403C; --red-soft:#FBEDEC;
+    --body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--body);background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
+  header{display:flex;align-items:center;gap:12px;padding:16px 32px;background:var(--card);border-bottom:1px solid var(--line)}
+  .mk{width:28px;height:28px;border-radius:9px;background:var(--green);flex:none;box-shadow:0 3px 0 var(--green-dk)}
+  .wordmark{font-weight:800;font-size:17px;letter-spacing:-.2px}
+  .where{margin-left:auto;font-size:13px;color:var(--ink-2);font-weight:700}
+  main{max-width:1080px;margin:0 auto;padding:26px 32px 56px}
+  h1{font-size:23px;font-weight:800;letter-spacing:-.3px;margin:0 0 4px}
+  .lede{font-size:14px;color:var(--ink-2);font-weight:600;margin:0 0 22px;max-width:72ch}
+
+  .rail{display:flex;gap:8px;margin:0 0 22px;flex-wrap:wrap}
+  .step{display:flex;align-items:center;gap:9px;background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:7px 15px 7px 8px;font-size:12.5px;font-weight:700;color:var(--ink-3)}
+  .step b{width:22px;height:22px;border-radius:50%;background:var(--bg);color:var(--ink-3);display:grid;place-items:center;font-size:11.5px;font-weight:800}
+  .step.on{border-color:var(--green);color:var(--ink)}
+  .step.on b{background:var(--green);color:#fff}
+  .step.write{border-style:dashed}
+
+  .cols{display:grid;grid-template-columns:1.45fr 1fr;gap:18px;align-items:start}
+  .card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:18px 20px}
+  .card h2{font-size:14px;font-weight:800;margin:0 0 3px}
+  .card .sub{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:0 0 14px}
+
+  .drop{border:2px dashed var(--line);border-radius:16px;padding:26px 20px;text-align:center;background:#FCFDFD}
+  .drop .big{font-size:14.5px;font-weight:800;margin-bottom:3px}
+  .drop .small{font-size:12.5px;color:var(--ink-2);font-weight:600}
+  .drop .btn{margin-top:14px}
+
+  .file{display:flex;align-items:center;gap:11px;padding:11px 0;border-top:1px solid var(--line)}
+  .file:first-of-type{border-top:0}
+  .file .ic{width:30px;height:30px;border-radius:9px;background:var(--bg);display:grid;place-items:center;font-family:var(--mono);font-size:9.5px;font-weight:800;color:var(--ink-2);flex:none}
+  .file .nm{font-size:13px;font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .file .nm small{display:block;font-weight:600;font-size:11.5px;color:var(--ink-3);font-family:var(--mono)}
+  .file .sz{font-size:12px;color:var(--ink-3);font-weight:700;white-space:nowrap}
+  .file .x{font:inherit;font-size:12px;font-weight:800;color:var(--ink-3);background:none;border:0;cursor:default;padding:4px 6px}
+  .file.bad .nm{color:var(--red)}
+  .file.bad .ic{background:var(--red-soft);color:var(--red)}
+  .pill{font-size:11px;font-weight:800;border-radius:99px;padding:3px 10px;white-space:nowrap}
+  .neutral{background:var(--bg);color:var(--ink-2)}
+  .bad-pill{background:var(--red-soft);color:var(--red)}
+
+  .btnrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px}
+  .btn{font:inherit;font-size:13px;font-weight:800;border-radius:12px;padding:10px 16px;border:1.5px solid var(--line);background:#fff;color:var(--ink);cursor:default}
+  .btn.primary{background:var(--green);border-color:var(--green);color:#fff;box-shadow:0 2px 0 var(--green-dk)}
+  .btn[disabled]{color:var(--ink-3);background:var(--bg);box-shadow:none;border-color:var(--line)}
+  .note{font-size:12px;color:var(--ink-2);font-weight:600;margin:10px 0 0}
+  .rule{font-size:12.5px;color:var(--ink-2);font-weight:600;background:var(--bg);border-radius:12px;padding:11px 14px;margin:14px 0 0}
+  .rule b{color:var(--ink)}
+  .rule.warn{background:var(--amber-soft);color:var(--amber)}
+  .rule.warn b{color:var(--amber)}
+  .kv{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid var(--line);font-size:12.5px}
+  .kv:first-of-type{border-top:0}
+  .kv .k{color:var(--ink-2);font-weight:600}
+  .kv .v{font-weight:800;font-family:var(--mono);font-size:12px}
+  .link{color:var(--green-dk);font-weight:800;text-decoration:none}
+</style>
+
+<header>
+  <div class="mk"></div>
+  <div class="wordmark">Marginal</div>
+  <div class="where">Teacher tools · import questions · 1 of 6</div>
+</header>
+
+<main>
+  <h1>Choose the packages to import</h1>
+  <p class="lede">A package is one question, authored outside Marginal against the published contract.
+    Choosing a file reads its first two fields, so this list can say what each one claims to be. Nothing
+    is validated until you press the button, and nothing is written until the last step, and then only
+    what the preview listed.</p>
+
+  <div class="rail">
+    <div class="step on"><b>1</b> Choose files</div>
+    <div class="step"><b>2</b> Parse</div>
+    <div class="step"><b>3</b> Validate</div>
+    <div class="step"><b>4</b> Resolve</div>
+    <div class="step"><b>5</b> Review changes</div>
+    <div class="step write"><b>6</b> Publish</div>
+  </div>
+
+  <div class="cols">
+    <div>
+      <div class="card">
+        <h2>Files</h2>
+        <p class="sub">One question per file. A whole folder is fine; they are read as a set.</p>
+
+        <div class="drop">
+          <div class="big">Drop package files here</div>
+          <div class="small">or choose them from your computer</div>
+          <button class="btn">Choose files</button>
+        </div>
+
+        <div style="margin-top:16px">
+          <div class="file">
+            <div class="ic">JSON</div>
+            <div class="nm">example-mkt-01.json<small>marginal.question-package · 1.0</small></div>
+            <div class="sz">69 KB</div>
+            <button class="x">remove</button>
+          </div>
+          <div class="file">
+            <div class="ic">JSON</div>
+            <div class="nm">example-ah-religion.json<small>marginal.question-package · 1.0</small></div>
+            <div class="sz">2.3 KB</div>
+            <button class="x">remove</button>
+          </div>
+          <div class="file">
+            <div class="ic">JSON</div>
+            <div class="nm">invalid-demo.json<small>marginal.question-package · 1.0</small></div>
+            <div class="sz">6.5 KB</div>
+            <button class="x">remove</button>
+          </div>
+          <div class="file bad">
+            <div class="ic">TXT</div>
+            <div class="nm">marking-notes.txt<small>not a package</small></div>
+            <div class="sz">4 KB</div>
+            <span class="pill bad-pill">will not be read</span>
+            <button class="x">remove</button>
+          </div>
+        </div>
+
+        <div class="rule warn"><b>One file is not a package.</b> It does not declare
+          <code>"schema": "marginal.question-package"</code>, so it is set aside now rather than
+          failing four screens later with a parse error that says nothing useful. Three files will be
+          validated.</div>
+
+        <div class="btnrow">
+          <button class="btn primary">Validate 3 files</button>
+          <button class="btn">Cancel</button>
+        </div>
+        <p class="note">This parses and validates all three in full before any of them could be
+          published. It writes nothing.</p>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2>What this reader supports</h2>
+        <p class="sub">Shown before you choose, because a package authored against a different major
+          version will be refused rather than interpreted.</p>
+        <div class="kv"><span class="k">package type</span><span class="v">marginal.question-package</span></div>
+        <div class="kv"><span class="k">contract version</span><span class="v">1.0</span></div>
+        <div class="kv"><span class="k">a later minor</span><span class="v">read, with a note</span></div>
+        <div class="kv"><span class="k">a different major</span><span class="v">refused</span></div>
+        <div class="rule"><b>The specification is published.</b>
+          <a class="link" href="#">authoring-guide.md</a> ·
+          <a class="link" href="#">question-package.schema.json</a> ·
+          <a class="link" href="#">the three templates</a> ·
+          <a class="link" href="#">directive-registry.json</a>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <h2>Where these would land</h2>
+        <p class="sub">Nothing is written until the last step. This is what the last step would write
+          into.</p>
+        <div class="kv"><span class="k">question bank</span><span class="v">19 questions</span></div>
+        <div class="kv"><span class="k">vocabulary</span><span class="v">14 records</span></div>
+        <div class="kv"><span class="k">concepts</span><span class="v">6 records</span></div>
+        <div class="kv"><span class="k">lessons</span><span class="v">4 records</span></div>
+        <div class="kv"><span class="k">evidence</span><span class="v">58 records</span></div>
+        <div class="kv"><span class="k">syllabus</span><span class="v">197 nodes</span></div>
+        <div class="rule"><b>An import adds; it does not overwrite.</b> A package that provides a
+          record with an id already in a library is rejected, and a question id already in the bank
+          is rejected. Updating what is already here is a later workflow.</div>
+      </div>
+    </div>
+  </div>
+</main>
