@@ -97,28 +97,28 @@
 
   <div class="cols">
     <div class="card">
-      <p class="count"><span>3 packages</span> read</p>
-      <p class="sub">One question per package, each declaring a contract this reader supports.</p>
+      <p class="count"><span>3 packages</span> parsed</p>
+      <p class="sub">One question per package, each declaring a contract version Marginal supports.</p>
       <table>
         <tr><th>package</th><th>contract</th><th>question</th><th class="r">result</th></tr>
         <tr>
           <td class="f">example-mkt-01.json<small>marginal.question-package</small></td>
           <td class="v">1.0</td><td class="q">mkt-01</td>
-          <td class="r"><span class="ok">read</span></td>
+          <td class="r"><span class="ok">parsed</span></td>
         </tr>
         <tr>
           <td class="f">example-ah-religion.json<small>marginal.question-package</small></td>
           <td class="v">1.0</td><td class="q">ah-religion</td>
-          <td class="r"><span class="ok">read</span></td>
+          <td class="r"><span class="ok">parsed</span></td>
         </tr>
         <tr>
           <td class="f">invalid-demo.json<small>marginal.question-package</small></td>
           <td class="v">1.0</td><td class="q">Mkt 02!</td>
-          <td class="r"><span class="ok">read</span></td>
+          <td class="r"><span class="ok">parsed</span></td>
         </tr>
       </table>
 
-      <div class="rule"><b>All three are readable.</b> Nothing has been validated against the content
+      <div class="rule"><b>All three parsed.</b> Nothing has been validated against the content
         contract yet, so nothing here says whether a question is any good, or even whether its id is
         allowed. That is the next step.</div>
 
@@ -133,7 +133,7 @@
       <div class="card">
         <h2>What parsing checked</h2>
         <p class="quiet">The file is well formed JSON, it declares itself a Marginal question package,
-          and its contract version is one this reader can interpret.</p>
+          and its contract version is one this version of Marginal can interpret.</p>
         <p class="quiet"><b>And what it did not.</b> Nothing about the question: not its id, not its
           directive, not whether anything it references exists.</p>
       </div>

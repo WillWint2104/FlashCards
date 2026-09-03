@@ -1,0 +1,233 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Importer 3 of 8 · validate</title>
+<!--
+  IMPORTER SCREEN 3 OF 8. A mockup for review before anything is implemented.
+  Workflow stage 3 of 6.
+
+  ONE question: is what each package says internally valid?
+
+  Nothing here is about whether the things a package NAMES exist. An evidence
+  record it references, a concept it points at, a library that has not caught up:
+  all of that is stage 4, and mixing it in here would make "this package is
+  wrong" and "this library is not ready yet" look like the same problem, which
+  is the distinction the whole contract turns on.
+
+  This is also the screen most at risk of becoming the engineering dashboard
+  again. The rule it follows: the first view is three verdicts, and the detail is
+  grouped by what an author would DO about it rather than by which check fired.
+  Twenty-eight faults listed flat is a wall; twenty-eight faults in five named
+  groups is an afternoon's work with an order to it.
+
+  In the built screen the detail card is COLLAPSED until a teacher opens it, so
+  the first view really is three verdicts. It is drawn open here because a
+  mockup nobody can see the inside of is not reviewable.
+-->
+<style>
+  :root{
+    --bg:#EEF3F5; --card:#FFFFFF;
+    --ink:#3C4A4A; --ink-2:#7A8A88; --ink-3:#AEBAB8;
+    --green:#1CC47D; --green-dk:#14A368; --green-soft:#E4F9EF;
+    --line:#E7EDED; --amber:#B3730C; --amber-soft:#FDF3E3;
+    --red:#B3403C; --red-soft:#FBEDEC;
+    --body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--body);background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
+  header{display:flex;align-items:center;gap:12px;padding:16px 32px;background:var(--card);border-bottom:1px solid var(--line)}
+  .mk{width:28px;height:28px;border-radius:9px;background:var(--green);flex:none;box-shadow:0 3px 0 var(--green-dk)}
+  .wordmark{font-weight:800;font-size:17px;letter-spacing:-.2px}
+  .where{margin-left:auto;font-size:13px;color:var(--ink-2);font-weight:700}
+  main{max-width:1080px;margin:0 auto;padding:26px 32px 56px}
+  h1{font-size:23px;font-weight:800;letter-spacing:-.3px;margin:0 0 4px}
+  .lede{font-size:14px;color:var(--ink-2);font-weight:600;margin:0 0 22px;max-width:72ch}
+
+  .rail{display:flex;gap:8px;margin:0 0 22px;flex-wrap:wrap}
+  .step{display:flex;align-items:center;gap:9px;background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:7px 15px 7px 8px;font-size:12.5px;font-weight:700;color:var(--ink-3)}
+  .step b{width:22px;height:22px;border-radius:50%;background:var(--bg);color:var(--ink-3);display:grid;place-items:center;font-size:11.5px;font-weight:800}
+  .step.on{border-color:var(--green);color:var(--ink)}
+  .step.on b{background:var(--green);color:#fff}
+  .step.done{color:var(--ink-2)}
+  .step.done b{background:var(--green-soft);color:var(--green-dk)}
+  .step.write{border-style:dashed}
+
+  .cols{display:grid;grid-template-columns:1.45fr 1fr;gap:18px;align-items:start}
+  .card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:18px 20px}
+  .card h2{font-size:14px;font-weight:800;margin:0 0 3px}
+  .card .sub{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:0 0 14px}
+  .count{font-size:19px;font-weight:800;letter-spacing:-.2px;margin:0 0 2px}
+  .count span{color:var(--green-dk)}
+  .count em{font-style:normal;color:var(--red)}
+
+  .verdict{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+  .verdict:first-of-type{border-top:0}
+  .verdict .q{font-family:var(--mono);font-size:12.5px;font-weight:700;flex:1}
+  .verdict .q small{display:block;font-family:var(--body);font-size:11.5px;font-weight:600;color:var(--ink-3)}
+  .tag{font-size:11.5px;font-weight:800;border-radius:99px;padding:4px 11px;white-space:nowrap}
+  .good{background:var(--green-soft);color:var(--green-dk)}
+  .bad{background:var(--red-soft);color:var(--red)}
+  .warnt{background:var(--amber-soft);color:var(--amber)}
+
+  .grp{border-top:1px solid var(--line);padding:13px 0}
+  .grp:first-of-type{border-top:0}
+  .grph{display:flex;align-items:baseline;gap:10px}
+  .grph .n{font-size:13px;font-weight:800;flex:1}
+  .grph .c{font-size:11.5px;font-weight:800;color:var(--red);background:var(--red-soft);border-radius:99px;padding:3px 10px}
+  .grph .c.w{color:var(--amber);background:var(--amber-soft)}
+  .grpw{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:4px 0 8px}
+  .ex{font-size:12.5px;margin:0 0 6px;padding-left:13px;border-left:2px solid var(--line)}
+  .ex .at{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--ink-3);display:block}
+  .ex .msg{color:var(--ink-2);font-weight:600}
+  .more{font:inherit;font-size:11.5px;font-weight:800;color:var(--green-dk);background:none;border:0;padding:2px 0 0 13px;cursor:default;text-decoration:underline}
+
+  .btnrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px}
+  .btn{font:inherit;font-size:13px;font-weight:800;border-radius:12px;padding:10px 16px;border:1.5px solid var(--line);background:#fff;color:var(--ink);cursor:default}
+  .btn.primary{background:var(--green);border-color:var(--green);color:#fff;box-shadow:0 2px 0 var(--green-dk)}
+  .note{font-size:12px;color:var(--ink-2);font-weight:600;margin:10px 0 0}
+  .quiet{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:0 0 11px}
+  .quiet b{color:var(--ink)}
+  .rule{font-size:12.5px;color:var(--ink-2);font-weight:600;background:var(--bg);border-radius:12px;padding:11px 14px;margin:14px 0 0}
+  .rule b{color:var(--ink)}
+  details{font-size:12.5px}
+  summary{font-weight:800;font-size:12.5px;cursor:default;color:var(--ink)}
+  details p{color:var(--ink-2);font-weight:600;margin:9px 0 0}
+</style>
+
+<header>
+  <div class="mk"></div>
+  <div class="wordmark">Marginal</div>
+  <div class="where">Teacher tools · import questions · 3 of 6</div>
+</header>
+
+<main>
+  <h1>Validate packages</h1>
+  <p class="lede">Each package was checked against the content contract: its own fields, values and
+    internal consistency. Whether the records it names actually exist is the next step.</p>
+
+  <div class="rail">
+    <div class="step done"><b>✓</b> Choose files</div>
+    <div class="step done"><b>✓</b> Parse</div>
+    <div class="step on"><b>3</b> Validate</div>
+    <div class="step"><b>4</b> Resolve references</div>
+    <div class="step"><b>5</b> Review changes</div>
+    <div class="step write"><b>6</b> Publish</div>
+  </div>
+
+  <div class="cols">
+    <div>
+      <div class="card">
+        <p class="count"><span>2 valid</span>, <em>1 rejected</em></p>
+        <p class="sub">Every package was checked in full. Nothing has been written.</p>
+        <div class="verdict">
+          <div class="q">mkt-01<small>example-mkt-01.json</small></div>
+          <span class="tag good">valid</span>
+        </div>
+        <div class="verdict">
+          <div class="q">ah-religion<small>example-ah-religion.json</small></div>
+          <span class="tag good">valid</span>
+        </div>
+        <div class="verdict">
+          <div class="q">Mkt 02!<small>invalid-demo.json</small></div>
+          <span class="tag warnt">1 to check</span>
+          <span class="tag bad">28 problems</span>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <h2>invalid-demo.json</h2>
+        <p class="sub">Grouped by what to do about them, not by which check found them.</p>
+
+        <div class="grp">
+          <div class="grph"><span class="n">Written against an older shape</span><span class="c">8</span></div>
+          <p class="grpw">These fields were replaced. Each one still works inside Marginal today and
+            cannot be expressed in a package, which is why the contract names them.</p>
+          <div class="ex"><span class="at">pathways[0].evidence</span>
+            <span class="msg">Evidence matched by display label. Two records sharing a label silently
+              become one. Use <code>evidenceRefs</code> with ids.</span></div>
+          <div class="ex"><span class="at">pathways[0].concept</span>
+            <span class="msg">A topic, section and point triple matched by prefix. Use
+              <code>syllabusRef</code> and <code>conceptRef</code>.</span></div>
+          <button class="more">Show all 8</button>
+        </div>
+
+        <div class="grp">
+          <div class="grph"><span class="n">A value outside what the contract allows</span><span class="c">6</span></div>
+          <p class="grpw">Each names a list. Nothing is guessed at or mapped to a nearest match.</p>
+          <div class="ex"><span class="at">question.directive</span>
+            <span class="msg">"ponder" is not a command Marginal recognises. The registry lists 22.</span></div>
+          <div class="ex"><span class="at">question.marks</span>
+            <span class="msg">0 is outside 1 to 40.</span></div>
+          <button class="more">Show all 6</button>
+        </div>
+
+        <div class="grp">
+          <div class="grph"><span class="n">Ids, and things naming other parts of this package</span><span class="c">5</span></div>
+          <p class="grpw">All inside the file. Nothing here needed anything from Marginal to check.</p>
+          <div class="ex"><span class="at">question.id</span>
+            <span class="msg">"Mkt 02!" is not lower case with hyphens.</span></div>
+          <div class="ex"><span class="at">pathways[1].areaRef</span>
+            <span class="msg">"servicescape" is not an area this package defines.</span></div>
+          <button class="more">Show all 5</button>
+        </div>
+
+        <div class="grp">
+          <div class="grph"><span class="n">Rules this app does not bend</span><span class="c">6</span></div>
+          <p class="grpw">Each of these protects something a student sees.</p>
+          <div class="ex"><span class="at">marking.bands</span>
+            <span class="msg">Band descriptors with no source named. Marking language is quoted from
+              somewhere or it is invented.</span></div>
+          <div class="ex"><span class="at">question.vocabRefs[0]</span>
+            <span class="msg">"market segmentation" looks like a term rather than an id. Vocabulary is
+              named by id and never matched by its own text.</span></div>
+          <button class="more">Show all 6</button>
+        </div>
+
+        <div class="grp">
+          <div class="grph"><span class="n">The package disagrees with itself</span><span class="c">3</span></div>
+          <p class="grpw">Its <code>requires</code> list and what it actually references are different.</p>
+          <div class="ex"><span class="at">requires.evidence</span>
+            <span class="msg">One id is referenced and not declared.</span></div>
+          <button class="more">Show all 3</button>
+        </div>
+
+        <div class="grp">
+          <div class="grph"><span class="n">Worth checking, and not blocking</span><span class="c w">1</span></div>
+          <p class="grpw">Recorded on the import and does not stop it.</p>
+          <div class="ex"><span class="at">question.overallArgument</span>
+            <span class="msg">An em dash reaches a student here.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2>What happens to each</h2>
+        <p class="quiet"><b>mkt-01</b> and <b>ah-religion</b> continue to the next step.</p>
+        <p class="quiet"><b>invalid-demo.json</b> stops here. One rejected package does not hold up the
+          others, and nothing from it will be written.</p>
+        <div class="btnrow">
+          <button class="btn primary">Continue with 2 packages</button>
+        </div>
+        <p class="note">Or fix the file and start again with all three.</p>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <h2>Not checked here</h2>
+        <p class="quiet">Whether the evidence, concepts and syllabus points these packages name
+          actually exist. A package can be perfectly valid and still be waiting on something Marginal
+          does not have yet, and that is a different answer with a different fix.</p>
+        <p class="quiet">Resolve references is the next step.</p>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <details>
+          <summary>How importing works</summary>
+          <p>Parse asks whether the file is a readable package. Validate asks whether what it says is
+            valid. Resolve references asks whether the things it names exist. Review shows what would
+            change. Publish writes it, and is the only step that does.</p>
+        </details>
+      </div>
+    </div>
+  </div>
+</main>
