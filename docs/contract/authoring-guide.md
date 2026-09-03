@@ -76,6 +76,17 @@ with. It never claims that package is fully checked.
 There is no migration framework and no rewriting of old files. A package is read
 by a reader that understands its major version, or it is not read.
 
+**What a reader does not understand, it keeps.** The package document is the record
+of truth: publication stores the file exactly as authored, and everything else is
+derived from it and can be rebuilt. So a reader of `1.0` opening a later minor
+validates what it knows, lists what it is carrying without interpreting, and stores
+all of it. A reader that publishes its own reconstruction instead would return a
+package smaller than it received, with nothing to warn anybody, because from its
+own side everything it knew about was fine.
+
+A reader that cannot hand the document back may inspect and must not publish.
+Inspecting and losing is worse than refusing.
+
 | the package says | the reader does |
 | --- | --- |
 | the version this reader supports | validates in full |

@@ -237,6 +237,13 @@ framework: a package is read by a reader that understands its major version, or
 it is not read. Taken now, while files exist only inside this repository, because
 the point of a version is to be there before it is needed.
 
+**29. The document is the record of truth.** Publication stores the package file
+exactly as authored; the resolved view is derived and rebuildable. This is what
+makes a later minor safe to publish rather than merely safe to read: what a
+reader cannot interpret, it still keeps. A reader that cannot hand back the
+document it was given may inspect and must not publish, and the report says so
+by name rather than in a comment.
+
 ## What is still open
 
 Nothing in the format is waiting on a decision. What remains is work the

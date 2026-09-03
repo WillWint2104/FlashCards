@@ -257,6 +257,17 @@ function guide(manifest) {
   L.push("There is no migration framework and no rewriting of old files. A package is read");
   L.push("by a reader that understands its major version, or it is not read.");
   L.push("");
+  L.push("**What a reader does not understand, it keeps.** The package document is the record");
+  L.push("of truth: publication stores the file exactly as authored, and everything else is");
+  L.push("derived from it and can be rebuilt. So a reader of `" + CONTRACT_VERSION + "` opening a later minor");
+  L.push("validates what it knows, lists what it is carrying without interpreting, and stores");
+  L.push("all of it. A reader that publishes its own reconstruction instead would return a");
+  L.push("package smaller than it received, with nothing to warn anybody, because from its");
+  L.push("own side everything it knew about was fine.");
+  L.push("");
+  L.push("A reader that cannot hand the document back may inspect and must not publish.");
+  L.push("Inspecting and losing is worse than refusing.");
+  L.push("");
   L.push("| the package says | the reader does |");
   L.push("| --- | --- |");
   L.push("| the version this reader supports | validates in full |");

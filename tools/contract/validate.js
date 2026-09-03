@@ -32,6 +32,7 @@ const path = require("path");
 const { FIELDS, ENUMS, LIBRARIES, CAPABILITIES, CONTAINERS } = require("./fields.js");
 const { enumValues, ID_PATTERN, QID_PATTERN } = require("./generate.js");
 const caps = require("./capabilities.js");
+const { storable, carriedPaths } = require("./resolve.js");
 const directives = require("./directives.js");
 
 const SEV = { error: "error", blocked: "blocked", shortfall: "shortfall", warning: "warning" };
@@ -118,14 +119,28 @@ function validate(pkg, man, opts) {
       "have kept its name and changed its meaning, and guessing at that is worse than stopping");
     return finish(pkg, F, null, null);
   }
-  if (minor > CONTRACT_MINOR) {
+  const ahead = minor > CONTRACT_MINOR;
+  if (ahead) {
     // Same major, so nothing here means something else. The package may carry
     // additions this reader has never heard of, and it is checked against
     // everything the reader does know rather than refused for being newer.
+    //
+    // Publishing it is only safe because the DOCUMENT is what gets stored. If
+    // publication wrote this reader's reconstruction instead, the fields it did
+    // not understand would be gone and the package would come back from the
+    // store smaller than it went in. That is checked below rather than assumed.
     add(SEV.warning, "CONTRACT_VERSION_AHEAD", "contractVersion",
       "authored against " + pkg.contractVersion + " and checked against " + CONTRACT_VERSION +
-      ". Everything this validator knows about has been checked; anything added after " + CONTRACT_VERSION + " has not");
+      ". Everything this validator knows about has been checked; anything added after " + CONTRACT_VERSION +
+      " has not, and is carried unread rather than dropped");
   }
+  // Proved per package, not promised once. If a reader ever cannot hand back the
+  // document it was given, it may inspect and must not publish: inspecting and
+  // losing is worse than refusing.
+  const preserved = JSON.stringify(storable(pkg)) === JSON.stringify(pkg);
+  if (!preserved)
+    add(SEV.error, "WOULD_NOT_PRESERVE_DOCUMENT", "",
+      "this reader cannot hand back the document it was given, so publishing it would store less than was authored. It may be inspected and not published");
 
   const lib = (man && man.records) || {};
   const REG = (opts && opts.registry) || directives.registry();
@@ -393,7 +408,7 @@ function validate(pkg, man, opts) {
     });
   });
 
-  return finish(pkg, F, capability(pkg, man, REG, F));
+  return finish(pkg, F, capability(pkg, man, REG, F), { preservesDocument: preserved, carried: carriedPaths(pkg), aheadOfReader: ahead });
 }
 
 // ---- capabilities -----------------------------------------------------------
@@ -453,7 +468,7 @@ function vocabIds(pkg) {
   return [...new Set(out)];
 }
 
-function finish(pkg, F, cap) {
+function finish(pkg, F, cap, doc) {
   const counts = { error: 0, blocked: 0, shortfall: 0, warning: 0 };
   F.forEach(f => counts[f.severity]++);
   const verdict = counts.error ? "rejected"
@@ -464,6 +479,10 @@ function finish(pkg, F, cap) {
     package: ((pkg || {}).question || {}).id || "(unnamed)",
     verdict: verdict, wouldImport: !counts.error && !counts.blocked,
     counts: counts, findings: F, capability: cap,
+    // What publication would write, and what this reader is carrying without
+    // interpreting. Both are facts about the DOCUMENT rather than about the
+    // content, which is why they sit outside capability.
+    document: doc || { preservesDocument: true, carried: [], aheadOfReader: false },
   };
 }
 
@@ -533,6 +552,13 @@ function format(rep) {
       });
       out.push("");
     }
+  }
+  if (rep.document && rep.document.aheadOfReader) {
+    out.push("CARRIED UNREAD - authored against a later minor than this reader implements");
+    out.push("  the document is stored exactly as authored, so nothing below is lost");
+    rep.document.carried.slice(0, 12).forEach(p => out.push("      " + p));
+    if (rep.document.carried.length > 12) out.push("      and " + (rep.document.carried.length - 12) + " more");
+    out.push("");
   }
   out.push(rep.wouldImport ? "would import" : "would NOT import");
   return out.join("\n");

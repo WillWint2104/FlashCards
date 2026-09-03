@@ -24,6 +24,7 @@ reviewed as a coherent authored set, and imported, without anyone editing
 | `library-manifest.json` | **generated.** Ids and states, no bodies. What a validator checks a `requires` block against |
 | `invalid-demo.json` | **authored to be wrong.** One fault of every kind |
 | `unsupported-directive-demo.json` | **authored, and entirely valid.** A Compare question, asking for support that does not exist |
+| `ahead-minor-demo.json` | **authored against 1.7.** Carries four fields this reader cannot read, and must survive it unchanged |
 | `decisions.md` | the decisions taken, and what each one rules out |
 | `migration.md` | how the questions in source get out of source |
 
@@ -50,8 +51,18 @@ is a promise about **additions**: a package authored against a later minor still
 validates against everything the reader knows, and the report records that it may
 not know everything.
 
-No migration framework, and no rewriting of old files. `docs/contract/authoring-guide.md`
-carries the full table.
+No migration framework, and no rewriting of old files.
+
+**What a reader does not understand, it keeps.** The package document is the
+record of truth: publication stores the file as authored, and every derived
+thing can be rebuilt from it. A reader publishing its own reconstruction would
+return a package smaller than it received and nothing would warn anybody,
+because from its own side everything it knew about was fine.
+`ahead-minor-demo.json` is a 1.7 package carrying four fields this reader has
+never heard of; `tests/t18.mjs` requires it back byte for byte. A reader that
+cannot do that may inspect and must not publish.
+
+`docs/contract/authoring-guide.md` carries the full table.
 
 ## One field definition, four artefacts
 

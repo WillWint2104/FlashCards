@@ -10,6 +10,7 @@
 // format that quietly loses a field is a format nobody notices losing it until
 // a student meets the gap.
 const directives = require("./directives.js");
+const { FIELDS } = require("./fields.js");
 
 function resolve(pkg, libraries, REG) {
   const missing = [];
@@ -88,4 +89,53 @@ function resolve(pkg, libraries, REG) {
     missing: missing,
   };
 }
-module.exports = { resolve };
+// ---- what publication writes ------------------------------------------------
+//
+// THE PACKAGE DOCUMENT IS THE RECORD OF TRUTH. Publication stores this, exactly
+// as authored, and everything else is derived from it and can be rebuilt.
+//
+// That is the whole answer to forward compatibility. A 1.0 reader opening a 1.7
+// package understands some of it and not all of it; if publication stored the
+// reader's reconstruction, the parts it did not understand would be gone, and a
+// package would come back from the store smaller than it went in. Storing the
+// document verbatim makes that impossible by construction rather than by
+// remembering to copy every field.
+//
+// If a reader ever cannot store a document verbatim, it may inspect and must not
+// publish. Inspecting and losing is worse than refusing.
+function storable(pkg) {
+  return JSON.parse(JSON.stringify(pkg));
+}
+
+// Which paths in this document the field definition does not name. Not an error
+// and not a rejection: forty of them exist in the questions that ship, because
+// the specification names the fields an author must get right and carries some
+// blocks whole. It is reported so that a reviewer opening a package authored
+// against a later contract can see what this reader is carrying without
+// interpreting.
+const SPEC = FIELDS.filter(f => !/^shared:/.test(f.owner)).map(f => f.path.split("."));
+const bare = s => String(s).replace(/\[\]/g, "");
+function specKnows(parts) {
+  return SPEC.some(pat => {
+    if (pat.length < parts.length) return false;
+    return parts.every((p, i) => {
+      const a = bare(pat[i]);
+      return a === bare(p) || /^<.*>$/.test(a);
+    });
+  });
+}
+function carriedPaths(pkg) {
+  const out = {};
+  (function walk(o, parts) {
+    if (!o || typeof o !== "object") return;
+    if (Array.isArray(o)) return o.forEach(x => walk(x, parts));
+    Object.keys(o).forEach(k => {
+      const p = parts.concat([k]);
+      if (!specKnows(p)) { out[p.join(".")] = true; return; }
+      walk(o[k], p);
+    });
+  })(pkg, []);
+  return Object.keys(out).sort();
+}
+
+module.exports = { resolve, storable, carriedPaths };

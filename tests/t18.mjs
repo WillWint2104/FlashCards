@@ -110,6 +110,62 @@ console.log("1b. every package declares the contract it was authored against");
     "and everything else is still checked: " + ahead.capability.headline);
 }
 
+console.log("1c. a package from a later minor keeps what this reader cannot read");
+{
+  // The failure this prevents: a 1.0 reader opens a 1.7 package, validates the
+  // subset it understands, publishes its own reconstruction, and the package
+  // comes back from the store smaller than it went in. Nothing warns, because
+  // from the reader's side everything it knew about was fine.
+  const { storable, carriedPaths, resolve } = require("../tools/contract/resolve.js");
+  const raw = text("docs/contract/ahead-minor-demo.json");
+  const pkg = JSON.parse(raw);
+  ok(pkg.contractVersion === "1.7", "the fixture is authored against a later minor: " + pkg.contractVersion);
+
+  const r = validate(pkg, MAN);
+  ok(r.wouldImport, "it imports: " + r.verdict + " " + JSON.stringify(codes(r)));
+  ok(codes(r).indexOf("CONTRACT_VERSION_AHEAD") >= 0, "with the warning that says why");
+  ok(/carried unread rather than dropped/.test(r.findings.find(f => f.code === "CONTRACT_VERSION_AHEAD").message),
+    "and the warning says what happens to what it cannot read");
+
+  // The four additions are visible to a reviewer rather than silently absorbed
+  const planted = ["accessibility", "question.readingAge", "requirements.sourceSkills", "marking.rubricRef"];
+  const missed = planted.filter(p => r.document.carried.indexOf(p) < 0);
+  ok(!missed.length, "every field this reader does not define is listed: missing " + JSON.stringify(missed));
+  ok(r.document.aheadOfReader, "and the report says the package is ahead of the reader");
+
+  // The guarantee itself. Publication stores the DOCUMENT, so what it cannot
+  // read cannot be lost, and that is checked rather than promised.
+  ok(r.document.preservesDocument, "the reader reports that it preserves the document");
+  ok(JSON.stringify(storable(pkg), null, 2) + "\n" === raw,
+    "and hands back the file byte for byte, including the four fields it never read");
+  // reading it does not change it, either
+  const before = JSON.stringify(pkg);
+  resolve(pkg, lib.build().libraries, require("../tools/contract/directives.js").registry());
+  validate(pkg, MAN);
+  ok(JSON.stringify(pkg) === before, "validating and resolving leave the package untouched");
+
+  // What actually makes the guarantee true: storable() is a clone and nothing
+  // else. The equality check in the validator cannot fail for a document that
+  // came from a JSON file, so it is a tripwire for a future implementation
+  // rather than a test of this one, and asserting the shape of the function is
+  // the part that has teeth today.
+  const src = readFileSync(url("tools/contract/resolve.js"), "utf8");
+  const body = src.slice(src.indexOf("function storable("), src.indexOf("// Which paths in this document"));
+  ok(/JSON\.parse\(JSON\.stringify\(pkg\)\)/.test(body),
+    "storable is a whole-document clone: " + JSON.stringify(body.replace(/\s+/g, " ").trim()));
+  ok(!/(delete |\.map\(|pick|omit|Object\.keys)/.test(body),
+    "with no field list, no pick and no omit in it");
+  const clone = storable(pkg);
+  clone.question.text = "changed";
+  ok(pkg.question.text !== "changed", "and it is a copy, so nothing downstream can edit the stored document");
+
+  // The rule if that ever stops being true, stated in the report rather than in
+  // a comment: a reader that cannot hand the document back may inspect and must
+  // not publish.
+  ok(/WOULD_NOT_PRESERVE_DOCUMENT/.test(readFileSync(url("tools/contract/validate.js"), "utf8")),
+    "and a reader that cannot preserve the document is refused publication by name");
+}
+
 console.log("2. a judgement question with no judgement shapes is VALID, and says what it cannot give");
 {
   // The distinction the contract turns on: missing shared support is a capability
