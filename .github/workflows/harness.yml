@@ -68,5 +68,5 @@ jobs:
       # artefact means the two can drift, and the preview a reviewer reads would
       # stop being the thing the tests ran against.
       - name: the committed build matches a fresh one
-        run: git diff --exit-code -- marginal-preview.html docs/support-coverage.md
+        run: git diff --exit-code -- marginal-preview.html docs/support-coverage.md packages/library-manifest.json
       - run: node tests/run.js

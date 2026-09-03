@@ -1,0 +1,234 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Teacher import and review flow</title>
+<!--
+  A mockup, not a build. Nothing here is wired to anything, and the importer it
+  describes does not exist yet. It is a picture of the six steps so the shape of
+  the flow can be argued with before any of it is written.
+
+  Marginal's visual system: white surfaces on the page ground, one green accent,
+  sentence case, no em dashes in anything a person reads.
+-->
+<style>
+  :root{
+    --bg:#EEF3F5; --card:#FFFFFF;
+    --ink:#3C4A4A; --ink-2:#7A8A88; --ink-3:#AEBAB8;
+    --green:#1CC47D; --green-dk:#14A368; --green-soft:#E4F9EF;
+    --line:#E7EDED;
+    --amber:#B3730C; --amber-soft:#FDF3E3;
+    --red:#B3403C; --red-soft:#FBEDEC;
+    --body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--body);background:var(--bg);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased}
+  header{display:flex;align-items:center;gap:12px;padding:16px 32px;background:var(--card);border-bottom:1px solid var(--line)}
+  .mk{width:28px;height:28px;border-radius:9px;background:var(--green);flex:none;box-shadow:0 3px 0 var(--green-dk)}
+  .wordmark{font-weight:800;font-size:17px;letter-spacing:-.2px}
+  .where{margin-left:auto;font-size:13px;color:var(--ink-2);font-weight:700}
+  main{max-width:1180px;margin:0 auto;padding:28px 32px 60px}
+  h1{font-size:23px;font-weight:800;letter-spacing:-.3px;margin:0 0 4px}
+  .lede{font-size:14px;color:var(--ink-2);font-weight:600;margin:0 0 26px;max-width:70ch}
+
+  .rail{display:flex;gap:8px;margin:0 0 26px;flex-wrap:wrap}
+  .step{display:flex;align-items:center;gap:9px;background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:7px 15px 7px 8px;font-size:12.5px;font-weight:700;color:var(--ink-2)}
+  .step b{width:22px;height:22px;border-radius:50%;background:var(--bg);color:var(--ink-2);display:grid;place-items:center;font-size:11.5px;font-weight:800}
+  .step.on{border-color:var(--green);color:var(--ink)}
+  .step.on b{background:var(--green);color:#fff}
+  .step.gate{border-color:var(--amber);color:var(--amber)}
+  .step.gate b{background:var(--amber);color:#fff}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:18px 20px}
+  .card h2{font-size:14px;font-weight:800;margin:0 0 3px;letter-spacing:-.1px}
+  .card .sub{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:0 0 14px}
+  .full{grid-column:1 / -1}
+
+  .file{display:flex;align-items:center;gap:11px;padding:10px 0;border-top:1px solid var(--line)}
+  .file:first-of-type{border-top:0}
+  .file .nm{font-size:13px;font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .file .sz{font-size:12px;color:var(--ink-3);font-weight:700}
+  .pill{font-size:11px;font-weight:800;border-radius:99px;padding:3px 10px;white-space:nowrap}
+  .ok{background:var(--green-soft);color:var(--green-dk)}
+  .warn{background:var(--amber-soft);color:var(--amber)}
+  .bad{background:var(--red-soft);color:var(--red)}
+  .neutral{background:var(--bg);color:var(--ink-2)}
+
+  .sev{border-left:3px solid var(--line);padding:2px 0 2px 14px;margin:0 0 16px}
+  .sev.e{border-color:var(--red)} .sev.b{border-color:var(--amber)}
+  .sev.s{border-color:var(--green-dk)} .sev.w{border-color:var(--ink-3)}
+  .sev h3{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin:0 0 2px}
+  .sev.e h3{color:var(--red)} .sev.b h3{color:var(--amber)}
+  .sev.s h3{color:var(--green-dk)} .sev.w h3{color:var(--ink-2)}
+  .sev p{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:0 0 9px}
+  .find{font-size:12.5px;margin:0 0 8px}
+  .find code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;font-weight:700;background:var(--bg);border-radius:5px;padding:1px 6px}
+  .find .at{color:var(--ink-3);font-weight:700;font-size:11.5px}
+  .find .msg{color:var(--ink-2);font-weight:600;display:block}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--ink-3);font-weight:800;padding:0 0 7px}
+  td{padding:7px 0;border-top:1px solid var(--line);font-weight:600;color:var(--ink-2)}
+  td.d{color:var(--ink);font-weight:700}
+  .bar{width:120px;height:6px;background:var(--bg);border-radius:99px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:8px}
+  .bar i{display:block;height:100%;background:var(--green);border-radius:99px}
+  .bar.zero i{background:var(--red)}
+  .bar.part i{background:var(--amber)}
+
+  .btnrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px}
+  .btn{font:inherit;font-size:13px;font-weight:800;border-radius:12px;padding:10px 16px;border:1.5px solid var(--line);background:#fff;color:var(--ink);cursor:default}
+  .btn.primary{background:var(--green);border-color:var(--green);color:#fff;box-shadow:0 2px 0 var(--green-dk)}
+  .btn[disabled]{color:var(--ink-3);background:var(--bg)}
+  .note{font-size:12px;color:var(--ink-2);font-weight:600;margin:9px 0 0}
+  .rule{font-size:12.5px;color:var(--ink-2);font-weight:600;background:var(--bg);border-radius:12px;padding:11px 14px;margin:14px 0 0}
+  .rule b{color:var(--ink)}
+  .diff{font-size:12.5px;font-weight:700;display:flex;gap:9px;padding:8px 0;border-top:1px solid var(--line)}
+  .diff:first-of-type{border-top:0}
+  .diff .k{width:16px;text-align:center;font-weight:800}
+  .diff .k.add{color:var(--green-dk)} .diff .k.keep{color:var(--ink-3)} .diff .k.stop{color:var(--red)}
+  .diff .t{flex:1}
+  .diff .t small{display:block;color:var(--ink-2);font-weight:600;font-size:11.5px}
+</style>
+
+<header>
+  <div class="mk"></div>
+  <div class="wordmark">Marginal</div>
+  <div class="where">Teacher tools · import questions</div>
+</header>
+
+<main>
+  <h1>Import and review</h1>
+  <p class="lede">Six steps. The first five change nothing at all: the registry and the shared
+    libraries are untouched until the last one, and a package that cannot be published in full is
+    not published in part.</p>
+
+  <div class="rail">
+    <div class="step on"><b>1</b> Choose files</div>
+    <div class="step on"><b>2</b> Parse</div>
+    <div class="step on"><b>3</b> Validate</div>
+    <div class="step gate"><b>4</b> Resolve</div>
+    <div class="step"><b>5</b> Review changes</div>
+    <div class="step"><b>6</b> Publish</div>
+  </div>
+
+  <div class="grid">
+
+    <div class="card">
+      <h2>1 to 2 · what was opened</h2>
+      <p class="sub">Read into memory. Nothing has been written and no registry has been touched.</p>
+      <div class="file"><span class="nm">bus.mkt-01.guided.json</span><span class="sz">65 KB</span><span class="pill ok">parsed</span></div>
+      <div class="file"><span class="nm">anc.ah-religion.write-only.json</span><span class="sz">1.7 KB</span><span class="pill ok">parsed</span></div>
+      <div class="file"><span class="nm">invalid-demo.json</span><span class="sz">3.6 KB</span><span class="pill ok">parsed</span></div>
+      <div class="rule"><b>Fail before mutation.</b> All three are read and validated in full before any
+        of them can publish. One broken package in a set does not leave the other two half imported,
+        because none of them is imported until the set is settled.</div>
+    </div>
+
+    <div class="card">
+      <h2>3 · verdicts</h2>
+      <p class="sub">One line each. The detail is below, and it is never collapsed into a count.</p>
+      <div class="file"><span class="nm">bus.mkt-01</span><span class="pill neutral">guided</span><span class="pill ok">accepted</span></div>
+      <div class="file"><span class="nm">anc.ah-religion</span><span class="pill neutral">write-only</span><span class="pill ok">accepted</span></div>
+      <div class="file"><span class="nm">bus.demo-invalid</span><span class="pill neutral">learn and build</span><span class="pill bad">rejected</span></div>
+      <p class="note">A write-only package is not told off for lacking scaffolding it never claimed.
+        Intent is what a package says it can do, and it is checked against that and nothing else.</p>
+    </div>
+
+    <div class="card full">
+      <h2>4 · what is wrong with bus.demo-invalid, and who fixes each one</h2>
+      <p class="sub">22 errors, 2 blocked, 6 shortfalls, 1 warning. Four different answers, so four
+        different lists.</p>
+
+      <div class="grid">
+        <div>
+          <div class="sev e">
+            <h3>Errors · 22</h3>
+            <p>The package is wrong. It does not import.</p>
+            <div class="find"><code>VOCAB_REF_NOT_AN_ID</code> <span class="at">question.vocabRefs[0]</span>
+              <span class="msg">"market segmentation" looks like a term rather than an id. Vocabulary is
+                named by id and never matched by its own text.</span></div>
+            <div class="find"><code>VOCAB_RECORD_PARTIAL</code> <span class="at">question.vocabRefs[2]</span>
+              <span class="msg">bus.vocab.halfway exists and is half written: subject, example missing.</span></div>
+            <div class="find"><code>PROVIDES_CONFLICT</code> <span class="at">provides.concepts</span>
+              <span class="msg">bus.concept.people already exists. An import adds records; it does not
+                overwrite them.</span></div>
+            <div class="find"><code>BANDS_WITHOUT_SOURCE</code> <span class="at">question.criteria</span>
+              <span class="msg">Band descriptors are present with no source named. Marking language is
+                quoted from somewhere or it is invented.</span></div>
+            <p class="note">18 more, each naming its own path.</p>
+          </div>
+
+          <div class="sev b">
+            <h3>Blocked · 2</h3>
+            <p>The package is right. The library has not caught up. Nothing here is the author's to fix.</p>
+            <div class="find"><code>DEPENDENCY_ABSENT</code> <span class="at">requires.vocabulary</span>
+              <span class="msg">bus.vocab.nowhere is declared, and this library does not have it.</span></div>
+            <div class="find"><code>DEPENDENCY_ABSENT</code> <span class="at">requires.syllabus</span>
+              <span class="msg">bus.syllabus.marketing.marketing-strategies.nonexistent-point is declared,
+                and this library does not have it.</span></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="sev s">
+            <h3>Shortfalls · 6</h3>
+            <p>Well formed, and below the level it claims. Importable at the level it reaches, once
+              somebody says so.</p>
+            <div class="find"><code>SHORTFALL_NO_TEACHING</code>
+              <span class="msg">0 of 2 pathways carry a lesson.</span></div>
+            <div class="find"><code>SHORTFALL_NO_LADDER</code>
+              <span class="msg">0 of 2 pathways carry a full help ladder.</span></div>
+            <div class="find"><code>SHORTFALL_EVIDENCE_UNSOURCED</code>
+              <span class="msg">0 of 2 pathways have evidence carrying a source.</span></div>
+            <div class="btnrow">
+              <button class="btn" disabled>Import as guided instead</button>
+            </div>
+            <p class="note">Offered, never taken automatically. A question quietly demoted is a question
+              nobody knows the state of.</p>
+          </div>
+
+          <div class="sev w">
+            <h3>Warnings · 1</h3>
+            <p>Imports, and is recorded.</p>
+            <div class="find"><code>EM_DASH_IN_STUDENT_TEXT</code> <span class="at">question.areas.people.guides.topic</span>
+              <span class="msg">An em dash reaches a student here.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>5 · readiness for bus.mkt-01</h2>
+      <p class="sub">Measured from the package. Seven dimensions, because one number would average
+        away the row that matters.</p>
+      <table>
+        <tr><th>dimension</th><th>have</th><th></th></tr>
+        <tr><td class="d">guidance</td><td>12 of 12</td><td><span class="bar"><i style="width:100%"></i></span></td></tr>
+        <tr><td class="d">teaching</td><td>4 of 12</td><td><span class="bar part"><i style="width:33%"></i></span></td></tr>
+        <tr><td class="d">concepts</td><td>5 of 5</td><td><span class="bar"><i style="width:100%"></i></span></td></tr>
+        <tr><td class="d">ladders</td><td>3 of 12</td><td><span class="bar part"><i style="width:25%"></i></span></td></tr>
+        <tr><td class="d">evidence</td><td>0 of 12</td><td><span class="bar zero"><i style="width:100%"></i></span></td></tr>
+        <tr><td class="d">vocabulary</td><td>0 asked</td><td><span class="bar"><i style="width:0"></i></span></td></tr>
+        <tr><td class="d">recovery</td><td>yes</td><td><span class="bar"><i style="width:100%"></i></span></td></tr>
+      </table>
+      <p class="note">Fully guided, and not one evidence item carries a source. That is the row a single
+        score would hide, and it is the reason this question is not Learn and Build ready.</p>
+    </div>
+
+    <div class="card">
+      <h2>5 · what publishing would change</h2>
+      <p class="sub">Every write, listed before any of them happens.</p>
+      <div class="diff"><span class="k add">+</span><span class="t">bus.mkt-01<small>a new question in Business Studies, guided</small></span></div>
+      <div class="diff"><span class="k add">+</span><span class="t">anc.ah-religion<small>a new question in Ancient History, write only</small></span></div>
+      <div class="diff"><span class="k keep">=</span><span class="t">16 shared records referenced<small>concepts, evidence and syllabus points already in the libraries, unchanged</small></span></div>
+      <div class="diff"><span class="k keep">=</span><span class="t">0 shared records added<small>neither package provides one</small></span></div>
+      <div class="diff"><span class="k stop">x</span><span class="t">bus.demo-invalid<small>not published, and nothing from it is written</small></span></div>
+      <div class="btnrow">
+        <button class="btn primary">Publish 2 of 3</button>
+        <button class="btn">Back to the files</button>
+      </div>
+      <p class="note">The button says how many, because "publish" beside a rejected package is a
+        question about what is about to happen.</p>
+    </div>
+
+  </div>
+</main>

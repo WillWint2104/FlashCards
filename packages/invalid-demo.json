@@ -1,0 +1,105 @@
+{
+ "format": "marginal.question-package",
+ "formatVersion": 1,
+ "package": {
+  "id": "bus.demo-invalid",
+  "intent": "learn-and-build",
+  "note": "Authored to be wrong. Every fault in it is one an author could plausibly make, and each one is a different KIND of fault, so the report has to keep them apart rather than counting them."
+ },
+ "requires": {
+  "vocabulary": ["bus.vocab.nowhere", "bus.vocab.halfway", "bus.vocab.positioning"],
+  "concepts": ["bus.concept.people"],
+  "evidence": [],
+  "resources": ["bus.resource.chapter-six"],
+  "syllabus": ["bus.syllabus.marketing", "bus.syllabus.marketing.marketing-strategies.nonexistent-point"]
+ },
+ "provides": {
+  "vocabulary": {
+   "bus.vocab.halfway": {
+    "id": "bus.vocab.halfway",
+    "term": "positioning",
+    "plain": "where something sits compared with the things around it",
+    "subject": "",
+    "example": ""
+   },
+   "bus.vocab.positioning": {
+    "id": "bus.vocab.positioning",
+    "term": "positioning",
+    "plain": "where something sits compared with the things around it",
+    "subject": "the place a product holds in the mind of the target market, relative to competing products",
+    "example": "Its higher price positions it above the supermarket brands rather than beside them."
+   }
+  },
+  "concepts": {
+   "bus.concept.people": {
+    "id": "bus.concept.people",
+    "kind": "domain",
+    "oneLine": "a rewritten version of a concept three other questions already point at",
+    "title": "People",
+    "quick": "This record would silently replace the one in the library."
+   }
+  },
+  "resources": {
+   "bus.resource.chapter-six": {
+    "id": "bus.resource.chapter-six",
+    "label": "Chapter 6",
+    "provider": "school drive"
+   }
+  }
+ },
+ "question": {
+  "id": "Mkt 02!",
+  "text": "Ponder how people and processes affect the customer experience.",
+  "command": "Ponder",
+  "marks": 0,
+  "topicRef": "bus.syllabus.marketing",
+  "topicLabel": "Marketing",
+  "criteria": {
+   "bands": [{"range": "17-20", "text": "a band descriptor nobody sourced"}]
+  },
+  "decode": {
+   "highlights": [
+    {"anchor": "Evaluate", "kind": "directive", "label": "what you need to do",
+     "note": "The anchor is highlighted in the question text, and this one is not in it."}
+   ]
+  },
+  "requirements": {
+   "requiredAreas": [{"id": "e-marketing", "label": "e-marketing"}]
+  },
+  "areas": {
+   "people": {"label": "people", "guides": {"topic": "Name the staffing decision — then say what it changes."}},
+   "processes": {"label": "processes", "guides": {"topic": "Name the step the customer moves through."}}
+  },
+  "vocabRefs": [
+   "market segmentation",
+   {"id": "bus.vocab.nowhere", "role": "topic-context"},
+   {"id": "bus.vocab.halfway", "role": "topic-context"},
+   {"id": "bus.vocab.positioning", "role": "key-term"}
+  ],
+  "studyRefs": ["bus.resource.chapter-six"]
+ },
+ "pathways": [
+  {
+   "id": "demo-people-training",
+   "area": "people",
+   "relationship": "training changes what the customer gets",
+   "short": "training -> consistency",
+   "meaning": "A staffing decision reaches the customer through what those staff were taught to do.",
+   "syllabusRef": "bus.syllabus.marketing.marketing-strategies.nonexistent-point",
+   "evidenceRefs": ["bus.evidence.marketing.a-record-nobody-has"],
+   "learning": {
+    "status": "draft",
+    "conceptRefs": {"primary": ["bus.concept.people", "bus.concept.rostering"], "supporting": [], "optional": []}
+   },
+   "help": {"explain": {"hint": "Say what the training changed."}}
+  },
+  {
+   "id": "demo-people-training",
+   "area": "servicescape",
+   "relationship": "the room changes what the customer expects",
+   "short": "surroundings -> expectation",
+   "meaning": "",
+   "help": {}
+  }
+ ]
+}

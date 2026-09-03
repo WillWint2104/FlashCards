@@ -1,0 +1,993 @@
+{
+ "format": "marginal.library-manifest",
+ "formatVersion": 1,
+ "counts": {
+  "vocabulary": {
+   "records": 0,
+   "complete": 0
+  },
+  "concepts": {
+   "records": 6,
+   "complete": 6
+  },
+  "evidence": {
+   "records": 58,
+   "complete": 58
+  },
+  "resources": {
+   "records": 0,
+   "complete": 0
+  },
+  "syllabus": {
+   "records": 86,
+   "complete": 86
+  },
+  "sentenceShapes": {
+   "records": 6,
+   "complete": 6
+  }
+ },
+ "enums": {
+  "vocabularyRoles": [
+   "relationship-support",
+   "strategy-example",
+   "outcome-evidence",
+   "topic-context"
+  ],
+  "directives": [
+   "account for",
+   "analyse",
+   "assess",
+   "critically",
+   "describe",
+   "discuss",
+   "evaluate",
+   "examine",
+   "explain",
+   "how can",
+   "how do",
+   "how does",
+   "outline",
+   "to what extent"
+  ],
+  "directiveFamilies": {
+   "judgement": [
+    "evaluate",
+    "assess",
+    "to what extent",
+    "discuss",
+    "critically"
+   ],
+   "causal": [
+    "explain",
+    "how can",
+    "how do",
+    "how does",
+    "describe",
+    "outline",
+    "analyse",
+    "account for",
+    "examine"
+   ]
+  },
+  "answerShapeCommands": [
+   "identify",
+   "list",
+   "outline",
+   "describe",
+   "explain",
+   "analyse",
+   "compare",
+   "distinguish",
+   "assess",
+   "evaluate",
+   "discuss",
+   "justify",
+   "recommend",
+   "propose",
+   "demonstrate",
+   "examine",
+   "account for",
+   "to what extent",
+   "how can"
+  ],
+  "structures": [
+   "five",
+   "four",
+   "six"
+  ],
+  "shapeFamilies": [
+   "causal"
+  ],
+  "shapeRoles": [
+   "introduction",
+   "body",
+   "conclusion"
+  ],
+  "shapeStages": [
+   "thesis",
+   "topic",
+   "restate",
+   "judgement"
+  ],
+  "slotKeys": [
+   "point",
+   "analysis",
+   "evidence",
+   "link",
+   "thesis",
+   "methods",
+   "restate",
+   "judgement"
+  ],
+  "connectors": [
+   "towards",
+   "changes"
+  ],
+  "intents": [
+   "write-only",
+   "guided",
+   "learn-and-build"
+  ],
+  "learningStatus": [
+   "authored",
+   "none-required",
+   "unreviewed"
+  ],
+  "conceptKinds": [
+   "domain",
+   "supporting"
+  ],
+  "requiresTeaching": [
+   "always",
+   "contextual",
+   "never"
+  ]
+ },
+ "records": {
+  "vocabulary": {},
+  "concepts": {
+   "bus.concept.processes": {
+    "complete": true,
+    "missing": [],
+    "kind": "domain",
+    "teaching": "always"
+   },
+   "bus.concept.people": {
+    "complete": true,
+    "missing": [],
+    "kind": "domain",
+    "teaching": "always"
+   },
+   "bus.concept.training": {
+    "complete": true,
+    "missing": [],
+    "kind": "domain",
+    "teaching": "always"
+   },
+   "bus.concept.serviceStandards": {
+    "complete": true,
+    "missing": [],
+    "kind": "supporting",
+    "teaching": "contextual"
+   },
+   "bus.concept.servicescape": {
+    "complete": true,
+    "missing": [],
+    "kind": "supporting",
+    "teaching": "contextual"
+   },
+   "bus.concept.customerEngagement": {
+    "complete": true,
+    "missing": [],
+    "kind": "supporting",
+    "teaching": "contextual"
+   }
+  },
+  "evidence": {
+   "bus.evidence.operations.standardised-production-system": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.operations.interdependence-at-a-menu-launch": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.operations.a-good-and-a-service-in-one-transaction": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.operations.global-menu-localisation": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.operations.packaging-waste-the-law-and-voluntary-action": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.operations.inputs-transformed-and-transforming": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.operations.volume-variety-variation-and-visibility": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.operations.technology-task-design-and-process-layout": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.operations.outputs-order-accuracy-and-service-time": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.operations.approved-suppliers-and-distribution-centres": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.operations.frozen-stock-fifo-and-made-to-order": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.operations.quality-control-assurance-and-improvement": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.operations.performance-objectives-on-the-restaurant-floor": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.operations.kiosks-and-the-app-beside-the-grill": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.operations.outsourcing-and-why-franchising-is-not-outsourcing": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.operations.resistance-when-kiosks-and-table-service-arrived": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.operations.global-scale-menu-trials-and-test-kitchens": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.marketing.golden-arches-global-branding": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.marketing.economic-and-sociocultural-influences-on-customer-choice": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.marketing.kilojoule-labelling-and-advertising-to-children": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.marketing.consumer-law-and-advertising-claims": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.marketing.big-mac-in-the-maturity-stage": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.marketing.test-restaurants-and-customer-feedback-surveys": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.marketing.segments-served-by-happy-meal-and-mccafe": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.marketing.promotion-mix-from-advertising-to-sponsorship": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.marketing.price-points-from-value-range-to-mccafe": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.marketing.intensive-distribution-and-standardised-service": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.marketing.standardisation-with-local-customisation": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.marketing.app-loyalty-rewards-and-mobile-ordering": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.finance.franchising-funds-network-growth": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.finance.finance-funds-every-other-function": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.finance.listed-parent-using-retained-profits-and-borrowing": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.finance.australian-company-under-asic-and-company-tax": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.finance.interest-rates-overseas-funds-and-the-economic-outlook": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.finance.immediate-cash-sales-almost-no-customer-receivables": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.finance.two-levels-of-margin-restaurant-and-corporation": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.finance.choosing-debt-or-equity-for-expansion": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.finance.consolidated-global-reports-and-one-off-gains": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.finance.audited-accounts-and-disclosure-in-a-listed-group": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.finance.standardisation-as-cost-control-marketing-as-revenue-control": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.finance.property-leasing-and-working-capital": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.finance.exchange-rate-exposure-and-hedging": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.human_resources.franchise-model-splits-hr-responsibility": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.human_resources.outsourcing-and-use-of-contractors": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.human_resources.national-employment-standards-and-the-award-set-the-floor": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.human_resources.work-health-and-safety-in-the-restaurant": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.human_resources.technology-and-changing-work-patterns": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.human_resources.standardised-acquisition-and-development": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.human_resources.maintenance-through-rostering-and-grievance-handling": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.human_resources.separation-in-a-young-casual-workforce": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.human_resources.leadership-style-on-a-shift": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.human_resources.job-design-using-specific-tasks": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.human_resources.internal-recruitment-and-promotion-pathway": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.human_resources.performance-management-against-set-standards": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.human_resources.monetary-and-non-monetary-rewards": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.human_resources.global-staffing-with-local-employees": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   },
+   "bus.evidence.human_resources.workplace-disputes-in-fast-food": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": false
+   },
+   "bus.evidence.human_resources.turnover-and-benchmarking-across-stores": {
+    "complete": true,
+    "missing": [],
+    "sourced": false,
+    "verifyFlag": true
+   }
+  },
+  "resources": {},
+  "syllabus": {
+   "bus.syllabus.operations": {
+    "complete": true,
+    "missing": []
+   },
+   "bus.syllabus.operations.role-of-operations-management.strategic-role-of-operations-management-cost-leadership-good-service-differentiation": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.operations.role-of-operations-management.goods-and-or-services-in-different-industries": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.operations.role-of-operations-management.interdependence-with-other-key-business-functions": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.operations.influences.globalisation-technology-quality-expectations-cost-based-competition-government-policies-legal-regulation-environmental-sustainability": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.operations.influences.corporate-social-responsibility": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.operations.operations-processes.inputs": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 7
+   },
+   "bus.syllabus.operations.operations-processes.transformation-processes": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 11
+   },
+   "bus.syllabus.operations.operations-processes.outputs": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.operations.operations-strategies.performance-objectives-quality-speed-dependability-flexibility-customisation-cost": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 8
+   },
+   "bus.syllabus.operations.operations-strategies.new-product-or-service-design-and-development": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.operations.operations-strategies.supply-chain-management-logistics-e-commerce-global-sourcing": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.operations.operations-strategies.outsourcing-advantages-and-disadvantages": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.operations.operations-strategies.technology-leading-edge-established": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.operations.operations-strategies.inventory-management-advantages-and-disadvantages-of-holding-stock-lifo-last-in-first-out-fifo-first-in-first-out-jit-just-in-time": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 8
+   },
+   "bus.syllabus.operations.operations-strategies.quality-management": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 7
+   },
+   "bus.syllabus.operations.operations-strategies.overcoming-resistance-to-change-financial-costs-purchasing-new-equipment-redundancy-payments-retraining-reorganising-plant-layout-inertia": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 7
+   },
+   "bus.syllabus.operations.operations-strategies.global-factors-global-sourcing-economies-of-scale-scanning-and-learning-research-and-development": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.marketing": {
+    "complete": true,
+    "missing": []
+   },
+   "bus.syllabus.marketing.role-of-marketing.strategic-role-of-marketing-goods-and-services": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.marketing.role-of-marketing.interdependence-with-other-key-business-functions": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.marketing.role-of-marketing.production-selling-marketing-approaches": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.marketing.role-of-marketing.types-of-markets-resource-industrial-intermediate-consumer-mass-niche": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.marketing.influences-on-marketing.factors-influencing-customer-choice-psychological-sociocultural-economic-government": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.marketing.influences-on-marketing.consumer-laws": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.marketing.influences-on-marketing.ethical-truth-accuracy-and-good-taste-in-advertising-products-that-may-damage-health-engaging-in-fair-competition-sugging": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.marketing.marketing-process.situational-analysis-swot-product-life-cycle": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.marketing.marketing-process.market-research": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.marketing.marketing-process.establishing-market-objectives": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.marketing.marketing-process.identifying-target-markets": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.marketing.marketing-process.developing-marketing-strategies": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.marketing.marketing-process.implementation-monitoring-and-controlling-developing-a-financial-forecast-comparing-actual-and-planned-results-revising-the-marketing-strategy": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.marketing.marketing-strategies.market-segmentation-product-service-differentiation-and-positioning": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.marketing.marketing-strategies.products-goods-and-or-services": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.marketing.marketing-strategies.price-including-pricing-methods-cost-market-competition-based": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 8
+   },
+   "bus.syllabus.marketing.marketing-strategies.promotion": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 8
+   },
+   "bus.syllabus.marketing.marketing-strategies.place-distribution": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.marketing.marketing-strategies.people-processes-and-physical-evidence": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.marketing.marketing-strategies.e-marketing": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.marketing.marketing-strategies.global-marketing": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.finance": {
+    "complete": true,
+    "missing": []
+   },
+   "bus.syllabus.finance.role-of-financial-management.strategic-role-of-financial-management": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.finance.role-of-financial-management.objectives-of-financial-management": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.finance.role-of-financial-management.interdependence-with-other-key-business-functions": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.finance.influences-on-financial-management.internal-sources-of-finance-retained-profits": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.finance.influences-on-financial-management.external-sources-of-finance": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.finance.influences-on-financial-management.financial-institutions-banks-investment-banks-finance-companies-superannuation-funds-life-insurance-companies-unit-trusts-and-the-australian-securities-exchange": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.finance.influences-on-financial-management.influence-of-government-australian-securities-and-investments-commission-company-taxation": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.finance.influences-on-financial-management.global-market-influences-economic-outlook-availability-of-funds-interest-rates": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.finance.processes-of-financial-management.planning-and-implementing-financial-needs-budgets-record-systems-financial-risks-financial-controls": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.finance.processes-of-financial-management.monitoring-and-controlling-cash-flow-statement-income-statement-balance-sheet": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.finance.processes-of-financial-management.financial-ratios": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 8
+   },
+   "bus.syllabus.finance.processes-of-financial-management.limitations-of-financial-reports-normalised-earnings-capitalising-expenses-valuing-assets-timing-issues-debt-repayments-notes-to-the-financial-statements": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.finance.processes-of-financial-management.ethical-issues-related-to-financial-reports": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.finance.financial-management-strategies.cash-flow-management": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.finance.financial-management-strategies.working-capital-management": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.finance.financial-management-strategies.profitability-management": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.finance.financial-management-strategies.global-financial-management": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.human_resources": {
+    "complete": true,
+    "missing": []
+   },
+   "bus.syllabus.human_resources.role-of-human-resource-management.strategic-role-of-human-resources": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.human_resources.role-of-human-resource-management.interdependence-with-other-key-business-functions": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.human_resources.role-of-human-resource-management.outsourcing": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.human_resources.key-influences.stakeholders-employers-employees-employer-associations-unions-government-organisations-society": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.human_resources.key-influences.legal-the-current-legal-framework": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 8
+   },
+   "bus.syllabus.human_resources.key-influences.economic": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.human_resources.key-influences.technological": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.human_resources.key-influences.social-changing-work-patterns-living-standards": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.human_resources.key-influences.ethics-and-corporate-social-responsibility": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.human_resources.processes-of-human-resource-management.acquisition": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.human_resources.processes-of-human-resource-management.development": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.human_resources.processes-of-human-resource-management.maintenance": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.human_resources.processes-of-human-resource-management.separation": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.human_resources.strategies-in-human-resource-management.leadership-style": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.human_resources.strategies-in-human-resource-management.job-design-general-or-specific-tasks": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.human_resources.strategies-in-human-resource-management.recruitment-internal-or-external-general-or-specific-skills": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.human_resources.strategies-in-human-resource-management.training-and-development-current-or-future-skills": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.human_resources.strategies-in-human-resource-management.performance-management-developmental-or-administrative": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.human_resources.strategies-in-human-resource-management.rewards-monetary-and-non-monetary-individual-or-group-performance-pay": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.human_resources.strategies-in-human-resource-management.global-costs-skills-supply": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.human_resources.strategies-in-human-resource-management.workplace-disputes": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.human_resources.effectiveness-of-human-resource-management.indicators": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 6
+   },
+   "bus.syllabus.human_resources.effectiveness-of-human-resource-management.120-indicative-hours-are-required-to-complete-the-course": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 4
+   },
+   "bus.syllabus.human_resources.effectiveness-of-human-resource-management.the-preliminary-course-is-a-prerequisite": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.human_resources.effectiveness-of-human-resource-management.suggested-components-and-weightings-for-the-internal-assessment-of-the-preliminary-course": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.human_resources.effectiveness-of-human-resource-management.mandatory-components-and-weightings-for-the-internal-assessment-of-the-hsc-course": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   },
+   "bus.syllabus.human_resources.effectiveness-of-human-resource-management.the-hsc-examination-specifications-which-describe-the-format-of-the-external-hsc-examination": {
+    "complete": true,
+    "missing": [],
+    "legacyTerms": 5
+   }
+  },
+  "sentenceShapes": {
+   "causal.introduction.thesis": {
+    "complete": true,
+    "missing": []
+   },
+   "causal.body.topic": {
+    "complete": true,
+    "missing": []
+   },
+   "causal.body.topic.reasoning-first": {
+    "complete": true,
+    "missing": []
+   },
+   "causal.body.topic.conditional": {
+    "complete": true,
+    "missing": []
+   },
+   "causal.conclusion.restate": {
+    "complete": true,
+    "missing": []
+   },
+   "causal.conclusion.judgement": {
+    "complete": true,
+    "missing": []
+   }
+  }
+ }
+}

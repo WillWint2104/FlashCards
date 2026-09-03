@@ -24,7 +24,7 @@ const TIERS = {
   // 37s, so ui40 goes back to checkpoint, where it already runs: it walks EVERY
   // question through the shell, which is an exhaustive sweep rather than a fast
   // signal, and it was the single most expensive suite here at 7.2s.
-  fast: { budget: 30, suites: ["t1", "t17", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47"] },
+  fast: { budget: 30, suites: ["t1", "t17", "t18", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47"] },
   // Adds the interaction surfaces that the shell rewrite touched, the setup
   // and marking paths, and the simulated students. This is the gate to pass
   // before pushing. The budget is 180s rather than 120s because the seven bot
@@ -33,7 +33,7 @@ const TIERS = {
   // other, so there is no honest subset of them to run.
   checkpoint: {
     budget: 180,
-    suites: ["t1", "t2", "t17", "ui13", "ui30", "ui35", "ui37", "ui38", "ui39", "ui40", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "bots"],
+    suites: ["t1", "t2", "t17", "t18", "ui13", "ui30", "ui35", "ui37", "ui38", "ui39", "ui40", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "bots"],
   },
   // Everything run.js knows about. An empty list means "pass no filter".
   full: { budget: 360, suites: [] },

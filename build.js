@@ -571,18 +571,26 @@ const covText = coverage.format(covRows) + "\n";
 // than an array threw inside it, after marginal-preview.html had already been
 // published from the build that then exited non-zero.
 const covSummary = coverage.summary(covRows);
+// The library manifest a package validator checks a package's requires block
+// against: every shared record's id and whether it is complete enough for the
+// thing that will reference it. Generated rather than authored, so it cannot
+// drift from the content, and generated HERE for the same reason coverage is:
+// it loads and walks both content files, which is exactly the fallible work that
+// must finish before anything is published.
+const manText = JSON.stringify(require("./tools/package.js").manifest(), null, 1) + "\n";
 
-// Stage both, then promote both. Writing 1.1MB straight to the real path means
+// Stage all three, then promote all three. Writing 1.1MB straight to the real path means
 // an interrupted write leaves a TRUNCATED marginal-preview.html sitting there
-// looking like a build output, and a failure on the second write leaves the pair
+// looking like a build output, and a failure on a later write leaves the set
 // half-updated: a new preview beside stale coverage. A rename within a directory
 // replaces the file in one step, so neither state is reachable.
 // Two renames cannot be one atomic step, so the guarantee is not "both or
-// neither in an instant" but "the previous pair, if the new pair cannot be
+// neither in an instant" but "the previous set, if the new set cannot be
 // completed": the outgoing file is kept until every promotion has succeeded.
 const artefacts = [
   { dir: root, name: "marginal-preview.html", text: out },
   { dir: path.join(root, "docs"), name: "support-coverage.md", text: covText },
+  { dir: path.join(root, "packages"), name: "library-manifest.json", text: manText },
 ].map(a => ({
   text: a.text,
   dest: path.join(a.dir, a.name),
@@ -612,7 +620,7 @@ try {
     drop(a.tmp);
     if (fs.existsSync(a.prev)) { drop(a.dest); try { fs.renameSync(a.prev, a.dest); } catch (e2) { /* reported below */ } }
   });
-  console.error("BUILD REFUSED: the artefacts could not be published, so the previous pair stands: " + e.message);
+  console.error("BUILD REFUSED: the artefacts could not be published, so the previous set stands: " + e.message);
   process.exit(1);
 }
 artefacts.forEach(a => drop(a.prev));
