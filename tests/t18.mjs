@@ -110,12 +110,19 @@ console.log("1b. every package declares the contract it was authored against");
     "and everything else is still checked: " + ahead.capability.headline);
 }
 
-console.log("1c. a package from a later minor keeps what this reader cannot read");
+console.log("1c. a later minor keeps every field this version of Marginal cannot read");
 {
-  // The failure this prevents: a 1.0 reader opens a 1.7 package, validates the
-  // subset it understands, publishes its own reconstruction, and the package
-  // comes back from the store smaller than it went in. Nothing warns, because
-  // from the reader's side everything it knew about was fine.
+  // The failure this prevents: Marginal opens a 1.7 package, validates the
+  // subset it understands, publishes a reconstruction built from the fields it
+  // knows, and the package comes back from the store smaller than it went in.
+  // Nothing warns, because from its own side everything it knew about was fine.
+  //
+  // The guarantee is SEMANTIC. Every property and value survives; formatting
+  // does not, and is not claimed. My first version of this suite asserted byte
+  // identity and passed, because the fixture happened to be written with the
+  // same two-space indent JSON.stringify emits. That is a test passing for a
+  // reason that has nothing to do with the property, so this one begins by
+  // reformatting the input to make sure it cannot.
   const { storable, carriedPaths, resolve } = require("../tools/contract/resolve.js");
   const raw = text("docs/contract/ahead-minor-demo.json");
   const pkg = JSON.parse(raw);
@@ -124,46 +131,61 @@ console.log("1c. a package from a later minor keeps what this reader cannot read
   const r = validate(pkg, MAN);
   ok(r.wouldImport, "it imports: " + r.verdict + " " + JSON.stringify(codes(r)));
   ok(codes(r).indexOf("CONTRACT_VERSION_AHEAD") >= 0, "with the warning that says why");
-  ok(/carried unread rather than dropped/.test(r.findings.find(f => f.code === "CONTRACT_VERSION_AHEAD").message),
+  ok(/stored unchanged rather than dropped/.test(r.findings.find(f => f.code === "CONTRACT_VERSION_AHEAD").message),
     "and the warning says what happens to what it cannot read");
 
-  // The four additions are visible to a reviewer rather than silently absorbed
+  // 1. unknown additions at several depths, all visible to a reviewer
   const planted = ["accessibility", "question.readingAge", "requirements.sourceSkills", "marking.rubricRef"];
   const missed = planted.filter(p => r.document.carried.indexOf(p) < 0);
-  ok(!missed.length, "every field this reader does not define is listed: missing " + JSON.stringify(missed));
-  ok(r.document.aheadOfReader, "and the report says the package is ahead of the reader");
+  ok(!missed.length, "every field this version does not define is listed: missing " + JSON.stringify(missed));
+  ok(r.document.aheadOfReader, "and the report says the package is ahead of this version");
 
-  // The guarantee itself. Publication stores the DOCUMENT, so what it cannot
-  // read cannot be lost, and that is checked rather than promised.
-  ok(r.document.preservesDocument, "the reader reports that it preserves the document");
-  ok(JSON.stringify(storable(pkg), null, 2) + "\n" === raw,
-    "and hands back the file byte for byte, including the four fields it never read");
-  // reading it does not change it, either
-  const before = JSON.stringify(pkg);
-  resolve(pkg, lib.build().libraries, require("../tools/contract/directives.js").registry());
-  validate(pkg, MAN);
-  ok(JSON.stringify(pkg) === before, "validating and resolving leave the package untouched");
+  // 2 and 3. through the storage boundary and back, from an input formatted
+  // differently from anything Marginal emits
+  const reformatted = JSON.stringify(pkg, null, 4).replace(/\n/g, "\r\n");
+  ok(reformatted !== raw, "the reformatted input is not the file on disk");
+  const reloaded = storable(JSON.parse(reformatted));
 
-  // What actually makes the guarantee true: storable() is a clone and nothing
-  // else. The equality check in the validator cannot fail for a document that
-  // came from a JSON file, so it is a tripwire for a future implementation
-  // rather than a test of this one, and asserting the shape of the function is
-  // the part that has teeth today.
+  // 4. every unknown key and value still present and equal
+  const at = (o, path) => path.split(".").reduce((x, k) => (x == null ? x : x[k]), o);
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  planted.forEach(p => {
+    ok(at(reloaded, p) !== undefined, p + " survives storage and reload");
+    ok(same(at(reloaded, p), at(pkg, p)), p + " is unchanged: " + JSON.stringify(at(reloaded, p)));
+  });
+  ok(same(reloaded, pkg), "and the whole document is semantically identical after a round trip");
+  ok(at(reloaded, "accessibility.screenReaderSummary") === at(pkg, "accessibility.screenReaderSummary"),
+    "including a value nested inside a block this version has never heard of");
+
+  // and formatting is explicitly NOT the promise
+  ok(JSON.stringify(reloaded, null, 2) + "\n" !== reformatted,
+    "the stored document does not reproduce the uploaded formatting, and does not claim to");
+
+  // 5. the storage path takes the whole document rather than fields it knows
   const src = readFileSync(url("tools/contract/resolve.js"), "utf8");
   const body = src.slice(src.indexOf("function storable("), src.indexOf("// Which paths in this document"));
   ok(/JSON\.parse\(JSON\.stringify\(pkg\)\)/.test(body),
     "storable is a whole-document clone: " + JSON.stringify(body.replace(/\s+/g, " ").trim()));
-  ok(!/(delete |\.map\(|pick|omit|Object\.keys)/.test(body),
-    "with no field list, no pick and no omit in it");
+  ok(!/(delete |\.map\(|pick|omit|Object\.keys|FIELDS)/.test(body),
+    "with no field list, no whitelist, no pick and no omit in it");
+  // behavioural, not only textual: a key invented at run time survives, which a
+  // whitelist could not allow
+  const invented = JSON.parse(raw);
+  invented.somethingNobodyHasThoughtOfYet = { nested: [1, { deep: "value" }] };
+  ok(same(storable(invented).somethingNobodyHasThoughtOfYet, invented.somethingNobodyHasThoughtOfYet),
+    "a field invented at run time survives, which no whitelist could permit");
+
+  // reading does not modify
+  const before = JSON.stringify(pkg);
+  resolve(pkg, lib.build().libraries, require("../tools/contract/directives.js").registry());
+  validate(pkg, MAN);
+  ok(JSON.stringify(pkg) === before, "validating and resolving leave the package untouched");
   const clone = storable(pkg);
   clone.question.text = "changed";
-  ok(pkg.question.text !== "changed", "and it is a copy, so nothing downstream can edit the stored document");
+  ok(pkg.question.text !== "changed", "and the stored document is a copy, so nothing downstream can edit it");
 
-  // The rule if that ever stops being true, stated in the report rather than in
-  // a comment: a reader that cannot hand the document back may inspect and must
-  // not publish.
   ok(/WOULD_NOT_PRESERVE_DOCUMENT/.test(readFileSync(url("tools/contract/validate.js"), "utf8")),
-    "and a reader that cannot preserve the document is refused publication by name");
+    "a version of Marginal that cannot return the document is refused publication by name");
 }
 
 console.log("2. a judgement question with no judgement shapes is VALID, and says what it cannot give");

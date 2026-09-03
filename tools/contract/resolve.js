@@ -91,18 +91,27 @@ function resolve(pkg, libraries, REG) {
 }
 // ---- what publication writes ------------------------------------------------
 //
-// THE PACKAGE DOCUMENT IS THE RECORD OF TRUTH. Publication stores this, exactly
-// as authored, and everything else is derived from it and can be rebuilt.
+// THE PACKAGE DOCUMENT IS THE RECORD OF TRUTH. Publication stores the whole
+// parsed document; everything else Marginal uses is derived from it and can be
+// rebuilt.
 //
-// That is the whole answer to forward compatibility. A 1.0 reader opening a 1.7
-// package understands some of it and not all of it; if publication stored the
-// reader's reconstruction, the parts it did not understand would be gone, and a
-// package would come back from the store smaller than it went in. Storing the
-// document verbatim makes that impossible by construction rather than by
-// remembering to copy every field.
+// The guarantee is SEMANTIC, and the distinction matters. Every property and
+// value the package supplied survives, including fields this version of Marginal
+// has never heard of. What does not survive is formatting: a package indented
+// with four spaces is stored as the same document and would serialise with two.
+// Marginal does not keep the uploaded bytes, so it cannot promise to reproduce
+// them, and promising it would be a claim about a file it no longer has.
 //
-// If a reader ever cannot store a document verbatim, it may inspect and must not
-// publish. Inspecting and losing is worse than refusing.
+// That is the whole answer to forward compatibility, and the failure it prevents
+// is precise: a 1.0 reader opening a 1.7 package understands some of it and not
+// all of it, and if publication stored the reader's reconstruction, the parts it
+// did not understand would be gone. Cloning the document makes that impossible
+// by construction. Rebuilding it from a list of known fields would make it
+// certain, and would look identical from the reader's own side, because
+// everything it knew about would be fine.
+//
+// If a reader ever cannot return the document it was given, it may inspect and
+// must not publish. Inspecting and losing is worse than refusing.
 function storable(pkg) {
   return JSON.parse(JSON.stringify(pkg));
 }

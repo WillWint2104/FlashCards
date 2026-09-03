@@ -76,16 +76,25 @@ with. It never claims that package is fully checked.
 There is no migration framework and no rewriting of old files. A package is read
 by a reader that understands its major version, or it is not read.
 
-**What a reader does not understand, it keeps.** The package document is the record
-of truth: publication stores the file exactly as authored, and everything else is
-derived from it and can be rebuilt. So a reader of `1.0` opening a later minor
-validates what it knows, lists what it is carrying without interpreting, and stores
-all of it. A reader that publishes its own reconstruction instead would return a
-package smaller than it received, with nothing to warn anybody, because from its
-own side everything it knew about was fine.
+**What Marginal does not understand, it keeps.** The package document is the record
+of truth: publication stores the whole parsed document, and everything else is
+derived from it and rebuilt. So this version, reading a later minor, checks what it
+knows, lists what it is carrying without interpreting, and stores all of it.
 
-A reader that cannot hand the document back may inspect and must not publish.
-Inspecting and losing is worse than refusing.
+The guarantee is **semantic**. Every property and value your package supplies
+survives, including fields this version has never heard of. Formatting does not: a
+package indented with four spaces is stored as the same document and would
+serialise with two. Marginal does not keep your uploaded bytes and does not claim
+to reproduce them, so do not use whitespace, key order or escaping to carry
+meaning.
+
+The alternative rule is the tempting one, and it is why this is written down:
+rebuilding the stored package from the fields the current contract defines is a
+whitelist. It looks correct from inside the version that wrote it, and it silently
+deletes everything the next contract adds.
+
+A version of Marginal that cannot return the document it was given may inspect and
+must not publish. Inspecting and losing is worse than refusing.
 
 | the package says | the reader does |
 | --- | --- |

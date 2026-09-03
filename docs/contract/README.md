@@ -53,14 +53,24 @@ not know everything.
 
 No migration framework, and no rewriting of old files.
 
-**What a reader does not understand, it keeps.** The package document is the
-record of truth: publication stores the file as authored, and every derived
-thing can be rebuilt from it. A reader publishing its own reconstruction would
-return a package smaller than it received and nothing would warn anybody,
-because from its own side everything it knew about was fine.
-`ahead-minor-demo.json` is a 1.7 package carrying four fields this reader has
-never heard of; `tests/t18.mjs` requires it back byte for byte. A reader that
-cannot do that may inspect and must not publish.
+**What Marginal does not understand, it keeps.** The package document is the
+record of truth: publication stores the whole parsed document, and every derived
+thing is rebuilt from it. A version publishing a reconstruction assembled from
+the fields it knows would return a package smaller than it received, and nothing
+would warn anybody, because from its own side everything it knew about was fine.
+
+The guarantee is **semantic**. Every property and value the package supplied
+survives, including fields this version has never heard of. Formatting does not:
+a package indented with four spaces is stored as the same document and would
+serialise with two. Marginal does not keep the uploaded bytes, so it does not
+claim to reproduce them.
+
+`ahead-minor-demo.json` is a 1.7 package carrying four additions at four depths.
+`tests/t18.mjs` reformats it, puts it through the storage boundary, reloads it,
+and requires every unknown key and value back unchanged, while asserting that
+the formatting is *not* reproduced. Storing only known fields fails seven of its
+assertions. A version of Marginal that cannot return the document may inspect
+and must not publish.
 
 `docs/contract/authoring-guide.md` carries the full table.
 

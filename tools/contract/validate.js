@@ -125,22 +125,24 @@ function validate(pkg, man, opts) {
     // additions this reader has never heard of, and it is checked against
     // everything the reader does know rather than refused for being newer.
     //
-    // Publishing it is only safe because the DOCUMENT is what gets stored. If
-    // publication wrote this reader's reconstruction instead, the fields it did
-    // not understand would be gone and the package would come back from the
-    // store smaller than it went in. That is checked below rather than assumed.
+    // Publishing it is only safe because the whole DOCUMENT is what gets stored.
+    // If publication wrote a reconstruction from the fields this version knows
+    // instead, the rest would be gone and the package would come back from the
+    // store smaller than it went in. Checked below rather than assumed.
     add(SEV.warning, "CONTRACT_VERSION_AHEAD", "contractVersion",
       "authored against " + pkg.contractVersion + " and checked against " + CONTRACT_VERSION +
-      ". Everything this validator knows about has been checked; anything added after " + CONTRACT_VERSION +
-      " has not, and is carried unread rather than dropped");
+      ". Everything this version of Marginal knows about has been checked; anything added after " +
+      CONTRACT_VERSION + " has not, and is stored unchanged rather than dropped");
   }
   // Proved per package, not promised once. If a reader ever cannot hand back the
   // document it was given, it may inspect and must not publish: inspecting and
   // losing is worse than refusing.
+  // Semantic, not literal: every property and value survives, and formatting is
+  // not a thing Marginal keeps or claims.
   const preserved = JSON.stringify(storable(pkg)) === JSON.stringify(pkg);
   if (!preserved)
     add(SEV.error, "WOULD_NOT_PRESERVE_DOCUMENT", "",
-      "this reader cannot hand back the document it was given, so publishing it would store less than was authored. It may be inspected and not published");
+      "this version of Marginal cannot return the document it was given, so publishing it would store less than was authored. It may be inspected and not published");
 
   const lib = (man && man.records) || {};
   const REG = (opts && opts.registry) || directives.registry();
@@ -554,8 +556,8 @@ function format(rep) {
     }
   }
   if (rep.document && rep.document.aheadOfReader) {
-    out.push("CARRIED UNREAD - authored against a later minor than this reader implements");
-    out.push("  the document is stored exactly as authored, so nothing below is lost");
+    out.push("CARRIED UNREAD - authored against a later minor than this version of Marginal implements");
+    out.push("  the whole document is stored, so every field below survives unchanged");
     rep.document.carried.slice(0, 12).forEach(p => out.push("      " + p));
     if (rep.document.carried.length > 12) out.push("      and " + (rep.document.carried.length - 12) + " more");
     out.push("");

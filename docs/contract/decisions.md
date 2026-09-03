@@ -237,12 +237,21 @@ framework: a package is read by a reader that understands its major version, or
 it is not read. Taken now, while files exist only inside this repository, because
 the point of a version is to be there before it is needed.
 
-**29. The document is the record of truth.** Publication stores the package file
-exactly as authored; the resolved view is derived and rebuildable. This is what
-makes a later minor safe to publish rather than merely safe to read: what a
-reader cannot interpret, it still keeps. A reader that cannot hand back the
-document it was given may inspect and must not publish, and the report says so
-by name rather than in a comment.
+**29. The document is the record of truth, semantically.** Publication stores the
+whole parsed package; the resolved view is derived and rebuildable. Every
+property and value survives, including fields this version has never heard of.
+Formatting does not survive and is not claimed: Marginal does not retain the
+uploaded bytes, and a promise about a file it no longer holds would be a promise
+it could not keep.
+
+This is what makes a later minor safe to publish rather than merely safe to
+read. The rule it replaces is the tempting one: rebuild the stored package from
+the fields the current contract defines. That is a whitelist, it looks correct
+from inside the version that wrote it, and it silently deletes everything the
+next contract adds.
+
+A version that cannot return the document it was given may inspect and must not
+publish, and the report says so by name rather than in a comment.
 
 ## What is still open
 
