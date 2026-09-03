@@ -68,6 +68,48 @@ console.log("1. every question that ships converts and validates");
     mkt.capability.measures.evidence.have + " vs " + cov.evidenceSourced);
 }
 
+console.log("1b. every package declares the contract it was authored against");
+{
+  const gen = require("../tools/contract/generate.js");
+  ok(gen.CONTRACT_VERSION === "1.0", "the contract is at " + gen.CONTRACT_VERSION);
+  IDS.forEach(id => {
+    const p = read("docs/contract/example-" + id + ".json");
+    ok(p.contractVersion === gen.CONTRACT_VERSION && p.schema === "marginal.question-package",
+      id + " carries the version and the package type: " + JSON.stringify([p.schema, p.contractVersion]));
+    ok(!("version" in p), id + " carries no second version field");
+  });
+  // The exporter writes it. A version somebody maintains by hand is a version
+  // that eventually describes a file it is not on.
+  const src = readFileSync(url("tools/contract/packagize.js"), "utf8");
+  ok(/contractVersion: require\("\.\/generate\.js"\)\.CONTRACT_VERSION/.test(src),
+    "and the exporter takes it from one place rather than writing a literal");
+
+  const base = read("docs/contract/example-mkt-01.json");
+  const at = v => { const c = JSON.parse(JSON.stringify(base)); c.contractVersion = v; return validate(c, MAN); };
+  // A different major is refused, and nothing else in the file is read: that is
+  // the whole point of stopping rather than checking what it recognises.
+  [["2.0", "a later major"], ["0.9", "an earlier major"]].forEach(([v, why]) => {
+    const r = at(v);
+    ok(codes(r).join() === "CONTRACT_VERSION_UNSUPPORTED", why + " is refused, and alone: " + JSON.stringify(codes(r)));
+    ok(!r.wouldImport, why + " does not import");
+    ok(/guessing at that is worse than stopping/.test(r.findings[0].message), "and says why it stopped");
+  });
+  ["1", 1, "x", null, "1.0.0"].forEach(v => {
+    const r = at(v);
+    ok(codes(r).join() === "CONTRACT_VERSION_MALFORMED",
+      JSON.stringify(v) + " is not a major.minor version: " + JSON.stringify(codes(r)));
+  });
+  // Same major, later minor: checked against everything this reader knows, and
+  // told that it is not everything. No migration framework, and no refusal.
+  const ahead = at("1.7");
+  ok(ahead.wouldImport, "a later minor still imports: " + ahead.verdict);
+  ok(codes(ahead).indexOf("CONTRACT_VERSION_AHEAD") >= 0, "with a warning that says so");
+  ok(ahead.findings.find(f => f.code === "CONTRACT_VERSION_AHEAD").severity === "warning",
+    "which is a warning rather than an error");
+  ok(ahead.capability.headline === validate(base, MAN).capability.headline,
+    "and everything else is still checked: " + ahead.capability.headline);
+}
+
 console.log("2. a judgement question with no judgement shapes is VALID, and says what it cannot give");
 {
   // The distinction the contract turns on: missing shared support is a capability

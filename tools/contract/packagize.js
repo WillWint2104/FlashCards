@@ -195,7 +195,9 @@ function packagize(qid) {
 
   const pkg = {
     schema: "marginal.question-package",
-    version: 1,
+    // Written here, never typed by an author. A version somebody maintains by
+    // hand is a version that eventually describes a file it is not on.
+    contractVersion: require("./generate.js").CONTRACT_VERSION,
     origin: { type: "bundled", packageId: null, author: null, authoredAt: null },
     provenance: { reviewState: "in-source", publication: "published", notes: null },
     requires: {}, provides: {},

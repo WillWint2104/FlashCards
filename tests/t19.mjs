@@ -64,6 +64,8 @@ for (const id of ["mkt-01", "ah-religion"]) {
   ok(r.missing.length === 0, "every ref resolves to a record: " + JSON.stringify(r.missing));
 
   console.log("2. the question survives");
+  ok(pkg.contractVersion === require("../tools/contract/generate.js").CONTRACT_VERSION,
+    "the package says which contract it was authored against: " + pkg.contractVersion);
   ok(r.question.text === src.text, "wording is unchanged");
   ok(r.question.directive === String(src.command).toLowerCase(),
     "the directive is the same command: " + r.question.directive + " vs " + src.command);

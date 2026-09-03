@@ -1,6 +1,6 @@
 {
   "schema": "marginal.question-package",
-  "version": 1,
+  "contractVersion": "1.0",
   "origin": {
     "type": "imported",
     "packageId": "demo.invalid",

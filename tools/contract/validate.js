@@ -56,7 +56,10 @@ const enumCode = name => ({ vocabularyRole: "VOCAB_ROLE_UNKNOWN", evidenceRole: 
   learningStatus: "LEARNING_STATUS_UNKNOWN", mechanismStatus: "MECHANISM_STATUS_UNKNOWN" })[name]
   || (name.replace(/([a-z])([A-Z])/g, "$1_$2").toUpperCase() + "_UNKNOWN");
 const FORMAT = "marginal.question-package";
-const VERSION = 1;
+// The contract this validator implements. Major is the compatibility promise and
+// minor is what it has caught up with.
+const { CONTRACT_MAJOR, CONTRACT_MINOR, CONTRACT_VERSION } = require("./generate.js");
+const VERSION_RE = /^(\d+)\.(\d+)$/;
 
 // Walk a field path against a package, returning every concrete instance with
 // the real path so a report can name pathways[3].guidance.explain.ladder[2].rung
@@ -96,7 +99,33 @@ function validate(pkg, man, opts) {
 
   if (!pkg || typeof pkg !== "object") { add(SEV.error, "PACKAGE_NOT_AN_OBJECT", "", "the file did not parse to an object"); return finish(pkg, F, null, null); }
   if (pkg.schema !== FORMAT) { add(SEV.error, "FORMAT_UNKNOWN", "schema", "expected " + FORMAT + ", found " + JSON.stringify(pkg.schema)); return finish(pkg, F, null, null); }
-  if (pkg.version !== VERSION) { add(SEV.error, "FORMAT_VERSION_UNSUPPORTED", "version", "this validator understands version " + VERSION + ", the package declares " + JSON.stringify(pkg.version)); return finish(pkg, F, null, null); }
+  // Read before anything else, and the only field allowed to stop the read. A
+  // reader that does not know a major version refuses the file rather than
+  // checking the fields it recognises: a field that kept its name and changed
+  // its meaning is what a major version exists to announce, so validating a
+  // major 2 package against major 1 rules would report confidently and wrongly.
+  const semver = VERSION_RE.exec(String(pkg.contractVersion == null ? "" : pkg.contractVersion));
+  if (!semver) {
+    add(SEV.error, "CONTRACT_VERSION_MALFORMED", "contractVersion",
+      JSON.stringify(pkg.contractVersion) + " is not a major.minor version. This validator implements " + CONTRACT_VERSION);
+    return finish(pkg, F, null, null);
+  }
+  const major = Number(semver[1]), minor = Number(semver[2]);
+  if (major !== CONTRACT_MAJOR) {
+    add(SEV.error, "CONTRACT_VERSION_UNSUPPORTED", "contractVersion",
+      "this package was authored against contract " + pkg.contractVersion + " and this validator implements " +
+      CONTRACT_VERSION + ". Nothing else in the file has been read: a different major version means a field may " +
+      "have kept its name and changed its meaning, and guessing at that is worse than stopping");
+    return finish(pkg, F, null, null);
+  }
+  if (minor > CONTRACT_MINOR) {
+    // Same major, so nothing here means something else. The package may carry
+    // additions this reader has never heard of, and it is checked against
+    // everything the reader does know rather than refused for being newer.
+    add(SEV.warning, "CONTRACT_VERSION_AHEAD", "contractVersion",
+      "authored against " + pkg.contractVersion + " and checked against " + CONTRACT_VERSION +
+      ". Everything this validator knows about has been checked; anything added after " + CONTRACT_VERSION + " has not");
+  }
 
   const lib = (man && man.records) || {};
   const REG = (opts && opts.registry) || directives.registry();

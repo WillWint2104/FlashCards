@@ -35,6 +35,24 @@ a gate.
     node tools/contract/packagize.js mkt-01        convert one
     node tools/contract/validate.js <package.json> validate one or many
 
+## Versioning
+
+    "schema": "marginal.question-package",
+    "contractVersion": "1.0",
+
+`schema` is the package type; `contractVersion` is which version of that contract
+the file follows. The exporter writes it and no author types it.
+
+The major number is a promise about **meaning**: a reader that does not know it
+refuses the file and reads nothing else, because a field that kept its name and
+changed its meaning is what a major version exists to announce. The minor number
+is a promise about **additions**: a package authored against a later minor still
+validates against everything the reader knows, and the report records that it may
+not know everything.
+
+No migration framework, and no rewriting of old files. `docs/contract/authoring-guide.md`
+carries the full table.
+
 ## One field definition, four artefacts
 
 `tools/contract/fields.js` is the contract. The JSON Schema, the authoring guide,

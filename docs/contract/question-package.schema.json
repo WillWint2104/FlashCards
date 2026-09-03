@@ -6,12 +6,13 @@
   "type": "object",
   "properties": {
     "schema": {
-      "description": "says what kind of file this is, so a validator never guesses at content it cannot interpret.",
+      "description": "what kind of file this is: the package type. A validator reads this before anything else, so it never guesses at content it cannot interpret. Shared libraries and manifests carry their own value here, which is how one directory holds several kinds of file.",
       "const": "marginal.question-package"
     },
-    "version": {
-      "description": "the contract version this package was authored against.",
-      "type": "integer"
+    "contractVersion": {
+      "description": "the contract this package was authored against, as major.minor. The major number is the compatibility promise: a reader that does not know it refuses the file rather than interpreting fields it may be wrong about. The minor number rises when the contract gains something a v1 reader can safely ignore, so a package authored later than the reader still validates against what the reader does know, and says so.",
+      "type": "string",
+      "pattern": "^1\\.\\d+$"
     },
     "origin": {
       "type": "object",
@@ -770,7 +771,7 @@
   },
   "required": [
     "schema",
-    "version",
+    "contractVersion",
     "origin",
     "provenance",
     "requires",

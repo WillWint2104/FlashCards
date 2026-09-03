@@ -51,6 +51,43 @@ is measuring something no student can be given.
 | `resources` | `ResourceRecord` | question, area, pathway |
 | `sentenceShapes` | `SentenceShape` | engine |
 
+## Versioning
+
+Every package declares the contract it was authored against:
+
+    "schema": "marginal.question-package",
+    "contractVersion": "1.0",
+
+`schema` says what kind of file this is. `contractVersion` says which version of
+that contract it follows, as `major.minor`.
+
+**The major number is a promise about meaning.** A reader that does not know a
+major version refuses the file. It does not read the fields it recognises and
+ignore the rest, because a field that kept its name and changed its meaning is
+exactly what a major version exists to announce, and guessing there is worse than
+stopping.
+
+**The minor number is a promise about additions.** Anything added within major 1
+is something a reader of `1.0` can safely not know about. So a package authored
+against a later minor still validates: the reader checks everything it knows, and
+records that the package was authored against a contract it has not caught up
+with. It never claims that package is fully checked.
+
+There is no migration framework and no rewriting of old files. A package is read
+by a reader that understands its major version, or it is not read.
+
+| the package says | the reader does |
+| --- | --- |
+| the version this reader supports | validates in full |
+| the same major, a later minor | validates what it knows, and says it may not know everything |
+| the same major, an earlier minor | validates in full: nothing was removed within a major |
+| a different major | **refuses**, and reads nothing else in the file |
+| a value that is not `major.minor` | **refuses** |
+
+The exporter writes the value; no author types it. Nothing else in a package
+depends on it, which is the point: one field, read first, before anything is
+interpreted.
+
 ## The directive registry
 
 Every command the content recognises. There is no fallback: a command outside
@@ -164,28 +201,28 @@ one. A failed rule reports the sentence below, not a number.
 | student reads it | no |
 | may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
-says what kind of file this is, so a validator never guesses at content it cannot interpret.
+what kind of file this is: the package type. A validator reads this before anything else, so it never guesses at content it cannot interpret. Shared libraries and manifests carry their own value here, which is how one directory holds several kinds of file.
 
 - good: "marginal.question-package"
 - bad: "question" — a name a reader guesses at is not a format
 
-### `version`
+### `contractVersion`
 
 | | |
 | --- | --- |
 | required | **yes** |
-| type | `integer` |
-| allowed | integer |
+| type | `version` |
+| allowed | `"1.0"`. Major 1, any minor |
 | belongs to | the package envelope |
 | leaving it out | **invalid** - the package does not import |
 | student surface | none |
 | student reads it | no |
 | may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
-the contract version this package was authored against.
+the contract this package was authored against, as major.minor. The major number is the compatibility promise: a reader that does not know it refuses the file rather than interpreting fields it may be wrong about. The minor number rises when the contract gains something a v1 reader can safely ignore, so a package authored later than the reader still validates against what the reader does know, and says so.
 
-- good: 1
-- bad: "1" — a string version sorts wrongly and compares wrongly
+- good: "1.0"
+- bad: "1" or 1 — a major with no minor cannot say which additions it was authored against, and a number cannot hold "1.10"
 
 ### `origin.type`
 

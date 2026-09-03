@@ -106,7 +106,7 @@ const LIBRARIES = {
 // that look authored. Nullable here means "absent is a capability fact"; it never
 // means "optional to think about".
 const CONTAINERS = {
-  required: ["schema", "version", "origin", "provenance", "requires", "question",
+  required: ["schema", "contractVersion", "origin", "provenance", "requires", "question",
              "relationship", "areas", "pathways", "marking"],
   nullable: ["decode", "requirements", "coreAnswer", "workingAnswer", "reasoning", "provides"],
 };
@@ -119,12 +119,14 @@ const f = o => { F.push(o); return o; };
 // ===========================================================================
 f({ path: "schema", owner: "package", type: "const", value: "marginal.question-package",
   required: true, omission: "invalid", studentProse: false, answerSpecific: false,
-  means: "says what kind of file this is, so a validator never guesses at content it cannot interpret.",
+  means: "what kind of file this is: the package type. A validator reads this before anything else, so it never guesses at content it cannot interpret. Shared libraries and manifests carry their own value here, which is how one directory holds several kinds of file.",
   surface: "none",
   good: '"marginal.question-package"', bad: '"question" — a name a reader guesses at is not a format' });
-f({ path: "version", owner: "package", type: "integer", required: true, omission: "invalid",
-  studentProse: false, answerSpecific: false, means: "the contract version this package was authored against.",
-  surface: "none", good: "1", bad: '"1" — a string version sorts wrongly and compares wrongly' });
+f({ path: "contractVersion", owner: "package", type: "version", required: true, omission: "invalid",
+  studentProse: false, answerSpecific: false,
+  means: "the contract this package was authored against, as major.minor. The major number is the compatibility promise: a reader that does not know it refuses the file rather than interpreting fields it may be wrong about. The minor number rises when the contract gains something a v1 reader can safely ignore, so a package authored later than the reader still validates against what the reader does know, and says so.",
+  surface: "none",
+  good: '"1.0"', bad: '"1" or 1 — a major with no minor cannot say which additions it was authored against, and a number cannot hold "1.10"' });
 
 f({ path: "origin.type", owner: "package", type: "enum", enumName: "originType", required: true,
   omission: "invalid", studentProse: false, answerSpecific: false,

@@ -229,6 +229,14 @@ compare against source, over the semantic fields that carry meaning.
 personas and semantic handles, so a bot can be written against the contract
 rather than against a question id.
 
+**28. The contract is versioned, and the version is read first.**
+`contractVersion`, `major.minor`, written by the exporter. A different major is
+refused before anything else in the file is read; a later minor within the same
+major validates against what the reader knows and says so. There is no migration
+framework: a package is read by a reader that understands its major version, or
+it is not read. Taken now, while files exist only inside this repository, because
+the point of a version is to be there before it is needed.
+
 ## What is still open
 
 Nothing in the format is waiting on a decision. What remains is work the

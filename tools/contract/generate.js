@@ -14,6 +14,11 @@ const directives = require("./directives.js");
 const capabilities = require("./capabilities.js");
 
 let REG = null;
+// The contract this generator describes. Major is the compatibility promise;
+// minor rises when something a v1 reader can ignore is added.
+const CONTRACT_MAJOR = 1;
+const CONTRACT_MINOR = 0;
+const CONTRACT_VERSION = CONTRACT_MAJOR + "." + CONTRACT_MINOR;
 const ID_PATTERN = "^[a-z0-9]+([.-][a-z0-9]+)*$";
 const QID_PATTERN = "^[a-z0-9]+(-[a-z0-9]+)*$";
 
@@ -40,6 +45,9 @@ function leafSchema(f, manifest) {
     }
     case "boolean": return Object.assign(d, { type: "boolean" });
     case "date": return Object.assign(d, { type: "string", pattern: "^\\d{4}-\\d{2}-\\d{2}$" });
+    // Major 1, any minor. A file declaring major 2 is refused by this schema
+    // rather than validated against a contract it was not authored for.
+    case "version": return Object.assign(d, { type: "string", pattern: "^" + CONTRACT_MAJOR + "\\.\\d+$" });
     case "url": return Object.assign(d, { type: "string", format: "uri" });
     case "id": return Object.assign(d, { type: "string", pattern: f.pattern || QID_PATTERN });
     case "enum": return Object.assign(d, { enum: enumValues(f.enumName, manifest) });
@@ -170,6 +178,7 @@ function allowed(f, manifest) {
       REG.counts.supported + " of " + REG.counts.known + " are supported in guided writing";
   if (f.type === "enum") return enumValues(f.enumName, manifest).map(v => "`" + v + "`").join(", ");
   if (f.type === "integer" && f.range) return "whole number, " + f.range[0] + " to " + f.range[1];
+  if (f.type === "version") return "`\"" + CONTRACT_VERSION + "\"`. Major " + CONTRACT_MAJOR + ", any minor";
   if (f.type === "id") return "lower case, hyphens";
   if (f.type === "ref" || f.type === "ref[]") return "id in `" + f.refTo + "`";
   if (f.type === "vocabRef[]") return "`{ id, role }`, role one of " + enumValues("vocabularyRole", manifest).map(v => "`" + v + "`").join(", ");
@@ -223,6 +232,43 @@ function guide(manifest) {
     L.push("| `" + k + "` | `" + LIBRARIES[k].record + "` | " + LIBRARIES[k].scope + " |"));
   L.push("");
 
+  L.push("## Versioning");
+  L.push("");
+  L.push("Every package declares the contract it was authored against:");
+  L.push("");
+  L.push("    \"schema\": \"marginal.question-package\",");
+  L.push("    \"contractVersion\": \"" + CONTRACT_VERSION + "\",");
+  L.push("");
+  L.push("`schema` says what kind of file this is. `contractVersion` says which version of");
+  L.push("that contract it follows, as `major.minor`.");
+  L.push("");
+  L.push("**The major number is a promise about meaning.** A reader that does not know a");
+  L.push("major version refuses the file. It does not read the fields it recognises and");
+  L.push("ignore the rest, because a field that kept its name and changed its meaning is");
+  L.push("exactly what a major version exists to announce, and guessing there is worse than");
+  L.push("stopping.");
+  L.push("");
+  L.push("**The minor number is a promise about additions.** Anything added within major " + CONTRACT_MAJOR);
+  L.push("is something a reader of `" + CONTRACT_VERSION + "` can safely not know about. So a package authored");
+  L.push("against a later minor still validates: the reader checks everything it knows, and");
+  L.push("records that the package was authored against a contract it has not caught up");
+  L.push("with. It never claims that package is fully checked.");
+  L.push("");
+  L.push("There is no migration framework and no rewriting of old files. A package is read");
+  L.push("by a reader that understands its major version, or it is not read.");
+  L.push("");
+  L.push("| the package says | the reader does |");
+  L.push("| --- | --- |");
+  L.push("| the version this reader supports | validates in full |");
+  L.push("| the same major, a later minor | validates what it knows, and says it may not know everything |");
+  L.push("| the same major, an earlier minor | validates in full: nothing was removed within a major |");
+  L.push("| a different major | **refuses**, and reads nothing else in the file |");
+  L.push("| a value that is not `major.minor` | **refuses** |");
+  L.push("");
+  L.push("The exporter writes the value; no author types it. Nothing else in a package");
+  L.push("depends on it, which is the point: one field, read first, before anything is");
+  L.push("interpreted.");
+  L.push("");
   L.push("## The directive registry");
   L.push("");
   L.push("Every command the content recognises. There is no fallback: a command outside");
@@ -309,7 +355,7 @@ function guide(manifest) {
 // ---- templates --------------------------------------------------------------
 // Generated from the same definition, because a hand-maintained template is
 // exactly the drift the contract exists to prevent.
-const BLANK = { const: v => v, integer: 20, boolean: false, date: "", url: "", id: "", string: "",
+const BLANK = { const: v => v, version: CONTRACT_VERSION, integer: 20, boolean: false, date: "", url: "", id: "", string: "",
   enum: null, ref: null, "ref[]": [], "string[]": [], "vocabRef[]": [], "band[]": null, "record map": {} };
 function templateValue(f, manifest) {
   if (f.type === "const") return f.value;
@@ -344,4 +390,5 @@ function template(kind, manifest) {
   return out;
 }
 
-module.exports = { jsonSchema, guide, template, enumValues, ID_PATTERN, QID_PATTERN };
+module.exports = { jsonSchema, guide, template, enumValues, ID_PATTERN, QID_PATTERN,
+  CONTRACT_VERSION, CONTRACT_MAJOR, CONTRACT_MINOR };
