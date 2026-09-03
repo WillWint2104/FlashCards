@@ -1,41 +1,47 @@
 <!doctype html>
 <meta charset="utf-8">
-<title>Importer 4 of 8 · resolve references</title>
+<title>Importer mockup 4 · resolve references</title>
 <!--
-  IMPORTER SCREEN 4 OF 8. A mockup for review before anything is implemented.
-  Workflow stage 4 of 6.
+  IMPORTER MOCKUP 4 OF 8. Workflow stage 4 of 6. Nothing is implemented.
 
-  ONE question: do the shared records these packages NAME actually exist?
+  ONE question: do the shared records these packages name actually exist?
 
-  Two problems this screen has to solve, and they pull against each other.
+  REBUILT after an audit against the seven locked rules found two of them
+  violated and one fabricated number. Recorded here because the mistake is more
+  instructive than the fix:
 
-  The happy path is 23 successful lookups. Twenty-three green rows is the
-  engineering dashboard we keep almost building; "23 of 23" alone tells a
-  teacher nothing about what the import leans on. So the count is per LIBRARY,
-  five rows rather than twenty-three, which is the smallest honest unit that
-  still says which parts of Marginal this question depends on.
+    The earlier draft claimed "fin-01 declares two records this Marginal does
+    not hold yet", in a file whose own header said every number was real.
+    fin-01 declares ten references, zero of them vocabulary, and every one
+    resolves; its verdict is accepted with no blocked section at all. I wanted
+    a blocked example, this run does not contain one, and I invented a package
+    to carry it. That is the exact failure this contract exists to prevent,
+    committed in the document describing the contract.
 
-  And the state this stage exists for does not occur in this run. The only
-  package with a missing dependency stopped at Validate, so both packages here
-  resolve cleanly. Rather than invent a failure, the blocked state is taught in
-  the right column and shown in full underneath, using the real findings from
-  the package that stopped, clearly labelled as not part of this run.
+    The honest version is below: the blocked state is shown from the two REAL
+    dependencies invalid-demo declares, framed as what would happen if that
+    package had passed validation, which it did not.
 
-  ONE RISK THIS SHAPE CARRIES, recorded so the built screen inherits it rather
-  than rediscovering it. A shortfall is a fact about a RECORD, so organising by
-  library puts it in the right place. Blocked is a fact about a PACKAGE: it
-  decides which questions import. With two packages, one of which names nothing,
-  the merge is lossless. With five packages sharing a syllabus, a row reading
-  "Syllabus, 12 references, 2 waiting on the library" says nothing about WHICH
-  question is held up, which is the only thing a teacher can act on. So the rule
-  for the built screen: the library table is always first, because what an import
-  leans on is worth showing every time, and any blocked dependency PROMOTES a
-  package-shaped card above it. The shape of the screen changes with the state.
+  ALSO FIXED, from the same audit:
+    - a capability finding was sitting inside the reference table and inside
+      the resolve card. Rule 5 says capability is not a resolve finding, so it
+      now has its own block and the table shows resolution only.
+    - the promoted blocked card was drawn at the BOTTOM of the page while a
+      caption claimed it belongs above the table. A mockup that renders the
+      forbidden arrangement and describes the required one teaches the picture.
+      The alternate state now renders the card above the table.
+    - "1 shortfall" beside a count of 7 read as one of seven. It is seven of
+      seven, and the number a teacher needs is that one.
+    - dashed meant blocked, and not-yet-reached, and not-part-of-this-import,
+      three things on one page. It now means blocked and nothing else.
+    - uppercase tracked micro-labels are gone. Screen 3 has no text-transform
+      and neither does this.
 
-  ALL NUMBERS ARE REAL, taken from the validator against the merged contract:
-  vocabulary 7, lessons 4, evidence 6, syllabus 5, concepts 1 = 23 references,
-  all resolving; 0 of 7 vocabulary records displayable; 0 of 6 evidence records
-  sourced; ah-religion declares none at all.
+  EVERY NUMBER RE-DERIVED FROM THE VALIDATOR, not from the previous draft:
+  mkt-01 declares 23 references, 7 vocabulary, 6 evidence, 5 syllabus, 4
+  lessons, 1 concept, 0 resources, all resolving; 0 of its 7 vocabulary
+  records can be displayed; 0 of its 6 evidence records carry a source;
+  ah-religion declares none; the evidence library holds 58 records.
 -->
 <style>
   :root{
@@ -64,6 +70,10 @@
   .step.on b{background:var(--green);color:#fff}
   .step.done{color:var(--ink-2)}
   .step.done b{background:var(--green-soft);color:var(--green-dk)}
+  /* Dashed means "does not act yet", in the rail and on a blocked pill alike:
+     the Publish step has not written anything, and a blocked package is not
+     going to move until a library changes. It no longer marks demonstration
+     panels, which is the dilution that made it meaningless. */
   .step.write{border-style:dashed}
 
   .cols{display:grid;grid-template-columns:1.45fr 1fr;gap:18px;align-items:start}
@@ -73,28 +83,31 @@
   .count{font-size:19px;font-weight:800;letter-spacing:-.2px;margin:0 0 2px}
   .count span{color:var(--green-dk)}
 
-  table.libs{width:100%;border-collapse:collapse;font-size:12.5px}
-  table.libs th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.55px;color:var(--ink-3);font-weight:800;padding:0 0 8px}
-  table.libs td{padding:10px 0;border-top:1px solid var(--line);font-weight:600;color:var(--ink-2);vertical-align:top}
-  table.libs td.n{font-weight:800;color:var(--ink);width:104px}
-  table.libs td.r{text-align:right;font-family:var(--mono);font-size:11.5px;font-weight:700;white-space:nowrap}
-  table.libs tr.off td{color:var(--ink-3)}
-  .more{font:inherit;font-size:11.5px;font-weight:800;color:var(--green-dk);background:none;border:0;padding:11px 0 0;cursor:default;text-decoration:underline}
+  /* Prose rows, in screen 3's idiom. No table, no right-aligned monospace
+     column, no tracked capitals: those are what turned this into a dashboard
+     the first time. */
+  .row{display:flex;gap:14px;padding:11px 0;border-top:1px solid var(--line)}
+  .row:first-of-type{border-top:0}
+  .row .n{font-size:13px;font-weight:800;width:104px;flex:none}
+  .row .d{font-size:12.5px;color:var(--ink-2);font-weight:600;flex:1}
+  .row.none .n,.row.none .d{color:var(--ink-3)}
 
   .pkgrow{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line)}
   .pkgrow:first-of-type{border-top:0}
   .pkgrow .q{font-family:var(--mono);font-size:12.5px;font-weight:700;flex:1}
   .pkgrow .q small{display:block;font-family:var(--body);font-size:11.5px;font-weight:600;color:var(--ink-3)}
+
   .tag{font-size:11.5px;font-weight:800;border-radius:99px;padding:4px 11px;white-space:nowrap}
   .good{background:var(--green-soft);color:var(--green-dk)}
+  /* Amber is every finding that does not block: warning on screen 3, shortfall
+     here. They share the only property a teacher acts on, so they share a
+     colour, and the WORD is always on the pill so they are never confused. */
   .warnt{background:var(--amber-soft);color:var(--amber)}
   .badt{background:var(--red-soft);color:var(--red)}
   .neutral{background:var(--bg);color:var(--ink-2)}
-  /* Blocked is neither red nor amber. Red means the package is wrong; amber
-     means the import continues. Blocked is neither, so it takes the one
-     treatment this system already uses for "has not happened yet": the dashed
-     edge the Publish step wears in the rail. Three visual families, four
-     severities, and no fourth colour invented for the occasion. */
+  /* Dashed means blocked. Only blocked. It is the one severity that is neither
+     a fault nor a thing that continues, so it gets a treatment no other state
+     on this page uses. */
   .blockt{background:var(--bg);color:var(--ink-2);border:1.5px dashed var(--ink-3);padding:3px 10px}
 
   .item{padding:13px 0;border-top:1px solid var(--line)}
@@ -113,6 +126,10 @@
   .btnrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px}
   .btn{font:inherit;font-size:13px;font-weight:800;border-radius:12px;padding:10px 16px;border:1.5px solid var(--line);background:#fff;color:var(--ink);cursor:default}
   .btn.primary{background:var(--green);border-color:var(--green);color:#fff;box-shadow:0 2px 0 var(--green-dk)}
+  /* Nothing in the demonstration panel is pressable, and it must not look it:
+     a green primary button down there is the one thing a teacher might click
+     believing it acts on their import. */
+  .btn.inert{background:var(--bg);border-color:var(--line);color:var(--ink-3);box-shadow:none}
   .note{font-size:12px;color:var(--ink-2);font-weight:600;margin:10px 0 0}
   .quiet{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:0 0 11px}
   .quiet b{color:var(--ink)}
@@ -122,18 +139,15 @@
   summary{font-weight:800;font-size:12.5px;cursor:default;color:var(--ink)}
   details p{color:var(--ink-2);font-weight:600;margin:9px 0 0}
 
-  .aside{background:var(--card);border:1.5px dashed var(--line);border-radius:18px;padding:18px 20px;margin-top:22px}
-  .aside .lbl{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-3);margin-bottom:6px}
-  .aside h2{font-size:14px;font-weight:800;margin:0 0 3px}
-  .two{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:14px}
-  .promo{background:var(--card);border:1.5px dashed var(--line);border-radius:18px;padding:18px 20px;margin-top:18px}
-  .promo .lbl{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-3);margin-bottom:6px}
-  .promo h2{font-size:14px;font-weight:800;margin:0 0 3px}
-  .promobox{border:1.5px dashed var(--ink-3);border-radius:14px;padding:14px 16px;margin-top:12px;background:var(--bg)}
-  .promobox .h{display:flex;align-items:baseline;gap:10px}
-  .promobox .h .n{font-size:13px;font-weight:800;flex:1}
-  .promobox .w{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:6px 0 0}
-  .promobox .w b{color:var(--ink)}
+  /* Not part of this import. Tinted, solid edged and labelled in sentence case:
+     it must be unmistakably a different kind of thing from the screen above it,
+     without borrowing the dashed edge that now means blocked. */
+  .demo{background:#F4F7F8;border:1.5px solid var(--line);border-radius:18px;padding:18px 20px;margin-top:22px}
+  .demo .lbl{font-size:12px;font-weight:800;color:var(--ink-3);margin-bottom:4px}
+  .demo h2{font-size:14px;font-weight:800;margin:0 0 3px}
+  .demo .sub{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:0 0 14px}
+  .demo .card{background:var(--card);opacity:.92}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
 </style>
 
 <header>
@@ -160,27 +174,21 @@
     <div>
       <div class="card">
         <p class="count"><span>All 23 references</span> found</p>
-        <p class="sub">What this import leans on. Green is stated once, here: a row carries a mark
-          only where it differs from that.</p>
-        <table class="libs">
-          <tr><th>library</th><th>what this import touches</th><th class="r">refs</th></tr>
-          <tr><td class="n">Vocabulary</td><td>Seven business studies terms</td>
-              <td class="r">7 <span class="tag warnt">1 shortfall</span></td></tr>
-          <tr><td class="n">Evidence</td><td>Six McDonald's marketing records</td><td class="r">6</td></tr>
-          <tr><td class="n">Syllabus</td><td>The marketing topic and four points under marketing strategies</td><td class="r">5</td></tr>
-          <tr><td class="n">Lessons</td><td>Four lessons, one for each taught argument in this question</td><td class="r">4</td></tr>
-          <tr><td class="n">Concepts</td><td>One concept, processes in the marketing mix</td><td class="r">1</td></tr>
-          <tr class="off"><td class="n">Resources</td><td>Neither package asks for one</td><td class="r">none</td></tr>
-        </table>
-        <button class="more">Show the 23 records</button>
+        <p class="sub">What this import leans on. Nothing here is waiting on a library. These are 23
+          distinct records; a question may cite the same record from several arguments, so the
+          readiness report counts more reference sites than there are records.</p>
+        <div class="row"><span class="n">Vocabulary</span><span class="d">Seven business studies terms</span></div>
+        <div class="row"><span class="n">Evidence</span><span class="d">Six McDonald's marketing records</span></div>
+        <div class="row"><span class="n">Syllabus</span><span class="d">The marketing topic and four points under marketing strategies</span></div>
+        <div class="row"><span class="n">Lessons</span><span class="d">Four lessons, one for each taught argument in this question</span></div>
+        <div class="row"><span class="n">Concepts</span><span class="d">One concept, processes in the marketing mix</span></div>
+        <div class="row none"><span class="n">Resources</span><span class="d">Neither package asks for one</span></div>
+        <button class="btn" style="margin-top:14px">Show the 23 records</button>
         <div class="rule"><b>Exact ids, and nothing else.</b> A reference finds the record an author
           named, or it finds nothing. Marginal does not offer a nearest match, does not suggest a
           replacement, does not guess from a label and never substitutes one record for another. The
           display-string and prefix joins this contract removed are not allowed back in as a helpful
           suggestion.</div>
-        <div class="rule" style="margin-top:10px">Nothing here is waiting on a library. When a package
-          declares a record Marginal does not hold yet, the package is right and the library has not
-          caught up, and it is never reported as an error. Neither of these packages is in that state.</div>
       </div>
 
       <div class="card" style="margin-top:18px">
@@ -188,7 +196,6 @@
         <div class="pkgrow">
           <div class="q">mkt-01<small>23 references</small></div>
           <span class="tag good">all found</span>
-          <span class="tag warnt">1 shortfall</span>
         </div>
         <div class="pkgrow">
           <div class="q">ah-religion<small>no references</small></div>
@@ -199,27 +206,17 @@
       </div>
 
       <div class="card" style="margin-top:18px">
-        <h2>Found, and not fully usable yet</h2>
-        <p class="sub">The record exists. Something a student would see is still missing from it.
-          Neither stops the import, and neither is a fault in the package.</p>
-
+        <h2>Found, and not usable yet</h2>
+        <p class="sub">One finding. The records exist and something a student would see is missing
+          from them, so this does not stop the import.</p>
         <div class="item">
-          <div class="h"><span class="n">7 vocabulary terms cannot be shown yet</span><span class="tag warnt">shortfall</span></div>
-          <p class="w">All seven resolve and each one teaches on the Learn surface. None can be offered
-            in the vocabulary panel, because each is missing a plain meaning and an example, and a term
-            without a meaning a student can read is the thing that panel exists to prevent.</p>
+          <div class="h"><span class="n">None of the seven vocabulary terms can be shown</span><span class="tag warnt">shortfall</span></div>
+          <p class="w">All seven resolve and each teaches on the Learn surface. <b>Seven of seven</b>
+            are missing a plain meaning and an example, so the vocabulary panel will not offer any of
+            them, and a term without a meaning a student can read is what that panel exists to
+            prevent.</p>
           <div class="ex"><span class="msg">Add a plain meaning and an example to each record.</span>
             <span class="at">business.vocab.processes and 6 more</span></div>
-        </div>
-
-        <div class="item">
-          <div class="h"><span class="n">No evidence record carries a source</span><span class="tag neutral">capability</span></div>
-          <p class="w">All six resolve, and none names where its fact came from. This is not something
-            resolving reports: existence and provenance are different questions, and the validator
-            raises it as the capability <b>evidence complete</b>, which mkt-01 will not reach. It is
-            here because these are the six records this step just looked up.</p>
-          <div class="ex"><span class="msg">Add a checkable source to each record, in the evidence library.</span>
-            <span class="at">6 of 6 records, shared with every other question that uses them</span></div>
         </div>
       </div>
     </div>
@@ -246,6 +243,15 @@
       </div>
 
       <div class="card" style="margin-top:18px">
+        <h2>Not a finding here</h2>
+        <p class="quiet">None of mkt-01's six evidence records names a source. That is not something
+          resolving reports: existence and provenance are different questions, and it reaches the
+          report as the capability <b>evidence-complete</b>, which mkt-01 will not reach.</p>
+        <p class="quiet">It is mentioned because these are records this step just looked up. It sits
+          outside the findings above on purpose.</p>
+      </div>
+
+      <div class="card" style="margin-top:18px">
         <h2>Not checked here</h2>
         <p class="quiet">Whether a record that resolved is the <b>right</b> record. Marginal matches
           by id and never guesses from a label, which is what keeps an import predictable and also
@@ -264,25 +270,28 @@
     </div>
   </div>
 
-  <div class="aside">
-    <div class="lbl">Not part of this import</div>
-    <h2>What the two answers look like</h2>
-    <p class="sub">Taken from invalid-demo.json, the package that stopped at Validate. Shown here
-      because a distinction nobody has seen is a distinction nobody will believe.</p>
+  <div class="demo">
+    <div class="lbl">Not part of this import. Nothing below is pressable.</div>
+    <h2>The two answers, and where each one appears</h2>
+    <p class="sub">Drawn from invalid-demo.json, the package that stopped at Validate, so the ids are
+      real. If it had passed validation, this is what this step would have said about it.</p>
+
     <div class="two">
-      <div>
+      <div class="card">
         <div class="item">
           <div class="h"><span class="n">A reference to nothing</span><span class="tag badt">error</span></div>
-          <p class="w">The package does not import until an author changes it.</p>
+          <p class="w">The package does not import until an author changes it, and the message names
+            the place in the file to change.</p>
           <div class="ex err"><span class="msg">"mcdonalds.marketing.a-record-nobody-has" names no record
             in the evidence library, and is not declared in requires.</span>
             <span class="at">pathways[0].evidenceRefs[0].ref</span></div>
           <p class="w" style="margin-top:9px">There is no "did you mean" here, and there will not be
-            one. Six records in that library have similar labels, and offering the closest is the
-            label matching this contract spent months removing. An author chooses the id.</p>
+            one. The evidence library holds 58 records and offers none of them, because choosing the
+            closest by name is the label matching this contract removed. An author chooses the id.</p>
         </div>
       </div>
-      <div>
+
+      <div class="card">
         <div class="item">
           <div class="h"><span class="n">A dependency Marginal does not have</span><span class="tag blockt">waiting on the library</span></div>
           <p class="w">The package is correct. It waits for the library, and no edit to the file would
@@ -291,36 +300,37 @@
             vocabulary library does not hold it yet.</span></div>
           <div class="ex blk"><span class="msg">"business.marketing.marketing-strategies.nonexistent" is
             declared, and the syllabus library does not hold it yet.</span></div>
-          <p class="w" style="margin-top:9px">No path, no line and no file. Every error on these
-            screens points at somewhere in a package; the absence of a location is the signal that the
-            package is not where the problem is.</p>
+          <p class="w" style="margin-top:9px">No path, no line and no file. An error names where in the
+            package to look; the absence of a location is the signal that the package is not where the
+            problem is.</p>
         </div>
       </div>
     </div>
 
-  </div>
+    <h2 style="margin-top:22px">Where a blocked dependency appears on the screen</h2>
+    <p class="sub">A shortfall is a fact about a record, so it belongs beside the library it came from.
+      A blocked dependency is a fact about a <b>package</b>: it decides which questions import. So it
+      does not get a row in the summary. It goes above it, and the shape of the screen changes.</p>
 
-  <div class="promo">
-      <div class="lbl">Also not part of this import</div>
-      <h2>Where a blocked dependency would appear</h2>
-      <p class="sub">A shortfall is a fact about a record, so the library table is its home. A blocked
-        dependency is a fact about a <b>package</b>: it decides which questions import. So it does not
-        get a row in that table. It promotes a card above it, and the shape of the screen changes with
-        the state.</p>
-      <div class="promobox">
+    <div class="card">
+      <div class="item">
         <div class="h"><span class="n">1 package is waiting on the library</span><span class="tag blockt">waiting on the library</span></div>
-        <p class="w"><b>fin-01</b> declares two records this Marginal does not hold yet. The package is
-          correct. There is nothing in it for you or its author to change, and it imports unchanged on
+        <p class="w">Two records this package declares are not in Marginal yet. It is correct as
+          written, there is nothing in it for you or its author to change, and it imports unchanged on
           the day those records exist.</p>
         <div class="ex blk"><span class="msg">One vocabulary record and one syllabus node.</span></div>
         <div class="btnrow">
-          <button class="btn primary">Continue with 1 package</button>
-          <button class="btn">Keep fin-01 for later</button>
+          <button class="btn inert">Continue with the other packages</button>
+          <button class="btn inert">Keep this one for later</button>
         </div>
-        <p class="note">Not "remove" and not "fix". A blocked package is deferred, and the buttons say
-          so.</p>
+        <p class="note">Not "remove" and not "fix". The package is right, so neither word applies.</p>
       </div>
-      <p class="note">Underneath it, the library table still appears exactly as above, because what an
-        import leans on is worth showing every time.</p>
     </div>
+
+    <div class="card" style="margin-top:12px">
+      <p class="count" style="font-size:16px"><span>All 23 references</span> found</p>
+      <p class="sub" style="margin-bottom:0">The library summary still follows underneath, unchanged,
+        because what an import leans on is worth showing every time.</p>
+    </div>
+  </div>
 </main>
