@@ -27,13 +27,13 @@
     ],
     "syllabus": [
       "business.hr",
+      "business.hr.strategies-in-human-resource-management.global.skills",
       "business.hr.strategies-in-human-resource-management.job-design",
       "business.hr.strategies-in-human-resource-management.performance-management",
       "business.hr.strategies-in-human-resource-management.rewards",
       "business.hr.strategies-in-human-resource-management.training-and-development"
     ],
-    "resources": [],
-    "criteria": []
+    "resources": []
   },
   "provides": {},
   "question": {
@@ -90,7 +90,7 @@
           },
           {
             "label": "skills",
-            "criterionRef": null
+            "criterionRef": "business.hr.strategies-in-human-resource-management.global.skills"
           }
         ],
         "pathwayRefs": []

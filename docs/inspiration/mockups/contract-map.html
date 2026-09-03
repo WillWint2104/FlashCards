@@ -1,0 +1,179 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>The contract boundary</title>
+<!--
+  Where Marginal stops and externally authored content begins. A picture of the
+  boundary PR #58 defines, not of an interface: nothing here is a screen.
+-->
+<style>
+  :root{
+    --bg:#EEF3F5; --card:#FFFFFF;
+    --ink:#3C4A4A; --ink-2:#7A8A88; --ink-3:#AEBAB8;
+    --green:#1CC47D; --green-dk:#14A368; --green-soft:#E4F9EF;
+    --line:#E7EDED; --amber:#B3730C; --amber-soft:#FDF3E3;
+    --red:#B3403C; --red-soft:#FBEDEC;
+    --body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--body);background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
+  header{display:flex;align-items:center;gap:12px;padding:16px 32px;background:var(--card);border-bottom:1px solid var(--line)}
+  .mk{width:28px;height:28px;border-radius:9px;background:var(--green);flex:none;box-shadow:0 3px 0 var(--green-dk)}
+  .wordmark{font-weight:800;font-size:17px;letter-spacing:-.2px}
+  .where{margin-left:auto;font-size:13px;color:var(--ink-2);font-weight:700}
+  main{max-width:1220px;margin:0 auto;padding:26px 32px 56px}
+  h1{font-size:23px;font-weight:800;letter-spacing:-.3px;margin:0 0 4px}
+  .lede{font-size:14px;color:var(--ink-2);font-weight:600;margin:0 0 24px;max-width:76ch}
+
+  .lanes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px}
+  .lane{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:16px 18px}
+  .lane.mid{border-color:var(--green)}
+  .lane h2{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-3);margin:0 0 10px}
+  .lane.mid h2{color:var(--green-dk)}
+  .box{border:1.5px solid var(--line);border-radius:12px;padding:9px 12px;margin:0 0 8px;background:#fff}
+  .box b{display:block;font-size:12.5px;font-weight:800}
+  .box span{display:block;font-size:11.5px;color:var(--ink-2);font-weight:600}
+  .box code{font-family:var(--mono);font-size:11px;color:var(--ink-2)}
+  .box.gen{background:var(--green-soft);border-color:#CFF0E0}
+  .box.gen b{color:var(--green-dk)}
+  .arrow{text-align:center;font-size:15px;color:var(--ink-3);font-weight:800;margin:2px 0 8px}
+
+  .strip{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:16px 18px;margin-bottom:16px}
+  .strip h2{font-size:14px;font-weight:800;margin:0 0 3px}
+  .strip .sub{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:0 0 12px}
+  .row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .sev{border-left:3px solid var(--line);padding:1px 0 1px 12px}
+  .sev.e{border-color:var(--red)} .sev.b{border-color:var(--amber)}
+  .sev.s{border-color:var(--green-dk)} .sev.w{border-color:var(--ink-3)}
+  .sev h3{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin:0 0 3px}
+  .sev.e h3{color:var(--red)} .sev.b h3{color:var(--amber)}
+  .sev.s h3{color:var(--green-dk)} .sev.w h3{color:var(--ink-2)}
+  .sev p{font-size:12px;color:var(--ink-2);font-weight:600;margin:0}
+  .sev p b{color:var(--ink)}
+
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .cap{display:flex;gap:9px;align-items:baseline;padding:6px 0;border-top:1px solid var(--line);font-size:12.5px}
+  .cap:first-of-type{border-top:0}
+  .cap .n{font-weight:800;min-width:150px}
+  .cap .d{color:var(--ink-2);font-weight:600;flex:1}
+  .rule{font-size:12.5px;color:var(--ink-2);font-weight:600;background:var(--bg);border-radius:12px;padding:11px 14px;margin:12px 0 0}
+  .rule b{color:var(--ink)}
+  .lib{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:700;background:var(--bg);border-radius:6px;padding:2px 8px;margin:0 5px 5px 0;color:var(--ink-2)}
+  .no{color:var(--red);font-weight:800}
+  .yes{color:var(--green-dk);font-weight:800}
+</style>
+
+<header>
+  <div class="mk"></div>
+  <div class="wordmark">Marginal</div>
+  <div class="where">QuestionPackage v1 · the contract boundary</div>
+</header>
+
+<main>
+  <h1>Where Marginal stops and authored content begins</h1>
+  <p class="lede">A question is authored outside the application, against a generated specification, and
+    reaches a student through one boundary. Everything on the left is written by someone who has never
+    read the source. Everything in the middle refuses before anything is written. Nothing on the right
+    reads a package yet.</p>
+
+  <div class="lanes">
+    <div class="lane">
+      <h2>Outside · what an author works from</h2>
+      <div class="box gen"><b>authoring-guide.md</b><span>92 fields. Purpose, surface, allowed values,
+        what omitting it costs, a good example and a bad one</span></div>
+      <div class="box gen"><b>question-package.schema.json</b><span>JSON Schema, for the author's own tooling</span></div>
+      <div class="box gen"><b>template-causal / judgement / write-only</b><span>the shape to start from</span></div>
+      <div class="box gen"><b>directive-registry.json</b><span>22 commands, and what support each one has</span></div>
+      <div class="arrow">↓</div>
+      <div class="box"><b>one package, one question</b><span><code>question · relationship · areas · pathways · marking</code></span></div>
+      <div class="box"><b>requires</b><span>every shared id it names. Generated from the package, never
+        authored beside it</span></div>
+      <div class="box"><b>provides</b><span>records it brings. It may add to a library; it may never
+        replace what is in one</span></div>
+    </div>
+
+    <div class="lane mid">
+      <h2>The boundary · read only</h2>
+      <div class="box"><b>parse the whole set</b><span>nothing is written yet</span></div>
+      <div class="arrow">↓</div>
+      <div class="box"><b>validate the whole set</b><span>every check runs. None short-circuits</span></div>
+      <div class="arrow">↓</div>
+      <div class="box"><b>resolve every reference</b><span>a ref that names nothing is listed, never dropped</span></div>
+      <div class="arrow">↓</div>
+      <div class="box"><b>measure capability</b><span>six states, one definition, no arithmetic</span></div>
+      <div class="arrow">↓</div>
+      <div class="box"><b>preview every change</b><span>each question and each shared record the publish
+        would touch</span></div>
+      <div class="arrow">↓</div>
+      <div class="box gen"><b>publish</b><span>the first thing that writes. A package that cannot be
+        published in full is not published in part</span></div>
+      <div class="rule"><b>Not built.</b> The validator has no write call in it, opens no network, and
+        its only file system call is readFileSync.</div>
+    </div>
+
+    <div class="lane">
+      <h2>Inside · what the app owns</h2>
+      <div class="box"><b>shared libraries</b><span>referenced by id from any number of questions,
+        never copied into one</span>
+        <div style="margin-top:7px">
+          <span class="lib">vocabulary 14</span><span class="lib">concepts 6</span><span class="lib">lessons 4</span>
+          <span class="lib">evidence 58</span><span class="lib">syllabus 197</span><span class="lib">resources 0</span>
+          <span class="lib">sentenceShapes 6</span>
+        </div>
+      </div>
+      <div class="box"><b>the engine</b><span>how a record is displayed and used. A package never says
+        how anything looks</span></div>
+      <div class="box"><b>the runtime today</b><span>reads <code>essay-content.js</code>. Stage 2 of the
+        migration is the loader that reads packages instead</span></div>
+      <div class="rule"><b>The rule that draws the line.</b> A package references teaching. It never
+        contains a lesson, a definition, an evidence record or a sentence shape.</div>
+    </div>
+  </div>
+
+  <div class="strip">
+    <h2>Four answers, never one count</h2>
+    <p class="sub">Because the person reading the report does something different for each.</p>
+    <div class="row">
+      <div class="sev e"><h3>Error</h3><p><b>The package is wrong.</b> A ref names nothing and was never
+        declared. A value is outside a list. An old prose join came back.</p></div>
+      <div class="sev b"><h3>Blocked</h3><p><b>The package is right.</b> It declared a dependency and the
+        library does not have it. There is nothing in the package to fix.</p></div>
+      <div class="sev s"><h3>Shortfall</h3><p><b>Well formed.</b> Something it asks for cannot be given in
+        full yet. It imports, and it is recorded.</p></div>
+      <div class="sev w"><h3>Warning</h3><p><b>Worth recording.</b> House style, and nothing a student
+        would be harmed by.</p></div>
+    </div>
+  </div>
+
+  <div class="split">
+    <div class="strip" style="margin:0">
+      <h2>Capability · what the content reaches</h2>
+      <p class="sub">One definition in <code>capabilities.js</code>, evaluated by the validator and by the
+        coverage report. Each is a conjunction of named rules.</p>
+      <div class="cap"><span class="n">importable</span><span class="d">parses, resolves, can be stored</span></div>
+      <div class="cap"><span class="n">writing ready</span><span class="d">a student can be given it and write against it</span></div>
+      <div class="cap"><span class="n">pathway guided</span><span class="d">authored arguments to choose between</span></div>
+      <div class="cap"><span class="n">learning complete</span><span class="d">a student who knows nothing can be taught here</span></div>
+      <div class="cap"><span class="n">assessment complete</span><span class="d">what the answer must accomplish, and how it is marked</span></div>
+      <div class="cap"><span class="n">evidence complete</span><span class="d">every argument has evidence carrying a source</span></div>
+      <div class="rule"><b>No score anywhere.</b> Twelve complete arguments and no sourced evidence is
+        pathway-guided and not evidence-complete. It can never be four fifths of anything.</div>
+    </div>
+
+    <div class="strip" style="margin:0">
+      <h2>Support unavailable · what the engine cannot give</h2>
+      <p class="sub">Kept apart from capability, and from faults. A valid question can ask for something
+        Marginal does not have.</p>
+      <div class="cap"><span class="n">judgement shapes</span><span class="d">every authored sentence shape is causal, so an
+        Evaluate question is offered none and the panel is withheld</span></div>
+      <div class="cap"><span class="n">guided writing</span><span class="d">8 of 22 known commands assign no family.
+        A Compare question imports and is offered no argument scaffolding</span></div>
+      <div class="rule"><b>There is no fallback.</b> The engine's own resolver returns
+        <code>causal</code> when nothing matches, which is how a Compare question came to be scaffolded
+        as a cause. Unknown does not import; known and unsupported is withheld, never defaulted.</div>
+      <div class="rule" style="margin-top:10px"><b>Identity is never a display string.</b>
+        <span class="no">not</span> <code>"App, loyalty rewards and mobile ordering"</code> ·
+        <span class="yes">but</span> <code>mcdonalds.marketing.app-loyalty-rewards-and-mobile-ordering</code></div>
+    </div>
+  </div>
+</main>

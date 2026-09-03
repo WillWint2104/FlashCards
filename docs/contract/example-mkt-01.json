@@ -46,8 +46,7 @@
       "business.marketing.marketing-strategies.people",
       "business.marketing.marketing-strategies.promotion"
     ],
-    "resources": [],
-    "criteria": []
+    "resources": []
   },
   "provides": {},
   "question": {
@@ -80,7 +79,7 @@
         "right": [
           {
             "label": "e-marketing",
-            "criterionRef": null
+            "criterionRef": "business.marketing.marketing-strategies.e-marketing"
           }
         ],
         "pathwayRefs": []

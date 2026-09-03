@@ -13,13 +13,17 @@ reviewed as a coherent authored set, and imported, without anyone editing
 
 | file | what it is |
 | --- | --- |
-| `authoring-guide.md` | **generated.** Every field, what it is for, what omitting it costs, a good example and a bad one |
+| `authoring-guide.md` | **generated.** Every field, what it is for, what omitting it costs, a good example and a bad one. The deliverable an external author works from |
+| `directive-registry.json` | **generated.** Every command the content recognises, and what support exists for each |
+| `criterion-mapping.md` | **generated.** Where the right-hand end of a plan claim gets its id, and which ones still have none |
+| `fixture-manifest.json` | **generated.** The five simulated students, and the semantic handles a bot can key on |
 | `question-package.schema.json` | **generated.** JSON Schema, for an author's own tooling |
 | `template-causal.json`, `template-judgement.json`, `template-write-only.json` | **generated.** The three shapes a question is authored into |
 | `example-*.json` | **generated.** All nineteen questions in the bank, converted from source |
 | `shared-libraries.json` | **generated.** The libraries a package references: vocabulary, concepts, lessons, evidence, syllabus, resources, sentence shapes |
 | `library-manifest.json` | **generated.** Ids and states, no bodies. What a validator checks a `requires` block against |
 | `invalid-demo.json` | **authored to be wrong.** One fault of every kind |
+| `unsupported-directive-demo.json` | **authored, and entirely valid.** A Compare question, asking for support that does not exist |
 | `decisions.md` | the decisions taken, and what each one rules out |
 | `migration.md` | how the questions in source get out of source |
 
@@ -51,7 +55,22 @@ student reads the words.
 
 ## Capability, not a score
 
-Six capabilities, reported independently.
+Six capabilities, reported independently. **One definition**, in
+`tools/contract/capabilities.js`, evaluated by the validator and by the coverage
+report. Three implementations of "what counts as guided" would disagree the first
+time one was edited, and the disagreement would surface as two tools reporting
+different states for the same question. `tests/t18.mjs` runs both entry points
+over all nineteen and requires the same answer.
+
+Each capability is a **conjunction of named rules** with no arithmetic anywhere,
+which is what makes averaging impossible rather than merely unlikely. A failed
+rule reports a sentence:
+
+    not reached  evidence-complete
+        every-reference-has-a-role: an evidence reference does not say what the
+        item is doing in this response, and a role is never inferred
+            21 references carry no role
+
 
 | capability | what a student can be given |
 | --- | --- |
@@ -129,11 +148,22 @@ expressible in a package. That is the argument for replacing them, not against.
 | `learning.concepts` | bare keys hoping `subject.concepts` has them | a `learningRef` to a lesson that names concepts by id |
 | `question.topic` | a display label a **keyword table** guesses a key from: four word lists, first match wins, `null` if none hit | `topicRef` |
 
-A fifth is not a join but the same failure: a directive in neither family
-resolves to `causal` by fallback, so a question commanded "Compare" is scaffolded
-as a cause all the way to submission with no error anywhere. Eight commands are
-in that position. An imported package may not depend on it, so
-`DIRECTIVE_NO_FAMILY` is an error.
+A fifth is not a join but the same failure: the engine's family resolver returns
+`causal` when nothing matches, so a question commanded "Compare" is scaffolded as
+a cause all the way to submission with no error anywhere.
+
+`docs/contract/directive-registry.json` replaces the fallback with three
+distinguishable answers, and there is no fourth:
+
+| the command is | the answer |
+| --- | --- |
+| not in the registry | `DIRECTIVE_UNKNOWN`. It does not import |
+| in it, assigning no family | valid. Every slot label, sentence shape and guidance line chosen by family is **withheld**, and the report says which support is missing |
+| in it, with a family | supported |
+
+22 commands are known and 8 of them assign no family.
+`unsupported-directive-demo.json` is one of those eight: a Compare question that
+imports, reaches writing-ready, and is offered no argument scaffolding at all.
 
 The validator rejects each old shape **by name**, not by the absence of its
 replacement, because a half-migrated package would satisfy the second test.
@@ -157,6 +187,35 @@ half-written ones.
 A term string in a ref position is `VOCAB_REF_NOT_AN_ID`. `points[].terms` is
 carried as `legacyTerms`, which is the name it earned: 477 strings with no
 meaning anywhere, and no route to a student.
+
+## Round trip
+
+`tests/t19.mjs` exports a question, validates the package, resolves every
+reference and compares the result with the source it came from. Not byte for
+byte: the format renames fields, merges two into one and moves lessons out of the
+pathway. What must survive is the meaning, and the suite is the list of what
+counts as meaning: wording, directive, marks, areas and their guidance, pathway
+identity, the authored cause end, contribution role, every guidance line and
+every ladder rung in order, the lesson through its ref, every vocabulary meaning
+now held in one library instead of six concepts, every evidence item and what the
+pathway said it was for, the marking bands and their source, and which sentence
+shapes the engine would be able to offer.
+
+234 assertions across `mkt-01` and `ah-religion`. Removing the `fromLabel`
+mapping from the transform fails twelve of them, which is how the suite is known
+to be testing what it claims.
+
+## Simulated students, described and not yet run
+
+`fixture-manifest.json` publishes five personas and, for every package, the
+stable semantic handles a bot can key on: area ids, pathway ids, ladder depths,
+which pathways carry a lesson, how much evidence is sourced, how much vocabulary
+is displayable. No question ids in the handles and no prose at all, because a
+simulation that hard-codes a question runs against one question.
+
+Applicability is derived from capability rather than asserted. The
+zero-knowledge student is not run against a question that reaches no
+learning-complete: that would report a content gap as a failure.
 
 ## What the transform still cannot carry
 

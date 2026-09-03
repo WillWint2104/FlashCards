@@ -50,7 +50,104 @@ is measuring something no student can be given.
 | `syllabus` | `SyllabusNode` | question, area, pathway |
 | `resources` | `ResourceRecord` | question, area, pathway |
 | `sentenceShapes` | `SentenceShape` | engine |
-| `criteria` | `CriterionRecord` | relationship claims |
+
+## The directive registry
+
+Every command the content recognises. There is no fallback: a command outside
+this table is `DIRECTIVE_UNKNOWN` and does not import, and a command in it that
+assigns no family gives a valid question whose family-dependent guidance is
+**withheld**. The engine's own resolver returns `causal` when nothing matches,
+which is how a Compare question came to be scaffolded as a cause; imported
+content may not depend on that.
+
+| command | family | guided writing | sentence shapes | note |
+| --- | --- | --- | --- | --- |
+| `account for` | `causal` | supported | 4 |  |
+| `analyse` | `causal` | supported | 4 |  |
+| `assess` | `judgement` | supported | none | In the judgement family, and no sentence shape is authored for that family, so the shape panel is withheld. |
+| `compare` | none | **not supported** | none | Comparison needs two subjects held side by side. The causal slots ask for one relationship, so serving them here would scaffold the wrong essay. |
+| `critically` | `judgement` | supported | none | In the judgement family, and no sentence shape is authored for that family, so the shape panel is withheld. |
+| `demonstrate` | none | **not supported** | none | Asks for a worked showing rather than an argued relationship. |
+| `describe` | `causal` | supported | 4 |  |
+| `discuss` | `judgement` | supported | none | In the judgement family, and no sentence shape is authored for that family, so the shape panel is withheld. |
+| `distinguish` | none | **not supported** | none | Same shape as compare: the answer is the difference between two things, not the effect of one on another. |
+| `evaluate` | `judgement` | supported | none | In the judgement family, and no sentence shape is authored for that family, so the shape panel is withheld. |
+| `examine` | `causal` | supported | 4 |  |
+| `explain` | `causal` | supported | 4 |  |
+| `how can` | `causal` | supported | 4 |  |
+| `how do` | `causal` | supported | 4 |  |
+| `how does` | `causal` | supported | 4 |  |
+| `identify` | none | **not supported** | none | A short-answer directive. The extended-response scaffolding does not apply. |
+| `justify` | none | **not supported** | none | Justification is a judgement made after a decision is stated, which is close to the judgement family and is not the same shape. |
+| `list` | none | **not supported** | none | A short-answer directive. The extended-response scaffolding does not apply. |
+| `outline` | `causal` | supported | 4 |  |
+| `propose` | none | **not supported** | none | Ends in a proposal, same reason as recommend. |
+| `recommend` | none | **not supported** | none | Ends in a decision the student makes, which none of the current slot sets asks for. |
+| `to what extent` | `judgement` | supported | none | In the judgement family, and no sentence shape is authored for that family, so the shape panel is withheld. |
+
+## What earns each capability
+
+One definition, in `tools/contract/capabilities.js`, evaluated by the validator
+and by the coverage report. Each capability is a **conjunction of named rules**,
+so there is no score anywhere and a strong dimension cannot average away a weak
+one. A failed rule reports the sentence below, not a number.
+
+### `importable`
+
+| rule | fails when |
+| --- | --- |
+| `has-id` | question.id is missing |
+| `has-subject` | question.subject is missing |
+| `has-text` | question.text is missing |
+| `has-directive` | question.directive is missing |
+| `directive-known` | the directive is not in the registry, so nothing knows what kind of answer this asks for |
+| `resolves` | something in the package is malformed or does not resolve |
+
+### `writing-ready`
+
+| rule | fails when |
+| --- | --- |
+| `importable` | the package is not importable yet |
+| `has-marks` | question.marks is missing, so the expected length and band table are unknown |
+| `states-what-it-argues` | neither an overall argument nor a single relationship claim, so there is nothing to hold a paragraph against |
+
+### `pathway-guided`
+
+| rule | fails when |
+| --- | --- |
+| `writing-ready` | the question is not writing ready yet |
+| `directive-supported` | guided writing is not supported for this directive, so every slot label and guidance line chosen by family is withheld |
+| `arguments-to-choose-between` | fewer than two authored arguments, which is not a choice |
+| `every-argument-complete` | an argument is missing what a student needs to choose it and write it |
+| `judgement-offers-a-limitation` | a judgement question whose arguments all support it is offering a case, not a judgement |
+
+### `learning-complete`
+
+| rule | fails when |
+| --- | --- |
+| `arguments-exist` | there is nothing to teach, because there are no arguments |
+| `every-argument-reviewed` | an argument has not been through learning review, which is not the same as needing no lesson |
+| `concepts-explained` | an argument names a concept whose record is not complete |
+| `lessons-resolve` | an argument says its lesson is authored and the lesson does not resolve |
+
+### `assessment-complete`
+
+| rule | fails when |
+| --- | --- |
+| `decoded` | no decode block, so the student cannot be shown what the stem is asking |
+| `requirements-stated` | no requirements, so nothing says what a full answer must contain |
+| `thesis-described` | no acceptableThesis, so a student's own wording can only be matched, not accepted |
+| `checklist-present` | no checklist, so the completion card has nothing to check against |
+| `marking-language-sourced` | no bandSource, so any band descriptor shown would be unattributed |
+
+### `evidence-complete`
+
+| rule | fails when |
+| --- | --- |
+| `arguments-exist` | there is nothing to evidence, because there are no arguments |
+| `every-argument-has-evidence` | an argument references no evidence at all |
+| `every-reference-has-a-role` | an evidence reference does not say what the item is doing in this response, and a role is never inferred |
+| `every-record-sourced` | an evidence record carries no source, so the fact is unattributed |
 
 ## The envelope
 
@@ -59,9 +156,13 @@ is measuring something no student can be given.
 | | |
 | --- | --- |
 | required | **yes** |
+| type | `const` |
 | allowed | `"marginal.question-package"` |
+| belongs to | the package envelope |
+| leaving it out | **invalid** - the package does not import |
 | student surface | none |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 says what kind of file this is, so a validator never guesses at content it cannot interpret.
 
@@ -73,9 +174,13 @@ says what kind of file this is, so a validator never guesses at content it canno
 | | |
 | --- | --- |
 | required | **yes** |
+| type | `integer` |
 | allowed | integer |
+| belongs to | the package envelope |
+| leaving it out | **invalid** - the package does not import |
 | student surface | none |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 the contract version this package was authored against.
 
@@ -87,9 +192,13 @@ the contract version this package was authored against.
 | | |
 | --- | --- |
 | required | **yes** |
+| type | `enum` |
 | allowed | `bundled`, `imported` |
+| belongs to | the package envelope |
+| leaving it out | **invalid** - the package does not import |
 | student surface | none |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 whether the question shipped with the application or arrived through an import. Where a question came from is metadata beside its id and never part of it.
 
@@ -101,9 +210,13 @@ whether the question shipped with the application or arrived through an import. 
 | | |
 | --- | --- |
 | required | no |
+| type | `string` |
 | allowed | string |
+| belongs to | the package envelope |
+| leaving it out | **acceptable** - nothing depends on it |
 | student surface | none |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 the authoring bundle this question arrived in, for tracing a set back to its source.
 
@@ -115,9 +228,13 @@ the authoring bundle this question arrived in, for tracing a set back to its sou
 | | |
 | --- | --- |
 | required | no |
+| type | `string` |
 | allowed | string |
+| belongs to | the package envelope |
+| leaving it out | **acceptable** - nothing depends on it |
 | student surface | none |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 who authored the question, for review rather than for display.
 
@@ -129,9 +246,13 @@ who authored the question, for review rather than for display.
 | | |
 | --- | --- |
 | required | no |
+| type | `date` |
 | allowed | date |
+| belongs to | the package envelope |
+| leaving it out | **acceptable** - nothing depends on it |
 | student surface | none |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 when it was authored. A date, not a timestamp: nothing needs the minute.
 
@@ -143,9 +264,13 @@ when it was authored. A date, not a timestamp: nothing needs the minute.
 | | |
 | --- | --- |
 | required | **yes** |
+| type | `enum` |
 | allowed | `draft`, `in-review`, `in-source`, `approved` |
+| belongs to | the package envelope |
+| leaving it out | **invalid** - the package does not import |
 | student surface | none |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 how far through review this question is. A draft may be imported and is never served to a student.
 
@@ -157,9 +282,13 @@ how far through review this question is. A draft may be imported and is never se
 | | |
 | --- | --- |
 | required | **yes** |
+| type | `enum` |
 | allowed | `unpublished`, `published`, `withdrawn` |
+| belongs to | the package envelope |
+| leaving it out | **invalid** - the package does not import |
 | student surface | the question picker |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 whether a student may be given this question at all, independent of how complete it is.
 
@@ -171,9 +300,13 @@ whether a student may be given this question at all, independent of how complete
 | | |
 | --- | --- |
 | required | no |
+| type | `string` |
 | allowed | string |
+| belongs to | the package envelope |
+| leaving it out | **acceptable** - nothing depends on it |
 | student surface | none |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 anything the next reviewer needs to know. Never rendered.
 
@@ -185,10 +318,14 @@ anything the next reviewer needs to know. Never rendered.
 | | |
 | --- | --- |
 | required | no |
+| type | `string[]` |
 | allowed | string[] |
+| belongs to | the package envelope |
+| leaving it out | **acceptable** - nothing depends on it |
 | references | ids in `any` |
 | student surface | none |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 every shared id this package references, by library. Generated from the package rather than authored beside it: a dependency list that can disagree with the package it describes is a second source of truth. The importer recomputes it and reports any difference in both directions, so an omitted library is caught as a mismatch rather than as a missing field.
 
@@ -200,10 +337,14 @@ every shared id this package references, by library. Generated from the package 
 | | |
 | --- | --- |
 | required | no |
+| type | `record map` |
 | allowed | record map |
+| belongs to | the package envelope |
+| leaving it out | **acceptable** - nothing depends on it |
 | references | ids in `any` |
 | student surface | wherever the library is consumed |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 shared records this package contributes to a library. A package may bring a record the library does not have. It may never replace one it does: a definition three other questions point at is not this import's to rewrite.
 
@@ -217,9 +358,13 @@ shared records this package contributes to a library. A package may bring a reco
 | | |
 | --- | --- |
 | required | **yes** |
+| type | `id` |
 | allowed | lower case, hyphens |
+| belongs to | the question's own content |
+| leaving it out | **invalid** - the package does not import |
 | student surface | none, and it is written into every saved draft, so it can never change |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 the stable name of this question in one namespace shared by bundled and imported questions alike. A collision is an import-blocking error and never an implicit overwrite.
 
@@ -231,9 +376,13 @@ the stable name of this question in one namespace shared by bundled and imported
 | | |
 | --- | --- |
 | required | **yes** |
+| type | `id` |
 | allowed | lower case, hyphens |
+| belongs to | the question's own content |
+| leaving it out | **invalid** - the package does not import |
 | student surface | the subject picker |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 which subject's marking criteria, paragraph models and libraries apply.
 
@@ -245,10 +394,14 @@ which subject's marking criteria, paragraph models and libraries apply.
 | | |
 | --- | --- |
 | required | for `writing-ready` |
+| type | `ref` |
 | allowed | id in `syllabus` |
+| belongs to | the question's own content |
+| leaving it out | **capability shortfall** - imports, and does not reach `writing-ready`; naming a record the `syllabus` library does not have is **blocked**, not invalid: declare it in `requires` and the report says the library is not ready, with nothing in the package to fix |
 | references | ids in `syllabus` |
 | student surface | the study content panel, which loads the topic's core content |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 the syllabus node this question sits in. A ref, because the engine used to recover the topic from a display label with a keyword table: four word lists, first match wins, null if none hit.
 
@@ -260,9 +413,13 @@ the syllabus node this question sits in. A ref, because the engine used to recov
 | | |
 | --- | --- |
 | required | no |
+| type | `string` |
 | allowed | string |
+| belongs to | the question's own content |
+| leaving it out | **acceptable** - nothing depends on it |
 | student surface | the question header |
 | student reads it | yes |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 the topic in words, for a subject that has no syllabus library at all. Never present beside topicRef: a question carries a ref or a label.
 
@@ -274,23 +431,31 @@ the topic in words, for a subject that has no syllabus library at all. Never pre
 | | |
 | --- | --- |
 | required | **yes** |
-| allowed | `account for`, `analyse`, `assess`, `critically`, `describe`, `discuss`, `evaluate`, `examine`, `explain`, `how can`, `how do`, `how does`, `outline`, `to what extent` |
+| type | `enum` |
+| allowed | any command in the directive registry below. 14 of 22 are supported in guided writing |
+| belongs to | the question's own content |
+| leaving it out | **invalid** - the package does not import |
 | student surface | the decode panel, the slot labels, the sentence shapes |
 | student reads it | yes |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
-the command verb, which decides the directive family and therefore every slot label, sentence shape and piece of guidance downstream. Nothing else decides it.
+the command verb, which decides the directive family and therefore every slot label, sentence shape and piece of guidance downstream. Nothing else decides it. It must be in the directive registry: a command outside it does not import, and a command in it that assigns no family gives a valid question whose family-dependent guidance is withheld rather than defaulted.
 
-- good: "Explain"
-- bad: "Compare" today: it is in neither family, so the engine falls through to causal and scaffolds a comparison as a cause. An imported package may not rely on that fallback
+- good: "explain", which assigns the causal family and has four authored sentence shapes
+- bad: "ponder", which the registry does not list. "compare" is legal and unsupported: the question imports and is offered no argument scaffolding, rather than being scaffolded as a cause
 
 ### `question.text`
 
 | | |
 | --- | --- |
 | required | **yes** |
+| type | `string` |
 | allowed | string |
+| belongs to | the question's own content |
+| leaving it out | **invalid** - the package does not import |
 | student surface | the question header, the decode panel, the marking payload |
 | student reads it | yes |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 the question exactly as a student reads it. Every decode highlight anchors into this string.
 
@@ -302,9 +467,13 @@ the question exactly as a student reads it. Every decode highlight anchors into 
 | | |
 | --- | --- |
 | required | **yes** |
+| type | `integer` |
 | allowed | whole number, 1 to 40 |
+| belongs to | the question's own content |
+| leaving it out | **invalid** - the package does not import |
 | student surface | the question header, the marking request |
 | student reads it | yes |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 what the question is worth, which sets the expected length and the band table.
 
@@ -316,9 +485,13 @@ what the question is worth, which sets the expected length and the band table.
 | | |
 | --- | --- |
 | required | for `pathway-guided` |
+| type | `string` |
 | allowed | string |
+| belongs to | the question's own content |
+| leaving it out | **capability shortfall** - imports, and does not reach `pathway-guided` |
 | student surface | the sentence shape frames, the stuck helper |
 | student reads it | yes |
+| may be answer specific | yes, and it is shown only on request |
 
 the first of the two ends this question joins. The sentence shapes bind to it by name. It is NOT vocabulary: it carries no meaning and is never displayed as a definition.
 
@@ -330,9 +503,13 @@ the first of the two ends this question joins. The sentence shapes bind to it by
 | | |
 | --- | --- |
 | required | for `pathway-guided` |
+| type | `string` |
 | allowed | string |
+| belongs to | the question's own content |
+| leaving it out | **capability shortfall** - imports, and does not reach `pathway-guided` |
 | student surface | the sentence shape frames |
 | student reads it | yes |
+| may be answer specific | yes, and it is shown only on request |
 
 the second end. Both are present or neither is.
 
@@ -344,9 +521,13 @@ the second end. Both are present or neither is.
 | | |
 | --- | --- |
 | required | for `writing-ready` |
+| type | `string` |
 | allowed | string |
+| belongs to | the question's own content |
+| leaving it out | **capability shortfall** - imports, and does not reach `writing-ready` |
 | student surface | the planner, the response map |
 | student reads it | yes |
+| may be answer specific | yes, and it is shown only on request |
 
 the one line the whole essay is arguing, which every paragraph is held against.
 
@@ -358,10 +539,14 @@ the one line the whole essay is arguing, which every paragraph is held against.
 | | |
 | --- | --- |
 | required | no |
+| type | `vocabRef[]` |
 | allowed | `{ id, role }`, role one of `relationship-support`, `strategy-example`, `outcome-evidence`, `topic-context` |
+| belongs to | the question's own content |
+| leaving it out | **acceptable** - nothing depends on it; naming a record the `vocabulary` library does not have is **blocked**, not invalid: declare it in `requires` and the report says the library is not ready, with nothing in the package to fix |
 | references | ids in `vocabulary` |
 | student surface | the vocabulary panel, and nowhere else |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 the terms this question asks for by name. Vocabulary reaches a student because something named it, never because a term string appeared in prose.
 
@@ -373,10 +558,14 @@ the terms this question asks for by name. Vocabulary reaches a student because s
 | | |
 | --- | --- |
 | required | no |
+| type | `ref[]` |
 | allowed | id in `resources` |
+| belongs to | the question's own content |
+| leaving it out | **acceptable** - nothing depends on it; naming a record the `resources` library does not have is **blocked**, not invalid: declare it in `requires` and the report says the library is not ready, with nothing in the package to fix |
 | references | ids in `resources` |
 | student surface | the Learn button's resource list |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 the reading for this question. A resource is a label and a link to material the school already holds; no resource bytes live in this repository.
 
@@ -388,9 +577,13 @@ the reading for this question. A resource is a label and a link to material the 
 | | |
 | --- | --- |
 | required | for `writing-ready` |
+| type | `string` |
 | allowed | string |
+| belongs to | the question's own content |
+| leaving it out | **capability shortfall** - imports, and does not reach `writing-ready` |
 | student surface | the setup screen, above the argument picker |
 | student reads it | yes |
+| may be answer specific | yes, and it is shown only on request |
 
 what this question's two ends actually are, in the author's words. It replaced a sentence the engine synthesised, which was only ever true of Operations questions.
 
@@ -402,9 +595,13 @@ what this question's two ends actually are, in the author's words. It replaced a
 | | |
 | --- | --- |
 | required | **yes** |
+| type | `id` |
 | allowed | lower case, hyphens |
+| belongs to | the question's own content |
+| leaving it out | **invalid** - the package does not import |
 | student surface | none |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 the stable name of one claim the essay makes, so a pathway can point at it.
 
@@ -416,9 +613,13 @@ the stable name of one claim the essay makes, so a pathway can point at it.
 | | |
 | --- | --- |
 | required | **yes** |
+| type | `string` |
 | allowed | string |
+| belongs to | the question's own content |
+| leaving it out | **invalid** - the package does not import |
 | student surface | the planner's angle list |
 | student reads it | yes |
+| may be answer specific | yes, and it is shown only on request |
 
 the claim as a student reads it in the planner.
 
@@ -430,9 +631,13 @@ the claim as a student reads it in the planner.
 | | |
 | --- | --- |
 | required | **yes** |
+| type | `string` |
 | allowed | string |
+| belongs to | the question's own content |
+| leaving it out | **invalid** - the package does not import |
 | student surface | the planner |
 | student reads it | yes |
+| may be answer specific | yes, and it is shown only on request |
 
 the cause end of the claim, authored. The engine used to recover it by splitting the line on the word "to".
 
@@ -444,10 +649,14 @@ the cause end of the claim, authored. The engine used to recover it by splitting
 | | |
 | --- | --- |
 | required | for `learning-complete` |
+| type | `ref` |
 | allowed | id in `concepts` |
+| belongs to | the question's own content |
+| leaving it out | **capability shortfall** - imports, and does not reach `learning-complete`; naming a record the `concepts` library does not have is **blocked**, not invalid: declare it in `requires` and the report says the library is not ready, with nothing in the package to fix |
 | references | ids in `concepts` |
 | student surface | the Learn button |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 the concept record behind the cause end, so a student can open it.
 
@@ -459,9 +668,13 @@ the concept record behind the cause end, so a student can open it.
 | | |
 | --- | --- |
 | required | **yes** |
+| type | `enum` |
 | allowed | `shapes`, `affects`, `constrains`, `enables` |
+| belongs to | the question's own content |
+| leaving it out | **invalid** - the package does not import |
 | student surface | the planner |
 | student reads it | yes |
+| may be answer specific | yes, and it is shown only on request |
 
 how the left end acts on the right end. Authored, because the difference between shaping and constraining is the argument.
 
@@ -473,9 +686,13 @@ how the left end acts on the right end. Authored, because the difference between
 | | |
 | --- | --- |
 | required | **yes** |
+| type | `string` |
 | allowed | string |
+| belongs to | the question's own content |
+| leaving it out | **invalid** - the package does not import |
 | student surface | the planner |
 | student reads it | yes |
+| may be answer specific | yes, and it is shown only on request |
 
 the effect end of the claim.
 
@@ -487,24 +704,32 @@ the effect end of the claim.
 | | |
 | --- | --- |
 | required | for `assessment-complete` |
-| allowed | id in `criteria` |
-| references | ids in `criteria` |
+| type | `ref` |
+| allowed | id in `syllabus` |
+| belongs to | the question's own content |
+| leaving it out | **capability shortfall** - imports, and does not reach `assessment-complete`; naming a record the `syllabus` library does not have is **blocked**, not invalid: declare it in `requires` and the report says the library is not ready, with nothing in the package to fix |
+| references | ids in `syllabus` |
 | student surface | the planner, the coverage report |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
-the objective or criterion the effect end names, so two questions arguing towards the same objective can be told they do.
+the syllabus node the effect end names, so two questions arguing towards the same objective can be told they do. It points into the syllabus graph rather than at a separate criterion registry: a syllabus point that names its own parts in its title gives each part an id, and those are what a claim's right-hand end is.
 
-- good: "business.marketing.objective.market-share"
-- bad: null where an objective registry entry exists. 65 criterion labels currently have no id, which is the largest single piece of work this contract creates
+- good: "business.operations.operations-strategies.performance-objectives.quality"
+- bad: "quality" as a display string. An imported author may never reference identity by a label somebody could reword
 
 ### `relationship.claims[].pathwayRefs`
 
 | | |
 | --- | --- |
 | required | no |
+| type | `string[]` |
 | allowed | string[] |
+| belongs to | the question's own content |
+| leaving it out | **acceptable** - nothing depends on it |
 | student surface | the planner |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 which authored arguments serve this claim, so the planner and the argument picker agree.
 
@@ -516,9 +741,13 @@ which authored arguments serve this claim, so the planner and the argument picke
 | | |
 | --- | --- |
 | required | for `assessment-complete` |
+| type | `string` |
 | allowed | string |
+| belongs to | the question's own content |
+| leaving it out | **capability shortfall** - imports, and does not reach `assessment-complete` |
 | student surface | the decode panel |
 | student reads it | yes |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 what this directive verb demands, in this question, in plain words.
 
@@ -530,9 +759,13 @@ what this directive verb demands, in this question, in plain words.
 | | |
 | --- | --- |
 | required | for `assessment-complete` |
+| type | `string` |
 | allowed | string |
+| belongs to | the question's own content |
+| leaving it out | **capability shortfall** - imports, and does not reach `assessment-complete` |
 | student surface | the decode panel |
 | student reads it | yes |
+| may be answer specific | yes, and it is shown only on request |
 
 the question restated so a student who stalls on its wording can still start.
 
@@ -544,9 +777,13 @@ the question restated so a student who stalls on its wording can still start.
 | | |
 | --- | --- |
 | required | **yes** |
+| type | `string` |
 | allowed | string |
+| belongs to | the question's own content |
+| leaving it out | **invalid** - the package does not import |
 | student surface | the decode panel's highlighted stem |
 | student reads it | yes |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 the exact substring of question.text this note attaches to. It must appear in the text or nothing on screen can be highlighted.
 
@@ -558,9 +795,13 @@ the exact substring of question.text this note attaches to. It must appear in th
 | | |
 | --- | --- |
 | required | **yes** |
+| type | `string` |
 | allowed | string |
+| belongs to | the question's own content |
+| leaving it out | **invalid** - the package does not import |
 | student surface | the decode panel |
 | student reads it | yes |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 what that part of the stem is asking for.
 
@@ -572,9 +813,13 @@ what that part of the stem is asking for.
 | | |
 | --- | --- |
 | required | for `assessment-complete` |
+| type | `string` |
 | allowed | string |
+| belongs to | the question's own content |
+| leaving it out | **capability shortfall** - imports, and does not reach `assessment-complete` |
 | student surface | the coverage rail |
 | student reads it | yes |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 what has to be done for every element the question names.
 
@@ -586,9 +831,13 @@ what has to be done for every element the question names.
 | | |
 | --- | --- |
 | required | for `assessment-complete` |
+| type | `string[]` |
 | allowed | string[] |
+| belongs to | the question's own content |
+| leaving it out | **capability shortfall** - imports, and does not reach `assessment-complete` |
 | student surface | the requirement rail |
 | student reads it | yes |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 the ideas a full answer has to use. Labels, not refs: this is the requirement rail, and it states what the answer must contain rather than opening a lesson.
 
@@ -600,9 +849,13 @@ the ideas a full answer has to use. Labels, not refs: this is the requirement ra
 | | |
 | --- | --- |
 | required | for `assessment-complete` |
+| type | `string[]` |
 | allowed | string[] |
+| belongs to | the question's own content |
+| leaving it out | **capability shortfall** - imports, and does not reach `assessment-complete` |
 | student surface | the requirement rail |
 | student reads it | yes |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 the connections a full answer has to make, as distinct from the ideas it has to mention.
 
@@ -614,9 +867,13 @@ the connections a full answer has to make, as distinct from the ideas it has to 
 | | |
 | --- | --- |
 | required | for `assessment-complete` |
+| type | `string[]` |
 | allowed | string[] |
+| belongs to | the question's own content |
+| leaving it out | **capability shortfall** - imports, and does not reach `assessment-complete` |
 | student surface | the requirement rail, the marking request |
 | student reads it | yes |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 what the answer as a whole has to achieve, which is what separates a complete response from a correct one.
 
@@ -628,9 +885,13 @@ what the answer as a whole has to achieve, which is what separates a complete re
 | | |
 | --- | --- |
 | required | no |
+| type | `string` |
 | allowed | string |
+| belongs to | the question's own content |
+| leaving it out | **acceptable** - nothing depends on it |
 | student surface | the requirement rail |
 | student reads it | yes |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 the syllabus wording this question sits under, in the author's summary. Original words: syllabus text is not reproduced.
 
@@ -642,9 +903,13 @@ the syllabus wording this question sits under, in the author's summary. Original
 | | |
 | --- | --- |
 | required | for `assessment-complete` |
+| type | `enum` |
 | allowed | `causal`, `judgement` |
+| belongs to | the question's own content |
+| leaving it out | **capability shortfall** - imports, and does not reach `assessment-complete` |
 | student surface | none directly |
 | student reads it | no |
+| may be answer specific | yes, and it is shown only on request |
 
 the shape the model answer takes. It does NOT decide the directive family: the command does, and a mode that disagrees with the command is the second answer to a settled question.
 
@@ -656,9 +921,13 @@ the shape the model answer takes. It does NOT decide the directive family: the c
 | | |
 | --- | --- |
 | required | for `assessment-complete` |
+| type | `string` |
 | allowed | string |
+| belongs to | the question's own content |
+| leaving it out | **capability shortfall** - imports, and does not reach `assessment-complete` |
 | student surface | the compare surface, on request only |
 | student reads it | yes |
+| may be answer specific | yes, and it is shown only on request |
 
 the answer in one sentence, which the app compares a draft against.
 
@@ -670,9 +939,13 @@ the answer in one sentence, which the app compares a draft against.
 | | |
 | --- | --- |
 | required | for `assessment-complete` |
+| type | `string` |
 | allowed | string |
+| belongs to | the question's own content |
+| leaving it out | **capability shortfall** - imports, and does not reach `assessment-complete` |
 | student surface | the thesis check |
 | student reads it | yes |
+| may be answer specific | yes, and it is shown only on request |
 
 what any acceptable thesis must contain, so a student's own wording can be accepted rather than matched.
 
@@ -684,9 +957,13 @@ what any acceptable thesis must contain, so a student's own wording can be accep
 | | |
 | --- | --- |
 | required | for `assessment-complete` |
+| type | `string[]` |
 | allowed | string[] |
+| belongs to | the question's own content |
+| leaving it out | **capability shortfall** - imports, and does not reach `assessment-complete` |
 | student surface | the completion card |
 | student reads it | yes |
+| may be answer specific | yes, and it is shown only on request |
 
 what the finished answer must contain, item by item.
 
@@ -698,10 +975,14 @@ what the finished answer must contain, item by item.
 | | |
 | --- | --- |
 | required | for `pathway-guided` |
+| type | `enum` |
 | allowed | `positive`, `qualified`, `negative` |
+| belongs to | the question's own content |
+| leaving it out | **capability shortfall** - imports, and does not reach `pathway-guided` |
 | applies to | judgement questions |
 | student surface | the position picker |
 | student reads it | no |
+| may be answer specific | yes, and it is shown only on request |
 
 which way a position leans. A judgement question that offers no qualified position is offering a choice between two absolutes.
 
@@ -713,10 +994,14 @@ which way a position leans. A judgement question that offers no qualified positi
 | | |
 | --- | --- |
 | required | for `assessment-complete` |
+| type | `id` |
 | allowed | lower case, hyphens |
+| belongs to | the question's own content |
+| leaving it out | **capability shortfall** - imports, and does not reach `assessment-complete` |
 | applies to | judgement questions |
 | student surface | the judgement rail |
 | student reads it | no |
+| may be answer specific | yes, and it is shown only on request |
 
 the stable name of one criterion the judgement is made against.
 
@@ -728,9 +1013,13 @@ the stable name of one criterion the judgement is made against.
 | | |
 | --- | --- |
 | required | for `writing-ready` |
+| type | `string` |
 | allowed | string |
+| belongs to | the question's own content |
+| leaving it out | **capability shortfall** - imports, and does not reach `writing-ready` |
 | student surface | the working answer strip |
 | student reads it | yes |
+| may be answer specific | yes, and it is shown only on request |
 
 the sentence the working answer builds from as the student picks arguments.
 
@@ -742,9 +1031,13 @@ the sentence the working answer builds from as the student picks arguments.
 | | |
 | --- | --- |
 | required | for `pathway-guided` |
+| type | `string` |
 | allowed | string |
+| belongs to | the question's own content |
+| leaving it out | **capability shortfall** - imports, and does not reach `pathway-guided` |
 | student surface | the wrong-turn notice |
 | student reads it | yes |
+| may be answer specific | yes, and it is shown only on request |
 
 what the cause end of this question is called, so the app can tell a student their argument is running backwards.
 
@@ -756,9 +1049,13 @@ what the cause end of this question is called, so the app can tell a student the
 | | |
 | --- | --- |
 | required | for `pathway-guided` |
+| type | `string` |
 | allowed | string |
+| belongs to | the question's own content |
+| leaving it out | **capability shortfall** - imports, and does not reach `pathway-guided` |
 | student surface | the wrong-turn notice |
 | student reads it | yes |
+| may be answer specific | yes, and it is shown only on request |
 
 the direction the argument must run, stated once.
 
@@ -770,9 +1067,13 @@ the direction the argument must run, stated once.
 | | |
 | --- | --- |
 | required | for `assessment-complete` |
+| type | `enum` |
 | allowed | `authored`, `generated` |
+| belongs to | the question's own content |
+| leaving it out | **capability shortfall** - imports, and does not reach `assessment-complete` |
 | student surface | the marking rail |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 whether the marking guidance was authored for this question or assembled from the subject's criteria.
 
@@ -784,9 +1085,13 @@ whether the marking guidance was authored for this question or assembled from th
 | | |
 | --- | --- |
 | required | for `assessment-complete` |
+| type | `band[]` |
 | allowed | band[] |
+| belongs to | the question's own content |
+| leaving it out | **capability shortfall** - imports, and does not reach `assessment-complete` |
 | student surface | the marking rail |
 | student reads it | yes |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 band descriptors. Present only with a source: marking language is quoted from somewhere or it is invented, and inventing it is the one thing this app may never do.
 
@@ -798,9 +1103,13 @@ band descriptors. Present only with a source: marking language is quoted from so
 | | |
 | --- | --- |
 | required | for `assessment-complete` |
+| type | `string` |
 | allowed | string |
+| belongs to | the question's own content |
+| leaving it out | **capability shortfall** - imports, and does not reach `assessment-complete` |
 | student surface | the marking rail |
 | student reads it | yes |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 where the band descriptors came from.
 
@@ -814,9 +1123,13 @@ where the band descriptors came from.
 | | |
 | --- | --- |
 | required | **yes** |
+| type | `id` |
 | allowed | lower case, hyphens |
+| belongs to | an area, which is question-local |
+| leaving it out | **invalid** - the package does not import |
 | student surface | the coverage rail, the argument picker |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 the question-local name of one element this question names. Question-local by decision: an area is whatever the question genuinely needs.
 
@@ -828,9 +1141,13 @@ the question-local name of one element this question names. Question-local by de
 | | |
 | --- | --- |
 | required | **yes** |
+| type | `string` |
 | allowed | string |
+| belongs to | an area, which is question-local |
+| leaving it out | **invalid** - the package does not import |
 | student surface | the coverage rail |
 | student reads it | yes |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 the element in the words a student reads. It is never matched against syllabus prose: matching a label against text is the inference this contract exists to remove.
 
@@ -842,10 +1159,14 @@ the element in the words a student reads. It is never matched against syllabus p
 | | |
 | --- | --- |
 | required | no |
+| type | `ref[]` |
 | allowed | id in `syllabus` |
+| belongs to | an area, which is question-local |
+| leaving it out | **acceptable** - nothing depends on it; naming a record the `syllabus` library does not have is **blocked**, not invalid: declare it in `requires` and the report says the library is not ready, with nothing in the package to fix |
 | references | ids in `syllabus` |
 | student surface | the study content panel |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 the syllabus nodes this area claims to cover, if the author claims any. Claimed means resolved: a ref that names nothing is an error, and claiming nothing is valid.
 
@@ -857,9 +1178,13 @@ the syllabus nodes this area claims to cover, if the author claims any. Claimed 
 | | |
 | --- | --- |
 | required | for `pathway-guided` |
+| type | `string` |
 | allowed | string |
+| belongs to | an area, which is question-local |
+| leaving it out | **capability shortfall** - imports, and does not reach `pathway-guided` |
 | student surface | the composer's guidance line |
 | student reads it | yes |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 the one line always shown for this slot when the student is writing about this area.
 
@@ -871,10 +1196,14 @@ the one line always shown for this slot when the student is writing about this a
 | | |
 | --- | --- |
 | required | no |
+| type | `vocabRef[]` |
 | allowed | `{ id, role }`, role one of `relationship-support`, `strategy-example`, `outcome-evidence`, `topic-context` |
+| belongs to | an area, which is question-local |
+| leaving it out | **acceptable** - nothing depends on it; naming a record the `vocabulary` library does not have is **blocked**, not invalid: declare it in `requires` and the report says the library is not ready, with nothing in the package to fix |
 | references | ids in `vocabulary` |
 | student surface | the vocabulary panel |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 terms this area asks for by name.
 
@@ -888,9 +1217,13 @@ terms this area asks for by name.
 | | |
 | --- | --- |
 | required | **yes** |
+| type | `id` |
 | allowed | lower case, hyphens |
+| belongs to | a pathway, which is question-local |
+| leaving it out | **invalid** - the package does not import |
 | student surface | none |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 the stable name of one argument. It is written into saved sentences, so it can never change.
 
@@ -902,10 +1235,14 @@ the stable name of one argument. It is written into saved sentences, so it can n
 | | |
 | --- | --- |
 | required | for `pathway-guided` |
+| type | `string` |
 | allowed | string |
+| belongs to | a pathway, which is question-local |
+| leaving it out | **capability shortfall** - imports, and does not reach `pathway-guided` |
 | references | ids in `areas in this package` |
 | student surface | the argument picker's grouping |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 which element of the question this argument belongs to.
 
@@ -917,9 +1254,13 @@ which element of the question this argument belongs to.
 | | |
 | --- | --- |
 | required | for `pathway-guided` |
+| type | `string` |
 | allowed | string |
+| belongs to | a pathway, which is question-local |
+| leaving it out | **capability shortfall** - imports, and does not reach `pathway-guided` |
 | student surface | the argument picker |
 | student reads it | yes |
+| may be answer specific | yes, and it is shown only on request |
 
 the argument in four or five words, as it appears on the choosing card.
 
@@ -931,9 +1272,13 @@ the argument in four or five words, as it appears on the choosing card.
 | | |
 | --- | --- |
 | required | for `pathway-guided` |
+| type | `string` |
 | allowed | string |
+| belongs to | a pathway, which is question-local |
+| leaving it out | **capability shortfall** - imports, and does not reach `pathway-guided` |
 | student surface | the argument picker, the composer header |
 | student reads it | yes |
+| may be answer specific | yes, and it is shown only on request |
 
 the relationship this argument asserts, in one line.
 
@@ -945,9 +1290,13 @@ the relationship this argument asserts, in one line.
 | | |
 | --- | --- |
 | required | for `pathway-guided` |
+| type | `string` |
 | allowed | string |
+| belongs to | a pathway, which is question-local |
+| leaving it out | **capability shortfall** - imports, and does not reach `pathway-guided` |
 | student surface | the sentence shape frames |
 | student reads it | yes |
+| may be answer specific | yes, and it is shown only on request |
 
 the cause end of this argument, authored. The engine carries an explicit rule that it is never derived from `short` or `relationship`, which is what makes it semantic rather than presentational.
 
@@ -959,10 +1308,14 @@ the cause end of this argument, authored. The engine carries an explicit rule th
 | | |
 | --- | --- |
 | required | for `learning-complete` |
+| type | `ref` |
 | allowed | id in `concepts` |
+| belongs to | a pathway, which is question-local |
+| leaving it out | **capability shortfall** - imports, and does not reach `learning-complete`; naming a record the `concepts` library does not have is **blocked**, not invalid: declare it in `requires` and the report says the library is not ready, with nothing in the package to fix |
 | references | ids in `concepts` |
 | student surface | the Learn button |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 the concept record behind the cause end.
 
@@ -974,9 +1327,13 @@ the concept record behind the cause end.
 | | |
 | --- | --- |
 | required | for `pathway-guided` |
+| type | `string` |
 | allowed | string |
+| belongs to | a pathway, which is question-local |
+| leaving it out | **capability shortfall** - imports, and does not reach `pathway-guided` |
 | student surface | the argument picker's expanded card |
 | student reads it | yes |
+| may be answer specific | yes, and it is shown only on request |
 
 what choosing this argument commits the student to. Without it the picker is a list of labels and a student cannot tell what they are choosing between.
 
@@ -988,9 +1345,13 @@ what choosing this argument commits the student to. Without it the picker is a l
 | | |
 | --- | --- |
 | required | for `pathway-guided` |
+| type | `string` |
 | allowed | string |
+| belongs to | a pathway, which is question-local |
+| leaving it out | **capability shortfall** - imports, and does not reach `pathway-guided` |
 | student surface | the composer's target line |
 | student reads it | yes |
+| may be answer specific | yes, and it is shown only on request |
 
 what this paragraph has to establish for the argument to hold.
 
@@ -1002,9 +1363,13 @@ what this paragraph has to establish for the argument to hold.
 | | |
 | --- | --- |
 | required | for `pathway-guided` |
+| type | `string` |
 | allowed | string |
+| belongs to | a pathway, which is question-local |
+| leaving it out | **capability shortfall** - imports, and does not reach `pathway-guided` |
 | student surface | the composer's watch-out line |
 | student reads it | yes |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 the mistake students actually make on this argument, named before they make it.
 
@@ -1016,9 +1381,13 @@ the mistake students actually make on this argument, named before they make it.
 | | |
 | --- | --- |
 | required | for `pathway-guided` |
+| type | `enum` |
 | allowed | `authored`, `none-required`, `unreviewed` |
+| belongs to | a pathway, which is question-local |
+| leaving it out | **capability shortfall** - imports, and does not reach `pathway-guided` |
 | student surface | none |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 whether the middle step of the relationship has been authored, is not needed, or has not been looked at.
 
@@ -1030,9 +1399,13 @@ whether the middle step of the relationship has been authored, is not needed, or
 | | |
 | --- | --- |
 | required | for `pathway-guided` |
+| type | `string` |
 | allowed | string |
+| belongs to | a pathway, which is question-local |
+| leaving it out | **capability shortfall** - imports, and does not reach `pathway-guided` |
 | student surface | the composer's mechanism line |
 | student reads it | yes |
+| may be answer specific | yes, and it is shown only on request |
 
 the middle step: how the cause reaches the effect. It is the difference between an argument and an assertion.
 
@@ -1044,10 +1417,14 @@ the middle step: how the cause reaches the effect. It is the difference between 
 | | |
 | --- | --- |
 | required | for `learning-complete` |
+| type | `ref` |
 | allowed | id in `concepts` |
+| belongs to | a pathway, which is question-local |
+| leaving it out | **capability shortfall** - imports, and does not reach `learning-complete`; naming a record the `concepts` library does not have is **blocked**, not invalid: declare it in `requires` and the report says the library is not ready, with nothing in the package to fix |
 | references | ids in `concepts` |
 | student surface | the Learn surface |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 the concept this argument sits on, which is what the Learn button opens.
 
@@ -1059,10 +1436,14 @@ the concept this argument sits on, which is what the Learn button opens.
 | | |
 | --- | --- |
 | required | for `learning-complete` |
+| type | `ref` |
 | allowed | id in `syllabus` |
+| belongs to | a pathway, which is question-local |
+| leaving it out | **capability shortfall** - imports, and does not reach `learning-complete`; naming a record the `syllabus` library does not have is **blocked**, not invalid: declare it in `requires` and the report says the library is not ready, with nothing in the package to fix |
 | references | ids in `syllabus` |
 | student surface | the study content drawer |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 the syllabus node this argument is written against. Replaces a {topic, section, point} prose triple matched by PREFIX: nine of the twenty-eight authored triples resolve only that way, so "rewards" finds "rewards - monetary and non-monetary, individual or group, performance pay".
 
@@ -1074,10 +1455,14 @@ the syllabus node this argument is written against. Replaces a {topic, section, 
 | | |
 | --- | --- |
 | required | for `learning-complete` |
+| type | `ref` |
 | allowed | id in `lessons` |
+| belongs to | a pathway, which is question-local |
+| leaving it out | **capability shortfall** - imports, and does not reach `learning-complete`; naming a record the `lessons` library does not have is **blocked**, not invalid: declare it in `requires` and the report says the library is not ready, with nothing in the package to fix |
 | references | ids in `lessons` |
 | student surface | the Learn surface |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 the lesson that teaches this argument to a student who does not know the content. A pathway may REFERENCE teaching; it may not contain a lesson.
 
@@ -1089,9 +1474,13 @@ the lesson that teaches this argument to a student who does not know the content
 | | |
 | --- | --- |
 | required | for `learning-complete` |
+| type | `enum` |
 | allowed | `authored`, `none-required`, `unreviewed` |
+| belongs to | a pathway, which is question-local |
+| leaving it out | **capability shortfall** - imports, and does not reach `learning-complete` |
 | student surface | none |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 whether this argument has been through learning review. `none-required` is an authored decision that the argument needs no lesson, and is not the same as nobody having looked.
 
@@ -1103,10 +1492,14 @@ whether this argument has been through learning review. `none-required` is an au
 | | |
 | --- | --- |
 | required | for `evidence-complete` |
+| type | `ref` |
 | allowed | id in `evidence` |
+| belongs to | a pathway, which is question-local |
+| leaving it out | **capability shortfall** - imports, and does not reach `evidence-complete`; naming a record the `evidence` library does not have is **blocked**, not invalid: declare it in `requires` and the report says the library is not ready, with nothing in the package to fix |
 | references | ids in `evidence` |
 | student surface | the evidence drawer |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 the evidence record this argument uses. Replaces a display LABEL matched case-insensitively against the bank, where two records sharing a label silently became one.
 
@@ -1118,9 +1511,13 @@ the evidence record this argument uses. Replaces a display LABEL matched case-in
 | | |
 | --- | --- |
 | required | for `evidence-complete` |
+| type | `enum` |
 | allowed | `relationship-support`, `strategy-example`, `outcome-evidence`, `topic-context` |
+| belongs to | a pathway, which is question-local |
+| leaving it out | **capability shortfall** - imports, and does not reach `evidence-complete` |
 | student surface | the evidence drawer's grouping |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 what this item is doing for THIS argument. Authored, never inferred: a record in the same topic is topic-context and nothing stronger, and even that is a claim the author makes.
 
@@ -1132,9 +1529,13 @@ what this item is doing for THIS argument. Authored, never inferred: a record in
 | | |
 | --- | --- |
 | required | for `evidence-complete` |
+| type | `string` |
 | allowed | string |
+| belongs to | a pathway, which is question-local |
+| leaving it out | **capability shortfall** - imports, and does not reach `evidence-complete` |
 | student surface | the evidence drawer |
 | student reads it | yes |
+| may be answer specific | yes, and it is shown only on request |
 
 why this item supports this argument. It belongs to the pathway; the record belongs to the library.
 
@@ -1146,9 +1547,13 @@ why this item supports this argument. It belongs to the pathway; the record belo
 | | |
 | --- | --- |
 | required | no |
+| type | `string` |
 | allowed | string |
+| belongs to | a pathway, which is question-local |
+| leaving it out | **acceptable** - nothing depends on it |
 | student surface | the evidence drawer |
 | student reads it | yes |
+| may be answer specific | yes, and it is shown only on request |
 
 what this item does not prove, so a student does not claim more than it supports.
 
@@ -1160,9 +1565,13 @@ what this item does not prove, so a student does not claim more than it supports
 | | |
 | --- | --- |
 | required | for `pathway-guided` |
+| type | `string` |
 | allowed | string |
+| belongs to | a pathway, which is question-local |
+| leaving it out | **capability shortfall** - imports, and does not reach `pathway-guided` |
 | student surface | the composer's guidance line |
 | student reads it | yes |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 the one line always shown for this slot. `guides` and `help` were two fields for one idea; this is that idea with two depths.
 
@@ -1174,9 +1583,13 @@ the one line always shown for this slot. `guides` and `help` were two fields for
 | | |
 | --- | --- |
 | required | for `pathway-guided` |
+| type | `enum` |
 | allowed | `hint`, `needs`, `direction`, `frame`, `starter`, `example` |
+| belongs to | a pathway, which is question-local |
+| leaving it out | **capability shortfall** - imports, and does not reach `pathway-guided` |
 | student surface | the stuck helper |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 which step of the escalating ladder this is. Order is the meaning: each rung gives more than the one before it, and a full ladder is five rungs.
 
@@ -1188,9 +1601,13 @@ which step of the escalating ladder this is. Order is the meaning: each rung giv
 | | |
 | --- | --- |
 | required | for `pathway-guided` |
+| type | `string` |
 | allowed | string |
+| belongs to | a pathway, which is question-local |
+| leaving it out | **capability shortfall** - imports, and does not reach `pathway-guided` |
 | student surface | the stuck helper |
 | student reads it | yes |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 what this rung actually offers.
 
@@ -1202,10 +1619,14 @@ what this rung actually offers.
 | | |
 | --- | --- |
 | required | no |
+| type | `vocabRef[]` |
 | allowed | `{ id, role }`, role one of `relationship-support`, `strategy-example`, `outcome-evidence`, `topic-context` |
+| belongs to | a pathway, which is question-local |
+| leaving it out | **acceptable** - nothing depends on it; naming a record the `vocabulary` library does not have is **blocked**, not invalid: declare it in `requires` and the report says the library is not ready, with nothing in the package to fix |
 | references | ids in `vocabulary` |
 | student surface | the vocabulary panel |
 | student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
 
 terms this argument asks for by name.
 
@@ -1217,10 +1638,14 @@ terms this argument asks for by name.
 | | |
 | --- | --- |
 | required | for `pathway-guided` |
+| type | `enum` |
 | allowed | `support`, `limitation`, `conditional` |
+| belongs to | a pathway, which is question-local |
+| leaving it out | **capability shortfall** - imports, and does not reach `pathway-guided` |
 | applies to | judgement questions |
 | student surface | the argument picker's grouping |
 | student reads it | no |
+| may be answer specific | yes, and it is shown only on request |
 
 whether this argument supports the judgement, limits it, or holds conditionally. A judgement question offering only support is offering a case, not a judgement, so pathway-guided requires at least one limitation.
 
@@ -1231,12 +1656,12 @@ whether this argument supports the judgement, limits it, or holds conditionally.
 
 ### `VocabularyRecord`
 
-| field | required | student reads it | what it is for |
-| --- | --- | --- | --- |
-| `term` | **yes** | yes | the term itself. |
-| `subject` | **yes** | yes | what it means in this course, which is usually narrower than the plain sense. A record with a term and no subject meaning is a word with nothing attached, which is the thing this library exists to prevent. |
-| `plain` | no | yes | what the word means in ordinary English, for a student who has never met it. Without it the record still teaches on the Learn surface and is not offered in the vocabulary panel. |
-| `example` | no | yes | the term doing its job in a sentence, in a context other than this question. |
+| field | type | required | leaving it out | student reads it | what it is for |
+| --- | --- | --- | --- | --- | --- |
+| `term` | `string` | **yes** | **invalid** - the package does not import | yes | the term itself. |
+| `subject` | `string` | **yes** | **invalid** - the package does not import | yes | what it means in this course, which is usually narrower than the plain sense. A record with a term and no subject meaning is a word with nothing attached, which is the thing this library exists to prevent. |
+| `plain` | `string` | for `displayable` | **level** - the record exists and the `displayable` surface will not use it | yes | what the word means in ordinary English, for a student who has never met it. Without it the record still teaches on the Learn surface and is not offered in the vocabulary panel. |
+| `example` | `string` | for `displayable` | **level** - the record exists and the `displayable` surface will not use it | yes | the term doing its job in a sentence, in a context other than this question. |
 
 - `term` good: "market segmentation"
 - `term` bad: "segmentation (see also targeting)"
@@ -1249,10 +1674,10 @@ whether this argument supports the judgement, limits it, or holds conditionally.
 
 ### `ConceptRecord`
 
-| field | required | student reads it | what it is for |
-| --- | --- | --- | --- |
-| `requiresTeaching` | **yes** | no | whether this concept always needs teaching, needs it only in context, or never does. It was authored as the boolean true and as the string "contextual", and a field with two types is an unknown-enum fault waiting to happen. |
-| `vocabRefs` | no | no | the terms this concept defines, as refs. Concepts used to own {term, meaning} pairs directly, which made two definition systems; vocabulary has one authority and this is how a concept points into it. |
+| field | type | required | leaving it out | student reads it | what it is for |
+| --- | --- | --- | --- | --- | --- |
+| `requiresTeaching` | `enum` | **yes** | **invalid** - the package does not import | no | whether this concept always needs teaching, needs it only in context, or never does. It was authored as the boolean true and as the string "contextual", and a field with two types is an unknown-enum fault waiting to happen. |
+| `vocabRefs` | `vocabRef[]` | no | **acceptable** - nothing depends on it; naming a record the `vocabulary` library does not have is **blocked**, not invalid: declare it in `requires` and the report says the library is not ready, with nothing in the package to fix | no | the terms this concept defines, as refs. Concepts used to own {term, meaning} pairs directly, which made two definition systems; vocabulary has one authority and this is how a concept points into it. |
 
 - `requiresTeaching` good: "contextual"
 - `requiresTeaching` bad: true
@@ -1261,10 +1686,10 @@ whether this argument supports the judgement, limits it, or holds conditionally.
 
 ### `EvidenceRecord`
 
-| field | required | student reads it | what it is for |
-| --- | --- | --- | --- |
-| `source` | for `evidence-complete` | yes | where the fact came from. 0 of 58 records currently carry one, so no question can reach evidence-complete today. That is the report telling the truth about the content, and the requirement is not weakened to make the top state reachable. |
-| `verify` | no | yes | that the figure moves and the student should check a current one themselves. |
+| field | type | required | leaving it out | student reads it | what it is for |
+| --- | --- | --- | --- | --- | --- |
+| `source` | `string` | for `evidence-complete` | **capability shortfall** - imports, and does not reach `evidence-complete` | yes | where the fact came from. 0 of 58 records currently carry one, so no question can reach evidence-complete today. That is the report telling the truth about the content, and the requirement is not weakened to make the top state reachable. |
+| `verify` | `boolean` | no | **acceptable** - nothing depends on it | yes | that the figure moves and the student should check a current one themselves. |
 
 - `source` good: a named, checkable source
 - `source` bad: a plausible-looking citation nobody checked
@@ -1273,18 +1698,18 @@ whether this argument supports the judgement, limits it, or holds conditionally.
 
 ### `SyllabusNode`
 
-| field | required | student reads it | what it is for |
-| --- | --- | --- | --- |
-| `legacyTerms` | no | no | the term strings that sit beside a syllabus point in the source content. They have no meanings anywhere. Topic matching and the learning allowlist read them; nothing displays them, and they can never satisfy a vocabRef, because a ref names an id and a term string in a ref position is an error. |
+| field | type | required | leaving it out | student reads it | what it is for |
+| --- | --- | --- | --- | --- | --- |
+| `legacyTerms` | `string[]` | no | **acceptable** - nothing depends on it | no | the term strings that sit beside a syllabus point in the source content. They have no meanings anywhere. Topic matching and the learning allowlist read them; nothing displays them, and they can never satisfy a vocabRef, because a ref names an id and a term string in a ref position is an error. |
 
 - `legacyTerms` good: left alone
 - `legacyTerms` bad: copied into vocabRefs
 
 ### `ResourceRecord`
 
-| field | required | student reads it | what it is for |
-| --- | --- | --- | --- |
-| `url` | **yes** | no | where the material is. A link to what the school already holds, behind whatever access that platform applies. No resource bytes live in this repository. |
+| field | type | required | leaving it out | student reads it | what it is for |
+| --- | --- | --- | --- | --- | --- |
+| `url` | `url` | **yes** | **invalid** - the package does not import | no | where the material is. A link to what the school already holds, behind whatever access that platform applies. No resource bytes live in this repository. |
 
 - `url` good: a share link
 - `url` bad: a file committed to the repository

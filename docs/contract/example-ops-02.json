@@ -18,10 +18,10 @@
     "lessons": [],
     "evidence": [],
     "syllabus": [
-      "business.operations"
+      "business.operations",
+      "business.operations.role-of-operations-management.strategic-role-of-operations-management.cost-leadership"
     ],
-    "resources": [],
-    "criteria": []
+    "resources": []
   },
   "provides": {},
   "question": {
@@ -74,7 +74,7 @@
         "right": [
           {
             "label": "cost leadership",
-            "criterionRef": null
+            "criterionRef": "business.operations.role-of-operations-management.strategic-role-of-operations-management.cost-leadership"
           }
         ],
         "pathwayRefs": []

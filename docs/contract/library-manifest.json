@@ -21,8 +21,8 @@
       "published": 0
     },
     "syllabus": {
-      "records": 86,
-      "complete": 86
+      "records": 197,
+      "complete": 197
     },
     "resources": {
       "records": 0,
@@ -31,10 +31,6 @@
     "sentenceShapes": {
       "records": 6,
       "complete": 6
-    },
-    "criteria": {
-      "records": 0,
-      "complete": 0
     }
   },
   "enums": {
@@ -197,6 +193,12 @@
       "always",
       "contextual",
       "never"
+    ],
+    "evidenceRole": [
+      "relationship-support",
+      "strategy-example",
+      "outcome-evidence",
+      "topic-context"
     ]
   },
   "notes": [],
@@ -668,347 +670,988 @@
     "syllabus": {
       "business.operations": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "topic"
       },
       "business.operations.role-of-operations-management.strategic-role-of-operations-management": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.operations.role-of-operations-management.strategic-role-of-operations-management.cost-leadership": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.role-of-operations-management.strategic-role-of-operations-management.good-service-differentiation": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.operations.role-of-operations-management.goods-and-or-services-in-different-industries": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.operations.role-of-operations-management.interdependence-with-other-key-business-functions": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.operations.influences.globalisation": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.operations.influences.corporate-social-responsibility": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.operations.operations-processes.inputs": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.operations.operations-processes.transformation-processes": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.operations.operations-processes.outputs": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.operations.operations-strategies.performance-objectives": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.operations.operations-strategies.performance-objectives.quality": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.performance-objectives.speed": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.performance-objectives.dependability": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.performance-objectives.flexibility": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.performance-objectives.customisation": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.performance-objectives.cost": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.operations.operations-strategies.new-product-or-service-design-and-development": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.operations.operations-strategies.supply-chain-management": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.operations.operations-strategies.supply-chain-management.logistics": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.supply-chain-management.e-commerce": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.supply-chain-management.global-sourcing": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.operations.operations-strategies.outsourcing": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.operations.operations-strategies.outsourcing.advantages": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.outsourcing.disadvantages": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.operations.operations-strategies.technology": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.operations.operations-strategies.technology.leading-edge": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.technology.established": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.operations.operations-strategies.inventory-management": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.operations.operations-strategies.inventory-management.advantages": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.inventory-management.disadvantages-of-holding-stock": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.inventory-management.lifo": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.inventory-management.fifo": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.inventory-management.jit": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.operations.operations-strategies.quality-management": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.operations.operations-strategies.overcoming-resistance-to-change": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.operations.operations-strategies.overcoming-resistance-to-change.financial-costs": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.overcoming-resistance-to-change.purchasing-new-equipment": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.overcoming-resistance-to-change.redundancy-payments": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.overcoming-resistance-to-change.retraining": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.overcoming-resistance-to-change.reorganising-plant-layout": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.overcoming-resistance-to-change.inertia": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.operations.operations-strategies.global-factors": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.operations.operations-strategies.global-factors.global-sourcing": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.global-factors.economies-of-scale": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.global-factors.scanning": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.global-factors.learning": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.global-factors.research": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.operations.operations-strategies.global-factors.development": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.marketing": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "topic"
       },
       "business.marketing.role-of-marketing.strategic-role-of-marketing-goods-and-services": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.marketing.role-of-marketing.interdependence-with-other-key-business-functions": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.marketing.role-of-marketing.production": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.marketing.role-of-marketing.types-of-markets": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.marketing.role-of-marketing.types-of-markets.resource": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.role-of-marketing.types-of-markets.industrial": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.role-of-marketing.types-of-markets.intermediate": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.role-of-marketing.types-of-markets.consumer": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.role-of-marketing.types-of-markets.mass": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.role-of-marketing.types-of-markets.niche": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.marketing.influences-on-marketing.factors-influencing-customer-choice": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.marketing.influences-on-marketing.factors-influencing-customer-choice.psychological": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.influences-on-marketing.factors-influencing-customer-choice.sociocultural": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.influences-on-marketing.factors-influencing-customer-choice.economic": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.influences-on-marketing.factors-influencing-customer-choice.government": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.marketing.influences-on-marketing.consumer-laws": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.marketing.influences-on-marketing.ethical": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.marketing.influences-on-marketing.ethical.truth": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.influences-on-marketing.ethical.accuracy": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.influences-on-marketing.ethical.good-taste-in-advertising": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.influences-on-marketing.ethical.products-that-may-damage-health": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.influences-on-marketing.ethical.engaging-in-fair-competition": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.influences-on-marketing.ethical.sugging": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.marketing.marketing-process.situational-analysis": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.marketing.marketing-process.situational-analysis.swot": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.marketing-process.situational-analysis.product-life-cycle": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.marketing.marketing-process.market-research": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.marketing.marketing-process.establishing-market-objectives": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.marketing.marketing-process.identifying-target-markets": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.marketing.marketing-process.developing-marketing-strategies": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.marketing.marketing-process.implementation": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.marketing.marketing-process.implementation.planned-results": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.marketing-process.implementation.revising-the-marketing-strategy": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.marketing.marketing-strategies.market-segmentation": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.marketing.marketing-strategies.products": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.marketing.marketing-strategies.products.goods-and-or-services": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.marketing.marketing-strategies.price-including-pricing-methods": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.marketing.marketing-strategies.price-including-pricing-methods.cost": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.marketing-strategies.price-including-pricing-methods.market": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.marketing.marketing-strategies.price-including-pricing-methods.competition-based": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.marketing.marketing-strategies.promotion": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.marketing.marketing-strategies.place-distribution": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.marketing.marketing-strategies.people": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.marketing.marketing-strategies.e-marketing": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.marketing.marketing-strategies.global-marketing": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.finance": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "topic"
       },
       "business.finance.role-of-financial-management.strategic-role-of-financial-management": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.finance.role-of-financial-management.objectives-of-financial-management": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.finance.role-of-financial-management.interdependence-with-other-key-business-functions": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.finance.influences-on-financial-management.internal-sources-of-finance": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.finance.influences-on-financial-management.internal-sources-of-finance.retained-profits": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.finance.influences-on-financial-management.external-sources-of-finance": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.finance.influences-on-financial-management.financial-institutions": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.finance.influences-on-financial-management.financial-institutions.banks": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.influences-on-financial-management.financial-institutions.investment-banks": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.influences-on-financial-management.financial-institutions.finance-companies": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.influences-on-financial-management.financial-institutions.superannuation-funds": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.influences-on-financial-management.financial-institutions.life-insurance-companies": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.influences-on-financial-management.financial-institutions.unit-trusts": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.influences-on-financial-management.financial-institutions.the-australian-securities-exchange": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.finance.influences-on-financial-management.influence-of-government": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.finance.influences-on-financial-management.influence-of-government.australian-securities": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.influences-on-financial-management.influence-of-government.investments-commission": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.influences-on-financial-management.influence-of-government.company-taxation": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.finance.influences-on-financial-management.global-market-influences": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.finance.influences-on-financial-management.global-market-influences.economic-outlook": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.influences-on-financial-management.global-market-influences.availability-of-funds": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.influences-on-financial-management.global-market-influences.interest-rates": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.finance.processes-of-financial-management.planning-and-implementing": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.finance.processes-of-financial-management.planning-and-implementing.financial-needs": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.processes-of-financial-management.planning-and-implementing.budgets": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.processes-of-financial-management.planning-and-implementing.record-systems": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.processes-of-financial-management.planning-and-implementing.financial-risks": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.processes-of-financial-management.planning-and-implementing.financial-controls": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.finance.processes-of-financial-management.monitoring-and-controlling": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.finance.processes-of-financial-management.monitoring-and-controlling.cash-flow-statement": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.processes-of-financial-management.monitoring-and-controlling.income-statement": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.processes-of-financial-management.monitoring-and-controlling.balance-sheet": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.finance.processes-of-financial-management.financial-ratios": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.finance.processes-of-financial-management.limitations-of-financial-reports": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.finance.processes-of-financial-management.limitations-of-financial-reports.normalised-earnings": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.processes-of-financial-management.limitations-of-financial-reports.capitalising-expenses": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.processes-of-financial-management.limitations-of-financial-reports.valuing-assets": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.processes-of-financial-management.limitations-of-financial-reports.timing-issues": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.processes-of-financial-management.limitations-of-financial-reports.debt-repayments": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.finance.processes-of-financial-management.limitations-of-financial-reports.notes-to-the-financial-statements": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.finance.processes-of-financial-management.ethical-issues-related-to-financial-reports": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.finance.financial-management-strategies.cash-flow-management": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.finance.financial-management-strategies.working-capital-management": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.finance.financial-management-strategies.profitability-management": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.finance.financial-management-strategies.global-financial-management": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.hr": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "topic"
       },
       "business.hr.role-of-human-resource-management.strategic-role-of-human-resources": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.hr.role-of-human-resource-management.interdependence-with-other-key-business-functions": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.hr.role-of-human-resource-management.outsourcing": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.hr.key-influences.stakeholders": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.key-influences.stakeholders.employers": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.key-influences.stakeholders.employees": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.key-influences.stakeholders.employer-associations": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.key-influences.stakeholders.unions": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.key-influences.stakeholders.government-organisations": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.key-influences.stakeholders.society": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.hr.key-influences.legal": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.key-influences.legal.the-current-legal-framework": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.hr.key-influences.economic": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.hr.key-influences.technological": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.hr.key-influences.social": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.key-influences.social.changing-work-patterns": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.key-influences.social.living-standards": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.hr.key-influences.ethics-and-corporate-social-responsibility": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.hr.processes-of-human-resource-management.acquisition": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.hr.processes-of-human-resource-management.development": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.hr.processes-of-human-resource-management.maintenance": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.hr.processes-of-human-resource-management.separation": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.hr.strategies-in-human-resource-management.leadership-style": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.hr.strategies-in-human-resource-management.job-design": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.strategies-in-human-resource-management.job-design.general": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.strategies-in-human-resource-management.job-design.specific-tasks": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.hr.strategies-in-human-resource-management.recruitment": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.strategies-in-human-resource-management.recruitment.internal": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.strategies-in-human-resource-management.recruitment.external": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.strategies-in-human-resource-management.recruitment.general": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.strategies-in-human-resource-management.recruitment.specific-skills": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.hr.strategies-in-human-resource-management.training-and-development": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.strategies-in-human-resource-management.training-and-development.current": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.strategies-in-human-resource-management.training-and-development.future-skills": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.hr.strategies-in-human-resource-management.performance-management": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.strategies-in-human-resource-management.performance-management.developmental": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.strategies-in-human-resource-management.performance-management.administrative": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.hr.strategies-in-human-resource-management.rewards": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.strategies-in-human-resource-management.rewards.monetary": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.strategies-in-human-resource-management.rewards.non-monetary": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.strategies-in-human-resource-management.rewards.individual": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.strategies-in-human-resource-management.rewards.group": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.strategies-in-human-resource-management.rewards.performance-pay": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.hr.strategies-in-human-resource-management.global": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
+      },
+      "business.hr.strategies-in-human-resource-management.global.costs": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.strategies-in-human-resource-management.global.skills": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
+      },
+      "business.hr.strategies-in-human-resource-management.global.supply": {
+        "complete": true,
+        "missing": [],
+        "kind": "part"
       },
       "business.hr.strategies-in-human-resource-management.workplace-disputes": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.hr.effectiveness-of-human-resource-management.indicators": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.hr.effectiveness-of-human-resource-management.120-indicative-hours-are-required-to-complete-the-course": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.hr.effectiveness-of-human-resource-management.the-preliminary-course-is-a-prerequisite": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.hr.effectiveness-of-human-resource-management.suggested-components-and-weightings-for-the-internal-assessment-of-the-preliminary-course": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.hr.effectiveness-of-human-resource-management.mandatory-components-and-weightings-for-the-internal-assessment-of-the-hsc-course": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       },
       "business.hr.effectiveness-of-human-resource-management.the-hsc-examination-specifications": {
         "complete": true,
-        "missing": []
+        "missing": [],
+        "kind": "point"
       }
     },
     "resources": {},
@@ -1037,7 +1680,6 @@
         "complete": true,
         "missing": []
       }
-    },
-    "criteria": {}
+    }
   }
 }

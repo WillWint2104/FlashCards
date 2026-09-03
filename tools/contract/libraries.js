@@ -34,6 +34,18 @@ function load(file) {
 // id that changes when the prose changes is not an id.
 const slug = s => String(s == null ? "" : s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 const SUBJECT_NS = { business_studies: "business", ancient_history: "ancient" };
+// The parts a syllabus point names in its own title, after the dash. Authored
+// punctuation only: everything before the dash is the point, everything after is
+// a comma or "and" separated list of its parts. A title with no dash names no
+// parts, which is a fact about the syllabus wording and not a gap to fill in.
+function subNodes(title) {
+  const m = String(title || "").split(/\s+[-\u2013\u2014]\s+/);
+  if (m.length < 2) return [];
+  return m.slice(1).join(" - ")
+    .split(/,|\s+and\s+|\s+or\s+/)
+    .map(x => x.replace(/\([^)]*\)/g, "").trim())
+    .filter(x => x && x.length > 2 && x.split(/\s+/).length <= 5);
+}
 const TOPIC_NS = { operations: "operations", marketing: "marketing", finance: "finance", human_resources: "hr" };
 const ns = k => SUBJECT_NS[k] || slug(k);
 
@@ -60,20 +72,35 @@ function build_() {
   const B = load("business-content.js").BUSCONTENT;
   const notes = [];
   const L = { vocabulary: {}, concepts: {}, lessons: {}, evidence: {}, syllabus: {},
-              resources: {}, sentenceShapes: {}, criteria: {} };
+              resources: {}, sentenceShapes: {} };
 
   // ---- syllabus -----------------------------------------------------------
+  // Points, and their SUB-NODES. A syllabus point often names its own parts in
+  // its title: "performance objectives - quality, speed, dependability,
+  // flexibility, customisation, cost". Those parts are what a plan line's
+  // right-hand end points at, so they get ids from the same graph rather than a
+  // separate criterion registry. Split on the authored dash and the authored
+  // commas, and on nothing else: no part is ever recovered from the `what` prose,
+  // because that is the inference this contract removes.
   Object.keys((B && B.topics) || {}).forEach(topic => {
     const t = B.topics[topic], tid = id.topic("business", topic);
     L.syllabus[tid] = { id: tid, subject: "business_studies", label: t.label, kind: "topic", sections: [] };
     (t.sections || []).forEach(sec => {
       const points = (sec.points || []).map(pt => {
         const pid = id.point("business", topic, sec.name, pt.point);
+        const parts = subNodes(pt.point);
         L.syllabus[pid] = { id: pid, subject: "business_studies", kind: "point", topicRef: tid,
           section: sec.name, point: pt.point, what: pt.what, why: pt.why, exam: pt.exam || "",
+          partRefs: parts.map(x => pid + "." + slug(x)),
           // Named to say what it is. These strings have no meanings anywhere,
           // nothing displays them, and they can never satisfy a vocabRef.
           legacyTerms: (pt.terms || []).slice() };
+        parts.forEach(label => {
+          const sid = pid + "." + slug(label);
+          if (L.syllabus[sid]) return;
+          L.syllabus[sid] = { id: sid, subject: "business_studies", kind: "part", topicRef: tid,
+            pointRef: pid, section: sec.name, point: pt.point, label: label };
+        });
         return pid;
       });
       L.syllabus[tid].sections.push({ name: sec.name, pointRefs: points });
@@ -195,8 +222,9 @@ function completeness(kind, rec) {
   if (kind === "lessons") return { complete: !nonEmpty(rec, ["know", "chain"]).length, missing: nonEmpty(rec, ["know", "chain"]) };
   if (kind === "resources") { const m = nonEmpty(rec, ["label", "url"]); return { complete: !m.length, missing: m }; }
   if (kind === "syllabus") {
-    const m = rec.kind === "topic" ? nonEmpty(rec, ["label"]) : nonEmpty(rec, ["point", "what", "why"]);
-    return { complete: !m.length, missing: m };
+    const need = rec.kind === "topic" ? ["label"] : rec.kind === "part" ? ["label", "pointRef"] : ["point", "what", "why"];
+    const m = nonEmpty(rec, need);
+    return { complete: !m.length, missing: m, kind: rec.kind };
   }
   if (kind === "sentenceShapes") { const m = nonEmpty(rec, ["family", "role", "stage", "frame", "why"]); return { complete: !m.length, missing: m }; }
   return { complete: true, missing: [] };
@@ -243,4 +271,4 @@ function manifest() {
            notes: notes, records: records };
 }
 
-module.exports = { build, manifest, completeness, id, ns, slug, load };
+module.exports = { build, manifest, completeness, id, ns, slug, load, subNodes };

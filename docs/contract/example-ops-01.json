@@ -18,10 +18,13 @@
     "lessons": [],
     "evidence": [],
     "syllabus": [
-      "business.operations"
+      "business.operations",
+      "business.operations.operations-strategies.performance-objectives.cost",
+      "business.operations.operations-strategies.performance-objectives.dependability",
+      "business.operations.operations-strategies.performance-objectives.quality",
+      "business.operations.operations-strategies.performance-objectives.speed"
     ],
-    "resources": [],
-    "criteria": []
+    "resources": []
   },
   "provides": {},
   "question": {
@@ -54,11 +57,11 @@
         "right": [
           {
             "label": "speed",
-            "criterionRef": null
+            "criterionRef": "business.operations.operations-strategies.performance-objectives.speed"
           },
           {
             "label": "cost",
-            "criterionRef": null
+            "criterionRef": "business.operations.operations-strategies.performance-objectives.cost"
           }
         ],
         "pathwayRefs": []
@@ -74,11 +77,11 @@
         "right": [
           {
             "label": "dependability",
-            "criterionRef": null
+            "criterionRef": "business.operations.operations-strategies.performance-objectives.dependability"
           },
           {
             "label": "cost",
-            "criterionRef": null
+            "criterionRef": "business.operations.operations-strategies.performance-objectives.cost"
           }
         ],
         "pathwayRefs": []
@@ -94,7 +97,7 @@
         "right": [
           {
             "label": "quality",
-            "criterionRef": null
+            "criterionRef": "business.operations.operations-strategies.performance-objectives.quality"
           }
         ],
         "pathwayRefs": []
@@ -110,11 +113,11 @@
         "right": [
           {
             "label": "dependability",
-            "criterionRef": null
+            "criterionRef": "business.operations.operations-strategies.performance-objectives.dependability"
           },
           {
             "label": "cost",
-            "criterionRef": null
+            "criterionRef": "business.operations.operations-strategies.performance-objectives.cost"
           }
         ],
         "pathwayRefs": []

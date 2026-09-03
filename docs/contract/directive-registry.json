@@ -1,0 +1,276 @@
+{
+  "schema": "marginal.directive-registry",
+  "version": 1,
+  "counts": {
+    "known": 22,
+    "supported": 14,
+    "unsupported": 8,
+    "withShapes": 9
+  },
+  "families": {
+    "judgement": [
+      "assess",
+      "critically",
+      "discuss",
+      "evaluate",
+      "to what extent"
+    ],
+    "causal": [
+      "account for",
+      "analyse",
+      "describe",
+      "examine",
+      "explain",
+      "how can",
+      "how do",
+      "how does",
+      "outline"
+    ]
+  },
+  "fallback": "none. A command outside this registry is DIRECTIVE_UNKNOWN and does not import. A command in it with assignsFamily false is valid, and every piece of guidance chosen by family is withheld rather than defaulted to causal.",
+  "commands": [
+    {
+      "command": "account for",
+      "family": "causal",
+      "assignsFamily": true,
+      "answerShape": true,
+      "supportedInGuidedWriting": true,
+      "sentenceShapeCoverage": [
+        "causal.body.topic",
+        "causal.conclusion.judgement",
+        "causal.conclusion.restate",
+        "causal.introduction.thesis"
+      ],
+      "notes": null
+    },
+    {
+      "command": "analyse",
+      "family": "causal",
+      "assignsFamily": true,
+      "answerShape": true,
+      "supportedInGuidedWriting": true,
+      "sentenceShapeCoverage": [
+        "causal.body.topic",
+        "causal.conclusion.judgement",
+        "causal.conclusion.restate",
+        "causal.introduction.thesis"
+      ],
+      "notes": null
+    },
+    {
+      "command": "assess",
+      "family": "judgement",
+      "assignsFamily": true,
+      "answerShape": true,
+      "supportedInGuidedWriting": true,
+      "sentenceShapeCoverage": [],
+      "notes": "In the judgement family, and no sentence shape is authored for that family, so the shape panel is withheld."
+    },
+    {
+      "command": "compare",
+      "family": null,
+      "assignsFamily": false,
+      "answerShape": true,
+      "supportedInGuidedWriting": false,
+      "sentenceShapeCoverage": [],
+      "notes": "Comparison needs two subjects held side by side. The causal slots ask for one relationship, so serving them here would scaffold the wrong essay."
+    },
+    {
+      "command": "critically",
+      "family": "judgement",
+      "assignsFamily": true,
+      "answerShape": false,
+      "supportedInGuidedWriting": true,
+      "sentenceShapeCoverage": [],
+      "notes": "In the judgement family, and no sentence shape is authored for that family, so the shape panel is withheld."
+    },
+    {
+      "command": "demonstrate",
+      "family": null,
+      "assignsFamily": false,
+      "answerShape": true,
+      "supportedInGuidedWriting": false,
+      "sentenceShapeCoverage": [],
+      "notes": "Asks for a worked showing rather than an argued relationship."
+    },
+    {
+      "command": "describe",
+      "family": "causal",
+      "assignsFamily": true,
+      "answerShape": true,
+      "supportedInGuidedWriting": true,
+      "sentenceShapeCoverage": [
+        "causal.body.topic",
+        "causal.conclusion.judgement",
+        "causal.conclusion.restate",
+        "causal.introduction.thesis"
+      ],
+      "notes": null
+    },
+    {
+      "command": "discuss",
+      "family": "judgement",
+      "assignsFamily": true,
+      "answerShape": true,
+      "supportedInGuidedWriting": true,
+      "sentenceShapeCoverage": [],
+      "notes": "In the judgement family, and no sentence shape is authored for that family, so the shape panel is withheld."
+    },
+    {
+      "command": "distinguish",
+      "family": null,
+      "assignsFamily": false,
+      "answerShape": true,
+      "supportedInGuidedWriting": false,
+      "sentenceShapeCoverage": [],
+      "notes": "Same shape as compare: the answer is the difference between two things, not the effect of one on another."
+    },
+    {
+      "command": "evaluate",
+      "family": "judgement",
+      "assignsFamily": true,
+      "answerShape": true,
+      "supportedInGuidedWriting": true,
+      "sentenceShapeCoverage": [],
+      "notes": "In the judgement family, and no sentence shape is authored for that family, so the shape panel is withheld."
+    },
+    {
+      "command": "examine",
+      "family": "causal",
+      "assignsFamily": true,
+      "answerShape": true,
+      "supportedInGuidedWriting": true,
+      "sentenceShapeCoverage": [
+        "causal.body.topic",
+        "causal.conclusion.judgement",
+        "causal.conclusion.restate",
+        "causal.introduction.thesis"
+      ],
+      "notes": null
+    },
+    {
+      "command": "explain",
+      "family": "causal",
+      "assignsFamily": true,
+      "answerShape": true,
+      "supportedInGuidedWriting": true,
+      "sentenceShapeCoverage": [
+        "causal.body.topic",
+        "causal.conclusion.judgement",
+        "causal.conclusion.restate",
+        "causal.introduction.thesis"
+      ],
+      "notes": null
+    },
+    {
+      "command": "how can",
+      "family": "causal",
+      "assignsFamily": true,
+      "answerShape": true,
+      "supportedInGuidedWriting": true,
+      "sentenceShapeCoverage": [
+        "causal.body.topic",
+        "causal.conclusion.judgement",
+        "causal.conclusion.restate",
+        "causal.introduction.thesis"
+      ],
+      "notes": null
+    },
+    {
+      "command": "how do",
+      "family": "causal",
+      "assignsFamily": true,
+      "answerShape": false,
+      "supportedInGuidedWriting": true,
+      "sentenceShapeCoverage": [
+        "causal.body.topic",
+        "causal.conclusion.judgement",
+        "causal.conclusion.restate",
+        "causal.introduction.thesis"
+      ],
+      "notes": null
+    },
+    {
+      "command": "how does",
+      "family": "causal",
+      "assignsFamily": true,
+      "answerShape": false,
+      "supportedInGuidedWriting": true,
+      "sentenceShapeCoverage": [
+        "causal.body.topic",
+        "causal.conclusion.judgement",
+        "causal.conclusion.restate",
+        "causal.introduction.thesis"
+      ],
+      "notes": null
+    },
+    {
+      "command": "identify",
+      "family": null,
+      "assignsFamily": false,
+      "answerShape": true,
+      "supportedInGuidedWriting": false,
+      "sentenceShapeCoverage": [],
+      "notes": "A short-answer directive. The extended-response scaffolding does not apply."
+    },
+    {
+      "command": "justify",
+      "family": null,
+      "assignsFamily": false,
+      "answerShape": true,
+      "supportedInGuidedWriting": false,
+      "sentenceShapeCoverage": [],
+      "notes": "Justification is a judgement made after a decision is stated, which is close to the judgement family and is not the same shape."
+    },
+    {
+      "command": "list",
+      "family": null,
+      "assignsFamily": false,
+      "answerShape": true,
+      "supportedInGuidedWriting": false,
+      "sentenceShapeCoverage": [],
+      "notes": "A short-answer directive. The extended-response scaffolding does not apply."
+    },
+    {
+      "command": "outline",
+      "family": "causal",
+      "assignsFamily": true,
+      "answerShape": true,
+      "supportedInGuidedWriting": true,
+      "sentenceShapeCoverage": [
+        "causal.body.topic",
+        "causal.conclusion.judgement",
+        "causal.conclusion.restate",
+        "causal.introduction.thesis"
+      ],
+      "notes": null
+    },
+    {
+      "command": "propose",
+      "family": null,
+      "assignsFamily": false,
+      "answerShape": true,
+      "supportedInGuidedWriting": false,
+      "sentenceShapeCoverage": [],
+      "notes": "Ends in a proposal, same reason as recommend."
+    },
+    {
+      "command": "recommend",
+      "family": null,
+      "assignsFamily": false,
+      "answerShape": true,
+      "supportedInGuidedWriting": false,
+      "sentenceShapeCoverage": [],
+      "notes": "Ends in a decision the student makes, which none of the current slot sets asks for."
+    },
+    {
+      "command": "to what extent",
+      "family": "judgement",
+      "assignsFamily": true,
+      "answerShape": true,
+      "supportedInGuidedWriting": true,
+      "sentenceShapeCoverage": [],
+      "notes": "In the judgement family, and no sentence shape is authored for that family, so the shape panel is withheld."
+    }
+  ]
+}

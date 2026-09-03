@@ -125,7 +125,7 @@
           "minLength": 1
         },
         "directive": {
-          "description": "the command verb, which decides the directive family and therefore every slot label, sentence shape and piece of guidance downstream. Nothing else decides it.",
+          "description": "the command verb, which decides the directive family and therefore every slot label, sentence shape and piece of guidance downstream. Nothing else decides it. It must be in the directive registry: a command outside it does not import, and a command in it that assigns no family gives a valid question whose family-dependent guidance is withheld rather than defaulted.",
           "enum": [
             "account for",
             "analyse",
@@ -259,7 +259,7 @@
                       "minLength": 1
                     },
                     "criterionRef": {
-                      "description": "the objective or criterion the effect end names, so two questions arguing towards the same objective can be told they do. Names a record in the criteria library.",
+                      "description": "the syllabus node the effect end names, so two questions arguing towards the same objective can be told they do. It points into the syllabus graph rather than at a separate criterion registry: a syllabus point that names its own parts in its title gives each part an id, and those are what a claim's right-hand end is. Names a record in the syllabus library.",
                       "type": "string",
                       "pattern": "^[a-z0-9]+([.-][a-z0-9]+)*$"
                     }

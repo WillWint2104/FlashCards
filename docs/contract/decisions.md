@@ -188,14 +188,57 @@ state of.
 **20. One question per package in v1.** A pack of questions with one shared
 `requires` is a later design and is not smuggled into the first import.
 
+## Locked in the hardening pass
+
+**21. One machine definition of every capability.** `tools/contract/capabilities.js`
+and nothing else. The validator and the coverage report both evaluate it, and a
+test runs both over all nineteen questions and requires the same answer. Each
+capability is a conjunction of named rules carrying the sentence they would say,
+so a result can be explained rather than printed. No score, no weight, no
+average: a strong dimension cannot cover a weak one because there is no
+arithmetic for it to happen in.
+
+**22. The directive registry, and no fallback.** Unknown does not import; known
+and unsupported is a valid question whose family-dependent guidance is withheld;
+known and supported is served. `Compare` can no longer behave as `Explain`.
+
+**23. Criterion ids come from the syllabus graph.** A point names its parts in
+its own title, after an authored dash, and each part becomes a node with an id.
+No separate registry. 14 of 63 right-hand ends resolve deterministically today,
+scoped to the question's own topic and nowhere wider; the other 49 are labels
+whose owning point does not name its parts, and the mapping report proposes the
+id each would have. An imported author never references identity by a display
+string.
+
+**24. Evidence roles are contract data.** Their own four-value list rather than
+an alias of the vocabulary roles, because a vocabulary role says what a term is
+for in the argument and an evidence role says what an item is doing in the
+response. The record owns provenance; the reference owns function. A missing role
+denies `evidence-complete` and is never inferred from topic, label or
+neighbouring content.
+
+**25. Vocabulary levels are derived, never authored.** A record carries facts:
+term, course meaning, plain meaning, example. `complete` and `displayable` are
+computed from them. A concept arriving with its own `{term, meaning}` pairs is
+`SECOND_VOCABULARY_AUTHORITY` and does not import.
+
+**26. Round-trip fidelity is proved, not assumed.** Export, validate, resolve,
+compare against source, over the semantic fields that carry meaning.
+
+**27. The simulations are described before they are run.** A fixture manifest of
+personas and semantic handles, so a bot can be written against the contract
+rather than against a question id.
+
 ## What is still open
 
 Nothing in the format is waiting on a decision. What remains is work the
 decisions create:
 
-- the criterion registry, 63 labels with no id;
+- 49 of 63 criterion right-hand ends, whose owning syllabus point does not name
+  its parts in its title. The ids they would have are in `criterion-mapping.md`;
 - 25 evidence references with no authored role;
 - 14 vocabulary records needing a plain meaning and an example before the
   vocabulary panel can offer them;
-- the eight directives in neither family;
+- the eight directives in neither family, now registered and reported rather
+  than silently served as causal;
 - judgement sentence shapes, of which there are none.

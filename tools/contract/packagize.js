@@ -66,7 +66,7 @@ function packagize(qid) {
   }));
   if (!q) throw new Error("no such question: " + qid);
   const n = ns(subjectKey);
-  const unmapped = [], migrated = [];
+  const unmapped = [], migrated = [], criterionHits = [], criterionMisses = [];
 
   // The keyword table the engine uses is not carried across. The label is
   // normalised to a key and the key must exist, or the question carries a label
@@ -82,16 +82,47 @@ function packagize(qid) {
   // A plan line's relationship becomes explicit structure. The left end is
   // authored. The right end needs a criterion registry that does not exist, so
   // it is left null and counted rather than invented.
+  // A claim's right-hand end resolves to a syllabus sub-node by EXACT normalised
+  // label, scoped to this question's topic first and then to the subject. Exact
+  // and scoped, so nothing is matched by looking like something; ambiguous or
+  // absent stays null and is counted.
+  // Two authored things a label may name exactly: a sub-node's label, or the head
+  // of a point's title, which is everything before the authored dash. Both come
+  // from punctuation somebody wrote. Nothing is matched on resemblance, and a
+  // label matching two nodes in scope resolves to neither.
+  const head = t => String(t || "").split(/\s+[-\u2013\u2014]\s+/)[0].trim();
+  const candidates = Object.values(L.syllabus)
+    .filter(x => x.kind === "part" || x.kind === "point")
+    .map(x => ({ id: x.id, topicRef: x.topicRef, key: slug(x.kind === "part" ? x.label : head(x.point)), kind: x.kind }));
+  function criterionRefFor(label, where) {
+    const want = slug(label);
+    const mine = hasTopic ? id.topic("business", topicKey) : null;
+    // Scoped to this question's own topic and nowhere wider. A subject-wide
+    // fallback resolved an operations question's "costs" onto an HR sub-node,
+    // which is the same loose join in a new place: a label that means one thing
+    // in operations and another in human resources is two ideas, not one id.
+    const inTopic = candidates.filter(x => x.key === want && x.topicRef === mine);
+    if (inTopic.length === 1) { criterionHits.push({ label: label, id: inTopic[0].id, kind: inTopic[0].kind, scope: "topic" }); return inTopic[0].id; }
+    criterionMisses.push({ label: label, where: where,
+      // The id it WOULD have, so the review is about authoring one node in the
+      // existing graph rather than about inventing an identifier scheme.
+      proposed: mine ? mine + ".<point>." + slug(label) : null,
+      reason: !mine ? "the question resolves to no syllabus topic"
+        : inTopic.length > 1 ? inTopic.length + " nodes in this topic carry that label, so it names none of them"
+        : "no node in this question's topic carries that label" });
+    return null;
+  }
+
   const claims = (q.plan || []).map((line, i) => {
     const bits = String(line).split(/\s+to\s+/i);
     const left = bits[0].trim();
     const rights = bits.length < 2 ? [] : bits[1].split(/\s*(?:,|and)\s*/).map(x => x.trim()).filter(Boolean);
     if (!rights.length) unmapped.push("plan line " + (i + 1) + " states no right-hand end: " + JSON.stringify(String(line)));
-    rights.forEach(r => unmapped.push("criterion " + JSON.stringify(r) + " has no id: no criterion registry exists"));
+    // resolved below, per right-hand end
     return { id: q.id + "-claim-" + (i + 1), line: String(line),
       left: { label: left, conceptRef: null },
       relation: judgement ? "affects" : "shapes",
-      right: rights.map(r => ({ label: r, criterionRef: null })), pathwayRefs: [] };
+      right: rights.map(r => ({ label: r, criterionRef: criterionRefFor(r, q.id + "-claim-" + (i + 1)) })), pathwayRefs: [] };
   });
 
   function syllabusRefFor(c, where) {
@@ -202,8 +233,10 @@ function packagize(qid) {
     bad.forEach(a => unmapped.push("requiredArea " + JSON.stringify((a || {}).id || a) + " is not one of this question's areas"));
   }
 
+  criterionMisses.forEach(m => unmapped.push("criterion " + JSON.stringify(m.label) + " has no id: " + m.reason));
   pkg.requires = requiresOf(pkg);
-  return { pkg: pkg, unmapped: unmapped, migrated: migrated };
+  return { pkg: pkg, unmapped: unmapped, migrated: migrated,
+           criteria: { resolved: criterionHits, unresolved: criterionMisses } };
 }
 
 // requires is COMPUTED, never authored beside the package. A dependency list
@@ -211,7 +244,7 @@ function packagize(qid) {
 // so the validator recomputes it the same way and reports any difference.
 function requiresOf(pkg) {
   const sets = { vocabulary: new Set(), concepts: new Set(), lessons: new Set(), evidence: new Set(),
-                 syllabus: new Set(), resources: new Set(), criteria: new Set() };
+                 syllabus: new Set(), resources: new Set() };
   const walk = o => {
     if (!o || typeof o !== "object") return;
     if (Array.isArray(o)) return o.forEach(walk);
@@ -223,7 +256,7 @@ function requiresOf(pkg) {
       else if (k === "evidenceRefs") (v || []).forEach(r => r && r.ref && sets.evidence.add(r.ref));
       else if (k === "conceptRef") sets.concepts.add(v);
       else if (k === "learningRef") sets.lessons.add(v);
-      else if (k === "criterionRef") sets.criteria.add(v);
+      else if (k === "criterionRef") sets.syllabus.add(v);
       else if (k === "syllabusRef" || k === "topicRef") sets.syllabus.add(v);
       else if (k === "syllabusRefs") (v || []).forEach(r => r && sets.syllabus.add(r));
       else walk(v);

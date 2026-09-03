@@ -18,10 +18,11 @@
     "lessons": [],
     "evidence": [],
     "syllabus": [
-      "business.marketing"
+      "business.marketing",
+      "business.marketing.marketing-strategies.e-marketing",
+      "business.marketing.marketing-strategies.promotion"
     ],
-    "resources": [],
-    "criteria": []
+    "resources": []
   },
   "provides": {},
   "question": {
@@ -86,11 +87,11 @@
         "right": [
           {
             "label": "promotion",
-            "criterionRef": null
+            "criterionRef": "business.marketing.marketing-strategies.promotion"
           },
           {
             "label": "e-marketing",
-            "criterionRef": null
+            "criterionRef": "business.marketing.marketing-strategies.e-marketing"
           }
         ],
         "pathwayRefs": []

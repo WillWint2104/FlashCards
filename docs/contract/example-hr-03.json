@@ -18,10 +18,11 @@
     "lessons": [],
     "evidence": [],
     "syllabus": [
-      "business.hr"
+      "business.hr",
+      "business.hr.strategies-in-human-resource-management.global.costs",
+      "business.hr.strategies-in-human-resource-management.global.skills"
     ],
-    "resources": [],
-    "criteria": []
+    "resources": []
   },
   "provides": {},
   "question": {
@@ -70,7 +71,7 @@
         "right": [
           {
             "label": "skills",
-            "criterionRef": null
+            "criterionRef": "business.hr.strategies-in-human-resource-management.global.skills"
           },
           {
             "label": "productivity",
@@ -114,7 +115,7 @@
           },
           {
             "label": "costs",
-            "criterionRef": null
+            "criterionRef": "business.hr.strategies-in-human-resource-management.global.costs"
           },
           {
             "label": "culture",

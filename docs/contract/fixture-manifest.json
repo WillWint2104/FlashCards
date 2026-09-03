@@ -1,0 +1,1667 @@
+{
+  "schema": "marginal.fixture-manifest",
+  "version": 1,
+  "note": "Describes the simulations. Does not run them: that is work for after the importer, against externally authored packs rather than against this bank.",
+  "personas": [
+    {
+      "id": "zeroKnowledgeStudent",
+      "means": "knows nothing about the content and will not leave the app to learn it",
+      "exercises": [
+        "pathways[].learningRef",
+        "pathways[].conceptRef",
+        "vocabRefs"
+      ],
+      "fails": "choosing an argument opens something that does not teach it, or names a term with no meaning",
+      "needs": [
+        "learning-complete"
+      ]
+    },
+    {
+      "id": "strongIndependentStudent",
+      "means": "writes well and opens no help at all",
+      "exercises": [
+        "question.text",
+        "question.marks",
+        "marking.bandSource"
+      ],
+      "fails": "the app blocks, nags or requires a scaffold to reach submission",
+      "needs": [
+        "writing-ready"
+      ]
+    },
+    {
+      "id": "misconceptionStudent",
+      "means": "writes exactly the mistake the pathway names, and the argument backwards",
+      "exercises": [
+        "pathways[].commonMistake",
+        "reasoning.forward",
+        "reasoning.backward"
+      ],
+      "fails": "the app accepts the wrong-direction argument without noticing, or names the mistake before it is made",
+      "needs": [
+        "pathway-guided"
+      ]
+    },
+    {
+      "id": "helpSeekingStudent",
+      "means": "presses every help control and climbs every rung",
+      "exercises": [
+        "pathways[].guidance.<slot>.ladder"
+      ],
+      "fails": "a rung offers a sentence about this question that could be pasted, or the ladder ends before it has said anything useful",
+      "needs": [
+        "pathway-guided"
+      ]
+    },
+    {
+      "id": "bypassEverythingStudent",
+      "means": "skips planning, goes straight to the full attempt and submits",
+      "exercises": [
+        "the full attempt surface",
+        "legacyTerms",
+        "vocabRefs"
+      ],
+      "fails": "an undefined term reaches the screen, or a surface renders empty rather than being withheld",
+      "needs": [
+        "importable"
+      ]
+    }
+  ],
+  "runnable": {
+    "zeroKnowledgeStudent": [],
+    "strongIndependentStudent": [
+      "ops-01",
+      "ops-02",
+      "ops-03",
+      "mkt-01",
+      "mkt-04",
+      "mkt-02",
+      "mkt-03",
+      "fin-01",
+      "fin-02",
+      "fin-03",
+      "hr-01",
+      "hr-02",
+      "hr-03"
+    ],
+    "misconceptionStudent": [
+      "mkt-01",
+      "fin-01",
+      "hr-01"
+    ],
+    "helpSeekingStudent": [
+      "mkt-01",
+      "fin-01",
+      "hr-01"
+    ],
+    "bypassEverythingStudent": [
+      "ah-sources",
+      "ah-religion",
+      "ah-geography",
+      "ah-women",
+      "ah-power",
+      "ah-site",
+      "ops-01",
+      "ops-02",
+      "ops-03",
+      "mkt-01",
+      "mkt-04",
+      "mkt-02",
+      "mkt-03",
+      "fin-01",
+      "fin-02",
+      "fin-03",
+      "hr-01",
+      "hr-02",
+      "hr-03"
+    ]
+  },
+  "packages": [
+    {
+      "package": "ah-sources",
+      "capabilities": {
+        "importable": "reached",
+        "writing-ready": "not-reached",
+        "pathway-guided": "not-reached",
+        "learning-complete": "not-reached",
+        "assessment-complete": "not-reached",
+        "evidence-complete": "not-reached"
+      },
+      "headline": "Importable - missing writing-ready, pathway-guided, learning-complete, assessment-complete, evidence-complete",
+      "handles": {
+        "directive": {
+          "command": "assess",
+          "family": "judgement",
+          "supportedInGuidedWriting": true,
+          "sentenceShapes": 0
+        },
+        "marks": 20,
+        "areas": [],
+        "slots": [],
+        "claims": 0,
+        "hasReasoning": false,
+        "hasDecode": false,
+        "bandSource": false,
+        "pathways": []
+      },
+      "personas": [
+        {
+          "persona": "zeroKnowledgeStudent",
+          "applicable": false,
+          "why": "needs learning-complete, which this package does not reach"
+        },
+        {
+          "persona": "strongIndependentStudent",
+          "applicable": false,
+          "why": "needs writing-ready, which this package does not reach"
+        },
+        {
+          "persona": "misconceptionStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "helpSeekingStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "bypassEverythingStudent",
+          "applicable": true,
+          "why": null
+        }
+      ]
+    },
+    {
+      "package": "ah-religion",
+      "capabilities": {
+        "importable": "reached",
+        "writing-ready": "not-reached",
+        "pathway-guided": "not-reached",
+        "learning-complete": "not-reached",
+        "assessment-complete": "not-reached",
+        "evidence-complete": "not-reached"
+      },
+      "headline": "Importable - missing writing-ready, pathway-guided, learning-complete, assessment-complete, evidence-complete",
+      "handles": {
+        "directive": {
+          "command": "explain",
+          "family": "causal",
+          "supportedInGuidedWriting": true,
+          "sentenceShapes": 4
+        },
+        "marks": 20,
+        "areas": [],
+        "slots": [],
+        "claims": 0,
+        "hasReasoning": false,
+        "hasDecode": false,
+        "bandSource": true,
+        "pathways": []
+      },
+      "personas": [
+        {
+          "persona": "zeroKnowledgeStudent",
+          "applicable": false,
+          "why": "needs learning-complete, which this package does not reach"
+        },
+        {
+          "persona": "strongIndependentStudent",
+          "applicable": false,
+          "why": "needs writing-ready, which this package does not reach"
+        },
+        {
+          "persona": "misconceptionStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "helpSeekingStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "bypassEverythingStudent",
+          "applicable": true,
+          "why": null
+        }
+      ]
+    },
+    {
+      "package": "ah-geography",
+      "capabilities": {
+        "importable": "reached",
+        "writing-ready": "not-reached",
+        "pathway-guided": "not-reached",
+        "learning-complete": "not-reached",
+        "assessment-complete": "not-reached",
+        "evidence-complete": "not-reached"
+      },
+      "headline": "Importable - missing writing-ready, pathway-guided, learning-complete, assessment-complete, evidence-complete",
+      "handles": {
+        "directive": {
+          "command": "to what extent",
+          "family": "judgement",
+          "supportedInGuidedWriting": true,
+          "sentenceShapes": 0
+        },
+        "marks": 20,
+        "areas": [],
+        "slots": [],
+        "claims": 0,
+        "hasReasoning": false,
+        "hasDecode": false,
+        "bandSource": false,
+        "pathways": []
+      },
+      "personas": [
+        {
+          "persona": "zeroKnowledgeStudent",
+          "applicable": false,
+          "why": "needs learning-complete, which this package does not reach"
+        },
+        {
+          "persona": "strongIndependentStudent",
+          "applicable": false,
+          "why": "needs writing-ready, which this package does not reach"
+        },
+        {
+          "persona": "misconceptionStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "helpSeekingStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "bypassEverythingStudent",
+          "applicable": true,
+          "why": null
+        }
+      ]
+    },
+    {
+      "package": "ah-women",
+      "capabilities": {
+        "importable": "reached",
+        "writing-ready": "not-reached",
+        "pathway-guided": "not-reached",
+        "learning-complete": "not-reached",
+        "assessment-complete": "not-reached",
+        "evidence-complete": "not-reached"
+      },
+      "headline": "Importable - missing writing-ready, pathway-guided, learning-complete, assessment-complete, evidence-complete",
+      "handles": {
+        "directive": {
+          "command": "evaluate",
+          "family": "judgement",
+          "supportedInGuidedWriting": true,
+          "sentenceShapes": 0
+        },
+        "marks": 20,
+        "areas": [],
+        "slots": [],
+        "claims": 0,
+        "hasReasoning": false,
+        "hasDecode": false,
+        "bandSource": false,
+        "pathways": []
+      },
+      "personas": [
+        {
+          "persona": "zeroKnowledgeStudent",
+          "applicable": false,
+          "why": "needs learning-complete, which this package does not reach"
+        },
+        {
+          "persona": "strongIndependentStudent",
+          "applicable": false,
+          "why": "needs writing-ready, which this package does not reach"
+        },
+        {
+          "persona": "misconceptionStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "helpSeekingStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "bypassEverythingStudent",
+          "applicable": true,
+          "why": null
+        }
+      ]
+    },
+    {
+      "package": "ah-power",
+      "capabilities": {
+        "importable": "reached",
+        "writing-ready": "not-reached",
+        "pathway-guided": "not-reached",
+        "learning-complete": "not-reached",
+        "assessment-complete": "not-reached",
+        "evidence-complete": "not-reached"
+      },
+      "headline": "Importable - missing writing-ready, pathway-guided, learning-complete, assessment-complete, evidence-complete",
+      "handles": {
+        "directive": {
+          "command": "discuss",
+          "family": "judgement",
+          "supportedInGuidedWriting": true,
+          "sentenceShapes": 0
+        },
+        "marks": 20,
+        "areas": [],
+        "slots": [],
+        "claims": 0,
+        "hasReasoning": false,
+        "hasDecode": false,
+        "bandSource": false,
+        "pathways": []
+      },
+      "personas": [
+        {
+          "persona": "zeroKnowledgeStudent",
+          "applicable": false,
+          "why": "needs learning-complete, which this package does not reach"
+        },
+        {
+          "persona": "strongIndependentStudent",
+          "applicable": false,
+          "why": "needs writing-ready, which this package does not reach"
+        },
+        {
+          "persona": "misconceptionStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "helpSeekingStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "bypassEverythingStudent",
+          "applicable": true,
+          "why": null
+        }
+      ]
+    },
+    {
+      "package": "ah-site",
+      "capabilities": {
+        "importable": "reached",
+        "writing-ready": "not-reached",
+        "pathway-guided": "not-reached",
+        "learning-complete": "not-reached",
+        "assessment-complete": "not-reached",
+        "evidence-complete": "not-reached"
+      },
+      "headline": "Importable - missing writing-ready, pathway-guided, learning-complete, assessment-complete, evidence-complete",
+      "handles": {
+        "directive": {
+          "command": "account for",
+          "family": "causal",
+          "supportedInGuidedWriting": true,
+          "sentenceShapes": 4
+        },
+        "marks": 20,
+        "areas": [],
+        "slots": [],
+        "claims": 0,
+        "hasReasoning": false,
+        "hasDecode": false,
+        "bandSource": false,
+        "pathways": []
+      },
+      "personas": [
+        {
+          "persona": "zeroKnowledgeStudent",
+          "applicable": false,
+          "why": "needs learning-complete, which this package does not reach"
+        },
+        {
+          "persona": "strongIndependentStudent",
+          "applicable": false,
+          "why": "needs writing-ready, which this package does not reach"
+        },
+        {
+          "persona": "misconceptionStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "helpSeekingStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "bypassEverythingStudent",
+          "applicable": true,
+          "why": null
+        }
+      ]
+    },
+    {
+      "package": "ops-01",
+      "capabilities": {
+        "importable": "reached",
+        "writing-ready": "reached",
+        "pathway-guided": "not-reached",
+        "learning-complete": "not-reached",
+        "assessment-complete": "not-reached",
+        "evidence-complete": "not-reached"
+      },
+      "headline": "Writing ready - missing pathway-guided, learning-complete, assessment-complete, evidence-complete",
+      "handles": {
+        "directive": {
+          "command": "how can",
+          "family": "causal",
+          "supportedInGuidedWriting": true,
+          "sentenceShapes": 4
+        },
+        "marks": 20,
+        "areas": [],
+        "slots": [],
+        "claims": 4,
+        "hasReasoning": false,
+        "hasDecode": false,
+        "bandSource": false,
+        "pathways": []
+      },
+      "personas": [
+        {
+          "persona": "zeroKnowledgeStudent",
+          "applicable": false,
+          "why": "needs learning-complete, which this package does not reach"
+        },
+        {
+          "persona": "strongIndependentStudent",
+          "applicable": true,
+          "why": null
+        },
+        {
+          "persona": "misconceptionStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "helpSeekingStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "bypassEverythingStudent",
+          "applicable": true,
+          "why": null
+        }
+      ]
+    },
+    {
+      "package": "ops-02",
+      "capabilities": {
+        "importable": "reached",
+        "writing-ready": "reached",
+        "pathway-guided": "not-reached",
+        "learning-complete": "not-reached",
+        "assessment-complete": "not-reached",
+        "evidence-complete": "not-reached"
+      },
+      "headline": "Writing ready - missing pathway-guided, learning-complete, assessment-complete, evidence-complete",
+      "handles": {
+        "directive": {
+          "command": "assess",
+          "family": "judgement",
+          "supportedInGuidedWriting": true,
+          "sentenceShapes": 0
+        },
+        "marks": 20,
+        "areas": [],
+        "slots": [],
+        "claims": 4,
+        "hasReasoning": false,
+        "hasDecode": false,
+        "bandSource": false,
+        "pathways": []
+      },
+      "personas": [
+        {
+          "persona": "zeroKnowledgeStudent",
+          "applicable": false,
+          "why": "needs learning-complete, which this package does not reach"
+        },
+        {
+          "persona": "strongIndependentStudent",
+          "applicable": true,
+          "why": null
+        },
+        {
+          "persona": "misconceptionStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "helpSeekingStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "bypassEverythingStudent",
+          "applicable": true,
+          "why": null
+        }
+      ]
+    },
+    {
+      "package": "ops-03",
+      "capabilities": {
+        "importable": "reached",
+        "writing-ready": "reached",
+        "pathway-guided": "not-reached",
+        "learning-complete": "not-reached",
+        "assessment-complete": "not-reached",
+        "evidence-complete": "not-reached"
+      },
+      "headline": "Writing ready - missing pathway-guided, learning-complete, assessment-complete, evidence-complete",
+      "handles": {
+        "directive": {
+          "command": "how can",
+          "family": "causal",
+          "supportedInGuidedWriting": true,
+          "sentenceShapes": 4
+        },
+        "marks": 20,
+        "areas": [],
+        "slots": [],
+        "claims": 4,
+        "hasReasoning": false,
+        "hasDecode": false,
+        "bandSource": false,
+        "pathways": []
+      },
+      "personas": [
+        {
+          "persona": "zeroKnowledgeStudent",
+          "applicable": false,
+          "why": "needs learning-complete, which this package does not reach"
+        },
+        {
+          "persona": "strongIndependentStudent",
+          "applicable": true,
+          "why": null
+        },
+        {
+          "persona": "misconceptionStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "helpSeekingStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "bypassEverythingStudent",
+          "applicable": true,
+          "why": null
+        }
+      ]
+    },
+    {
+      "package": "mkt-01",
+      "capabilities": {
+        "importable": "reached",
+        "writing-ready": "reached",
+        "pathway-guided": "reached",
+        "learning-complete": "not-reached",
+        "assessment-complete": "reached",
+        "evidence-complete": "not-reached"
+      },
+      "headline": "Guided - missing learning-complete, evidence-complete",
+      "handles": {
+        "directive": {
+          "command": "explain",
+          "family": "causal",
+          "supportedInGuidedWriting": true,
+          "sentenceShapes": 4
+        },
+        "marks": 20,
+        "areas": [
+          "e-marketing",
+          "people",
+          "processes",
+          "physical-evidence"
+        ],
+        "slots": [
+          "define",
+          "effect",
+          "example",
+          "explain",
+          "link",
+          "topic"
+        ],
+        "claims": 4,
+        "hasReasoning": true,
+        "hasDecode": true,
+        "bandSource": true,
+        "pathways": [
+          {
+            "id": "mkt01-em-digital",
+            "areaRef": "e-marketing",
+            "contribution": null,
+            "namesAMistake": true,
+            "hasMechanism": false,
+            "lesson": null,
+            "learningStatus": "unreviewed",
+            "deepestLadder": 5,
+            "ladderRungs": [
+              "hint",
+              "needs",
+              "frame",
+              "starter",
+              "example"
+            ],
+            "evidence": 2,
+            "evidenceSourced": 0,
+            "evidenceRoled": 0,
+            "vocab": 0,
+            "vocabDisplayable": 0
+          },
+          {
+            "id": "mkt01-em-value",
+            "areaRef": "e-marketing",
+            "contribution": null,
+            "namesAMistake": true,
+            "hasMechanism": false,
+            "lesson": null,
+            "learningStatus": "unreviewed",
+            "deepestLadder": 0,
+            "ladderRungs": [],
+            "evidence": 2,
+            "evidenceSourced": 0,
+            "evidenceRoled": 0,
+            "vocab": 0,
+            "vocabDisplayable": 0
+          },
+          {
+            "id": "mkt01-em-convenience",
+            "areaRef": "e-marketing",
+            "contribution": null,
+            "namesAMistake": true,
+            "hasMechanism": false,
+            "lesson": null,
+            "learningStatus": "unreviewed",
+            "deepestLadder": 0,
+            "ladderRungs": [],
+            "evidence": 1,
+            "evidenceSourced": 0,
+            "evidenceRoled": 0,
+            "vocab": 0,
+            "vocabDisplayable": 0
+          },
+          {
+            "id": "mkt01-pe-service",
+            "areaRef": "people",
+            "contribution": null,
+            "namesAMistake": true,
+            "hasMechanism": true,
+            "lesson": "business.lesson.mkt01-pe-service",
+            "learningStatus": "authored",
+            "deepestLadder": 0,
+            "ladderRungs": [],
+            "evidence": 1,
+            "evidenceSourced": 0,
+            "evidenceRoled": 0,
+            "vocab": 0,
+            "vocabDisplayable": 0
+          },
+          {
+            "id": "mkt01-pe-speed",
+            "areaRef": "people",
+            "contribution": null,
+            "namesAMistake": true,
+            "hasMechanism": false,
+            "lesson": null,
+            "learningStatus": "unreviewed",
+            "deepestLadder": 0,
+            "ladderRungs": [],
+            "evidence": 1,
+            "evidenceSourced": 0,
+            "evidenceRoled": 0,
+            "vocab": 0,
+            "vocabDisplayable": 0
+          },
+          {
+            "id": "mkt01-pe-consistency",
+            "areaRef": "people",
+            "contribution": null,
+            "namesAMistake": true,
+            "hasMechanism": true,
+            "lesson": null,
+            "learningStatus": "unreviewed",
+            "deepestLadder": 0,
+            "ladderRungs": [],
+            "evidence": 2,
+            "evidenceSourced": 0,
+            "evidenceRoled": 0,
+            "vocab": 0,
+            "vocabDisplayable": 0
+          },
+          {
+            "id": "mkt01-pr-convenience",
+            "areaRef": "processes",
+            "contribution": null,
+            "namesAMistake": true,
+            "hasMechanism": true,
+            "lesson": "business.lesson.mkt01-pr-convenience",
+            "learningStatus": "authored",
+            "deepestLadder": 5,
+            "ladderRungs": [
+              "hint",
+              "needs",
+              "direction",
+              "starter",
+              "example"
+            ],
+            "evidence": 2,
+            "evidenceSourced": 0,
+            "evidenceRoled": 0,
+            "vocab": 7,
+            "vocabDisplayable": 0
+          },
+          {
+            "id": "mkt01-pr-speed",
+            "areaRef": "processes",
+            "contribution": null,
+            "namesAMistake": true,
+            "hasMechanism": true,
+            "lesson": "business.lesson.mkt01-pr-speed",
+            "learningStatus": "authored",
+            "deepestLadder": 5,
+            "ladderRungs": [
+              "hint",
+              "needs",
+              "direction",
+              "starter",
+              "example"
+            ],
+            "evidence": 2,
+            "evidenceSourced": 0,
+            "evidenceRoled": 0,
+            "vocab": 7,
+            "vocabDisplayable": 0
+          },
+          {
+            "id": "mkt01-pr-customisation",
+            "areaRef": "processes",
+            "contribution": null,
+            "namesAMistake": true,
+            "hasMechanism": false,
+            "lesson": "business.lesson.mkt01-pr-customisation",
+            "learningStatus": "authored",
+            "deepestLadder": 5,
+            "ladderRungs": [
+              "hint",
+              "needs",
+              "direction",
+              "starter",
+              "example"
+            ],
+            "evidence": 3,
+            "evidenceSourced": 0,
+            "evidenceRoled": 0,
+            "vocab": 7,
+            "vocabDisplayable": 0
+          },
+          {
+            "id": "mkt01-ph-servicescape",
+            "areaRef": "physical-evidence",
+            "contribution": null,
+            "namesAMistake": true,
+            "hasMechanism": true,
+            "lesson": null,
+            "learningStatus": "unreviewed",
+            "deepestLadder": 0,
+            "ladderRungs": [],
+            "evidence": 2,
+            "evidenceSourced": 0,
+            "evidenceRoled": 0,
+            "vocab": 0,
+            "vocabDisplayable": 0
+          },
+          {
+            "id": "mkt01-ph-segments",
+            "areaRef": "physical-evidence",
+            "contribution": null,
+            "namesAMistake": true,
+            "hasMechanism": false,
+            "lesson": null,
+            "learningStatus": "unreviewed",
+            "deepestLadder": 0,
+            "ladderRungs": [],
+            "evidence": 1,
+            "evidenceSourced": 0,
+            "evidenceRoled": 0,
+            "vocab": 0,
+            "vocabDisplayable": 0
+          },
+          {
+            "id": "mkt01-ph-selfservice",
+            "areaRef": "physical-evidence",
+            "contribution": null,
+            "namesAMistake": true,
+            "hasMechanism": false,
+            "lesson": null,
+            "learningStatus": "unreviewed",
+            "deepestLadder": 0,
+            "ladderRungs": [],
+            "evidence": 2,
+            "evidenceSourced": 0,
+            "evidenceRoled": 0,
+            "vocab": 0,
+            "vocabDisplayable": 0
+          }
+        ]
+      },
+      "personas": [
+        {
+          "persona": "zeroKnowledgeStudent",
+          "applicable": false,
+          "why": "needs learning-complete, which this package does not reach"
+        },
+        {
+          "persona": "strongIndependentStudent",
+          "applicable": true,
+          "why": null
+        },
+        {
+          "persona": "misconceptionStudent",
+          "applicable": true,
+          "why": null
+        },
+        {
+          "persona": "helpSeekingStudent",
+          "applicable": true,
+          "why": null
+        },
+        {
+          "persona": "bypassEverythingStudent",
+          "applicable": true,
+          "why": null
+        }
+      ]
+    },
+    {
+      "package": "mkt-04",
+      "capabilities": {
+        "importable": "reached",
+        "writing-ready": "reached",
+        "pathway-guided": "not-reached",
+        "learning-complete": "not-reached",
+        "assessment-complete": "not-reached",
+        "evidence-complete": "not-reached"
+      },
+      "headline": "Writing ready - missing pathway-guided, learning-complete, assessment-complete, evidence-complete",
+      "handles": {
+        "directive": {
+          "command": "explain",
+          "family": "causal",
+          "supportedInGuidedWriting": true,
+          "sentenceShapes": 4
+        },
+        "marks": 20,
+        "areas": [],
+        "slots": [],
+        "claims": 4,
+        "hasReasoning": false,
+        "hasDecode": false,
+        "bandSource": false,
+        "pathways": []
+      },
+      "personas": [
+        {
+          "persona": "zeroKnowledgeStudent",
+          "applicable": false,
+          "why": "needs learning-complete, which this package does not reach"
+        },
+        {
+          "persona": "strongIndependentStudent",
+          "applicable": true,
+          "why": null
+        },
+        {
+          "persona": "misconceptionStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "helpSeekingStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "bypassEverythingStudent",
+          "applicable": true,
+          "why": null
+        }
+      ]
+    },
+    {
+      "package": "mkt-02",
+      "capabilities": {
+        "importable": "reached",
+        "writing-ready": "reached",
+        "pathway-guided": "not-reached",
+        "learning-complete": "not-reached",
+        "assessment-complete": "not-reached",
+        "evidence-complete": "not-reached"
+      },
+      "headline": "Writing ready - missing pathway-guided, learning-complete, assessment-complete, evidence-complete",
+      "handles": {
+        "directive": {
+          "command": "assess",
+          "family": "judgement",
+          "supportedInGuidedWriting": true,
+          "sentenceShapes": 0
+        },
+        "marks": 20,
+        "areas": [],
+        "slots": [],
+        "claims": 4,
+        "hasReasoning": false,
+        "hasDecode": false,
+        "bandSource": false,
+        "pathways": []
+      },
+      "personas": [
+        {
+          "persona": "zeroKnowledgeStudent",
+          "applicable": false,
+          "why": "needs learning-complete, which this package does not reach"
+        },
+        {
+          "persona": "strongIndependentStudent",
+          "applicable": true,
+          "why": null
+        },
+        {
+          "persona": "misconceptionStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "helpSeekingStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "bypassEverythingStudent",
+          "applicable": true,
+          "why": null
+        }
+      ]
+    },
+    {
+      "package": "mkt-03",
+      "capabilities": {
+        "importable": "reached",
+        "writing-ready": "reached",
+        "pathway-guided": "not-reached",
+        "learning-complete": "not-reached",
+        "assessment-complete": "not-reached",
+        "evidence-complete": "not-reached"
+      },
+      "headline": "Writing ready - missing pathway-guided, learning-complete, assessment-complete, evidence-complete",
+      "handles": {
+        "directive": {
+          "command": "to what extent",
+          "family": "judgement",
+          "supportedInGuidedWriting": true,
+          "sentenceShapes": 0
+        },
+        "marks": 20,
+        "areas": [],
+        "slots": [],
+        "claims": 4,
+        "hasReasoning": false,
+        "hasDecode": false,
+        "bandSource": false,
+        "pathways": []
+      },
+      "personas": [
+        {
+          "persona": "zeroKnowledgeStudent",
+          "applicable": false,
+          "why": "needs learning-complete, which this package does not reach"
+        },
+        {
+          "persona": "strongIndependentStudent",
+          "applicable": true,
+          "why": null
+        },
+        {
+          "persona": "misconceptionStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "helpSeekingStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "bypassEverythingStudent",
+          "applicable": true,
+          "why": null
+        }
+      ]
+    },
+    {
+      "package": "fin-01",
+      "capabilities": {
+        "importable": "reached",
+        "writing-ready": "reached",
+        "pathway-guided": "reached",
+        "learning-complete": "not-reached",
+        "assessment-complete": "reached",
+        "evidence-complete": "not-reached"
+      },
+      "headline": "Guided - missing learning-complete, evidence-complete",
+      "handles": {
+        "directive": {
+          "command": "how can",
+          "family": "causal",
+          "supportedInGuidedWriting": true,
+          "sentenceShapes": 4
+        },
+        "marks": 20,
+        "areas": [
+          "cash-flow-management",
+          "working-capital-management",
+          "profitability-management",
+          "global-financial-management"
+        ],
+        "slots": [
+          "explain"
+        ],
+        "claims": 4,
+        "hasReasoning": true,
+        "hasDecode": true,
+        "bandSource": true,
+        "pathways": [
+          {
+            "id": "fin01-cf-liquidity",
+            "areaRef": "cash-flow-management",
+            "contribution": null,
+            "namesAMistake": true,
+            "hasMechanism": false,
+            "lesson": null,
+            "learningStatus": "unreviewed",
+            "deepestLadder": 0,
+            "ladderRungs": [],
+            "evidence": 1,
+            "evidenceSourced": 0,
+            "evidenceRoled": 0,
+            "vocab": 0,
+            "vocabDisplayable": 0
+          },
+          {
+            "id": "fin01-cf-discounts",
+            "areaRef": "cash-flow-management",
+            "contribution": null,
+            "namesAMistake": true,
+            "hasMechanism": false,
+            "lesson": null,
+            "learningStatus": "unreviewed",
+            "deepestLadder": 0,
+            "ladderRungs": [],
+            "evidence": 0,
+            "evidenceSourced": 0,
+            "evidenceRoled": 0,
+            "vocab": 0,
+            "vocabDisplayable": 0
+          },
+          {
+            "id": "fin01-wc-control",
+            "areaRef": "working-capital-management",
+            "contribution": null,
+            "namesAMistake": true,
+            "hasMechanism": false,
+            "lesson": null,
+            "learningStatus": "unreviewed",
+            "deepestLadder": 0,
+            "ladderRungs": [],
+            "evidence": 1,
+            "evidenceSourced": 0,
+            "evidenceRoled": 0,
+            "vocab": 0,
+            "vocabDisplayable": 0
+          },
+          {
+            "id": "fin01-wc-leasing",
+            "areaRef": "working-capital-management",
+            "contribution": null,
+            "namesAMistake": true,
+            "hasMechanism": false,
+            "lesson": null,
+            "learningStatus": "unreviewed",
+            "deepestLadder": 0,
+            "ladderRungs": [],
+            "evidence": 1,
+            "evidenceSourced": 0,
+            "evidenceRoled": 0,
+            "vocab": 0,
+            "vocabDisplayable": 0
+          },
+          {
+            "id": "fin01-pm-cost",
+            "areaRef": "profitability-management",
+            "contribution": null,
+            "namesAMistake": true,
+            "hasMechanism": false,
+            "lesson": null,
+            "learningStatus": "unreviewed",
+            "deepestLadder": 0,
+            "ladderRungs": [],
+            "evidence": 1,
+            "evidenceSourced": 0,
+            "evidenceRoled": 0,
+            "vocab": 0,
+            "vocabDisplayable": 0
+          },
+          {
+            "id": "fin01-pm-revenue",
+            "areaRef": "profitability-management",
+            "contribution": null,
+            "namesAMistake": true,
+            "hasMechanism": false,
+            "lesson": null,
+            "learningStatus": "unreviewed",
+            "deepestLadder": 0,
+            "ladderRungs": [],
+            "evidence": 1,
+            "evidenceSourced": 0,
+            "evidenceRoled": 0,
+            "vocab": 0,
+            "vocabDisplayable": 0
+          },
+          {
+            "id": "fin01-gf-hedging",
+            "areaRef": "global-financial-management",
+            "contribution": null,
+            "namesAMistake": true,
+            "hasMechanism": false,
+            "lesson": null,
+            "learningStatus": "unreviewed",
+            "deepestLadder": 0,
+            "ladderRungs": [],
+            "evidence": 1,
+            "evidenceSourced": 0,
+            "evidenceRoled": 0,
+            "vocab": 0,
+            "vocabDisplayable": 0
+          },
+          {
+            "id": "fin01-gf-payment",
+            "areaRef": "global-financial-management",
+            "contribution": null,
+            "namesAMistake": true,
+            "hasMechanism": false,
+            "lesson": null,
+            "learningStatus": "unreviewed",
+            "deepestLadder": 0,
+            "ladderRungs": [],
+            "evidence": 0,
+            "evidenceSourced": 0,
+            "evidenceRoled": 0,
+            "vocab": 0,
+            "vocabDisplayable": 0
+          }
+        ]
+      },
+      "personas": [
+        {
+          "persona": "zeroKnowledgeStudent",
+          "applicable": false,
+          "why": "needs learning-complete, which this package does not reach"
+        },
+        {
+          "persona": "strongIndependentStudent",
+          "applicable": true,
+          "why": null
+        },
+        {
+          "persona": "misconceptionStudent",
+          "applicable": true,
+          "why": null
+        },
+        {
+          "persona": "helpSeekingStudent",
+          "applicable": true,
+          "why": null
+        },
+        {
+          "persona": "bypassEverythingStudent",
+          "applicable": true,
+          "why": null
+        }
+      ]
+    },
+    {
+      "package": "fin-02",
+      "capabilities": {
+        "importable": "reached",
+        "writing-ready": "reached",
+        "pathway-guided": "not-reached",
+        "learning-complete": "not-reached",
+        "assessment-complete": "not-reached",
+        "evidence-complete": "not-reached"
+      },
+      "headline": "Writing ready - missing pathway-guided, learning-complete, assessment-complete, evidence-complete",
+      "handles": {
+        "directive": {
+          "command": "explain",
+          "family": "causal",
+          "supportedInGuidedWriting": true,
+          "sentenceShapes": 4
+        },
+        "marks": 20,
+        "areas": [],
+        "slots": [],
+        "claims": 4,
+        "hasReasoning": false,
+        "hasDecode": false,
+        "bandSource": false,
+        "pathways": []
+      },
+      "personas": [
+        {
+          "persona": "zeroKnowledgeStudent",
+          "applicable": false,
+          "why": "needs learning-complete, which this package does not reach"
+        },
+        {
+          "persona": "strongIndependentStudent",
+          "applicable": true,
+          "why": null
+        },
+        {
+          "persona": "misconceptionStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "helpSeekingStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "bypassEverythingStudent",
+          "applicable": true,
+          "why": null
+        }
+      ]
+    },
+    {
+      "package": "fin-03",
+      "capabilities": {
+        "importable": "reached",
+        "writing-ready": "reached",
+        "pathway-guided": "not-reached",
+        "learning-complete": "not-reached",
+        "assessment-complete": "not-reached",
+        "evidence-complete": "not-reached"
+      },
+      "headline": "Writing ready - missing pathway-guided, learning-complete, assessment-complete, evidence-complete",
+      "handles": {
+        "directive": {
+          "command": "assess",
+          "family": "judgement",
+          "supportedInGuidedWriting": true,
+          "sentenceShapes": 0
+        },
+        "marks": 20,
+        "areas": [],
+        "slots": [],
+        "claims": 4,
+        "hasReasoning": false,
+        "hasDecode": false,
+        "bandSource": false,
+        "pathways": []
+      },
+      "personas": [
+        {
+          "persona": "zeroKnowledgeStudent",
+          "applicable": false,
+          "why": "needs learning-complete, which this package does not reach"
+        },
+        {
+          "persona": "strongIndependentStudent",
+          "applicable": true,
+          "why": null
+        },
+        {
+          "persona": "misconceptionStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "helpSeekingStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "bypassEverythingStudent",
+          "applicable": true,
+          "why": null
+        }
+      ]
+    },
+    {
+      "package": "hr-01",
+      "capabilities": {
+        "importable": "reached",
+        "writing-ready": "reached",
+        "pathway-guided": "reached",
+        "learning-complete": "not-reached",
+        "assessment-complete": "reached",
+        "evidence-complete": "not-reached"
+      },
+      "headline": "Guided - missing learning-complete, evidence-complete",
+      "handles": {
+        "directive": {
+          "command": "evaluate",
+          "family": "judgement",
+          "supportedInGuidedWriting": true,
+          "sentenceShapes": 0
+        },
+        "marks": 20,
+        "areas": [
+          "training-and-development",
+          "rewards",
+          "performance-management",
+          "job-design"
+        ],
+        "slots": [
+          "explain"
+        ],
+        "claims": 4,
+        "hasReasoning": true,
+        "hasDecode": true,
+        "bandSource": true,
+        "pathways": [
+          {
+            "id": "hr01-td-productivity",
+            "areaRef": "training-and-development",
+            "contribution": "support",
+            "namesAMistake": true,
+            "hasMechanism": false,
+            "lesson": null,
+            "learningStatus": "unreviewed",
+            "deepestLadder": 0,
+            "ladderRungs": [],
+            "evidence": 1,
+            "evidenceSourced": 0,
+            "evidenceRoled": 0,
+            "vocab": 0,
+            "vocabDisplayable": 0
+          },
+          {
+            "id": "hr01-td-retention",
+            "areaRef": "training-and-development",
+            "contribution": "support",
+            "namesAMistake": true,
+            "hasMechanism": false,
+            "lesson": null,
+            "learningStatus": "unreviewed",
+            "deepestLadder": 0,
+            "ladderRungs": [],
+            "evidence": 1,
+            "evidenceSourced": 0,
+            "evidenceRoled": 0,
+            "vocab": 0,
+            "vocabDisplayable": 0
+          },
+          {
+            "id": "hr01-rw-motivation",
+            "areaRef": "rewards",
+            "contribution": "conditional",
+            "namesAMistake": true,
+            "hasMechanism": false,
+            "lesson": null,
+            "learningStatus": "unreviewed",
+            "deepestLadder": 0,
+            "ladderRungs": [],
+            "evidence": 1,
+            "evidenceSourced": 0,
+            "evidenceRoled": 0,
+            "vocab": 0,
+            "vocabDisplayable": 0
+          },
+          {
+            "id": "hr01-rw-cost",
+            "areaRef": "rewards",
+            "contribution": "limitation",
+            "namesAMistake": true,
+            "hasMechanism": false,
+            "lesson": null,
+            "learningStatus": "unreviewed",
+            "deepestLadder": 0,
+            "ladderRungs": [],
+            "evidence": 0,
+            "evidenceSourced": 0,
+            "evidenceRoled": 0,
+            "vocab": 0,
+            "vocabDisplayable": 0
+          },
+          {
+            "id": "hr01-pf-accountability",
+            "areaRef": "performance-management",
+            "contribution": "conditional",
+            "namesAMistake": true,
+            "hasMechanism": false,
+            "lesson": null,
+            "learningStatus": "unreviewed",
+            "deepestLadder": 0,
+            "ladderRungs": [],
+            "evidence": 1,
+            "evidenceSourced": 0,
+            "evidenceRoled": 0,
+            "vocab": 0,
+            "vocabDisplayable": 0
+          },
+          {
+            "id": "hr01-pf-trust",
+            "areaRef": "performance-management",
+            "contribution": "limitation",
+            "namesAMistake": true,
+            "hasMechanism": false,
+            "lesson": null,
+            "learningStatus": "unreviewed",
+            "deepestLadder": 0,
+            "ladderRungs": [],
+            "evidence": 1,
+            "evidenceSourced": 0,
+            "evidenceRoled": 0,
+            "vocab": 0,
+            "vocabDisplayable": 0
+          },
+          {
+            "id": "hr01-jd-enrichment",
+            "areaRef": "job-design",
+            "contribution": "support",
+            "namesAMistake": true,
+            "hasMechanism": false,
+            "lesson": null,
+            "learningStatus": "unreviewed",
+            "deepestLadder": 0,
+            "ladderRungs": [],
+            "evidence": 1,
+            "evidenceSourced": 0,
+            "evidenceRoled": 0,
+            "vocab": 0,
+            "vocabDisplayable": 0
+          },
+          {
+            "id": "hr01-jd-flexibility",
+            "areaRef": "job-design",
+            "contribution": "conditional",
+            "namesAMistake": true,
+            "hasMechanism": false,
+            "lesson": null,
+            "learningStatus": "unreviewed",
+            "deepestLadder": 0,
+            "ladderRungs": [],
+            "evidence": 1,
+            "evidenceSourced": 0,
+            "evidenceRoled": 0,
+            "vocab": 0,
+            "vocabDisplayable": 0
+          }
+        ]
+      },
+      "personas": [
+        {
+          "persona": "zeroKnowledgeStudent",
+          "applicable": false,
+          "why": "needs learning-complete, which this package does not reach"
+        },
+        {
+          "persona": "strongIndependentStudent",
+          "applicable": true,
+          "why": null
+        },
+        {
+          "persona": "misconceptionStudent",
+          "applicable": true,
+          "why": null
+        },
+        {
+          "persona": "helpSeekingStudent",
+          "applicable": true,
+          "why": null
+        },
+        {
+          "persona": "bypassEverythingStudent",
+          "applicable": true,
+          "why": null
+        }
+      ]
+    },
+    {
+      "package": "hr-02",
+      "capabilities": {
+        "importable": "reached",
+        "writing-ready": "reached",
+        "pathway-guided": "not-reached",
+        "learning-complete": "not-reached",
+        "assessment-complete": "not-reached",
+        "evidence-complete": "not-reached"
+      },
+      "headline": "Writing ready - missing pathway-guided, learning-complete, assessment-complete, evidence-complete",
+      "handles": {
+        "directive": {
+          "command": "analyse",
+          "family": "causal",
+          "supportedInGuidedWriting": true,
+          "sentenceShapes": 4
+        },
+        "marks": 20,
+        "areas": [],
+        "slots": [],
+        "claims": 4,
+        "hasReasoning": false,
+        "hasDecode": false,
+        "bandSource": false,
+        "pathways": []
+      },
+      "personas": [
+        {
+          "persona": "zeroKnowledgeStudent",
+          "applicable": false,
+          "why": "needs learning-complete, which this package does not reach"
+        },
+        {
+          "persona": "strongIndependentStudent",
+          "applicable": true,
+          "why": null
+        },
+        {
+          "persona": "misconceptionStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "helpSeekingStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "bypassEverythingStudent",
+          "applicable": true,
+          "why": null
+        }
+      ]
+    },
+    {
+      "package": "hr-03",
+      "capabilities": {
+        "importable": "reached",
+        "writing-ready": "reached",
+        "pathway-guided": "not-reached",
+        "learning-complete": "not-reached",
+        "assessment-complete": "not-reached",
+        "evidence-complete": "not-reached"
+      },
+      "headline": "Writing ready - missing pathway-guided, learning-complete, assessment-complete, evidence-complete",
+      "handles": {
+        "directive": {
+          "command": "to what extent",
+          "family": "judgement",
+          "supportedInGuidedWriting": true,
+          "sentenceShapes": 0
+        },
+        "marks": 20,
+        "areas": [],
+        "slots": [],
+        "claims": 4,
+        "hasReasoning": false,
+        "hasDecode": false,
+        "bandSource": false,
+        "pathways": []
+      },
+      "personas": [
+        {
+          "persona": "zeroKnowledgeStudent",
+          "applicable": false,
+          "why": "needs learning-complete, which this package does not reach"
+        },
+        {
+          "persona": "strongIndependentStudent",
+          "applicable": true,
+          "why": null
+        },
+        {
+          "persona": "misconceptionStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "helpSeekingStudent",
+          "applicable": false,
+          "why": "needs pathway-guided, which this package does not reach"
+        },
+        {
+          "persona": "bypassEverythingStudent",
+          "applicable": true,
+          "why": null
+        }
+      ]
+    }
+  ]
+}

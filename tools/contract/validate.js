@@ -31,6 +31,8 @@ const fs = require("fs");
 const path = require("path");
 const { FIELDS, ENUMS, LIBRARIES, CAPABILITIES, CONTAINERS } = require("./fields.js");
 const { enumValues, ID_PATTERN, QID_PATTERN } = require("./generate.js");
+const caps = require("./capabilities.js");
+const directives = require("./directives.js");
 
 const SEV = { error: "error", blocked: "blocked", shortfall: "shortfall", warning: "warning" };
 const ID_RE = new RegExp(ID_PATTERN);
@@ -97,6 +99,7 @@ function validate(pkg, man, opts) {
   if (pkg.version !== VERSION) { add(SEV.error, "FORMAT_VERSION_UNSUPPORTED", "version", "this validator understands version " + VERSION + ", the package declares " + JSON.stringify(pkg.version)); return finish(pkg, F, null, null); }
 
   const lib = (man && man.records) || {};
+  const REG = (opts && opts.registry) || directives.registry();
   const provides = pkg.provides || {};
   const declared = pkg.requires || {};
   const asked = {}, notDisplayable = {};
@@ -186,6 +189,10 @@ function validate(pkg, man, opts) {
           add(SEV.error, "ID_MALFORMED", at, JSON.stringify(v) + " is not lower case with hyphens");
         break;
       case "enum": {
+        if (f.enumName === "directive") {
+          if (!directives.rowFor(REG, v)) enumMiss(f, at, v, []);
+          break;
+        }
         let vals; try { vals = enumValues(f.enumName, man); } catch (e) { add(SEV.error, "ENUM_UNDEFINED", at, e.message); break; }
         if (vals.indexOf(v) < 0) enumMiss(f, at, v, vals);
         break;
@@ -202,17 +209,16 @@ function validate(pkg, man, opts) {
       add(SEV.warning, "EM_DASH_IN_STUDENT_TEXT", at, "an em dash reaches a student here");
   }
 
-  // A directive outside the family lists does not fail at runtime: the engine
-  // returns causal when nothing matches, so a Compare question is scaffolded as
-  // a cause all the way to submission. Imported content may not rely on that.
+  // The directive is answered by the registry, not by a family list, because
+  // "unknown" and "known and unsupported" are different facts. Unknown does not
+  // import. Known and unsupported is a valid question that guided writing cannot
+  // serve yet, and the family-dependent guidance is withheld rather than
+  // defaulted to causal, which is what the engine does on its own.
   function enumMiss(f, at, v, vals) {
     if (f.enumName === "directive") {
-      const alsoShaped = ((man.enums || {}).answerShapeCommands || []).indexOf(String(v).toLowerCase()) >= 0;
-      add(SEV.error, "DIRECTIVE_NO_FAMILY", at,
-        JSON.stringify(v) + (alsoShaped
-          ? " has an answer shape and is in neither directive family. The engine resolves it to causal by fallback and an imported package may not depend on that"
-          : " is not a directive this content knows") +
-        ". Add it to a directive family, or use one of: " + vals.join(", "));
+      add(SEV.error, "DIRECTIVE_UNKNOWN", at,
+        JSON.stringify(v) + " is not a command this content recognises. The registry lists " +
+        REG.commands.length + ": " + REG.commands.map(r => r.command).join(", "));
       return;
     }
     add(SEV.error, enumCode(f.enumName), at, JSON.stringify(v) + " is not one of " + vals.join(", "));
@@ -317,6 +323,12 @@ function validate(pkg, man, opts) {
   Object.keys(provides).forEach(kind => {
     Object.keys(provides[kind] || {}).forEach(rid => {
       const at = "provides." + kind + "[" + JSON.stringify(rid) + "]";
+      // Vocabulary has one authority. A concept that carries its own
+      // {term, meaning} pairs is a second definition system, which is the thing
+      // the migration removed, so it cannot come back through an import.
+      if (kind === "concepts" && ((provides[kind][rid] || {}).terms || []).length)
+        add(SEV.error, "SECOND_VOCABULARY_AUTHORITY", at + ".terms",
+          "a concept record may not carry its own term definitions. Vocabulary records hold meanings and a concept names them with vocabRefs");
       if (!ID_RE.test(rid)) add(SEV.error, "ID_MALFORMED", at, JSON.stringify(rid));
       if ((lib[kind] || {})[rid])
         add(SEV.error, "PROVIDES_CONFLICT", at,
@@ -352,83 +364,60 @@ function validate(pkg, man, opts) {
     });
   });
 
-  const cap = capabilities(pkg, man, capabilityGaps, F);
-  return finish(pkg, F, cap, capabilityGaps);
+  return finish(pkg, F, capability(pkg, man, REG, F));
 }
 
 // ---- capabilities -----------------------------------------------------------
-// Six, reported independently. A question climbs them separately, and one score
-// would average away the row that matters: mkt-01 is pathway-guided and has no
-// sourced evidence at all.
-//
-// A capability that is not reached is not an error. Nothing is silently
-// downgraded either: the package keeps saying what it is, the report says which
-// capabilities it reaches, and publishing at a lower one is somebody's explicit
-// action.
-function capabilities(pkg, man, gaps, F) {
+// Evaluated by tools/contract/capabilities.js, which is the only place the rules
+// live. This function measures and reports; it does not decide.
+function capability(pkg, man, REG, F) {
   const p = pkg.pathways || [], q = pkg.question || {};
   const lib = (man && man.records) || {};
   const rec = (kind, id) => (lib[kind] || {})[id] || null;
-  const complete = pw => !!(pw.short && pw.relationship && pw.choiceMeaning && pw.whatToProve
-    && pw.commonMistake && Object.keys(pw.guidance || {}).length);
-  const judgement = (pkg.coreAnswer || {}).mode === "judgement";
-  const d = {};
-  d.importable = !!(q.id && q.subject && q.directive && q.text)
-    && !F.some(x => x.severity === "error");
-  d["writing-ready"] = !!(d.importable && q.marks
-    && (q.overallArgument || ((pkg.relationship || {}).claims || []).length));
-  d["pathway-guided"] = !!(d["writing-ready"] && p.length >= 2 && p.every(complete)
-    && (!judgement || p.some(x => (x.contribution || {}).role === "limitation")));
-  d["learning-complete"] = !!(p.length && p.every(x =>
-    (x.learning || {}).status !== "unreviewed"
-    && (x.conceptRef ? (rec("concepts", x.conceptRef) || {}).complete : false)
-    && ((x.learning || {}).status !== "authored" || (rec("lessons", x.learningRef) || {}).complete)));
-  d["assessment-complete"] = !!(pkg.decode && pkg.requirements && (pkg.coreAnswer || {}).acceptableThesis
-    && (((pkg.coreAnswer || {}).checklist) || []).length && (pkg.marking || {}).bandSource);
-  d["evidence-complete"] = !!(p.length && p.every(x => (x.evidenceRefs || []).length
-    && (x.evidenceRefs || []).every(e => e.role && (rec("evidence", e.ref) || {}).published)));
+  const row = directives.rowFor(REG, q.directive);
+  const dims = caps.evaluate(pkg, man, row, F.some(x => x.severity === "error"));
 
-  // Support the ENGINE cannot give, which is not the package's fault and is not
-  // a capability the package failed to reach. A judgement question with no
-  // judgement sentence shapes is structurally valid, and a student writing it
-  // gets no shape panel, so the report says so by name rather than staying quiet.
+  // Support the ENGINE cannot give. Never a fault in the package, and kept apart
+  // from capability for that reason: capability answers what the CONTENT reaches,
+  // this answers what Marginal cannot yet provide for a valid question.
   const unavailable = [];
-  const fams = (man.enums || {}).directiveFamilies || {};
-  const fam = Object.keys(fams).find(k => (fams[k] || []).some(x => {
-    const c = String(q.directive || "").toLowerCase();
-    return c === x || c.indexOf(x) === 0;
-  })) || null;
-  const cover = (man.enums || {}).shapeCoverage || [];
-  if (fam && !cover.some(k => k.split(".")[0] === fam))
-    unavailable.push({ support: "sentence shapes", reason: "no shape is authored for the " + fam +
-      " family, so the shape panel is withheld while a student writes this question" });
-  if (!fam && q.directive)
-    unavailable.push({ support: "directive family", reason: JSON.stringify(q.directive) +
-      " is in no family, so every slot label, shape and piece of guidance that depends on the family is withheld" });
+  if (row && !row.supportedInGuidedWriting)
+    unavailable.push({ support: "guided writing", directive: row.command, reason: row.notes ||
+      ("\"" + row.command + "\" assigns no directive family, so every slot label, sentence shape and piece of guidance chosen by family is withheld"),
+      consequence: "the question is valid and can be written against; the argument scaffolding is not offered" });
+  if (row && row.supportedInGuidedWriting && !row.sentenceShapeCoverage.length)
+    unavailable.push({ support: "sentence shapes", directive: row.command, family: row.family,
+      reason: "no sentence shape is authored for the " + row.family + " family",
+      consequence: "the shape panel is withheld while a student writes this question" });
+
+  const vocab = vocabIds(pkg);
   const measures = {
-    guidance: { have: p.filter(complete).length, of: p.length, note: "arguments a student can choose between and be guided through" },
-    teaching: { have: p.filter(x => (x.learning || {}).status === "authored").length, of: p.length, note: "arguments carrying a lesson for a student who does not know the content" },
-    ladders: { have: p.filter(x => Object.values(x.guidance || {}).some(g => (g.ladder || []).length >= 5)).length, of: p.length, note: "arguments whose help ladder is deep enough to climb" },
-    evidence: { have: p.filter(x => (x.evidenceRefs || []).some(e => (rec("evidence", e.ref) || {}).published)).length, of: p.length, note: "arguments with evidence carrying a source" },
+    guidance: { have: p.filter(caps.pathwayComplete).length, of: p.length,
+      note: "arguments a student can choose between and be guided through" },
+    teaching: { have: p.filter(x => (x.learning || {}).status === "authored").length, of: p.length,
+      note: "arguments carrying a lesson for a student who does not know the content" },
+    ladders: { have: p.filter(x => Object.values(x.guidance || {}).some(g => (g.ladder || []).length >= 5)).length,
+      of: p.length, note: "arguments whose help ladder is deep enough to climb" },
+    evidence: { have: p.filter(x => (x.evidenceRefs || []).some(e => (rec("evidence", e.ref) || {}).published)).length,
+      of: p.length, note: "arguments with evidence carrying a source" },
     evidenceRoles: { have: p.reduce((n, x) => n + (x.evidenceRefs || []).filter(e => e.role).length, 0),
-      of: p.reduce((n, x) => n + (x.evidenceRefs || []).length, 0), note: "evidence references carrying an authored role" },
-    vocabulary: { have: vocabIds(pkg).filter(i => (rec("vocabulary", i) || {}).displayable).length,
-      of: vocabIds(pkg).length, note: "terms asked for by name that the vocabulary panel can display" },
-    recovery: { have: pkg.reasoning ? 1 : 0, of: 1, note: "the question can notice an argument running backwards" },
+      of: p.reduce((n, x) => n + (x.evidenceRefs || []).length, 0),
+      note: "evidence references carrying an authored role" },
+    vocabulary: { have: vocab.filter(i => (rec("vocabulary", i) || {}).displayable).length, of: vocab.length,
+      note: "terms asked for by name that the vocabulary panel can display" },
+    recovery: { have: pkg.reasoning ? 1 : 0, of: 1,
+      note: "the question can notice an argument running backwards" },
   };
-  const missing = Object.keys(d).filter(k => !d[k]);
-  const head = !d.importable ? "Not importable"
-    : d["pathway-guided"] ? (missing.length ? "Guided" : "Fully authored")
-    : d["writing-ready"] ? "Writing ready" : "Importable";
-  return { dimensions: d, headline: head + (missing.length ? " - missing " + missing.join(", ") : ""),
-           missing: missing, measures: measures, gaps: gaps, unavailable: unavailable };
+  const missing = caps.ORDER.filter(k => dims[k].status !== "reached");
+  return { dimensions: dims, headline: caps.headline(dims), missing: missing,
+           directive: row, measures: measures, unavailable: unavailable };
 }
 // Only the scopes the runtime can actually resolve from. A readiness report that
 // walks a scope the engine never reaches is measuring something no student can
 // be given, which is the bug the vocabulary report had.
 function vocabIds(pkg) {
   const out = [];
-  const take = o => (o && o.vocabRefs || []).forEach(r => r && r.id && out.push(r.id));
+  const take = o => ((o && o.vocabRefs) || []).forEach(r => r && r.id && out.push(r.id));
   take(pkg.question);
   (pkg.areas || []).forEach(take);
   (pkg.pathways || []).forEach(take);
@@ -491,8 +480,15 @@ function format(rep) {
     out.push("");
   });
   if (rep.capability) {
-    out.push("CAPABILITIES");
-    CAPABILITIES.forEach(c => out.push("  " + (rep.capability.dimensions[c.id] ? "reached    " : "not reached") + "  " + c.id));
+    out.push("CAPABILITIES - each one a conjunction of named rules, so no strong dimension covers a weak one");
+    Object.keys(rep.capability.dimensions).forEach(k => {
+      const d = rep.capability.dimensions[k];
+      out.push("  " + (d.status === "reached" ? "reached    " : "not reached") + "  " + k);
+      d.missing.forEach(m => {
+        out.push("        " + m.rule + ": " + m.says);
+        (m.detail || []).forEach(x => out.push("            " + x));
+      });
+    });
     out.push("");
     out.push("MEASURED");
     Object.keys(rep.capability.measures).forEach(k => {
@@ -502,7 +498,10 @@ function format(rep) {
     out.push("");
     if (rep.capability.unavailable.length) {
       out.push("SUPPORT UNAVAILABLE - not a fault in the package");
-      rep.capability.unavailable.forEach(u => out.push("  " + u.support + ": " + u.reason));
+      rep.capability.unavailable.forEach(u => {
+        out.push("  " + u.support + ": " + u.reason);
+        out.push("      " + u.consequence);
+      });
       out.push("");
     }
   }

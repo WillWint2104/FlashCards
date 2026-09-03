@@ -10,7 +10,7 @@
   "provenance": {
     "reviewState": "draft",
     "publication": "unpublished",
-    "notes": "Authored to be wrong. Every fault is one an author could plausibly make and each is a different KIND of fault, so the report has to keep them apart rather than counting them. Half of them are the old prose joins, which is how a half-migrated package would look."
+    "notes": "Authored to be wrong. Every fault is one an author could plausibly make and each is a different KIND of fault, so the report has to keep them apart rather than counting them. Half of them are the old prose joins, which is how a half-migrated package would look. The companion fixture unsupported-directive-demo.json is the opposite case: entirely valid, and asking for support that does not exist."
   },
   "requires": {
     "vocabulary": [
@@ -54,7 +54,13 @@
         "requiresTeaching": "always",
         "oneLine": "a rewritten copy of a record three questions already point at",
         "title": "People",
-        "quick": "This would silently replace the one in the library."
+        "quick": "This would silently replace the one in the library.",
+        "terms": [
+          {
+            "term": "people",
+            "meaning": "a second definition system, arriving through an import"
+          }
+        ]
       }
     },
     "resources": {
@@ -72,8 +78,8 @@
     "qtype": "C",
     "topicRef": "business.marketing",
     "topicLabel": "Marketing",
-    "directive": "compare",
-    "text": "Compare how people and processes affect the customer experience.",
+    "directive": "ponder",
+    "text": "Ponder how people and processes affect the customer experience.",
     "marks": 0,
     "terms": {
       "first": "people",

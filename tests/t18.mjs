@@ -37,19 +37,20 @@ const IDS = ["ops-01", "ops-02", "ops-03", "mkt-01", "mkt-02", "mkt-03", "mkt-04
 console.log("1. every question that ships converts and validates");
 {
   const reports = IDS.map(id => ({ id: id, r: validate(read("docs/contract/example-" + id + ".json"), MAN) }));
+  const at = (rep, k) => rep.capability.dimensions[k].status === "reached";
   const bad = reports.filter(x => x.r.counts.error || x.r.counts.blocked);
   ok(!bad.length, "none of the nineteen is rejected or blocked: " +
     JSON.stringify(bad.map(x => x.id + " " + JSON.stringify(codes(x.r)))));
-  const guided = reports.filter(x => x.r.capability.dimensions["pathway-guided"]).map(x => x.id).sort();
+  const guided = reports.filter(x => at(x.r, "pathway-guided")).map(x => x.id).sort();
   console.log("    guided:", JSON.stringify(guided));
   ok(JSON.stringify(guided) === JSON.stringify(["fin-01", "hr-01", "mkt-01"]),
     "the three questions with authored arguments are the three that report guided: " + JSON.stringify(guided));
-  const stem = reports.filter(x => !x.r.capability.dimensions["writing-ready"]).map(x => x.id).sort();
+  const stem = reports.filter(x => !at(x.r, "writing-ready")).map(x => x.id).sort();
   ok(stem.length === 6 && stem.every(x => /^ah-/.test(x)),
     "and the six carrying only a stem say so rather than being dressed up: " + JSON.stringify(stem));
   // The point of six dimensions rather than one score.
   const mkt = reports.find(x => x.id === "mkt-01").r;
-  ok(mkt.capability.dimensions["pathway-guided"] && !mkt.capability.dimensions["evidence-complete"],
+  ok(at(mkt, "pathway-guided") && !at(mkt, "evidence-complete"),
     "mkt-01 is fully guided and has no sourced evidence at all, and both are visible: " + mkt.capability.headline);
   ok(mkt.capability.measures.evidence.have === 0 && mkt.capability.measures.evidence.of === 12,
     "measured 0 of 12: " + JSON.stringify(mkt.capability.measures.evidence));
@@ -108,11 +109,32 @@ console.log("3. the old prose joins are rejected by name");
     drops[code](copy);
     ok(codes(validate(copy, MAN)).indexOf(code) < 0, code + " is reported for the old field and not for its absence");
   });
-  // and the DIRECTIVE fallback, which is the fifth join: a command in no family
-  // resolves to causal at runtime and an imported package may not lean on it
-  ok(got.indexOf("DIRECTIVE_NO_FAMILY") >= 0, "a directive in no family is an error, not a silent causal fallback");
-  const d = r.findings.find(f => f.code === "DIRECTIVE_NO_FAMILY");
-  ok(/fallback/.test(d.message) && /may not depend/.test(d.message), "and says why: " + d.message);
+  // and the second vocabulary authority, which is the join that would come back
+  // through an import rather than through the source
+  ok(got.indexOf("SECOND_VOCABULARY_AUTHORITY") >= 0,
+    "a concept arriving with its own term definitions is rejected: " + JSON.stringify(got.filter(c => /VOCAB/.test(c))));
+}
+
+console.log("3b. the directive registry replaces the causal fallback with three answers");
+{
+  const REG = require("../tools/contract/directives.js").registry();
+  ok(/^none\./.test(REG.fallback), "the registry states that there is no fallback: " + REG.fallback.slice(0, 20));
+  ok(REG.counts.known === 22 && REG.counts.unsupported === 8,
+    "22 known commands, 8 of them unsupported in guided writing: " + JSON.stringify(REG.counts));
+  // unknown: an error
+  const bad = validate(read("docs/contract/invalid-demo.json"), MAN);
+  ok(codes(bad).indexOf("DIRECTIVE_UNKNOWN") >= 0, "a command the registry does not list does not import");
+  // known and unsupported: a VALID question that is offered no scaffolding
+  const un = validate(read("docs/contract/unsupported-directive-demo.json"), MAN);
+  console.log("    compare:", un.verdict, un.capability.headline);
+  ok(un.wouldImport, "a Compare question imports: " + un.verdict + " " + JSON.stringify(codes(un)));
+  ok(un.capability.dimensions["writing-ready"].status === "reached", "and is writing ready");
+  ok(un.capability.dimensions["pathway-guided"].missing.some(m => m.rule === "directive-supported"),
+    "and is not pathway guided, for the stated reason: " +
+    JSON.stringify(un.capability.dimensions["pathway-guided"].missing.map(m => m.rule)));
+  const gw = un.capability.unavailable.find(u => u.support === "guided writing");
+  ok(!!gw, "with guided writing reported as unavailable rather than served as causal");
+  ok(gw && /side by side/.test(gw.reason), "and a reason a person can act on: " + (gw && gw.reason));
 }
 
 console.log("4. every kind of finding, kept apart");
@@ -145,10 +167,50 @@ console.log("4. every kind of finding, kept apart");
   ok(nd.length === 1, "reported once, about the records: " + nd.length);
 }
 
+console.log("4b. one weak dimension can never be averaged away by a strong one");
+{
+  const caps = require("../tools/contract/capabilities.js");
+  // Structural, not incidental: every capability is a conjunction of named rules
+  // and there is no arithmetic anywhere in the module.
+  const src = readFileSync(url("tools/contract/capabilities.js"), "utf8");
+  ok(!/score|weight|average|percent|\* 100/i.test(src.replace(/^\s*\/\/.*$/gm, "")),
+    "the rules carry no score, weight or average");
+  ok(caps.ORDER.every(k => caps.RULES[k].length >= 3), "and each capability is several rules, not one test");
+  // Demonstrated: mkt-01 is as strong as a question in this bank gets on the
+  // dimensions it reaches, and one unsourced evidence record still denies it.
+  const pkg = read("docs/contract/example-mkt-01.json");
+  const before = validate(pkg, MAN).capability.dimensions;
+  ok(before["pathway-guided"].status === "reached" && before["evidence-complete"].status === "not-reached",
+    "twelve complete arguments do not make it evidence complete");
+  // and the reverse: satisfying every evidence rule does not lift learning
+  const strong = JSON.parse(JSON.stringify(pkg));
+  strong.pathways.forEach(p => (p.evidenceRefs || []).forEach(e => { e.role = "outcome-evidence"; }));
+  const after = validate(strong, MAN).capability.dimensions;
+  ok(after["learning-complete"].status === "not-reached",
+    "and giving every evidence reference a role does not move learning-complete");
+  ok(after["evidence-complete"].missing.every(m => m.rule !== "every-reference-has-a-role"),
+    "though it does answer the rule it was about: " +
+    JSON.stringify(after["evidence-complete"].missing.map(m => m.rule)));
+}
+
+console.log("4c. the coverage report and the validator answer with the same rules");
+{
+  // Not "both look right". The same question, through two entry points, with one
+  // definition between them.
+  const cov = require("../tools/coverage.js").report();
+  const rows = cov.filter(r => r.capability);
+  ok(rows.length === cov.length, "every coverage row carries a capability result");
+  rows.forEach(r => {
+    const v = validate(read("docs/contract/example-" + r.id + ".json"), MAN);
+    ok(v.capability.headline === r.capability.headline,
+      r.id + ": " + JSON.stringify(r.capability.headline) + " vs " + JSON.stringify(v.capability.headline));
+  });
+}
+
 console.log("5. capability is measured, and never quietly lowered");
 {
   const r = validate(read("docs/contract/example-mkt-01.json"), MAN);
-  ok(r.capability.dimensions.importable, "mkt-01 is importable");
+  ok(r.capability.dimensions.importable.status === "reached", "mkt-01 is importable");
   ok(r.capability.missing.join() === "learning-complete,evidence-complete",
     "and the report names what it does not reach: " + JSON.stringify(r.capability.missing));
   // Nothing in the validator writes a capability back into the package, so
@@ -181,6 +243,9 @@ console.log("7. the guide, the schema and the templates still match the definiti
   ok(gen.guide(MAN) === text("docs/contract/authoring-guide.md"), "the authoring guide is what fields.js generates");
   ok(JSON.stringify(gen.jsonSchema(MAN), null, 2) + "\n" === text("docs/contract/question-package.schema.json"),
     "the JSON Schema is what fields.js generates");
+  const REG2 = require("../tools/contract/directives.js").registry();
+  ok(JSON.stringify(REG2, null, 2) + "\n" === text("docs/contract/directive-registry.json"),
+    "the directive registry is what directives.js generates");
   ["causal", "judgement", "write-only"].forEach(k =>
     ok(JSON.stringify(gen.template(k, MAN), null, 2) + "\n" === text("docs/contract/template-" + k + ".json"),
       "the " + k + " template is what fields.js generates"));
@@ -203,13 +268,43 @@ console.log("7. the guide, the schema and the templates still match the definiti
     "and the guide documents every one of them: " + walked);
 }
 
+console.log("7b. the fixture manifest exposes handles a bot can use without knowing the question");
+{
+  const fx = read("docs/contract/fixture-manifest.json");
+  ok(fx.personas.length === 5, "five personas: " + fx.personas.map(p => p.id).join(", "));
+  ok(fx.personas.every(p => p.fails && p.needs.length), "each names what would count as a failure and what it needs");
+  const mkt = fx.packages.find(p => p.package === "mkt-01");
+  ok(mkt && mkt.handles.pathways.length === 12, "the handles carry every pathway: " + (mkt && mkt.handles.pathways.length));
+  ok(mkt && mkt.handles.pathways.some(p => p.deepestLadder >= 5),
+    "with ladder depth, so a help-seeking bot can find one to climb");
+  ok(mkt && mkt.handles.slots.length > 0 && mkt.handles.areas.length === 4,
+    "and the slots and areas: " + JSON.stringify(mkt && mkt.handles.areas));
+  // The point of the manifest: no prose, no question text, nothing a bot would
+  // have to hard-code.
+  const blob = JSON.stringify(fx.packages);
+  ok(!/target markets|e-marketing affect|McDonald/i.test(blob), "and no question prose at all");
+  // applicability is derived from capability, not asserted
+  const zero = fx.packages.find(p => p.package === "mkt-01").personas.find(x => x.persona === "zeroKnowledgeStudent");
+  ok(!zero.applicable && /learning-complete/.test(zero.why),
+    "a persona that needs teaching is not run against a question without it: " + JSON.stringify(zero));
+}
+
 console.log("8. nothing in the validator can write");
 {
   const src = readFileSync(url("tools/contract/validate.js"), "utf8");
   const writes = src.match(/writeFileSync|appendFileSync|mkdirSync|rmSync|unlinkSync|createWriteStream/g) || [];
   ok(!writes.length, "no write call exists in it at all: " + JSON.stringify(writes));
-  const body = src.replace(/^\s*\/\/.*$/gm, "");
-  ok(!/registry|publish\(/.test(body), "and nothing in it names a registry or a publish step");
+  // The word "published" is a field on an evidence record and "commits" is in a
+  // message, so a keyword scan proves nothing. What must be true is narrower and
+  // checkable: the only thing it does to the file system is read, and it can
+  // reach nothing else.
+  const fsCalls = [...src.matchAll(/\bfs\.(\w+)/g)].map(m => m[1]);
+  ok(fsCalls.every(c => c === "readFileSync"), "its only file system call is readFileSync: " + JSON.stringify([...new Set(fsCalls)]));
+  ok(!/require\("(?:http|https|net|child_process|worker_threads)"\)/.test(src),
+    "and it opens no network or process");
+  const exported = require("../tools/contract/validate.js");
+  ok(Object.keys(exported).every(k => typeof exported[k] === "function"),
+    "and exports functions only, none of which is a publish step: " + JSON.stringify(Object.keys(exported)));
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
