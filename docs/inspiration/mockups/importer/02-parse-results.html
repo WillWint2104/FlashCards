@@ -1,0 +1,152 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Importer 2 of 8 · parse results</title>
+<!--
+  IMPORTER SCREEN 2 OF 8. A mockup for review before anything is implemented.
+  Workflow stage 2 of 6.
+
+  This screen answers ONE question: can Marginal read each of these files as a
+  package at all? Nothing about the contract is checked here.
+
+  invalid-demo.json is read successfully on this screen and carries 32 contract
+  errors on the next one. That is the point of separating the two: parse is
+  "is this a readable Marginal package", validate is "is what it says valid".
+  Showing its errors here would collapse two stages the workflow rail promises
+  are different, and would teach a teacher that a red file is a broken file
+  rather than a file with something specific wrong further in.
+-->
+<style>
+  :root{
+    --bg:#EEF3F5; --card:#FFFFFF;
+    --ink:#3C4A4A; --ink-2:#7A8A88; --ink-3:#AEBAB8;
+    --green:#1CC47D; --green-dk:#14A368; --green-soft:#E4F9EF;
+    --line:#E7EDED; --amber:#B3730C; --amber-soft:#FDF3E3;
+    --red:#B3403C; --red-soft:#FBEDEC;
+    --body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--body);background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
+  header{display:flex;align-items:center;gap:12px;padding:16px 32px;background:var(--card);border-bottom:1px solid var(--line)}
+  .mk{width:28px;height:28px;border-radius:9px;background:var(--green);flex:none;box-shadow:0 3px 0 var(--green-dk)}
+  .wordmark{font-weight:800;font-size:17px;letter-spacing:-.2px}
+  .where{margin-left:auto;font-size:13px;color:var(--ink-2);font-weight:700}
+  main{max-width:1080px;margin:0 auto;padding:26px 32px 56px}
+  h1{font-size:23px;font-weight:800;letter-spacing:-.3px;margin:0 0 4px}
+  .lede{font-size:14px;color:var(--ink-2);font-weight:600;margin:0 0 22px;max-width:72ch}
+
+  .rail{display:flex;gap:8px;margin:0 0 22px;flex-wrap:wrap}
+  .step{display:flex;align-items:center;gap:9px;background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:7px 15px 7px 8px;font-size:12.5px;font-weight:700;color:var(--ink-3)}
+  .step b{width:22px;height:22px;border-radius:50%;background:var(--bg);color:var(--ink-3);display:grid;place-items:center;font-size:11.5px;font-weight:800}
+  .step.on{border-color:var(--green);color:var(--ink)}
+  .step.on b{background:var(--green);color:#fff}
+  .step.done{color:var(--ink-2)}
+  .step.done b{background:var(--green-soft);color:var(--green-dk)}
+  .step.write{border-style:dashed}
+
+  .cols{display:grid;grid-template-columns:1.45fr 1fr;gap:18px;align-items:start}
+  .card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:18px 20px}
+  .card h2{font-size:14px;font-weight:800;margin:0 0 3px}
+  .card .sub{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:0 0 14px}
+  .count{font-size:19px;font-weight:800;letter-spacing:-.2px;margin:0 0 2px}
+  .count span{color:var(--green-dk)}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.55px;color:var(--ink-3);font-weight:800;padding:0 0 8px}
+  td{padding:11px 0;border-top:1px solid var(--line);font-weight:600;color:var(--ink-2);vertical-align:middle}
+  td.f{color:var(--ink);font-weight:700}
+  td.f small{display:block;font-family:var(--mono);font-size:11px;color:var(--ink-3);font-weight:600}
+  td.q{font-family:var(--mono);font-size:11.5px;font-weight:700;color:var(--ink)}
+  td.v{font-family:var(--mono);font-size:11.5px;font-weight:700}
+  td.r{text-align:right}
+  .ok{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;color:var(--green-dk);background:var(--green-soft);border-radius:99px;padding:4px 11px}
+
+  .btnrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px}
+  .btn{font:inherit;font-size:13px;font-weight:800;border-radius:12px;padding:10px 16px;border:1.5px solid var(--line);background:#fff;color:var(--ink);cursor:default}
+  .btn.primary{background:var(--green);border-color:var(--green);color:#fff;box-shadow:0 2px 0 var(--green-dk)}
+  .note{font-size:12px;color:var(--ink-2);font-weight:600;margin:10px 0 0}
+  .quiet{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:0 0 11px}
+  .quiet b{color:var(--ink)}
+  .rule{font-size:12.5px;color:var(--ink-2);font-weight:600;background:var(--bg);border-radius:12px;padding:11px 14px;margin:14px 0 0}
+  .rule b{color:var(--ink)}
+  .stage{display:flex;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:12.5px}
+  .stage:first-of-type{border-top:0}
+  .stage .n{font-weight:800;min-width:76px}
+  .stage .d{color:var(--ink-2);font-weight:600}
+</style>
+
+<header>
+  <div class="mk"></div>
+  <div class="wordmark">Marginal</div>
+  <div class="where">Teacher tools · import questions · 2 of 6</div>
+</header>
+
+<main>
+  <h1>Parse packages</h1>
+  <p class="lede">Each file was opened and read as a Marginal question package. Nothing has been
+    checked against the content contract yet, and nothing has been written.</p>
+
+  <div class="rail">
+    <div class="step done"><b>✓</b> Choose files</div>
+    <div class="step on"><b>2</b> Parse</div>
+    <div class="step"><b>3</b> Validate</div>
+    <div class="step"><b>4</b> Resolve references</div>
+    <div class="step"><b>5</b> Review changes</div>
+    <div class="step write"><b>6</b> Publish</div>
+  </div>
+
+  <div class="cols">
+    <div class="card">
+      <p class="count"><span>3 packages</span> read</p>
+      <p class="sub">One question per package, each declaring a contract this reader supports.</p>
+      <table>
+        <tr><th>package</th><th>contract</th><th>question</th><th class="r">result</th></tr>
+        <tr>
+          <td class="f">example-mkt-01.json<small>marginal.question-package</small></td>
+          <td class="v">1.0</td><td class="q">mkt-01</td>
+          <td class="r"><span class="ok">read</span></td>
+        </tr>
+        <tr>
+          <td class="f">example-ah-religion.json<small>marginal.question-package</small></td>
+          <td class="v">1.0</td><td class="q">ah-religion</td>
+          <td class="r"><span class="ok">read</span></td>
+        </tr>
+        <tr>
+          <td class="f">invalid-demo.json<small>marginal.question-package</small></td>
+          <td class="v">1.0</td><td class="q">Mkt 02!</td>
+          <td class="r"><span class="ok">read</span></td>
+        </tr>
+      </table>
+
+      <div class="rule"><b>All three are readable.</b> Nothing has been validated against the content
+        contract yet, so nothing here says whether a question is any good, or even whether its id is
+        allowed. That is the next step.</div>
+
+      <div class="btnrow">
+        <button class="btn primary">Validate 3 packages</button>
+        <button class="btn">Back to files</button>
+      </div>
+      <p class="note">Validation checks all three in full before any of them could be published.</p>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2>What parsing checked</h2>
+        <p class="quiet">The file is well formed JSON, it declares itself a Marginal question package,
+          and its contract version is one this reader can interpret.</p>
+        <p class="quiet"><b>And what it did not.</b> Nothing about the question: not its id, not its
+          directive, not whether anything it references exists.</p>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <h2>What each step asks</h2>
+        <p class="quiet">The rail above says where you are. This says what each stage is for.</p>
+        <div class="stage"><span class="n">Parse</span><span class="d">is this a readable Marginal package?</span></div>
+        <div class="stage"><span class="n">Validate</span><span class="d">is what it says internally valid?</span></div>
+        <div class="stage"><span class="n">Resolve</span><span class="d">does everything it references exist?</span></div>
+        <div class="stage"><span class="n">Review</span><span class="d">what would this change?</span></div>
+        <div class="stage"><span class="n">Publish</span><span class="d">write it.</span></div>
+      </div>
+    </div>
+  </div>
+</main>
