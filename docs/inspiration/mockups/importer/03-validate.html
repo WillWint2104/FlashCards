@@ -2,8 +2,22 @@
 <meta charset="utf-8">
 <title>Importer 3 of 8 · validate</title>
 <!--
-  IMPORTER SCREEN 3 OF 8. A mockup for review before anything is implemented.
+  IMPORTER SCREEN 3 OF 8. FROZEN. Approved; do not open another visual pass on
+  this screen unless implementation or testing exposes a real usability problem.
   Workflow stage 3 of 6.
+
+  TWO BEHAVIOURS TO CARRY INTO IMPLEMENTATION, recorded here because they are
+  behaviour rather than layout and would otherwise be lost between the mockup
+  and the build:
+
+  1. "Show all N" expands IN PLACE and becomes "Show fewer". It does not
+     rebuild the page and it does not move the scroll position. A teacher
+     opening the fourth group should still be looking at the fourth group.
+
+  2. The package summary row and its diagnostic block stay linked. With one
+     rejected package the block is simply below; with several, pressing a
+     rejected row takes the teacher to that package's block rather than
+     leaving them to hunt for it.
 
   ONE question: is what each package says internally valid?
 
