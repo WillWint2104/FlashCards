@@ -115,9 +115,15 @@ const drawer = p => p.$eval('.es-drawer-body', e => e.innerText.replace(/\s+/g, 
   }
 
   // ==========================================================================
-  console.log('2. the 405 undefined terms are gone from the student route');
+  console.log('2. the undefined terms are gone from THIS TOOL, which is not the same as gone');
   // ==========================================================================
   {
+    // Scoped deliberately, and the scope is the point. These strings are still
+    // rendered to students by esHintHTML on the FULL-ATTEMPT screen (app.js:8528,
+    // .es-hintterm), 477 of them, undefined. Vocabulary v1 removed the pattern from
+    // this tool and not from the app, and a suite claiming otherwise would be the
+    // more comfortable lie.
+    //
     // Not "the old class is absent" — nothing emits it, so that could not fail.
     // And not "no term string appears on the page" either: "physical evidence" is
     // in the question stem and "knowledge and understanding" is in the marking

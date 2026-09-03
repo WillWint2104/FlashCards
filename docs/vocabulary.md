@@ -12,6 +12,17 @@ sentence shapes resolve.
 is worse than an empty panel: a student cannot tell a term the app is teaching from
 a word somebody typed next to a heading.
 
+## Still broken elsewhere
+
+The rule is **do not display undefined vocabulary**, and this document is about one
+tool. `esHintHTML` (app.js:8528) still renders the same `points[].terms` strings as
+`.es-hintterm` chips on the **full-attempt screen** — 477 of them, undefined, in
+green. Vocabulary v1 removed the pattern from the writing tool and not from the app.
+
+It is recorded here rather than fixed because the two ways out are a product
+decision: delete the chips, or author 477 records. Neither belongs in a branch that
+was deliberately kept clear of content authoring.
+
 ## What this replaced
 
 `BUSCONTENT` holds 405 distinct term strings across 83 section points. The tool
@@ -81,8 +92,19 @@ Undefined refs stay invisible to the student in both cases, and visible to the
 readiness report in both cases:
 
 ```
-vocabulary 6 refs requested / 4 defined / 2 missing
+vocabulary 6 refs requested / 4 usable, 2 unusable (1 naming no record, 1 half-written), 1 with an unknown role; store 5 records, 1 partial
 ```
+
+The line only says what is wrong, so a clean run stays short. It reports the three
+ways a ref can fail SEPARATELY, because they are opposite jobs to fix: a ref naming
+no record is a typo or a deleted record; a half-written one was started and not
+finished; and a ref whose role is not one of the four still works, because the
+runtime re-buckets it, which is exactly why the author would otherwise never learn
+they mistyped it.
+
+It also reports the store's own state whether or not anything references it. Fifty
+records with a blank field used to print the same line as fifty records that do not
+exist, and as no records at all.
 
 The empty-state copy is kept for the states that can still reach it, and asserted to
 still exist rather than being deleted.

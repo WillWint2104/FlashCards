@@ -564,6 +564,13 @@ if (offences.length) {
 const coverage = require("./tools/coverage.js");
 const covRows = coverage.report();
 const covText = coverage.format(covRows) + "\n";
+// The summary STRING, not the call. summary() used to be arithmetic over covRows
+// and safe to run anywhere; it now reads essay-content.js and walks it, so calling
+// it below the promotion block put file I/O and a parse on the one side of this
+// file that is not allowed to fail. A vocabRefs authored as a bare string rather
+// than an array threw inside it, after marginal-preview.html had already been
+// published from the build that then exited non-zero.
+const covSummary = coverage.summary(covRows);
 
 // Stage both, then promote both. Writing 1.1MB straight to the real path means
 // an interrupted write leaves a TRUNCATED marginal-preview.html sitting there
@@ -610,4 +617,4 @@ try {
 }
 artefacts.forEach(a => drop(a.prev));
 console.log(`built marginal-preview.html (${out.length} characters)`);
-console.log(coverage.summary(covRows));
+console.log(covSummary);

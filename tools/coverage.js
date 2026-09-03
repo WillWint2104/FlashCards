@@ -254,19 +254,32 @@ function format(rows) {
 function vocabCoverage() {
   const ESSAY = load("essay-content.js").ESSAY;
   const store = ESSAY.vocab || { records: {} };
-  const complete = id => {
-    const r = store.records[id];
-    return !!r && ["term", "plain", "subject", "example"].every(k => String(r[k] || "").trim());
-  };
-  const asked = new Set(), unmet = new Set();
-  const take = list => (list || []).forEach(x => {
-    const id = typeof x === "string" ? x : (x && x.id); if (!id) return;
-    asked.add(id); if (!complete(id)) unmet.add(id);
-  });
+  const FIELDS = ["term", "plain", "subject", "example"];
+  const complete = r => !!r && FIELDS.every(k => String(r[k] || "").trim());
+  const roles = (store.roles || []).map(r => r.id);
   // The scopes the RESOLVER reads, and only those. esVocabRefs walks pathway ->
   // esAreaDef -> question, and esAreaDef resolves against q.areas, so a subject-level
   // area is not a place the app looks. Counting refs there would report an authoring
   // gap for terms no student route can ever ask for.
+  //
+  // A ref can fail in three DIFFERENT ways, and reporting them as one number told an
+  // author nothing about what to do next:
+  //   dangling    it names an id that does not exist. A typo, or a record deleted.
+  //   halfWritten the record is there and a field is blank. Started, not finished.
+  //   badRole     everything resolves, but the role is not one the panel groups by.
+  //               The runtime re-buckets it so no term is lost, and without this the
+  //               author would never learn they mistyped it.
+  const asked = new Set(), dangling = new Set(), halfWritten = new Set(), badRole = new Set();
+  const take = list => (list || []).forEach(x => {
+    const id = typeof x === "string" ? x : (x && x.id);
+    if (!id) return;
+    asked.add(id);
+    const rec = store.records[id];
+    if (!rec) { dangling.add(id); return; }
+    if (!complete(rec)) { halfWritten.add(id); return; }
+    const role = (typeof x === "object" && x.role) || "";
+    if (role && roles.indexOf(role) < 0) badRole.add(id);
+  });
   Object.keys(ESSAY.subjects || {}).forEach(k => {
     const sub = ESSAY.subjects[k] || {};
     (sub.questions || []).forEach(q => {
@@ -275,8 +288,38 @@ function vocabCoverage() {
       (q.pathways || []).forEach(pa => take(pa.vocabRefs));
     });
   });
-  const defined = Object.keys(store.records).filter(complete).length;
-  return { asked: asked.size, unmet: unmet.size, defined: defined };
+  // The store's own state, whether or not anything references it. Fifty records with
+  // a blank field used to print exactly the same line as fifty records that do not
+  // exist, which is the one thing this report exists to tell an author apart.
+  const ids = Object.keys(store.records || {});
+  const recordsComplete = ids.filter(id => complete(store.records[id])).length;
+  return {
+    asked: asked.size,
+    unmet: dangling.size + halfWritten.size,
+    dangling: dangling.size,
+    halfWritten: halfWritten.size,
+    badRole: badRole.size,
+    records: ids.length,
+    recordsComplete: recordsComplete,
+    recordsPartial: ids.length - recordsComplete,
+  };
+}
+// One line, and only the problems that exist. A run with nothing wrong stays short;
+// anything wrong says what it is, because "1 missing" does not tell an author whether
+// to write a definition or fix a typo.
+function vocabLine() {
+  const v = vocabCoverage();
+  const why = [];
+  if (v.dangling) why.push(v.dangling + " naming no record");
+  if (v.halfWritten) why.push(v.halfWritten + " half-written");
+  let out = "vocabulary " + v.asked + " refs requested / " + (v.asked - v.unmet) + " usable";
+  if (v.unmet) out += ", " + v.unmet + " unusable (" + why.join(", ") + ")";
+  if (v.badRole) out += ", " + v.badRole + " with an unknown role";
+  if (v.records) {
+    out += "; store " + v.records + " record" + (v.records === 1 ? "" : "s");
+    if (v.recordsPartial) out += ", " + v.recordsPartial + " partial";
+  }
+  return out;
 }
 function summary(rows) {
   const p = rows.reduce((n, r) => n + r.pathways, 0);
@@ -288,14 +331,9 @@ function summary(rows) {
   const d = rows.reduce((n, r) => n + r.reviewed, 0);
   return "support: " + frac(d, p) + " pathways reviewed, " + frac(s, p) + " teach themselves, " + frac(l, p) + " carry a full ladder, " + frac(e, p) + " have sourced evidence, " +
     c + " concepts are named but never explained, " + frac(ready, rows.length) + " questions are Learn & Build ready" +
-    (() => { const v = vocabCoverage();
-      // Said as three numbers rather than a fraction, because a student sees none
-      // of this: what an author needs to know is how many terms were asked for and
-      // how many of those have nothing behind them.
-      return ", vocabulary " + v.asked + " refs requested / " + (v.asked - v.unmet) + " defined / " +
-        v.unmet + " missing" + (v.defined ? " (" + v.defined + " records in all)" : ""); })();
+    ", " + vocabLine();
 }
-module.exports = { report, format, summary, teachable, vocabulary, vocabCoverage, termsOf, readinessOf, FULL_LADDER };
+module.exports = { report, format, summary, teachable, vocabulary, vocabCoverage, vocabLine, termsOf, readinessOf, FULL_LADDER };
 if (require.main === module) {
   const rows = report();
   console.log(format(rows));
