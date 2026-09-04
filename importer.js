@@ -573,8 +573,12 @@
         r.failed.map(function (f) {
           return row("stop", f.id, f.reason + ". " + f.note);
         }).join("") +
-        row("same", plural(r.held.length + r.rejected.length, "package") + " was not in the publish set",
-          "Unchanged, and never attempted.") +
+        // Only when there is one. A row reading "0 packages was not in the
+        // publish set" is noise with a grammar mistake in it.
+        (r.held.length + r.rejected.length
+          ? row("same", plural(r.held.length + r.rejected.length, "package") + " not in the publish set",
+              "Unchanged, and never attempted.")
+          : "") +
         '<div class="rule"><b>' + esc(r.atomicUnitSays) + "</b></div>";
     }
     left.appendChild(c);
