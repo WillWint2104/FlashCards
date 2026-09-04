@@ -25,6 +25,11 @@ const TIERS = {
   // 37s, so ui40 goes back to checkpoint, where it already runs: it walks EVERY
   // question through the shell, which is an exhaustive sweep rather than a fast
   // signal, and it was the single most expensive suite here at 7.2s.
+  // ui50 is NOT here. It publishes through the importer and then drives the
+  // student app, so it is an integration test across two surfaces rather than a
+  // sharp signal about one, and it took the tier to 42.1s. Same reasoning that
+  // moved the simulated students out of checkpoint: this tier is worth having
+  // because it is cheap enough to run out of habit.
   // 40s rather than 30s. The tier gained four contract suites and the importer
   // suite as those milestones landed, and at 30.6s it was quietly over a budget
   // that only prints. Six browser suites are 25s of it and each covers a surface
@@ -47,10 +52,15 @@ const TIERS = {
     budget: 60,
     suites: ["t1", "t2", "t17", "t18", "t19", "t20", "t21", "ui13", "ui30", "ui35", "ui37", "ui38", "ui39", "ui40", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49"],
   },
-  // The seven simulated students, run one after another through a single page.
+  // End to end. The seven simulated students, run one after another through a
+  // single page, and the suite that publishes a package through the importer and
+  // then finds it in the student app. Both cross a whole surface rather than
+  // testing one, and both are expensive for that reason: ui50 alone was 8.4s of
+  // a checkpoint run that has to stay under a minute to be worth having.
+  //
   // The cross-journey assertions compare the students to each other, so there is
-  // no honest subset of them: this tier is all of them or none.
-  journeys: { budget: 180, suites: ["bots"] },
+  // no honest subset of the bots: that part is all of them or none.
+  journeys: { budget: 180, suites: ["ui50", "bots"] },
   // Everything run.js knows about, the journeys included. An empty list means
   // "pass no filter".
   full: { budget: 360, suites: [] },

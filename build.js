@@ -40,6 +40,11 @@ let out = shell;
 out = inlineScript(out, '<script src="content.js"></script>', content);
 out = inlineScript(out, '<script src="essay-content.js"></script>', essay);
 out = inlineScript(out, '<script src="business-content.js"></script>', buscontent);
+// Imported questions reach the student through the same store adapter that wrote
+// them. Two modules, no validator: a student surface has nothing to decide about
+// a package that was validated and admitted before it was ever written.
+out = inlineScript(out, '<script src="student-imports.js"></script>',
+  require("./tools/contract/bundle.js").studentBundle(root));
 out = inlineScript(out, '<script src="app.js"></script>', app);
 
 // ---------------------------------------------------------------------------

@@ -322,7 +322,7 @@
   // the source of truth for criteria and band expectations, so adding a subject
   // stays content-only.
   function essaySubjectByLabel(label) {
-    const subs = (window.ESSAY && window.ESSAY.subjects) || {};
+    const subs = esAllSubjects().subjects;
     const hit = Object.keys(subs).find(k => String(subs[k].label || "").toLowerCase() === String(label || "").toLowerCase());
     return hit ? subs[hit] : null;
   }
@@ -3166,8 +3166,45 @@
     try { const w = Cloud.who && Cloud.who(); if (w && w.class_code) return w.class_code; } catch (e) { /* ignore */ }
     return state.code || CONFIG.code || "";
   }
+  // ---- imported questions ---------------------------------------------------
+  // ONE QUESTION INTERFACE. A question that shipped in essay-content.js and a
+  // question a teacher imported reach every screen below through the same path,
+  // and nothing downstream asks which it was: they differ in where they were
+  // stored and in nothing else.
+  //
+  // window.ESSAY is NOT touched. The merge returns a new object, so the
+  // questions that shipped are the same objects they always were, and an
+  // importer that has stored nothing leaves this identical to reading
+  // window.ESSAY.subjects directly.
+  //
+  // Computed once. Reading storage and adapting every stored document on each of
+  // the several hundred calls these screens make would be work repeated for an
+  // answer that cannot change while the page is open.
+  let ES_MERGE = null;
+  function esAllSubjects() {
+    const base = (window.ESSAY && window.ESSAY.subjects) || {};
+    if (ES_MERGE && ES_MERGE.base === base) return ES_MERGE.out;
+    let merged = { subjects: base, added: [], collisions: [], unusable: [] };
+    // A student must still get the questions that shipped when anything about
+    // imported ones goes wrong, so every failure here degrades to the source
+    // bank rather than to an empty screen.
+    try {
+      if (window.MarginalImports) merged = window.MarginalImports.merge(base);
+    } catch (e) { merged = { subjects: base, added: [], collisions: [], unusable: [{ id: null, why: String((e && e.message) || e) }] }; }
+    ES_MERGE = { base: base, out: merged };
+    return merged;
+  }
+  // Exposed so a test can see what was taken and what was refused. Reading only.
+  function esImportReport() {
+    const m = esAllSubjects();
+    return { added: m.added, collisions: m.collisions, unusable: m.unusable };
+  }
+  // Read only, for the suites that need to see what the merge produced. It
+  // computes nothing of its own and cannot change anything.
+  try { window.__esSubjects = () => esAllSubjects().subjects; window.__esImports = esImportReport; } catch (e) { /* not a browser */ }
   function esSubjectContent(subject) {
-    return (window.ESSAY && window.ESSAY.subjects && window.ESSAY.subjects[subject]) || null;
+    const subs = esAllSubjects().subjects;
+    return (subs && subs[subject]) || null;
   }
   // The worked-example fallback set (window.ESSAY.slots.examples) is authored for this
   // subject. Any OTHER subject borrows it as a clearly-labelled placeholder until its
@@ -3199,7 +3236,7 @@
   // paragraph scaffold. Lets any login load a subject's bank without a class-code
   // rule (the routed subject is just the default selection).
   function esSubjectsList() {
-    const subs = (window.ESSAY && window.ESSAY.subjects) || {};
+    const subs = esAllSubjects().subjects;
     return Object.keys(subs)
       .filter(k => { const s = subs[k]; return s && ((Array.isArray(s.questions) && s.questions.length) || s.scaffolds); })
       .map(k => ({ key: k, label: subs[k].label || k }));
@@ -6657,7 +6694,7 @@
   // Optional ones are never shown unasked and exist so the deeper material can
   // reach them.
   function esConceptStore() {
-    const sub = (window.ESSAY && window.ESSAY.subjects && window.ESSAY.subjects[ES.subject]) || null;
+    const sub = esSubjectContent(ES.subject);
     return (sub && sub.concepts) || {};
   }
   function esConceptsFor(p, tier) {
