@@ -21,6 +21,16 @@
 const admit = require("./admit.js");
 const { storable } = require("./resolve.js");
 
+// Every attempt is identified, so a log, a test and a retry can tell two
+// attempts at the same plan apart. Deterministic rather than random: the
+// counter is what distinguishes attempts, and the fingerprint says which bank
+// each was made against, so a retry after the bank moved is visible as such.
+let ATTEMPT = 0;
+function operationId(plan) {
+  ATTEMPT += 1;
+  return "op-" + ATTEMPT + "-" + (plan && plan.checkedAgainst ? plan.checkedAgainst.registry : "noplan");
+}
+
 const OUTCOME = {
   written: "written",                       // every publishable package was added
   partial: "partially written",             // some added, some failed, none half added
@@ -65,11 +75,12 @@ function apply(plan, dest, opts) {
   if (!plan || plan.schema !== "marginal.publish-plan")
     throw new Error("publish takes a plan from admit.plan(). There is no other way to reach a write");
   const reg = registryOf(dest);
+  const operation = o.operation || operationId(plan);
 
   // The destination is re-checked here, against the bank as it is NOW. The plan
   // is evidence the check ran at Review; it is never permission to skip it.
   if (plan.checkedAgainst.registry !== admit.fingerprint(reg))
-    return result(OUTCOME.destinationChanged, [], [], plan, {
+    return result(OUTCOME.destinationChanged, [], [], plan, { operation: operation,
       staleMessage: STALE,
       reviewedAgainst: plan.checkedAgainst.questions,
       destinationNow: reg.ids.length,
@@ -80,13 +91,13 @@ function apply(plan, dest, opts) {
     });
 
   if (!plan.questions.length && !plan.shared.additions.length)
-    return result(OUTCOME.nothing, [], [], plan, {});
+    return result(OUTCOME.nothing, [], [], plan, { operation: operation });
 
   const added = [], failed = [];
   plan.questions.forEach(q => {
     const provides = plan.shared.additions.filter(a => a.suppliedBy === q.id);
     // ---- staging. Everything that can fail is above the promotion line. -----
-    let staged = null, why = null;
+    let staged = null, why = null, stored = null;
     try {
       // One check, not two. An id present in the destination is taken whether it
       // arrived with the bank or was added a moment ago by this same batch, and
@@ -113,6 +124,19 @@ function apply(plan, dest, opts) {
         subjectLabel: (plan.labels || {})[q.subject] || q.subject, document: doc },
         shared: provides.map(a => ({ kind: a.kind, id: a.id })) };
       if (o.failWriting === q.id) throw new Error(o.failMessage || "the destination refused the write");
+      // PERSISTENCE, and the last thing that may fail. One call, one package,
+      // and the store's own layout makes it one key, so there is no arrangement
+      // in which half of it lands. It sits inside this try on purpose: a store
+      // that refuses leaves the package exactly as absent as a failed check
+      // does, and the in memory promotion below has not run.
+      //
+      // A destination without a write function is a rehearsal, and says so by
+      // not having one. That is the only difference between the model the
+      // mockups were drawn from and a publication.
+      if (dest.write) stored = dest.write({
+        schema: "marginal.published-package", version: 1,
+        question: staged.question, shared: staged.shared,
+      });
     } catch (e) { why = e.message; }
 
     if (why) {
@@ -132,19 +156,25 @@ function apply(plan, dest, opts) {
     dest.log.push({ op: "add", kind: "question", id: staged.question.id });
     staged.shared.forEach(r => dest.log.push({ op: "add", kind: r.kind, id: r.id }));
     added.push({ id: staged.question.id, source: q.source, subject: q.subject,
-      shared: staged.shared.map(r => r.kind + "/" + r.id) });
+      shared: staged.shared.map(r => r.kind + "/" + r.id),
+      // Where it went, and whether it survived. null means a rehearsal.
+      persisted: stored ? stored.key : null,
+      indexed: stored ? stored.indexed : null });
   });
 
   // Four outcomes, and "some failed" is not the same sentence as "all failed".
   const outcome = added.length && failed.length ? OUTCOME.partial
     : added.length ? OUTCOME.written : OUTCOME.failed;
-  return result(outcome, added, failed, plan, {});
+  return result(outcome, added, failed, plan, { operation: operation });
 }
 
 function result(outcome, added, failed, plan, extra) {
   return Object.assign({
     schema: "marginal.publish-result", version: 1,
     outcome: outcome,
+    // Filled by apply(). Named here so a result without one is obviously wrong
+    // rather than quietly missing.
+    operation: null,
     // Stated, not implied. Requirement 5 of the brief: the screen has to say
     // exactly which unit is atomic, and this is where that sentence comes from.
     atomicUnit: "package",
@@ -173,7 +203,10 @@ function result(outcome, added, failed, plan, extra) {
   }, extra || {});
 }
 
-module.exports = { apply, destination, registryOf, OUTCOME, STALE };
+module.exports = { apply, destination, registryOf, OUTCOME, STALE,
+  // Test only: attempts are numbered from process start, so a suite that
+  // asserts on the number needs to be able to say where it started.
+  _attempts: () => ATTEMPT };
 
 if (require.main === module) {
   const fs = require("fs");

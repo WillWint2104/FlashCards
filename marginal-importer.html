@@ -87,6 +87,15 @@
   .rule{font-size:12.5px;color:var(--ink-2);font-weight:600;background:var(--bg);border-radius:12px;padding:11px 14px;margin:14px 0 0}
   .rule b{color:var(--ink)}
   .invariant{background:var(--green-soft);border:1.5px solid #CFF0E0;border-radius:14px;padding:13px 16px;margin-top:18px;font-size:13px;font-weight:700;color:var(--green-dk)}
+  .banner{border-radius:18px;padding:16px 20px;margin-bottom:18px;border:1.5px solid var(--line);background:var(--card)}
+  .banner .hd{font-size:19px;font-weight:800;letter-spacing:-.2px;margin:0 0 3px}
+  .banner .bd{font-size:13px;font-weight:600;color:var(--ink-2);margin:0;max-width:74ch}
+  .banner.good{background:var(--green-soft);border-color:#CFF0E0}
+  .banner.good .hd,.banner.good .bd{color:var(--green-dk)}
+  .banner.stop{background:var(--red-soft);border-color:#F2D8D6}
+  .banner.stop .hd{color:var(--red)}
+  .banner.warn{background:var(--amber-soft);border-color:#F2E2C6}
+  .banner.warn .hd{color:var(--amber)}
   .drop{border:2px dashed var(--ink-3);border-radius:16px;padding:26px 20px;text-align:center;background:var(--bg)}
   .drop p{margin:0 0 4px;font-size:13.5px;font-weight:700}
   .drop small{font-size:12px;color:var(--ink-2);font-weight:600}
@@ -2389,6 +2398,16 @@ __defs["./publish.js"] = function (module, exports, require) {
 const admit = require("./admit.js");
 const { storable } = require("./resolve.js");
 
+// Every attempt is identified, so a log, a test and a retry can tell two
+// attempts at the same plan apart. Deterministic rather than random: the
+// counter is what distinguishes attempts, and the fingerprint says which bank
+// each was made against, so a retry after the bank moved is visible as such.
+let ATTEMPT = 0;
+function operationId(plan) {
+  ATTEMPT += 1;
+  return "op-" + ATTEMPT + "-" + (plan && plan.checkedAgainst ? plan.checkedAgainst.registry : "noplan");
+}
+
 const OUTCOME = {
   written: "written",                       // every publishable package was added
   partial: "partially written",             // some added, some failed, none half added
@@ -2433,11 +2452,12 @@ function apply(plan, dest, opts) {
   if (!plan || plan.schema !== "marginal.publish-plan")
     throw new Error("publish takes a plan from admit.plan(). There is no other way to reach a write");
   const reg = registryOf(dest);
+  const operation = o.operation || operationId(plan);
 
   // The destination is re-checked here, against the bank as it is NOW. The plan
   // is evidence the check ran at Review; it is never permission to skip it.
   if (plan.checkedAgainst.registry !== admit.fingerprint(reg))
-    return result(OUTCOME.destinationChanged, [], [], plan, {
+    return result(OUTCOME.destinationChanged, [], [], plan, { operation: operation,
       staleMessage: STALE,
       reviewedAgainst: plan.checkedAgainst.questions,
       destinationNow: reg.ids.length,
@@ -2448,13 +2468,13 @@ function apply(plan, dest, opts) {
     });
 
   if (!plan.questions.length && !plan.shared.additions.length)
-    return result(OUTCOME.nothing, [], [], plan, {});
+    return result(OUTCOME.nothing, [], [], plan, { operation: operation });
 
   const added = [], failed = [];
   plan.questions.forEach(q => {
     const provides = plan.shared.additions.filter(a => a.suppliedBy === q.id);
     // ---- staging. Everything that can fail is above the promotion line. -----
-    let staged = null, why = null;
+    let staged = null, why = null, stored = null;
     try {
       // One check, not two. An id present in the destination is taken whether it
       // arrived with the bank or was added a moment ago by this same batch, and
@@ -2481,6 +2501,19 @@ function apply(plan, dest, opts) {
         subjectLabel: (plan.labels || {})[q.subject] || q.subject, document: doc },
         shared: provides.map(a => ({ kind: a.kind, id: a.id })) };
       if (o.failWriting === q.id) throw new Error(o.failMessage || "the destination refused the write");
+      // PERSISTENCE, and the last thing that may fail. One call, one package,
+      // and the store's own layout makes it one key, so there is no arrangement
+      // in which half of it lands. It sits inside this try on purpose: a store
+      // that refuses leaves the package exactly as absent as a failed check
+      // does, and the in memory promotion below has not run.
+      //
+      // A destination without a write function is a rehearsal, and says so by
+      // not having one. That is the only difference between the model the
+      // mockups were drawn from and a publication.
+      if (dest.write) stored = dest.write({
+        schema: "marginal.published-package", version: 1,
+        question: staged.question, shared: staged.shared,
+      });
     } catch (e) { why = e.message; }
 
     if (why) {
@@ -2500,19 +2533,25 @@ function apply(plan, dest, opts) {
     dest.log.push({ op: "add", kind: "question", id: staged.question.id });
     staged.shared.forEach(r => dest.log.push({ op: "add", kind: r.kind, id: r.id }));
     added.push({ id: staged.question.id, source: q.source, subject: q.subject,
-      shared: staged.shared.map(r => r.kind + "/" + r.id) });
+      shared: staged.shared.map(r => r.kind + "/" + r.id),
+      // Where it went, and whether it survived. null means a rehearsal.
+      persisted: stored ? stored.key : null,
+      indexed: stored ? stored.indexed : null });
   });
 
   // Four outcomes, and "some failed" is not the same sentence as "all failed".
   const outcome = added.length && failed.length ? OUTCOME.partial
     : added.length ? OUTCOME.written : OUTCOME.failed;
-  return result(outcome, added, failed, plan, {});
+  return result(outcome, added, failed, plan, { operation: operation });
 }
 
 function result(outcome, added, failed, plan, extra) {
   return Object.assign({
     schema: "marginal.publish-result", version: 1,
     outcome: outcome,
+    // Filled by apply(). Named here so a result without one is obviously wrong
+    // rather than quietly missing.
+    operation: null,
     // Stated, not implied. Requirement 5 of the brief: the screen has to say
     // exactly which unit is atomic, and this is where that sentence comes from.
     atomicUnit: "package",
@@ -2541,7 +2580,10 @@ function result(outcome, added, failed, plan, extra) {
   }, extra || {});
 }
 
-module.exports = { apply, destination, registryOf, OUTCOME, STALE };
+module.exports = { apply, destination, registryOf, OUTCOME, STALE,
+  // Test only: attempts are numbered from process start, so a suite that
+  // asserts on the number needs to be able to say where it started.
+  _attempts: () => ATTEMPT };
 
 if (require.main === module) {
   const fs = require("fs");
@@ -2664,6 +2706,155 @@ function groupErrors(findings) {
 module.exports = { GROUPS, groupOf, groupErrors };
 
 };
+__defs["./store.js"] = function (module, exports, require) {
+// THE PERSISTENCE ADAPTER. One write boundary, underneath publication.
+//
+// publish.js decides WHAT is written. This decides HOW it is kept. Nothing else
+// in Marginal may write an imported question, and in particular the importer UI
+// may not: a second write path is how the thing a teacher approved and the thing
+// that lands stop being the same thing.
+//
+// THE STORAGE LAYOUT IS THE ATOMICITY RULE, WRITTEN DOWN.
+// The atomic unit is the package together with the records it provides, so a
+// published package is ONE key holding one object. There is no arrangement of
+// several keys that leaves half a package behind, because there are never
+// several keys to get half way through. A backend that cannot write one key
+// atomically is not a backend this can use.
+//
+//   marginal.import.pkg.<question id>   one published package, whole
+//   marginal.import.index               the ids, so a reader need not scan keys
+//
+// The index is a convenience and never the authority. It is rebuilt from the
+// package keys on load, so an index that disagrees with what is stored loses:
+// a question is present because its package is present.
+//
+// The backend is injected. In a browser it is localStorage; in a test it is an
+// object; nothing here knows which, so the rules are tested without a browser
+// and are the same rules in one.
+const PREFIX = "marginal.import.pkg.";
+const INDEX = "marginal.import.index";
+
+// A backend is four functions over strings. Anything meeting this can be one.
+function memoryBackend(seed) {
+  const m = Object.assign({}, seed || {});
+  return {
+    name: "memory",
+    get: k => (k in m ? m[k] : null),
+    set: (k, v) => { m[k] = String(v); },
+    remove: k => { delete m[k]; },
+    keys: () => Object.keys(m),
+  };
+}
+
+function localStorageBackend(ls) {
+  return {
+    name: "localStorage",
+    get: k => ls.getItem(k),
+    set: (k, v) => ls.setItem(k, String(v)),
+    remove: k => ls.removeItem(k),
+    keys: () => { const out = []; for (let i = 0; i < ls.length; i++) out.push(ls.key(i)); return out; },
+  };
+}
+
+// A backend that fails on a named package, so the failure path can be exercised
+// against the real adapter rather than against a mock of it. It fails on SET,
+// which is the only place a write happens, and after every check has passed.
+function failingBackend(inner, failOnKey) {
+  return {
+    name: inner.name + " (failing on " + failOnKey + ")",
+    get: inner.get, remove: inner.remove, keys: inner.keys,
+    set: (k, v) => {
+      if (k === PREFIX + failOnKey) throw new Error("the store refused the write");
+      return inner.set(k, v);
+    },
+  };
+}
+
+function createStore(backend) {
+  const B = backend;
+
+  // Everything that has been published here, read back from the package keys.
+  // The index is not consulted, because it is a cache of this.
+  function load() {
+    const questions = {}, shared = {}, broken = [];
+    B.keys().filter(k => k.indexOf(PREFIX) === 0).forEach(k => {
+      let unit = null;
+      try { unit = JSON.parse(B.get(k)); } catch (e) { broken.push({ key: k, why: e.message }); return; }
+      if (!unit || !unit.question || !unit.question.id) { broken.push({ key: k, why: "no question in the stored unit" }); return; }
+      questions[unit.question.id] = unit.question;
+      (unit.shared || []).forEach(r => {
+        shared[r.kind] = shared[r.kind] || {};
+        shared[r.kind][r.id] = { id: r.id, suppliedBy: unit.question.id };
+      });
+    });
+    // A key that will not parse is reported and never silently skipped: a
+    // question that has quietly stopped existing is worse than one that has
+    // loudly failed to.
+    return { questions: questions, shared: shared, broken: broken };
+  }
+
+  // The one write. A whole package in a single set, so it lands or it does not.
+  // It refuses an id that is already stored rather than replacing it, which is
+  // the same rule admission applies, enforced again at the last possible moment.
+  function writeUnit(unit) {
+    if (!unit || !unit.question || !unit.question.id) throw new Error("a unit must carry a question");
+    const key = PREFIX + unit.question.id;
+    if (B.get(key) != null)
+      throw new Error("QUESTION_ID_ALREADY_EXISTS: " + unit.question.id + " is already stored");
+    // Serialise first. A unit that cannot be serialised must fail BEFORE the
+    // write rather than during it.
+    const text = JSON.stringify(unit);
+    if (JSON.parse(text).question.id !== unit.question.id)
+      throw new Error("the stored unit would not read back as itself");
+    B.set(key, text);
+    // The package key is the atomic act and it has happened. The index is a
+    // convenience that load() never consults, so a failure to update it must not
+    // turn a write that SUCCEEDED into one reported as failed: that would leave
+    // a stored question the caller believes is absent, which is the one state
+    // this whole design exists to prevent.
+    let indexed = true;
+    try { reindex(); } catch (e) { indexed = false; }
+    return { key: key, indexed: indexed };
+  }
+
+  function reindex() {
+    const ids = B.keys().filter(k => k.indexOf(PREFIX) === 0).map(k => k.slice(PREFIX.length)).sort();
+    B.set(INDEX, JSON.stringify({ schema: "marginal.import.index", version: 1, ids: ids }));
+  }
+
+  // The destination publish.js writes into: the questions that shipped, plus the
+  // ones published here, plus the one function that persists a package.
+  function destination(bundledRegistry) {
+    const persisted = load();
+    const questions = {};
+    Object.keys(bundledRegistry.questions).forEach(id => {
+      const q = bundledRegistry.questions[id];
+      questions[id] = { id: id, subject: q.subject, subjectLabel: q.subjectLabel, document: null };
+    });
+    Object.keys(persisted.questions).forEach(id => { questions[id] = persisted.questions[id]; });
+    return {
+      schema: "marginal.destination", questions: questions, shared: persisted.shared, log: [],
+      broken: persisted.broken,
+      // The persistence hook publish.js calls inside the atomic unit. Present
+      // here and absent on an in memory destination, which is the whole
+      // difference between a rehearsal and a publication.
+      write: writeUnit,
+      backend: B.name,
+    };
+  }
+
+  function clear() {
+    B.keys().filter(k => k.indexOf(PREFIX) === 0 || k === INDEX).forEach(k => B.remove(k));
+  }
+
+  return { load: load, destination: destination, writeUnit: writeUnit, clear: clear,
+           index: () => { try { return JSON.parse(B.get(INDEX)); } catch (e) { return null; } },
+           backend: B };
+}
+
+module.exports = { createStore, memoryBackend, localStorageBackend, failingBackend, PREFIX, INDEX };
+
+};
 
   var validate = __require('./validate.js');
   var resolve = __require('./resolve.js');
@@ -2673,6 +2864,15 @@ module.exports = { GROUPS, groupOf, groupErrors };
   var fields = __require('./fields.js');
   var generate = __require('./generate.js');
   var diagnostics = __require('./diagnostics.js');
+  var store = __require('./store.js');
+  // THE ADAPTER CHOOSES THE BACKEND, not the page. importer.js never names
+  // localStorage, which is what lets the build refuse an importer that has a
+  // write path of its own: there is exactly one, and it is here.
+  var backend = null;
+  try { window.localStorage.setItem('marginal.import.probe', '1');
+        window.localStorage.removeItem('marginal.import.probe');
+        backend = store.localStorageBackend(window.localStorage); }
+  catch (e) { backend = store.memoryBackend(); backend.name = 'memory (storage unavailable: ' + e.name + ')'; }
   window.MarginalContract = {
     validate: validate.validate, libraryReadiness: validate.libraryReadiness,
     resolve: resolve.resolve, storable: resolve.storable, carriedPaths: resolve.carriedPaths,
@@ -2683,6 +2883,9 @@ module.exports = { GROUPS, groupOf, groupErrors };
     contractVersion: generate.CONTRACT_VERSION,
     FIELDS: fields.FIELDS,
     groupErrors: diagnostics.groupErrors, groupOf: diagnostics.groupOf,
+    store: store.createStore(backend),
+    memoryStore: function () { return store.createStore(store.memoryBackend()); },
+    failingStore: function (id) { return store.createStore(store.failingBackend(backend, id)); },
   };
 })();
 
@@ -2724,7 +2927,11 @@ window.MarginalImportData = {"manifest":{"schema":"marginal.library-manifest","v
   // from each other.
   var HEADINGS = ["Choose the packages to import", "Parse packages", "Validate packages",
                   "Resolve references", "Review changes", "Publish"];
-  var state = { step: 0, files: [], reports: null, plan: null, reached: 0 };
+  var state = { step: 0, files: [], reports: null, plan: null, reached: 0,
+    // Publication. `busy` is set the moment Publish is pressed and is never
+    // cleared while an attempt is in flight, so one plan cannot be submitted
+    // twice by pressing twice.
+    busy: false, result: null };
 
   // ---- helpers -------------------------------------------------------------
   var $ = function (sel) { return document.querySelector(sel); };
@@ -2770,7 +2977,15 @@ window.MarginalImportData = {"manifest":{"schema":"marginal.library-manifest","v
     // publishable, so nothing else in this file asks.
     var entries = state.reports.filter(function (r) { return r.pkg; })
       .map(function (r) { return { source: r.source, pkg: r.pkg, report: r.report }; });
-    state.plan = entries.length ? C.plan(entries, D.questions, D.manifest, { registry: D.directives }) : null;
+    // The destination is the bank that SHIPPED plus everything published here.
+    // A question imported last week is as much a collision as one that came with
+    // the app, so admission is run against the live registry rather than the
+    // generated one.
+    // Read fresh on every run of the pipeline, and deliberately NOT kept for
+    // publication: see the note where apply() is called.
+    var dest = C.store.destination(D.questions);
+    var live = C.registryOf(dest);
+    state.plan = entries.length ? C.plan(entries, live, D.manifest, { registry: D.directives }) : null;
   }
   var entryFor = function (source) {
     if (!state.plan) return null;
@@ -2798,7 +3013,7 @@ window.MarginalImportData = {"manifest":{"schema":"marginal.library-manifest","v
   function go(i) { state.step = i; state.reached = Math.max(state.reached, i); render(); }
 
   // ---- screens -------------------------------------------------------------
-  var SCREENS = [choose, parsed, validated, resolved, review, publishStub];
+  var SCREENS = [choose, parsed, validated, resolved, review, publishStep];
 
   function render() {
     rail();
@@ -3166,20 +3381,143 @@ window.MarginalImportData = {"manifest":{"schema":"marginal.library-manifest","v
   }
 
   // 6 ------------------------------------------------------------------------
-  // Drawn, and not reachable. Slice 1 has no store, so a Publish button here
-  // would be a button that lies about what it does.
-  function publishStub(s) {
-    $("#lede").textContent = "This build stops here.";
+  // Publish. It receives the plan Review showed and never rebuilds one from the
+  // files. Everything it can do is one of four outcomes from publish.apply(),
+  // and the screen is a view of whichever came back.
+  function publishStep(s) {
+    $("#lede").textContent = state.result
+      ? "What happened, in full."
+      : "This step performs the additions you reviewed, and nothing else.";
+    if (state.result) return publishResult(s);
+
+    var p = state.plan;
+    var left = el("div");
     var c = el("div", "card");
-    c.innerHTML = "<h2>Publish is not built yet</h2>" +
-      '<p class="sub">This is the read only importer. Everything before this step is real: the ' +
-      'verdicts, the references and the plan all came from the contract modules.</p>' +
-      '<p class="quiet">There is no store underneath this build and no write path in it. A Publish ' +
-      'button here would be a button that does not do what it says, so there is not one.</p>' +
-      '<div class="rule">The plan above is what Publish will be given when it exists. It is not ' +
-      "recomputed at that point and it is not rebuilt from the files.</div>";
-    s.appendChild(c);
+    c.innerHTML = '<p class="count"><span>' + plural(p.questions.length, "question") + "</span> will be added</p>" +
+      '<p class="sub">The same publish set you reviewed, in short. Nothing here is new.</p>' +
+      p.questions.map(function (x) { return row("add", x.id, "New question, from " + x.source); }).join("") +
+      row("add", plural(p.shared.additions.length, "shared library record") + " added") +
+      row("same", plural(p.checkedAgainst.questions, "existing question") + ", untouched") +
+      '<div class="rule"><b>A package writes completely or not at all</b>, together with the shared ' +
+      "records it provides. A batch is not atomic: if you publish several and one fails, the ones " +
+      "already added stay added, and the result names which is which.</div>";
+    left.appendChild(c);
+
+    var right = el("div");
+    var n = el("div", "card");
+    n.innerHTML = "<h2>Ready</h2>" +
+      '<p class="quiet">Checked against the ' + plural(p.checkedAgainst.questions, "question") +
+      " in this bank. The check runs again as the first thing Publish does.</p>";
+    var b = el("button", "btn primary", "Publish " + plural(p.questions.length, "question"));
+    b.id = "publish";
+    b.disabled = !p.questions.length || state.busy;
+    var br = el("div", "btnrow"); br.appendChild(b); n.appendChild(br);
+    right.appendChild(n);
+    var cols = el("div", "cols"); cols.appendChild(left); cols.appendChild(right);
+    s.appendChild(cols);
+
+    b.addEventListener("click", function () {
+      // GUARD FIRST, before anything is read or written. A second press during
+      // an attempt, and a press on a button left over from a previous render,
+      // both stop here. The flag is the guard rather than the disabled
+      // attribute: the attribute is what a person sees, and an element held from
+      // before the screen re-rendered still carries this listener while no
+      // longer being in the document at all.
+      if (state.busy || state.result) return;
+      state.busy = true;
+      // The element is the one this listener was attached to, so this cannot
+      // throw on a screen that has since been replaced.
+      b.disabled = true;
+      b.textContent = "Publishing";
+      // The destination is READ AGAIN, here, at the moment of writing. Reusing
+      // the one Review was computed against would compare the plan with the bank
+      // it was made from, so a question that arrived in between could never be
+      // seen and the whole re-check would be theatre.
+      state.result = C.apply(state.plan, C.store.destination(D.questions), {});
+      state.busy = false;
+      go(5);
+    });
     back(s, 4);
+  }
+
+  function publishResult(s) {
+    var r = state.result;
+    var stale = r.outcome === C.OUTCOME.destinationChanged;
+    var left = el("div");
+    var banner = el("div", "banner " + (stale ? "warn" : r.added.length && !r.failed.length ? "good"
+      : r.added.length ? "warn" : "stop"));
+    banner.innerHTML = "<p class=\"hd\">" + esc(stale || !r.added.length ? "Nothing was written"
+      : plural(r.added.length, "question") + " added") + "</p>" +
+      '<p class="bd">' + esc(stale ? C.STALE
+        : r.failed.length ? "Some packages could not be written. Nothing of them reached the bank."
+        : "No existing question or shared record changed.") + "</p>";
+    left.appendChild(banner);
+
+    var c = el("div", "card");
+    if (stale) {
+      c.innerHTML = "<h2>What happened</h2>" +
+        '<p class="sub">Publish checks the bank again as its first step. It did not match, so it ' +
+        "stopped before writing anything.</p>" +
+        row("same", "You reviewed against " + plural(r.reviewedAgainst, "question"),
+          "The bank now holds " + r.destinationNow + ".") +
+        (r.arrived || []).map(function (id) { return row("add", id + " was added since",
+          "By something else, not by this import."); }).join("") +
+        row("same", "0 questions written, 0 attempted", "Not a failed write. The write never began.");
+    } else {
+      c.innerHTML = "<h2>What was written</h2>" +
+        r.added.map(function (a) {
+          return row("add", a.id, "Stored whole" + (a.shared.length ? ", with " +
+            plural(a.shared.length, "shared record") : "") + ".");
+        }).join("") +
+        r.failed.map(function (f) {
+          return row("stop", f.id, f.reason + ". " + f.note);
+        }).join("") +
+        row("same", plural(r.held.length + r.rejected.length, "package") + " was not in the publish set",
+          "Unchanged, and never attempted.") +
+        '<div class="rule"><b>' + esc(r.atomicUnitSays) + "</b></div>";
+    }
+    left.appendChild(c);
+
+    if (r.readiness && r.readiness.length && !stale) {
+      var rd = el("div", "card");
+      rd.innerHTML = "<h2>Worth doing next</h2>" +
+        '<p class="sub">Reported apart from the writes, because none of it is a change.</p>' +
+        r.readiness.map(function (x) {
+          return '<p class="quiet"><b>' + esc(x.id) + "</b> " + esc(x.headline) +
+            (x.warnings.length ? ". Warning: " + esc(x.warnings.join(", ")) : "") +
+            (x.carried.length ? ". " + plural(x.carried.length, "field") +
+              " stored without being interpreted: " + esc(x.carried.join(", ")) : "") + "</p>";
+        }).join("");
+      left.appendChild(rd);
+    }
+
+    var right = el("div");
+    var n = el("div", "card");
+    n.innerHTML = "<h2>What to do</h2>" +
+      '<p class="quiet">' + esc(stale
+        ? "Go back to Review. It will re-check your ids against the bank as it is now."
+        : r.failed.length ? "Nothing was half done, so there is nothing to clean up."
+        : "The questions above are in the bank and will still be there after a reload.") + "</p>";
+    var brow = el("div", "btnrow");
+    // RETRY IS A FRESH REVIEW, never a replay. It re-runs the pipeline against
+    // the destination as it is now, which is why the button says Review and not
+    // Publish again: pressing it can change what the plan says.
+    var again = el("button", "btn primary", stale || r.failed.length ? "Review changes again" : "Import more");
+    again.id = "again";
+    brow.appendChild(again);
+    n.appendChild(brow);
+    n.innerHTML += '<p class="note">Attempt ' + esc(r.operation) + ". Retrying reviews again from the " +
+      "start rather than sending this plan a second time.</p>";
+    right.appendChild(n);
+    var cols = el("div", "cols"); cols.appendChild(left); cols.appendChild(right);
+    s.appendChild(cols);
+    $("#again").addEventListener("click", function () {
+      // A fresh admission against the live destination. The old plan and the old
+      // result are dropped rather than reused.
+      state.result = null;
+      runPipeline();
+      go(4);
+    });
   }
 
   function back(s, to) {

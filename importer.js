@@ -28,7 +28,11 @@
   // from each other.
   var HEADINGS = ["Choose the packages to import", "Parse packages", "Validate packages",
                   "Resolve references", "Review changes", "Publish"];
-  var state = { step: 0, files: [], reports: null, plan: null, reached: 0 };
+  var state = { step: 0, files: [], reports: null, plan: null, reached: 0,
+    // Publication. `busy` is set the moment Publish is pressed and is never
+    // cleared while an attempt is in flight, so one plan cannot be submitted
+    // twice by pressing twice.
+    busy: false, result: null };
 
   // ---- helpers -------------------------------------------------------------
   var $ = function (sel) { return document.querySelector(sel); };
@@ -74,7 +78,15 @@
     // publishable, so nothing else in this file asks.
     var entries = state.reports.filter(function (r) { return r.pkg; })
       .map(function (r) { return { source: r.source, pkg: r.pkg, report: r.report }; });
-    state.plan = entries.length ? C.plan(entries, D.questions, D.manifest, { registry: D.directives }) : null;
+    // The destination is the bank that SHIPPED plus everything published here.
+    // A question imported last week is as much a collision as one that came with
+    // the app, so admission is run against the live registry rather than the
+    // generated one.
+    // Read fresh on every run of the pipeline, and deliberately NOT kept for
+    // publication: see the note where apply() is called.
+    var dest = C.store.destination(D.questions);
+    var live = C.registryOf(dest);
+    state.plan = entries.length ? C.plan(entries, live, D.manifest, { registry: D.directives }) : null;
   }
   var entryFor = function (source) {
     if (!state.plan) return null;
@@ -102,7 +114,7 @@
   function go(i) { state.step = i; state.reached = Math.max(state.reached, i); render(); }
 
   // ---- screens -------------------------------------------------------------
-  var SCREENS = [choose, parsed, validated, resolved, review, publishStub];
+  var SCREENS = [choose, parsed, validated, resolved, review, publishStep];
 
   function render() {
     rail();
@@ -470,20 +482,143 @@
   }
 
   // 6 ------------------------------------------------------------------------
-  // Drawn, and not reachable. Slice 1 has no store, so a Publish button here
-  // would be a button that lies about what it does.
-  function publishStub(s) {
-    $("#lede").textContent = "This build stops here.";
+  // Publish. It receives the plan Review showed and never rebuilds one from the
+  // files. Everything it can do is one of four outcomes from publish.apply(),
+  // and the screen is a view of whichever came back.
+  function publishStep(s) {
+    $("#lede").textContent = state.result
+      ? "What happened, in full."
+      : "This step performs the additions you reviewed, and nothing else.";
+    if (state.result) return publishResult(s);
+
+    var p = state.plan;
+    var left = el("div");
     var c = el("div", "card");
-    c.innerHTML = "<h2>Publish is not built yet</h2>" +
-      '<p class="sub">This is the read only importer. Everything before this step is real: the ' +
-      'verdicts, the references and the plan all came from the contract modules.</p>' +
-      '<p class="quiet">There is no store underneath this build and no write path in it. A Publish ' +
-      'button here would be a button that does not do what it says, so there is not one.</p>' +
-      '<div class="rule">The plan above is what Publish will be given when it exists. It is not ' +
-      "recomputed at that point and it is not rebuilt from the files.</div>";
-    s.appendChild(c);
+    c.innerHTML = '<p class="count"><span>' + plural(p.questions.length, "question") + "</span> will be added</p>" +
+      '<p class="sub">The same publish set you reviewed, in short. Nothing here is new.</p>' +
+      p.questions.map(function (x) { return row("add", x.id, "New question, from " + x.source); }).join("") +
+      row("add", plural(p.shared.additions.length, "shared library record") + " added") +
+      row("same", plural(p.checkedAgainst.questions, "existing question") + ", untouched") +
+      '<div class="rule"><b>A package writes completely or not at all</b>, together with the shared ' +
+      "records it provides. A batch is not atomic: if you publish several and one fails, the ones " +
+      "already added stay added, and the result names which is which.</div>";
+    left.appendChild(c);
+
+    var right = el("div");
+    var n = el("div", "card");
+    n.innerHTML = "<h2>Ready</h2>" +
+      '<p class="quiet">Checked against the ' + plural(p.checkedAgainst.questions, "question") +
+      " in this bank. The check runs again as the first thing Publish does.</p>";
+    var b = el("button", "btn primary", "Publish " + plural(p.questions.length, "question"));
+    b.id = "publish";
+    b.disabled = !p.questions.length || state.busy;
+    var br = el("div", "btnrow"); br.appendChild(b); n.appendChild(br);
+    right.appendChild(n);
+    var cols = el("div", "cols"); cols.appendChild(left); cols.appendChild(right);
+    s.appendChild(cols);
+
+    b.addEventListener("click", function () {
+      // GUARD FIRST, before anything is read or written. A second press during
+      // an attempt, and a press on a button left over from a previous render,
+      // both stop here. The flag is the guard rather than the disabled
+      // attribute: the attribute is what a person sees, and an element held from
+      // before the screen re-rendered still carries this listener while no
+      // longer being in the document at all.
+      if (state.busy || state.result) return;
+      state.busy = true;
+      // The element is the one this listener was attached to, so this cannot
+      // throw on a screen that has since been replaced.
+      b.disabled = true;
+      b.textContent = "Publishing";
+      // The destination is READ AGAIN, here, at the moment of writing. Reusing
+      // the one Review was computed against would compare the plan with the bank
+      // it was made from, so a question that arrived in between could never be
+      // seen and the whole re-check would be theatre.
+      state.result = C.apply(state.plan, C.store.destination(D.questions), {});
+      state.busy = false;
+      go(5);
+    });
     back(s, 4);
+  }
+
+  function publishResult(s) {
+    var r = state.result;
+    var stale = r.outcome === C.OUTCOME.destinationChanged;
+    var left = el("div");
+    var banner = el("div", "banner " + (stale ? "warn" : r.added.length && !r.failed.length ? "good"
+      : r.added.length ? "warn" : "stop"));
+    banner.innerHTML = "<p class=\"hd\">" + esc(stale || !r.added.length ? "Nothing was written"
+      : plural(r.added.length, "question") + " added") + "</p>" +
+      '<p class="bd">' + esc(stale ? C.STALE
+        : r.failed.length ? "Some packages could not be written. Nothing of them reached the bank."
+        : "No existing question or shared record changed.") + "</p>";
+    left.appendChild(banner);
+
+    var c = el("div", "card");
+    if (stale) {
+      c.innerHTML = "<h2>What happened</h2>" +
+        '<p class="sub">Publish checks the bank again as its first step. It did not match, so it ' +
+        "stopped before writing anything.</p>" +
+        row("same", "You reviewed against " + plural(r.reviewedAgainst, "question"),
+          "The bank now holds " + r.destinationNow + ".") +
+        (r.arrived || []).map(function (id) { return row("add", id + " was added since",
+          "By something else, not by this import."); }).join("") +
+        row("same", "0 questions written, 0 attempted", "Not a failed write. The write never began.");
+    } else {
+      c.innerHTML = "<h2>What was written</h2>" +
+        r.added.map(function (a) {
+          return row("add", a.id, "Stored whole" + (a.shared.length ? ", with " +
+            plural(a.shared.length, "shared record") : "") + ".");
+        }).join("") +
+        r.failed.map(function (f) {
+          return row("stop", f.id, f.reason + ". " + f.note);
+        }).join("") +
+        row("same", plural(r.held.length + r.rejected.length, "package") + " was not in the publish set",
+          "Unchanged, and never attempted.") +
+        '<div class="rule"><b>' + esc(r.atomicUnitSays) + "</b></div>";
+    }
+    left.appendChild(c);
+
+    if (r.readiness && r.readiness.length && !stale) {
+      var rd = el("div", "card");
+      rd.innerHTML = "<h2>Worth doing next</h2>" +
+        '<p class="sub">Reported apart from the writes, because none of it is a change.</p>' +
+        r.readiness.map(function (x) {
+          return '<p class="quiet"><b>' + esc(x.id) + "</b> " + esc(x.headline) +
+            (x.warnings.length ? ". Warning: " + esc(x.warnings.join(", ")) : "") +
+            (x.carried.length ? ". " + plural(x.carried.length, "field") +
+              " stored without being interpreted: " + esc(x.carried.join(", ")) : "") + "</p>";
+        }).join("");
+      left.appendChild(rd);
+    }
+
+    var right = el("div");
+    var n = el("div", "card");
+    n.innerHTML = "<h2>What to do</h2>" +
+      '<p class="quiet">' + esc(stale
+        ? "Go back to Review. It will re-check your ids against the bank as it is now."
+        : r.failed.length ? "Nothing was half done, so there is nothing to clean up."
+        : "The questions above are in the bank and will still be there after a reload.") + "</p>";
+    var brow = el("div", "btnrow");
+    // RETRY IS A FRESH REVIEW, never a replay. It re-runs the pipeline against
+    // the destination as it is now, which is why the button says Review and not
+    // Publish again: pressing it can change what the plan says.
+    var again = el("button", "btn primary", stale || r.failed.length ? "Review changes again" : "Import more");
+    again.id = "again";
+    brow.appendChild(again);
+    n.appendChild(brow);
+    n.innerHTML += '<p class="note">Attempt ' + esc(r.operation) + ". Retrying reviews again from the " +
+      "start rather than sending this plan a second time.</p>";
+    right.appendChild(n);
+    var cols = el("div", "cols"); cols.appendChild(left); cols.appendChild(right);
+    s.appendChild(cols);
+    $("#again").addEventListener("click", function () {
+      // A fresh admission against the live destination. The old plan and the old
+      // result are dropped rather than reused.
+      state.result = null;
+      runPipeline();
+      go(4);
+    });
   }
 
   function back(s, to) {

@@ -28,7 +28,7 @@ const path = require("path");
 // Order matters only in that every module must be defined before the entry
 // point runs. They are required lazily by the shim, so this is just the set.
 const MODULES = ["fields.js", "capabilities.js", "directives.js", "generate.js",
-                 "resolve.js", "validate.js", "admit.js", "publish.js", "diagnostics.js"];
+                 "resolve.js", "validate.js", "admit.js", "publish.js", "diagnostics.js", "store.js"];
 
 function bundle(root) {
   const dir = path.join(root, "tools", "contract");
@@ -83,6 +83,15 @@ function bundle(root) {
     "  var fields = __require('./fields.js');",
     "  var generate = __require('./generate.js');",
     "  var diagnostics = __require('./diagnostics.js');",
+    "  var store = __require('./store.js');",
+    "  // THE ADAPTER CHOOSES THE BACKEND, not the page. importer.js never names",
+    "  // localStorage, which is what lets the build refuse an importer that has a",
+    "  // write path of its own: there is exactly one, and it is here.",
+    "  var backend = null;",
+    "  try { window.localStorage.setItem('marginal.import.probe', '1');",
+    "        window.localStorage.removeItem('marginal.import.probe');",
+    "        backend = store.localStorageBackend(window.localStorage); }",
+    "  catch (e) { backend = store.memoryBackend(); backend.name = 'memory (storage unavailable: ' + e.name + ')'; }",
     "  window.MarginalContract = {",
     "    validate: validate.validate, libraryReadiness: validate.libraryReadiness,",
     "    resolve: resolve.resolve, storable: resolve.storable, carriedPaths: resolve.carriedPaths,",
@@ -93,6 +102,9 @@ function bundle(root) {
     "    contractVersion: generate.CONTRACT_VERSION,",
     "    FIELDS: fields.FIELDS,",
     "    groupErrors: diagnostics.groupErrors, groupOf: diagnostics.groupOf,",
+    "    store: store.createStore(backend),",
+    "    memoryStore: function () { return store.createStore(store.memoryBackend()); },",
+    "    failingStore: function (id) { return store.createStore(store.failingBackend(backend, id)); },",
     "  };",
     "})();",
     "",

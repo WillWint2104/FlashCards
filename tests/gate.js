@@ -31,7 +31,7 @@ const TIERS = {
   // a change here can break. Raised deliberately, with the headroom stated, which
   // is the opposite of what happened to checkpoint: that one was left at 174/180
   // until variance would have started failing it.
-  fast: { budget: 40, suites: ["t1", "t17", "t18", "t19", "t20", "t21", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48"] },
+  fast: { budget: 40, suites: ["t1", "t17", "t18", "t19", "t20", "t21", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49"] },
   // Adds the interaction surfaces that the shell rewrite touched, and the setup
   // and marking paths. This is the gate to pass before pushing, and its whole
   // value is that it is cheap enough to run out of habit.
@@ -45,7 +45,7 @@ const TIERS = {
   // change break the thing I am working on.
   checkpoint: {
     budget: 60,
-    suites: ["t1", "t2", "t17", "t18", "t19", "t20", "t21", "ui13", "ui30", "ui35", "ui37", "ui38", "ui39", "ui40", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48"],
+    suites: ["t1", "t2", "t17", "t18", "t19", "t20", "t21", "ui13", "ui30", "ui35", "ui37", "ui38", "ui39", "ui40", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49"],
   },
   // The seven simulated students, run one after another through a single page.
   // The cross-journey assertions compare the students to each other, so there is

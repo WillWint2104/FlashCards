@@ -357,18 +357,25 @@ const NOT_JSON = path.join(ROOT, "tests", "out", "not-a-package.json");
     await page.evaluate(() => window.__importer.go(5));
     await page.waitForFunction(() => window.__importer.state().step === 5);
     const body = await page.textContent("#screen");
-    ok(/Publish is not built yet/.test(body), "the last step says so plainly");
+    ok(/will be added/.test(body), "the last step is the publish step");
     const buttons = await page.$$eval("#screen button", bs => bs.map(b => b.textContent.trim()));
-    ok(!buttons.some(b => /^Publish/.test(b)), "and offers no Publish button: " + JSON.stringify(buttons));
-    // The page holds nothing anywhere it could survive a reload.
+    ok(buttons.some(b => /^Publish 1 question$/.test(b)),
+      "which offers a Publish button naming the real count: " + JSON.stringify(buttons));
+    // Reaching the screen must not have written anything. Publication happens
+    // when the button is pressed and at no other moment.
+    ok(await page.evaluate(() => Object.keys(window.MarginalContract.store.load().questions).length) === 0,
+      "and arriving at it has stored nothing");
+    // Nothing is kept anywhere except through the adapter. A cookie or a session
+    // entry would be a second place state lives, and neither publication nor
+    // review has any business writing one.
     const stored = await page.evaluate(() => {
-      let ls = -1, ss = -1;
-      try { ls = window.localStorage.length; } catch (e) { ls = -2; }
+      let ss = -1;
       try { ss = window.sessionStorage.length; } catch (e) { ss = -2; }
-      return { ls, ss, cookies: document.cookie };
+      return { ss, cookies: document.cookie, ls: window.localStorage.length };
     });
-    ok(stored.ls <= 0 && stored.ss <= 0 && !stored.cookies,
-      "nothing is in local storage, session storage or a cookie: " + JSON.stringify(stored));
+    ok(stored.ss <= 0 && !stored.cookies,
+      "no session storage and no cookie: " + JSON.stringify(stored));
+    ok(stored.ls === 0, "and nothing in local storage either, because nothing was published: " + stored.ls);
     ok(!requests.length, "and the page made no network request: " + JSON.stringify(requests));
     // A reload starts empty, which is the honest behaviour for a build with no
     // store: it must not appear to have remembered anything.
