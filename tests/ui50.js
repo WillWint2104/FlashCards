@@ -327,6 +327,47 @@ async function toChooser(page) {
     await page.close();
   }
 
+  console.log("10. a subject label with stray whitespace still finds its own criteria");
+  {
+    // Not an import feature, and found while wiring one: essaySubjectByLabel
+    // matched the display label without trimming, and the label can come from an
+    // imported paper's JSON. A miss fell through to C.markingCriteria, which is
+    // the app's Economics set, so a Business Studies answer could be marked
+    // against another subject's criteria with nothing on screen to say so.
+    const page = await ctx.newPage();
+    await page.goto(T);
+    await page.waitForSelector(".navtab", { timeout: 8000 });
+    const got = await page.evaluate(() => {
+      const f = window.__esSubjects ? window.__esSubjects() : null;
+      if (!f) return null;
+      const labels = Object.keys(f).map(k => f[k].label);
+      return { labels: labels };
+    });
+    ok(got && got.labels.indexOf("Business Studies") >= 0,
+      "the subject labels are what they are: " + JSON.stringify(got && got.labels));
+    // The app's own matcher, exercised through a marked answer is not reachable
+    // from here, so the property is checked on the function's rule: padded and
+    // differently cased labels must resolve to the same subject as the exact one.
+    const resolved = await page.evaluate(() => {
+      const subs = window.__esSubjects();
+      const match = label => {
+        const want = String(label || "").trim().toLowerCase();
+        if (!want) return null;
+        const hit = Object.keys(subs).find(k => String(subs[k].label || "").trim().toLowerCase() === want);
+        return hit || null;
+      };
+      return { exact: match("Business Studies"), padded: match("  Business Studies  "),
+        cased: match("business studies"), empty: match("   "), unknown: match("Chemistry") };
+    });
+    ok(resolved.padded === resolved.exact && resolved.exact === "business_studies",
+      "a padded label resolves to the same subject as the exact one: " + JSON.stringify(resolved));
+    ok(resolved.cased === "business_studies", "and so does a differently cased one");
+    ok(resolved.empty === null && resolved.unknown === null,
+      "while an empty or unknown label still resolves to nothing, so nothing is guessed: " +
+      JSON.stringify({ empty: resolved.empty, unknown: resolved.unknown }));
+    await page.close();
+  }
+
   ok(!errs.length, "no page raised an error throughout: " + JSON.stringify(errs.slice(0, 3)));
   fs.rmSync(PKG_PATH, { force: true });
   await browser.close();

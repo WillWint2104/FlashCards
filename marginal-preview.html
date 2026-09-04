@@ -8945,9 +8945,16 @@ module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf };
   // The subject namespace whose label matches this one, or null. Subject content is
   // the source of truth for criteria and band expectations, so adding a subject
   // stays content-only.
+  // Trimmed on both sides. The label reaching here can come from an imported
+  // paper's JSON, which is authored text, and " Business Studies " matching
+  // nothing meant markingContext fell through to C.markingCriteria: a Business
+  // Studies answer marked against the app's own Economics criteria, with nothing
+  // on screen to say so. Trimming closes that without changing what matches.
   function essaySubjectByLabel(label) {
     const subs = esAllSubjects().subjects;
-    const hit = Object.keys(subs).find(k => String(subs[k].label || "").toLowerCase() === String(label || "").toLowerCase());
+    const want = String(label || "").trim().toLowerCase();
+    if (!want) return null;
+    const hit = Object.keys(subs).find(k => String(subs[k].label || "").trim().toLowerCase() === want);
     return hit ? subs[hit] : null;
   }
   // What THIS question requires: the concepts to address, the relationships to
