@@ -1,0 +1,283 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Importer mockup 5 · review changes</title>
+<!--
+  IMPORTER MOCKUP 5 OF 8. Workflow stage 5 of 6. Nothing is implemented.
+
+  ONE question: if I press Publish, exactly what changes?
+
+  THE PREVIEW IS UNCOMFORTABLE, AND IT IS THE REAL ONE. The walkthrough set is
+  example-mkt-01.json and example-ah-religion.json, both generated from the
+  question bank they would be imported into. Their question ids are mkt-01 and
+  ah-religion, and both are already in that bank. Decision 7 of the contract:
+  a collision is an import-blocking error in v1 and never an implicit
+  overwrite. So the truthful answer to "what will change" is NOTHING, and the
+  screen says so rather than being redesigned around a friendlier fixture.
+
+  This is the best possible first version of this screen. Its whole job is to
+  prove that publishing adds exactly what was previewed and never silently
+  replaces anything, and the real data happens to exercise that guarantee on
+  every row instead of on a hypothetical.
+
+  A GAP THIS SCREEN DEPENDS ON, recorded because it is not built. The validator
+  has NO question registry and performs NO id collision check: `validate(pkg,
+  man, opts)` takes a library manifest and a directive registry, and neither
+  contains the question bank. Decision 7 requires the check; this screen cannot
+  be correct until it exists. Drawn as intended behaviour, flagged as absent.
+
+  EVERY NUMBER FROM THE REAL FILES: 19 questions in the bank, both package ids
+  among them; both packages declare `provides: {}`, so zero shared records
+  would be added; mkt-01 references 23 existing records and ah-religion none;
+  invalid-demo was rejected at Validate with 32 errors and 1 warning, and its own
+  2 blocked findings never reach this screen because a rejected package stops at
+  Validate; no package that reaches this screen is blocked.
+-->
+<style>
+  :root{
+    --bg:#EEF3F5; --card:#FFFFFF;
+    --ink:#3C4A4A; --ink-2:#7A8A88; --ink-3:#AEBAB8;
+    --green:#1CC47D; --green-dk:#14A368; --green-soft:#E4F9EF;
+    --line:#E7EDED; --amber:#B3730C; --amber-soft:#FDF3E3;
+    --red:#B3403C; --red-soft:#FBEDEC;
+    --body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--body);background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
+  header{display:flex;align-items:center;gap:12px;padding:16px 32px;background:var(--card);border-bottom:1px solid var(--line)}
+  .mk{width:28px;height:28px;border-radius:9px;background:var(--green);flex:none;box-shadow:0 3px 0 var(--green-dk)}
+  .wordmark{font-weight:800;font-size:17px;letter-spacing:-.2px}
+  .where{margin-left:auto;font-size:13px;color:var(--ink-2);font-weight:700}
+  main{max-width:1080px;margin:0 auto;padding:26px 32px 56px}
+  h1{font-size:23px;font-weight:800;letter-spacing:-.3px;margin:0 0 4px}
+  .lede{font-size:14px;color:var(--ink-2);font-weight:600;margin:0 0 22px;max-width:72ch}
+
+  .rail{display:flex;gap:8px;margin:0 0 22px;flex-wrap:wrap}
+  .step{display:flex;align-items:center;gap:9px;background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:7px 15px 7px 8px;font-size:12.5px;font-weight:700;color:var(--ink-3)}
+  .step b{width:22px;height:22px;border-radius:50%;background:var(--bg);color:var(--ink-3);display:grid;place-items:center;font-size:11.5px;font-weight:800}
+  .step.on{border-color:var(--green);color:var(--ink)}
+  .step.on b{background:var(--green);color:#fff}
+  .step.done{color:var(--ink-2)}
+  .step.done b{background:var(--green-soft);color:var(--green-dk)}
+  .step.write{border-style:dashed}
+
+  .cols{display:grid;grid-template-columns:1.45fr 1fr;gap:18px;align-items:start}
+  .card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:18px 20px}
+  .card h2{font-size:14px;font-weight:800;margin:0 0 3px}
+  .card .sub{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:0 0 14px}
+  .count{font-size:19px;font-weight:800;letter-spacing:-.2px;margin:0 0 2px}
+  .count span{color:var(--green-dk)}
+  .count em{font-style:normal;color:var(--red)}
+
+  .grp{border-top:1px solid var(--line);padding:14px 0}
+  .grp:first-of-type{border-top:0}
+  .grph{display:flex;align-items:baseline;gap:10px;margin-bottom:3px}
+  .grph .n{font-size:13px;font-weight:800;flex:1}
+  .grpw{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:0 0 8px}
+
+  .w{display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--line);font-size:12.5px}
+  .w:first-of-type{border-top:0}
+  .w .k{width:18px;flex:none;font-weight:800;text-align:center}
+  .w .k.add{color:var(--green-dk)} .w .k.same{color:var(--ink-3)} .w .k.stop{color:var(--red)}
+  .w .t{flex:1;font-weight:700}
+  .w .t small{display:block;font-weight:600;color:var(--ink-2);font-size:11.5px}
+  .w .t code{font-family:var(--mono);font-size:11px;color:var(--ink-2)}
+
+  .tag{font-size:11.5px;font-weight:800;border-radius:99px;padding:4px 11px;white-space:nowrap}
+  .good{background:var(--green-soft);color:var(--green-dk)}
+  .warnt{background:var(--amber-soft);color:var(--amber)}
+  .badt{background:var(--red-soft);color:var(--red)}
+  .neutral{background:var(--bg);color:var(--ink-2)}
+  .blockt{background:var(--bg);color:var(--ink-2);border:1.5px dashed var(--ink-3);padding:3px 10px}
+
+  .btnrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px}
+  .btn{font:inherit;font-size:13px;font-weight:800;border-radius:12px;padding:10px 16px;border:1.5px solid var(--line);background:#fff;color:var(--ink);cursor:default}
+  .btn.primary{background:var(--green);border-color:var(--green);color:#fff;box-shadow:0 2px 0 var(--green-dk)}
+  .btn.off{background:var(--bg);border-color:var(--line);color:var(--ink-3);box-shadow:none}
+  .btn.inert{background:var(--bg);border-color:var(--line);color:var(--ink-3);box-shadow:none}
+  .note{font-size:12px;color:var(--ink-2);font-weight:600;margin:10px 0 0}
+  .quiet{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:0 0 11px}
+  .quiet b{color:var(--ink)}
+  .rule{font-size:12.5px;color:var(--ink-2);font-weight:600;background:var(--bg);border-radius:12px;padding:11px 14px;margin:14px 0 0}
+  .rule b{color:var(--ink)}
+  .invariant{background:var(--green-soft);border:1.5px solid #CFF0E0;border-radius:14px;padding:13px 16px;margin-top:18px;font-size:13px;font-weight:700;color:var(--green-dk)}
+  details{font-size:12.5px}
+  summary{font-weight:800;font-size:12.5px;cursor:default;color:var(--ink)}
+  details p{color:var(--ink-2);font-weight:600;margin:9px 0 0}
+
+  .demo{background:#F4F7F8;border:1.5px solid var(--line);border-radius:18px;padding:18px 20px;margin-top:22px}
+  .demo .lbl{font-size:12px;font-weight:800;color:var(--ink-3);margin-bottom:4px}
+  .demo h2{font-size:14px;font-weight:800;margin:0 0 3px}
+  .demo .sub{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:0 0 14px}
+  .demo .card{background:var(--card);opacity:.94}
+</style>
+
+<header>
+  <div class="mk"></div>
+  <div class="wordmark">Marginal</div>
+  <div class="where">Teacher tools · import questions · 5 of 6</div>
+</header>
+
+<main>
+  <h1>Review changes</h1>
+  <p class="lede">Everything Publish would write, listed one by one. Nothing has been written, and
+    Publish will do exactly what is on this page and nothing else.</p>
+
+  <div class="rail">
+    <div class="step done"><b>✓</b> Choose files</div>
+    <div class="step done"><b>✓</b> Parse</div>
+    <div class="step done"><b>✓</b> Validate</div>
+    <div class="step done"><b>✓</b> Resolve references</div>
+    <div class="step on"><b>5</b> Review changes</div>
+    <div class="step write"><b>6</b> Publish</div>
+  </div>
+
+  <div class="cols">
+    <div>
+      <div class="card">
+        <p class="count"><em>Nothing would be written</em></p>
+        <p class="sub">Both questions are already in this question bank, and neither package brings a
+          shared record. There is no change to make.</p>
+        <div class="w"><span class="k add">+</span><span class="t">0 questions added</span></div>
+        <div class="w"><span class="k add">+</span><span class="t">0 shared records added<small>Both <code>provides</code> blocks are empty</small></span></div>
+        <div class="w"><span class="k same">=</span><span class="t">23 shared records referenced and unchanged</span></div>
+        <div class="w"><span class="k stop">x</span><span class="t">2 questions cannot be published<small>Their ids are already in the bank</small></span></div>
+        <div class="w"><span class="k stop">x</span><span class="t">1 package not included<small>Rejected at Validate</small></span></div>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <h2>Questions</h2>
+        <p class="sub">Every question the import would add, and every one it cannot.</p>
+
+        <div class="grp">
+          <div class="grph"><span class="n">New</span><span class="tag neutral">none</span></div>
+          <p class="grpw">No question in this import has an id that is free.</p>
+        </div>
+
+        <div class="grp">
+          <div class="grph"><span class="n">Already exists</span><span class="tag badt">2, cannot publish</span></div>
+          <p class="grpw">An id already in the bank is an import-blocking error and never an implicit
+            overwrite. The existing questions stay exactly as they are.</p>
+          <div class="w"><span class="k stop">x</span><span class="t">mkt-01
+            <small>Already in Business Studies. <b>The existing question is unchanged</b>, and this
+            importer cannot replace it.</small></span></div>
+          <div class="w"><span class="k stop">x</span><span class="t">ah-religion
+            <small>Already in Ancient History. <b>The existing question is unchanged</b>, and this
+            importer cannot replace it.</small></span></div>
+          <div class="rule">Replacing a question is a different workflow with different consequences,
+            and it is not smuggled into a first import. To bring a revised version of one of these in,
+            give it its own id.</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <h2>Shared library records</h2>
+        <p class="sub">Where a record comes from matters, so each one says which package supplied it.</p>
+
+        <div class="grp">
+          <div class="grph"><span class="n">New</span><span class="tag neutral">none</span></div>
+          <p class="grpw">Both packages declare an empty <code>provides</code> block, so this import adds
+            nothing to any library. A new record would be listed here individually, with the package
+            that supplied it.</p>
+        </div>
+
+        <div class="grp">
+          <div class="grph"><span class="n">Already exists, referenced and unchanged</span><span class="tag neutral">23</span></div>
+          <p class="grpw">Referenced by mkt-01. Publishing would not touch any of them.</p>
+          <div class="w"><span class="k same">=</span><span class="t">Vocabulary, 7 records<small>referenced by mkt-01</small></span></div>
+          <div class="w"><span class="k same">=</span><span class="t">Evidence, 6 records<small>referenced by mkt-01</small></span></div>
+          <div class="w"><span class="k same">=</span><span class="t">Syllabus, 5 nodes<small>referenced by mkt-01</small></span></div>
+          <div class="w"><span class="k same">=</span><span class="t">Lessons, 4 records<small>referenced by mkt-01</small></span></div>
+          <div class="w"><span class="k same">=</span><span class="t">Concepts, 1 record<small>referenced by mkt-01</small></span></div>
+          <button class="btn" style="margin-top:12px">Show the 23 ids</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <h2>Not included</h2>
+        <p class="sub">Three files were chosen and none reaches Publish. This is why the numbers
+          differ.</p>
+        <div class="w"><span class="k stop">x</span><span class="t">invalid-demo.json
+          <small>Rejected at Validate: 32 errors and 1 warning. Nothing from it is written.</small></span></div>
+        <div class="w"><span class="k same">=</span><span class="t">No package is waiting on the library
+          <small>Every declared dependency in this set was found.</small></span></div>
+      </div>
+
+      <div class="invariant">Nothing has been written yet. Publish will perform exactly the additions
+        shown above and will not modify existing records.</div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2>What happens next</h2>
+        <p class="quiet">There is nothing to publish, so the next step has nothing to do.</p>
+        <div class="btnrow">
+          <button class="btn off">Continue to Publish</button>
+          <button class="btn primary">Back to files</button>
+        </div>
+        <p class="note">Publish stays a separate step even when it would write something. This screen
+          never writes.</p>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <h2>What each mark means</h2>
+        <p class="quiet"><b>+ new.</b> Does not exist yet. Publish creates it.</p>
+        <p class="quiet"><b>= already exists.</b> Publish reads it and leaves it exactly as it is.</p>
+        <p class="quiet"><b>x not published.</b> Either the package was rejected, or its id is taken.
+          Nothing from it is written.</p>
+        <div class="rule">There is no fourth mark, because there is no overwrite. A first import adds
+          or it declines.</div>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <h2>Readiness is not a change</h2>
+        <p class="quiet">mkt-01 carries one shortfall and does not reach two capabilities:
+          <b>learning-complete</b> and <b>evidence-complete</b>. None of that is a write, so none of it
+          appears in the list on the left.</p>
+        <p class="quiet">It travels with the question and is reported after import, where it is content
+          work rather than a decision about this file.</p>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <h2>What gets stored</h2>
+        <p class="quiet">The unit is the <b>package document</b>. Publish stores the whole file as
+          authored, and everything Marginal uses is derived from it and can be rebuilt.</p>
+        <p class="quiet">So this page does not list a package's individual properties, and does not
+          need to. A field written against a later contract version is stored with the rest, unread
+          and unchanged.</p>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <details>
+          <summary>How importing works</summary>
+          <p>Parse asks whether the file is a readable package. Validate asks whether what it says is
+            valid. Resolve references asks whether the things it names exist. Review shows what would
+            change. Publish writes it, and is the only step that does.</p>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <div class="demo">
+    <div class="lbl">A different import. Nothing below is pressable.</div>
+    <h2>The same screen when there is something to publish</h2>
+    <p class="sub">From ahead-minor-demo.json, a real fixture whose question id <code>ah-religion-ahead</code>
+      is not in the bank. It is the only package in the repository that would actually add something, so
+      it is the only honest way to show this state.</p>
+    <div class="card">
+      <p class="count"><span>1 question</span> would be added</p>
+      <div class="w"><span class="k add">+</span><span class="t">ah-religion-ahead
+        <small>New question in Ancient History. Contract 1.7, which is later than this version reads,
+        so it is stored whole and the fields Marginal does not know are kept unchanged.</small></span></div>
+      <div class="w"><span class="k add">+</span><span class="t">0 shared records added<small>It provides none</small></span></div>
+      <div class="w"><span class="k same">=</span><span class="t">0 shared records referenced<small>It names none</small></span></div>
+      <div class="btnrow">
+        <button class="btn inert">Continue to Publish</button>
+      </div>
+    </div>
+    <p class="note">No fixture in the repository provides a new shared record, so the "new shared
+      record, supplied by which package" row is described on the left and not drawn. Inventing a
+      package to fill it is how the last screen got a fabricated example into a file that claimed
+      every number was real.</p>
+  </div>
+</main>

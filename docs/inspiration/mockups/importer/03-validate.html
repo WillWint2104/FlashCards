@@ -144,7 +144,7 @@
         <div class="verdict">
           <div class="q">Mkt 02!<small>invalid-demo.json</small></div>
           <span class="tag warnt">1 warning</span>
-          <span class="tag bad">28 errors</span>
+          <span class="tag bad">32 errors</span>
         </div>
       </div>
 
@@ -172,11 +172,11 @@
         </div>
 
         <div class="grp">
-          <div class="grph"><span class="n">Ids, and things naming other parts of this package</span><span class="c">5</span></div>
+          <div class="grph"><span class="n">Ids, and things naming other parts of this package</span><span class="c">6</span></div>
           <p class="grpw">All inside the file. Nothing here needed anything from Marginal to check.</p>
           <div class="ex"><span class="msg">"Mkt 02!" is not lower case with hyphens.</span><span class="at">question.id</span></div>
           <div class="ex"><span class="msg">"servicescape" is not an area this package defines.</span><span class="at">pathways[1].areaRef</span></div>
-          <button class="more">Show all 5</button>
+          <button class="more">Show all 6</button>
         </div>
 
         <div class="grp">
@@ -190,11 +190,12 @@
         </div>
 
         <div class="grp">
-          <div class="grph"><span class="n">The package disagrees with itself</span><span class="c">3</span></div>
-          <p class="grpw">Its <code>requires</code> list and what it actually references are different.</p>
+          <div class="grph"><span class="n">The package disagrees with itself</span><span class="c">6</span></div>
+          <p class="grpw">Two places in the file say different things: its <code>requires</code> list against
+            what it actually references, and single fields given twice in two shapes.</p>
           <div class="ex"><span class="msg">An evidence id is referenced and never declared.</span><span class="at">requires.evidence</span></div>
           <div class="ex"><span class="msg">A concept id is declared and never referenced.</span><span class="at">requires.concepts</span></div>
-          <button class="more">Show all 3</button>
+          <button class="more">Show all 6</button>
         </div>
 
         <div class="grp">
