@@ -36,6 +36,7 @@ a gate.
     node tools/contract/packagize.js mkt-01        convert one
     node tools/contract/validate.js <package.json> validate one or many
     node tools/contract/admit.js <package.json>    what publishing would change
+    node tools/contract/publish.js <package.json> and what publishing then does
 
 ## The three questions, and the three stages that answer them
 
@@ -47,6 +48,7 @@ different. Collapsing them is how a valid file gets called malformed.
 | `validate.js` | is this a valid package | the library manifest | `error`, `warning` |
 | `validate.js` | do the records it names exist | the shared libraries | `blocked`, `shortfall` |
 | `admit.js` | does the destination have room | the question registry | `QUESTION_ID_ALREADY_EXISTS` |
+| `publish.js` | perform those additions, or none | the plan, and nothing else | a written, partial, failed or destination-changed result |
 
 A question id already in the bank is not a fault in the file. The package is
 correct and the id is taken, so it is raised at admission, against the

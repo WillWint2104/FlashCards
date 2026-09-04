@@ -40,6 +40,22 @@ function stateOf(reasons) {
   return "already-exists";
 }
 
+// Every key path in a document, taken from the RAW parsed package. It travels
+// with the plan as a witness, so publication can prove the document it is about
+// to store still has everything the file had. Comparing the stored document
+// with the plan's own copy would prove nothing: both came through storable(),
+// so a storable() that narrowed to known fields would narrow them equally and
+// agree with itself. This is the only comparison that catches that.
+function paths(v, at, out) {
+  out = out || [];
+  if (v === null || typeof v !== "object") { if (at) out.push(at); return out; }
+  if (Array.isArray(v)) { v.forEach((x, i) => paths(x, at + "[" + i + "]", out)); if (!v.length && at) out.push(at); return out; }
+  const keys = Object.keys(v);
+  if (!keys.length && at) out.push(at);
+  keys.forEach(k => paths(v[k], at ? at + "." + k : k, out));
+  return out;
+}
+
 // A fingerprint of the registry the plan was computed against. Publish compares
 // it with the registry it is about to write into, so a plan cannot be carried
 // across a change in the destination and applied to a bank it never saw.
@@ -128,7 +144,9 @@ function plan(entries, reg, man) {
     questions.push({ source: a.source, id: a.id,
       subject: (pkg.question || {}).subject || null,
       // The unit stored is the package document, whole and as authored.
-      document: storable(pkg) });
+      document: storable(pkg),
+      // Taken from pkg, not from the copy above, on purpose. See paths().
+      fidelity: paths(pkg).sort() });
     const provides = pkg.provides || {};
     Object.keys(provides).forEach(kind => Object.keys(provides[kind] || {}).forEach(rid =>
       shared.additions.push({ kind: kind, id: rid, suppliedBy: a.id })));
@@ -140,7 +158,11 @@ function plan(entries, reg, man) {
   return {
     schema: "marginal.publish-plan", version: 1,
     // The seal. Publish refuses a plan whose registry has changed underneath it.
-    checkedAgainst: { registry: fingerprint(reg), questions: (reg.ids || Object.keys(reg.questions)).length },
+    // The ids as well as the count, so that a plan which has gone stale can name
+    // WHAT arrived rather than only that something did.
+    checkedAgainst: { registry: fingerprint(reg),
+      questions: (reg.ids || Object.keys(reg.questions)).length,
+      ids: (reg.ids || Object.keys(reg.questions).sort()).slice() },
     questions: questions, shared: shared,
     held: admitted.filter(a => a.state === "already-exists"),
     deferred: admitted.filter(a => a.state === "deferred"),
@@ -181,7 +203,7 @@ function writes(plan_, reg) {
     .concat(plan_.shared.additions.map(a => ({ op: "add", kind: a.kind, id: a.id })));
 }
 
-module.exports = { admit, plan, writes, fingerprint, STAGE, stateOf };
+module.exports = { admit, plan, writes, fingerprint, paths, STAGE, stateOf };
 
 if (require.main === module) {
   const files = process.argv.slice(2);
