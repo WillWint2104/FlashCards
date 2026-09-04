@@ -19,15 +19,32 @@
   replaces anything, and the real data happens to exercise that guarantee on
   every row instead of on a hypothetical.
 
-  A GAP THIS SCREEN DEPENDS ON, recorded because it is not built. The validator
-  has NO question registry and performs NO id collision check: `validate(pkg,
-  man, opts)` takes a library manifest and a directive registry, and neither
-  contains the question bank. Decision 7 requires the check; this screen cannot
-  be correct until it exists. Drawn as intended behaviour, flagged as absent.
+  THE RULE IS ENFORCED, not merely drawn. tools/contract/admit.js is the
+  admission stage: it takes the destination question registry, raises
+  QUESTION_ID_ALREADY_EXISTS at the review stage, and is the only producer of a
+  publish set. validate() still knows nothing about the question bank, and that
+  is correct. A collision is not a fault in the file. tests/t20.mjs is the
+  regression, and every number on this page comes from admit.plan().
 
-  EVERY NUMBER FROM THE REAL FILES: 19 questions in the bank, both package ids
-  among them; both packages declare `provides: {}`, so zero shared records
-  would be added; mkt-01 references 23 existing records and ah-religion none;
+  THE INTERACTION MODEL IS FROZEN:
+    every package chosen stays visible, whatever happened to it;
+    new, already exists, deferred and rejected are four distinct states and one
+      is never described as another;
+    capability and readiness shortfalls are never reasons a package cannot be
+      published, and never appear in the list of what would be written;
+    a shared record is shown as an addition only where the package provides it;
+    an existing record is never shown as modified, because nothing modifies one;
+    Continue to Publish is enabled only when at least one addition is publishable;
+    an empty mutation set says plainly that publishing would change nothing;
+    nothing is written on this screen.
+
+  EVERY NUMBER FROM THE REAL FILES, and reproducible with
+  `node tools/contract/admit.js docs/contract/example-mkt-01.json
+  docs/contract/example-ah-religion.json docs/contract/invalid-demo.json`:
+  19 questions in the bank, both package ids among them; both packages declare
+  `provides: {}`, so zero shared records would be added; mkt-01 NAMES 23
+  existing records and ah-religion none, and because mkt-01 is held the publish
+  set reaches none of them;
   invalid-demo was rejected at Validate with 32 errors and 1 warning, and its own
   2 blocked findings never reach this screen because a rejected package stops at
   Validate; no package that reaches this screen is blocked.
@@ -94,7 +111,9 @@
   .btn{font:inherit;font-size:13px;font-weight:800;border-radius:12px;padding:10px 16px;border:1.5px solid var(--line);background:#fff;color:var(--ink);cursor:default}
   .btn.primary{background:var(--green);border-color:var(--green);color:#fff;box-shadow:0 2px 0 var(--green-dk)}
   .btn.off{background:var(--bg);border-color:var(--line);color:var(--ink-3);box-shadow:none}
-  .btn.inert{background:var(--bg);border-color:var(--line);color:var(--ink-3);box-shadow:none}
+  /* Enabled in appearance and not pressable, because the example state HAS a
+     publishable addition. A grey button here would teach the opposite rule. */
+  .btn.inert{cursor:not-allowed}
   .note{font-size:12px;color:var(--ink-2);font-weight:600;margin:10px 0 0}
   .quiet{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:0 0 11px}
   .quiet b{color:var(--ink)}
@@ -105,8 +124,15 @@
   summary{font-weight:800;font-size:12.5px;cursor:default;color:var(--ink)}
   details p{color:var(--ink-2);font-weight:600;margin:9px 0 0}
 
-  .demo{background:#F4F7F8;border:1.5px solid var(--line);border-radius:18px;padding:18px 20px;margin-top:22px}
-  .demo .lbl{font-size:12px;font-weight:800;color:var(--ink-3);margin-bottom:4px}
+  /* The example state is fenced off, because a reader must never mistake it for
+     the import in front of them. Dashed is already spoken for by "blocked", so
+     the separation is a hard rule, a stated end to the live screen, and a badge
+     on every element inside. */
+  .fence{margin:34px 0 0;border-top:2px solid var(--ink-3);padding-top:10px}
+  .fence .end{font-size:12px;font-weight:800;color:var(--ink-2);text-transform:uppercase;letter-spacing:.06em}
+  .demo{background:#E8EDEF;border:1.5px solid #D3DCDD;border-radius:18px;padding:18px 20px;margin-top:10px}
+  .demo .lbl{display:inline-block;font-size:11px;font-weight:800;color:#FFFFFF;background:var(--ink-2);
+    border-radius:99px;padding:3px 11px;margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em}
   .demo h2{font-size:14px;font-weight:800;margin:0 0 3px}
   .demo .sub{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:0 0 14px}
   .demo .card{background:var(--card);opacity:.94}
@@ -137,10 +163,11 @@
       <div class="card">
         <p class="count"><em>Nothing would be written</em></p>
         <p class="sub">Both questions are already in this question bank, and neither package brings a
-          shared record. There is no change to make.</p>
+          shared record. There is no change to make. Checked against the 19 questions this bank holds
+          now, and the check is repeated at Publish against the bank as it is then.</p>
         <div class="w"><span class="k add">+</span><span class="t">0 questions added</span></div>
         <div class="w"><span class="k add">+</span><span class="t">0 shared records added<small>Both <code>provides</code> blocks are empty</small></span></div>
-        <div class="w"><span class="k same">=</span><span class="t">23 shared records referenced and unchanged</span></div>
+        <div class="w"><span class="k same">=</span><span class="t">0 shared records the publish set touches<small>The publish set is empty, so it reaches none</small></span></div>
         <div class="w"><span class="k stop">x</span><span class="t">2 questions cannot be published<small>Their ids are already in the bank</small></span></div>
         <div class="w"><span class="k stop">x</span><span class="t">1 package not included<small>Rejected at Validate</small></span></div>
       </div>
@@ -182,13 +209,15 @@
         </div>
 
         <div class="grp">
-          <div class="grph"><span class="n">Already exists, referenced and unchanged</span><span class="tag neutral">23</span></div>
-          <p class="grpw">Referenced by mkt-01. Publishing would not touch any of them.</p>
-          <div class="w"><span class="k same">=</span><span class="t">Vocabulary, 7 records<small>referenced by mkt-01</small></span></div>
-          <div class="w"><span class="k same">=</span><span class="t">Evidence, 6 records<small>referenced by mkt-01</small></span></div>
-          <div class="w"><span class="k same">=</span><span class="t">Syllabus, 5 nodes<small>referenced by mkt-01</small></span></div>
-          <div class="w"><span class="k same">=</span><span class="t">Lessons, 4 records<small>referenced by mkt-01</small></span></div>
-          <div class="w"><span class="k same">=</span><span class="t">Concepts, 1 record<small>referenced by mkt-01</small></span></div>
+          <div class="grph"><span class="n">Named by a package that cannot be published</span><span class="tag neutral">23</span></div>
+          <p class="grpw">mkt-01 names 23 records that already exist. Because mkt-01 is held, the publish
+            set reaches none of them, and they are unchanged either way. They are listed because mkt-01
+            stays visible, not because this import touches them.</p>
+          <div class="w"><span class="k same">=</span><span class="t">Vocabulary, 7 records<small>named by mkt-01, which is held</small></span></div>
+          <div class="w"><span class="k same">=</span><span class="t">Evidence, 6 records<small>named by mkt-01, which is held</small></span></div>
+          <div class="w"><span class="k same">=</span><span class="t">Syllabus, 5 nodes<small>named by mkt-01, which is held</small></span></div>
+          <div class="w"><span class="k same">=</span><span class="t">Lessons, 4 records<small>named by mkt-01, which is held</small></span></div>
+          <div class="w"><span class="k same">=</span><span class="t">Concepts, 1 record<small>named by mkt-01, which is held</small></span></div>
           <button class="btn" style="margin-top:12px">Show the 23 ids</button>
         </div>
       </div>
@@ -215,8 +244,9 @@
           <button class="btn off">Continue to Publish</button>
           <button class="btn primary">Back to files</button>
         </div>
-        <p class="note">Publish stays a separate step even when it would write something. This screen
-          never writes.</p>
+        <p class="note">Continue to Publish turns on only when at least one addition is publishable.
+          It is off here because there are none. Publish stays a separate step even when it would write
+          something, and this screen never writes.</p>
       </div>
 
       <div class="card" style="margin-top:18px">
@@ -258,12 +288,18 @@
     </div>
   </div>
 
+  <div class="fence">
+    <p class="end">End of this import. Everything above is the live preview for the three files chosen.</p>
+  </div>
+
   <div class="demo">
-    <div class="lbl">A different import. Nothing below is pressable.</div>
+    <div class="lbl">Example state, not this import</div>
     <h2>The same screen when there is something to publish</h2>
-    <p class="sub">From ahead-minor-demo.json, a real fixture whose question id <code>ah-religion-ahead</code>
-      is not in the bank. It is the only package in the repository that would actually add something, so
-      it is the only honest way to show this state.</p>
+    <p class="sub">A second, separate import, shown so the design of the non-empty state can be reviewed
+      alongside the empty one. It is not part of the preview above, nothing in it is pressable, and it
+      would never appear on the same screen. From ahead-minor-demo.json, a real fixture whose question id
+      <code>ah-religion-ahead</code> is not in the bank, and the only package in the repository that
+      would actually add something.</p>
     <div class="card">
       <p class="count"><span>1 question</span> would be added</p>
       <div class="w"><span class="k add">+</span><span class="t">ah-religion-ahead
@@ -272,7 +308,7 @@
       <div class="w"><span class="k add">+</span><span class="t">0 shared records added<small>It provides none</small></span></div>
       <div class="w"><span class="k same">=</span><span class="t">0 shared records referenced<small>It names none</small></span></div>
       <div class="btnrow">
-        <button class="btn inert">Continue to Publish</button>
+        <button class="btn primary inert">Continue to Publish</button>
       </div>
     </div>
     <p class="note">No fixture in the repository provides a new shared record, so the "new shared

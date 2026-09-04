@@ -35,6 +35,25 @@ a gate.
     node tools/contract/packagize.js               convert every question
     node tools/contract/packagize.js mkt-01        convert one
     node tools/contract/validate.js <package.json> validate one or many
+    node tools/contract/admit.js <package.json>    what publishing would change
+
+## The three questions, and the three stages that answer them
+
+Each stage reads a different thing, and that is why the faults it can raise are
+different. Collapsing them is how a valid file gets called malformed.
+
+| stage | asks | reads | raises |
+| --- | --- | --- | --- |
+| `validate.js` | is this a valid package | the library manifest | `error`, `warning` |
+| `validate.js` | do the records it names exist | the shared libraries | `blocked`, `shortfall` |
+| `admit.js` | does the destination have room | the question registry | `QUESTION_ID_ALREADY_EXISTS` |
+
+A question id already in the bank is not a fault in the file. The package is
+correct and the id is taken, so it is raised at admission, against the
+destination, and never as a schema error. `admit.plan()` is the only producer of
+a publish set; it will not run without the registry, and `admit.writes()` checks
+again against the registry as it is then. Decision 7 has the reasoning,
+`tests/t20.mjs` the proof.
 
 ## Versioning
 

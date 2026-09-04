@@ -91,6 +91,29 @@ Where a question came from is metadata beside the id, not part of it, and lives
 in `origin`. Update and replacement semantics are a later design; they are not
 smuggled into first import.
 
+**Where the check lives, and why not in the validator.** `validate(pkg, man)`
+reads a library manifest, which holds shared records and no questions. That is
+not an oversight to be corrected by handing it the bank. A colliding package is
+STRUCTURALLY VALID, and reporting the collision as a schema error would tell an
+author their correct file is malformed and send them to fix nothing.
+
+The check belongs to the stage that knows the destination, and that stage is
+`tools/contract/admit.js`:
+
+    validate   is this file a valid package                 library manifest
+    resolve    do the things it names exist                 shared libraries
+    admit      does the destination have room               question registry
+
+`QUESTION_ID_ALREADY_EXISTS` is raised at the review stage, against the
+destination registry, and carries the subject that holds the id. A package can
+be unpublishable for reasons from more than one stage at once, so the reasons
+are a list and none is folded into another. `admit.plan()` is the only producer
+of a publish set, it refuses to run without a registry rather than defaulting to
+an empty one, and `admit.writes()` re-runs the check against the registry as it
+is at that moment, so a plan is evidence the check ran and never permission to
+skip it. `tests/t20.mjs` is the regression, including the seven bad
+implementations it is written to catch.
+
 **8. Areas are question-local, and are never validated by vocabulary matching.**
 An area has its own stable question-local id and an authored label, and the
 label may be whatever the question genuinely needs. If the author claims a
