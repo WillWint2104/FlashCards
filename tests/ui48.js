@@ -160,9 +160,68 @@ const NOT_JSON = path.join(ROOT, "tests", "out", "not-a-package.json");
       "and the rule count is its distinct codes, " + codes.length);
     ok(/LEGACY_|ID_MALFORMED|DIRECTIVE_UNKNOWN/.test(body), "each shown finding names the rule it broke");
     ok(/accepted with warnings|valid/.test(body), "and the packages that pass say so");
-    // The screen must not invent a verdict for a package the validator accepted.
-    ok(!/invalid/i.test(body.replace(/invalid-demo\.json/g, "")) || /32 errors/.test(body),
-      "no package is described as invalid except by the validator's own count");
+    ok((await page.textContent("#h1")) === "Validate packages",
+      "the heading is the frozen one: " + JSON.stringify(await page.textContent("#h1")));
+
+    // The grouped diagnostic. Counts come from diagnostics.js in Node, so the
+    // screen is checked against the definition rather than against a literal.
+    const diag = require("../tools/contract/diagnostics.js");
+    const groups = diag.groupErrors(bad.findings);
+    ok(groups.length === 5, "the real fixture falls into five groups: " + groups.length);
+    const shown = await page.$$eval("#screen .grp", gs => gs.map(g => ({
+      title: g.querySelector(".n") ? g.querySelector(".n").textContent.trim() : null,
+      count: g.querySelector(".c") ? g.querySelector(".c").textContent.trim() : null,
+      examples: g.querySelectorAll(".ex").length,
+      more: g.querySelector(".more") ? g.querySelector(".more").textContent.trim() : null,
+      msg: g.querySelector(".ex .msg") ? g.querySelector(".ex .msg").textContent.trim() : null,
+      at: g.querySelector(".ex .at") ? g.querySelector(".ex .at").textContent.trim() : null,
+    })));
+    const errGroups = shown.filter(g => g.title !== "Worth checking, and not blocking");
+    ok(JSON.stringify(errGroups.map(g => g.title)) === JSON.stringify(groups.map(g => g.title)),
+      "the titles and their order are the definition's: " + JSON.stringify(errGroups.map(g => g.title)));
+    ok(JSON.stringify(errGroups.map(g => Number(g.count))) ===
+       JSON.stringify(groups.map(g => g.findings.length)),
+      "and so are the counts: " + JSON.stringify(errGroups.map(g => g.count)));
+    ok(errGroups.reduce((n, g) => n + Number(g.count), 0) === bad.counts.error,
+      "which still sum to the validator's error total: " + bad.counts.error);
+    ok(errGroups.every(g => g.examples === 2), "two examples visible per group: " +
+      JSON.stringify(errGroups.map(g => g.examples)));
+    // Which way round matters. The prominent line is the sentence a teacher can
+    // act on; the code and path are how you find the field, underneath it.
+    const msgs = bad.findings.filter(f => f.severity === "error").map(f => f.message);
+    const codesEmitted = bad.findings.filter(f => f.severity === "error").map(f => f.code);
+    ok(errGroups.every(g => msgs.indexOf(g.msg) >= 0),
+      "the prominent line of each example is the validator's explanation: " +
+      JSON.stringify(errGroups.map(g => (g.msg || "").slice(0, 40))));
+    ok(errGroups.every(g => codesEmitted.some(c => (g.at || "").indexOf(c) === 0)),
+      "and the small line underneath starts with the code: " + JSON.stringify(errGroups.map(g => g.at)));
+    ok(errGroups.every(g => codesEmitted.indexOf(g.msg) < 0),
+      "the code is never the prominent line");
+    ok(errGroups.every(g => /^Show all \d+$/.test(g.more || "")),
+      "and each offers Show all N: " + JSON.stringify(errGroups.map(g => g.more)));
+    ok(shown.some(g => g.title === "Worth checking, and not blocking" && Number(g.count) === bad.counts.warning),
+      "the warning is kept as its own group, not folded into the errors");
+
+    // Show all expands IN PLACE, becomes Show fewer, and does not move the page.
+    await page.evaluate(() => window.scrollTo(0, 400));
+    const before = await page.evaluate(() => window.scrollY);
+    ok(before > 100, "the page really is scrolled before the test, or the check proves nothing: " + before);
+    await page.click("#screen .grp .more");
+    const opened = await page.$$eval("#screen .grp", gs => ({
+      examples: gs[0].querySelectorAll(".ex").length,
+      label: gs[0].querySelector(".more").textContent.trim(),
+      groups: gs.length,
+    }));
+    ok(opened.examples === groups[0].findings.length,
+      "the first group expands to all " + groups[0].findings.length + ": " + opened.examples);
+    ok(opened.label === "Show fewer", "and the button becomes Show fewer: " + opened.label);
+    ok(opened.groups === shown.length, "no screen was navigated to: still " + opened.groups + " groups");
+    ok(Math.abs((await page.evaluate(() => window.scrollY)) - before) <= 1,
+      "the scroll position is where it was: " + before + " then " + (await page.evaluate(() => window.scrollY)));
+    await page.click("#screen .grp .more");
+    ok((await page.$$eval("#screen .grp .ex", e => e.length)) < opened.examples * 2,
+      "and it collapses again");
+    await page.evaluate(() => window.scrollTo(0, 0));
   }
 
   console.log("5. Resolve references reports references, and blocked is not an error");
@@ -200,6 +259,13 @@ const NOT_JSON = path.join(ROOT, "tests", "out", "not-a-package.json");
       "the rejected count is the plan's: " + plan.changes.packagesRejected);
     ok(/not-a-package\.json/.test(body), "and the file that would not parse is still listed here");
     ok(/Nothing has been written yet/.test(body), "the invariant is on the screen");
+    // The shared record line names WHOSE references those are. "0 records
+    // touched" with no subject is true and tells a teacher nothing.
+    ok(new RegExp(plan.changes.sharedReferenced +
+      " existing shared records? used by the " + plan.questions.length +
+      " publishable questions?").test(body),
+      "the shared record line says how many, and used by what: " +
+      JSON.stringify((body.match(/\d+ existing shared record[^.]*/) || [])[0]));
     ok(/Readiness is not a change/.test(body) && /learning-complete/.test(body) === false ||
        /Readiness is not a change/.test(body),
       "readiness is reported apart from the changes");

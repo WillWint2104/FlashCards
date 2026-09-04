@@ -28,7 +28,7 @@ const path = require("path");
 // Order matters only in that every module must be defined before the entry
 // point runs. They are required lazily by the shim, so this is just the set.
 const MODULES = ["fields.js", "capabilities.js", "directives.js", "generate.js",
-                 "resolve.js", "validate.js", "admit.js", "publish.js"];
+                 "resolve.js", "validate.js", "admit.js", "publish.js", "diagnostics.js"];
 
 function bundle(root) {
   const dir = path.join(root, "tools", "contract");
@@ -82,6 +82,7 @@ function bundle(root) {
     "  var capabilities = __require('./capabilities.js');",
     "  var fields = __require('./fields.js');",
     "  var generate = __require('./generate.js');",
+    "  var diagnostics = __require('./diagnostics.js');",
     "  window.MarginalContract = {",
     "    validate: validate.validate, libraryReadiness: validate.libraryReadiness,",
     "    resolve: resolve.resolve, storable: resolve.storable, carriedPaths: resolve.carriedPaths,",
@@ -91,6 +92,7 @@ function bundle(root) {
     "    CAPABILITIES: capabilities.RULES ? Object.keys(capabilities.RULES) : [],",
     "    contractVersion: generate.CONTRACT_VERSION,",
     "    FIELDS: fields.FIELDS,",
+    "    groupErrors: diagnostics.groupErrors, groupOf: diagnostics.groupOf,",
     "  };",
     "})();",
     "",

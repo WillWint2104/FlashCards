@@ -23,6 +23,11 @@
   var D = window.MarginalImportData; // the generated manifest and registries
 
   var STEPS = ["Choose files", "Parse", "Validate", "Resolve references", "Review changes", "Publish"];
+  // The rail is a short label per step; the page heading is the frozen wording
+  // from the design. They are different lengths on purpose and are not derived
+  // from each other.
+  var HEADINGS = ["Choose the packages to import", "Parse packages", "Validate packages",
+                  "Resolve references", "Review changes", "Publish"];
   var state = { step: 0, files: [], reports: null, plan: null, reached: 0 };
 
   // ---- helpers -------------------------------------------------------------
@@ -101,7 +106,7 @@
 
   function render() {
     rail();
-    $("#h1").textContent = STEPS[state.step];
+    $("#h1").textContent = HEADINGS[state.step];
     var s = $("#screen");
     s.innerHTML = "";
     SCREENS[state.step](s);
@@ -240,19 +245,60 @@
       }).join("");
     left.appendChild(head);
 
+    // Grouped by what to do about them, not by which check found them. The
+    // grouping is tools/contract/diagnostics.js, so the screen cannot invent a
+    // category and a new validator code cannot silently stop being described.
     rejected.forEach(function (r) {
       var c = el("div", "card");
       var errs = r.report.findings.filter(function (f) { return f.severity === "error"; });
-      var byCode = {};
-      errs.forEach(function (f) { (byCode[f.code] = byCode[f.code] || []).push(f); });
+      var codes = {};
+      errs.forEach(function (f) { codes[f.code] = 1; });
+      var groups = C.groupErrors(r.report.findings);
+      var warns = r.report.findings.filter(function (f) { return f.severity === "warning"; });
       c.innerHTML = "<h2>" + esc(r.source) + "</h2>" +
         '<p class="sub">' + plural(errs.length, "error") + " across " +
-        plural(Object.keys(byCode).length, "rule") + ". Each names the rule it broke.</p>" +
-        errs.slice(0, 6).map(function (f) {
-          return '<div class="ex"><span class="msg">' + esc(f.message) + '</span>' +
+        plural(Object.keys(codes).length, "rule") + ". Grouped by what to do about them, " +
+        "not by which check found them.</p>";
+      groups.forEach(function (g) {
+        var grp = el("div", "grp");
+        // The explanation is the primary line. The code and the path sit under
+        // it, small, because they are how you find the field and not what is
+        // wrong with it.
+        var body = g.findings.map(function (f) {
+          return '<div class="ex"><span class="msg">' + esc(f.message) + "</span>" +
             '<span class="at">' + esc(f.code) + (f.path ? " · " + esc(f.path) : "") + "</span></div>";
-        }).join("") +
-        (errs.length > 6 ? '<button class="more">Show all ' + errs.length + "</button>" : "");
+        });
+        grp.innerHTML = '<div class="grph"><span class="n">' + esc(g.title) +
+          '</span><span class="c">' + g.findings.length + "</span></div>" +
+          '<p class="grpw">' + esc(g.says) + "</p>" +
+          '<div class="exlist">' + body.slice(0, 2).join("") + "</div>";
+        if (body.length > 2) {
+          var more = el("button", "more", "Show all " + body.length);
+          var open = false;
+          more.addEventListener("click", function () {
+            // Expands IN PLACE. The scroll position is restored around the
+            // change, so the rows a teacher was reading do not move under them.
+            var y = window.scrollY;
+            open = !open;
+            grp.querySelector(".exlist").innerHTML = (open ? body : body.slice(0, 2)).join("");
+            more.textContent = open ? "Show fewer" : "Show all " + body.length;
+            window.scrollTo(0, y);
+          });
+          grp.appendChild(more);
+        }
+        c.appendChild(grp);
+      });
+      if (warns.length) {
+        var wg = el("div", "grp");
+        wg.innerHTML = '<div class="grph"><span class="n">Worth checking, and not blocking</span>' +
+          '<span class="c w">' + warns.length + "</span></div>" +
+          '<p class="grpw">Recorded on the import and does not stop it.</p>' +
+          warns.map(function (f) {
+            return '<div class="ex"><span class="msg">' + esc(f.message) + "</span>" +
+              '<span class="at">' + esc(f.code) + (f.path ? " · " + esc(f.path) : "") + "</span></div>";
+          }).join("");
+        c.appendChild(wg);
+      }
       left.appendChild(c);
     });
 
@@ -329,7 +375,13 @@
       " this bank holds now.</p>" +
       row("add", plural(ch.questionsAdded, "question") + " added") +
       row("add", plural(ch.sharedAdded, "shared record") + " added") +
-      row("same", plural(ch.sharedReferenced, "shared record") + " the publish set touches") +
+      // Same number, same meaning: the shared records the PUBLISHABLE questions
+      // name. When nothing is publishable it is zero because there is nothing to
+      // name them, and the line says which of those two it is.
+      row("same", p.questions.length
+        ? plural(ch.sharedReferenced, "existing shared record") + " used by the " +
+          plural(p.questions.length, "publishable question")
+        : "0 existing shared records used, because nothing here is publishable") +
       (ch.questionsHeld ? row("stop", plural(ch.questionsHeld, "question") + " cannot be published",
         "Ids already in the bank") : "") +
       (ch.packagesDeferred ? row("same", plural(ch.packagesDeferred, "package") + " waiting on the library") : "") +

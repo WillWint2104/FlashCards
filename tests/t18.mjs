@@ -427,5 +427,38 @@ console.log("8. nothing in the validator can write");
     "and exports functions only, none of which is a publish step: " + JSON.stringify(Object.keys(exported)));
 }
 
+console.log("9. every error the validator can raise has a plain description");
+{
+  // The grouping is what a teacher reads instead of 32 codes, and a code with no
+  // group is a finding that would be shown without one. So the check is not
+  // "the groups look sensible", it is: enumerate every code the validator can
+  // emit, straight out of its source, and account for all of them.
+  const diag = require("../tools/contract/diagnostics.js");
+  const src = text("tools/contract/validate.js");
+  const literal = [...src.matchAll(/add\(SEV\.error,\s*"([A-Z_]+)"/g)].map(m => m[1]);
+  // The per library codes are built from a table rather than written at the call
+  // site, so a scan for add(SEV.error, "...") misses every one of them.
+  const table = [...src.matchAll(/(?:unknown|partial):\s*"([A-Z_]+)"/g)].map(m => m[1]);
+  const fallbacks = [...src.matchAll(/\|\|\s*"([A-Z_]+)"/g)].map(m => m[1]);
+  const codes = [...new Set(literal.concat(table).concat(fallbacks))].sort();
+  ok(codes.length >= 45, "the validator can raise at least 45 distinct errors: " + codes.length);
+  const orphans = codes.filter(c => !diag.groupOf(c));
+  ok(!orphans.length, "and every one of them belongs to a group: " + JSON.stringify(orphans));
+  // Exactly one group, so a finding cannot be counted twice on the screen.
+  const twice = codes.filter(c => diag.GROUPS.filter(g => g.test ? g.test(c) : g.codes.indexOf(c) >= 0).length > 1);
+  ok(!twice.length, "each in exactly one group: " + JSON.stringify(twice));
+  // The counts on the screen must be the validator's counts, redistributed.
+  const bad = read("docs/contract/invalid-demo.json");
+  const rep = validate(bad, MAN);
+  const groups = diag.groupErrors(rep.findings);
+  const summed = groups.reduce((n, g) => n + g.findings.length, 0);
+  ok(summed === rep.counts.error, "grouping loses nothing: " + summed + " of " + rep.counts.error);
+  ok(!groups.some(g => g.id === "ungrouped"), "and the real fixture needs no catch all group");
+  // Grouping is presentation. It must not touch severity, and must never pick up
+  // a blocked, shortfall or warning finding, each of which has its own place.
+  ok(groups.every(g => g.findings.every(f => f.severity === "error")),
+    "only errors are grouped, because the other three severities mean other things");
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
