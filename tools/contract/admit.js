@@ -70,16 +70,23 @@ function fingerprint(reg) {
 // ---- admission --------------------------------------------------------------
 // entries: [{ source, pkg, report }]. report is optional and is produced here
 // when absent, so a caller cannot skip validation by simply not supplying one.
-function admit(entries, reg, man) {
+function admit(entries, reg, man, opts) {
   if (!reg || !reg.questions) throw new Error(
     "admit requires the destination question registry. Whether an id is free is not " +
     "a property of the package, and cannot be decided without knowing what is already there");
   const M = man || lib.manifest();
+  // The directive registry is passed THROUGH rather than fetched. When an entry
+  // arrives without a report this is where validation happens, and validate()
+  // falls back to building a registry from the content files when it is not
+  // given one. That fallback is design time work: it reads the file system, so
+  // it cannot run in the importer, and a caller that has a registry must be able
+  // to hand it over.
+  const O = opts || {};
   const seenInBatch = {};
 
   return (entries || []).map(e => {
     const pkg = e.pkg;
-    const report = e.report || validate(pkg, M);
+    const report = e.report || validate(pkg, M, O.registry ? { registry: O.registry } : undefined);
     const id = ((pkg || {}).question || {}).id || null;
     const reasons = [];
 
@@ -131,11 +138,11 @@ function admit(entries, reg, man) {
 // The ONLY producer of what Publish would write. It takes the registry because
 // it cannot be correct without it, and it throws rather than defaulting,
 // because a default here would be a silent answer to "is this id free".
-function plan(entries, reg, man) {
+function plan(entries, reg, man, opts) {
   if (!reg || !reg.questions) throw new Error(
     "plan requires the destination question registry: a publish set cannot be computed " +
     "without knowing what is already there");
-  const admitted = admit(entries, reg, man);
+  const admitted = admit(entries, reg, man, opts);
   const questions = [], shared = { additions: [], referenced: [] };
 
   admitted.filter(a => a.publishable).forEach(a => {
@@ -210,7 +217,7 @@ if (require.main === module) {
   if (!files.length) { console.error("usage: node tools/contract/admit.js <package.json> [...]"); process.exit(2); }
   const reg = lib.questionRegistry(), man = lib.manifest();
   const entries = files.map(f => ({ source: f.split("/").pop(), pkg: JSON.parse(fs.readFileSync(f, "utf8")) }));
-  const p = plan(entries, reg, man);
+  const p = plan(entries, reg, man, { registry: require("./directives.js").registry() });
   console.log("destination: " + p.checkedAgainst.questions + " questions, registry " + p.checkedAgainst.registry);
   p.entries.forEach(a => {
     console.log("\n" + (a.source || a.id) + "  [" + a.state + "]" + (a.publishable ? "  WOULD BE ADDED" : ""));

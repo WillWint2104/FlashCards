@@ -1,0 +1,122 @@
+{
+  "schema": "marginal.question-registry",
+  "version": 1,
+  "questions": {
+    "ah-sources": {
+      "id": "ah-sources",
+      "subject": "ancient_history",
+      "subjectLabel": "Ancient History"
+    },
+    "ah-religion": {
+      "id": "ah-religion",
+      "subject": "ancient_history",
+      "subjectLabel": "Ancient History"
+    },
+    "ah-geography": {
+      "id": "ah-geography",
+      "subject": "ancient_history",
+      "subjectLabel": "Ancient History"
+    },
+    "ah-women": {
+      "id": "ah-women",
+      "subject": "ancient_history",
+      "subjectLabel": "Ancient History"
+    },
+    "ah-power": {
+      "id": "ah-power",
+      "subject": "ancient_history",
+      "subjectLabel": "Ancient History"
+    },
+    "ah-site": {
+      "id": "ah-site",
+      "subject": "ancient_history",
+      "subjectLabel": "Ancient History"
+    },
+    "ops-01": {
+      "id": "ops-01",
+      "subject": "business_studies",
+      "subjectLabel": "Business Studies"
+    },
+    "ops-02": {
+      "id": "ops-02",
+      "subject": "business_studies",
+      "subjectLabel": "Business Studies"
+    },
+    "ops-03": {
+      "id": "ops-03",
+      "subject": "business_studies",
+      "subjectLabel": "Business Studies"
+    },
+    "mkt-01": {
+      "id": "mkt-01",
+      "subject": "business_studies",
+      "subjectLabel": "Business Studies"
+    },
+    "mkt-04": {
+      "id": "mkt-04",
+      "subject": "business_studies",
+      "subjectLabel": "Business Studies"
+    },
+    "mkt-02": {
+      "id": "mkt-02",
+      "subject": "business_studies",
+      "subjectLabel": "Business Studies"
+    },
+    "mkt-03": {
+      "id": "mkt-03",
+      "subject": "business_studies",
+      "subjectLabel": "Business Studies"
+    },
+    "fin-01": {
+      "id": "fin-01",
+      "subject": "business_studies",
+      "subjectLabel": "Business Studies"
+    },
+    "fin-02": {
+      "id": "fin-02",
+      "subject": "business_studies",
+      "subjectLabel": "Business Studies"
+    },
+    "fin-03": {
+      "id": "fin-03",
+      "subject": "business_studies",
+      "subjectLabel": "Business Studies"
+    },
+    "hr-01": {
+      "id": "hr-01",
+      "subject": "business_studies",
+      "subjectLabel": "Business Studies"
+    },
+    "hr-02": {
+      "id": "hr-02",
+      "subject": "business_studies",
+      "subjectLabel": "Business Studies"
+    },
+    "hr-03": {
+      "id": "hr-03",
+      "subject": "business_studies",
+      "subjectLabel": "Business Studies"
+    }
+  },
+  "ids": [
+    "ah-geography",
+    "ah-power",
+    "ah-religion",
+    "ah-site",
+    "ah-sources",
+    "ah-women",
+    "fin-01",
+    "fin-02",
+    "fin-03",
+    "hr-01",
+    "hr-02",
+    "hr-03",
+    "mkt-01",
+    "mkt-02",
+    "mkt-03",
+    "mkt-04",
+    "ops-01",
+    "ops-02",
+    "ops-03"
+  ]
+}

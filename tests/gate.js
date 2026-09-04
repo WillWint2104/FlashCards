@@ -25,7 +25,7 @@ const TIERS = {
   // 37s, so ui40 goes back to checkpoint, where it already runs: it walks EVERY
   // question through the shell, which is an exhaustive sweep rather than a fast
   // signal, and it was the single most expensive suite here at 7.2s.
-  fast: { budget: 30, suites: ["t1", "t17", "t18", "t19", "t20", "t21", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47"] },
+  fast: { budget: 30, suites: ["t1", "t17", "t18", "t19", "t20", "t21", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48"] },
   // Adds the interaction surfaces that the shell rewrite touched, and the setup
   // and marking paths. This is the gate to pass before pushing, and its whole
   // value is that it is cheap enough to run out of habit.
@@ -39,7 +39,7 @@ const TIERS = {
   // change break the thing I am working on.
   checkpoint: {
     budget: 60,
-    suites: ["t1", "t2", "t17", "t18", "t19", "t20", "t21", "ui13", "ui30", "ui35", "ui37", "ui38", "ui39", "ui40", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47"],
+    suites: ["t1", "t2", "t17", "t18", "t19", "t20", "t21", "ui13", "ui30", "ui35", "ui37", "ui38", "ui39", "ui40", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48"],
   },
   // The seven simulated students, run one after another through a single page.
   // The cross-journey assertions compare the students to each other, so there is

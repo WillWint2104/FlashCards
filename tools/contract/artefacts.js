@@ -33,6 +33,10 @@ function artefacts(root) {
 
   const REG = directives.registry();
   out.push({ dir: C, name: "directive-registry.json", text: J(REG) });
+  // What questions already exist where an import would land. Generated for the
+  // same reason the manifest is: the importer runs in a browser and cannot walk
+  // the content files, and a hand kept copy of the bank would go stale silently.
+  out.push({ dir: C, name: "question-registry.json", text: J(lib.questionRegistry()) });
   out.push({ dir: C, name: "fixture-manifest.json",
     text: J(fixtures.manifest(built.map(b => b.r.pkg), man, REG)) });
   out.push({ dir: C, name: "criterion-mapping.md", text: criterionMapping(built) });
