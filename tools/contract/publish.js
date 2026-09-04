@@ -33,7 +33,7 @@ const OUTCOME = {
 // not an error report. The preview was correct when it was made and something
 // else has been added since, so the answer is to look again, not to retry.
 const STALE =
-  "The question bank changed since this preview was created. Review changes again before publishing.";
+  "The question bank changed since Review. Nothing was written. Review changes again before publishing.";
 
 // The destination. questions carries the ids that exist and the subject holding
 // each, and never question content: nothing in publication may read an existing

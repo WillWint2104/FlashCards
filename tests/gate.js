@@ -2,7 +2,8 @@
 // change deserves rather than always paying for the full run.
 //
 //   node tests/gate.js fast          shell smoke and the entry contracts
-//   node tests/gate.js checkpoint    the above plus setup, coverage, bots
+//   node tests/gate.js checkpoint    the above plus the interaction surfaces
+//   node tests/gate.js journeys      the simulated students, on their own
 //   node tests/gate.js full          every suite
 //
 // Each gate ends with a single line that names the tier, the suites it actually
@@ -25,23 +26,33 @@ const TIERS = {
   // question through the shell, which is an exhaustive sweep rather than a fast
   // signal, and it was the single most expensive suite here at 7.2s.
   fast: { budget: 30, suites: ["t1", "t17", "t18", "t19", "t20", "t21", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47"] },
-  // Adds the interaction surfaces that the shell rewrite touched, the setup
-  // and marking paths, and the simulated students. This is the gate to pass
-  // before pushing. The budget is 180s rather than 120s because the seven bot
-  // journeys are 124s of it on their own and they run one after another through
-  // a single page; the cross-journey assertions compare the students to each
-  // other, so there is no honest subset of them to run.
+  // Adds the interaction surfaces that the shell rewrite touched, and the setup
+  // and marking paths. This is the gate to pass before pushing, and its whole
+  // value is that it is cheap enough to run out of habit.
+  //
+  // The simulated students used to be here and are not any more. They were 124s
+  // of a 174s run against a 180s budget, which is not a budget: ordinary machine
+  // variance would have started failing it, and a gate people stop running is
+  // worse than one that covers less. They are integration tests of product
+  // behaviour rather than of the architecture a change is touching, so they moved
+  // to their own tier and to full. Checkpoint answers one question: did this
+  // change break the thing I am working on.
   checkpoint: {
-    budget: 180,
-    suites: ["t1", "t2", "t17", "t18", "t19", "t20", "t21", "ui13", "ui30", "ui35", "ui37", "ui38", "ui39", "ui40", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "bots"],
+    budget: 60,
+    suites: ["t1", "t2", "t17", "t18", "t19", "t20", "t21", "ui13", "ui30", "ui35", "ui37", "ui38", "ui39", "ui40", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47"],
   },
-  // Everything run.js knows about. An empty list means "pass no filter".
+  // The seven simulated students, run one after another through a single page.
+  // The cross-journey assertions compare the students to each other, so there is
+  // no honest subset of them: this tier is all of them or none.
+  journeys: { budget: 180, suites: ["bots"] },
+  // Everything run.js knows about, the journeys included. An empty list means
+  // "pass no filter".
   full: { budget: 360, suites: [] },
 };
 
 const tier = (process.argv[2] || "").toLowerCase();
 if (!TIERS[tier]) {
-  console.error("usage: node tests/gate.js fast|checkpoint|full");
+  console.error("usage: node tests/gate.js fast|checkpoint|journeys|full");
   process.exit(2);
 }
 const want = TIERS[tier].suites;

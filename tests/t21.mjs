@@ -80,8 +80,14 @@ console.log("2. the destination is re-checked, and a stale plan writes nothing")
   ok(!dest.questions["ah-religion-ahead"], "the question in the plan did not reach the bank");
   // The teacher-facing sentence, not an internal safety error.
   ok(r.staleMessage === pub.STALE, "it carries the review-again sentence");
-  ok(/Review changes again/.test(r.staleMessage) && !/fingerprint|checksum|hash|error/i.test(r.staleMessage),
-    "which says what to do and names no internal machinery: " + JSON.stringify(r.staleMessage));
+  // The wording is frozen. It has to say three things in order: what changed,
+  // that nothing was written, and what to do. And it must name no machinery: a
+  // teacher is not the audience for a fingerprint.
+  ok(/changed since Review/.test(r.staleMessage) && /Nothing was written/.test(r.staleMessage) &&
+     /Review changes again before publishing/.test(r.staleMessage),
+    "it says what changed, that nothing was written, and what to do: " + JSON.stringify(r.staleMessage));
+  ok(!/fingerprint|checksum|hash|registry|error|failed|E_/i.test(r.staleMessage),
+    "and names no internal machinery: " + JSON.stringify(r.staleMessage));
   ok(r.reviewedAgainst === 19 && r.destinationNow === 20,
     "it says what was reviewed and what is there now: " + r.reviewedAgainst + " then, " + r.destinationNow + " now");
   ok(JSON.stringify(r.arrived) === JSON.stringify(["ops-04"]),
