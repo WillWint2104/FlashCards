@@ -124,16 +124,25 @@ async function toChooser(page) {
     await toChooser(page);
     const rows = await page.$$eval(".es-qrow", es => es.map(e => e.dataset.esq));
     ok(rows.indexOf(ID) >= 0, "the imported question is in the list: " + JSON.stringify(rows));
-    // Every question that shipped is still there, in its original order, with
-    // the imported one appended rather than woven in.
+    // Every question that shipped is still there, and the imported one sits
+    // among them in the ordinary order rather than in a section of its own. The
+    // list is sorted by topic, so "appended last" is no longer the property to
+    // check; being indistinguishable in the ordering is.
     const busSource = SOURCE_IDS.filter(id => rows.indexOf(id) >= 0);
-    ok(rows.slice(0, rows.length - 1).join(",") === rows.filter(r => r !== ID).join(","),
-      "the imported one is appended, and nothing that shipped moved: " + JSON.stringify(rows));
     ok(busSource.length === 13, "all 13 Business Studies questions that shipped are still listed: " + busSource.length);
-    // There is no separate imported mode, list or badge. It is in the normal place.
-    const modes = await page.$$eval("[data-esmode]", es => es.map(e => e.dataset.esmode));
-    ok(JSON.stringify(modes.sort()) === '["own","practice"]',
-      "and no third mode was added for imported questions: " + JSON.stringify(modes));
+    const meta = await page.$$eval(".es-qrow", es => es.map(e => ({
+      id: e.dataset.esq, topic: ((e.querySelector(".es-qrowmeta") || {}).textContent || "").split("\u00b7")[0].trim() })));
+    const topics = meta.map(m => m.topic);
+    ok(JSON.stringify(topics) === JSON.stringify(topics.slice().sort()),
+      "the list is in topic order: " + JSON.stringify(topics));
+    const mine = meta.findIndex(m => m.id === ID);
+    ok(mine > 0 && mine < meta.length - 1,
+      "and the imported question sits inside that order, not bolted to an end: position " +
+      (mine + 1) + " of " + meta.length);
+    // There is no separate route, list or badge for imported questions.
+    const routes = await page.$$eval("[data-espick]", es => es.map(e => e.dataset.espick));
+    ok(routes.every(r => r === "list" || r === "own" || r === "subject"),
+      "and no imported-only route was added: " + JSON.stringify([...new Set(routes)]));
 
   console.log("3. window.ESSAY is not touched, and the merge is a view");
     // Same page visit. Loading the 1.9MB walkthrough once per assertion group

@@ -128,9 +128,11 @@ async function planAll(page) {
 // its own question has to say so first, which is also what a student does.
 async function ownQuestion(page, q) {
   await page.evaluate(() => {
-    const b = [...document.querySelectorAll('[data-esmode]')].find(x => x.dataset.esmode === 'own');
+    const b = document.querySelector('[data-espick="own"]')
+      || [...document.querySelectorAll('[data-esmode]')].find(x => x.dataset.esmode === 'own');
     if (b) b.click();
   });
+  // The textarea lives on the own-question stage, which the click above opens.
   const box = await page.waitForSelector('#esq', { timeout: 8000 }).catch(() => null);
   if (!box) return false;
   await page.fill('#esq', q);
@@ -144,13 +146,55 @@ async function ownQuestion(page, q) {
 // The practice bank is the other route, so a suite that picks a premade question
 // has to ask for it first, exactly as a student without a question of their own
 // does. Safe to call when already there.
+// Choosing a practice question is three stages now: a subject, then the list,
+// then the question itself. This helper takes a suite to the LIST, which is what
+// every caller meant by "use practice", and it is one helper so the flow changing
+// again is one edit rather than a dozen.
 async function usePractice(page) {
   await page.evaluate(() => {
-    const b = [...document.querySelectorAll('[data-esmode]')].find(x => x.dataset.esmode === 'practice');
-    if (b && !b.classList.contains('on')) b.click();
+    const b = document.querySelector('[data-espick="list"]')
+      || [...document.querySelectorAll('[data-esmode]')].find(x => x.dataset.esmode === 'practice');
+    if (b) b.click();
   });
   // The rows are the point of switching, so wait for them rather than for 300ms.
   await page.waitForSelector('.es-qrow', { timeout: 8000 }).catch(() => {});
+}
+
+// Match a question by its WORDING, not by the whole row. Rows carry the topic,
+// the directive and the marks under the question now, so /operations/i against
+// the row text matches every Operations question rather than the one whose
+// wording says it. The question is .es-qrowq; everything else is about it.
+async function chooseQuestion(page, re) {
+  await usePractice(page);
+  const hit = await page.evaluate(src => {
+    const r = new RegExp(src, 'i');
+    const rows = [...document.querySelectorAll('.es-qrow')];
+    const t = rows.find(x => r.test((x.querySelector('.es-qrowq') || x).textContent));
+    if (!t) return null;
+    t.click();
+    return t.dataset.esq;
+  }, re instanceof RegExp ? re.source : String(re));
+  if (!hit) return null;
+  await page.waitForSelector('#esstart', { timeout: 8000 }).catch(() => {});
+  return hit;
+}
+
+// Choose a question and get past the preview into the writing surface. A row now
+// opens the question rather than starting it, so a suite that wants to WRITE has
+// to say so; one that wants to look at the preview calls usePractice and clicks
+// the row itself.
+async function pickQuestion(page, id) {
+  await usePractice(page);
+  const sel = id ? '.es-qrow[data-esq="' + id + '"]' : '.es-qrow';
+  const row = await page.$(sel);
+  if (!row) return false;
+  await row.click();
+  await page.waitForSelector('#esstart', { timeout: 8000 }).catch(() => {});
+  const go = await page.$('#esstart');
+  if (!go) return false;
+  await go.click();
+  await page.waitForTimeout(500);
+  return true;
 }
 
 // The help ladder used to open from a generic control sitting under the guide.
@@ -190,7 +234,7 @@ async function climbLadder(page) {
 
 module.exports = { usePractice, ownQuestion, closeMap, ladderOffered, climbLadder,
   nextSection, prevSection, planAll, openMap,
-  chromium, ROOT, OUT, BASE: OUT,
+  chromium, ROOT, OUT, BASE: OUT, pickQuestion, chooseQuestion,
   WALK, T: url(WALK),
   PLAIN, P: url(PLAIN),
   fileUrl: name => url(path.join(OUT, name)),

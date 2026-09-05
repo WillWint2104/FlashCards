@@ -1653,7 +1653,9 @@
   .es-filters{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-bottom:12px}
   .es-filter{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .es-filterlbl{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:700}
-  .es-resultcount{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:0 0 8px}
+  .es-countrow{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 8px}
+  .es-resultcount{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:0}
+  .es-sortnote{font-size:12px;color:var(--ink-3);font-weight:600}
   .es-qrows{display:flex;flex-direction:column;gap:8px}
   .es-qrow{text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:12px;
     padding:13px 15px;font:inherit;color:var(--ink);cursor:pointer;display:block;width:100%;
@@ -1664,6 +1666,62 @@
   .es-qrow.on .es-qrowq{font-weight:600}
   .es-qrowmeta{display:block;margin-top:5px;font-size:11.5px;color:var(--ink-3);font-weight:600}
   .es-qrowmeta i{font-style:normal;margin:0 6px;color:var(--line)}
+  /* A row is a choice, so it looks like one: a radio, the question, then what is
+     authored about it. The radio is drawn rather than an input, because the row
+     is the control and a nested input would be a second target inside it. */
+  .es-qrow{display:flex;gap:13px;align-items:flex-start}
+  .es-qradio{flex:none;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--ink-3);
+    margin-top:2px;display:block;position:relative}
+  .es-qrow.on .es-qradio{border-color:var(--green);border-width:2px}
+  .es-qrow.on .es-qradio::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--green)}
+  .es-qrowtext{flex:1;min-width:0}
+  /* Getting in: subject, then a question. Two routes, stated as two buttons. */
+  .es-choicerow{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+  .es-btn{font:inherit;font-size:14px;font-weight:600;border-radius:11px;padding:11px 18px;
+    border:1.5px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+  .es-btn:hover{border-color:var(--green);color:var(--green-dk)}
+  .es-btn-go{background:var(--green);border-color:var(--green);color:#fff}
+  .es-btn-go:hover{background:var(--green-dk);border-color:var(--green-dk);color:#fff}
+  .es-startnote{display:flex;gap:11px;align-items:flex-start;background:var(--surface);
+    border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-top:18px;
+    font-size:13px;color:var(--ink-2);line-height:1.55}
+  .es-startnote b{color:var(--ink);display:block}
+  .es-i{flex:none;width:17px;height:17px;border-radius:50%;border:1.5px solid var(--ink-3);
+    color:var(--ink-3);font-size:11px;font-weight:800;display:grid;place-items:center;margin-top:1px}
+  .es-backlink{display:inline-block;margin-bottom:12px;font-size:13px}
+  .es-h2{font-size:22px;font-weight:800;letter-spacing:-.3px;margin:0 0 4px}
+  .es-lead2{font-size:13.5px;color:var(--ink-2);margin:0 0 16px}
+  /* The question, before committing to it, beside what it can actually give. */
+  .es-prevwrap{display:grid;grid-template-columns:1.5fr 1fr;gap:18px;align-items:start}
+  .es-prevmain,.es-prevside{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:18px 20px}
+  .es-prevside{background:var(--surface)}
+  .es-chip{display:inline-block;background:var(--green-soft);color:var(--green-dk);border-radius:7px;
+    padding:3px 9px;font-size:11.5px;font-weight:700;margin-bottom:10px}
+  .es-prevq{font-size:19px;line-height:1.45;font-weight:600;color:var(--ink);margin:0 0 6px}
+  .es-prevmeta{font-size:13px;color:var(--ink-2);font-weight:600;margin:0 0 16px}
+  .es-prevmeta i{font-style:normal;color:var(--line)}
+  .es-facts{margin:0 0 18px;border-top:1px solid var(--line);padding-top:13px}
+  .es-factrow{display:flex;gap:16px;padding:5px 0;font-size:13px}
+  .es-factrow dt{flex:none;width:150px;color:var(--ink-2);font-weight:600;margin:0}
+  .es-factrow dd{margin:0;color:var(--ink);font-weight:600}
+  .es-sidehd{font-size:13.5px;font-weight:800;margin:0 0 8px}
+  .es-sidep{font-size:12.5px;color:var(--ink-2);line-height:1.6;margin:0 0 10px}
+  .es-suplist{border-top:1px solid var(--line);padding-top:10px}
+  .es-suprow{display:flex;align-items:center;gap:9px;padding:6px 0;font-size:12.5px}
+  .es-supmark{flex:none;width:16px;text-align:center;font-weight:800}
+  .es-suprow.yes .es-supmark{color:var(--green-dk)}
+  .es-suprow.no .es-supmark{color:var(--ink-3)}
+  .es-supname{flex:1;font-weight:600;color:var(--ink)}
+  .es-suprow.no .es-supname{color:var(--ink-3)}
+  .es-supstate{color:var(--ink-3);font-weight:600;font-size:11.5px}
+  .es-suprow.yes .es-supstate{color:var(--green-dk)}
+  .es-moreopts{margin-top:20px;border-top:1px solid var(--line);padding-top:14px}
+  .es-moreopts > summary{font-size:13px;font-weight:700;color:var(--ink-2);cursor:pointer;list-style:none}
+  .es-moreopts > summary::-webkit-details-marker{display:none}
+  .es-moreopts > summary::before{content:"+ ";color:var(--ink-3)}
+  .es-moreopts[open] > summary::before{content:"\2212 "}
+  .es-moreopts > summary:hover{color:var(--green-dk)}
+  @media (max-width:820px){ .es-prevwrap{grid-template-columns:1fr} }
   /* Marking guidance: a status line, with the detail one press away. */
   .es-rubstatus{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
   .es-rubtick{color:var(--green-dk);font-weight:800}

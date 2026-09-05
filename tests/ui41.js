@@ -52,15 +52,32 @@ async function guidance(p, q) {
   await p.route(/workers\.dev/, r => r.abort());
   await setup(p);
 
-  console.log('--- the student\'s own question is the way in ---');
+  console.log('--- both routes in, and the practice bank leads ---');
+  // THIS REVERSES AN EARLIER DECISION, and it is written down rather than
+  // quietly changed. Setup used to open with the question box in front of you,
+  // on the reasoning that a student with a question in their hand is the normal
+  // case and this is essay practice that also supplies questions. The approved
+  // design puts "Choose a practice question" first and primary, and makes the
+  // box one press away. What must stay true either way: both routes are on the
+  // first screen, neither is buried, and the typed route still works.
   const mode = await p.evaluate(() => {
-    const on = document.querySelector('[data-esmode].on');
-    const order = [...document.querySelectorAll('[data-esmode]')].map(x => x.dataset.esmode);
-    return { on: on ? on.dataset.esmode : null, order: order, box: !!document.querySelector('#esq') };
+    const routes = [...document.querySelectorAll('[data-espick]')].map(x => ({
+      to: x.dataset.espick, label: x.textContent.trim(),
+      primary: x.classList.contains('es-btn-go') }));
+    return { routes: routes, box: !!document.querySelector('#esq') };
   });
-  ok(mode.on === 'own', 'setup opens on the student\'s own question: ' + mode.on);
-  ok(mode.order[0] === 'own', 'and it is the first route offered: ' + JSON.stringify(mode.order));
-  ok(mode.box, 'the question box is there without asking for it');
+  ok(mode.routes.length === 2, 'the first screen offers exactly two routes: ' +
+    JSON.stringify(mode.routes.map(r => r.label)));
+  ok(mode.routes[0].to === 'list' && mode.routes[0].primary,
+    'the practice bank is first and primary: ' + JSON.stringify(mode.routes[0]));
+  ok(mode.routes.some(r => r.to === 'own'), 'and the student\'s own question is the other');
+  ok(!mode.box, 'the box is not on this screen, because choosing a route comes first');
+  // One press, and it is there. A route that costs more than that is buried.
+  await p.click('[data-espick="own"]');
+  await p.waitForSelector('#esq', { timeout: 8000 });
+  ok(!!(await p.$('#esq')), 'one press reaches the question box');
+  await p.click('[data-espick="subject"]');
+  await p.waitForSelector('[data-espick="list"]', { timeout: 8000 });
 
   console.log('--- a judgement directive gets judgement guidance ---');
   const g1 = await guidance(p, 'Assess the effectiveness of marketing strategies in achieving marketing objectives.');
@@ -112,7 +129,7 @@ async function guidance(p, q) {
 
   console.log('--- a topic with nothing behind it is not offered as a choice ---');
   await setup(p);
-  await p.evaluate(() => { const t = [...document.querySelectorAll('[data-esmode]')].find(x => x.dataset.esmode === 'practice'); t && t.click(); });
+  await p.evaluate(() => { const t = document.querySelector('[data-espick="list"]'); t && t.click(); });
   await settled(p);
   const dir = await p.evaluate(() => {
     const d = [...document.querySelectorAll('[data-essetupdir]')].find(x => /Explain/i.test(x.textContent));

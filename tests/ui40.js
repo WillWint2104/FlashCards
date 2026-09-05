@@ -49,7 +49,9 @@ async function toPicker(p, subject) {
   await p.waitForSelector('#essubject', { timeout: 8000 });
   await p.selectOption('#essubject', subject).catch(() => {});
   // The picker is ready when it has offered something, whichever mode it opens in.
-  await p.waitForFunction(() => !!document.querySelector('.es-qrow, [data-esmode]'), null, { timeout: 8000 });
+  // Stage one offers the two routes; the list offers rows. Either means the
+  // picker is ready.
+  await p.waitForFunction(() => !!document.querySelector('.es-qrow, [data-espick], [data-esmode]'), null, { timeout: 8000 });
   return true;
 }
 
@@ -124,17 +126,17 @@ async function toPicker(p, subject) {
   // lives on the ROW rather than in a separate restatement below the list: the
   // rows carry the complete authored wording, so repeating it underneath said
   // the same thing twice. Same property, checked where it is.
+  // Choosing a row now opens the question rather than starting it, so the
+  // question is stated back on the preview. Same requirement, one screen along.
   const carried = await p.evaluate(() => {
-    const on = document.querySelector('.es-qrow.on');
-    const q = on && on.querySelector('.es-qrowq');
-    return { id: on ? on.dataset.esq : null, stated: q ? q.textContent.trim().length : 0,
-      text: q ? q.textContent.trim() : '', restatements: document.querySelectorAll('.es-qrowq').length,
-      typedField: !!document.querySelector('#estopic') };
+    const q = document.querySelector('.es-prevq');
+    return { stated: q ? q.textContent.trim().length : 0, text: q ? q.textContent.trim() : '',
+      hasStart: !!document.querySelector('#esstart'), typedField: !!document.querySelector('#estopic') };
   });
-  ok(!!carried.id, 'choosing a row marks it as chosen: ' + JSON.stringify(carried.id));
-  ok(carried.stated > 20, 'and the chosen row states the whole question: ' + carried.stated + ' chars');
+  ok(carried.stated > 20, 'the preview states the whole question: ' + carried.stated + ' chars');
   ok(/^[A-Z].*[.?]$/.test(carried.text),
     'as a complete question rather than a fragment: ' + JSON.stringify(carried.text.slice(0, 60)));
+  ok(carried.hasStart, 'and offers one control that starts it');
   // ES lives inside the IIFE and cannot be read from a test, so the topic actually
   // reaching marking is asserted in ui2, where the payload is captured.
   ok(!carried.typedField, 'and nobody is asked to type a topic any more');

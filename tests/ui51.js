@@ -101,8 +101,11 @@ const rowsOf = page => page.$$eval(".es-qrow", es => es.map(e => ({
   console.log("3. one directive is one filter, whatever case it was written in");
   {
     const page = read1;
-    const dirs = await page.$$eval("[data-essetupdir]", es => es.map(e => ({
-      id: e.dataset.essetupdir, label: e.textContent.trim() })));
+    // The All pill carries an empty id, because it clears rather than selects.
+    // It is not a directive and is excluded from the directive assertions.
+    const dirs = await page.$$eval("[data-essetupdir]", es => es
+      .filter(e => e.dataset.essetupdir)
+      .map(e => ({ id: e.dataset.essetupdir, label: e.textContent.trim() })));
     const ids = dirs.map(d => d.id);
     ok(ids.length === new Set(ids).size, "no directive appears twice: " + JSON.stringify(ids));
     ok(ids.every(i => i === i.toLowerCase()), "every filter identity is canonical: " + JSON.stringify(ids));
@@ -113,8 +116,9 @@ const rowsOf = page => page.$$eval(".es-qrow", es => es.map(e => ({
     ok(dirs.every(d => /^[A-Z]/.test(d.label)), "each is labelled for a person: " +
       JSON.stringify(dirs.map(d => d.label)));
     const topics = await page.$$eval("[data-essetuptopic]", es => es.map(e => e.dataset.essetuptopic));
-    ok(topics.every(t => t === t.toLowerCase()), "topic identities are canonical too: " + JSON.stringify(topics));
-    ok(topics.length === new Set(topics).size, "and no topic appears twice");
+    ok(topics.filter(Boolean).every(t => t === t.toLowerCase()), "topic identities are canonical too: " + JSON.stringify(topics));
+    const realTopics = topics.filter(Boolean);
+    ok(realTopics.length === new Set(realTopics).size, "and no topic appears twice");
   }
 
   console.log("4. an imported question joins the same filter, not a second one");
@@ -139,7 +143,7 @@ const rowsOf = page => page.$$eval(".es-qrow", es => es.map(e => ({
 
     const page = await ctx.newPage();
     await chooser(page);
-    const before = await page.$$eval("[data-essetupdir]", es => es.map(e => e.dataset.essetupdir));
+    const before = await page.$$eval("[data-essetupdir]", es => es.map(e => e.dataset.essetupdir).filter(Boolean));
     const beforeCount = await page.$eval('[data-essetupdir="explain"] .es-pilln', e => Number(e.textContent));
     await page.evaluate(doc => {
       window.localStorage.setItem("marginal.import.pkg." + doc.question.id, JSON.stringify({
@@ -148,7 +152,7 @@ const rowsOf = page => page.$$eval(".es-qrow", es => es.map(e => ({
         shared: [] }));
     }, p);
     await chooser(page);
-    const after = await page.$$eval("[data-essetupdir]", es => es.map(e => e.dataset.essetupdir));
+    const after = await page.$$eval("[data-essetupdir]", es => es.map(e => e.dataset.essetupdir).filter(Boolean));
     ok(JSON.stringify(after) === JSON.stringify(before),
       "importing a lowercase explain adds NO new directive filter: " + JSON.stringify(after));
     const afterCount = await page.$eval('[data-essetupdir="explain"] .es-pilln', e => Number(e.textContent));
@@ -176,10 +180,11 @@ const rowsOf = page => page.$$eval(".es-qrow", es => es.map(e => ({
     const page = await ctx.newPage();
     await chooser(page);
     const read = () => page.evaluate(() => ({
-      dirs: [...document.querySelectorAll("[data-essetupdir]")].map(e => ({
+      dirs: [...document.querySelectorAll("[data-essetupdir]")].filter(e => e.dataset.essetupdir).map(e => ({
         id: e.dataset.essetupdir, n: Number((e.querySelector(".es-pilln") || {}).textContent) })),
-      topics: [...document.querySelectorAll("[data-essetuptopic]")].map(e => ({
+      topics: [...document.querySelectorAll("[data-essetuptopic]")].filter(e => e.dataset.essetuptopic).map(e => ({
         id: e.dataset.essetuptopic, n: Number((e.querySelector(".es-pilln") || {}).textContent) })),
+      all: Number((document.querySelector('[data-essetupdir=""] .es-pilln') || {}).textContent),
       count: (document.querySelector(".es-resultcount") || {}).textContent.trim(),
       rows: document.querySelectorAll(".es-qrow").length,
     }));
@@ -188,6 +193,7 @@ const rowsOf = page => page.$$eval(".es-qrow", es => es.map(e => ({
     ok(all.rows === 13, "and there are 13 rows");
     ok(all.dirs.reduce((n, d) => n + d.n, 0) === 13, "the directive counts sum to the bank: " +
       JSON.stringify(all.dirs));
+    ok(all.all === 13, "and the All pill says the same total: " + all.all);
     // Choose a topic, and the DIRECTIVE counts must be recomputed for it.
     await page.click('[data-essetuptopic="finance"]');
     await page.waitForTimeout(250);
@@ -202,8 +208,10 @@ const rowsOf = page => page.$$eval(".es-qrow", es => es.map(e => ({
     const disabled = await page.$$eval("[data-essetupdir][disabled]", es => es.map(e => e.dataset.essetupdir));
     ok(JSON.stringify(disabled.sort()) === JSON.stringify(empty.map(d => d.id).sort()),
       "and are not pressable, because a filter leading nowhere is a dead end: " + JSON.stringify(disabled));
-    const clear = await page.$("#esclearfilters");
-    ok(!!clear, "there is a way back to all of them");
+    // Clearing is the All pill at the head of each row, which is also what says
+    // how many there are in total.
+    const clear = await page.$('[data-essetuptopic=""]');
+    ok(!!clear, "there is an All pill to go back to all of them");
     await clear.click();
     await page.waitForTimeout(250);
     ok((await read()).rows === 13, "which restores every question");
@@ -223,6 +231,103 @@ const rowsOf = page => page.$$eval(".es-qrow", es => es.map(e => ({
       ok(a.t === rt.topicId(a.c), "topicId agrees on " + JSON.stringify(a.c) + ": " + a.t);
     });
     await read1.close();
+  }
+
+  console.log("7. the preview says what the question actually offers");
+  {
+    const page = await ctx.newPage();
+    await chooser(page);
+    // mkt-01 is one of the three that report guided; ops-01 carries a stem and a
+    // rubric and nothing else. If the preview said the same thing about both, it
+    // would be decoration.
+    const read = async id => {
+      await page.click('.es-qrow[data-esq="' + id + '"]');
+      await page.waitForSelector(".es-prevq", { timeout: 8000 });
+      const out = await page.evaluate(() => ({
+        q: document.querySelector(".es-prevq").textContent.trim(),
+        facts: [...document.querySelectorAll(".es-factrow")].map(r => [
+          r.querySelector("dt").textContent.trim(), r.querySelector("dd").textContent.trim()]),
+        support: [...document.querySelectorAll(".es-suprow")].map(r => ({
+          name: r.querySelector(".es-supname").textContent.trim(),
+          state: r.querySelector(".es-supstate").textContent.trim() })),
+      }));
+      await page.click("#esbacklist");
+      await page.waitForSelector(".es-qrow", { timeout: 8000 });
+      return out;
+    };
+    const guided = await read("mkt-01");
+    const thin = await read("ops-01");
+    const src = id => BUS.find(q => q.id === id);
+
+    ok(guided.q === src("mkt-01").text.trim(), "the preview is the authored question, whole");
+    ok(thin.q === src("ops-01").text.trim(), "for a thin question as well as a guided one");
+
+    const has = (r, n) => (r.support.find(x => x.name === n) || {}).state;
+    ok(has(guided, "Pathway guidance") === "Available",
+      "mkt-01 has pathway guidance, because it authors arguments: " + has(guided, "Pathway guidance"));
+    ok(has(thin, "Pathway guidance") === "Not available",
+      "ops-01 does not, because it authors none: " + has(thin, "Pathway guidance"));
+    ok(has(guided, "Planning support") === "Available" && has(thin, "Planning support") === "Not available",
+      "and the same for planning support, which is areas");
+    ok(has(guided, "Marking guidance") === "Available" && has(thin, "Marking guidance") === "Available",
+      "marking guidance is there for both, because it is written or generated");
+    ok(JSON.stringify(guided.support) !== JSON.stringify(thin.support),
+      "so the two questions do NOT report the same support");
+
+    // Every line is checkable against the question. Nothing is asserted that the
+    // question does not carry.
+    const paths = (src("mkt-01").pathways || []).length;
+    ok(paths > 0 && has(guided, "Learning support") ===
+      ((src("mkt-01").pathways || []).some(p => (p.learning || {}).status === "authored") ? "Available" : "Not available"),
+      "learning support matches whether a lesson is authored on any argument");
+
+    // Marks: stated where authored, absent where not. The mockups showed 12
+    // marks on ops-01, which authors none.
+    const marksRow = r => (r.facts.find(f => f[0] === "Marks") || [])[1];
+    ok(marksRow(guided) === String(src("mkt-01").marks), "marks are stated where authored: " + marksRow(guided));
+    ok(src("ops-01").marks == null && marksRow(thin) === undefined,
+      "and there is no Marks row at all where none is authored: " + JSON.stringify(marksRow(thin)));
+    await page.close();
+  }
+
+  console.log("8. the three stages are three screens, and each has a way back");
+  {
+    const page = await ctx.newPage();
+    await page.goto(T);
+    await page.waitForSelector(".navtab", { timeout: 8000 });
+    for (const t of await page.$$(".navtab")) {
+      if (/essay/i.test((await t.textContent()) || "")) { await t.click(); break; }
+    }
+    await page.waitForSelector("#essubject", { timeout: 8000 });
+    await page.selectOption("#essubject", "business_studies");
+    await page.waitForTimeout(250);
+    const stage = () => page.evaluate(() => ({
+      heading: (document.querySelector(".es-h1, .es-h2") || {}).textContent,
+      rows: document.querySelectorAll(".es-qrow").length,
+      preview: !!document.querySelector(".es-prevq"),
+      subject: !!document.querySelector("#essubject"),
+      // Present is not the question; VISIBLE is. A field inside a hidden wrapper
+      // is not part of the screen even though it is in the document.
+      settings: (() => { const e = document.querySelector("#esstruct"); return !!e && !!e.offsetParent; })(),
+    }));
+    const one = await stage();
+    ok(/Set up your essay/.test(one.heading) && one.subject && one.rows === 0,
+      "stage one is the subject and no list: " + JSON.stringify(one));
+    await page.click('[data-espick="list"]'); await page.waitForTimeout(250);
+    const two = await stage();
+    ok(/Choose a practice question/.test(two.heading) && two.rows === 13 && !two.subject,
+      "stage two is the list, with its own heading and no setup form: " + JSON.stringify(two));
+    ok(!two.settings, "and the settings are not carried down it: " + two.settings);
+    await page.click('.es-qrow[data-esq="mkt-01"]'); await page.waitForTimeout(250);
+    const three = await stage();
+    ok(three.preview && three.rows === 0, "stage three is the question: " + JSON.stringify(three));
+    ok(three.settings, "with the settings reachable, folded, so nothing became unreachable");
+    // Back, all the way.
+    await page.click("#esbacklist"); await page.waitForTimeout(250);
+    ok((await stage()).rows === 13, "back returns to the list");
+    await page.click('[data-espick="subject"]'); await page.waitForTimeout(250);
+    ok((await stage()).subject, "and back again returns to the subject");
+    await page.close();
   }
 
   ok(!errs.length, "no page raised an error throughout: " + JSON.stringify(errs.slice(0, 3)));
