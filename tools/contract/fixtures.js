@@ -105,7 +105,7 @@ function manifest(packages, man, REG) {
   const runnable = {};
   PERSONAS.forEach(p => { runnable[p.id] = rows.filter(r => r.personas.find(x => x.persona === p.id).applicable).map(r => r.package); });
   return { schema: "marginal.fixture-manifest", version: 1,
-    note: "Describes the simulations. Does not run them: that is work for after the importer, against externally authored packs rather than against this bank.",
+    note: "Describes the simulations. tests/ui53.js runs them against an externally authored package rather than against this bank, which is what this manifest was written for.",
     personas: PERSONAS, runnable: runnable, packages: rows };
 }
 module.exports = { manifest, PERSONAS, handles };

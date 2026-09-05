@@ -890,11 +890,31 @@ const ORDER = Object.keys(RULES);
 
 function evaluate(pkg, man, directiveRow, hasErrors) {
   const lib = (man && man.records) || {};
+  const provides = (pkg && pkg.provides) || {};
+  // A record the package PROVIDES resolves, exactly as it does in validate.js.
+  // Without this the two halves of the contract disagreed: validate accepted a
+  // provided lesson as resolving, and the capability rules looked only in the
+  // shared library and reported the argument as having no lesson. An external
+  // package that wrote its own lessons was told it had not written them, and the
+  // only way to reach learning-complete was to point at a lesson authored for a
+  // different question. The rules were pushing authors towards borrowing, which
+  // is the one thing the runtime exists to refuse.
+  //
+  // A provided record is treated as complete because a half written one is
+  // already a RECORD_PARTIAL error, which fails `resolves` and therefore
+  // importable, so it can never reach a rule below this line.
+  const rec = (kind, id) => {
+    if (id == null) return null;
+    const shared = (lib[kind] || {})[id];
+    if (shared) return shared;
+    const own = (provides[kind] || {})[id];
+    return own ? { complete: true, provided: true, missing: [] } : null;
+  };
   const c = {
     pkg: pkg, q: pkg.question || {}, paths: pkg.pathways || [],
     judgement: (pkg.coreAnswer || {}).mode === "judgement",
     directive: directiveRow, errors: !!hasErrors,
-    rec: (kind, id) => (lib[kind] || {})[id] || null,
+    rec: rec,
     reached: {},
   };
   const out = {};

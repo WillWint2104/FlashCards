@@ -85,7 +85,14 @@ const TIERS = {
   // no honest subset of the bots: that part is all of them or none.
   // ui13, ui30 and ui51 joined when checkpoint went over its minute. All three
   // are end-to-end walks rather than seam checks, which is what this tier is for.
-  journeys: { budget: 180, suites: ["ui13", "ui30", "ui40", "ui50", "ui51", "bots"] },
+  //
+  // ui53 is the longest chain in the repository and belongs nowhere else: it
+  // publishes an externally authored package through the real importer and then
+  // walks four simulated students through it, so it crosses every surface the
+  // project has. The budget went to 240 with it, which is the honest cost of the
+  // suite rather than headroom taken back: the run is 205s and the tier is not
+  // one people run out of habit.
+  journeys: { budget: 240, suites: ["ui13", "ui30", "ui40", "ui50", "ui51", "ui53", "bots"] },
   // Everything run.js knows about, the journeys included. An empty list means
   // "pass no filter".
   full: { budget: 360, suites: [] },

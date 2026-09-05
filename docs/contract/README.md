@@ -1,8 +1,11 @@
 # QuestionPackage v1
 
 The interchange format a question is authored in, imported from and validated
-against. **The importer does not exist.** Nothing in the application reads any of
-this. It is here to be argued with before a user interface is built on top of it.
+against. **The importer exists**, as `marginal-importer.html`, and the student app
+reads what it publishes: a package is validated, reviewed, admitted and stored,
+and the question then appears in the ordinary question list beside the ones that
+shipped. `tests/ui53.js` walks that whole chain on a package authored outside the
+application, and four simulated students write against it.
 
 The goal it serves, stated once so every decision below can be checked against
 it: *a complete question can be authored as JSON outside Marginal, validated,
@@ -25,6 +28,7 @@ reviewed as a coherent authored set, and imported, without anyone editing
 | `invalid-demo.json` | **authored to be wrong.** One fault of every kind |
 | `unsupported-directive-demo.json` | **authored, and entirely valid.** A Compare question, asking for support that does not exist |
 | `ahead-minor-demo.json` | **authored against 1.7.** Carries four fields this reader cannot read, and must survive it unchanged |
+| `../../tests/fixtures/external-ops-package.json` | **authored outside the application**, from `template-causal.json`, by the script beside it. Four areas, eight arguments, its own vocabulary, concepts and lessons, and no evidence, because it has no source it could cite |
 | `decisions.md` | the decisions taken, and what each one rules out |
 | `migration.md` | how the questions in source get out of source |
 
