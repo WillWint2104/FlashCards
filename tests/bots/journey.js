@@ -3,7 +3,7 @@
 // the student does: the profile's knowledge state does, and the app's response
 // to it does.
 const { termsOf, vocabulary, teachable, Ledger, Trace } = require("./lib");
-const { openMap, usePractice } = require("../env");
+const { openMap, usePractice, chooseQuestion } = require("../env");
 // what a pathway SAYS it depends on, which is the thing worth auditing. A word
 // the sentence happened to contain is not a teaching dependency.
 function declaredOf(q, id, store) {
@@ -25,9 +25,18 @@ async function openApp(p, T, subject, qre, structure) {
   await p.$$eval(".navtab", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await wait(p, 400);
   await p.selectOption("#essubject", subject); await wait(p, 220);
-  await usePractice(p);
-  await p.$$eval(".es-qrow", (es, r) => { const t = es.find(x => new RegExp(r, "i").test(x.textContent)); t && t.click(); }, qre.source);
-  if (structure) { await p.selectOption("#esstruct", structure); await wait(p, 150); }
+  // The structure control lives with the other settings on the SETUP stage now,
+  // folded, so it is chosen before going to the list rather than after picking a
+  // question. Choosing a question is choosing; setting up is setting up.
+  if (structure) {
+    const sum = await p.$("#esmoreopts > summary");
+    if (sum) { await sum.click(); await wait(p, 150); }
+    await p.selectOption("#esstruct", structure).catch(() => {});
+    await wait(p, 150);
+  }
+  // chooseQuestion matches on the question's WORDING and walks the pages, which
+  // the list now has: ten to a page.
+  await chooseQuestion(p, qre);
   await p.click("#esstart"); await wait(p, 700);
 }
 
