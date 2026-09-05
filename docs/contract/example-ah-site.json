@@ -1,6 +1,6 @@
 {
   "schema": "marginal.question-package",
-  "contractVersion": "1.0",
+  "contractVersion": "1.1",
   "origin": {
     "type": "bundled",
     "packageId": null,
@@ -28,11 +28,12 @@
     "topicLabel": "Features of ancient societies: significant sites",
     "directive": "account for",
     "text": "Account for the significance of one major site or monument to the society that built it.",
-    "marks": 20,
     "terms": {
       "first": null,
       "second": null
     },
+    "note": null,
+    "areasLabel": null,
     "overallArgument": null,
     "vocabRefs": [],
     "studyRefs": []

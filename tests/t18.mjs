@@ -38,16 +38,32 @@ console.log("1. every question that ships converts and validates");
 {
   const reports = IDS.map(id => ({ id: id, r: validate(read("docs/contract/example-" + id + ".json"), MAN) }));
   const at = (rep, k) => rep.capability.dimensions[k].status === "reached";
-  const bad = reports.filter(x => x.r.counts.error || x.r.counts.blocked);
-  ok(!bad.length, "none of the nineteen is rejected or blocked: " +
-    JSON.stringify(bad.map(x => x.id + " " + JSON.stringify(codes(x.r)))));
+  // FOURTEEN OF THE NINETEEN ARE INVALID, and that is the truthful state rather
+  // than a regression. question.marks is required by the contract, fourteen
+  // questions in source author none, and the exporter used to write `marks: 20`
+  // for them. Twenty is the SETUP FORM's editable default (app.js:4311), not
+  // anything anybody said about these questions, so carrying it into a package
+  // turned "the student's form starts at 20" into "this question is worth 20",
+  // on the header a student reads and in the band table. The default is gone,
+  // the packages say what is missing, and this suite says so too.
+  const noMarks = reports.filter(x => x.r.findings.some(f => f.path === "question.marks"));
+  const other = reports.filter(x => (x.r.counts.error || x.r.counts.blocked) && !noMarks.includes(x));
+  ok(noMarks.length === 14, "fourteen questions author no marks and cannot be exported until they do: " +
+    JSON.stringify(noMarks.map(x => x.id).sort()));
+  ok(!other.length, "and nothing else is rejected or blocked: " +
+    JSON.stringify(other.map(x => x.id + " " + JSON.stringify(codes(x.r)))));
   const guided = reports.filter(x => at(x.r, "pathway-guided")).map(x => x.id).sort();
   console.log("    guided:", JSON.stringify(guided));
   ok(JSON.stringify(guided) === JSON.stringify(["fin-01", "hr-01", "mkt-01"]),
     "the three questions with authored arguments are the three that report guided: " + JSON.stringify(guided));
+  // writing-ready needs marks, so the fourteen without them now fall out of it
+  // too. The six Ancient History questions still carry only a stem; the eight
+  // Business Studies ones are otherwise complete and are held by the one field.
   const stem = reports.filter(x => !at(x.r, "writing-ready")).map(x => x.id).sort();
-  ok(stem.length === 6 && stem.every(x => /^ah-/.test(x)),
-    "and the six carrying only a stem say so rather than being dressed up: " + JSON.stringify(stem));
+  ok(stem.every(x => noMarks.some(n => n.id === x) || /^ah-/.test(x)),
+    "nothing is short of writing-ready for a reason other than a stem or missing marks: " + JSON.stringify(stem));
+  const ah = stem.filter(x => /^ah-/.test(x));
+  ok(ah.length === 6, "and the six carrying only a stem still say so: " + JSON.stringify(ah));
   // The point of six dimensions rather than one score.
   const mkt = reports.find(x => x.id === "mkt-01").r;
   ok(at(mkt, "pathway-guided") && !at(mkt, "evidence-complete"),
@@ -71,7 +87,7 @@ console.log("1. every question that ships converts and validates");
 console.log("1b. every package declares the contract it was authored against");
 {
   const gen = require("../tools/contract/generate.js");
-  ok(gen.CONTRACT_VERSION === "1.0", "the contract is at " + gen.CONTRACT_VERSION);
+  ok(gen.CONTRACT_VERSION === "1.1", "the contract is at " + gen.CONTRACT_VERSION);
   IDS.forEach(id => {
     const p = read("docs/contract/example-" + id + ".json");
     ok(p.contractVersion === gen.CONTRACT_VERSION && p.schema === "marginal.question-package",
@@ -192,8 +208,15 @@ console.log("2. a judgement question with no judgement shapes is VALID, and says
 {
   // The distinction the contract turns on: missing shared support is a capability
   // fact about the engine, not a malformed package.
-  const r = validate(read("docs/contract/example-mkt-02.json"), MAN);
-  ok(r.wouldImport, "mkt-02 imports: " + r.verdict + " " + JSON.stringify(codes(r)));
+  // mkt-02 authors no marks, which the contract requires, so it is rejected for
+  // a reason that has nothing to do with the point here. The marks are supplied
+  // BY THIS TEST, and named as such, so the assertion is about sentence shapes
+  // and not about a field somebody has yet to author.
+  const mkt02 = read("docs/contract/example-mkt-02.json");
+  ok(mkt02.question.marks == null, "mkt-02 still authors no marks in source: " + JSON.stringify(mkt02.question.marks));
+  mkt02.question.marks = 20; // supplied here, not by the exporter
+  const r = validate(mkt02, MAN);
+  ok(r.wouldImport, "with marks supplied, mkt-02 imports: " + r.verdict + " " + JSON.stringify(codes(r)));
   const shapes = r.capability.unavailable.find(u => u.support === "sentence shapes");
   console.log("    unavailable:", JSON.stringify(r.capability.unavailable));
   ok(!!shapes, "and reports that sentence shape support is unavailable");

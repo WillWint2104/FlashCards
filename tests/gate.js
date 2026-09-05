@@ -25,6 +25,10 @@ const TIERS = {
   // 37s, so ui40 goes back to checkpoint, where it already runs: it walks EVERY
   // question through the shell, which is an exhaustive sweep rather than a fast
   // signal, and it was the single most expensive suite here at 7.2s.
+  // ui51 is not here either: it renders the picker in four browser pages, which
+  // is a surface check rather than a sharp signal, and the tier was at 40.2s of
+  // its 40s. Its static half, t22, is here, and that is the half that catches a
+  // field going missing on the way through the contract.
   // ui50 is NOT here. It publishes through the importer and then drives the
   // student app, so it is an integration test across two surfaces rather than a
   // sharp signal about one, and it took the tier to 42.1s. Same reasoning that
@@ -36,7 +40,7 @@ const TIERS = {
   // a change here can break. Raised deliberately, with the headroom stated, which
   // is the opposite of what happened to checkpoint: that one was left at 174/180
   // until variance would have started failing it.
-  fast: { budget: 40, suites: ["t1", "t17", "t18", "t19", "t20", "t21", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49"] },
+  fast: { budget: 40, suites: ["t1", "t17", "t18", "t19", "t20", "t21", "t22", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49"] },
   // Adds the interaction surfaces that the shell rewrite touched, and the setup
   // and marking paths. This is the gate to pass before pushing, and its whole
   // value is that it is cheap enough to run out of habit.
@@ -50,8 +54,12 @@ const TIERS = {
   // change break the thing I am working on.
   checkpoint: {
     budget: 60,
-    suites: ["t1", "t2", "t17", "t18", "t19", "t20", "t21", "ui13", "ui30", "ui35", "ui37", "ui38", "ui39", "ui40", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49"],
+    suites: ["t1", "t2", "t17", "t18", "t19", "t20", "t21", "t22", "ui13", "ui30", "ui35", "ui37", "ui38", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49", "ui51"],
   },
+  // ui40 joined this tier when ui51 arrived. It walks EVERY question through the
+  // shell, which is an exhaustive sweep and 6.2s of it, and the picker it swept
+  // for is now covered precisely by ui51 at a third of the cost. An exhaustive
+  // walk belongs where the exhaustive things are.
   // End to end. The seven simulated students, run one after another through a
   // single page, and the suite that publishes a package through the importer and
   // then finds it in the student app. Both cross a whole surface rather than
@@ -60,7 +68,7 @@ const TIERS = {
   //
   // The cross-journey assertions compare the students to each other, so there is
   // no honest subset of the bots: that part is all of them or none.
-  journeys: { budget: 180, suites: ["ui50", "bots"] },
+  journeys: { budget: 180, suites: ["ui40", "ui50", "bots"] },
   // Everything run.js knows about, the journeys included. An empty list means
   // "pass no filter".
   full: { budget: 360, suites: [] },

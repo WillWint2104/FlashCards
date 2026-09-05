@@ -1,6 +1,6 @@
 {
   "schema": "marginal.question-package",
-  "contractVersion": "1.0",
+  "contractVersion": "1.1",
   "origin": {
     "type": "bundled",
     "packageId": null,
@@ -32,11 +32,12 @@
     "topicLabel": null,
     "directive": "to what extent",
     "text": "To what extent can human resource processes contribute to effective human resource management?",
-    "marks": 20,
     "terms": {
       "first": "Human resource processes",
       "second": "Effective human resource management"
     },
+    "note": null,
+    "areasLabel": null,
     "overallArgument": "Human resource processes contribute substantially to effective management, though their effect depends on how well each stage is carried out.",
     "vocabRefs": [],
     "studyRefs": []

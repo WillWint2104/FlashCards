@@ -311,6 +311,49 @@ next contract adds.
 A version that cannot return the document it was given may inspect and must not
 publish, and the report says so by name rather than in a comment.
 
+
+**Contract 1.1, and what a bundled question loses on the way out.** Building the
+inverse of the exporter, so an imported package could reach the student runtime,
+showed that five things did not survive a round trip. Four were dropped in
+silence and one was invented:
+
+| lost | where | 1.1 |
+| --- | --- | --- |
+| `question.note` | two questions | carried |
+| `areasLabel` | two questions | carried |
+| `pathways[].mechanism.reason` | one pathway | carried beside `note`, which is a different field |
+| `requirements.requiredAreas` | one question | carried, ids slugged to match the areas they name |
+| `marks` | fourteen questions | NOT defaulted any more |
+
+The marks one is the one that mattered. `packagize.js` wrote `marks: q.marks ||
+20`, and twenty is the setup form's editable default in `app.js`, not something
+anybody said about those questions. Carrying it into a package turned "the
+student's form starts at 20" into "this question is worth 20", on the header a
+student reads and in the band table the answer is marked against. There is no
+default now. `question.marks` is required, fourteen questions author none, and
+their packages are invalid until somebody says what they are worth. That is a
+content gap stated out loud rather than filled in.
+
+The additions are optional fields, so a 1.0 reader still reads a 1.1 package and
+stores the four it does not interpret. `tests/t22.mjs` round trips every bundled
+Business Studies question, source to package to runtime, and compares field by
+field rather than checking that the result is merely valid.
+
+**A topic's label belongs to the syllabus record, not to the question.** A
+question carries `topicRef` or `topicLabel` and never both, so the runtime
+resolves a ref through a generated topic index, exactly as the manifest resolves
+it. It is never taken apart: `business.hr` is the human resources topic and its
+last segment is a namespace. Where nothing resolves a ref, the question has no
+display topic, because "Hr" is a word nobody wrote.
+
+**Directive identity is canonical and case-insensitive.** `essay-content.js`
+authors "Explain" and the contract stores "explain". Filtering on the raw string
+put one directive in the picker twice, as "Explain 3" and "explain 1". The
+identity is the lowercase form and the label is derived from it, which for every
+directive this bank authors is the authored form exactly. Topics are identified
+the same way, but their label is the authored one, because capitalisation cannot
+be rebuilt from an id.
+
 ## What is still open
 
 Nothing in the format is waiting on a decision. What remains is work the

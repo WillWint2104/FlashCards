@@ -43,7 +43,13 @@ out = inlineScript(out, '<script src="business-content.js"></script>', busconten
 // Imported questions reach the student through the same store adapter that wrote
 // them. Two modules, no validator: a student surface has nothing to decide about
 // a package that was validated and admitted before it was ever written.
+const topicIndex = {};
+Object.values(require("./tools/contract/libraries.js").build().libraries.syllabus)
+  .forEach(r => { if (r.kind === "topic") topicIndex[r.id] = r.label; });
 out = inlineScript(out, '<script src="student-imports.js"></script>',
+  "// GENERATED. Topic ids to the labels the syllabus library authors, so a\n" +
+  "// question carrying only a topicRef has a name to show without one being\n" +
+  "// invented from the id.\nwindow.MarginalTopics = " + JSON.stringify(topicIndex) + ";\n" +
   require("./tools/contract/bundle.js").studentBundle(root));
 out = inlineScript(out, '<script src="app.js"></script>', app);
 

@@ -120,13 +120,21 @@ async function toPicker(p, subject) {
   await usePractice(p);
   await p.evaluate(() => { const row = document.querySelector('.es-qrow'); row && row.click(); });
   await p.waitForFunction(() => !!document.querySelector('.es-qrow.on'), null, { timeout: 8000 }).catch(() => {});
+  // The requirement is that the whole question is stated back once, and it now
+  // lives on the ROW rather than in a separate restatement below the list: the
+  // rows carry the complete authored wording, so repeating it underneath said
+  // the same thing twice. Same property, checked where it is.
   const carried = await p.evaluate(() => {
-    const on = document.querySelector('.es-qrow.on'), c = document.querySelector('.es-chosenq');
-    return { id: on ? on.dataset.esq : null, stated: c ? c.textContent.trim().length : 0,
+    const on = document.querySelector('.es-qrow.on');
+    const q = on && on.querySelector('.es-qrowq');
+    return { id: on ? on.dataset.esq : null, stated: q ? q.textContent.trim().length : 0,
+      text: q ? q.textContent.trim() : '', restatements: document.querySelectorAll('.es-qrowq').length,
       typedField: !!document.querySelector('#estopic') };
   });
   ok(!!carried.id, 'choosing a row marks it as chosen: ' + JSON.stringify(carried.id));
-  ok(carried.stated > 20, 'and states the whole question back once: ' + carried.stated + ' chars');
+  ok(carried.stated > 20, 'and the chosen row states the whole question: ' + carried.stated + ' chars');
+  ok(/^[A-Z].*[.?]$/.test(carried.text),
+    'as a complete question rather than a fragment: ' + JSON.stringify(carried.text.slice(0, 60)));
   // ES lives inside the IIFE and cannot be read from a test, so the topic actually
   // reaching marking is asserted in ui2, where the payload is captured.
   ok(!carried.typedField, 'and nobody is asked to type a topic any more');

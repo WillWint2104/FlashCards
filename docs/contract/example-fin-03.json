@@ -1,6 +1,6 @@
 {
   "schema": "marginal.question-package",
-  "contractVersion": "1.0",
+  "contractVersion": "1.1",
   "origin": {
     "type": "bundled",
     "packageId": null,
@@ -30,11 +30,12 @@
     "topicLabel": null,
     "directive": "assess",
     "text": "Assess the impact of influences on the financial management of a business.",
-    "marks": 20,
     "terms": {
       "first": "Influences on financial management",
       "second": "Financial management and performance"
     },
+    "note": null,
+    "areasLabel": null,
     "overallArgument": "The significance of each influence depends on the business's financial position and activities, though global market conditions can be particularly significant for large and international businesses.",
     "vocabRefs": [],
     "studyRefs": []

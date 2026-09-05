@@ -23,10 +23,19 @@
 const SOURCE = { bundled: "bundled", imported: "imported" };
 
 // package.question.terms is { first, second }; the runtime reads term1/term2.
-function topicFromRef(ref) {
+// A topic's LABEL belongs to the syllabus record, not to the question, which is
+// why a question carries a ref or a label and never both. So a ref is resolved
+// through the syllabus, exactly as the manifest resolves it, and never taken
+// apart: business.hr is the human resources topic, and its last segment is "hr",
+// which is a namespace and not something to show anybody.
+//
+// Where nothing resolves it, the question has NO display topic. That is the
+// honest outcome: the label lives somewhere this reader was not given, and
+// "Hr" would be a word nobody wrote.
+function topicLabelFor(ref, topics) {
   if (!ref || typeof ref !== "string") return null;
-  const bits = ref.split(".");
-  return bits.length >= 2 ? bits[bits.length - 1] : null;
+  const hit = (topics || {})[ref];
+  return hit ? String(hit) : null;
 }
 
 function termsOf(q) {
@@ -91,8 +100,15 @@ function pathwaysOf(doc) {
       commonMistake: p.commonMistake || undefined,
       guides: guidesOf(p.guidance), help: helpOf(p.guidance),
     };
-    if (p.mechanism && (p.mechanism.text || p.mechanism.note || p.mechanism.status !== "unreviewed"))
-      out.mechanism = { state: p.mechanism.status, text: p.mechanism.text || undefined, note: p.mechanism.note || undefined };
+    if (p.mechanism && (p.mechanism.text || p.mechanism.note || p.mechanism.reason ||
+                        p.mechanism.status !== "unreviewed")) {
+      out.mechanism = { state: p.mechanism.status };
+      // reason and note are different authored things: reason argues that no
+      // middle step is needed, note records what a reviewer found missing.
+      if (p.mechanism.reason) out.mechanism.reason = p.mechanism.reason;
+      if (p.mechanism.text) out.mechanism.text = p.mechanism.text;
+      if (p.mechanism.note) out.mechanism.note = p.mechanism.note;
+    }
     if (p.learning && p.learning.status) out.learning = { status: p.learning.status };
     if (p.contribution) out.contribution = p.contribution;
     // Refs are ids into the shared libraries. They travel unresolved: resolving
@@ -109,7 +125,8 @@ function pathwaysOf(doc) {
 // The runtime question. Only what the package actually carries: a field the
 // package leaves out is left out here, so the runtime's own "is this authored"
 // checks see the truth rather than an empty shape pretending to be authored.
-function toRuntimeQuestion(doc) {
+function toRuntimeQuestion(doc, opts) {
+  const topics = (opts && opts.topics) || null;
   if (!doc || !doc.question || !doc.question.id) return null;
   const q = doc.question;
   const t = termsOf(q);
@@ -128,9 +145,13 @@ function toRuntimeQuestion(doc) {
     // "Marketing" comes back as "marketing". That is a real loss and it is left
     // visible rather than repaired by title casing, which would invent a label
     // for every ref whose original had none.
-    topic: q.topicLabel || topicFromRef(q.topicRef) || undefined,
+    topic: q.topicLabel || topicLabelFor(q.topicRef, topics) || undefined,
     topicRef: q.topicRef || undefined,
   };
+  // Added in contract 1.1. Dropped by 1.0 and therefore lost on any question
+  // exported and re-imported.
+  if (q.note) out.note = q.note;
+  if (q.areasLabel) out.areasLabel = q.areasLabel;
   if (t.term1 != null) out.term1 = t.term1;
   if (t.term2 != null) out.term2 = t.term2;
   if (q.overallArgument) out.argument = q.overallArgument;
@@ -154,6 +175,8 @@ function toRuntimeQuestion(doc) {
     if ((r.relationships || []).length) req.relationships = r.relationships.slice();
     if ((r.accomplish || []).length) req.accomplish = r.accomplish.slice();
     if (r.syllabusSummary) req.syllabus = r.syllabusSummary;
+    if ((r.requiredAreas || []).length)
+      req.requiredAreas = r.requiredAreas.map(a => ({ id: a.id, label: a.label }));
     if (Object.keys(req).length) out.requirements = req;
   }
   if (doc.coreAnswer) out.coreAnswer = doc.coreAnswer;
@@ -181,7 +204,7 @@ function toRuntimeQuestion(doc) {
 // Admission refuses that at import, so reaching here means storage is wrong,
 // and the runtime's job in that case is to be obviously missing a question
 // rather than quietly serving a different one under a familiar id.
-function mergeSubjects(subjects, stored) {
+function mergeSubjects(subjects, stored, opts) {
   const sourceIds = {};
   Object.keys(subjects || {}).forEach(sk =>
     ((subjects[sk] || {}).questions || []).forEach(q => { if (q && q.id) sourceIds[q.id] = sk; }));
@@ -190,7 +213,7 @@ function mergeSubjects(subjects, stored) {
   Object.keys((stored || {}).questions || {}).forEach(id => {
     const rec = stored.questions[id];
     const doc = rec && rec.document;
-    const rq = doc ? toRuntimeQuestion(doc) : null;
+    const rq = doc ? toRuntimeQuestion(doc, opts) : null;
     if (!rq) { unusable.push({ id: id, why: "the stored package carries no readable question" }); return; }
     if (rq.id !== id) { unusable.push({ id: id, why: "stored under " + id + " and the document says " + rq.id }); return; }
     if (sourceIds[id]) { collisions.push({ id: id, subject: sourceIds[id] }); return; }
@@ -215,4 +238,30 @@ function mergeSubjects(subjects, stored) {
   return { subjects: out, added: added, collisions: collisions, unusable: unusable };
 }
 
-module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf };
+// ---- canonical identity ------------------------------------------------------
+// A directive is one thing however it is written. The contract stores it as a
+// lowercase id and essay-content.js authors it as a display form, so "Explain"
+// and "explain" reached a picker as two filters over the same directive. The
+// identity is the lowercase form; the LABEL is a display form derived from it,
+// which for every directive the bank uses is the id with its first letter
+// raised: explain, how can, to what extent, assess, evaluate, analyse.
+//
+// Nothing here changes what a student reads. The complete authored wording of a
+// question is question.text and always was; it contains the directive in
+// whatever case its author wrote.
+function directiveId(command) {
+  return String(command == null ? "" : command).trim().toLowerCase();
+}
+function directiveLabel(id) {
+  const s = String(id || "").trim();
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
+}
+// Topics are identified the same way. A label cannot be rebuilt from an id,
+// because slugging threw the capitalisation away, so the label is the first
+// AUTHORED one seen for an identity and never a title cased guess.
+function topicId(topic) {
+  return String(topic == null ? "" : topic).trim().toLowerCase();
+}
+
+module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf,
+  directiveId, directiveLabel, topicId };

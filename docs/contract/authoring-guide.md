@@ -56,7 +56,7 @@ is measuring something no student can be given.
 Every package declares the contract it was authored against:
 
     "schema": "marginal.question-package",
-    "contractVersion": "1.0",
+    "contractVersion": "1.1",
 
 `schema` says what kind of file this is. `contractVersion` says which version of
 that contract it follows, as `major.minor`.
@@ -68,7 +68,7 @@ exactly what a major version exists to announce, and guessing there is worse tha
 stopping.
 
 **The minor number is a promise about additions.** Anything added within major 1
-is something a reader of `1.0` can safely not know about. So a package authored
+is something a reader of `1.1` can safely not know about. So a package authored
 against a later minor still validates: the reader checks everything it knows, and
 records that the package was authored against a contract it has not caught up
 with. It never claims that package is fully checked.
@@ -232,7 +232,7 @@ what kind of file this is: the package type. A validator reads this before anyth
 | --- | --- |
 | required | **yes** |
 | type | `version` |
-| allowed | `"1.0"`. Major 1, any minor |
+| allowed | `"1.1"`. Major 1, any minor |
 | belongs to | the package envelope |
 | leaving it out | **invalid** - the package does not import |
 | student surface | none |
@@ -536,6 +536,42 @@ what the question is worth, which sets the expected length and the band table.
 
 - good: 20
 - bad: 0
+
+### `question.note`
+
+| | |
+| --- | --- |
+| required | no |
+| type | `string` |
+| allowed | string |
+| belongs to | the question's own content |
+| leaving it out | **acceptable** - nothing depends on it |
+| student surface | the teacher's view of the question |
+| student reads it | no |
+| may be answer specific | **no** - it must be about a different context, because scaffolding is not answer assembly |
+
+where this question came from, in the teacher's words. Not shown to a student.
+
+- good: "2024 HSC Section IV question."
+- bad: "a good one" — a note nobody can act on is not provenance
+
+### `question.areasLabel`
+
+| | |
+| --- | --- |
+| required | no |
+| type | `string` |
+| allowed | string |
+| belongs to | the question's own content |
+| leaving it out | **acceptable** - nothing depends on it |
+| student surface | the area chooser |
+| student reads it | yes |
+| may be answer specific | yes, and it is shown only on request |
+
+the collective name for this question's areas, used where the screen has to name them as a group.
+
+- good: "financial strategy area"
+- bad: "areas" — the point of the field is that this question calls them something
 
 ### `question.terms.first`
 
@@ -954,6 +990,42 @@ the syllabus wording this question sits under, in the author's summary. Original
 
 - good: a one line summary
 - bad: a quotation from the syllabus document
+
+### `requirements.requiredAreas[].id`
+
+| | |
+| --- | --- |
+| required | **yes** |
+| type | `id` |
+| allowed | lower case, hyphens |
+| belongs to | the question's own content |
+| leaving it out | **invalid** - the package does not import |
+| student surface | the area chooser, which marks these as needed |
+| student reads it | no |
+| may be answer specific | yes, and it is shown only on request |
+
+the id of an area this question defines, which a complete answer has to cover.
+
+- good: "e-marketing"
+- bad: "the first one"
+
+### `requirements.requiredAreas[].label`
+
+| | |
+| --- | --- |
+| required | **yes** |
+| type | `string` |
+| allowed | string |
+| belongs to | the question's own content |
+| leaving it out | **invalid** - the package does not import |
+| student surface | the area chooser |
+| student reads it | yes |
+| may be answer specific | yes, and it is shown only on request |
+
+how that required area is named where the student is told it is needed.
+
+- good: "e-marketing"
+- bad: ""
 
 ### `coreAnswer.mode`
 
@@ -1450,6 +1522,24 @@ whether the middle step of the relationship has been authored, is not needed, or
 
 - good: "authored"
 - bad: "done"
+
+### `pathways[].mechanism.reason`
+
+| | |
+| --- | --- |
+| required | no |
+| type | `string` |
+| allowed | string |
+| belongs to | a pathway, which is question-local |
+| leaving it out | **acceptable** - nothing depends on it |
+| student surface | not shown to a student; it is the record of the judgement |
+| student reads it | no |
+| may be answer specific | yes, and it is shown only on request |
+
+why this pathway needs no middle step, where the status says none is required.
+
+- good: "The two ends already meet, and a middle step would restate the relationship."
+- bad: "n/a" — that is the status again, not a reason
 
 ### `pathways[].mechanism.text`
 

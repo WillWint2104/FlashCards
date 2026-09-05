@@ -1647,13 +1647,23 @@
   .es-pill.empty:hover{border-color:var(--line);background:none}
   .es-pilln{font-size:11px;color:var(--ink-3);font-weight:600}
   .es-pill.on .es-pilln{color:var(--green-dk)}
-  .es-qrows{display:flex;flex-direction:column;gap:6px}
-  .es-qrow{text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:10px;
-    padding:10px 13px;font:inherit;font-size:14px;line-height:1.5;color:var(--ink);cursor:pointer}
-  .es-qrow:hover{border-color:var(--green);background:var(--green-soft)}
-  .es-qrow.on{border-color:var(--green);background:var(--green-soft);font-weight:600}
-  .es-chosen{border-top:1px solid var(--line);padding-top:12px;margin-top:4px}
-  .es-chosenq{font-size:15px;line-height:1.6;color:var(--ink);margin:0}
+  /* Choosing a question, laid out as choosing a question: the filters together at
+     the top, the count immediately above what it counts, then one card per
+     question with the whole authored wording as the dominant text. */
+  .es-filters{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-bottom:12px}
+  .es-filter{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .es-filterlbl{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:700}
+  .es-resultcount{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:0 0 8px}
+  .es-qrows{display:flex;flex-direction:column;gap:8px}
+  .es-qrow{text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:12px;
+    padding:13px 15px;font:inherit;color:var(--ink);cursor:pointer;display:block;width:100%;
+    transition:border-color .12s,background .12s}
+  .es-qrow:hover{border-color:var(--green)}
+  .es-qrow.on{border-color:var(--green);background:var(--green-soft);box-shadow:inset 3px 0 0 var(--green)}
+  .es-qrowq{display:block;font-size:14.5px;line-height:1.5;color:var(--ink)}
+  .es-qrow.on .es-qrowq{font-weight:600}
+  .es-qrowmeta{display:block;margin-top:5px;font-size:11.5px;color:var(--ink-3);font-weight:600}
+  .es-qrowmeta i{font-style:normal;margin:0 6px;color:var(--line)}
   /* Marking guidance: a status line, with the detail one press away. */
   .es-rubstatus{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
   .es-rubtick{color:var(--green-dk);font-weight:800}

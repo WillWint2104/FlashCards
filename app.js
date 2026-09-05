@@ -3206,6 +3206,25 @@
     const m = esAllSubjects();
     return { added: m.added, collisions: m.collisions, unusable: m.unusable };
   }
+  // CANONICAL QUESTION IDENTITY. Defined in tools/contract/runtime.js and used
+  // from there, so the app and the importer cannot disagree about whether two
+  // questions share a directive. The inline fallbacks exist only for a page that
+  // somehow loaded app.js without the bundle; tests/ui51.js asserts the two
+  // implementations agree on every question in the bank.
+  function esDirectiveId(c) {
+    const M = window.MarginalImports;
+    return M && M.directiveId ? M.directiveId(c) : String(c == null ? "" : c).trim().toLowerCase();
+  }
+  function esDirectiveLabel(id) {
+    const M = window.MarginalImports;
+    if (M && M.directiveLabel) return M.directiveLabel(id);
+    const t = String(id || "").trim();
+    return t ? t.charAt(0).toUpperCase() + t.slice(1) : "";
+  }
+  function esTopicId(t) {
+    const M = window.MarginalImports;
+    return M && M.topicId ? M.topicId(t) : String(t == null ? "" : t).trim().toLowerCase();
+  }
   // Read only, for the suites that need to see what the merge produced. It
   // computes nothing of its own and cannot change anything.
   try { window.__esSubjects = () => esAllSubjects().subjects; window.__esImports = esImportReport; } catch (e) { /* not a browser */ }
@@ -4381,12 +4400,27 @@
         // A student with a question in front of them is the normal case: this is
         // essay practice that also supplies questions, not a question bank.
         const mode = f.setupMode || "own";
+        // CANONICAL IDENTITY, not display strings. A directive is one thing
+        // however it is written: essay-content.js authors "Explain" and the
+        // contract stores "explain", and filtering on the raw string put the same
+        // directive in the picker twice. The identity is the lowercase form; the
+        // label is derived from it. Topics are identified the same way, but their
+        // label is the first AUTHORED one seen, because capitalisation cannot be
+        // rebuilt from an id.
         const dirs = [];
-        qs.forEach(q => { const c = String(q.command || "").trim(); if (c && dirs.indexOf(c) < 0) dirs.push(c); });
+        qs.forEach(q => {
+          const id = esDirectiveId(q.command);
+          if (id && !dirs.some(d => d.id === id)) dirs.push({ id: id, label: esDirectiveLabel(id) });
+        });
         const topics = [];
-        qs.forEach(q => { const t = String(q.topic || "").trim(); if (t && topics.indexOf(t) < 0) topics.push(t); });
-        const byDir = f.setupDir ? qs.filter(q => String(q.command || "").trim() === f.setupDir) : qs;
-        const shown = f.setupTopic ? byDir.filter(q => String(q.topic || "").trim() === f.setupTopic) : byDir;
+        qs.forEach(q => {
+          const id = esTopicId(q.topic);
+          const label = String(q.topic || "").trim();
+          if (id && !topics.some(t => t.id === id)) topics.push({ id: id, label: label });
+        });
+        const byDir = f.setupDir ? qs.filter(q => esDirectiveId(q.command) === f.setupDir) : qs;
+        const byTopic = f.setupTopic ? qs.filter(q => esTopicId(q.topic) === f.setupTopic) : qs;
+        const shown = byDir.filter(q => byTopic.indexOf(q) >= 0);
         const chosen = f.questionId ? qs.find(q => q.id === f.questionId) : null;
         const pill = (val, cur, key, label, count) =>
           // A count of zero is worth showing, because it tells the student what this
@@ -4402,24 +4436,41 @@
             <label class="es-label" for="esq">Your essay question <span class="es-req">needed</span></label>
             <textarea id="esq" class="es-input es-ta" rows="3" placeholder="Paste or type the whole question, including the directive.">${esc(f.question)}</textarea>
           ` : `
-            <div class="es-step">
-              <div class="es-steplbl">Directive</div>
-              <div class="es-pills">${dirs.map(d => pill(d, f.setupDir, "setupdir", d, qs.filter(q => String(q.command || "").trim() === d).length)).join("")}</div>
+            <div class="es-filters">
+              <div class="es-filter">
+                <span class="es-filterlbl">Directive</span>
+                <div class="es-pills">${dirs.map(d => pill(d.id, f.setupDir, "setupdir", d.label,
+                  byTopic.filter(q => esDirectiveId(q.command) === d.id).length)).join("")}</div>
+              </div>
+              <div class="es-filter">
+                <span class="es-filterlbl">Topic</span>
+                <div class="es-pills">${topics.map(t => pill(t.id, f.setupTopic, "setuptopic", t.label,
+                  byDir.filter(q => esTopicId(q.topic) === t.id).length)).join("")}</div>
+              </div>
+              ${(f.setupDir || f.setupTopic) ? `<button type="button" class="es-linkbtn" id="esclearfilters">Clear filters</button>` : ""}
             </div>
-            <div class="es-step">
-              <div class="es-steplbl">Topic</div>
-              <div class="es-pills">${topics.map(t => pill(t, f.setupTopic, "setuptopic", t, byDir.filter(q => String(q.topic || "").trim() === t).length)).join("")}</div>
-            </div>
-            <div class="es-step">
-              <div class="es-steplbl">${shown.length} question${shown.length === 1 ? "" : "s"}</div>
-              ${shown.length ? `<div class="es-qrows">${shown.map(q =>
-                `<button type="button" class="es-qrow ${f.questionId === q.id ? "on" : ""}" data-esq="${esc(q.id)}">${esc(esQuestionPreview(q))}</button>`).join("")}</div>`
-                : `<p class="es-help">Nothing matches both of those. Clear one of them to see more.</p>`}
-            </div>
-            ${chosen ? `<div class="es-chosen">
-              <div class="es-steplbl">Your question</div>
-              <p class="es-chosenq"><b>${esc(chosen.command)}</b> ${esc(esQuestionPreview(chosen))}</p>
-            </div>` : ""}
+            <p class="es-resultcount">${shown.length} question${shown.length === 1 ? "" : "s"}${
+              (f.setupDir || f.setupTopic) && shown.length !== qs.length ? ` of ${qs.length}` : ""}</p>
+            ${shown.length ? `<div class="es-qrows">${shown.map(q => {
+              // THE COMPLETE AUTHORED WORDING. question.text is the question as
+              // its author wrote it, directive and punctuation included. The
+              // picker used to render esQuestionPreview, which strips the leading
+              // directive so a chip can carry it, and the rows have no chip: a
+              // student was reading "operations strategies contribute to the
+              // achievement of performance objectives?".
+              //
+              // Metadata under it, and only what is authored. A question with no
+              // marks shows no marks rather than the setup form's default.
+              const meta = [];
+              if (String(q.topic || "").trim()) meta.push(esc(String(q.topic).trim()));
+              if (esDirectiveId(q.command)) meta.push(esc(esDirectiveLabel(esDirectiveId(q.command))));
+              if (q.marks != null) meta.push(esc(String(q.marks)) + " marks");
+              return `<button type="button" class="es-qrow ${f.questionId === q.id ? "on" : ""}" data-esq="${esc(q.id)}" aria-pressed="${f.questionId === q.id ? "true" : "false"}">
+                <span class="es-qrowq">${esc(String(q.text || "").trim())}</span>
+                ${meta.length ? `<span class="es-qrowmeta">${meta.join('<i>\u00b7</i>')}</span>` : ""}
+              </button>`;
+            }).join("")}</div>`
+              : `<p class="es-help">Nothing matches both of those. Clear one of them to see more.</p>`}
           `}
         </div>`;
       })()}
@@ -4483,6 +4534,8 @@
       f.questionId = null; f.question = "";
       esRender();
     });
+    const cf = $("#esclearfilters");
+    if (cf) cf.onclick = () => { f.setupDir = null; f.setupTopic = null; f.questionId = null; f.question = ""; esRender(); };
     const ro = $("#esrubopen"); if (ro) ro.onclick = () => { f.rubricOpen = !f.rubricOpen; esRender(); };
     const rb = $("#esrubric"); if (rb) rb.oninput = () => { f.rubric = rb.value; };
     const mk = $("#esmarks"); if (mk) mk.oninput = () => { const n = Math.round(Number(mk.value)); f.marks = (n >= 1 && n <= 60) ? n : 20; };

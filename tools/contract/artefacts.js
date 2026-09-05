@@ -37,6 +37,14 @@ function artefacts(root) {
   // same reason the manifest is: the importer runs in a browser and cannot walk
   // the content files, and a hand kept copy of the bank would go stale silently.
   out.push({ dir: C, name: "question-registry.json", text: J(lib.questionRegistry()) });
+  // Topic ids to their authored labels. The runtime needs a display name for a
+  // question that carries only a topicRef, and the label belongs to the syllabus
+  // record rather than to the question. Generated for the same reason the
+  // manifest is: it cannot then disagree with the library it came from.
+  const topicIndex = {};
+  Object.values(libraries.syllabus).forEach(r => { if (r.kind === "topic") topicIndex[r.id] = r.label; });
+  out.push({ dir: C, name: "topic-index.json",
+    text: J({ schema: "marginal.topic-index", version: 1, topics: topicIndex }) });
   out.push({ dir: C, name: "fixture-manifest.json",
     text: J(fixtures.manifest(built.map(b => b.r.pkg), man, REG)) });
   out.push({ dir: C, name: "criterion-mapping.md", text: criterionMapping(built) });
