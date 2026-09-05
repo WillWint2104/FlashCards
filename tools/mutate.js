@@ -36,7 +36,31 @@ const { spawnSync, execFileSync } = require("child_process");
 const ROOT = path.resolve(__dirname, "..");
 const MUTATIONS = require("./mutations.js");
 const OUT = path.join(ROOT, "tests/out/mutation-results.jsonl");
+const LOCK = path.join(ROOT, "tests/out/.mutation-in-flight");
 const DEFAULT_TIMEOUT_MS = 180000;
+
+// WHILE THIS RUNS, THE WORKING TREE CONTAINS A DELIBERATE FAULT.
+//
+// That is not a detail. A commit taken during a run captures whatever mutant was
+// applied at that moment, and it happened: b9c2d59 shipped runtime.js with the
+// ladder type tag removed, because `git add -A` ran while runtime-untypes-ladder
+// was in the tree. The suites had all passed; the commit was simply of the wrong
+// bytes.
+//
+// So the run announces itself in a file. It says which mutation is applied and
+// to which file, it is removed on every exit path including a signal, and it is
+// what anything committing should look at first.
+function lock(m) {
+  fs.mkdirSync(path.dirname(LOCK), { recursive: true });
+  fs.writeFileSync(LOCK, JSON.stringify({
+    pid: process.pid, mutation: m ? m.id : null, file: m ? m.file : null,
+    since: new Date().toISOString(),
+    warning: "A deliberate fault is in the working tree. Do not commit until this file is gone.",
+  }, null, 2) + "\n");
+}
+function unlock() { try { fs.unlinkSync(LOCK); } catch (e) { /* already gone */ } }
+["exit", "SIGINT", "SIGTERM", "SIGHUP"].forEach(sig =>
+  process.on(sig, () => { unlock(); if (sig !== "exit") process.exit(130); }));
 
 const argv = process.argv.slice(2);
 const flag = n => argv.indexOf(n) >= 0;
@@ -165,6 +189,29 @@ const secs = ms => (ms / 1000).toFixed(1) + "s";
   console.log("  per-mutant timeout " + secs(timeout) + " | results " + path.relative(ROOT, OUT));
   if (!todo.length) { console.log("\nnothing to do."); summarise(list, done); return; }
 
+  if (fs.existsSync(LOCK)) {
+    console.error("REFUSING TO START: " + path.relative(ROOT, LOCK) + " exists.\n" +
+      fs.readFileSync(LOCK, "utf8") +
+      "\nA previous run may still be going, or one died with a fault in the tree.\n" +
+      "Check `git status` before deleting it.");
+    process.exit(2);
+  }
+  // A file with uncommitted work in it cannot be safely restored: apply() puts
+  // back what it read, which would be the uncommitted version, and any confusion
+  // about which is which lands in a commit.
+  let dirty = [];
+  try {
+    dirty = execFileSync("git", ["status", "--porcelain"], { cwd: ROOT, encoding: "utf8" })
+      .split("\n").filter(Boolean).map(l => l.slice(3).trim());
+  } catch (e) { /* not a checkout */ }
+  const willTouch = [...new Set(todo.map(m => m.file))];
+  const clash = willTouch.filter(f => dirty.indexOf(f) >= 0);
+  if (clash.length && !flag("--dirty-ok")) {
+    console.error("REFUSING TO START: these files are to be mutated and have uncommitted changes:\n  " +
+      clash.join("\n  ") + "\nCommit or stash first, or pass --dirty-ok if you know what you are doing.");
+    process.exit(2);
+  }
+
   const base = census();
   console.log("  processes at start: node " + base.node + ", browser " + base.browser + "\n");
 
@@ -178,6 +225,7 @@ const secs = ms => (ms / 1000).toFixed(1) + "s";
     process.stdout.write(String(n) + "/" + todo.length + " — " + m.id + " — " + m.owner + " …" + eta + "\r");
 
     const t0 = Date.now();
+    lock(m);
     const a = apply(m);
     if (!a.ok) {
       const r = { id: m.id, owner: m.owner, verdict: "STALE", ms: Date.now() - t0, why: a.why, at: new Date().toISOString() };
@@ -211,6 +259,7 @@ const secs = ms => (ms / 1000).toFixed(1) + "s";
       }
     } finally {
       a.restore();
+      unlock();
     }
     ms = ms || (Date.now() - t0);
 
