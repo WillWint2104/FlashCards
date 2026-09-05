@@ -120,10 +120,14 @@ if (!P) {
   await p.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await p.waitForTimeout(400);
   await p.selectOption('#essubject', 'business_studies').catch(() => {}); await p.waitForTimeout(200);
-  await chooseQuestion(p, /target markets/i);
-  await p.waitForTimeout(200);
+  // The structure is a SETUP setting and lives with the others there, folded,
+  // so it is chosen before the question rather than after it.
+  await (async () => { const sum = await p.$('#esmoreopts > summary');
+    if (sum) { await sum.click(); await p.waitForTimeout(150); } })();
   await p.selectOption('#esstruct', 'six').catch(e => note('setup', 'could not choose a 4-body structure'));
   await p.waitForTimeout(150);
+  await chooseQuestion(p, /target markets/i);
+  await p.waitForTimeout(200);
   await p.click('#esstart'); await p.waitForTimeout(500);
   await planAll(p);
   last = await m();

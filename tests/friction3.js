@@ -8,8 +8,12 @@ const { chromium, T, OUT, BASE, fileUrl, usePractice, chooseQuestion } = require
   await p.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await p.waitForTimeout(400);
   await p.selectOption('#essubject', 'business_studies'); await p.waitForTimeout(200);
-  await chooseQuestion(p, /target markets/i);
+  // The structure is a SETUP setting and lives with the others there, folded,
+  // so it is chosen before the question rather than after it.
+  await (async () => { const sum = await p.$('#esmoreopts > summary');
+    if (sum) { await sum.click(); await p.waitForTimeout(150); } })();
   await p.selectOption('#esstruct', 'six'); await p.waitForTimeout(150);
+  await chooseQuestion(p, /target markets/i);
   await p.click('#esstart'); await p.waitForTimeout(400);
   const pick = async re => { await p.$$eval('[data-espath]', (es, r) => { const x = es.find(e => new RegExp(r, 'i').test(e.textContent)); x && x.click(); }, re); await p.waitForTimeout(250); };
   const start = async () => { const g = await p.$('#esstartwriting'); if (g) { await g.click(); await p.waitForTimeout(300); } };
