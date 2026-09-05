@@ -10,7 +10,7 @@
 // the capture too eagerly loses the student's words, and clearing it too late
 // duplicates them. 47 suites, the role-by-mode matrix and a six area walkthrough all
 // missed the duplication, because it only appears after ACCEPTING at the same stage.
-const { chromium, T, OUT, usePractice } = require('./env');
+const { chromium, T, OUT, usePractice, chooseQuestion } = require('./env');
 
 // Waits that name their condition. This app fetches nothing and renders
 // synchronously, so the effect of a click is present on the next frame:
@@ -30,7 +30,7 @@ async function toWriting(p) {
   await p.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await settled(p);
   await p.selectOption('#essubject', 'business_studies').catch(() => {});
-  await usePractice(p); await p.$$eval('.es-qrow', es => { const t = es.find(x => /target markets affect/i.test(x.textContent)); t && t.click(); });
+  await chooseQuestion(p, /target markets affect/i);
   await p.click('#esstart');
   await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
   if (await p.$('.es-startrow')) await p.$$eval('.es-startrow', es => { const t = es.filter(x => /Body/.test(x.textContent))[0]; t && t.click(); });

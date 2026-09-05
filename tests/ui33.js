@@ -18,7 +18,7 @@
 //
 // Driven from a fixture the test owns, so the real bank can be sourced, resourced
 // or rewritten without touching it.
-const { chromium, P, usePractice } = require('./env');
+const { chromium, P, usePractice, chooseQuestion } = require('./env');
 
 // Waits that name their condition. This app fetches nothing and renders
 // synchronously, so the effect of a click is present on the next frame:
@@ -47,7 +47,7 @@ async function openFixture(p){
   await settled(p);
   await p.selectOption('#essubject','evidence_contract');
   await settled(p);
-  await usePractice(p); await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/fixture marketing question/i.test(x.textContent));t&&t.click();});
+  await chooseQuestion(p, /fixture marketing question/i);
   await settled(p);
   await p.click('#esstart');
   await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });

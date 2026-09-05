@@ -16,7 +16,7 @@
 // The assertions are on NODE IDENTITY, not on values surviving. Values survived
 // before the fix too, because they were restored afterwards; that is what made
 // the defect hard to see and what makes value-survival the wrong test.
-const { chromium, T, usePractice } = require('./env');
+const { chromium, T, usePractice, chooseQuestion } = require('./env');
 
 // Waits that name their condition. This app fetches nothing and renders
 // synchronously, so the effect of a click is present on the next frame:
@@ -32,7 +32,7 @@ async function toComposer(p){
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await settled(p);
   await p.selectOption('#essubject','business_studies').catch(()=>{});
-  await usePractice(p); await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/target markets affect/i.test(x.textContent));t&&t.click();});
+  await chooseQuestion(p, /target markets affect/i);
   await p.click('#esstart');
   await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
   if (await p.$('.es-startrow')) await p.$$eval('.es-startrow',es=>{const t=es.filter(x=>/Body/.test(x.textContent))[0];t&&t.click();});
@@ -75,7 +75,7 @@ async function toComposer(p){
       recreated:['.es-scrim','.es-shell','.es-wrap','.es-belt','.es-map','.es-compose','#esline']
         .filter(s=>document.querySelector(s)!==window.__ref[s]),
       anims:(document.querySelector('.es-wrap')?.getAnimations()||[]).length,
-      setup:!!document.querySelector('#esstart, .es-qrow, #essubject'),
+      setup:!!document.querySelector('#esstart, .qp-row, #essubject'),
       v:document.querySelector('#esline')?.value,
       sel:document.querySelector('#esline')?.selectionStart }));
     ok(st.recreated.length===0, t+': no workspace node was rebuilt, kept '+JSON.stringify(st.recreated));

@@ -321,9 +321,16 @@
   // The subject namespace whose label matches this one, or null. Subject content is
   // the source of truth for criteria and band expectations, so adding a subject
   // stays content-only.
+  // Trimmed on both sides. The label reaching here can come from an imported
+  // paper's JSON, which is authored text, and " Business Studies " matching
+  // nothing meant markingContext fell through to C.markingCriteria: a Business
+  // Studies answer marked against the app's own Economics criteria, with nothing
+  // on screen to say so. Trimming closes that without changing what matches.
   function essaySubjectByLabel(label) {
-    const subs = (window.ESSAY && window.ESSAY.subjects) || {};
-    const hit = Object.keys(subs).find(k => String(subs[k].label || "").toLowerCase() === String(label || "").toLowerCase());
+    const subs = esAllSubjects().subjects;
+    const want = String(label || "").trim().toLowerCase();
+    if (!want) return null;
+    const hit = Object.keys(subs).find(k => String(subs[k].label || "").trim().toLowerCase() === want);
     return hit ? subs[hit] : null;
   }
   // What THIS question requires: the concepts to address, the relationships to
@@ -376,6 +383,35 @@
   // answer as a short answer and not as a miniature essay.
   //
   // opts.plan is the student's own plan and opts.validContent our authored argument
+  // A REQUEST THAT CANNOT HANG.
+  //
+  // Both calls to the marking worker were bare awaits inside a try/catch, which
+  // handles a refused connection and a bad status honestly and does nothing at
+  // all about the case in between: a worker that accepts the connection and then
+  // never answers. There the student waits with no message and no way to tell
+  // whether anything is happening, which is the one failure the catch below was
+  // written to prevent.
+  //
+  // 45 seconds because a marking call is a model call and is legitimately slow;
+  // the point is not to be strict, it is that there IS a bound. On timeout the
+  // abort surfaces as an ordinary error, so both callers degrade the way they
+  // already degrade for every other failure, with a reason on screen.
+  const ES_REQUEST_MS = 45000;
+  async function esPostJSON(url, body) {
+    const ctrl = typeof AbortController === "function" ? new AbortController() : null;
+    const timer = ctrl ? setTimeout(() => ctrl.abort(), ES_REQUEST_MS) : null;
+    try {
+      return await fetch(url, {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify(body), signal: ctrl ? ctrl.signal : undefined,
+      });
+    } catch (e) {
+      if (e && (e.name === "AbortError" || e.name === "TimeoutError"))
+        throw new Error("no answer in " + Math.round(ES_REQUEST_MS / 1000) + " seconds");
+      throw e;
+    } finally { if (timer) clearTimeout(timer); }
+  }
+
   // pathways. Both are sent, and the worker routes them to the DIAGNOSIS pass only:
   // they are context for reading the response, never a checklist that awards marks.
   function responseTypeOf(card, opts) {
@@ -387,9 +423,7 @@
     if (state.endpoint) {
       try {
         const mc = markingContext(card);
-        const res = await fetch(state.endpoint, {
-          method: "POST", headers: { "content-type": "application/json" },
-          body: JSON.stringify({
+        const res = await esPostJSON(state.endpoint, {
             prompt: card.prompt, marks: card.marks, model_answer: card.model, vocab: card.vocab, answer,
             scaffold: card.scaffold, faults: card.faults,
             command: card.command || commandOf(card.prompt) || undefined,
@@ -399,7 +433,6 @@
             rubric: card.rubric || undefined,
             plan: opts.plan, validContent: opts.validContent, blocks: opts.blocks,
             code: state.code || undefined
-          })
         });
         if (!res.ok) throw new Error("proxy " + res.status);
         const g = await res.json();
@@ -3166,8 +3199,64 @@
     try { const w = Cloud.who && Cloud.who(); if (w && w.class_code) return w.class_code; } catch (e) { /* ignore */ }
     return state.code || CONFIG.code || "";
   }
+  // ---- imported questions ---------------------------------------------------
+  // ONE QUESTION INTERFACE. A question that shipped in essay-content.js and a
+  // question a teacher imported reach every screen below through the same path,
+  // and nothing downstream asks which it was: they differ in where they were
+  // stored and in nothing else.
+  //
+  // window.ESSAY is NOT touched. The merge returns a new object, so the
+  // questions that shipped are the same objects they always were, and an
+  // importer that has stored nothing leaves this identical to reading
+  // window.ESSAY.subjects directly.
+  //
+  // Computed once. Reading storage and adapting every stored document on each of
+  // the several hundred calls these screens make would be work repeated for an
+  // answer that cannot change while the page is open.
+  let ES_MERGE = null;
+  function esAllSubjects() {
+    const base = (window.ESSAY && window.ESSAY.subjects) || {};
+    if (ES_MERGE && ES_MERGE.base === base) return ES_MERGE.out;
+    let merged = { subjects: base, added: [], collisions: [], unusable: [] };
+    // A student must still get the questions that shipped when anything about
+    // imported ones goes wrong, so every failure here degrades to the source
+    // bank rather than to an empty screen.
+    try {
+      if (window.MarginalImports) merged = window.MarginalImports.merge(base);
+    } catch (e) { merged = { subjects: base, added: [], collisions: [], unusable: [{ id: null, why: String((e && e.message) || e) }] }; }
+    ES_MERGE = { base: base, out: merged };
+    return merged;
+  }
+  // Exposed so a test can see what was taken and what was refused. Reading only.
+  function esImportReport() {
+    const m = esAllSubjects();
+    return { added: m.added, collisions: m.collisions, unusable: m.unusable };
+  }
+  // CANONICAL QUESTION IDENTITY. Defined in tools/contract/runtime.js and used
+  // from there, so the app and the importer cannot disagree about whether two
+  // questions share a directive. The inline fallbacks exist only for a page that
+  // somehow loaded app.js without the bundle; tests/ui51.js asserts the two
+  // implementations agree on every question in the bank.
+  function esDirectiveId(c) {
+    const M = window.MarginalImports;
+    return M && M.directiveId ? M.directiveId(c) : String(c == null ? "" : c).trim().toLowerCase();
+  }
+  function esDirectiveLabel(id) {
+    const M = window.MarginalImports;
+    if (M && M.directiveLabel) return M.directiveLabel(id);
+    const t = String(id || "").trim();
+    return t ? t.charAt(0).toUpperCase() + t.slice(1) : "";
+  }
+  function esTopicId(t) {
+    const M = window.MarginalImports;
+    return M && M.topicId ? M.topicId(t) : String(t == null ? "" : t).trim().toLowerCase();
+  }
+  // Read only, for the suites that need to see what the merge produced. It
+  // computes nothing of its own and cannot change anything.
+  try { window.__esSubjects = () => esAllSubjects().subjects; window.__esImports = esImportReport; } catch (e) { /* not a browser */ }
   function esSubjectContent(subject) {
-    return (window.ESSAY && window.ESSAY.subjects && window.ESSAY.subjects[subject]) || null;
+    const subs = esAllSubjects().subjects;
+    return (subs && subs[subject]) || null;
   }
   // The worked-example fallback set (window.ESSAY.slots.examples) is authored for this
   // subject. Any OTHER subject borrows it as a clearly-labelled placeholder until its
@@ -3199,7 +3288,7 @@
   // paragraph scaffold. Lets any login load a subject's bank without a class-code
   // rule (the routed subject is just the default selection).
   function esSubjectsList() {
-    const subs = (window.ESSAY && window.ESSAY.subjects) || {};
+    const subs = esAllSubjects().subjects;
     return Object.keys(subs)
       .filter(k => { const s = subs[k]; return s && ((Array.isArray(s.questions) && s.questions.length) || s.scaffolds); })
       .map(k => ({ key: k, label: subs[k].label || k }));
@@ -4263,6 +4352,34 @@
     return "causal";
   }
 
+  // WHAT THIS QUESTION ACTUALLY OFFERS, read off the question and nothing else.
+  // Every line is a fact about what somebody authored: a question with no
+  // pathways has no pathway guidance, and saying so before a student commits is
+  // the honest version of finding out afterwards. Nothing here is a capability
+  // score and nothing is borrowed from another question.
+  function esSupportFor(q) {
+    const paths = (q && q.pathways) || [];
+    const areas = Object.keys((q && q.areas) || {});
+    const rows = [
+      { key: "marking", label: "Marking guidance", has: true,
+        note: "Written for this question, or generated from it" },
+      { key: "planning", label: "Planning support", has: areas.length > 0,
+        note: areas.length ? areas.length + " areas to plan across" : "This question defines no areas" },
+      { key: "pathway", label: "Pathway guidance", has: paths.length > 0,
+        note: paths.length ? paths.length + " arguments to choose between" : "This question authors no arguments" },
+      { key: "learning", label: "Learning support", has: paths.some(p => (p.learning || {}).status === "authored"),
+        note: "A lesson for a student who does not know the content yet" },
+      { key: "evidence", label: "Evidence support", has: paths.some(p => (p.evidenceRefs || []).length),
+        note: "Evidence attached to the arguments" },
+    ];
+    const have = rows.filter(r => r.has);
+    return { rows: rows,
+      // The one line summary the preview leads with. It names what IS there.
+      summary: have.length === 1 ? have[0].label.toLowerCase() + " only"
+        : have.map(r => r.label.toLowerCase()).join(", "),
+      missing: rows.filter(r => !r.has) };
+  }
+
   function esRenderSetup(host, sc) {
     if (!ES.form) ES.form = { question: "", topic: "", rubric: "", marks: 20, structure: sc.defaultStructure, paraModel: (sc.paraModels[0] || null), rubricOpen: false };
     const f = ES.form;
@@ -4270,179 +4387,525 @@
     // paragraph scaffold, defaulting to the subject routed from their class code.
     const subjectList = esSubjectsList();
     const subjectPicker = subjectList.length > 1 ? `
-      <div class="es-field">
-        <label class="es-label" for="essubject">Subject</label>
-        <select id="essubject" class="es-input es-select">${subjectList.map(s =>
+      <div class="qp-field">
+        <label class="qp-label" for="essubject">Subject</label>
+        <select id="essubject" class="qp-input qp-select">${subjectList.map(s =>
           `<option value="${esc(s.key)}" ${s.key === ES.subject ? "selected" : ""}>${esc(s.label)}</option>`).join("")}</select>
       </div>` : "";
     // Paragraph-structure picker (e.g. Business Studies TEEEC vs TDECC), only when
     // the subject ships selectable scaffolds.
     const scObj = esSubjectContent(ES.subject);
     const modelPicker = sc.hasParaModels ? `
-      <div class="es-field">
-        <label class="es-label" for="esparamodel">Paragraph structure</label>
-        <select id="esparamodel" class="es-input es-select">${sc.paraModels.map(m =>
+      <div class="qp-field">
+        <label class="qp-label" for="esparamodel">Paragraph structure</label>
+        <select id="esparamodel" class="qp-input qp-select">${sc.paraModels.map(m =>
           `<option value="${esc(m)}" ${m === f.paraModel ? "selected" : ""}>${esc(esParaModelLabel(m))}${(scObj.scaffolds[m] && scObj.scaffolds[m].expansion) ? " \u00b7 " + esc(scObj.scaffolds[m].expansion) : ""}</option>`).join("")}</select>
-        <p class="es-help">Each body paragraph will be scaffolded to this structure.</p>
+        <p class="qp-hint">Each body paragraph will be scaffolded to this structure.</p>
       </div>` : "";
     // Suggested questions are subject-specific: show them ONLY when THIS subject ships
     // its own set. Otherwise hide the block cleanly (the student types their own).
     const qChips = sc.hasQuestions ? sc.questions.map(q =>
       `<button class="es-qchip" data-esq="${esc(q.id)}"><span class="es-qcmd">${esc(q.command)}</span> ${esc(esQuestionPreview(q))}</button>`).join("") : "";
-    // Discrete, most-recent-first list (not one combined pill); each row deletes.
-    const saved = esRecent(ES.list).slice(0, 12);
-    const resume = saved.length ? `
-      <div class="es-resume" data-resume>
-        <p class="es-label">Your saved essays</p>
-        <div class="es-reslist">${saved.map(d => {
-          const mastered = (d.paras || []).filter(x => x.mastered).length, np = (d.paras || []).length;
-          const q = (d.question || "").trim();
-          return `<div class="es-resitem" data-resrow="${esc(d.id)}">
-             <div class="es-resmain">
-               ${d.topic ? `<span class="es-restoplabel">${esc(d.topic)}</span>` : ""}
-               <span class="es-resq">${esc(q.slice(0, 110))}${q.length > 110 ? "…" : ""}</span>
-               <span class="es-resmeta">${np ? mastered + "/" + np + " mastered" : "draft"}</span>
-             </div>
-             <div class="es-resactions">
-               <button class="es-misstier" data-esresume="${esc(d.id)}">Resume</button>
-               <button class="es-misstier ghost" data-estemplate="${esc(d.id)}">Use as template</button>
-               <button class="es-resdel" data-esdelete="${esc(d.id)}" aria-label="Delete this saved essay" title="Delete this saved essay">remove</button>
-             </div>
-           </div>`;
-        }).join("")}</div>
-      </div>` : "";
     const structOpts = (window.ESSAY.structures || []).map(s =>
       `<option value="${esc(s.key)}" ${s.key === f.structure ? "selected" : ""}>${esc(s.label)}</option>`).join("");
     const bandsRef = (window.ESSAY.bands || []).map(b =>
       `<div class="es-band"><span class="es-bandr">${esc(b.range)}</span><span class="es-bandt">${esc(b.text)}</span></div>`).join("");
-    host.innerHTML = `
-    <div class="es-scrim"><div class="es-shell"><div class="es-wrap">
-      <div class="es-top">
-        <div class="es-brand">Marginal · essay practice ${sc.label ? `<span class="es-subj">${esc(sc.label)}${sc.stage ? " · " + esc(sc.stage) : ""}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}</div>
-        <button class="es-x" id="esx" aria-label="Close">close</button>
+    // The marking guidance line: a status, not a form field. It resolves without
+    // being asked for, and the disclosure is for the student who wants to check
+    // what their essay will be read against.
+    const rubricStatus = (() => {
+      const r = esRubricFor(f, sc);
+      const label = r.source === "user-provided" ? "Your own marking guidance will be used"
+        : r.source === "authored" ? "Marking guidance written for this question will be used"
+        : "Marking guidance will be generated from this question";
+      return `<div class="qp-field">
+        <div class="qp-rub"><span class="qp-rubtick">\u2713</span>
+          <span class="qp-rubtext">${esc(label)}</span>
+          <span class="qp-rubprov">${esc(r.source)}</span>
+          <button type="button" class="qp-link" id="esrubopen">${f.rubricOpen ? "Hide" : "Review or edit"}</button>
+        </div>
+        <div class="qp-rubbox"${f.rubricOpen ? "" : " hidden"}>
+          ${r.source === "generated" ? `<p class="qp-hint">Generated from the question in front of you. It is not an official marking guide and is not from NESA.</p>` : ""}
+          <pre class="qp-rubpre">${esc(r.text)}</pre>
+          <label class="qp-label" for="esrubric">Replace it with your own</label>
+          <textarea id="esrubric" class="qp-input qp-ta" rows="3" placeholder="Paste your rubric or marking bands here.">${esc(f.rubric)}</textarea>
+        </div>
+      </div>`;
+    })();
+
+    // ============================ CHOOSING A QUESTION ========================
+    // Four stages, one surface, its own class namespace. `qp-` because the
+    // generic es- names are already spoken for: .es-btn is defined twice in the
+    // shell and carries a 4px green under-edge, which is why every button in the
+    // first version of this flow grew one.
+    //
+    // Each stage renders ITS OWN page and returns. Nothing from another stage is
+    // hidden underneath it, because nothing from another stage is emitted: the
+    // list is not the setup form with a list appended to it.
+    const stage = (sc.questions || []).length ? (f.pickStage || "subject") : "own";
+    // THE PAGE, not a column on it. Header, a main column with a rail beside it,
+    // and a footer. The rail is part of the composition rather than decoration:
+    // without it the right half of a desktop viewport is empty and page two of a
+    // filtered list is three rows in a field of nothing.
+    //
+    // The nav carries the mockup's weight with Marginal's real destinations. It
+    // does not invent a section that does not exist.
+    const nav = `<header class="qp-nav"><div class="qp-navin">
+      <span class="qp-logo" aria-hidden="true">M</span>
+      <span class="qp-word">Marginal</span>
+      <nav class="qp-navlinks">
+        ${/* A nav link is not a stage route within the picker, so it does not
+              carry the stage attribute: counting the routes on a screen would
+              have counted it. Both links go somewhere real; the one you are on
+              is marked rather than repeated. */ ""}
+        <button type="button" class="qp-navlink ${stage === "essays" ? "" : "on"}"
+          data-esnav="back">Essay practice</button>
+        <button type="button" class="qp-navlink ${stage === "essays" ? "on" : ""}"
+          data-esnav="essays">My essays</button>
+      </nav>
+      <div class="qp-navright">
+        ${sc.label ? `<span class="qp-subj">${esc(sc.label)}${sc.stage ? " · " + esc(sc.stage) : ""}</span>` : ""}
+        ${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}
+        <button class="qp-close" id="esx" aria-label="Close">close</button>
       </div>
-      <h1 class="es-h1">Set up your essay</h1>
-      <p class="es-lead">Only the question is needed. Everything else is optional and you can change all of it later.</p>
-      ${subjectPicker}
-      ${resume}
-      ${(() => {
-        // Thirteen full-width questions in one column made the student read every
-        // one to find the kind they wanted. The directive and the topic are both
-        // authored on every question, so they are used as filters rather than
-        // matched out of the text.
-        const qs = (sc.questions || []);
-        if (!qs.length) return `<div class="es-field">
-          <label class="es-label" for="esq">Essay question <span class="es-req">needed</span></label>
-          <textarea id="esq" class="es-input es-ta" rows="3" placeholder="Paste or type the question you are practising.">${esc(f.question)}</textarea></div>`;
-        // A student with a question in front of them is the normal case: this is
-        // essay practice that also supplies questions, not a question bank.
-        const mode = f.setupMode || "own";
-        const dirs = [];
-        qs.forEach(q => { const c = String(q.command || "").trim(); if (c && dirs.indexOf(c) < 0) dirs.push(c); });
-        const topics = [];
-        qs.forEach(q => { const t = String(q.topic || "").trim(); if (t && topics.indexOf(t) < 0) topics.push(t); });
-        const byDir = f.setupDir ? qs.filter(q => String(q.command || "").trim() === f.setupDir) : qs;
-        const shown = f.setupTopic ? byDir.filter(q => String(q.topic || "").trim() === f.setupTopic) : byDir;
-        const chosen = f.questionId ? qs.find(q => q.id === f.questionId) : null;
-        const pill = (val, cur, key, label, count) =>
-          // A count of zero is worth showing, because it tells the student what this
-          // subject has before they go looking. It is not worth making clickable:
-          // a pill that leads to an empty list is a dead end dressed as a choice.
-          `<button type="button" class="es-pill ${cur === val ? "on" : ""}${count === 0 ? " empty" : ""}"${count === 0 ? " disabled" : ""} data-es${key}="${esc(val)}">${esc(label)}${count != null ? `<span class="es-pilln">${count}</span>` : ""}</button>`;
-        return `<div class="es-field">
-          <div class="es-modes">
-            <button type="button" class="es-mode ${mode === "own" ? "on" : ""}" data-esmode="own">Use my question</button>
-            <button type="button" class="es-mode ${mode === "practice" ? "on" : ""}" data-esmode="practice">Choose a practice question</button>
+    </div></header>`;
+    const foot = `<footer class="qp-foot"><div class="qp-footin">
+      <span class="qp-logo sm" aria-hidden="true">M</span>
+      <span class="qp-footword">Marginal</span>
+      <span class="qp-foottag">Better practice. Brighter progress.</span>
+    </div></footer>`;
+    // One page shell for every stage, so the stages read as one flow.
+    const shell = (main, rail) => `<div class="qp">${nav}
+      <main class="qp-main"><div class="qp-grid">
+        <div class="qp-col">${main}</div>
+        <aside class="qp-rail">${rail}</aside>
+      </div></main>${foot}</div>`;
+    const railCard = (icon, title, body) =>
+      `<section class="qp-rc"><div class="qp-rchd"><span class="qp-rcicon" aria-hidden="true">${icon}</span>
+        <h2 class="qp-rct">${esc(title)}</h2></div>${body}</section>`;
+    const back = (to, label) =>
+      `<button type="button" class="qp-back" data-espick="${to}">&larr; ${esc(label)}</button>`;
+
+    // The settings, which belong to setting up and to nowhere else. Folded, on
+    // the first stage only: the list and the preview are for choosing, and the
+    // student who wants a different structure is setting up, not choosing.
+    const options = `<details class="qp-opts"${f.optsOpen ? " open" : ""} id="esmoreopts">
+      <summary>Essay options: marking guidance, marks and structure</summary>
+      <div class="qp-optsbody">
+        ${rubricStatus}
+        <div class="qp-field">
+          ${/* Not "marks this question is worth": that states a mark value as a
+                fact about the question, and a question has one only when somebody
+                authored it. This field is the student's own setting for the mark
+                split on a full attempt, so it says so. */ ""}
+          <label class="qp-label" for="esmarks">Mark my attempt out of</label>
+          <p class="qp-hint">Used only when you submit a full attempt for marking.</p>
+          <input id="esmarks" class="qp-input qp-marks" type="number" min="1" max="60" step="1" value="${esc(String(f.marks))}">
+        </div>
+        <div class="qp-field">
+          <label class="qp-label" for="esstruct">Structure</label>
+          <select id="esstruct" class="qp-input qp-select">${structOpts}</select>
+        </div>
+        ${modelPicker}
+      </div>
+    </details>`;
+
+    // ---- stage: the list ----------------------------------------------------
+    if (stage === "list") {
+      const qs = sc.questions || [];
+      const dirs = [];
+      qs.forEach(q => {
+        const id = esDirectiveId(q.command);
+        if (id && !dirs.some(d => d.id === id)) dirs.push({ id: id, label: esDirectiveLabel(id) });
+      });
+      const topics = [];
+      qs.forEach(q => {
+        const id = esTopicId(q.topic), label = String(q.topic || "").trim();
+        if (id && !topics.some(t => t.id === id)) topics.push({ id: id, label: label });
+      });
+      const byDir = f.setupDir ? qs.filter(q => esDirectiveId(q.command) === f.setupDir) : qs;
+      const byTopic = f.setupTopic ? qs.filter(q => esTopicId(q.topic) === f.setupTopic) : qs;
+      const found = byDir.filter(q => byTopic.indexOf(q) >= 0).slice().sort((a, b) =>
+        String(a.topic || "").localeCompare(String(b.topic || "")) ||
+        String(a.text || "").localeCompare(String(b.text || "")));
+
+      // PAGINATION, after filtering. The bank grows every time an import
+      // succeeds, so a page that gets longer with every success is a picker that
+      // gets worse the better the architecture works.
+      const PER = 10;
+      const pages = Math.max(1, Math.ceil(found.length / PER));
+      const page = Math.min(Math.max(1, f.page || 1), pages);
+      const from = (page - 1) * PER;
+      const shown = found.slice(from, from + PER);
+
+      const pill = (val, cur, key, label, count) =>
+        `<button type="button" class="qp-pill ${cur === val ? "on" : ""}${count === 0 ? " empty" : ""}"${
+          count === 0 ? " disabled" : ""} data-es${key}="${esc(val)}">${esc(label)}<span class="qp-n">${count}</span></button>`;
+      const allPill = (cur, key, count) =>
+        `<button type="button" class="qp-pill ${cur ? "" : "on"}" data-es${key}="">All<span class="qp-n">${count}</span></button>`;
+      const pageBtn = (n, label, on, dis) =>
+        `<button type="button" class="qp-page ${on ? "on" : ""}"${dis ? " disabled" : ""} data-espage="${n}">${esc(label)}</button>`;
+
+      // The rail says what the filters are doing and what is currently chosen,
+      // which is the half of this page that was blank.
+      const chosen = f.questionId ? qs.find(x => x.id === f.questionId) : null;
+      const active = [];
+      if (f.setupDir) active.push("Directive: " + esDirectiveLabel(f.setupDir));
+      if (f.setupTopic) active.push("Topic: " + ((topics.find(t => t.id === f.setupTopic) || {}).label || f.setupTopic));
+      const rail = railCard("&#9678;", "How filtering works",
+          `<p class="qp-rcp">Use the directive and topic filters to find the kind of question you want to
+            practise. You can combine them, and the list updates as you press.</p>
+           <p class="qp-rcp">Each question shows its full wording, with its topic, directive and marks
+            where a mark value is authored.</p>
+           ${active.length ? `<div class="qp-active"><p class="qp-rclbl">Active filters</p>
+             ${active.map(a => `<span class="qp-atag">${esc(a)}</span>`).join("")}
+             <p class="qp-rcp">${found.length} question${found.length === 1 ? "" : "s"} match${
+               found.length === 1 ? "es" : ""}.</p></div>` : ""}`)
+        + railCard("&#9679;", "Current selection", chosen
+          ? `<p class="qp-rcq">${esc(String(chosen.text || "").trim())}</p>
+             <p class="qp-rcmeta">${[String(chosen.topic || "").trim(),
+               esDirectiveLabel(esDirectiveId(chosen.command)),
+               chosen.marks != null ? chosen.marks + " marks" : null].filter(Boolean).map(esc).join(" · ")}</p>
+             <p class="qp-rclbl">Available support</p>
+             <div class="qp-sup">${esSupportFor(chosen).rows.map(r =>
+               `<div class="qp-suprow ${r.has ? "yes" : "no"}"><span class="qp-supmark">${r.has ? "✓" : "⊘"}</span>
+                 <span class="qp-supname">${esc(r.label)}</span>
+                 <span class="qp-supstate">${r.has ? "Available" : "Not available"}</span></div>`).join("")}</div>
+             <div class="qp-railacts">
+               <button type="button" class="qp-btn qp-go" data-espick="preview">Preview question</button>
+             </div>`
+          : `<p class="qp-rcp">No question chosen yet. Pick one from the list and its wording and available
+              support will appear here before you start.</p>`)
+        + railCard("&#9662;", "Top tip",
+          `<p class="qp-rcp">Read the full question and its available support before you start writing. You
+            can always come back and change your selection.</p>`);
+
+      host.innerHTML = shell(`
+          ${back("subject", "Back to setup")}
+          <h1 class="qp-h1">Choose a practice question</h1>
+          <p class="qp-lead">Select a question to work on. You can change all other settings later.</p>
+          <div class="qp-filters">
+            <div class="qp-frow"><span class="qp-flabel">Directive</span>
+              ${allPill(f.setupDir, "setupdir", byTopic.length)}
+              ${dirs.map(d => pill(d.id, f.setupDir, "setupdir", d.label,
+                byTopic.filter(q => esDirectiveId(q.command) === d.id).length)).join("")}</div>
+            <div class="qp-frow"><span class="qp-flabel">Topic</span>
+              ${allPill(f.setupTopic, "setuptopic", byDir.length)}
+              ${topics.map(t => pill(t.id, f.setupTopic, "setuptopic", t.label,
+                byDir.filter(q => esTopicId(q.topic) === t.id).length)).join("")}</div>
           </div>
-          ${mode === "own" ? `
-            <label class="es-label" for="esq">Your essay question <span class="es-req">needed</span></label>
-            <textarea id="esq" class="es-input es-ta" rows="3" placeholder="Paste or type the whole question, including the directive.">${esc(f.question)}</textarea>
-          ` : `
-            <div class="es-step">
-              <div class="es-steplbl">Directive</div>
-              <div class="es-pills">${dirs.map(d => pill(d, f.setupDir, "setupdir", d, qs.filter(q => String(q.command || "").trim() === d).length)).join("")}</div>
-            </div>
-            <div class="es-step">
-              <div class="es-steplbl">Topic</div>
-              <div class="es-pills">${topics.map(t => pill(t, f.setupTopic, "setuptopic", t, byDir.filter(q => String(q.topic || "").trim() === t).length)).join("")}</div>
-            </div>
-            <div class="es-step">
-              <div class="es-steplbl">${shown.length} question${shown.length === 1 ? "" : "s"}</div>
-              ${shown.length ? `<div class="es-qrows">${shown.map(q =>
-                `<button type="button" class="es-qrow ${f.questionId === q.id ? "on" : ""}" data-esq="${esc(q.id)}">${esc(esQuestionPreview(q))}</button>`).join("")}</div>`
-                : `<p class="es-help">Nothing matches both of those. Clear one of them to see more.</p>`}
-            </div>
-            ${chosen ? `<div class="es-chosen">
-              <div class="es-steplbl">Your question</div>
-              <p class="es-chosenq"><b>${esc(chosen.command)}</b> ${esc(esQuestionPreview(chosen))}</p>
-            </div>` : ""}
-          `}
-        </div>`;
-      })()}
-      ${(() => {
-        // A status line, not a form field. The guidance resolves without being
-        // asked for, and the disclosure is there for the student who wants to
-        // check what it will be marked against.
-        const r = esRubricFor(f, sc);
-        const label = r.source === "user-provided" ? "Your own marking guidance will be used"
-          : r.source === "authored" ? "Marking guidance written for this question will be used"
-          : "Marking guidance will be generated from this question";
-        return `<div class="es-field">
-          <div class="es-rubstatus">
-            <span class="es-rubtick">\u2713</span>
-            <span class="es-rubtext">${esc(label)}</span>
-            <span class="es-rubprov">${esc(r.source)}</span>
-            <button type="button" class="es-linkbtn" id="esrubopen">${f.rubricOpen ? "Hide" : "Review or edit"}</button>
+          <div class="qp-count">
+            <span>${found.length ? (from + 1) + "–" + (from + shown.length) + " of " : ""}${
+              found.length} question${found.length === 1 ? "" : "s"}</span>
+            <span class="qp-sort">Sorted by topic</span>
           </div>
-          <div class="es-rubbox"${f.rubricOpen ? "" : " hidden"}>
-            ${r.source === "generated" ? `<p class="es-help">Generated from the question in front of you. It is not an official marking guide and is not from NESA.</p>` : ""}
-            <pre class="es-rubpre">${esc(r.text)}</pre>
-            <label class="es-label" for="esrubric">Replace it with your own</label>
-            <textarea id="esrubric" class="es-input es-ta" rows="3" placeholder="Paste your rubric or marking bands here.">${esc(f.rubric)}</textarea>
+          ${found.length ? `<div class="qp-rows" role="radiogroup" aria-label="Practice questions">${shown.map(q => {
+            const meta = [];
+            if (String(q.topic || "").trim()) meta.push(esc(String(q.topic).trim()));
+            if (esDirectiveId(q.command)) meta.push(esc(esDirectiveLabel(esDirectiveId(q.command))));
+            // Only where authored. A question nobody gave a mark value shows none.
+            if (q.marks != null) meta.push(esc(String(q.marks)) + " marks");
+            const on = f.questionId === q.id;
+            return `<button type="button" class="qp-row ${on ? "on" : ""}" data-esq="${esc(q.id)}" role="radio" aria-checked="${on ? "true" : "false"}">
+              <span class="qp-radio" aria-hidden="true"></span>
+              <span class="qp-rowtext"><span class="qp-q">${esc(String(q.text || "").trim())}</span>
+              ${meta.length ? `<span class="qp-meta">${meta.join(" <i>·</i> ")}</span>` : ""}</span>
+            </button>`;
+          }).join("")}</div>
+          ${pages > 1 ? `<div class="qp-pager">
+            ${pageBtn(page - 1, "‹ Previous", false, page === 1)}
+            <span class="qp-pagenums">${Array.from({ length: pages }, (_, i) =>
+              pageBtn(i + 1, String(i + 1), i + 1 === page, false)).join("")}</span>
+            <span class="qp-pagemob">Page ${page} of ${pages}</span>
+            ${pageBtn(page + 1, "Next ›", false, page === pages)}
+          </div>` : ""}`
+            : `<p class="qp-empty">Nothing matches both of those. Clear one of them to see more.</p>`}
+          <div class="qp-tail">
+            <h2 class="qp-tailh">Not the question you wanted?</h2>
+            <p class="qp-tailp">Clear the filters to see the whole bank, or bring a question from a past
+              paper or your own teacher. Your own question gets the same coaching, and the support it
+              carries is stated before you start either way.</p>
+            <div class="qp-tailacts">
+              <button type="button" class="qp-btn" data-espick="own">Use my own question</button>
+              <button type="button" class="qp-btn" data-espick="subject">Back to setup</button>
+            </div>
           </div>
-        </div>`;
-      })()}
-      <div class="es-field">
-        <label class="es-label" for="esmarks">Marks this question is worth</label>
-        <p class="es-help">Used only when you submit a full attempt for marking, so the mark you get back means something.</p>
-        <input id="esmarks" class="es-input es-marks" type="number" min="1" max="60" step="1" value="${esc(String(f.marks))}">
-      </div>
-      <div class="es-field">
-        <label class="es-label" for="esstruct">Structure</label>
-        <select id="esstruct" class="es-input es-select">${structOpts}</select>
-      </div>
-      ${modelPicker}
-      <div class="es-actions">
-        <button class="es-btn primary" id="esstart">Start practising</button>
-        <span class="es-foothint">You will write one paragraph at a time with a coach, or you can switch to a full timed attempt.</span>
-      </div>
-    </div></div></div>`;
+        `, rail);
+    }
+
+    // ---- stage: the question, before committing to it -----------------------
+    else if (stage === "preview" && f.questionId &&
+             (sc.questions || []).some(x => x.id === f.questionId)) {
+      const q = (sc.questions || []).find(x => x.id === f.questionId);
+      const sup = esSupportFor(q);
+      const facts = [["Topic", String(q.topic || "").trim()],
+                     ["Directive", esDirectiveLabel(esDirectiveId(q.command))],
+                     ["Marks", q.marks != null ? String(q.marks) : null],
+                     ["This question provides", sup.summary]]
+        .filter(r => r[1]).map(r =>
+          `<div class="qp-fact"><dt>${esc(r[0])}</dt><dd>${esc(r[1])}</dd></div>`).join("");
+      host.innerHTML = shell(`
+          <button type="button" class="qp-back" id="esbacklist">&larr; Back to question list</button>
+          <h1 class="qp-h1">Question preview</h1>
+          <p class="qp-lead">See the full details before starting.</p>
+          <div class="qp-card qp-prevcard">
+              ${String(q.topic || "").trim() ? `<span class="qp-chip">${esc(String(q.topic).trim())}</span>` : ""}
+              <p class="qp-prevq">${esc(String(q.text || "").trim())}</p>
+              <p class="qp-prevdir">${esc(esDirectiveLabel(esDirectiveId(q.command)))}${
+                q.marks != null ? ' <i>·</i> ' + esc(String(q.marks)) + " marks" : ""}</p>
+              <dl class="qp-facts">${facts}</dl>
+              ${q.marks == null ? `<p class="qp-note">No mark value is authored for this question. You can
+                still plan, write and get feedback on your essay.</p>` : ""}
+              <div class="qp-actions">
+                <button type="button" class="qp-btn qp-go" id="esstart">Start this question</button>
+                <button type="button" class="qp-btn" data-espick="list">Choose a different question</button>
+              </div>
+          </div>
+          <div class="qp-how">
+            <h2 class="qp-h2">What happens when you start</h2>
+            <div class="qp-howrow">
+              <div><div class="qp-hown">1</div><p class="qp-howt">Choose how to begin</p>
+                <p class="qp-howp">Plan the whole response first, or go straight into a paragraph. Whichever
+                  you pick, you can change your mind later.</p></div>
+              <div><div class="qp-hown">2</div><p class="qp-howt">Write with a coach</p>
+                <p class="qp-howp">A coach works through the paragraph with you one sentence at a time, or
+                  you can switch to a full timed attempt.</p></div>
+              <div><div class="qp-hown">3</div><p class="qp-howt">Get feedback</p>
+                <p class="qp-howp">Your writing is read against the marking guidance for this question, and
+                  the guidance says where it came from.</p></div>
+            </div>
+          </div>
+        `,
+        railCard("&#9678;", "About this question",
+          `<p class="qp-rcp">This question offers ${esc(sup.summary)}.</p>
+           <p class="qp-rclbl">Available support</p>
+           <div class="qp-sup">${sup.rows.map(r =>
+             `<div class="qp-suprow ${r.has ? "yes" : "no"}"><span class="qp-supmark">${r.has ? "✓" : "⊘"}</span>
+               <span class="qp-supname">${esc(r.label)}</span>
+               <span class="qp-supstate">${r.has ? "Available" : "Not available"}</span></div>`).join("")}</div>`)
+        + railCard("&#9679;", "What support means",
+          `<p class="qp-rcp">Support availability depends on how the question was authored. Nothing is
+            borrowed from another question, so a question shows only what somebody wrote for it.</p>
+           <p class="qp-rcp">You can always start the question and get feedback on your essay.</p>`)
+        + railCard("&#9662;", "Top tip",
+          `<p class="qp-rcp">A question with less support is still worth practising. You write it the same
+            way; there is simply less scaffolding on the way through.</p>`));
+    }
+
+    // ---- stage: My essays ---------------------------------------------------
+    // The nav link needs somewhere real to land. The saved essays used to sit at
+    // the bottom of the setup page, where a student who came back to carry on
+    // had to scroll past the whole setup form to find them, and where the nav
+    // link pointing at them was indistinguishable from Back to setup. They have
+    // their own destination now, with an empty state, so the link is never dead.
+    else if (stage === "essays") {
+      const mine = esRecent(ES.list || []).slice(0, 12);
+      host.innerHTML = shell(`
+          <h1 class="qp-h1">My essays</h1>
+          <p class="qp-lead">Everything you have started, most recent first.</p>
+          ${mine.length ? `<div class="qp-card qp-essays">${mine.map(d => {
+            const mastered = (d.paras || []).filter(x => x.mastered).length, np = (d.paras || []).length;
+            const qtext = String(d.question || "").trim();
+            return `<div class="qp-essay" data-resrow="${esc(d.id)}">
+              <div class="qp-essaymain">
+                ${d.topic ? `<span class="qp-chip sm">${esc(d.topic)}</span>` : ""}
+                <p class="qp-essayq">${esc(qtext)}</p>
+                <p class="qp-essaymeta">${np ? mastered + " of " + np + " paragraph" +
+                  (np === 1 ? "" : "s") + " mastered" : "not started yet"}</p>
+              </div>
+              <div class="qp-essayacts">
+                <button type="button" class="qp-btn qp-go sm" data-esresume="${esc(d.id)}">Resume</button>
+                <button type="button" class="qp-btn sm" data-estemplate="${esc(d.id)}">Use as template</button>
+                <button type="button" class="qp-linkbtn" data-esdelete="${esc(d.id)}"
+                  aria-label="Delete this saved essay">remove</button>
+              </div>
+            </div>`;
+          }).join("")}</div>`
+          : `<div class="qp-card qp-empty2">
+              <p class="qp-emptyh">You have not started an essay yet.</p>
+              <p class="qp-emptyp">Once you start one it is saved here automatically, and you can come back
+                to it, carry on where you left off, or use it as the template for another.</p>
+              <div class="qp-actions">
+                <button type="button" class="qp-btn qp-go" data-esnav="back">Set up an essay</button>
+              </div>
+            </div>`}
+        `,
+        railCard("&#9678;", "How saving works",
+          `<p class="qp-rcp">Your writing is saved as you go, on this device. Nothing is submitted anywhere
+            unless you ask for feedback.</p>
+           <p class="qp-rcp">Resume opens an essay where you left it. Use as template starts a new essay
+            from the same question and settings, without copying the writing.</p>`)
+        + railCard("&#9679;", "What is saved",
+          `<p class="qp-rcbig">${mine.length}</p>
+           <p class="qp-rcp">essay${mine.length === 1 ? "" : "s"} on this device.${
+             (ES.list || []).length > mine.length
+               ? " The most recent " + mine.length + " are listed." : ""}</p>`));
+    }
+
+    // ---- stage: a question the student brings -------------------------------
+    else if (stage === "own") {
+      host.innerHTML = shell(`
+          ${(sc.questions || []).length ? back("subject", "Back to setup") : ""}
+          <h1 class="qp-h1">Your essay question</h1>
+          <p class="qp-lead">Paste or type the whole question, including the directive.</p>
+          <div class="qp-card">
+            ${/* A subject with no question bank of its own opens straight here, so
+                  the subject picker has to be on this stage as well: otherwise a
+                  student on Economics has no way to reach Business Studies. */ ""}
+            ${subjectPicker}
+            <div class="qp-field">
+              <label class="qp-label" for="esq">Essay question <span class="qp-req">needed</span></label>
+              <textarea id="esq" class="qp-input qp-ta" rows="3" placeholder="Paste or type the whole question, including the directive.">${esc(f.question)}</textarea>
+            </div>
+            ${options}
+            <div class="qp-actions">
+              <button type="button" class="qp-btn qp-go" id="esstart">Start practising</button>
+            </div>
+          </div>
+        `,
+        railCard("&#9678;", "Writing your own question",
+          `<p class="qp-rcp">Paste the whole question, including the directive. The directive is what tells
+            the guidance whether you are explaining, assessing or judging.</p>
+           <p class="qp-rcp">Marking guidance is generated from the question when none is written for it,
+            and you can review or replace it under Essay options.</p>`)
+        + railCard("&#9679;", "Next steps",
+          `<ol class="qp-steps"><li>Paste or type your question.</li><li>Set the marks and structure if you
+            want to change them.</li><li>Write one paragraph at a time, with a coach.</li></ol>`));
+    }
+
+    // ---- stage: setting up --------------------------------------------------
+    else {
+      // Real numbers about the real bank. A question is imported when it came
+      // through the importer rather than with the app, which the runtime adapter
+      // records; nothing here is estimated.
+      const bank = sc.questions || [];
+      const imported = bank.filter(q => q.origin === "imported").length;
+      const topicCount = new Set(bank.map(q => esTopicId(q.topic)).filter(Boolean)).size;
+      const savedCount = (ES.list || []).length;
+      host.innerHTML = shell(`
+          <h1 class="qp-h1">Set up your essay</h1>
+          <p class="qp-lead">Choose a subject and a practice question. You can change everything else later.</p>
+          <div class="qp-card">
+            ${subjectPicker}
+            <div class="qp-actions">
+              <button type="button" class="qp-btn qp-go" data-espick="list">Choose a practice question</button>
+              <button type="button" class="qp-btn" data-espick="own">Use my own question</button>
+            </div>
+            <div class="qp-notes">
+              <div class="qp-note1"><b>You only need a question</b> to start.</div>
+              <div class="qp-note1"><b>You can change</b> all settings later.</div>
+              <div class="qp-note1"><b>Your work is saved</b> automatically.</div>
+            </div>
+            ${options}
+          </div>
+          <section class="qp-how">
+            <h2 class="qp-h2">How essay practice works</h2>
+            <div class="qp-howrow">
+              <div class="qp-howcell"><span class="qp-hown">1</span>
+                <p class="qp-howt">Choose a question</p>
+                <p class="qp-howp">Pick one from the bank, or paste your own. Every question shows what
+                  support it carries before you start.</p></div>
+              <div class="qp-howcell"><span class="qp-hown">2</span>
+                <p class="qp-howt">Write one paragraph at a time</p>
+                <p class="qp-howp">A coach works through the response with you, one sentence at a time, or
+                  you can switch to a full timed attempt.</p></div>
+              <div class="qp-howcell"><span class="qp-hown">3</span>
+                <p class="qp-howt">Get feedback</p>
+                <p class="qp-howp">Your writing is read against the marking guidance for the question, and
+                  the guidance says where it came from.</p></div>
+            </div>
+          </section>
+        `,
+        railCard("&#9678;", "Next steps",
+          `<ol class="qp-steps">
+            <li>Choose a subject.</li>
+            <li>Pick a practice question, or bring your own.</li>
+            <li>Read what support it carries.</li>
+            <li>Start writing.</li>
+          </ol>`)
+        + railCard("&#9679;", "This question bank",
+          `<p class="qp-rcbig">${bank.length}</p>
+           <p class="qp-rcp">question${bank.length === 1 ? "" : "s"} in ${esc(sc.label || "this subject")}${
+             topicCount ? ", across " + topicCount + " topic" + (topicCount === 1 ? "" : "s") : ""}.</p>
+           ${imported ? `<p class="qp-rcp">${imported} of them ${imported === 1 ? "was" : "were"} imported
+             through Teacher tools, and appear here exactly like the rest.</p>`
+             : `<p class="qp-rcp">A teacher can add more through Teacher tools, and they appear here
+             exactly like the rest.</p>`}
+           ${savedCount ? `<p class="qp-rcp">You have ${savedCount} saved essay${
+             savedCount === 1 ? "" : "s"}. <button type="button" class="qp-linkbtn"
+             data-esnav="essays">Open My essays</button></p>` : ""}`)
+        + railCard("&#9662;", "Top tip",
+          // Marks are academic metadata. A question has a mark value only when
+          // somebody authored one, so nothing here may suggest Marginal supplies
+          // a default for it. Structure and marking guidance are app settings and
+          // are named as optional settings, which is what they are.
+          `<p class="qp-rcp">You only need a question to start. Optional settings such as structure and
+            marking guidance can be changed later.</p>`));
+    }
+
     $("#esx").onclick = esClose;
     const q = $("#esq"); if (q) q.oninput = () => {
       f.question = q.value;
       const picked = f.questionId && sc.questions.find(x => x.id === f.questionId);
       if (picked && picked.text.trim() !== q.value.trim()) f.questionId = null;
     };
-    host.querySelectorAll("[data-esmode]").forEach(b => b.onclick = () => {
-      f.setupMode = b.dataset.esmode;
-      if (f.setupMode === "own") { f.questionId = null; }
+    // Stage navigation. "own" is the existing typed-question route and keeps its
+    // mode flag, so nothing about that path changes.
+    // Navigation moves between destinations and touches NOTHING else on the
+    // form. The subject, the chosen question, the filters, the page and the
+    // settings are all state a student built up, and a nav press that quietly
+    // reset any of them would lose their work. Leaving My essays returns to the
+    // stage they left, not to the top of the flow.
+    host.querySelectorAll("[data-esnav]").forEach(b => b.onclick = () => {
+      const to = b.dataset.esnav;
+      if (to === "essays") {
+        if (f.pickStage !== "essays") f.pickReturn = f.pickStage || "subject";
+        f.pickStage = "essays";
+      } else if (to === "back") {
+        f.pickStage = f.pickReturn || "subject";
+      } else {
+        f.pickStage = to;
+      }
       esRender();
     });
+    host.querySelectorAll("[data-espick]").forEach(b => b.onclick = () => {
+      const to = b.dataset.espick;
+      if (to === "own") { f.setupMode = "own"; f.pickStage = "own"; f.questionId = null; }
+      else { f.setupMode = "practice"; f.pickStage = to; }
+      esRender();
+    });
+    const bl = $("#esbacklist"); if (bl) bl.onclick = () => { f.pickStage = "list"; esRender(); };
+
+    // An empty value is the All pill, which clears the filter. Pressing the
+    // chosen one again also clears it, which is how a filter behaves.
+    // Filtering resets to the first page. Staying on page 3 of a result set that
+    // now has one page is how a filter appears to have found nothing.
     host.querySelectorAll("[data-essetupdir]").forEach(b => b.onclick = () => {
-      // Pressing the chosen one again clears it, which is how a filter behaves.
-      f.setupDir = f.setupDir === b.dataset.essetupdir ? null : b.dataset.essetupdir;
-      f.questionId = null; f.question = "";
+      const v = b.dataset.essetupdir;
+      f.setupDir = !v ? null : (f.setupDir === v ? null : v);
+      f.page = 1;
       esRender();
     });
     host.querySelectorAll("[data-essetuptopic]").forEach(b => b.onclick = () => {
-      f.setupTopic = f.setupTopic === b.dataset.essetuptopic ? null : b.dataset.essetuptopic;
-      f.questionId = null; f.question = "";
+      const v = b.dataset.essetuptopic;
+      f.setupTopic = !v ? null : (f.setupTopic === v ? null : v);
+      f.page = 1;
       esRender();
     });
+    host.querySelectorAll("[data-espage]").forEach(b => b.onclick = () => {
+      // The selection is NOT cleared by paging. A question chosen on page one is
+      // still chosen on page two, and is still chosen when you come back.
+      f.page = Number(b.dataset.espage) || 1;
+      esRender();
+    });
+    const cf = $("#esclearfilters");
+    if (cf) cf.onclick = () => { f.setupDir = null; f.setupTopic = null; f.questionId = null; f.question = ""; esRender(); };
     const ro = $("#esrubopen"); if (ro) ro.onclick = () => { f.rubricOpen = !f.rubricOpen; esRender(); };
     const rb = $("#esrubric"); if (rb) rb.oninput = () => { f.rubric = rb.value; };
     const mk = $("#esmarks"); if (mk) mk.oninput = () => { const n = Math.round(Number(mk.value)); f.marks = (n >= 1 && n <= 60) ? n : 20; };
-    const stt = $("#esstruct"); stt.onchange = () => { f.structure = stt.value; };
+    // Same guard: the structure picker is inside the folded options, which the
+    // list stage does not render at all.
+    const stt = $("#esstruct"); if (stt) stt.onchange = () => { f.structure = stt.value; };
     const subjSel = $("#essubject");
     if (subjSel) subjSel.onchange = () => {
       ES.subject = subjSel.value;
@@ -4464,8 +4927,18 @@
       // unattached: the row appeared to do nothing when it had in fact worked.
       if (qq) {
         f.question = qq.text; f.questionId = qq.id;
-        if (!f.topic) f.topic = qq.topic || "";
+        // The question's own topic, every time. The guard here was written when a
+        // student typed their topic into a field and it had to survive choosing a
+        // question; that field is gone, so the only thing the guard protected was
+        // the PREVIOUS question's topic. Choosing a Finance question after a
+        // Marketing one filed the essay under Marketing, and the topic reaches
+        // marking, so this was not only a wrong label on My essays.
+        f.topic = qq.topic || "";
         if (qq.marks) f.marks = qq.marks;
+        // Choosing a row SELECTS it and stays on the list: the rail fills with
+        // the question, its metadata and what support it carries, and Preview
+        // question is the step from there. Jumping straight to the preview took
+        // the list away from a student who was still comparing.
         esRender();
         const box = $("#esq"); if (box) box.focus();
       }
@@ -4482,13 +4955,29 @@
     });
     // Delete a saved essay: remove from localStorage + list, then drop just this
     // row from the DOM (no full re-render, no flash). Section goes if it empties.
+    // Asked first, every time. A saved essay is an afternoon of somebody's work
+    // and this control sits beside Resume, so a mis-aimed press was one click
+    // from losing it with nothing to undo. The wording says what is going and
+    // that it is not coming back, and cancelling changes nothing at all: the
+    // deletion happens after the answer, not before it.
     host.querySelectorAll("[data-esdelete]").forEach(b => b.onclick = () => {
       const id = b.dataset.esdelete;
+      if (!window.confirm("Remove this saved essay? This cannot be undone.")) return;
       esDeleteDraft(id);
       const row = host.querySelector('[data-resrow="' + id + '"]'); if (row) row.remove();
-      if (!ES.list.length) { const sec = host.querySelector("[data-resume]"); if (sec) sec.remove(); }
+      // The list may have emptied. On My essays that means the empty state,
+      // which is a different page rather than a section to remove, so the
+      // re-render is how it gets there.
+      if (!ES.list.length) {
+        const sec = host.querySelector("[data-resume]"); if (sec) sec.remove();
+        if ((ES.form || {}).pickStage === "essays") esRender();
+      }
     });
-    $("#esstart").onclick = () => {
+    // The stages that are choosing rather than starting have no start control, so
+    // the binding is guarded rather than assumed. It threw on the list stage,
+    // which left every binding after it unattached and the rows dead.
+    const startBtn = $("#esstart");
+    if (startBtn) startBtn.onclick = () => {
       const question = (f.question || "").trim();
       if (!question) { toast("Add your essay question to start."); const el = $("#esq"); if (el) el.focus(); return; }
       // Starting replaces the draft outright. That is fine on an empty one and is
@@ -5017,7 +5506,9 @@
     const step = slotsForRole(p.role).find(x => x.key === b.slot) || null;
     if (!step) return "";
     const g = esGuideFor(p, step);
-    return `<div class="es-guide"><div class="es-guideh">${esc(g.head)}</div><div class="es-guidejob">${esc(g.job)}</div></div>`;
+    const gap = esEvidenceGap(p, step);
+    return `<div class="es-guide"><div class="es-guideh">${esc(g.head)}</div><div class="es-guidejob">${esc(g.job)}</div>${
+      gap ? `<div class="es-evgap">${esc(gap)}</div>` : ""}</div>`;
   }
 
   // ---- help level belongs to the BLOCK, and is reset when its context moves ----
@@ -5824,7 +6315,8 @@
         // tells the student nothing they can act on and says the product is
         // unfinished, which is not their problem to carry. Absence is absence.
         body = `<p class="es-drawer-none">No verified evidence is available for this argument yet.</p>
-          <p class="es-drawer-note">You can keep writing and use evidence you already know.</p>`;
+          <p class="es-drawer-note">Your response still needs a case study or example. Use one from your
+            own course: Marginal has none authored for this question and will not supply one.</p>`;
       } else
       // "Fits this argument" is a claim about the content, so it is only made where
       // the content makes it. Where nothing is linked, the heading says what these
@@ -6446,6 +6938,24 @@
     const b = busContent(); const key = busTopicKey();
     return ((b && key && b.evidence && b.evidence[key]) || []).find(e => e.label === label) || null;
   }
+  // TWO FACTS, NEVER ONE. "This paragraph needs a case study" and "Marginal has a
+  // case study for you" are separate, and collapsing them is wrong in both
+  // directions. Dropping the sentence job because no evidence is authored would
+  // quietly remove a thing the response is marked on. Leaving the job alone and
+  // saying nothing else lets a student hunt through an Evidence tool that has
+  // nothing in it and conclude they have missed something.
+  //
+  // So the demand stands, always, and where Marginal has nothing to offer for
+  // this question it says so and hands the work back explicitly. Nothing here
+  // invents evidence, and nothing here removes a sentence the marker wants.
+  const ES_EVIDENCE_SLOTS = ["evidence", "example"];
+  function esEvidenceGap(p, step) {
+    if (!step || ES_EVIDENCE_SLOTS.indexOf(step.key) < 0) return "";
+    const bank = esEvidenceBank();
+    if (bank.usable.length) return "";
+    return "Marginal has no evidence authored for this question, so use a case study or example " +
+      "from your own course.";
+  }
   // The guide for the active sentence, now shaped by what the student chose. An
   // authored pathway guide for this slot wins; otherwise the slot's own job stands.
   // pathway guide -> area guide -> slot job. The last of those is scaffold
@@ -6657,7 +7167,7 @@
   // Optional ones are never shown unasked and exist so the deeper material can
   // reach them.
   function esConceptStore() {
-    const sub = (window.ESSAY && window.ESSAY.subjects && window.ESSAY.subjects[ES.subject]) || null;
+    const sub = esSubjectContent(ES.subject);
     return (sub && sub.concepts) || {};
   }
   function esConceptsFor(p, tier) {
@@ -8027,6 +8537,8 @@
                   </span>
                 </div>
                 <div class="es-guidejob">${esc(guide.job)}</div>
+                ${(() => { const g = esEvidenceGap(p, esStepDef(p));
+                  return g ? `<div class="es-evgap">${esc(g)}</div>` : ""; })()}
                 ${(() => {
                   // The shapes are authored per stage and are content free. They teach
                   // the grammar of the sentence, which is a different thing from the
@@ -9206,7 +9718,7 @@
           code: state.code || undefined
         };
         if ((d.rubric || "").trim()) payload.rubric = d.rubric.trim(); // omit when skipped -> generic bands
-        const res = await fetch(state.endpoint, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
+        const res = await esPostJSON(state.endpoint, payload);
         if (!res.ok) throw new Error("coach " + res.status);
         fb = esNormalizeCoach(await res.json(), "", p.role);
       } catch (e) {

@@ -1,6 +1,6 @@
 {
   "schema": "marginal.question-package",
-  "contractVersion": "1.0",
+  "contractVersion": "1.1",
   "origin": {
     "type": "bundled",
     "packageId": "",
@@ -26,6 +26,8 @@
     "directive": "account for",
     "text": "",
     "marks": 40,
+    "note": "",
+    "areasLabel": "",
     "overallArgument": "",
     "vocabRefs": [],
     "studyRefs": []
@@ -67,7 +69,13 @@
     "concepts": [],
     "relationships": [],
     "accomplish": [],
-    "syllabusSummary": ""
+    "syllabusSummary": "",
+    "requiredAreas": [
+      {
+        "id": "",
+        "label": ""
+      }
+    ]
   },
   "coreAnswer": {
     "mode": "causal",

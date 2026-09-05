@@ -146,10 +146,14 @@ function packagize(qid) {
       left: pw.fromLabel ? { label: pw.fromLabel, conceptRef: null } : null,
       choiceMeaning: pw.meaning || null,
       whatToProve: pw.whatToProve || null, commonMistake: pw.commonMistake || null,
+      // reason and note are two different authored things and only one of them
+      // used to travel. `reason` is the argument for status "none-required";
+      // `note` is a reviewer's record of what is still missing.
       mechanism: pw.mechanism
         ? { status: pw.mechanism.state || pw.mechanism.status || "unreviewed",
-            text: pw.mechanism.text || null, note: pw.mechanism.note || null }
-        : { status: "unreviewed", text: null, note: null },
+            text: pw.mechanism.text || null, note: pw.mechanism.note || null,
+            reason: pw.mechanism.reason || null }
+        : { status: "unreviewed", text: null, note: null, reason: null },
       conceptRef: null, syllabusRef: syllabusRefFor(pw.concept, pw.id),
       learningRef: null, learning: { status: (pw.learning || {}).status || "unreviewed" },
       evidenceRefs: [], vocabRefs: [], guidance: guidanceFor(pw) };
@@ -206,8 +210,17 @@ function packagize(qid) {
       topicRef: hasTopic ? id.topic("business", topicKey) : null,
       topicLabel: hasTopic ? null : (q.topic || null),
       directive: String(q.command || "").toLowerCase() || null,
-      text: q.text, marks: q.marks || 20,
+      text: q.text,
+      // NOT defaulted. `q.marks || 20` told nine of the thirteen Business Studies
+      // questions they were worth twenty marks on nobody's authority, and the
+      // number then reached a student on the question header and set the band
+      // table. question.marks is required by the contract, so a question with
+      // none produces an INVALID package, which is the truthful outcome: it
+      // cannot be exported until somebody authors what it is worth.
+      marks: q.marks,
       terms: { first: q.term1 || null, second: q.term2 || null },
+      note: q.note || null,
+      areasLabel: q.areasLabel || null,
       overallArgument: q.argument || null,
       vocabRefs: [], studyRefs: (q.studyRefs || []).slice(),
     },
@@ -218,6 +231,12 @@ function packagize(qid) {
       relationships: q.requirements.relationships || [],
       accomplish: q.requirements.accomplish || [],
       syllabusSummary: q.requirements.syllabus || null,
+      // Carried, not just validated. These were checked against the question's
+      // own areas and then dropped, so a question that required four of its
+      // areas exported as one that required none.
+      requiredAreas: (q.requirements.requiredAreas || []).map(a => ({
+        id: areaIds[(a || {}).id || a] || slug((a || {}).id || a),
+        label: (a || {}).label || String((a || {}).id || a) })),
     } : null,
     coreAnswer: q.coreAnswer || null,
     workingAnswer: q.workingAnswer || null,
@@ -228,11 +247,14 @@ function packagize(qid) {
       bands: (q.criteria && q.criteria.bands) || null,
       bandSource: (q.criteria && q.criteria.source) || null, text: q.rubric || null },
   };
+  if (q.marks == null) unmapped.push("marks: this question authors none, and the contract requires them. " +
+    "The package is invalid until somebody says what it is worth; a default would be a number nobody chose");
   if (q.objectiveWords) unmapped.push("objectiveWords dropped: claim right-hand ends are explicit in v1");
   if (q.qtype || q.qtypeLabel) migrated.push("qtype/qtypeLabel dropped: nothing in the app, the build or the tests reads them");
   if (q.requirements && (q.requirements.requiredAreas || []).length) {
     const bad = q.requirements.requiredAreas.filter(a => !areaIds[(a || {}).id || a]);
     bad.forEach(a => unmapped.push("requiredArea " + JSON.stringify((a || {}).id || a) + " is not one of this question's areas"));
+    migrated.push("requiredAreas: " + q.requirements.requiredAreas.length + " carried, which 1.0 dropped");
   }
 
   criterionMisses.forEach(m => unmapped.push("criterion " + JSON.stringify(m.label) + " has no id: " + m.reason));

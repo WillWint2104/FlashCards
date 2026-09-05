@@ -1,6 +1,6 @@
 {
   "schema": "marginal.question-package",
-  "contractVersion": "1.0",
+  "contractVersion": "1.1",
   "origin": {
     "type": "bundled",
     "packageId": null,
@@ -30,11 +30,12 @@
     "topicLabel": null,
     "directive": "assess",
     "text": "Assess the effectiveness of marketing strategies in achieving marketing objectives.",
-    "marks": 20,
     "terms": {
       "first": "Marketing strategies",
       "second": "Marketing objectives"
     },
+    "note": null,
+    "areasLabel": null,
     "overallArgument": "Marketing strategies can be effective in achieving objectives, though their success depends on fit with the market and on competitors' responses.",
     "vocabRefs": [],
     "studyRefs": []

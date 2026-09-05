@@ -2,7 +2,8 @@
 // change deserves rather than always paying for the full run.
 //
 //   node tests/gate.js fast          shell smoke and the entry contracts
-//   node tests/gate.js checkpoint    the above plus setup, coverage, bots
+//   node tests/gate.js checkpoint    the above plus the interaction surfaces
+//   node tests/gate.js journeys      the simulated students, on their own
 //   node tests/gate.js full          every suite
 //
 // Each gate ends with a single line that names the tier, the suites it actually
@@ -24,24 +25,121 @@ const TIERS = {
   // 37s, so ui40 goes back to checkpoint, where it already runs: it walks EVERY
   // question through the shell, which is an exhaustive sweep rather than a fast
   // signal, and it was the single most expensive suite here at 7.2s.
-  fast: { budget: 30, suites: ["t1", "t17", "t18", "t19", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47"] },
-  // Adds the interaction surfaces that the shell rewrite touched, the setup
-  // and marking paths, and the simulated students. This is the gate to pass
-  // before pushing. The budget is 180s rather than 120s because the seven bot
-  // journeys are 124s of it on their own and they run one after another through
-  // a single page; the cross-journey assertions compare the students to each
-  // other, so there is no honest subset of them to run.
+  // ui51 is not here either: it renders the picker in four browser pages, which
+  // is a surface check rather than a sharp signal, and the tier was at 40.2s of
+  // its 40s. Its static half, t22, is here, and that is the half that catches a
+  // field going missing on the way through the contract.
+  // ui50 is NOT here. It publishes through the importer and then drives the
+  // student app, so it is an integration test across two surfaces rather than a
+  // sharp signal about one, and it took the tier to 42.1s. Same reasoning that
+  // moved the simulated students out of checkpoint: this tier is worth having
+  // because it is cheap enough to run out of habit.
+  // 40s rather than 30s. The tier gained four contract suites and the importer
+  // suite as those milestones landed, and at 30.6s it was quietly over a budget
+  // that only prints. Six browser suites are 25s of it and each covers a surface
+  // a change here can break. Raised deliberately, with the headroom stated, which
+  // is the opposite of what happened to checkpoint: that one was left at 174/180
+  // until variance would have started failing it.
+  // t23 is the inventory check: it reads tests/ and the two registries and fails
+  // when a maintained test is outside both. It costs nothing and belongs in the
+  // tier that runs most often, because the thing it catches is a test drifting
+  // out of the harness, which is invisible by definition.
+  fast: { budget: 40, suites: ["t1", "t17", "t18", "t19", "t20", "t21", "t22", "t23", "t24", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49"] },
+  // Adds the interaction surfaces that the shell rewrite touched, and the setup
+  // and marking paths. This is the gate to pass before pushing, and its whole
+  // value is that it is cheap enough to run out of habit.
+  //
+  // The simulated students used to be here and are not any more. They were 124s
+  // of a 174s run against a 180s budget, which is not a budget: ordinary machine
+  // variance would have started failing it, and a gate people stop running is
+  // worse than one that covers less. They are integration tests of product
+  // behaviour rather than of the architecture a change is touching, so they moved
+  // to their own tier and to full. Checkpoint answers one question: did this
+  // change break the thing I am working on.
+  //
+  // The tier reached 73.4s once the picker rewrite landed, which is not a budget
+  // either. Three suites left rather than the budget moving, and they left on one
+  // criterion: does this suite establish an invariant at one seam, or does it
+  // drive a student across screens end to end? ui13 and ui30 walk the whole
+  // writing flow - picker, plan, paragraph, learning, repair, retry - and ui51
+  // renders the picker in four browser pages as a whole-surface sweep. Its static
+  // half, t22, stays here, and that is the half that catches a field going
+  // missing on the way through the contract. ui35, ui37 and ui46 stayed: each
+  // measures one seam, and one of them being red is the signal this tier exists
+  // to give.
+  //
+  // ui52 arrived here for the same reason. A header link whose destination does
+  // not exist is an architectural fault, not a journey, and it is the fault this
+  // flow already shipped once.
   checkpoint: {
-    budget: 180,
-    suites: ["t1", "t2", "t17", "t18", "t19", "ui13", "ui30", "ui35", "ui37", "ui38", "ui39", "ui40", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "bots"],
+    budget: 60,
+    suites: ["t1", "t2", "t17", "t18", "t19", "t20", "t21", "t22", "t23", "t24", "ui35", "ui38", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49", "ui52"],
   },
-  // Everything run.js knows about. An empty list means "pass no filter".
-  full: { budget: 360, suites: [] },
+  // ui40 joined this tier when ui51 arrived. It walks EVERY question through the
+  // shell, which is an exhaustive sweep and 6.2s of it, and the picker it swept
+  // for is now covered precisely by ui51 at a third of the cost. An exhaustive
+  // walk belongs where the exhaustive things are.
+  // End to end. The seven simulated students, run one after another through a
+  // single page, and the suite that publishes a package through the importer and
+  // then finds it in the student app. Both cross a whole surface rather than
+  // testing one, and both are expensive for that reason: ui50 alone was 8.4s of
+  // a checkpoint run that has to stay under a minute to be worth having.
+  //
+  // The cross-journey assertions compare the students to each other, so there is
+  // no honest subset of the bots: that part is all of them or none.
+  // ui13, ui30 and ui51 joined when checkpoint went over its minute. All three
+  // are end-to-end walks rather than seam checks, which is what this tier is for.
+  //
+  // ui53 publishes an externally authored package through the real importer and
+  // carries ONE representative student through to a finished response, so it
+  // crosses every surface the project has and does it once. That is the seam,
+  // and it belongs here.
+  //
+  // The four-profile matrix on the same question is tests/ui54.js and is in full
+  // only. Both halves were one suite and the tier went to 248.1s against a
+  // budget of 180, which is not a budget; the first fix was raising the number
+  // to 300, and a budget raised to fit whatever the tier grew into stops meaning
+  // anything. The split is the real fix: the routine gate keeps cross-surface
+  // imported-package coverage, and the study of how four different students fare
+  // on one question is paid for where the expensive things live.
+  //
+  // The bundled bots went with it, for the same reason and not to make a number.
+  // Splitting ui53 alone left the tier at 207.2s, because the bots are 125s of
+  // it: seven simulated students walking questions that SHIPPED. That is the
+  // same kind of work as ui54 and belongs in the same place, and leaving it here
+  // meant this tier paid for two student matrices while calling itself the
+  // routine gate. What stays is what the tier is for: the seams. Six suites that
+  // each cross a boundary once, including one imported package walked end to end
+  // by one student, in 71.7s against 180.
+  //
+  // ui55 is here rather than in checkpoint, by the same criterion as the rest of
+  // this tier: it walks every stage of the picker and presses every control on
+  // each, which is page-walking. It went into checkpoint first and took that
+  // tier to 132.8s against its minute, which is the mistake this file keeps
+  // making and the one the budget is not allowed to absorb.
+  //
+  // ui37 came here when checkpoint measured 62s twice against its minute. It was
+  // the borderline one when the tier was last split: it guards a seam, the
+  // capture and restore of a sentence in progress, but it guards it by leaving
+  // the writing screen and coming back through half a dozen controls, which is a
+  // walk. ui35 and ui46 stayed because each measures its invariant in place.
+  journeys: { budget: 180, suites: ["ui13", "ui30", "ui37", "ui40", "ui50", "ui51", "ui53", "ui55"] },
+  // Everything run.js knows about, the journeys included, plus the suites in no
+  // tier: both student matrices are here and only here, ui54's four profiles on
+  // the imported question and the bots' seven on the bundled bank.
+  //
+  // 600, from the measured run: 74 suites, 2944 assertions, 474.4s. The previous
+  // 480 was an estimate written before the tier had ever been run to completion,
+  // and 474 of 480 is 1.2% of headroom, which ordinary machine variance eats.
+  // There is nothing to move out of the tier that runs everything, so the only
+  // honest choice here is a number with room in it and the run that set it
+  // written down beside it.
+  full: { budget: 600, suites: [] },
 };
 
 const tier = (process.argv[2] || "").toLowerCase();
 if (!TIERS[tier]) {
-  console.error("usage: node tests/gate.js fast|checkpoint|full");
+  console.error("usage: node tests/gate.js fast|checkpoint|journeys|full");
   process.exit(2);
 }
 const want = TIERS[tier].suites;

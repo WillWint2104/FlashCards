@@ -2,7 +2,7 @@
 // and it had none of the things the planning surface had: it offered every
 // relationship in the question at once, it never said which required part the
 // paragraph was answering, and it repeated an argument without a word.
-const { openMap, usePractice } = require('./env');
+const { openMap, usePractice, chooseQuestion } = require('./env');
 
 // Waits that name their condition. This app fetches nothing and renders
 // synchronously, so the effect of a click is present on the next frame:
@@ -18,7 +18,7 @@ async function open(p, re){
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await settled(p);
   await p.selectOption('#essubject','business_studies'); await settled(p);
-  await usePractice(p); await p.$$eval('.es-qrow',(es,r)=>{const t=es.find(x=>new RegExp(r,'i').test(x.textContent));t&&t.click();}, re.source);
+  await chooseQuestion(p, re);
   await p.click('#esstart');
   await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
 }

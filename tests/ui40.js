@@ -8,7 +8,7 @@
 // The invariant: content availability changes what appears INSIDE the page. It
 // never changes which page. A question with no authored pathways is a page with a
 // simpler inside, never a different shell.
-const { chromium, T, usePractice } = require('./env');
+const { chromium, T, usePractice , allRows, pageTo } = require('./env');
 
 // Waits that name their condition. This app fetches nothing and renders
 // synchronously, so the effect of a click is present on the next frame:
@@ -49,7 +49,9 @@ async function toPicker(p, subject) {
   await p.waitForSelector('#essubject', { timeout: 8000 });
   await p.selectOption('#essubject', subject).catch(() => {});
   // The picker is ready when it has offered something, whichever mode it opens in.
-  await p.waitForFunction(() => !!document.querySelector('.es-qrow, [data-esmode]'), null, { timeout: 8000 });
+  // Stage one offers the two routes; the list offers rows. Either means the
+  // picker is ready.
+  await p.waitForFunction(() => !!document.querySelector('.qp-row, [data-espick], [data-esmode]'), null, { timeout: 8000 });
   return true;
 }
 
@@ -78,11 +80,17 @@ async function toPicker(p, subject) {
     // Rows drop the directive they were filtered by, so their text is not the
     // question text. The id is on the element and is exact.
     await usePractice(p);
+    // The list paginates at ten, so the question may be on a later page.
+    await pageTo(p, '.qp-row[data-esq="' + q.id + '"]');
     const picked = await p.evaluate(id => {
-      const c = [...document.querySelectorAll('.es-qrow')].find(x => x.dataset.esq === id);
+      const c = [...document.querySelectorAll('.qp-row')].find(x => x.dataset.esq === id);
       if (c) { c.click(); return true; } return false;
     }, q.id);
     ok(picked, q.id + ': is offered in the picker');
+    // Choosing selects; Preview question opens.
+    await p.evaluate(() => { const b = document.querySelector('[data-espick="preview"]'); b && b.click(); });
+    await p.waitForSelector('#esstart', { timeout: 8000 }).catch(() => {});
+
     if (!picked) continue;
     const started = await p.evaluate(() => { const s = document.querySelector('#esstart'); if (s) { s.click(); return true; } return false; });
     ok(started, q.id + ': can be started');
@@ -118,15 +126,26 @@ async function toPicker(p, subject) {
   // supply it. This is the contract that replaced it.
   await toPicker(p, 'business_studies');
   await usePractice(p);
-  await p.evaluate(() => { const row = document.querySelector('.es-qrow'); row && row.click(); });
-  await p.waitForFunction(() => !!document.querySelector('.es-qrow.on'), null, { timeout: 8000 }).catch(() => {});
+  await p.evaluate(() => { const row = document.querySelector('.qp-row'); row && row.click(); });
+  await p.waitForFunction(() => !!document.querySelector('.qp-row.on'), null, { timeout: 8000 }).catch(() => {});
+  // The requirement is that the whole question is stated back once, and it now
+  // lives on the ROW rather than in a separate restatement below the list: the
+  // rows carry the complete authored wording, so repeating it underneath said
+  // the same thing twice. Same property, checked where it is.
+  // Choosing a row now selects it; the rail's Preview question control opens the
+  // preview, and the question is stated back there. Same requirement, one screen
+  // along.
+  await p.evaluate(() => { const b = document.querySelector('[data-espick="preview"]'); b && b.click(); });
+  await p.waitForSelector('.qp-prevq', { timeout: 8000 }).catch(() => {});
   const carried = await p.evaluate(() => {
-    const on = document.querySelector('.es-qrow.on'), c = document.querySelector('.es-chosenq');
-    return { id: on ? on.dataset.esq : null, stated: c ? c.textContent.trim().length : 0,
-      typedField: !!document.querySelector('#estopic') };
+    const q = document.querySelector('.qp-prevq');
+    return { stated: q ? q.textContent.trim().length : 0, text: q ? q.textContent.trim() : '',
+      hasStart: !!document.querySelector('#esstart'), typedField: !!document.querySelector('#estopic') };
   });
-  ok(!!carried.id, 'choosing a row marks it as chosen: ' + JSON.stringify(carried.id));
-  ok(carried.stated > 20, 'and states the whole question back once: ' + carried.stated + ' chars');
+  ok(carried.stated > 20, 'the preview states the whole question: ' + carried.stated + ' chars');
+  ok(/^[A-Z].*[.?]$/.test(carried.text),
+    'as a complete question rather than a fragment: ' + JSON.stringify(carried.text.slice(0, 60)));
+  ok(carried.hasStart, 'and offers one control that starts it');
   // ES lives inside the IIFE and cannot be read from a test, so the topic actually
   // reaching marking is asserted in ui2, where the payload is captured.
   ok(!carried.typedField, 'and nobody is asked to type a topic any more');
@@ -134,7 +153,8 @@ async function toPicker(p, subject) {
   console.log('--- Ancient History is legacy and stays out of the Business Studies picker ---');
   await toPicker(p, 'business_studies');
   await usePractice(p);
-  const offered = await p.evaluate(() => [...document.querySelectorAll('.es-qrow')].map(x => x.dataset.esq + ' ' + x.textContent.replace(/\s+/g, ' ').trim()));
+  // Across every page: the list paginates at ten and the bank is thirteen.
+  const offered = (await allRows(p)).map(r => r.id + ' ' + r.q + ' ' + r.meta);
   ok(offered.length === bank.length, 'the picker offers exactly the Business Studies bank: ' + offered.length + ' against ' + bank.length);
   const leaked = offered.filter(t => /egypt|old kingdom|pharaoh|akhenaten|hatshepsut|rome|pompeii|spartan/i.test(t));
   ok(leaked.length === 0, 'no Ancient History question appears among them: ' + JSON.stringify(leaked.slice(0, 2)));

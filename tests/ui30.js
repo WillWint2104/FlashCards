@@ -7,7 +7,7 @@
 // the student to USE the idea; a wrong answer gets a targeted repair and a retry,
 // not the lesson again; every route lands back in the paragraph; and a student who
 // knows this already never meets any of it.
-const { chromium, T, OUT, usePractice } = require('./env');
+const { chromium, T, OUT, usePractice, chooseQuestion } = require('./env');
 
 // Waits that name what they are waiting for. The app renders synchronously and
 // fetches nothing, so a click's effect is present on the next frame: settled() is
@@ -24,7 +24,7 @@ async function open(p){
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await here(p, '#essubject');
   await p.selectOption('#essubject','business_studies'); await settled(p);
-  await usePractice(p); await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/target markets affect/i.test(x.textContent));t&&t.click();});
+  await chooseQuestion(p, /target markets affect/i);
   await p.click('#esstart');
   await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
 }

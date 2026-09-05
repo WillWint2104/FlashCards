@@ -128,9 +128,11 @@ async function planAll(page) {
 // its own question has to say so first, which is also what a student does.
 async function ownQuestion(page, q) {
   await page.evaluate(() => {
-    const b = [...document.querySelectorAll('[data-esmode]')].find(x => x.dataset.esmode === 'own');
+    const b = document.querySelector('[data-espick="own"]')
+      || [...document.querySelectorAll('[data-esmode]')].find(x => x.dataset.esmode === 'own');
     if (b) b.click();
   });
+  // The textarea lives on the own-question stage, which the click above opens.
   const box = await page.waitForSelector('#esq', { timeout: 8000 }).catch(() => null);
   if (!box) return false;
   await page.fill('#esq', q);
@@ -144,13 +146,103 @@ async function ownQuestion(page, q) {
 // The practice bank is the other route, so a suite that picks a premade question
 // has to ask for it first, exactly as a student without a question of their own
 // does. Safe to call when already there.
+// Choosing a practice question is three stages now: a subject, then the list,
+// then the question itself. This helper takes a suite to the LIST, which is what
+// every caller meant by "use practice", and it is one helper so the flow changing
+// again is one edit rather than a dozen.
 async function usePractice(page) {
   await page.evaluate(() => {
-    const b = [...document.querySelectorAll('[data-esmode]')].find(x => x.dataset.esmode === 'practice');
-    if (b && !b.classList.contains('on')) b.click();
+    const b = document.querySelector('[data-espick="list"]')
+      || [...document.querySelectorAll('[data-esmode]')].find(x => x.dataset.esmode === 'practice');
+    if (b) b.click();
   });
   // The rows are the point of switching, so wait for them rather than for 300ms.
-  await page.waitForSelector('.es-qrow', { timeout: 8000 }).catch(() => {});
+  await page.waitForSelector('.qp-row', { timeout: 8000 }).catch(() => {});
+}
+
+// Walk to the page holding a question. Each step re-queries, because pressing a
+// page button re-renders the list and every handle taken before it is detached.
+async function pageTo(page, sel) {
+  const n = await page.$$eval('.qp-pagenums .qp-page', bs => bs.length).catch(() => 0);
+  for (let i = 1; i <= Math.max(1, n); i++) {
+    if (await page.$(sel)) return true;
+    const b = await page.$('.qp-pagenums [data-espage="' + i + '"]');
+    if (!b) break;
+    await b.click();
+    await page.waitForTimeout(140);
+  }
+  return !!(await page.$(sel));
+}
+
+// Every question in the CURRENT filter, across every page. The list paginates at
+// ten, so a suite that reads .qp-row sees a page and not the result set, and
+// "all 13 are listed" quietly became "10 are listed". This walks the pages and
+// puts the reader back on the one it started on.
+async function allRows(page) {
+  const out = [];
+  const pages = await page.$$eval('.qp-pagenums .qp-page', bs => Math.max(1, bs.length));
+  const start = await page.$eval('.qp-page.on', e => Number(e.dataset.espage)).catch(() => 1);
+  for (let n = 1; n <= pages; n++) {
+    const btn = await page.$('.qp-pagenums [data-espage="' + n + '"]');
+    if (btn) { await btn.click(); await page.waitForTimeout(140); }
+    out.push(...await page.$$eval('.qp-row', es => es.map(e => ({
+      id: e.dataset.esq,
+      q: ((e.querySelector('.qp-q') || {}).textContent || '').trim(),
+      meta: ((e.querySelector('.qp-meta') || {}).textContent || '').trim(),
+      on: e.classList.contains('on') }))));
+  }
+  const back = await page.$('.qp-pagenums [data-espage="' + start + '"]');
+  if (back) { await back.click(); await page.waitForTimeout(120); }
+  return out;
+}
+
+// Match a question by its WORDING, not by the whole row. Rows carry the topic,
+// the directive and the marks under the question now, so /operations/i against
+// the row text matches every Operations question rather than the one whose
+// wording says it. The question is .qp-rowq; everything else is about it.
+async function chooseQuestion(page, re) {
+  await usePractice(page);
+  // The question may be on a later page, so walk to the one holding it first.
+  const want = re instanceof RegExp ? re : new RegExp(String(re), 'i');
+  const rows = await allRows(page);
+  const target = rows.find(r => want.test(r.q));
+  if (!target) return null;
+  await pageTo(page, '.qp-row[data-esq="' + target.id + '"]');
+  const hit0 = await page.evaluate(src => {
+    const r = new RegExp(src, 'i');
+    const rows = [...document.querySelectorAll('.qp-row')];
+    const t = rows.find(x => r.test((x.querySelector('.qp-rowq') || x).textContent));
+    if (!t) return null;
+    t.click();
+    return t.dataset.esq;
+  }, re instanceof RegExp ? re.source : String(re));
+  if (!hit0) return null;
+  // Choosing a row SELECTS it and fills the rail; the preview is the next step.
+  // A suite that wants the question open has to take it, which is also what a
+  // student does.
+  const prev = await page.waitForSelector('[data-espick="preview"]', { timeout: 8000 }).catch(() => null);
+  if (prev) { await prev.click(); await page.waitForSelector('#esstart', { timeout: 8000 }).catch(() => {}); }
+  return hit0;
+}
+
+// Choose a question and get past the preview into the writing surface. A row now
+// opens the question rather than starting it, so a suite that wants to WRITE has
+// to say so; one that wants to look at the preview calls usePractice and clicks
+// the row itself.
+async function pickQuestion(page, id) {
+  await usePractice(page);
+  const sel = id ? '.qp-row[data-esq="' + id + '"]' : '.qp-row';
+  const row = await page.$(sel);
+  if (!row) return false;
+  await row.click();
+  const prev = await page.waitForSelector('[data-espick="preview"]', { timeout: 8000 }).catch(() => null);
+  if (prev) await prev.click();
+  await page.waitForSelector('#esstart', { timeout: 8000 }).catch(() => {});
+  const go = await page.$('#esstart');
+  if (!go) return false;
+  await go.click();
+  await page.waitForTimeout(500);
+  return true;
 }
 
 // The help ladder used to open from a generic control sitting under the guide.
@@ -190,7 +282,7 @@ async function climbLadder(page) {
 
 module.exports = { usePractice, ownQuestion, closeMap, ladderOffered, climbLadder,
   nextSection, prevSection, planAll, openMap,
-  chromium, ROOT, OUT, BASE: OUT,
+  chromium, ROOT, OUT, BASE: OUT, pickQuestion, chooseQuestion, allRows, pageTo,
   WALK, T: url(WALK),
   PLAIN, P: url(PLAIN),
   fileUrl: name => url(path.join(OUT, name)),

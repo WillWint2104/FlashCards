@@ -1647,13 +1647,251 @@
   .es-pill.empty:hover{border-color:var(--line);background:none}
   .es-pilln{font-size:11px;color:var(--ink-3);font-weight:600}
   .es-pill.on .es-pilln{color:var(--green-dk)}
-  .es-qrows{display:flex;flex-direction:column;gap:6px}
-  .es-qrow{text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:10px;
-    padding:10px 13px;font:inherit;font-size:14px;line-height:1.5;color:var(--ink);cursor:pointer}
-  .es-qrow:hover{border-color:var(--green);background:var(--green-soft)}
-  .es-qrow.on{border-color:var(--green);background:var(--green-soft);font-weight:600}
-  .es-chosen{border-top:1px solid var(--line);padding-top:12px;margin-top:4px}
-  .es-chosenq{font-size:15px;line-height:1.6;color:var(--ink);margin:0}
+  /* ===================== CHOOSING A QUESTION =============================
+     Its own namespace, because the generic es- names are already spoken for:
+     .es-btn is defined twice in this file and carries a 4px green under-edge,
+     which is why every button in the first version of this flow grew one.
+     One surface, one card system, four stages that look like one flow. */
+  /* A FULL SCREEN SURFACE, not a section appended to the page underneath. It
+     was rendering inside the Study tab, so Backup & restore and the topic map
+     sat above the question list: the flow has to own the viewport the way the
+     workspace it leads into does. */
+  .qp{position:fixed;inset:0;overflow:auto;z-index:120;background:var(--page);color:var(--e-ink)}
+  /* THE PAGE. Header, a main column with a rail beside it, a footer, and the
+     footer sits at the bottom rather than under the content, so a short page is
+     still a page. The rail is composition: without it the right half of a
+     desktop viewport is empty and page two of a filtered list is three rows in
+     a field of nothing. */
+  .qp{display:flex;flex-direction:column}
+  /* The app styles bare header{} and main{} elements: sticky, padded, and main
+     capped at 1180px. Those matched this flow's semantic elements and shrank the
+     page to a column, which is the same class of collision as .es-btn. Every
+     inherited property is overridden here rather than worked around. */
+  .qp-nav{display:block;position:static;padding:0;max-width:none;gap:0;
+    background:var(--surface);border-bottom:1px solid var(--e-line);flex:none}
+  .qp-navin{max-width:1320px;margin:0 auto;padding:13px 28px;display:flex;align-items:center;gap:16px}
+  .qp-logo{width:30px;height:30px;border-radius:9px;background:var(--e-green);color:#fff;flex:none;
+    display:grid;place-items:center;font-family:var(--disp);font-weight:800;font-size:16px}
+  .qp-logo.sm{width:24px;height:24px;font-size:13px;border-radius:7px}
+  .qp-word{font-family:var(--disp);font-weight:800;font-size:18px;letter-spacing:-.3px;color:var(--e-ink)}
+  .qp-navlinks{display:flex;gap:4px;margin-left:14px}
+  .qp-navlink{background:none;border:0;border-bottom:2.5px solid transparent;font:inherit;font-size:14px;
+    font-weight:600;color:var(--e-ink2);cursor:pointer;padding:8px 10px}
+  .qp-navlink:hover{color:var(--e-ink)}
+  .qp-navlink.on{color:var(--e-ink);border-bottom-color:var(--e-green);font-weight:700}
+  .qp-navright{margin-left:auto;display:flex;align-items:center;gap:14px}
+  .qp-subj{font-size:13px;font-weight:600;color:var(--e-ink3)}
+  .qp-close{background:none;border:0;font:inherit;font-size:13px;font-weight:600;color:var(--e-ink2);cursor:pointer}
+  .qp-close:hover{color:var(--e-ink)}
+  .qp-main{flex:1 0 auto;width:100%;max-width:none;margin:0;padding:0}
+  .qp-grid{max-width:1320px;margin:0 auto;padding:30px 28px 52px;display:grid;
+    grid-template-columns:minmax(0,1fr) 348px;gap:26px;align-items:start}
+  .qp-col{min-width:0}
+  .qp-rail{display:flex;flex-direction:column;gap:16px;position:sticky;top:22px}
+  .qp-rc{background:var(--surface);border:1px solid var(--e-line);border-radius:16px;padding:18px 20px}
+  .qp-rchd{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .qp-rcicon{width:30px;height:30px;border-radius:9px;background:var(--e-mint);color:var(--e-green-dk);
+    flex:none;display:grid;place-items:center;font-size:14px}
+  .qp-rct{font-family:var(--disp);font-size:15.5px;font-weight:700;margin:0;color:var(--e-ink)}
+  .qp-rcp{font-size:13px;line-height:1.62;color:var(--e-ink2);margin:0 0 10px}
+  .qp-rcp:last-child{margin-bottom:0}
+  .qp-rclbl{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--e-ink3);margin:14px 0 7px}
+  .qp-rcq{font-size:14px;line-height:1.5;font-weight:600;color:var(--e-ink);margin:0 0 5px}
+  .qp-rcmeta{font-size:12px;color:var(--e-ink3);font-weight:600;margin:0}
+  .qp-rcbig{font-family:var(--disp);font-size:34px;font-weight:800;color:var(--e-green-dk);margin:0 0 2px;line-height:1}
+  .qp-steps{margin:0;padding-left:19px;font-size:13px;line-height:1.7;color:var(--e-ink2)}
+  .qp-steps li{margin-bottom:3px}
+  .qp-active{border-top:1px solid var(--e-line);margin-top:12px;padding-top:4px}
+  .qp-atag{display:inline-block;background:var(--e-mint);color:var(--e-green-dk);border-radius:7px;
+    padding:4px 9px;font-size:12px;font-weight:700;margin:0 6px 8px 0}
+  .qp-railacts{margin-top:14px}
+  .qp-railacts .qp-btn{width:100%;justify-content:center}
+  .qp-foot{flex:none;background:var(--surface);border-top:1px solid var(--e-line)}
+  .qp-footin{max-width:1320px;margin:0 auto;padding:20px 28px;display:flex;align-items:center;gap:11px}
+  .qp-footword{font-family:var(--disp);font-weight:800;font-size:15px;color:var(--e-ink)}
+  .qp-foottag{font-size:12.5px;color:var(--e-ink3)}
+  /* The lower section on setup, so the page ends rather than stopping. */
+  .qp-how{margin-top:26px;background:var(--surface);border:1px solid var(--e-line);border-radius:16px;padding:22px 24px}
+  .qp-howrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin-top:14px}
+  .qp-hown{display:grid;place-items:center;width:26px;height:26px;border-radius:8px;background:var(--e-mint);
+    color:var(--e-green-dk);font-weight:800;font-size:13px;margin-bottom:9px}
+  .qp-howt{font-size:14px;font-weight:700;color:var(--e-ink);margin:0 0 5px}
+  .qp-howp{font-size:12.5px;line-height:1.6;color:var(--e-ink2);margin:0}
+  /* My essays. The nav link's destination, so it has a page of its own rather
+     than a block at the bottom of another one. */
+  .qp-essays{padding:8px 10px}
+  .qp-essay{display:flex;gap:18px;align-items:flex-start;justify-content:space-between;
+    padding:16px 14px;border-bottom:1px solid var(--e-line)}
+  .qp-essay:last-child{border-bottom:0}
+  .qp-essaymain{min-width:0;flex:1}
+  .qp-essayq{font-size:15px;line-height:1.5;font-weight:600;color:var(--e-ink);margin:0 0 5px}
+  .qp-essaymeta{font-size:12.5px;color:var(--e-ink3);font-weight:600;margin:0}
+  .qp-essayacts{flex:none;display:flex;align-items:center;gap:9px}
+  .qp-btn.sm{font-size:13px;padding:8px 14px;border-radius:9px}
+  .qp-chip.sm{margin-bottom:7px;padding:3px 8px;font-size:11px}
+  .qp-linkbtn{background:none;border:0;font:inherit;font-size:12.5px;font-weight:700;
+    color:var(--e-ink3);cursor:pointer;padding:4px 2px;text-decoration:underline}
+  .qp-linkbtn:hover{color:var(--e-green-dk)}
+  .qp-empty2{text-align:left}
+  .qp-emptyh{font-family:var(--disp);font-size:17px;font-weight:700;color:var(--e-ink);margin:0 0 7px}
+  .qp-emptyp{font-size:13.5px;line-height:1.6;color:var(--e-ink2);margin:0 0 18px;max-width:60ch}
+  /* The end of the list. Page two holds three rows, and a page that stops in the
+     middle of the column reads as a rendering fault rather than the end of a
+     bank. This says the list is finished and offers the route out of it. */
+  .qp-tail{margin-top:26px;background:var(--surface);border:1px solid var(--e-line);
+    border-radius:16px;padding:22px 24px}
+  .qp-tailh{font-family:var(--disp);font-size:16px;font-weight:700;margin:0 0 7px;color:var(--e-ink)}
+  .qp-tailp{font-size:12.5px;line-height:1.65;color:var(--e-ink2);margin:0 0 15px;max-width:62ch}
+  .qp-tailacts{display:flex;flex-wrap:wrap;gap:10px}
+  /* The evidence a response needs, where Marginal has none to give. Beside the
+     sentence job rather than inside it: the job is authored prose. */
+  .es-evgap{margin-top:6px;font-size:12.5px;line-height:1.55;color:var(--e-ink2);
+    border-left:2px solid var(--e-line);padding-left:9px}
+  .qp-h2{font-family:var(--disp);font-size:18px;font-weight:700;margin:0;color:var(--e-ink)}
+  .qp-back{background:none;border:0;font:inherit;font-size:13px;font-weight:700;color:var(--e-ink2);
+    cursor:pointer;padding:0;margin-bottom:14px;display:inline-block}
+  .qp-back:hover{color:var(--e-green-dk)}
+  .qp-h1{font-family:var(--disp);font-size:30px;font-weight:700;letter-spacing:-.5px;margin:0 0 6px;color:var(--e-ink)}
+  .qp-lead{font-size:15px;color:var(--e-ink2);margin:0 0 22px}
+  .qp-card{background:var(--surface);border:1px solid var(--e-line);border-radius:16px;padding:22px 24px}
+
+  .qp-field{margin-bottom:16px}
+  .qp-label{display:block;font-size:12.5px;font-weight:700;color:var(--e-ink2);margin-bottom:6px}
+  .qp-hint{font-size:12px;color:var(--e-ink3);margin:0 0 7px}
+  .qp-req{color:var(--e-green-dk);font-weight:700}
+  .qp-input{width:100%;font:inherit;font-size:14.5px;color:var(--e-ink);background:var(--surface);
+    border:1.5px solid var(--e-line);border-radius:11px;padding:11px 13px}
+  .qp-input:focus{outline:none;border-color:var(--e-green)}
+  .qp-marks{max-width:120px}
+  .qp-ta{resize:vertical;line-height:1.55}
+  .qp-select{appearance:auto}
+
+  .qp-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+  .qp-btn{font:inherit;font-size:14.5px;font-weight:600;border-radius:11px;padding:12px 20px;
+    border:1.5px solid var(--e-line);background:var(--surface);color:var(--e-ink);cursor:pointer;
+    box-shadow:none;transition:border-color .12s,background .12s}
+  .qp-btn:hover{border-color:var(--e-green);color:var(--e-green-dk)}
+  .qp-go{background:var(--e-green);border-color:var(--e-green);color:#fff}
+  .qp-go:hover{background:var(--e-green-dk);border-color:var(--e-green-dk);color:#fff}
+  .qp-notes{display:flex;gap:26px;flex-wrap:wrap;margin-top:22px;padding-top:18px;border-top:1px solid var(--e-line)}
+  .qp-note1{font-size:12.5px;color:var(--e-ink2);line-height:1.5}
+  .qp-note1 b{display:block;color:var(--e-ink)}
+
+  /* Filters: compact, strong, and the first thing under the heading. */
+  .qp-filters{background:var(--surface);border:1px solid var(--e-line);border-radius:14px;padding:13px 15px;margin-bottom:16px}
+  .qp-frow{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  .qp-frow + .qp-frow{margin-top:9px}
+  .qp-flabel{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--e-ink3);width:74px;flex:none}
+  .qp-pill{background:var(--surface);border:1.5px solid var(--e-line);border-radius:9px;padding:6px 11px;
+    font:inherit;font-size:13px;font-weight:600;color:var(--e-ink);cursor:pointer;display:inline-flex;
+    align-items:center;gap:6px;transition:border-color .12s,background .12s}
+  .qp-pill:hover{border-color:var(--e-green);color:var(--e-green-dk)}
+  .qp-pill.on{background:var(--e-mint);border-color:var(--e-green);color:var(--e-green-dk)}
+  .qp-pill.empty{opacity:.4;cursor:default}
+  .qp-pill.empty:hover{border-color:var(--e-line);color:var(--e-ink)}
+  .qp-n{font-size:11px;color:var(--e-ink3);font-weight:700}
+  .qp-pill.on .qp-n{color:var(--e-green-dk)}
+
+  .qp-count{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 9px;
+    font-size:12.5px;font-weight:600;color:var(--e-ink2)}
+  .qp-sort{color:var(--e-ink3)}
+
+  /* Rows: compact, so ten of them are a page and not a scroll. */
+  .qp-rows{display:flex;flex-direction:column;gap:6px}
+  .qp-row{display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;
+    background:var(--surface);border:1.5px solid var(--e-line);border-radius:11px;padding:11px 14px;
+    font:inherit;color:var(--e-ink);cursor:pointer;box-shadow:none;transition:border-color .12s,background .12s}
+  .qp-row:hover{border-color:var(--e-green)}
+  .qp-row.on{background:var(--e-mint);border-color:var(--e-green)}
+  .qp-radio{flex:none;width:17px;height:17px;border-radius:50%;border:1.5px solid var(--e-ink3);
+    margin-top:2px;position:relative;background:var(--surface)}
+  .qp-row.on .qp-radio{border-color:var(--e-green);border-width:2px}
+  .qp-row.on .qp-radio::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--e-green)}
+  .qp-rowtext{flex:1;min-width:0}
+  .qp-q{display:block;font-size:14px;line-height:1.45;color:var(--e-ink)}
+  .qp-row.on .qp-q{font-weight:600}
+  .qp-meta{display:block;margin-top:3px;font-size:11.5px;color:var(--e-ink3);font-weight:600}
+  .qp-meta i{font-style:normal;color:var(--e-line)}
+  .qp-empty{font-size:13.5px;color:var(--e-ink2);background:var(--surface);border:1px solid var(--e-line);
+    border-radius:12px;padding:18px 20px;margin:0}
+
+  /* Pagination, because the bank grows every time an import succeeds. */
+  .qp-pager{display:flex;align-items:center;gap:6px;margin-top:16px;flex-wrap:wrap}
+  .qp-pagenums{display:flex;gap:4px}
+  .qp-pagemob{display:none;font-size:12.5px;font-weight:600;color:var(--e-ink2)}
+  .qp-page{min-width:34px;background:var(--surface);border:1.5px solid var(--e-line);border-radius:9px;
+    padding:7px 11px;font:inherit;font-size:13px;font-weight:600;color:var(--e-ink);cursor:pointer}
+  .qp-page:hover:not([disabled]){border-color:var(--e-green);color:var(--e-green-dk)}
+  .qp-page.on{background:var(--e-green);border-color:var(--e-green);color:#fff}
+  .qp-page[disabled]{opacity:.38;cursor:default}
+
+  /* The question itself, beside what it can actually give. */
+  .qp-prev{display:grid;grid-template-columns:1.55fr 1fr;gap:18px;align-items:start}
+  .qp-chip{display:inline-block;background:var(--e-mint);color:var(--e-green-dk);border-radius:8px;
+    padding:4px 10px;font-size:12px;font-weight:700;margin-bottom:12px}
+  .qp-prevq{font-family:var(--disp);font-size:23px;line-height:1.35;font-weight:700;color:var(--e-ink);margin:0 0 7px}
+  .qp-prevdir{font-size:13.5px;color:var(--e-ink2);font-weight:600;margin:0 0 18px}
+  .qp-prevdir i{font-style:normal;color:var(--e-line)}
+  .qp-facts{margin:0;border-top:1px solid var(--e-line);padding-top:14px}
+  .qp-fact{display:flex;gap:18px;padding:6px 0;font-size:13.5px}
+  .qp-fact dt{flex:none;width:170px;color:var(--e-ink2);font-weight:600;margin:0}
+  .qp-fact dd{margin:0;color:var(--e-ink);font-weight:600}
+  .qp-note{font-size:12.5px;color:var(--e-ink2);background:var(--sunk);border-radius:10px;
+    padding:11px 13px;margin:14px 0 0;line-height:1.55}
+  .qp-side{background:var(--surface);border:1px solid var(--e-line);border-radius:16px;padding:20px 22px}
+  .qp-sidehd{font-family:var(--disp);font-size:16px;font-weight:700;margin:0 0 8px;color:var(--e-ink)}
+  .qp-sidep{font-size:13px;color:var(--e-ink2);line-height:1.6;margin:0 0 16px}
+  .qp-sidehd2{font-size:13.5px;font-weight:700;margin:0 0 6px;color:var(--e-ink)}
+  .qp-sup{border-top:1px solid var(--e-line)}
+  .qp-suprow{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13px;border-bottom:1px solid var(--e-line)}
+  .qp-suprow:last-child{border-bottom:0}
+  .qp-supmark{flex:none;width:17px;text-align:center;font-weight:800}
+  .qp-suprow.yes .qp-supmark{color:var(--e-green-dk)}
+  .qp-suprow.no .qp-supmark{color:var(--e-ink3)}
+  .qp-supname{flex:1;font-weight:600;color:var(--e-ink)}
+  .qp-suprow.no .qp-supname{color:var(--e-ink3)}
+  .qp-supstate{color:var(--e-ink3);font-weight:600;font-size:12px}
+  .qp-suprow.yes .qp-supstate{color:var(--e-green-dk)}
+  .qp-sidefoot{font-size:12px;color:var(--e-ink2);background:var(--sunk);border-radius:10px;
+    padding:11px 13px;margin:16px 0 0;line-height:1.55}
+
+  /* Setting up is where the settings are, folded. Not on the list, not on the
+     preview: those are for choosing. */
+  .qp-opts{margin-top:20px;border-top:1px solid var(--e-line);padding-top:15px}
+  .qp-opts > summary{font-size:13px;font-weight:700;color:var(--e-ink2);cursor:pointer;list-style:none}
+  .qp-opts > summary::-webkit-details-marker{display:none}
+  .qp-opts > summary::before{content:"+ ";color:var(--e-ink3)}
+  .qp-opts[open] > summary::before{content:"\2212 "}
+  .qp-opts > summary:hover{color:var(--e-green-dk)}
+  .qp-optsbody{padding-top:16px}
+  .qp-rub{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:13.5px}
+  .qp-rubtick{color:var(--e-green-dk);font-weight:800}
+  .qp-rubtext{color:var(--e-ink)}
+  .qp-rubprov{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--e-ink3);background:var(--sunk);border-radius:6px;padding:3px 7px}
+  .qp-link{background:none;border:0;font:inherit;font-size:13px;font-weight:700;color:var(--e-green-dk);cursor:pointer;padding:0}
+  .qp-rubbox{margin-top:12px}
+  .qp-rubpre{white-space:pre-wrap;font:inherit;font-size:12.5px;color:var(--e-ink2);background:var(--sunk);
+    border-radius:10px;padding:13px 15px;margin:0 0 14px;max-height:220px;overflow:auto}
+
+  @media (max-width:1080px){
+    .qp-grid{grid-template-columns:minmax(0,1fr);padding:24px 20px 44px}
+    .qp-rail{position:static;flex-direction:row;flex-wrap:wrap}
+    .qp-rc{flex:1 1 300px}
+    .qp-howrow{grid-template-columns:1fr}
+  }
+  @media (max-width:900px){
+    .qp-prev{grid-template-columns:1fr}
+    .qp-fact dt{width:130px}
+  }
+  @media (max-width:620px){
+    .qp-h1{font-size:24px}
+    .qp-flabel{width:100%}
+    .qp-pagenums{display:none}
+    .qp-pagemob{display:inline}
+  }
   /* Marking guidance: a status line, with the detail one press away. */
   .es-rubstatus{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
   .es-rubtick{color:var(--green-dk);font-weight:800}
@@ -1818,7 +2056,7 @@
      the work, text is charcoal rather than grey-green, and green is used for
      state and primary action instead of as an outline around everything.
      ========================================================================== */
-  .es-scrim{
+  .es-scrim, .qp{
     --page:#F6F9F9; --surface:#FFFFFF; --sunk:#FAFCFC;
     --e-ink:#18272D; --e-ink2:#63787F; --e-ink3:#95A7AD;
     --e-green:#12B27A; --e-green-dk:#0E9765; --e-mint:#E7F8F0; --e-mint2:#F2FBF7;
@@ -2241,6 +2479,7 @@
 <script src="essay-content.js"></script>
 <script src="business-content.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="student-imports.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

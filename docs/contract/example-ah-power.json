@@ -1,6 +1,6 @@
 {
   "schema": "marginal.question-package",
-  "contractVersion": "1.0",
+  "contractVersion": "1.1",
   "origin": {
     "type": "bundled",
     "packageId": null,
@@ -28,11 +28,12 @@
     "topicLabel": "Features of ancient societies: power and authority",
     "directive": "discuss",
     "text": "Discuss the relationship between political power and religious authority in one ancient society you have studied.",
-    "marks": 20,
     "terms": {
       "first": null,
       "second": null
     },
+    "note": null,
+    "areasLabel": null,
     "overallArgument": null,
     "vocabRefs": [],
     "studyRefs": []

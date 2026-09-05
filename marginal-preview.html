@@ -1647,13 +1647,251 @@
   .es-pill.empty:hover{border-color:var(--line);background:none}
   .es-pilln{font-size:11px;color:var(--ink-3);font-weight:600}
   .es-pill.on .es-pilln{color:var(--green-dk)}
-  .es-qrows{display:flex;flex-direction:column;gap:6px}
-  .es-qrow{text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:10px;
-    padding:10px 13px;font:inherit;font-size:14px;line-height:1.5;color:var(--ink);cursor:pointer}
-  .es-qrow:hover{border-color:var(--green);background:var(--green-soft)}
-  .es-qrow.on{border-color:var(--green);background:var(--green-soft);font-weight:600}
-  .es-chosen{border-top:1px solid var(--line);padding-top:12px;margin-top:4px}
-  .es-chosenq{font-size:15px;line-height:1.6;color:var(--ink);margin:0}
+  /* ===================== CHOOSING A QUESTION =============================
+     Its own namespace, because the generic es- names are already spoken for:
+     .es-btn is defined twice in this file and carries a 4px green under-edge,
+     which is why every button in the first version of this flow grew one.
+     One surface, one card system, four stages that look like one flow. */
+  /* A FULL SCREEN SURFACE, not a section appended to the page underneath. It
+     was rendering inside the Study tab, so Backup & restore and the topic map
+     sat above the question list: the flow has to own the viewport the way the
+     workspace it leads into does. */
+  .qp{position:fixed;inset:0;overflow:auto;z-index:120;background:var(--page);color:var(--e-ink)}
+  /* THE PAGE. Header, a main column with a rail beside it, a footer, and the
+     footer sits at the bottom rather than under the content, so a short page is
+     still a page. The rail is composition: without it the right half of a
+     desktop viewport is empty and page two of a filtered list is three rows in
+     a field of nothing. */
+  .qp{display:flex;flex-direction:column}
+  /* The app styles bare header{} and main{} elements: sticky, padded, and main
+     capped at 1180px. Those matched this flow's semantic elements and shrank the
+     page to a column, which is the same class of collision as .es-btn. Every
+     inherited property is overridden here rather than worked around. */
+  .qp-nav{display:block;position:static;padding:0;max-width:none;gap:0;
+    background:var(--surface);border-bottom:1px solid var(--e-line);flex:none}
+  .qp-navin{max-width:1320px;margin:0 auto;padding:13px 28px;display:flex;align-items:center;gap:16px}
+  .qp-logo{width:30px;height:30px;border-radius:9px;background:var(--e-green);color:#fff;flex:none;
+    display:grid;place-items:center;font-family:var(--disp);font-weight:800;font-size:16px}
+  .qp-logo.sm{width:24px;height:24px;font-size:13px;border-radius:7px}
+  .qp-word{font-family:var(--disp);font-weight:800;font-size:18px;letter-spacing:-.3px;color:var(--e-ink)}
+  .qp-navlinks{display:flex;gap:4px;margin-left:14px}
+  .qp-navlink{background:none;border:0;border-bottom:2.5px solid transparent;font:inherit;font-size:14px;
+    font-weight:600;color:var(--e-ink2);cursor:pointer;padding:8px 10px}
+  .qp-navlink:hover{color:var(--e-ink)}
+  .qp-navlink.on{color:var(--e-ink);border-bottom-color:var(--e-green);font-weight:700}
+  .qp-navright{margin-left:auto;display:flex;align-items:center;gap:14px}
+  .qp-subj{font-size:13px;font-weight:600;color:var(--e-ink3)}
+  .qp-close{background:none;border:0;font:inherit;font-size:13px;font-weight:600;color:var(--e-ink2);cursor:pointer}
+  .qp-close:hover{color:var(--e-ink)}
+  .qp-main{flex:1 0 auto;width:100%;max-width:none;margin:0;padding:0}
+  .qp-grid{max-width:1320px;margin:0 auto;padding:30px 28px 52px;display:grid;
+    grid-template-columns:minmax(0,1fr) 348px;gap:26px;align-items:start}
+  .qp-col{min-width:0}
+  .qp-rail{display:flex;flex-direction:column;gap:16px;position:sticky;top:22px}
+  .qp-rc{background:var(--surface);border:1px solid var(--e-line);border-radius:16px;padding:18px 20px}
+  .qp-rchd{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .qp-rcicon{width:30px;height:30px;border-radius:9px;background:var(--e-mint);color:var(--e-green-dk);
+    flex:none;display:grid;place-items:center;font-size:14px}
+  .qp-rct{font-family:var(--disp);font-size:15.5px;font-weight:700;margin:0;color:var(--e-ink)}
+  .qp-rcp{font-size:13px;line-height:1.62;color:var(--e-ink2);margin:0 0 10px}
+  .qp-rcp:last-child{margin-bottom:0}
+  .qp-rclbl{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--e-ink3);margin:14px 0 7px}
+  .qp-rcq{font-size:14px;line-height:1.5;font-weight:600;color:var(--e-ink);margin:0 0 5px}
+  .qp-rcmeta{font-size:12px;color:var(--e-ink3);font-weight:600;margin:0}
+  .qp-rcbig{font-family:var(--disp);font-size:34px;font-weight:800;color:var(--e-green-dk);margin:0 0 2px;line-height:1}
+  .qp-steps{margin:0;padding-left:19px;font-size:13px;line-height:1.7;color:var(--e-ink2)}
+  .qp-steps li{margin-bottom:3px}
+  .qp-active{border-top:1px solid var(--e-line);margin-top:12px;padding-top:4px}
+  .qp-atag{display:inline-block;background:var(--e-mint);color:var(--e-green-dk);border-radius:7px;
+    padding:4px 9px;font-size:12px;font-weight:700;margin:0 6px 8px 0}
+  .qp-railacts{margin-top:14px}
+  .qp-railacts .qp-btn{width:100%;justify-content:center}
+  .qp-foot{flex:none;background:var(--surface);border-top:1px solid var(--e-line)}
+  .qp-footin{max-width:1320px;margin:0 auto;padding:20px 28px;display:flex;align-items:center;gap:11px}
+  .qp-footword{font-family:var(--disp);font-weight:800;font-size:15px;color:var(--e-ink)}
+  .qp-foottag{font-size:12.5px;color:var(--e-ink3)}
+  /* The lower section on setup, so the page ends rather than stopping. */
+  .qp-how{margin-top:26px;background:var(--surface);border:1px solid var(--e-line);border-radius:16px;padding:22px 24px}
+  .qp-howrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin-top:14px}
+  .qp-hown{display:grid;place-items:center;width:26px;height:26px;border-radius:8px;background:var(--e-mint);
+    color:var(--e-green-dk);font-weight:800;font-size:13px;margin-bottom:9px}
+  .qp-howt{font-size:14px;font-weight:700;color:var(--e-ink);margin:0 0 5px}
+  .qp-howp{font-size:12.5px;line-height:1.6;color:var(--e-ink2);margin:0}
+  /* My essays. The nav link's destination, so it has a page of its own rather
+     than a block at the bottom of another one. */
+  .qp-essays{padding:8px 10px}
+  .qp-essay{display:flex;gap:18px;align-items:flex-start;justify-content:space-between;
+    padding:16px 14px;border-bottom:1px solid var(--e-line)}
+  .qp-essay:last-child{border-bottom:0}
+  .qp-essaymain{min-width:0;flex:1}
+  .qp-essayq{font-size:15px;line-height:1.5;font-weight:600;color:var(--e-ink);margin:0 0 5px}
+  .qp-essaymeta{font-size:12.5px;color:var(--e-ink3);font-weight:600;margin:0}
+  .qp-essayacts{flex:none;display:flex;align-items:center;gap:9px}
+  .qp-btn.sm{font-size:13px;padding:8px 14px;border-radius:9px}
+  .qp-chip.sm{margin-bottom:7px;padding:3px 8px;font-size:11px}
+  .qp-linkbtn{background:none;border:0;font:inherit;font-size:12.5px;font-weight:700;
+    color:var(--e-ink3);cursor:pointer;padding:4px 2px;text-decoration:underline}
+  .qp-linkbtn:hover{color:var(--e-green-dk)}
+  .qp-empty2{text-align:left}
+  .qp-emptyh{font-family:var(--disp);font-size:17px;font-weight:700;color:var(--e-ink);margin:0 0 7px}
+  .qp-emptyp{font-size:13.5px;line-height:1.6;color:var(--e-ink2);margin:0 0 18px;max-width:60ch}
+  /* The end of the list. Page two holds three rows, and a page that stops in the
+     middle of the column reads as a rendering fault rather than the end of a
+     bank. This says the list is finished and offers the route out of it. */
+  .qp-tail{margin-top:26px;background:var(--surface);border:1px solid var(--e-line);
+    border-radius:16px;padding:22px 24px}
+  .qp-tailh{font-family:var(--disp);font-size:16px;font-weight:700;margin:0 0 7px;color:var(--e-ink)}
+  .qp-tailp{font-size:12.5px;line-height:1.65;color:var(--e-ink2);margin:0 0 15px;max-width:62ch}
+  .qp-tailacts{display:flex;flex-wrap:wrap;gap:10px}
+  /* The evidence a response needs, where Marginal has none to give. Beside the
+     sentence job rather than inside it: the job is authored prose. */
+  .es-evgap{margin-top:6px;font-size:12.5px;line-height:1.55;color:var(--e-ink2);
+    border-left:2px solid var(--e-line);padding-left:9px}
+  .qp-h2{font-family:var(--disp);font-size:18px;font-weight:700;margin:0;color:var(--e-ink)}
+  .qp-back{background:none;border:0;font:inherit;font-size:13px;font-weight:700;color:var(--e-ink2);
+    cursor:pointer;padding:0;margin-bottom:14px;display:inline-block}
+  .qp-back:hover{color:var(--e-green-dk)}
+  .qp-h1{font-family:var(--disp);font-size:30px;font-weight:700;letter-spacing:-.5px;margin:0 0 6px;color:var(--e-ink)}
+  .qp-lead{font-size:15px;color:var(--e-ink2);margin:0 0 22px}
+  .qp-card{background:var(--surface);border:1px solid var(--e-line);border-radius:16px;padding:22px 24px}
+
+  .qp-field{margin-bottom:16px}
+  .qp-label{display:block;font-size:12.5px;font-weight:700;color:var(--e-ink2);margin-bottom:6px}
+  .qp-hint{font-size:12px;color:var(--e-ink3);margin:0 0 7px}
+  .qp-req{color:var(--e-green-dk);font-weight:700}
+  .qp-input{width:100%;font:inherit;font-size:14.5px;color:var(--e-ink);background:var(--surface);
+    border:1.5px solid var(--e-line);border-radius:11px;padding:11px 13px}
+  .qp-input:focus{outline:none;border-color:var(--e-green)}
+  .qp-marks{max-width:120px}
+  .qp-ta{resize:vertical;line-height:1.55}
+  .qp-select{appearance:auto}
+
+  .qp-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+  .qp-btn{font:inherit;font-size:14.5px;font-weight:600;border-radius:11px;padding:12px 20px;
+    border:1.5px solid var(--e-line);background:var(--surface);color:var(--e-ink);cursor:pointer;
+    box-shadow:none;transition:border-color .12s,background .12s}
+  .qp-btn:hover{border-color:var(--e-green);color:var(--e-green-dk)}
+  .qp-go{background:var(--e-green);border-color:var(--e-green);color:#fff}
+  .qp-go:hover{background:var(--e-green-dk);border-color:var(--e-green-dk);color:#fff}
+  .qp-notes{display:flex;gap:26px;flex-wrap:wrap;margin-top:22px;padding-top:18px;border-top:1px solid var(--e-line)}
+  .qp-note1{font-size:12.5px;color:var(--e-ink2);line-height:1.5}
+  .qp-note1 b{display:block;color:var(--e-ink)}
+
+  /* Filters: compact, strong, and the first thing under the heading. */
+  .qp-filters{background:var(--surface);border:1px solid var(--e-line);border-radius:14px;padding:13px 15px;margin-bottom:16px}
+  .qp-frow{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  .qp-frow + .qp-frow{margin-top:9px}
+  .qp-flabel{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--e-ink3);width:74px;flex:none}
+  .qp-pill{background:var(--surface);border:1.5px solid var(--e-line);border-radius:9px;padding:6px 11px;
+    font:inherit;font-size:13px;font-weight:600;color:var(--e-ink);cursor:pointer;display:inline-flex;
+    align-items:center;gap:6px;transition:border-color .12s,background .12s}
+  .qp-pill:hover{border-color:var(--e-green);color:var(--e-green-dk)}
+  .qp-pill.on{background:var(--e-mint);border-color:var(--e-green);color:var(--e-green-dk)}
+  .qp-pill.empty{opacity:.4;cursor:default}
+  .qp-pill.empty:hover{border-color:var(--e-line);color:var(--e-ink)}
+  .qp-n{font-size:11px;color:var(--e-ink3);font-weight:700}
+  .qp-pill.on .qp-n{color:var(--e-green-dk)}
+
+  .qp-count{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 9px;
+    font-size:12.5px;font-weight:600;color:var(--e-ink2)}
+  .qp-sort{color:var(--e-ink3)}
+
+  /* Rows: compact, so ten of them are a page and not a scroll. */
+  .qp-rows{display:flex;flex-direction:column;gap:6px}
+  .qp-row{display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;
+    background:var(--surface);border:1.5px solid var(--e-line);border-radius:11px;padding:11px 14px;
+    font:inherit;color:var(--e-ink);cursor:pointer;box-shadow:none;transition:border-color .12s,background .12s}
+  .qp-row:hover{border-color:var(--e-green)}
+  .qp-row.on{background:var(--e-mint);border-color:var(--e-green)}
+  .qp-radio{flex:none;width:17px;height:17px;border-radius:50%;border:1.5px solid var(--e-ink3);
+    margin-top:2px;position:relative;background:var(--surface)}
+  .qp-row.on .qp-radio{border-color:var(--e-green);border-width:2px}
+  .qp-row.on .qp-radio::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--e-green)}
+  .qp-rowtext{flex:1;min-width:0}
+  .qp-q{display:block;font-size:14px;line-height:1.45;color:var(--e-ink)}
+  .qp-row.on .qp-q{font-weight:600}
+  .qp-meta{display:block;margin-top:3px;font-size:11.5px;color:var(--e-ink3);font-weight:600}
+  .qp-meta i{font-style:normal;color:var(--e-line)}
+  .qp-empty{font-size:13.5px;color:var(--e-ink2);background:var(--surface);border:1px solid var(--e-line);
+    border-radius:12px;padding:18px 20px;margin:0}
+
+  /* Pagination, because the bank grows every time an import succeeds. */
+  .qp-pager{display:flex;align-items:center;gap:6px;margin-top:16px;flex-wrap:wrap}
+  .qp-pagenums{display:flex;gap:4px}
+  .qp-pagemob{display:none;font-size:12.5px;font-weight:600;color:var(--e-ink2)}
+  .qp-page{min-width:34px;background:var(--surface);border:1.5px solid var(--e-line);border-radius:9px;
+    padding:7px 11px;font:inherit;font-size:13px;font-weight:600;color:var(--e-ink);cursor:pointer}
+  .qp-page:hover:not([disabled]){border-color:var(--e-green);color:var(--e-green-dk)}
+  .qp-page.on{background:var(--e-green);border-color:var(--e-green);color:#fff}
+  .qp-page[disabled]{opacity:.38;cursor:default}
+
+  /* The question itself, beside what it can actually give. */
+  .qp-prev{display:grid;grid-template-columns:1.55fr 1fr;gap:18px;align-items:start}
+  .qp-chip{display:inline-block;background:var(--e-mint);color:var(--e-green-dk);border-radius:8px;
+    padding:4px 10px;font-size:12px;font-weight:700;margin-bottom:12px}
+  .qp-prevq{font-family:var(--disp);font-size:23px;line-height:1.35;font-weight:700;color:var(--e-ink);margin:0 0 7px}
+  .qp-prevdir{font-size:13.5px;color:var(--e-ink2);font-weight:600;margin:0 0 18px}
+  .qp-prevdir i{font-style:normal;color:var(--e-line)}
+  .qp-facts{margin:0;border-top:1px solid var(--e-line);padding-top:14px}
+  .qp-fact{display:flex;gap:18px;padding:6px 0;font-size:13.5px}
+  .qp-fact dt{flex:none;width:170px;color:var(--e-ink2);font-weight:600;margin:0}
+  .qp-fact dd{margin:0;color:var(--e-ink);font-weight:600}
+  .qp-note{font-size:12.5px;color:var(--e-ink2);background:var(--sunk);border-radius:10px;
+    padding:11px 13px;margin:14px 0 0;line-height:1.55}
+  .qp-side{background:var(--surface);border:1px solid var(--e-line);border-radius:16px;padding:20px 22px}
+  .qp-sidehd{font-family:var(--disp);font-size:16px;font-weight:700;margin:0 0 8px;color:var(--e-ink)}
+  .qp-sidep{font-size:13px;color:var(--e-ink2);line-height:1.6;margin:0 0 16px}
+  .qp-sidehd2{font-size:13.5px;font-weight:700;margin:0 0 6px;color:var(--e-ink)}
+  .qp-sup{border-top:1px solid var(--e-line)}
+  .qp-suprow{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13px;border-bottom:1px solid var(--e-line)}
+  .qp-suprow:last-child{border-bottom:0}
+  .qp-supmark{flex:none;width:17px;text-align:center;font-weight:800}
+  .qp-suprow.yes .qp-supmark{color:var(--e-green-dk)}
+  .qp-suprow.no .qp-supmark{color:var(--e-ink3)}
+  .qp-supname{flex:1;font-weight:600;color:var(--e-ink)}
+  .qp-suprow.no .qp-supname{color:var(--e-ink3)}
+  .qp-supstate{color:var(--e-ink3);font-weight:600;font-size:12px}
+  .qp-suprow.yes .qp-supstate{color:var(--e-green-dk)}
+  .qp-sidefoot{font-size:12px;color:var(--e-ink2);background:var(--sunk);border-radius:10px;
+    padding:11px 13px;margin:16px 0 0;line-height:1.55}
+
+  /* Setting up is where the settings are, folded. Not on the list, not on the
+     preview: those are for choosing. */
+  .qp-opts{margin-top:20px;border-top:1px solid var(--e-line);padding-top:15px}
+  .qp-opts > summary{font-size:13px;font-weight:700;color:var(--e-ink2);cursor:pointer;list-style:none}
+  .qp-opts > summary::-webkit-details-marker{display:none}
+  .qp-opts > summary::before{content:"+ ";color:var(--e-ink3)}
+  .qp-opts[open] > summary::before{content:"\2212 "}
+  .qp-opts > summary:hover{color:var(--e-green-dk)}
+  .qp-optsbody{padding-top:16px}
+  .qp-rub{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:13.5px}
+  .qp-rubtick{color:var(--e-green-dk);font-weight:800}
+  .qp-rubtext{color:var(--e-ink)}
+  .qp-rubprov{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--e-ink3);background:var(--sunk);border-radius:6px;padding:3px 7px}
+  .qp-link{background:none;border:0;font:inherit;font-size:13px;font-weight:700;color:var(--e-green-dk);cursor:pointer;padding:0}
+  .qp-rubbox{margin-top:12px}
+  .qp-rubpre{white-space:pre-wrap;font:inherit;font-size:12.5px;color:var(--e-ink2);background:var(--sunk);
+    border-radius:10px;padding:13px 15px;margin:0 0 14px;max-height:220px;overflow:auto}
+
+  @media (max-width:1080px){
+    .qp-grid{grid-template-columns:minmax(0,1fr);padding:24px 20px 44px}
+    .qp-rail{position:static;flex-direction:row;flex-wrap:wrap}
+    .qp-rc{flex:1 1 300px}
+    .qp-howrow{grid-template-columns:1fr}
+  }
+  @media (max-width:900px){
+    .qp-prev{grid-template-columns:1fr}
+    .qp-fact dt{width:130px}
+  }
+  @media (max-width:620px){
+    .qp-h1{font-size:24px}
+    .qp-flabel{width:100%}
+    .qp-pagenums{display:none}
+    .qp-pagemob{display:inline}
+  }
   /* Marking guidance: a status line, with the detail one press away. */
   .es-rubstatus{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
   .es-rubtick{color:var(--green-dk);font-weight:800}
@@ -1818,7 +2056,7 @@
      the work, text is charcoal rather than grey-green, and green is used for
      state and primary action instead of as an outline around everything.
      ========================================================================== */
-  .es-scrim{
+  .es-scrim, .qp{
     --page:#F6F9F9; --surface:#FFFFFF; --sunk:#FAFCFC;
     --e-ink:#18272D; --e-ink2:#63787F; --e-ink3:#95A7AD;
     --e-green:#12B27A; --e-green-dk:#0E9765; --e-mint:#E7F8F0; --e-mint2:#F2FBF7;
@@ -8216,6 +8454,480 @@ window.BUSCONTENT = {
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+// GENERATED. Topic ids to the labels the syllabus library authors, so a
+// question carrying only a topicRef has a name to show without one being
+// invented from the id.
+window.MarginalTopics = {"business.operations":"Operations","business.marketing":"Marketing","business.finance":"Finance","business.hr":"Human resources"};
+// GENERATED by tools/contract/bundle.js from tools/contract/store.js and
+// tools/contract/runtime.js. Do not edit. The student app reads imported
+// questions through the same adapter the importer wrote them with.
+(function () {
+  "use strict";
+  var __defs = {}, __cache = {};
+  function __require(id) {
+    if (__cache[id]) return __cache[id].exports;
+    if (!__defs[id]) throw new Error('no such module in the student bundle: ' + id);
+    var m = { exports: {} };
+    __cache[id] = m;
+    __defs[id](m, m.exports, __require);
+    return m.exports;
+  }
+
+__defs["./store.js"] = function (module, exports, require) {
+// THE PERSISTENCE ADAPTER. One write boundary, underneath publication.
+//
+// publish.js decides WHAT is written. This decides HOW it is kept. Nothing else
+// in Marginal may write an imported question, and in particular the importer UI
+// may not: a second write path is how the thing a teacher approved and the thing
+// that lands stop being the same thing.
+//
+// THE STORAGE LAYOUT IS THE ATOMICITY RULE, WRITTEN DOWN.
+// The atomic unit is the package together with the records it provides, so a
+// published package is ONE key holding one object. There is no arrangement of
+// several keys that leaves half a package behind, because there are never
+// several keys to get half way through. A backend that cannot write one key
+// atomically is not a backend this can use.
+//
+//   marginal.import.pkg.<question id>   one published package, whole
+//   marginal.import.index               the ids, so a reader need not scan keys
+//
+// The index is a convenience and never the authority. It is rebuilt from the
+// package keys on load, so an index that disagrees with what is stored loses:
+// a question is present because its package is present.
+//
+// The backend is injected. In a browser it is localStorage; in a test it is an
+// object; nothing here knows which, so the rules are tested without a browser
+// and are the same rules in one.
+const PREFIX = "marginal.import.pkg.";
+const INDEX = "marginal.import.index";
+
+// A backend is four functions over strings. Anything meeting this can be one.
+function memoryBackend(seed) {
+  const m = Object.assign({}, seed || {});
+  return {
+    name: "memory",
+    get: k => (k in m ? m[k] : null),
+    set: (k, v) => { m[k] = String(v); },
+    remove: k => { delete m[k]; },
+    keys: () => Object.keys(m),
+  };
+}
+
+function localStorageBackend(ls) {
+  return {
+    name: "localStorage",
+    get: k => ls.getItem(k),
+    set: (k, v) => ls.setItem(k, String(v)),
+    remove: k => ls.removeItem(k),
+    keys: () => { const out = []; for (let i = 0; i < ls.length; i++) out.push(ls.key(i)); return out; },
+  };
+}
+
+// A backend that fails on a named package, so the failure path can be exercised
+// against the real adapter rather than against a mock of it. It fails on SET,
+// which is the only place a write happens, and after every check has passed.
+function failingBackend(inner, failOnKey) {
+  return {
+    name: inner.name + " (failing on " + failOnKey + ")",
+    get: inner.get, remove: inner.remove, keys: inner.keys,
+    set: (k, v) => {
+      if (k === PREFIX + failOnKey) throw new Error("the store refused the write");
+      return inner.set(k, v);
+    },
+  };
+}
+
+function createStore(backend) {
+  const B = backend;
+
+  // Everything that has been published here, read back from the package keys.
+  // The index is not consulted, because it is a cache of this.
+  function load() {
+    const questions = {}, shared = {}, broken = [];
+    B.keys().filter(k => k.indexOf(PREFIX) === 0).forEach(k => {
+      let unit = null;
+      try { unit = JSON.parse(B.get(k)); } catch (e) { broken.push({ key: k, why: e.message }); return; }
+      if (!unit || !unit.question || !unit.question.id) { broken.push({ key: k, why: "no question in the stored unit" }); return; }
+      questions[unit.question.id] = unit.question;
+      (unit.shared || []).forEach(r => {
+        shared[r.kind] = shared[r.kind] || {};
+        shared[r.kind][r.id] = { id: r.id, suppliedBy: unit.question.id };
+      });
+    });
+    // A key that will not parse is reported and never silently skipped: a
+    // question that has quietly stopped existing is worse than one that has
+    // loudly failed to.
+    return { questions: questions, shared: shared, broken: broken };
+  }
+
+  // The one write. A whole package in a single set, so it lands or it does not.
+  // It refuses an id that is already stored rather than replacing it, which is
+  // the same rule admission applies, enforced again at the last possible moment.
+  function writeUnit(unit) {
+    if (!unit || !unit.question || !unit.question.id) throw new Error("a unit must carry a question");
+    const key = PREFIX + unit.question.id;
+    if (B.get(key) != null)
+      throw new Error("QUESTION_ID_ALREADY_EXISTS: " + unit.question.id + " is already stored");
+    // Serialise first. A unit that cannot be serialised must fail BEFORE the
+    // write rather than during it.
+    const text = JSON.stringify(unit);
+    if (JSON.parse(text).question.id !== unit.question.id)
+      throw new Error("the stored unit would not read back as itself");
+    B.set(key, text);
+    // The package key is the atomic act and it has happened. The index is a
+    // convenience that load() never consults, so a failure to update it must not
+    // turn a write that SUCCEEDED into one reported as failed: that would leave
+    // a stored question the caller believes is absent, which is the one state
+    // this whole design exists to prevent.
+    let indexed = true;
+    try { reindex(); } catch (e) { indexed = false; }
+    return { key: key, indexed: indexed };
+  }
+
+  function reindex() {
+    const ids = B.keys().filter(k => k.indexOf(PREFIX) === 0).map(k => k.slice(PREFIX.length)).sort();
+    B.set(INDEX, JSON.stringify({ schema: "marginal.import.index", version: 1, ids: ids }));
+  }
+
+  // The destination publish.js writes into: the questions that shipped, plus the
+  // ones published here, plus the one function that persists a package.
+  function destination(bundledRegistry) {
+    const persisted = load();
+    const questions = {};
+    Object.keys(bundledRegistry.questions).forEach(id => {
+      const q = bundledRegistry.questions[id];
+      questions[id] = { id: id, subject: q.subject, subjectLabel: q.subjectLabel, document: null };
+    });
+    Object.keys(persisted.questions).forEach(id => { questions[id] = persisted.questions[id]; });
+    return {
+      schema: "marginal.destination", questions: questions, shared: persisted.shared, log: [],
+      broken: persisted.broken,
+      // The persistence hook publish.js calls inside the atomic unit. Present
+      // here and absent on an in memory destination, which is the whole
+      // difference between a rehearsal and a publication.
+      write: writeUnit,
+      backend: B.name,
+    };
+  }
+
+  function clear() {
+    B.keys().filter(k => k.indexOf(PREFIX) === 0 || k === INDEX).forEach(k => B.remove(k));
+  }
+
+  return { load: load, destination: destination, writeUnit: writeUnit, clear: clear,
+           index: () => { try { return JSON.parse(B.get(INDEX)); } catch (e) { return null; } },
+           backend: B };
+}
+
+module.exports = { createStore, memoryBackend, localStorageBackend, failingBackend, PREFIX, INDEX };
+
+};
+__defs["./runtime.js"] = function (module, exports, require) {
+// A STORED PACKAGE, AS THE STUDENT RUNTIME SEES IT.
+//
+// packagize.js turns a question in source into a package. This is the inverse,
+// and it is written by reading that file rather than by remembering the format:
+// every line below has a counterpart there, and when the two disagree the tests
+// that round trip a real question catch it.
+//
+// THREE RULES IT IS BUILT AROUND.
+//
+// It DERIVES and never mutates. The stored document is the source of truth and
+// stays exactly as authored; what comes back here is a view of it. Nothing in
+// this file writes to its argument.
+//
+// It never fills a gap. A package with no pathways becomes a question with no
+// pathways, and the runtime shows what it actually has. Borrowing support from
+// another question, or inventing a plan line because the shape looks empty, is
+// how a student is offered help nobody wrote for the question in front of them.
+//
+// It fails closed on a collision. An imported id that is also a source id means
+// something is wrong upstream, because admission refuses that at import. The
+// runtime cannot repair it and must not choose a winner, so it drops the
+// imported one and says so.
+const SOURCE = { bundled: "bundled", imported: "imported" };
+
+// package.question.terms is { first, second }; the runtime reads term1/term2.
+// A topic's LABEL belongs to the syllabus record, not to the question, which is
+// why a question carries a ref or a label and never both. So a ref is resolved
+// through the syllabus, exactly as the manifest resolves it, and never taken
+// apart: business.hr is the human resources topic, and its last segment is "hr",
+// which is a namespace and not something to show anybody.
+//
+// Where nothing resolves it, the question has NO display topic. That is the
+// honest outcome: the label lives somewhere this reader was not given, and
+// "Hr" would be a word nobody wrote.
+function topicLabelFor(ref, topics) {
+  if (!ref || typeof ref !== "string") return null;
+  const hit = (topics || {})[ref];
+  return hit ? String(hit) : null;
+}
+
+function termsOf(q) {
+  const t = q.terms || {};
+  return { term1: t.first == null ? null : t.first, term2: t.second == null ? null : t.second };
+}
+
+// relationship.claims[].line is the authored plan line, and the runtime's plan
+// is those lines. The structure around them, the resolved left and right ends,
+// is what the format ADDED and the runtime has no use for yet, so it travels on
+// the question rather than being flattened away.
+function planOf(doc) {
+  return ((doc.relationship || {}).claims || []).map(c => c.line).filter(x => x != null);
+}
+
+function areasOf(doc) {
+  const out = {};
+  (doc.areas || []).forEach(a => {
+    if (!a || !a.id) return;
+    out[a.id] = { label: a.label || a.id, guides: guidesOf(a.guidance) };
+  });
+  return out;
+}
+
+// guidance.<slot> = { direct, ladder[] } is one field with two depths. The
+// runtime reads guides.<slot> (the one line always shown) and help.<slot> (the
+// ladder behind it), so the pair is unpacked back into the two it came from.
+function guidesOf(guidance) {
+  const out = {};
+  Object.keys(guidance || {}).forEach(slot => { if (guidance[slot] && guidance[slot].direct) out[slot] = guidance[slot].direct; });
+  return out;
+}
+function helpOf(guidance) {
+  const out = {};
+  Object.keys(guidance || {}).forEach(slot => {
+    const ladder = (guidance[slot] || {}).ladder || [];
+    if (!ladder.length) return;
+    const h = {};
+    // The app discriminates the rungs above "what this part has to do" by a type
+    // tag, and withholds any rung that does not carry the one it expects. This
+    // adapter used to emit { text } with no tag, so on an imported question every
+    // rung above the second was silently dropped: the direction, the frame, the
+    // start you finish and the worked example, however carefully they were
+    // authored. A simulated student climbed the ladder six times and was handed
+    // rung two every time, which is what "the app had nothing further to show"
+    // meant. The contract already names the kind, as ladder[].rung, so this is a
+    // translation between two names for one thing rather than a field invented
+    // here: nothing is added to a rung the author did not write.
+    const TYPE = { direction: "reasoningDirection", frame: "scaffoldFrame",
+                   starter: "sentenceStarter", example: "differentContextExample" };
+    ladder.forEach(rung => {
+      if (rung.rung === "hint") h.hint = rung.text;
+      else if (rung.rung === "needs") h.needs = rung.text;
+      else if (rung.rung === "direction") h.direction = { type: TYPE.direction, text: rung.text };
+      else if (rung.rung === "frame") h.frame = { type: TYPE.frame, text: rung.text };
+      else if (rung.rung === "starter") h.starter = { type: TYPE.starter, text: rung.text };
+      else if (rung.rung === "example") h.example = { type: TYPE.example, text: rung.text,
+        context: rung.context || undefined, pattern: rung.pattern || undefined };
+    });
+    out[slot] = h;
+  });
+  return out;
+}
+
+function pathwaysOf(doc) {
+  return (doc.pathways || []).map(p => {
+    const out = {
+      id: p.id, area: p.areaRef || undefined, short: p.short,
+      adds: p.adds || undefined, relationship: p.relationship,
+      // Never derived from short or relationship, in either direction. The
+      // format made that explicit and the inverse has to keep it explicit.
+      fromLabel: (p.left && p.left.label) || undefined,
+      meaning: p.choiceMeaning || undefined,
+      whatToProve: p.whatToProve || undefined,
+      commonMistake: p.commonMistake || undefined,
+      guides: guidesOf(p.guidance), help: helpOf(p.guidance),
+    };
+    if (p.mechanism && (p.mechanism.text || p.mechanism.note || p.mechanism.reason ||
+                        p.mechanism.status !== "unreviewed")) {
+      out.mechanism = { state: p.mechanism.status };
+      // reason and note are different authored things: reason argues that no
+      // middle step is needed, note records what a reviewer found missing.
+      if (p.mechanism.reason) out.mechanism.reason = p.mechanism.reason;
+      if (p.mechanism.text) out.mechanism.text = p.mechanism.text;
+      if (p.mechanism.note) out.mechanism.note = p.mechanism.note;
+    }
+    if (p.learning && p.learning.status) out.learning = { status: p.learning.status };
+    if (p.contribution) out.contribution = p.contribution;
+    // Refs are ids into the shared libraries. They travel unresolved: resolving
+    // them needs the libraries, and a runtime that half resolved them would be
+    // a second resolver disagreeing with tools/contract/resolve.js.
+    if ((p.evidenceRefs || []).length) out.evidenceRefs = p.evidenceRefs.slice();
+    if ((p.vocabRefs || []).length) out.vocabRefs = p.vocabRefs.slice();
+    if (p.syllabusRef) out.syllabusRef = p.syllabusRef;
+    if (p.conceptRef) out.conceptRef = p.conceptRef;
+    return out;
+  });
+}
+
+// The runtime question. Only what the package actually carries: a field the
+// package leaves out is left out here, so the runtime's own "is this authored"
+// checks see the truth rather than an empty shape pretending to be authored.
+function toRuntimeQuestion(doc, opts) {
+  const topics = (opts && opts.topics) || null;
+  if (!doc || !doc.question || !doc.question.id) return null;
+  const q = doc.question;
+  const t = termsOf(q);
+  const out = {
+    id: q.id,
+    text: q.text,
+    command: q.directive || undefined,
+    marks: q.marks,
+    // topicRef is an id into the syllabus library; topicLabel is prose. The
+    // runtime reads `topic`, so a package carrying only a ref needs one.
+    //
+    // Taking the last segment of the ref is the EXACT INVERSE of how the ref
+    // was built - libraries.js id.topic(n, topic) is n + "." + slug(topic) -
+    // and not a resemblance match. What it cannot recover is the authored
+    // capitalisation, because slugging threw it away: a ref that was built from
+    // "Marketing" comes back as "marketing". That is a real loss and it is left
+    // visible rather than repaired by title casing, which would invent a label
+    // for every ref whose original had none.
+    topic: q.topicLabel || topicLabelFor(q.topicRef, topics) || undefined,
+    topicRef: q.topicRef || undefined,
+  };
+  // Added in contract 1.1. Dropped by 1.0 and therefore lost on any question
+  // exported and re-imported.
+  if (q.note) out.note = q.note;
+  if (q.areasLabel) out.areasLabel = q.areasLabel;
+  if (t.term1 != null) out.term1 = t.term1;
+  if (t.term2 != null) out.term2 = t.term2;
+  if (q.overallArgument) out.argument = q.overallArgument;
+  if ((q.studyRefs || []).length) out.studyRefs = q.studyRefs.slice();
+  if ((q.vocabRefs || []).length) out.vocabRefs = q.vocabRefs.slice();
+
+  const plan = planOf(doc);
+  if (plan.length) out.plan = plan;
+  if ((doc.relationship || {}).intro) out.connectIntro = doc.relationship.intro;
+
+  const areas = areasOf(doc);
+  if (Object.keys(areas).length) out.areas = areas;
+  const pathways = pathwaysOf(doc);
+  if (pathways.length) out.pathways = pathways;
+
+  if (doc.decode) out.decode = doc.decode;
+  if (doc.requirements) {
+    const r = doc.requirements;
+    const req = {};
+    if ((r.concepts || []).length) req.concepts = r.concepts.slice();
+    if ((r.relationships || []).length) req.relationships = r.relationships.slice();
+    if ((r.accomplish || []).length) req.accomplish = r.accomplish.slice();
+    if (r.syllabusSummary) req.syllabus = r.syllabusSummary;
+    if ((r.requiredAreas || []).length)
+      req.requiredAreas = r.requiredAreas.map(a => ({ id: a.id, label: a.label }));
+    if (Object.keys(req).length) out.requirements = req;
+  }
+  if (doc.coreAnswer) out.coreAnswer = doc.coreAnswer;
+  if (doc.workingAnswer) out.workingAnswer = doc.workingAnswer;
+  if (doc.reasoning) out.reasoning = doc.reasoning;
+  if (doc.marking) {
+    if (doc.marking.text) out.rubric = doc.marking.text;
+    // Bands OR a band source. A question can name where its band language comes
+    // from and carry no bands of its own, and testing only for bands dropped
+    // that source on four of the nineteen questions in the bank.
+    if (doc.marking.bands || doc.marking.bandSource)
+      out.criteria = { bands: doc.marking.bands || null, source: doc.marking.bandSource || undefined };
+  }
+  // Where it came from, so a surface that genuinely needs to know can ask,
+  // and so nothing has to guess by looking for a missing field.
+  out.origin = SOURCE.imported;
+  return out;
+}
+
+// The one question interface. Source subjects, with each subject's imported
+// questions appended, as a NEW object: window.ESSAY is not touched, so the
+// questions that shipped stay exactly what they were.
+//
+// A stored question whose id is already a source id is DROPPED and reported.
+// Admission refuses that at import, so reaching here means storage is wrong,
+// and the runtime's job in that case is to be obviously missing a question
+// rather than quietly serving a different one under a familiar id.
+function mergeSubjects(subjects, stored, opts) {
+  const sourceIds = {};
+  Object.keys(subjects || {}).forEach(sk =>
+    ((subjects[sk] || {}).questions || []).forEach(q => { if (q && q.id) sourceIds[q.id] = sk; }));
+
+  const bySubject = {}, collisions = [], unusable = [], added = [];
+  Object.keys((stored || {}).questions || {}).forEach(id => {
+    const rec = stored.questions[id];
+    const doc = rec && rec.document;
+    const rq = doc ? toRuntimeQuestion(doc, opts) : null;
+    if (!rq) { unusable.push({ id: id, why: "the stored package carries no readable question" }); return; }
+    if (rq.id !== id) { unusable.push({ id: id, why: "stored under " + id + " and the document says " + rq.id }); return; }
+    if (sourceIds[id]) { collisions.push({ id: id, subject: sourceIds[id] }); return; }
+    const sk = (doc.question && doc.question.subject) || rec.subject;
+    if (!sk) { unusable.push({ id: id, why: "the package names no subject" }); return; }
+    (bySubject[sk] = bySubject[sk] || []).push(rq);
+    added.push({ id: id, subject: sk });
+  });
+
+  const out = {};
+  Object.keys(subjects || {}).forEach(sk => { out[sk] = subjects[sk]; });
+  Object.keys(bySubject).forEach(sk => {
+    // A subject that ships no content at all still gets one, so an imported
+    // question cannot be invisible for want of a container. It carries the
+    // questions and nothing else, which is the honest amount.
+    const base = out[sk] || { key: sk, label: sk.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()), questions: [] };
+    const merged = {};
+    Object.keys(base).forEach(k => { merged[k] = base[k]; });
+    merged.questions = (base.questions || []).concat(bySubject[sk].slice().sort((a, b) => String(a.id).localeCompare(String(b.id))));
+    out[sk] = merged;
+  });
+  return { subjects: out, added: added, collisions: collisions, unusable: unusable };
+}
+
+// ---- canonical identity ------------------------------------------------------
+// A directive is one thing however it is written. The contract stores it as a
+// lowercase id and essay-content.js authors it as a display form, so "Explain"
+// and "explain" reached a picker as two filters over the same directive. The
+// identity is the lowercase form; the LABEL is a display form derived from it,
+// which for every directive the bank uses is the id with its first letter
+// raised: explain, how can, to what extent, assess, evaluate, analyse.
+//
+// Nothing here changes what a student reads. The complete authored wording of a
+// question is question.text and always was; it contains the directive in
+// whatever case its author wrote.
+function directiveId(command) {
+  return String(command == null ? "" : command).trim().toLowerCase();
+}
+function directiveLabel(id) {
+  const s = String(id || "").trim();
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
+}
+// Topics are identified the same way. A label cannot be rebuilt from an id,
+// because slugging threw the capitalisation away, so the label is the first
+// AUTHORED one seen for an identity and never a title cased guess.
+function topicId(topic) {
+  return String(topic == null ? "" : topic).trim().toLowerCase();
+}
+
+module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf,
+  directiveId, directiveLabel, topicId };
+
+};
+
+  var store = __require('./store.js');
+  var runtime = __require('./runtime.js');
+  // Storage may be unavailable, and a student whose browser blocks it must
+  // still get the questions that shipped. It degrades to holding nothing,
+  // never to failing to load.
+  var backend = null;
+  try { window.localStorage.getItem('marginal.import.index');
+        backend = store.localStorageBackend(window.localStorage); }
+  catch (e) { backend = store.memoryBackend(); }
+  var S = store.createStore(backend);
+  var TOPICS = window.MarginalTopics || {};
+  window.MarginalImports = {
+    load: function () { try { return S.load(); } catch (e) { return { questions: {}, shared: {}, broken: [{ key: null, why: String(e && e.message || e) }] }; } },
+    merge: function (subjects) { return runtime.mergeSubjects(subjects, window.MarginalImports.load(), { topics: TOPICS }); },
+    toRuntimeQuestion: function (doc) { return runtime.toRuntimeQuestion(doc, { topics: TOPICS }); },
+    directiveId: runtime.directiveId, directiveLabel: runtime.directiveLabel, topicId: runtime.topicId,
+    backend: backend.name,
+  };
+})();
+
+</script>
+<script>
 // =============================================================================
 // Marginal trial — app logic (single-file preview build)
 // Adds to the repo build: safe storage wrapper (works in sandboxed previews),
@@ -8539,9 +9251,16 @@ window.BUSCONTENT = {
   // The subject namespace whose label matches this one, or null. Subject content is
   // the source of truth for criteria and band expectations, so adding a subject
   // stays content-only.
+  // Trimmed on both sides. The label reaching here can come from an imported
+  // paper's JSON, which is authored text, and " Business Studies " matching
+  // nothing meant markingContext fell through to C.markingCriteria: a Business
+  // Studies answer marked against the app's own Economics criteria, with nothing
+  // on screen to say so. Trimming closes that without changing what matches.
   function essaySubjectByLabel(label) {
-    const subs = (window.ESSAY && window.ESSAY.subjects) || {};
-    const hit = Object.keys(subs).find(k => String(subs[k].label || "").toLowerCase() === String(label || "").toLowerCase());
+    const subs = esAllSubjects().subjects;
+    const want = String(label || "").trim().toLowerCase();
+    if (!want) return null;
+    const hit = Object.keys(subs).find(k => String(subs[k].label || "").trim().toLowerCase() === want);
     return hit ? subs[hit] : null;
   }
   // What THIS question requires: the concepts to address, the relationships to
@@ -8594,6 +9313,35 @@ window.BUSCONTENT = {
   // answer as a short answer and not as a miniature essay.
   //
   // opts.plan is the student's own plan and opts.validContent our authored argument
+  // A REQUEST THAT CANNOT HANG.
+  //
+  // Both calls to the marking worker were bare awaits inside a try/catch, which
+  // handles a refused connection and a bad status honestly and does nothing at
+  // all about the case in between: a worker that accepts the connection and then
+  // never answers. There the student waits with no message and no way to tell
+  // whether anything is happening, which is the one failure the catch below was
+  // written to prevent.
+  //
+  // 45 seconds because a marking call is a model call and is legitimately slow;
+  // the point is not to be strict, it is that there IS a bound. On timeout the
+  // abort surfaces as an ordinary error, so both callers degrade the way they
+  // already degrade for every other failure, with a reason on screen.
+  const ES_REQUEST_MS = 45000;
+  async function esPostJSON(url, body) {
+    const ctrl = typeof AbortController === "function" ? new AbortController() : null;
+    const timer = ctrl ? setTimeout(() => ctrl.abort(), ES_REQUEST_MS) : null;
+    try {
+      return await fetch(url, {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify(body), signal: ctrl ? ctrl.signal : undefined,
+      });
+    } catch (e) {
+      if (e && (e.name === "AbortError" || e.name === "TimeoutError"))
+        throw new Error("no answer in " + Math.round(ES_REQUEST_MS / 1000) + " seconds");
+      throw e;
+    } finally { if (timer) clearTimeout(timer); }
+  }
+
   // pathways. Both are sent, and the worker routes them to the DIAGNOSIS pass only:
   // they are context for reading the response, never a checklist that awards marks.
   function responseTypeOf(card, opts) {
@@ -8605,9 +9353,7 @@ window.BUSCONTENT = {
     if (state.endpoint) {
       try {
         const mc = markingContext(card);
-        const res = await fetch(state.endpoint, {
-          method: "POST", headers: { "content-type": "application/json" },
-          body: JSON.stringify({
+        const res = await esPostJSON(state.endpoint, {
             prompt: card.prompt, marks: card.marks, model_answer: card.model, vocab: card.vocab, answer,
             scaffold: card.scaffold, faults: card.faults,
             command: card.command || commandOf(card.prompt) || undefined,
@@ -8617,7 +9363,6 @@ window.BUSCONTENT = {
             rubric: card.rubric || undefined,
             plan: opts.plan, validContent: opts.validContent, blocks: opts.blocks,
             code: state.code || undefined
-          })
         });
         if (!res.ok) throw new Error("proxy " + res.status);
         const g = await res.json();
@@ -11384,8 +12129,64 @@ window.BUSCONTENT = {
     try { const w = Cloud.who && Cloud.who(); if (w && w.class_code) return w.class_code; } catch (e) { /* ignore */ }
     return state.code || CONFIG.code || "";
   }
+  // ---- imported questions ---------------------------------------------------
+  // ONE QUESTION INTERFACE. A question that shipped in essay-content.js and a
+  // question a teacher imported reach every screen below through the same path,
+  // and nothing downstream asks which it was: they differ in where they were
+  // stored and in nothing else.
+  //
+  // window.ESSAY is NOT touched. The merge returns a new object, so the
+  // questions that shipped are the same objects they always were, and an
+  // importer that has stored nothing leaves this identical to reading
+  // window.ESSAY.subjects directly.
+  //
+  // Computed once. Reading storage and adapting every stored document on each of
+  // the several hundred calls these screens make would be work repeated for an
+  // answer that cannot change while the page is open.
+  let ES_MERGE = null;
+  function esAllSubjects() {
+    const base = (window.ESSAY && window.ESSAY.subjects) || {};
+    if (ES_MERGE && ES_MERGE.base === base) return ES_MERGE.out;
+    let merged = { subjects: base, added: [], collisions: [], unusable: [] };
+    // A student must still get the questions that shipped when anything about
+    // imported ones goes wrong, so every failure here degrades to the source
+    // bank rather than to an empty screen.
+    try {
+      if (window.MarginalImports) merged = window.MarginalImports.merge(base);
+    } catch (e) { merged = { subjects: base, added: [], collisions: [], unusable: [{ id: null, why: String((e && e.message) || e) }] }; }
+    ES_MERGE = { base: base, out: merged };
+    return merged;
+  }
+  // Exposed so a test can see what was taken and what was refused. Reading only.
+  function esImportReport() {
+    const m = esAllSubjects();
+    return { added: m.added, collisions: m.collisions, unusable: m.unusable };
+  }
+  // CANONICAL QUESTION IDENTITY. Defined in tools/contract/runtime.js and used
+  // from there, so the app and the importer cannot disagree about whether two
+  // questions share a directive. The inline fallbacks exist only for a page that
+  // somehow loaded app.js without the bundle; tests/ui51.js asserts the two
+  // implementations agree on every question in the bank.
+  function esDirectiveId(c) {
+    const M = window.MarginalImports;
+    return M && M.directiveId ? M.directiveId(c) : String(c == null ? "" : c).trim().toLowerCase();
+  }
+  function esDirectiveLabel(id) {
+    const M = window.MarginalImports;
+    if (M && M.directiveLabel) return M.directiveLabel(id);
+    const t = String(id || "").trim();
+    return t ? t.charAt(0).toUpperCase() + t.slice(1) : "";
+  }
+  function esTopicId(t) {
+    const M = window.MarginalImports;
+    return M && M.topicId ? M.topicId(t) : String(t == null ? "" : t).trim().toLowerCase();
+  }
+  // Read only, for the suites that need to see what the merge produced. It
+  // computes nothing of its own and cannot change anything.
+  try { window.__esSubjects = () => esAllSubjects().subjects; window.__esImports = esImportReport; } catch (e) { /* not a browser */ }
   function esSubjectContent(subject) {
-    return (window.ESSAY && window.ESSAY.subjects && window.ESSAY.subjects[subject]) || null;
+    const subs = esAllSubjects().subjects;
+    return (subs && subs[subject]) || null;
   }
   // The worked-example fallback set (window.ESSAY.slots.examples) is authored for this
   // subject. Any OTHER subject borrows it as a clearly-labelled placeholder until its
@@ -11417,7 +12218,7 @@ window.BUSCONTENT = {
   // paragraph scaffold. Lets any login load a subject's bank without a class-code
   // rule (the routed subject is just the default selection).
   function esSubjectsList() {
-    const subs = (window.ESSAY && window.ESSAY.subjects) || {};
+    const subs = esAllSubjects().subjects;
     return Object.keys(subs)
       .filter(k => { const s = subs[k]; return s && ((Array.isArray(s.questions) && s.questions.length) || s.scaffolds); })
       .map(k => ({ key: k, label: subs[k].label || k }));
@@ -12481,6 +13282,34 @@ window.BUSCONTENT = {
     return "causal";
   }
 
+  // WHAT THIS QUESTION ACTUALLY OFFERS, read off the question and nothing else.
+  // Every line is a fact about what somebody authored: a question with no
+  // pathways has no pathway guidance, and saying so before a student commits is
+  // the honest version of finding out afterwards. Nothing here is a capability
+  // score and nothing is borrowed from another question.
+  function esSupportFor(q) {
+    const paths = (q && q.pathways) || [];
+    const areas = Object.keys((q && q.areas) || {});
+    const rows = [
+      { key: "marking", label: "Marking guidance", has: true,
+        note: "Written for this question, or generated from it" },
+      { key: "planning", label: "Planning support", has: areas.length > 0,
+        note: areas.length ? areas.length + " areas to plan across" : "This question defines no areas" },
+      { key: "pathway", label: "Pathway guidance", has: paths.length > 0,
+        note: paths.length ? paths.length + " arguments to choose between" : "This question authors no arguments" },
+      { key: "learning", label: "Learning support", has: paths.some(p => (p.learning || {}).status === "authored"),
+        note: "A lesson for a student who does not know the content yet" },
+      { key: "evidence", label: "Evidence support", has: paths.some(p => (p.evidenceRefs || []).length),
+        note: "Evidence attached to the arguments" },
+    ];
+    const have = rows.filter(r => r.has);
+    return { rows: rows,
+      // The one line summary the preview leads with. It names what IS there.
+      summary: have.length === 1 ? have[0].label.toLowerCase() + " only"
+        : have.map(r => r.label.toLowerCase()).join(", "),
+      missing: rows.filter(r => !r.has) };
+  }
+
   function esRenderSetup(host, sc) {
     if (!ES.form) ES.form = { question: "", topic: "", rubric: "", marks: 20, structure: sc.defaultStructure, paraModel: (sc.paraModels[0] || null), rubricOpen: false };
     const f = ES.form;
@@ -12488,179 +13317,525 @@ window.BUSCONTENT = {
     // paragraph scaffold, defaulting to the subject routed from their class code.
     const subjectList = esSubjectsList();
     const subjectPicker = subjectList.length > 1 ? `
-      <div class="es-field">
-        <label class="es-label" for="essubject">Subject</label>
-        <select id="essubject" class="es-input es-select">${subjectList.map(s =>
+      <div class="qp-field">
+        <label class="qp-label" for="essubject">Subject</label>
+        <select id="essubject" class="qp-input qp-select">${subjectList.map(s =>
           `<option value="${esc(s.key)}" ${s.key === ES.subject ? "selected" : ""}>${esc(s.label)}</option>`).join("")}</select>
       </div>` : "";
     // Paragraph-structure picker (e.g. Business Studies TEEEC vs TDECC), only when
     // the subject ships selectable scaffolds.
     const scObj = esSubjectContent(ES.subject);
     const modelPicker = sc.hasParaModels ? `
-      <div class="es-field">
-        <label class="es-label" for="esparamodel">Paragraph structure</label>
-        <select id="esparamodel" class="es-input es-select">${sc.paraModels.map(m =>
+      <div class="qp-field">
+        <label class="qp-label" for="esparamodel">Paragraph structure</label>
+        <select id="esparamodel" class="qp-input qp-select">${sc.paraModels.map(m =>
           `<option value="${esc(m)}" ${m === f.paraModel ? "selected" : ""}>${esc(esParaModelLabel(m))}${(scObj.scaffolds[m] && scObj.scaffolds[m].expansion) ? " \u00b7 " + esc(scObj.scaffolds[m].expansion) : ""}</option>`).join("")}</select>
-        <p class="es-help">Each body paragraph will be scaffolded to this structure.</p>
+        <p class="qp-hint">Each body paragraph will be scaffolded to this structure.</p>
       </div>` : "";
     // Suggested questions are subject-specific: show them ONLY when THIS subject ships
     // its own set. Otherwise hide the block cleanly (the student types their own).
     const qChips = sc.hasQuestions ? sc.questions.map(q =>
       `<button class="es-qchip" data-esq="${esc(q.id)}"><span class="es-qcmd">${esc(q.command)}</span> ${esc(esQuestionPreview(q))}</button>`).join("") : "";
-    // Discrete, most-recent-first list (not one combined pill); each row deletes.
-    const saved = esRecent(ES.list).slice(0, 12);
-    const resume = saved.length ? `
-      <div class="es-resume" data-resume>
-        <p class="es-label">Your saved essays</p>
-        <div class="es-reslist">${saved.map(d => {
-          const mastered = (d.paras || []).filter(x => x.mastered).length, np = (d.paras || []).length;
-          const q = (d.question || "").trim();
-          return `<div class="es-resitem" data-resrow="${esc(d.id)}">
-             <div class="es-resmain">
-               ${d.topic ? `<span class="es-restoplabel">${esc(d.topic)}</span>` : ""}
-               <span class="es-resq">${esc(q.slice(0, 110))}${q.length > 110 ? "…" : ""}</span>
-               <span class="es-resmeta">${np ? mastered + "/" + np + " mastered" : "draft"}</span>
-             </div>
-             <div class="es-resactions">
-               <button class="es-misstier" data-esresume="${esc(d.id)}">Resume</button>
-               <button class="es-misstier ghost" data-estemplate="${esc(d.id)}">Use as template</button>
-               <button class="es-resdel" data-esdelete="${esc(d.id)}" aria-label="Delete this saved essay" title="Delete this saved essay">remove</button>
-             </div>
-           </div>`;
-        }).join("")}</div>
-      </div>` : "";
     const structOpts = (window.ESSAY.structures || []).map(s =>
       `<option value="${esc(s.key)}" ${s.key === f.structure ? "selected" : ""}>${esc(s.label)}</option>`).join("");
     const bandsRef = (window.ESSAY.bands || []).map(b =>
       `<div class="es-band"><span class="es-bandr">${esc(b.range)}</span><span class="es-bandt">${esc(b.text)}</span></div>`).join("");
-    host.innerHTML = `
-    <div class="es-scrim"><div class="es-shell"><div class="es-wrap">
-      <div class="es-top">
-        <div class="es-brand">Marginal · essay practice ${sc.label ? `<span class="es-subj">${esc(sc.label)}${sc.stage ? " · " + esc(sc.stage) : ""}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}</div>
-        <button class="es-x" id="esx" aria-label="Close">close</button>
+    // The marking guidance line: a status, not a form field. It resolves without
+    // being asked for, and the disclosure is for the student who wants to check
+    // what their essay will be read against.
+    const rubricStatus = (() => {
+      const r = esRubricFor(f, sc);
+      const label = r.source === "user-provided" ? "Your own marking guidance will be used"
+        : r.source === "authored" ? "Marking guidance written for this question will be used"
+        : "Marking guidance will be generated from this question";
+      return `<div class="qp-field">
+        <div class="qp-rub"><span class="qp-rubtick">\u2713</span>
+          <span class="qp-rubtext">${esc(label)}</span>
+          <span class="qp-rubprov">${esc(r.source)}</span>
+          <button type="button" class="qp-link" id="esrubopen">${f.rubricOpen ? "Hide" : "Review or edit"}</button>
+        </div>
+        <div class="qp-rubbox"${f.rubricOpen ? "" : " hidden"}>
+          ${r.source === "generated" ? `<p class="qp-hint">Generated from the question in front of you. It is not an official marking guide and is not from NESA.</p>` : ""}
+          <pre class="qp-rubpre">${esc(r.text)}</pre>
+          <label class="qp-label" for="esrubric">Replace it with your own</label>
+          <textarea id="esrubric" class="qp-input qp-ta" rows="3" placeholder="Paste your rubric or marking bands here.">${esc(f.rubric)}</textarea>
+        </div>
+      </div>`;
+    })();
+
+    // ============================ CHOOSING A QUESTION ========================
+    // Four stages, one surface, its own class namespace. `qp-` because the
+    // generic es- names are already spoken for: .es-btn is defined twice in the
+    // shell and carries a 4px green under-edge, which is why every button in the
+    // first version of this flow grew one.
+    //
+    // Each stage renders ITS OWN page and returns. Nothing from another stage is
+    // hidden underneath it, because nothing from another stage is emitted: the
+    // list is not the setup form with a list appended to it.
+    const stage = (sc.questions || []).length ? (f.pickStage || "subject") : "own";
+    // THE PAGE, not a column on it. Header, a main column with a rail beside it,
+    // and a footer. The rail is part of the composition rather than decoration:
+    // without it the right half of a desktop viewport is empty and page two of a
+    // filtered list is three rows in a field of nothing.
+    //
+    // The nav carries the mockup's weight with Marginal's real destinations. It
+    // does not invent a section that does not exist.
+    const nav = `<header class="qp-nav"><div class="qp-navin">
+      <span class="qp-logo" aria-hidden="true">M</span>
+      <span class="qp-word">Marginal</span>
+      <nav class="qp-navlinks">
+        ${/* A nav link is not a stage route within the picker, so it does not
+              carry the stage attribute: counting the routes on a screen would
+              have counted it. Both links go somewhere real; the one you are on
+              is marked rather than repeated. */ ""}
+        <button type="button" class="qp-navlink ${stage === "essays" ? "" : "on"}"
+          data-esnav="back">Essay practice</button>
+        <button type="button" class="qp-navlink ${stage === "essays" ? "on" : ""}"
+          data-esnav="essays">My essays</button>
+      </nav>
+      <div class="qp-navright">
+        ${sc.label ? `<span class="qp-subj">${esc(sc.label)}${sc.stage ? " · " + esc(sc.stage) : ""}</span>` : ""}
+        ${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}
+        <button class="qp-close" id="esx" aria-label="Close">close</button>
       </div>
-      <h1 class="es-h1">Set up your essay</h1>
-      <p class="es-lead">Only the question is needed. Everything else is optional and you can change all of it later.</p>
-      ${subjectPicker}
-      ${resume}
-      ${(() => {
-        // Thirteen full-width questions in one column made the student read every
-        // one to find the kind they wanted. The directive and the topic are both
-        // authored on every question, so they are used as filters rather than
-        // matched out of the text.
-        const qs = (sc.questions || []);
-        if (!qs.length) return `<div class="es-field">
-          <label class="es-label" for="esq">Essay question <span class="es-req">needed</span></label>
-          <textarea id="esq" class="es-input es-ta" rows="3" placeholder="Paste or type the question you are practising.">${esc(f.question)}</textarea></div>`;
-        // A student with a question in front of them is the normal case: this is
-        // essay practice that also supplies questions, not a question bank.
-        const mode = f.setupMode || "own";
-        const dirs = [];
-        qs.forEach(q => { const c = String(q.command || "").trim(); if (c && dirs.indexOf(c) < 0) dirs.push(c); });
-        const topics = [];
-        qs.forEach(q => { const t = String(q.topic || "").trim(); if (t && topics.indexOf(t) < 0) topics.push(t); });
-        const byDir = f.setupDir ? qs.filter(q => String(q.command || "").trim() === f.setupDir) : qs;
-        const shown = f.setupTopic ? byDir.filter(q => String(q.topic || "").trim() === f.setupTopic) : byDir;
-        const chosen = f.questionId ? qs.find(q => q.id === f.questionId) : null;
-        const pill = (val, cur, key, label, count) =>
-          // A count of zero is worth showing, because it tells the student what this
-          // subject has before they go looking. It is not worth making clickable:
-          // a pill that leads to an empty list is a dead end dressed as a choice.
-          `<button type="button" class="es-pill ${cur === val ? "on" : ""}${count === 0 ? " empty" : ""}"${count === 0 ? " disabled" : ""} data-es${key}="${esc(val)}">${esc(label)}${count != null ? `<span class="es-pilln">${count}</span>` : ""}</button>`;
-        return `<div class="es-field">
-          <div class="es-modes">
-            <button type="button" class="es-mode ${mode === "own" ? "on" : ""}" data-esmode="own">Use my question</button>
-            <button type="button" class="es-mode ${mode === "practice" ? "on" : ""}" data-esmode="practice">Choose a practice question</button>
+    </div></header>`;
+    const foot = `<footer class="qp-foot"><div class="qp-footin">
+      <span class="qp-logo sm" aria-hidden="true">M</span>
+      <span class="qp-footword">Marginal</span>
+      <span class="qp-foottag">Better practice. Brighter progress.</span>
+    </div></footer>`;
+    // One page shell for every stage, so the stages read as one flow.
+    const shell = (main, rail) => `<div class="qp">${nav}
+      <main class="qp-main"><div class="qp-grid">
+        <div class="qp-col">${main}</div>
+        <aside class="qp-rail">${rail}</aside>
+      </div></main>${foot}</div>`;
+    const railCard = (icon, title, body) =>
+      `<section class="qp-rc"><div class="qp-rchd"><span class="qp-rcicon" aria-hidden="true">${icon}</span>
+        <h2 class="qp-rct">${esc(title)}</h2></div>${body}</section>`;
+    const back = (to, label) =>
+      `<button type="button" class="qp-back" data-espick="${to}">&larr; ${esc(label)}</button>`;
+
+    // The settings, which belong to setting up and to nowhere else. Folded, on
+    // the first stage only: the list and the preview are for choosing, and the
+    // student who wants a different structure is setting up, not choosing.
+    const options = `<details class="qp-opts"${f.optsOpen ? " open" : ""} id="esmoreopts">
+      <summary>Essay options: marking guidance, marks and structure</summary>
+      <div class="qp-optsbody">
+        ${rubricStatus}
+        <div class="qp-field">
+          ${/* Not "marks this question is worth": that states a mark value as a
+                fact about the question, and a question has one only when somebody
+                authored it. This field is the student's own setting for the mark
+                split on a full attempt, so it says so. */ ""}
+          <label class="qp-label" for="esmarks">Mark my attempt out of</label>
+          <p class="qp-hint">Used only when you submit a full attempt for marking.</p>
+          <input id="esmarks" class="qp-input qp-marks" type="number" min="1" max="60" step="1" value="${esc(String(f.marks))}">
+        </div>
+        <div class="qp-field">
+          <label class="qp-label" for="esstruct">Structure</label>
+          <select id="esstruct" class="qp-input qp-select">${structOpts}</select>
+        </div>
+        ${modelPicker}
+      </div>
+    </details>`;
+
+    // ---- stage: the list ----------------------------------------------------
+    if (stage === "list") {
+      const qs = sc.questions || [];
+      const dirs = [];
+      qs.forEach(q => {
+        const id = esDirectiveId(q.command);
+        if (id && !dirs.some(d => d.id === id)) dirs.push({ id: id, label: esDirectiveLabel(id) });
+      });
+      const topics = [];
+      qs.forEach(q => {
+        const id = esTopicId(q.topic), label = String(q.topic || "").trim();
+        if (id && !topics.some(t => t.id === id)) topics.push({ id: id, label: label });
+      });
+      const byDir = f.setupDir ? qs.filter(q => esDirectiveId(q.command) === f.setupDir) : qs;
+      const byTopic = f.setupTopic ? qs.filter(q => esTopicId(q.topic) === f.setupTopic) : qs;
+      const found = byDir.filter(q => byTopic.indexOf(q) >= 0).slice().sort((a, b) =>
+        String(a.topic || "").localeCompare(String(b.topic || "")) ||
+        String(a.text || "").localeCompare(String(b.text || "")));
+
+      // PAGINATION, after filtering. The bank grows every time an import
+      // succeeds, so a page that gets longer with every success is a picker that
+      // gets worse the better the architecture works.
+      const PER = 10;
+      const pages = Math.max(1, Math.ceil(found.length / PER));
+      const page = Math.min(Math.max(1, f.page || 1), pages);
+      const from = (page - 1) * PER;
+      const shown = found.slice(from, from + PER);
+
+      const pill = (val, cur, key, label, count) =>
+        `<button type="button" class="qp-pill ${cur === val ? "on" : ""}${count === 0 ? " empty" : ""}"${
+          count === 0 ? " disabled" : ""} data-es${key}="${esc(val)}">${esc(label)}<span class="qp-n">${count}</span></button>`;
+      const allPill = (cur, key, count) =>
+        `<button type="button" class="qp-pill ${cur ? "" : "on"}" data-es${key}="">All<span class="qp-n">${count}</span></button>`;
+      const pageBtn = (n, label, on, dis) =>
+        `<button type="button" class="qp-page ${on ? "on" : ""}"${dis ? " disabled" : ""} data-espage="${n}">${esc(label)}</button>`;
+
+      // The rail says what the filters are doing and what is currently chosen,
+      // which is the half of this page that was blank.
+      const chosen = f.questionId ? qs.find(x => x.id === f.questionId) : null;
+      const active = [];
+      if (f.setupDir) active.push("Directive: " + esDirectiveLabel(f.setupDir));
+      if (f.setupTopic) active.push("Topic: " + ((topics.find(t => t.id === f.setupTopic) || {}).label || f.setupTopic));
+      const rail = railCard("&#9678;", "How filtering works",
+          `<p class="qp-rcp">Use the directive and topic filters to find the kind of question you want to
+            practise. You can combine them, and the list updates as you press.</p>
+           <p class="qp-rcp">Each question shows its full wording, with its topic, directive and marks
+            where a mark value is authored.</p>
+           ${active.length ? `<div class="qp-active"><p class="qp-rclbl">Active filters</p>
+             ${active.map(a => `<span class="qp-atag">${esc(a)}</span>`).join("")}
+             <p class="qp-rcp">${found.length} question${found.length === 1 ? "" : "s"} match${
+               found.length === 1 ? "es" : ""}.</p></div>` : ""}`)
+        + railCard("&#9679;", "Current selection", chosen
+          ? `<p class="qp-rcq">${esc(String(chosen.text || "").trim())}</p>
+             <p class="qp-rcmeta">${[String(chosen.topic || "").trim(),
+               esDirectiveLabel(esDirectiveId(chosen.command)),
+               chosen.marks != null ? chosen.marks + " marks" : null].filter(Boolean).map(esc).join(" · ")}</p>
+             <p class="qp-rclbl">Available support</p>
+             <div class="qp-sup">${esSupportFor(chosen).rows.map(r =>
+               `<div class="qp-suprow ${r.has ? "yes" : "no"}"><span class="qp-supmark">${r.has ? "✓" : "⊘"}</span>
+                 <span class="qp-supname">${esc(r.label)}</span>
+                 <span class="qp-supstate">${r.has ? "Available" : "Not available"}</span></div>`).join("")}</div>
+             <div class="qp-railacts">
+               <button type="button" class="qp-btn qp-go" data-espick="preview">Preview question</button>
+             </div>`
+          : `<p class="qp-rcp">No question chosen yet. Pick one from the list and its wording and available
+              support will appear here before you start.</p>`)
+        + railCard("&#9662;", "Top tip",
+          `<p class="qp-rcp">Read the full question and its available support before you start writing. You
+            can always come back and change your selection.</p>`);
+
+      host.innerHTML = shell(`
+          ${back("subject", "Back to setup")}
+          <h1 class="qp-h1">Choose a practice question</h1>
+          <p class="qp-lead">Select a question to work on. You can change all other settings later.</p>
+          <div class="qp-filters">
+            <div class="qp-frow"><span class="qp-flabel">Directive</span>
+              ${allPill(f.setupDir, "setupdir", byTopic.length)}
+              ${dirs.map(d => pill(d.id, f.setupDir, "setupdir", d.label,
+                byTopic.filter(q => esDirectiveId(q.command) === d.id).length)).join("")}</div>
+            <div class="qp-frow"><span class="qp-flabel">Topic</span>
+              ${allPill(f.setupTopic, "setuptopic", byDir.length)}
+              ${topics.map(t => pill(t.id, f.setupTopic, "setuptopic", t.label,
+                byDir.filter(q => esTopicId(q.topic) === t.id).length)).join("")}</div>
           </div>
-          ${mode === "own" ? `
-            <label class="es-label" for="esq">Your essay question <span class="es-req">needed</span></label>
-            <textarea id="esq" class="es-input es-ta" rows="3" placeholder="Paste or type the whole question, including the directive.">${esc(f.question)}</textarea>
-          ` : `
-            <div class="es-step">
-              <div class="es-steplbl">Directive</div>
-              <div class="es-pills">${dirs.map(d => pill(d, f.setupDir, "setupdir", d, qs.filter(q => String(q.command || "").trim() === d).length)).join("")}</div>
-            </div>
-            <div class="es-step">
-              <div class="es-steplbl">Topic</div>
-              <div class="es-pills">${topics.map(t => pill(t, f.setupTopic, "setuptopic", t, byDir.filter(q => String(q.topic || "").trim() === t).length)).join("")}</div>
-            </div>
-            <div class="es-step">
-              <div class="es-steplbl">${shown.length} question${shown.length === 1 ? "" : "s"}</div>
-              ${shown.length ? `<div class="es-qrows">${shown.map(q =>
-                `<button type="button" class="es-qrow ${f.questionId === q.id ? "on" : ""}" data-esq="${esc(q.id)}">${esc(esQuestionPreview(q))}</button>`).join("")}</div>`
-                : `<p class="es-help">Nothing matches both of those. Clear one of them to see more.</p>`}
-            </div>
-            ${chosen ? `<div class="es-chosen">
-              <div class="es-steplbl">Your question</div>
-              <p class="es-chosenq"><b>${esc(chosen.command)}</b> ${esc(esQuestionPreview(chosen))}</p>
-            </div>` : ""}
-          `}
-        </div>`;
-      })()}
-      ${(() => {
-        // A status line, not a form field. The guidance resolves without being
-        // asked for, and the disclosure is there for the student who wants to
-        // check what it will be marked against.
-        const r = esRubricFor(f, sc);
-        const label = r.source === "user-provided" ? "Your own marking guidance will be used"
-          : r.source === "authored" ? "Marking guidance written for this question will be used"
-          : "Marking guidance will be generated from this question";
-        return `<div class="es-field">
-          <div class="es-rubstatus">
-            <span class="es-rubtick">\u2713</span>
-            <span class="es-rubtext">${esc(label)}</span>
-            <span class="es-rubprov">${esc(r.source)}</span>
-            <button type="button" class="es-linkbtn" id="esrubopen">${f.rubricOpen ? "Hide" : "Review or edit"}</button>
+          <div class="qp-count">
+            <span>${found.length ? (from + 1) + "–" + (from + shown.length) + " of " : ""}${
+              found.length} question${found.length === 1 ? "" : "s"}</span>
+            <span class="qp-sort">Sorted by topic</span>
           </div>
-          <div class="es-rubbox"${f.rubricOpen ? "" : " hidden"}>
-            ${r.source === "generated" ? `<p class="es-help">Generated from the question in front of you. It is not an official marking guide and is not from NESA.</p>` : ""}
-            <pre class="es-rubpre">${esc(r.text)}</pre>
-            <label class="es-label" for="esrubric">Replace it with your own</label>
-            <textarea id="esrubric" class="es-input es-ta" rows="3" placeholder="Paste your rubric or marking bands here.">${esc(f.rubric)}</textarea>
+          ${found.length ? `<div class="qp-rows" role="radiogroup" aria-label="Practice questions">${shown.map(q => {
+            const meta = [];
+            if (String(q.topic || "").trim()) meta.push(esc(String(q.topic).trim()));
+            if (esDirectiveId(q.command)) meta.push(esc(esDirectiveLabel(esDirectiveId(q.command))));
+            // Only where authored. A question nobody gave a mark value shows none.
+            if (q.marks != null) meta.push(esc(String(q.marks)) + " marks");
+            const on = f.questionId === q.id;
+            return `<button type="button" class="qp-row ${on ? "on" : ""}" data-esq="${esc(q.id)}" role="radio" aria-checked="${on ? "true" : "false"}">
+              <span class="qp-radio" aria-hidden="true"></span>
+              <span class="qp-rowtext"><span class="qp-q">${esc(String(q.text || "").trim())}</span>
+              ${meta.length ? `<span class="qp-meta">${meta.join(" <i>·</i> ")}</span>` : ""}</span>
+            </button>`;
+          }).join("")}</div>
+          ${pages > 1 ? `<div class="qp-pager">
+            ${pageBtn(page - 1, "‹ Previous", false, page === 1)}
+            <span class="qp-pagenums">${Array.from({ length: pages }, (_, i) =>
+              pageBtn(i + 1, String(i + 1), i + 1 === page, false)).join("")}</span>
+            <span class="qp-pagemob">Page ${page} of ${pages}</span>
+            ${pageBtn(page + 1, "Next ›", false, page === pages)}
+          </div>` : ""}`
+            : `<p class="qp-empty">Nothing matches both of those. Clear one of them to see more.</p>`}
+          <div class="qp-tail">
+            <h2 class="qp-tailh">Not the question you wanted?</h2>
+            <p class="qp-tailp">Clear the filters to see the whole bank, or bring a question from a past
+              paper or your own teacher. Your own question gets the same coaching, and the support it
+              carries is stated before you start either way.</p>
+            <div class="qp-tailacts">
+              <button type="button" class="qp-btn" data-espick="own">Use my own question</button>
+              <button type="button" class="qp-btn" data-espick="subject">Back to setup</button>
+            </div>
           </div>
-        </div>`;
-      })()}
-      <div class="es-field">
-        <label class="es-label" for="esmarks">Marks this question is worth</label>
-        <p class="es-help">Used only when you submit a full attempt for marking, so the mark you get back means something.</p>
-        <input id="esmarks" class="es-input es-marks" type="number" min="1" max="60" step="1" value="${esc(String(f.marks))}">
-      </div>
-      <div class="es-field">
-        <label class="es-label" for="esstruct">Structure</label>
-        <select id="esstruct" class="es-input es-select">${structOpts}</select>
-      </div>
-      ${modelPicker}
-      <div class="es-actions">
-        <button class="es-btn primary" id="esstart">Start practising</button>
-        <span class="es-foothint">You will write one paragraph at a time with a coach, or you can switch to a full timed attempt.</span>
-      </div>
-    </div></div></div>`;
+        `, rail);
+    }
+
+    // ---- stage: the question, before committing to it -----------------------
+    else if (stage === "preview" && f.questionId &&
+             (sc.questions || []).some(x => x.id === f.questionId)) {
+      const q = (sc.questions || []).find(x => x.id === f.questionId);
+      const sup = esSupportFor(q);
+      const facts = [["Topic", String(q.topic || "").trim()],
+                     ["Directive", esDirectiveLabel(esDirectiveId(q.command))],
+                     ["Marks", q.marks != null ? String(q.marks) : null],
+                     ["This question provides", sup.summary]]
+        .filter(r => r[1]).map(r =>
+          `<div class="qp-fact"><dt>${esc(r[0])}</dt><dd>${esc(r[1])}</dd></div>`).join("");
+      host.innerHTML = shell(`
+          <button type="button" class="qp-back" id="esbacklist">&larr; Back to question list</button>
+          <h1 class="qp-h1">Question preview</h1>
+          <p class="qp-lead">See the full details before starting.</p>
+          <div class="qp-card qp-prevcard">
+              ${String(q.topic || "").trim() ? `<span class="qp-chip">${esc(String(q.topic).trim())}</span>` : ""}
+              <p class="qp-prevq">${esc(String(q.text || "").trim())}</p>
+              <p class="qp-prevdir">${esc(esDirectiveLabel(esDirectiveId(q.command)))}${
+                q.marks != null ? ' <i>·</i> ' + esc(String(q.marks)) + " marks" : ""}</p>
+              <dl class="qp-facts">${facts}</dl>
+              ${q.marks == null ? `<p class="qp-note">No mark value is authored for this question. You can
+                still plan, write and get feedback on your essay.</p>` : ""}
+              <div class="qp-actions">
+                <button type="button" class="qp-btn qp-go" id="esstart">Start this question</button>
+                <button type="button" class="qp-btn" data-espick="list">Choose a different question</button>
+              </div>
+          </div>
+          <div class="qp-how">
+            <h2 class="qp-h2">What happens when you start</h2>
+            <div class="qp-howrow">
+              <div><div class="qp-hown">1</div><p class="qp-howt">Choose how to begin</p>
+                <p class="qp-howp">Plan the whole response first, or go straight into a paragraph. Whichever
+                  you pick, you can change your mind later.</p></div>
+              <div><div class="qp-hown">2</div><p class="qp-howt">Write with a coach</p>
+                <p class="qp-howp">A coach works through the paragraph with you one sentence at a time, or
+                  you can switch to a full timed attempt.</p></div>
+              <div><div class="qp-hown">3</div><p class="qp-howt">Get feedback</p>
+                <p class="qp-howp">Your writing is read against the marking guidance for this question, and
+                  the guidance says where it came from.</p></div>
+            </div>
+          </div>
+        `,
+        railCard("&#9678;", "About this question",
+          `<p class="qp-rcp">This question offers ${esc(sup.summary)}.</p>
+           <p class="qp-rclbl">Available support</p>
+           <div class="qp-sup">${sup.rows.map(r =>
+             `<div class="qp-suprow ${r.has ? "yes" : "no"}"><span class="qp-supmark">${r.has ? "✓" : "⊘"}</span>
+               <span class="qp-supname">${esc(r.label)}</span>
+               <span class="qp-supstate">${r.has ? "Available" : "Not available"}</span></div>`).join("")}</div>`)
+        + railCard("&#9679;", "What support means",
+          `<p class="qp-rcp">Support availability depends on how the question was authored. Nothing is
+            borrowed from another question, so a question shows only what somebody wrote for it.</p>
+           <p class="qp-rcp">You can always start the question and get feedback on your essay.</p>`)
+        + railCard("&#9662;", "Top tip",
+          `<p class="qp-rcp">A question with less support is still worth practising. You write it the same
+            way; there is simply less scaffolding on the way through.</p>`));
+    }
+
+    // ---- stage: My essays ---------------------------------------------------
+    // The nav link needs somewhere real to land. The saved essays used to sit at
+    // the bottom of the setup page, where a student who came back to carry on
+    // had to scroll past the whole setup form to find them, and where the nav
+    // link pointing at them was indistinguishable from Back to setup. They have
+    // their own destination now, with an empty state, so the link is never dead.
+    else if (stage === "essays") {
+      const mine = esRecent(ES.list || []).slice(0, 12);
+      host.innerHTML = shell(`
+          <h1 class="qp-h1">My essays</h1>
+          <p class="qp-lead">Everything you have started, most recent first.</p>
+          ${mine.length ? `<div class="qp-card qp-essays">${mine.map(d => {
+            const mastered = (d.paras || []).filter(x => x.mastered).length, np = (d.paras || []).length;
+            const qtext = String(d.question || "").trim();
+            return `<div class="qp-essay" data-resrow="${esc(d.id)}">
+              <div class="qp-essaymain">
+                ${d.topic ? `<span class="qp-chip sm">${esc(d.topic)}</span>` : ""}
+                <p class="qp-essayq">${esc(qtext)}</p>
+                <p class="qp-essaymeta">${np ? mastered + " of " + np + " paragraph" +
+                  (np === 1 ? "" : "s") + " mastered" : "not started yet"}</p>
+              </div>
+              <div class="qp-essayacts">
+                <button type="button" class="qp-btn qp-go sm" data-esresume="${esc(d.id)}">Resume</button>
+                <button type="button" class="qp-btn sm" data-estemplate="${esc(d.id)}">Use as template</button>
+                <button type="button" class="qp-linkbtn" data-esdelete="${esc(d.id)}"
+                  aria-label="Delete this saved essay">remove</button>
+              </div>
+            </div>`;
+          }).join("")}</div>`
+          : `<div class="qp-card qp-empty2">
+              <p class="qp-emptyh">You have not started an essay yet.</p>
+              <p class="qp-emptyp">Once you start one it is saved here automatically, and you can come back
+                to it, carry on where you left off, or use it as the template for another.</p>
+              <div class="qp-actions">
+                <button type="button" class="qp-btn qp-go" data-esnav="back">Set up an essay</button>
+              </div>
+            </div>`}
+        `,
+        railCard("&#9678;", "How saving works",
+          `<p class="qp-rcp">Your writing is saved as you go, on this device. Nothing is submitted anywhere
+            unless you ask for feedback.</p>
+           <p class="qp-rcp">Resume opens an essay where you left it. Use as template starts a new essay
+            from the same question and settings, without copying the writing.</p>`)
+        + railCard("&#9679;", "What is saved",
+          `<p class="qp-rcbig">${mine.length}</p>
+           <p class="qp-rcp">essay${mine.length === 1 ? "" : "s"} on this device.${
+             (ES.list || []).length > mine.length
+               ? " The most recent " + mine.length + " are listed." : ""}</p>`));
+    }
+
+    // ---- stage: a question the student brings -------------------------------
+    else if (stage === "own") {
+      host.innerHTML = shell(`
+          ${(sc.questions || []).length ? back("subject", "Back to setup") : ""}
+          <h1 class="qp-h1">Your essay question</h1>
+          <p class="qp-lead">Paste or type the whole question, including the directive.</p>
+          <div class="qp-card">
+            ${/* A subject with no question bank of its own opens straight here, so
+                  the subject picker has to be on this stage as well: otherwise a
+                  student on Economics has no way to reach Business Studies. */ ""}
+            ${subjectPicker}
+            <div class="qp-field">
+              <label class="qp-label" for="esq">Essay question <span class="qp-req">needed</span></label>
+              <textarea id="esq" class="qp-input qp-ta" rows="3" placeholder="Paste or type the whole question, including the directive.">${esc(f.question)}</textarea>
+            </div>
+            ${options}
+            <div class="qp-actions">
+              <button type="button" class="qp-btn qp-go" id="esstart">Start practising</button>
+            </div>
+          </div>
+        `,
+        railCard("&#9678;", "Writing your own question",
+          `<p class="qp-rcp">Paste the whole question, including the directive. The directive is what tells
+            the guidance whether you are explaining, assessing or judging.</p>
+           <p class="qp-rcp">Marking guidance is generated from the question when none is written for it,
+            and you can review or replace it under Essay options.</p>`)
+        + railCard("&#9679;", "Next steps",
+          `<ol class="qp-steps"><li>Paste or type your question.</li><li>Set the marks and structure if you
+            want to change them.</li><li>Write one paragraph at a time, with a coach.</li></ol>`));
+    }
+
+    // ---- stage: setting up --------------------------------------------------
+    else {
+      // Real numbers about the real bank. A question is imported when it came
+      // through the importer rather than with the app, which the runtime adapter
+      // records; nothing here is estimated.
+      const bank = sc.questions || [];
+      const imported = bank.filter(q => q.origin === "imported").length;
+      const topicCount = new Set(bank.map(q => esTopicId(q.topic)).filter(Boolean)).size;
+      const savedCount = (ES.list || []).length;
+      host.innerHTML = shell(`
+          <h1 class="qp-h1">Set up your essay</h1>
+          <p class="qp-lead">Choose a subject and a practice question. You can change everything else later.</p>
+          <div class="qp-card">
+            ${subjectPicker}
+            <div class="qp-actions">
+              <button type="button" class="qp-btn qp-go" data-espick="list">Choose a practice question</button>
+              <button type="button" class="qp-btn" data-espick="own">Use my own question</button>
+            </div>
+            <div class="qp-notes">
+              <div class="qp-note1"><b>You only need a question</b> to start.</div>
+              <div class="qp-note1"><b>You can change</b> all settings later.</div>
+              <div class="qp-note1"><b>Your work is saved</b> automatically.</div>
+            </div>
+            ${options}
+          </div>
+          <section class="qp-how">
+            <h2 class="qp-h2">How essay practice works</h2>
+            <div class="qp-howrow">
+              <div class="qp-howcell"><span class="qp-hown">1</span>
+                <p class="qp-howt">Choose a question</p>
+                <p class="qp-howp">Pick one from the bank, or paste your own. Every question shows what
+                  support it carries before you start.</p></div>
+              <div class="qp-howcell"><span class="qp-hown">2</span>
+                <p class="qp-howt">Write one paragraph at a time</p>
+                <p class="qp-howp">A coach works through the response with you, one sentence at a time, or
+                  you can switch to a full timed attempt.</p></div>
+              <div class="qp-howcell"><span class="qp-hown">3</span>
+                <p class="qp-howt">Get feedback</p>
+                <p class="qp-howp">Your writing is read against the marking guidance for the question, and
+                  the guidance says where it came from.</p></div>
+            </div>
+          </section>
+        `,
+        railCard("&#9678;", "Next steps",
+          `<ol class="qp-steps">
+            <li>Choose a subject.</li>
+            <li>Pick a practice question, or bring your own.</li>
+            <li>Read what support it carries.</li>
+            <li>Start writing.</li>
+          </ol>`)
+        + railCard("&#9679;", "This question bank",
+          `<p class="qp-rcbig">${bank.length}</p>
+           <p class="qp-rcp">question${bank.length === 1 ? "" : "s"} in ${esc(sc.label || "this subject")}${
+             topicCount ? ", across " + topicCount + " topic" + (topicCount === 1 ? "" : "s") : ""}.</p>
+           ${imported ? `<p class="qp-rcp">${imported} of them ${imported === 1 ? "was" : "were"} imported
+             through Teacher tools, and appear here exactly like the rest.</p>`
+             : `<p class="qp-rcp">A teacher can add more through Teacher tools, and they appear here
+             exactly like the rest.</p>`}
+           ${savedCount ? `<p class="qp-rcp">You have ${savedCount} saved essay${
+             savedCount === 1 ? "" : "s"}. <button type="button" class="qp-linkbtn"
+             data-esnav="essays">Open My essays</button></p>` : ""}`)
+        + railCard("&#9662;", "Top tip",
+          // Marks are academic metadata. A question has a mark value only when
+          // somebody authored one, so nothing here may suggest Marginal supplies
+          // a default for it. Structure and marking guidance are app settings and
+          // are named as optional settings, which is what they are.
+          `<p class="qp-rcp">You only need a question to start. Optional settings such as structure and
+            marking guidance can be changed later.</p>`));
+    }
+
     $("#esx").onclick = esClose;
     const q = $("#esq"); if (q) q.oninput = () => {
       f.question = q.value;
       const picked = f.questionId && sc.questions.find(x => x.id === f.questionId);
       if (picked && picked.text.trim() !== q.value.trim()) f.questionId = null;
     };
-    host.querySelectorAll("[data-esmode]").forEach(b => b.onclick = () => {
-      f.setupMode = b.dataset.esmode;
-      if (f.setupMode === "own") { f.questionId = null; }
+    // Stage navigation. "own" is the existing typed-question route and keeps its
+    // mode flag, so nothing about that path changes.
+    // Navigation moves between destinations and touches NOTHING else on the
+    // form. The subject, the chosen question, the filters, the page and the
+    // settings are all state a student built up, and a nav press that quietly
+    // reset any of them would lose their work. Leaving My essays returns to the
+    // stage they left, not to the top of the flow.
+    host.querySelectorAll("[data-esnav]").forEach(b => b.onclick = () => {
+      const to = b.dataset.esnav;
+      if (to === "essays") {
+        if (f.pickStage !== "essays") f.pickReturn = f.pickStage || "subject";
+        f.pickStage = "essays";
+      } else if (to === "back") {
+        f.pickStage = f.pickReturn || "subject";
+      } else {
+        f.pickStage = to;
+      }
       esRender();
     });
+    host.querySelectorAll("[data-espick]").forEach(b => b.onclick = () => {
+      const to = b.dataset.espick;
+      if (to === "own") { f.setupMode = "own"; f.pickStage = "own"; f.questionId = null; }
+      else { f.setupMode = "practice"; f.pickStage = to; }
+      esRender();
+    });
+    const bl = $("#esbacklist"); if (bl) bl.onclick = () => { f.pickStage = "list"; esRender(); };
+
+    // An empty value is the All pill, which clears the filter. Pressing the
+    // chosen one again also clears it, which is how a filter behaves.
+    // Filtering resets to the first page. Staying on page 3 of a result set that
+    // now has one page is how a filter appears to have found nothing.
     host.querySelectorAll("[data-essetupdir]").forEach(b => b.onclick = () => {
-      // Pressing the chosen one again clears it, which is how a filter behaves.
-      f.setupDir = f.setupDir === b.dataset.essetupdir ? null : b.dataset.essetupdir;
-      f.questionId = null; f.question = "";
+      const v = b.dataset.essetupdir;
+      f.setupDir = !v ? null : (f.setupDir === v ? null : v);
+      f.page = 1;
       esRender();
     });
     host.querySelectorAll("[data-essetuptopic]").forEach(b => b.onclick = () => {
-      f.setupTopic = f.setupTopic === b.dataset.essetuptopic ? null : b.dataset.essetuptopic;
-      f.questionId = null; f.question = "";
+      const v = b.dataset.essetuptopic;
+      f.setupTopic = !v ? null : (f.setupTopic === v ? null : v);
+      f.page = 1;
       esRender();
     });
+    host.querySelectorAll("[data-espage]").forEach(b => b.onclick = () => {
+      // The selection is NOT cleared by paging. A question chosen on page one is
+      // still chosen on page two, and is still chosen when you come back.
+      f.page = Number(b.dataset.espage) || 1;
+      esRender();
+    });
+    const cf = $("#esclearfilters");
+    if (cf) cf.onclick = () => { f.setupDir = null; f.setupTopic = null; f.questionId = null; f.question = ""; esRender(); };
     const ro = $("#esrubopen"); if (ro) ro.onclick = () => { f.rubricOpen = !f.rubricOpen; esRender(); };
     const rb = $("#esrubric"); if (rb) rb.oninput = () => { f.rubric = rb.value; };
     const mk = $("#esmarks"); if (mk) mk.oninput = () => { const n = Math.round(Number(mk.value)); f.marks = (n >= 1 && n <= 60) ? n : 20; };
-    const stt = $("#esstruct"); stt.onchange = () => { f.structure = stt.value; };
+    // Same guard: the structure picker is inside the folded options, which the
+    // list stage does not render at all.
+    const stt = $("#esstruct"); if (stt) stt.onchange = () => { f.structure = stt.value; };
     const subjSel = $("#essubject");
     if (subjSel) subjSel.onchange = () => {
       ES.subject = subjSel.value;
@@ -12682,8 +13857,18 @@ window.BUSCONTENT = {
       // unattached: the row appeared to do nothing when it had in fact worked.
       if (qq) {
         f.question = qq.text; f.questionId = qq.id;
-        if (!f.topic) f.topic = qq.topic || "";
+        // The question's own topic, every time. The guard here was written when a
+        // student typed their topic into a field and it had to survive choosing a
+        // question; that field is gone, so the only thing the guard protected was
+        // the PREVIOUS question's topic. Choosing a Finance question after a
+        // Marketing one filed the essay under Marketing, and the topic reaches
+        // marking, so this was not only a wrong label on My essays.
+        f.topic = qq.topic || "";
         if (qq.marks) f.marks = qq.marks;
+        // Choosing a row SELECTS it and stays on the list: the rail fills with
+        // the question, its metadata and what support it carries, and Preview
+        // question is the step from there. Jumping straight to the preview took
+        // the list away from a student who was still comparing.
         esRender();
         const box = $("#esq"); if (box) box.focus();
       }
@@ -12700,13 +13885,29 @@ window.BUSCONTENT = {
     });
     // Delete a saved essay: remove from localStorage + list, then drop just this
     // row from the DOM (no full re-render, no flash). Section goes if it empties.
+    // Asked first, every time. A saved essay is an afternoon of somebody's work
+    // and this control sits beside Resume, so a mis-aimed press was one click
+    // from losing it with nothing to undo. The wording says what is going and
+    // that it is not coming back, and cancelling changes nothing at all: the
+    // deletion happens after the answer, not before it.
     host.querySelectorAll("[data-esdelete]").forEach(b => b.onclick = () => {
       const id = b.dataset.esdelete;
+      if (!window.confirm("Remove this saved essay? This cannot be undone.")) return;
       esDeleteDraft(id);
       const row = host.querySelector('[data-resrow="' + id + '"]'); if (row) row.remove();
-      if (!ES.list.length) { const sec = host.querySelector("[data-resume]"); if (sec) sec.remove(); }
+      // The list may have emptied. On My essays that means the empty state,
+      // which is a different page rather than a section to remove, so the
+      // re-render is how it gets there.
+      if (!ES.list.length) {
+        const sec = host.querySelector("[data-resume]"); if (sec) sec.remove();
+        if ((ES.form || {}).pickStage === "essays") esRender();
+      }
     });
-    $("#esstart").onclick = () => {
+    // The stages that are choosing rather than starting have no start control, so
+    // the binding is guarded rather than assumed. It threw on the list stage,
+    // which left every binding after it unattached and the rows dead.
+    const startBtn = $("#esstart");
+    if (startBtn) startBtn.onclick = () => {
       const question = (f.question || "").trim();
       if (!question) { toast("Add your essay question to start."); const el = $("#esq"); if (el) el.focus(); return; }
       // Starting replaces the draft outright. That is fine on an empty one and is
@@ -13235,7 +14436,9 @@ window.BUSCONTENT = {
     const step = slotsForRole(p.role).find(x => x.key === b.slot) || null;
     if (!step) return "";
     const g = esGuideFor(p, step);
-    return `<div class="es-guide"><div class="es-guideh">${esc(g.head)}</div><div class="es-guidejob">${esc(g.job)}</div></div>`;
+    const gap = esEvidenceGap(p, step);
+    return `<div class="es-guide"><div class="es-guideh">${esc(g.head)}</div><div class="es-guidejob">${esc(g.job)}</div>${
+      gap ? `<div class="es-evgap">${esc(gap)}</div>` : ""}</div>`;
   }
 
   // ---- help level belongs to the BLOCK, and is reset when its context moves ----
@@ -14042,7 +15245,8 @@ window.BUSCONTENT = {
         // tells the student nothing they can act on and says the product is
         // unfinished, which is not their problem to carry. Absence is absence.
         body = `<p class="es-drawer-none">No verified evidence is available for this argument yet.</p>
-          <p class="es-drawer-note">You can keep writing and use evidence you already know.</p>`;
+          <p class="es-drawer-note">Your response still needs a case study or example. Use one from your
+            own course: Marginal has none authored for this question and will not supply one.</p>`;
       } else
       // "Fits this argument" is a claim about the content, so it is only made where
       // the content makes it. Where nothing is linked, the heading says what these
@@ -14664,6 +15868,24 @@ window.BUSCONTENT = {
     const b = busContent(); const key = busTopicKey();
     return ((b && key && b.evidence && b.evidence[key]) || []).find(e => e.label === label) || null;
   }
+  // TWO FACTS, NEVER ONE. "This paragraph needs a case study" and "Marginal has a
+  // case study for you" are separate, and collapsing them is wrong in both
+  // directions. Dropping the sentence job because no evidence is authored would
+  // quietly remove a thing the response is marked on. Leaving the job alone and
+  // saying nothing else lets a student hunt through an Evidence tool that has
+  // nothing in it and conclude they have missed something.
+  //
+  // So the demand stands, always, and where Marginal has nothing to offer for
+  // this question it says so and hands the work back explicitly. Nothing here
+  // invents evidence, and nothing here removes a sentence the marker wants.
+  const ES_EVIDENCE_SLOTS = ["evidence", "example"];
+  function esEvidenceGap(p, step) {
+    if (!step || ES_EVIDENCE_SLOTS.indexOf(step.key) < 0) return "";
+    const bank = esEvidenceBank();
+    if (bank.usable.length) return "";
+    return "Marginal has no evidence authored for this question, so use a case study or example " +
+      "from your own course.";
+  }
   // The guide for the active sentence, now shaped by what the student chose. An
   // authored pathway guide for this slot wins; otherwise the slot's own job stands.
   // pathway guide -> area guide -> slot job. The last of those is scaffold
@@ -14875,7 +16097,7 @@ window.BUSCONTENT = {
   // Optional ones are never shown unasked and exist so the deeper material can
   // reach them.
   function esConceptStore() {
-    const sub = (window.ESSAY && window.ESSAY.subjects && window.ESSAY.subjects[ES.subject]) || null;
+    const sub = esSubjectContent(ES.subject);
     return (sub && sub.concepts) || {};
   }
   function esConceptsFor(p, tier) {
@@ -16245,6 +17467,8 @@ window.BUSCONTENT = {
                   </span>
                 </div>
                 <div class="es-guidejob">${esc(guide.job)}</div>
+                ${(() => { const g = esEvidenceGap(p, esStepDef(p));
+                  return g ? `<div class="es-evgap">${esc(g)}</div>` : ""; })()}
                 ${(() => {
                   // The shapes are authored per stage and are content free. They teach
                   // the grammar of the sentence, which is a different thing from the
@@ -17424,7 +18648,7 @@ window.BUSCONTENT = {
           code: state.code || undefined
         };
         if ((d.rubric || "").trim()) payload.rubric = d.rubric.trim(); // omit when skipped -> generic bands
-        const res = await fetch(state.endpoint, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
+        const res = await esPostJSON(state.endpoint, payload);
         if (!res.ok) throw new Error("coach " + res.status);
         fb = esNormalizeCoach(await res.json(), "", p.role);
       } catch (e) {

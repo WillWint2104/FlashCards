@@ -17,7 +17,7 @@
 //
 // ui31 keeps the same contract as an end-to-end journey through real content.
 // Three tests, three different ways to be wrong.
-const { chromium, P, usePractice } = require('./env');
+const { chromium, P, usePractice, chooseQuestion } = require('./env');
 
 // Waits that name their condition. This app fetches nothing and renders
 // synchronously, so the effect of a click is present on the next frame:
@@ -37,7 +37,7 @@ async function openFixture(p){
   await settled(p);
   await p.selectOption('#essubject','contract_test');
   await settled(p);
-  await usePractice(p); await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/fixture question/i.test(x.textContent));t&&t.click();});
+  await chooseQuestion(p, /fixture question/i);
   await settled(p);
   await p.click('#esstart');
   await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });

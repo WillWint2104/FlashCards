@@ -25,9 +25,12 @@ async function enterBus(p, qre) {
   await p.selectOption('#essubject', 'business_studies');
   await usePractice(p);
   const got = await p.evaluate(r => {
-    const t = [...document.querySelectorAll('.es-qrow')].find(x => new RegExp(r, 'i').test(x.textContent));
+    const t = [...document.querySelectorAll('.qp-row')].find(x => new RegExp(r, 'i').test(x.textContent));
     if (t) { t.click(); return true; } return false; }, qre);
   if (!got) return false;
+  // Choosing selects; Preview question opens. The step a student takes.
+  await p.evaluate(() => { const b = document.querySelector('[data-espick="preview"]'); b && b.click(); });
+  await p.waitForSelector('#esstart', { timeout: 8000 }).catch(() => {});
   await p.click('#esstart');
   await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow'), null, { timeout: 8000 });
   return true;
@@ -233,8 +236,11 @@ const slots = p => p.$$eval('.es-shape2frame .es-sl', es => es.map(e => ({
     await p.selectOption('#essubject', 'ancient_history').catch(() => {});
     await rf(p);
     await usePractice(p);
-    const any = await p.evaluate(() => { const t = document.querySelector('.es-qrow'); if (t) { t.click(); return true; } return false; });
+    const any = await p.evaluate(() => { const t = document.querySelector('.qp-row'); if (t) { t.click(); return true; } return false; });
+    await p.evaluate(() => { const b = document.querySelector('[data-espick="preview"]'); b && b.click(); });
     if (any) {
+      await p.evaluate(() => { const b = document.querySelector('[data-espick="preview"]'); b && b.click(); });
+      await p.waitForSelector('#esstart', { timeout: 8000 }).catch(() => {});
       await p.click('#esstart');
       await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow'), null, { timeout: 8000 });
       await section(p, 'Body 1');

@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marginal · import questions</title>
+<!--
+  THE IMPORTER. A teacher surface, separate from the student app on purpose: it
+  shares no code with it, so nothing here can change what a student sees.
+
+  SLICE 1 IS READ ONLY. Choose, Parse, Validate, Resolve references and Review
+  are wired to the real contract modules. There is no store and no write path in
+  this file at all. Publish is drawn as the step it is and cannot be reached.
+
+  Every rule applied here is applied by tools/contract/*.js, running in the
+  browser through tools/contract/bundle.js. There is no second implementation of
+  validation, resolution or admission in this file, and there must never be one.
+-->
+<style>
+  :root{
+    --bg:#EEF3F5; --card:#FFFFFF;
+    --ink:#3C4A4A; --ink-2:#7A8A88; --ink-3:#AEBAB8;
+    --green:#1CC47D; --green-dk:#14A368; --green-soft:#E4F9EF;
+    --line:#E7EDED; --amber:#B3730C; --amber-soft:#FDF3E3;
+    --red:#B3403C; --red-soft:#FBEDEC;
+    --body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--body);background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
+  header{display:flex;align-items:center;gap:12px;padding:16px 32px;background:var(--card);border-bottom:1px solid var(--line)}
+  .mk{width:28px;height:28px;border-radius:9px;background:var(--green);flex:none;box-shadow:0 3px 0 var(--green-dk)}
+  .wordmark{font-weight:800;font-size:17px;letter-spacing:-.2px}
+  .where{margin-left:auto;font-size:13px;color:var(--ink-2);font-weight:700}
+  main{max-width:1080px;margin:0 auto;padding:26px 32px 56px}
+  h1{font-size:23px;font-weight:800;letter-spacing:-.3px;margin:0 0 4px}
+  .lede{font-size:14px;color:var(--ink-2);font-weight:600;margin:0 0 22px;max-width:72ch}
+
+  .rail{display:flex;gap:8px;margin:0 0 22px;flex-wrap:wrap}
+  .step{display:flex;align-items:center;gap:9px;background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:7px 15px 7px 8px;font-size:12.5px;font-weight:700;color:var(--ink-3);cursor:default}
+  .step b{width:22px;height:22px;border-radius:50%;background:var(--bg);color:var(--ink-3);display:grid;place-items:center;font-size:11.5px;font-weight:800}
+  .step.on{border-color:var(--green);color:var(--ink)}
+  .step.on b{background:var(--green);color:#fff}
+  .step.done{color:var(--ink-2);cursor:pointer}
+  .step.done b{background:var(--green-soft);color:var(--green-dk)}
+  .step.write{border-style:dashed}
+
+  .cols{display:grid;grid-template-columns:1.45fr 1fr;gap:18px;align-items:start}
+  .card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:18px 20px}
+  .card + .card{margin-top:18px}
+  .card h2{font-size:14px;font-weight:800;margin:0 0 3px}
+  .card .sub{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:0 0 14px}
+  .count{font-size:19px;font-weight:800;letter-spacing:-.2px;margin:0 0 2px}
+  .count span{color:var(--green-dk)} .count em{font-style:normal;color:var(--red)}
+
+  .grp{border-top:1px solid var(--line);padding:14px 0}
+  .grp:first-of-type{border-top:0}
+  .grph{display:flex;align-items:baseline;gap:10px;margin-bottom:3px}
+  .grph .n{font-size:13px;font-weight:800;flex:1}
+  .grph .c{font-size:11.5px;font-weight:800;color:var(--red);background:var(--red-soft);border-radius:99px;padding:3px 10px}
+  .grph .c.w{color:var(--amber);background:var(--amber-soft)}
+  .grpw{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:0 0 8px}
+
+  .w{display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--line);font-size:12.5px}
+  .w:first-of-type{border-top:0}
+  .w .k{width:18px;flex:none;font-weight:800;text-align:center}
+  .w .k.add{color:var(--green-dk)} .w .k.same{color:var(--ink-3)} .w .k.stop{color:var(--red)}
+  .w .k.warn{color:var(--amber)}
+  .w .t{flex:1;font-weight:700}
+  .w .t small{display:block;font-weight:600;color:var(--ink-2);font-size:11.5px}
+  .w .t code,code{font-family:var(--mono);font-size:11px;color:var(--ink-2)}
+
+  .tag{font-size:11.5px;font-weight:800;border-radius:99px;padding:4px 11px;white-space:nowrap}
+  .good{background:var(--green-soft);color:var(--green-dk)}
+  .warnt{background:var(--amber-soft);color:var(--amber)}
+  .badt{background:var(--red-soft);color:var(--red)}
+  .neutral{background:var(--bg);color:var(--ink-2)}
+  .blockt{background:var(--bg);color:var(--ink-2);border:1.5px dashed var(--ink-3);padding:3px 10px}
+
+  .btnrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px}
+  .btn{font:inherit;font-size:13px;font-weight:800;border-radius:12px;padding:10px 16px;border:1.5px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
+  .btn.primary{background:var(--green);border-color:var(--green);color:#fff;box-shadow:0 2px 0 var(--green-dk)}
+  .btn[disabled]{background:var(--bg);border-color:var(--line);color:var(--ink-3);box-shadow:none;cursor:not-allowed}
+  .note{font-size:12px;color:var(--ink-2);font-weight:600;margin:10px 0 0}
+  .quiet{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:0 0 11px}
+  .quiet b{color:var(--ink)}
+  .rule{font-size:12.5px;color:var(--ink-2);font-weight:600;background:var(--bg);border-radius:12px;padding:11px 14px;margin:14px 0 0}
+  .rule b{color:var(--ink)}
+  .invariant{background:var(--green-soft);border:1.5px solid #CFF0E0;border-radius:14px;padding:13px 16px;margin-top:18px;font-size:13px;font-weight:700;color:var(--green-dk)}
+  .banner{border-radius:18px;padding:16px 20px;margin-bottom:18px;border:1.5px solid var(--line);background:var(--card)}
+  .banner .hd{font-size:19px;font-weight:800;letter-spacing:-.2px;margin:0 0 3px}
+  .banner .bd{font-size:13px;font-weight:600;color:var(--ink-2);margin:0;max-width:74ch}
+  .banner.good{background:var(--green-soft);border-color:#CFF0E0}
+  .banner.good .hd,.banner.good .bd{color:var(--green-dk)}
+  .banner.stop{background:var(--red-soft);border-color:#F2D8D6}
+  .banner.stop .hd{color:var(--red)}
+  .banner.warn{background:var(--amber-soft);border-color:#F2E2C6}
+  .banner.warn .hd{color:var(--amber)}
+  .drop{border:2px dashed var(--ink-3);border-radius:16px;padding:26px 20px;text-align:center;background:var(--bg)}
+  .drop p{margin:0 0 4px;font-size:13.5px;font-weight:700}
+  .drop small{font-size:12px;color:var(--ink-2);font-weight:600}
+  .ex{background:var(--bg);border-radius:12px;padding:10px 13px;margin-top:8px;font-size:12.5px}
+  .ex .msg{font-weight:700;display:block}
+  .ex .at{font-family:var(--mono);font-size:11px;color:var(--ink-2);display:block;margin-top:3px}
+  .more{font:inherit;font-size:12px;font-weight:800;color:var(--green-dk);background:none;border:0;padding:8px 0 0;cursor:pointer}
+</style>
+</head>
+<body>
+<header>
+  <div class="mk"></div><div class="wordmark">Marginal</div>
+  <div class="where" id="where">Teacher tools · import questions</div>
+</header>
+<main>
+  <h1 id="h1">Choose files</h1>
+  <p class="lede" id="lede">Nothing is written until the last step, and this build cannot write at all.</p>
+  <div class="rail" id="rail"></div>
+  <div id="screen"></div>
+</main>
+<script src="contract-bundle.js"></script>
+<script src="importer-data.js"></script>
+<script src="importer.js"></script>
+</body>
+</html>

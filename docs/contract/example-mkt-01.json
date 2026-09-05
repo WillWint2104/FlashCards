@@ -1,6 +1,6 @@
 {
   "schema": "marginal.question-package",
-  "contractVersion": "1.0",
+  "contractVersion": "1.1",
   "origin": {
     "type": "bundled",
     "packageId": null,
@@ -61,6 +61,8 @@
       "first": "Target markets",
       "second": "Marketing strategies"
     },
+    "note": null,
+    "areasLabel": null,
     "overallArgument": "The chosen target market shapes each of these four elements so that the strategy fits the customer.",
     "vocabRefs": [],
     "studyRefs": []
@@ -204,7 +206,25 @@
       "uses one business consistently so the four relationships hold together",
       "makes the case study evidence do work, saying what each detail demonstrates about the target market"
     ],
-    "syllabusSummary": "Marketing: market segmentation and target markets, and the marketing strategies of e-marketing, people, processes and physical evidence."
+    "syllabusSummary": "Marketing: market segmentation and target markets, and the marketing strategies of e-marketing, people, processes and physical evidence.",
+    "requiredAreas": [
+      {
+        "id": "e-marketing",
+        "label": "e-marketing"
+      },
+      {
+        "id": "people",
+        "label": "people"
+      },
+      {
+        "id": "processes",
+        "label": "processes"
+      },
+      {
+        "id": "physical-evidence",
+        "label": "physical evidence"
+      }
+    ]
   },
   "coreAnswer": {
     "mode": "causal",
@@ -398,7 +418,8 @@
       "mechanism": {
         "status": "none-required",
         "text": null,
-        "note": null
+        "note": null,
+        "reason": "The two ends already meet. Nothing sits between a customer being on a channel and the business promoting there, and a middle step would restate the relationship rather than explain it."
       },
       "conceptRef": null,
       "syllabusRef": "business.marketing.marketing-strategies.e-marketing",
@@ -499,7 +520,8 @@
       "mechanism": {
         "status": "unreviewed",
         "text": null,
-        "note": "The authored e-marketing content explains that digital channels cut promotion costs and carry personalised offers. That is a capability of the strategy once chosen, not a reason a price-conscious market forces it. Bridging the two would mean inventing the step in between."
+        "note": "The authored e-marketing content explains that digital channels cut promotion costs and carry personalised offers. That is a capability of the strategy once chosen, not a reason a price-conscious market forces it. Bridging the two would mean inventing the step in between.",
+        "reason": null
       },
       "conceptRef": null,
       "syllabusRef": "business.marketing.marketing-strategies.promotion",
@@ -550,7 +572,8 @@
       "mechanism": {
         "status": "unreviewed",
         "text": null,
-        "note": "The source says customers browse, order and pay in one place, which describes what the channel does rather than why this market selects it. The bridging step, that an extra action loses a customer who chooses by effort, is not authored anywhere."
+        "note": "The source says customers browse, order and pay in one place, which describes what the channel does rather than why this market selects it. The bridging step, that an extra action loses a customer who chooses by effort, is not authored anywhere.",
+        "reason": null
       },
       "conceptRef": null,
       "syllabusRef": "business.marketing.marketing-strategies.e-marketing",
@@ -589,7 +612,8 @@
       "mechanism": {
         "status": "authored",
         "text": "the staff member is part of what the customer is buying, so their skill and manner are the thing being judged",
-        "note": null
+        "note": null,
+        "reason": null
       },
       "conceptRef": null,
       "syllabusRef": "business.marketing.marketing-strategies.people",
@@ -631,7 +655,8 @@
       "mechanism": {
         "status": "unreviewed",
         "text": null,
-        "note": "The relationship holds, but the middle step is about matching service capacity to demand, which is authored under Operations rather than Marketing. Naming it here would import a mechanism this topic does not carry."
+        "note": "The relationship holds, but the middle step is about matching service capacity to demand, which is authored under Operations rather than Marketing. Naming it here would import a mechanism this topic does not carry.",
+        "reason": null
       },
       "conceptRef": null,
       "syllabusRef": "business.marketing.marketing-strategies.people",
@@ -670,7 +695,8 @@
       "mechanism": {
         "status": "authored",
         "text": "if the staff are part of the product, differences between staff are differences in the product itself",
-        "note": null
+        "note": null,
+        "reason": null
       },
       "conceptRef": null,
       "syllabusRef": "business.marketing.marketing-strategies.people",
@@ -715,7 +741,8 @@
       "mechanism": {
         "status": "authored",
         "text": "ordering, queuing and paying are steps the customer performs personally, so effort left in them is effort spent by the customer",
-        "note": null
+        "note": null,
+        "reason": null
       },
       "conceptRef": "business.concept.processes",
       "syllabusRef": "business.marketing.marketing-strategies.people",
@@ -948,7 +975,8 @@
       "mechanism": {
         "status": "authored",
         "text": "the customer spends the process waiting, so its length is part of what they are judging",
-        "note": null
+        "note": null,
+        "reason": null
       },
       "conceptRef": "business.concept.processes",
       "syllabusRef": "business.marketing.marketing-strategies.people",
@@ -1181,7 +1209,8 @@
       "mechanism": {
         "status": "unreviewed",
         "text": null,
-        "note": "No authored marketing content connects customising an order to what the ordering system has to capture. The step is plausible but would have to be invented here."
+        "note": "No authored marketing content connects customising an order to what the ordering system has to capture. The step is plausible but would have to be invented here.",
+        "reason": null
       },
       "conceptRef": "business.concept.processes",
       "syllabusRef": "business.marketing.marketing-strategies.people",
@@ -1420,7 +1449,8 @@
       "mechanism": {
         "status": "authored",
         "text": "the service itself cannot be seen or tested before it is bought, so the surroundings are what the customer inspects instead",
-        "note": null
+        "note": null,
+        "reason": null
       },
       "conceptRef": null,
       "syllabusRef": "business.marketing.marketing-strategies.people",
@@ -1468,7 +1498,8 @@
       "mechanism": {
         "status": "unreviewed",
         "text": null,
-        "note": "The source establishes that a segmentation approach means a separate mix per segment, which is the definition of the approach rather than a reason one setting cannot serve both groups. That reason is not authored."
+        "note": "The source establishes that a segmentation approach means a separate mix per segment, which is the definition of the approach rather than a reason one setting cannot serve both groups. That reason is not authored.",
+        "reason": null
       },
       "conceptRef": null,
       "syllabusRef": "business.marketing.marketing-strategies.market-segmentation",
@@ -1507,7 +1538,8 @@
       "mechanism": {
         "status": "unreviewed",
         "text": null,
-        "note": "The authored content lists signage and layout as physical evidence but never links them to serving yourself. Naming the middle step would assert a connection the source does not make."
+        "note": "The authored content lists signage and layout as physical evidence but never links them to serving yourself. Naming the middle step would assert a connection the source does not make.",
+        "reason": null
       },
       "conceptRef": null,
       "syllabusRef": "business.marketing.marketing-strategies.people",
