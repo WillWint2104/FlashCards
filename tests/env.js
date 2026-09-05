@@ -208,7 +208,7 @@ async function chooseQuestion(page, re) {
   const target = rows.find(r => want.test(r.q));
   if (!target) return null;
   await pageTo(page, '.qp-row[data-esq="' + target.id + '"]');
-  const hit = await page.evaluate(src => {
+  const hit0 = await page.evaluate(src => {
     const r = new RegExp(src, 'i');
     const rows = [...document.querySelectorAll('.qp-row')];
     const t = rows.find(x => r.test((x.querySelector('.qp-rowq') || x).textContent));
@@ -216,9 +216,13 @@ async function chooseQuestion(page, re) {
     t.click();
     return t.dataset.esq;
   }, re instanceof RegExp ? re.source : String(re));
-  if (!hit) return null;
-  await page.waitForSelector('#esstart', { timeout: 8000 }).catch(() => {});
-  return hit;
+  if (!hit0) return null;
+  // Choosing a row SELECTS it and fills the rail; the preview is the next step.
+  // A suite that wants the question open has to take it, which is also what a
+  // student does.
+  const prev = await page.waitForSelector('[data-espick="preview"]', { timeout: 8000 }).catch(() => null);
+  if (prev) { await prev.click(); await page.waitForSelector('#esstart', { timeout: 8000 }).catch(() => {}); }
+  return hit0;
 }
 
 // Choose a question and get past the preview into the writing surface. A row now
@@ -231,6 +235,8 @@ async function pickQuestion(page, id) {
   const row = await page.$(sel);
   if (!row) return false;
   await row.click();
+  const prev = await page.waitForSelector('[data-espick="preview"]', { timeout: 8000 }).catch(() => null);
+  if (prev) await prev.click();
   await page.waitForSelector('#esstart', { timeout: 8000 }).catch(() => {});
   const go = await page.$('#esstart');
   if (!go) return false;

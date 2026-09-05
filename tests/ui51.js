@@ -243,6 +243,7 @@ const rowsOf = page => allRows(page);
       // The question may be on a later page.
       await pageTo(page, '.qp-row[data-esq="' + id + '"]');
       await page.click('.qp-row[data-esq="' + id + '"]');
+      await page.evaluate(() => { const b = document.querySelector('[data-espick="preview"]'); b && b.click(); });
       await page.waitForSelector(".qp-prevq", { timeout: 8000 });
       const out = await page.evaluate(() => ({
         q: document.querySelector(".qp-prevq").textContent.trim(),
@@ -323,6 +324,7 @@ const rowsOf = page => allRows(page);
     // They must be reachable from there, folded, or a student who wants a
     // different structure has nowhere to go.
     await page.click('.qp-row[data-esq="mkt-01"]'); await page.waitForTimeout(250);
+    await page.click('[data-espick="preview"]'); await page.waitForTimeout(250);
     const three = await stage();
     ok(three.preview && three.rows === 0, "stage three is the question: " + JSON.stringify(three));
     ok(!three.settings, "and the preview carries no settings either: " + three.settings);

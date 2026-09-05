@@ -87,6 +87,10 @@ async function toPicker(p, subject) {
       if (c) { c.click(); return true; } return false;
     }, q.id);
     ok(picked, q.id + ': is offered in the picker');
+    // Choosing selects; Preview question opens.
+    await p.evaluate(() => { const b = document.querySelector('[data-espick="preview"]'); b && b.click(); });
+    await p.waitForSelector('#esstart', { timeout: 8000 }).catch(() => {});
+
     if (!picked) continue;
     const started = await p.evaluate(() => { const s = document.querySelector('#esstart'); if (s) { s.click(); return true; } return false; });
     ok(started, q.id + ': can be started');
@@ -128,8 +132,11 @@ async function toPicker(p, subject) {
   // lives on the ROW rather than in a separate restatement below the list: the
   // rows carry the complete authored wording, so repeating it underneath said
   // the same thing twice. Same property, checked where it is.
-  // Choosing a row now opens the question rather than starting it, so the
-  // question is stated back on the preview. Same requirement, one screen along.
+  // Choosing a row now selects it; the rail's Preview question control opens the
+  // preview, and the question is stated back there. Same requirement, one screen
+  // along.
+  await p.evaluate(() => { const b = document.querySelector('[data-espick="preview"]'); b && b.click(); });
+  await p.waitForSelector('.qp-prevq', { timeout: 8000 }).catch(() => {});
   const carried = await p.evaluate(() => {
     const q = document.querySelector('.qp-prevq');
     return { stated: q ? q.textContent.trim().length : 0, text: q ? q.textContent.trim() : '',

@@ -1657,15 +1657,76 @@
      sat above the question list: the flow has to own the viewport the way the
      workspace it leads into does. */
   .qp{position:fixed;inset:0;overflow:auto;z-index:120;background:var(--page);color:var(--e-ink)}
-  .qp-page-wrap{max-width:1080px;margin:0 auto;padding:0 0 56px}
-  .qp-bar{display:flex;align-items:center;gap:12px;padding:15px 4px;border-bottom:1px solid var(--e-line);margin-bottom:26px}
-  .qp-brand{font-family:var(--disp);font-weight:700;font-size:15px;color:var(--e-ink)}
-  .qp-brand span{font-weight:600;color:var(--e-ink2)}
-  .qp-subj{margin-left:10px;font-size:13px;font-weight:600;color:var(--e-ink3)}
-  .qp-close{margin-left:auto;background:none;border:0;font:inherit;font-size:13px;font-weight:600;
-    color:var(--e-ink2);cursor:pointer}
+  /* THE PAGE. Header, a main column with a rail beside it, a footer, and the
+     footer sits at the bottom rather than under the content, so a short page is
+     still a page. The rail is composition: without it the right half of a
+     desktop viewport is empty and page two of a filtered list is three rows in
+     a field of nothing. */
+  .qp{display:flex;flex-direction:column}
+  /* The app styles bare header{} and main{} elements: sticky, padded, and main
+     capped at 1180px. Those matched this flow's semantic elements and shrank the
+     page to a column, which is the same class of collision as .es-btn. Every
+     inherited property is overridden here rather than worked around. */
+  .qp-nav{display:block;position:static;padding:0;max-width:none;gap:0;
+    background:var(--surface);border-bottom:1px solid var(--e-line);flex:none}
+  .qp-navin{max-width:1320px;margin:0 auto;padding:13px 28px;display:flex;align-items:center;gap:16px}
+  .qp-logo{width:30px;height:30px;border-radius:9px;background:var(--e-green);color:#fff;flex:none;
+    display:grid;place-items:center;font-family:var(--disp);font-weight:800;font-size:16px}
+  .qp-logo.sm{width:24px;height:24px;font-size:13px;border-radius:7px}
+  .qp-word{font-family:var(--disp);font-weight:800;font-size:18px;letter-spacing:-.3px;color:var(--e-ink)}
+  .qp-navlinks{display:flex;gap:4px;margin-left:14px}
+  .qp-navlink{background:none;border:0;border-bottom:2.5px solid transparent;font:inherit;font-size:14px;
+    font-weight:600;color:var(--e-ink2);cursor:pointer;padding:8px 10px}
+  .qp-navlink:hover{color:var(--e-ink)}
+  .qp-navlink.on{color:var(--e-ink);border-bottom-color:var(--e-green);font-weight:700}
+  .qp-navright{margin-left:auto;display:flex;align-items:center;gap:14px}
+  .qp-subj{font-size:13px;font-weight:600;color:var(--e-ink3)}
+  .qp-close{background:none;border:0;font:inherit;font-size:13px;font-weight:600;color:var(--e-ink2);cursor:pointer}
   .qp-close:hover{color:var(--e-ink)}
-  .qp-body{padding:0 4px}
+  .qp-main{flex:1 0 auto;width:100%;max-width:none;margin:0;padding:0}
+  .qp-grid{max-width:1320px;margin:0 auto;padding:30px 28px 52px;display:grid;
+    grid-template-columns:minmax(0,1fr) 348px;gap:26px;align-items:start}
+  .qp-col{min-width:0}
+  .qp-rail{display:flex;flex-direction:column;gap:16px;position:sticky;top:22px}
+  .qp-rc{background:var(--surface);border:1px solid var(--e-line);border-radius:16px;padding:18px 20px}
+  .qp-rchd{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .qp-rcicon{width:30px;height:30px;border-radius:9px;background:var(--e-mint);color:var(--e-green-dk);
+    flex:none;display:grid;place-items:center;font-size:14px}
+  .qp-rct{font-family:var(--disp);font-size:15.5px;font-weight:700;margin:0;color:var(--e-ink)}
+  .qp-rcp{font-size:13px;line-height:1.62;color:var(--e-ink2);margin:0 0 10px}
+  .qp-rcp:last-child{margin-bottom:0}
+  .qp-rclbl{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--e-ink3);margin:14px 0 7px}
+  .qp-rcq{font-size:14px;line-height:1.5;font-weight:600;color:var(--e-ink);margin:0 0 5px}
+  .qp-rcmeta{font-size:12px;color:var(--e-ink3);font-weight:600;margin:0}
+  .qp-rcbig{font-family:var(--disp);font-size:34px;font-weight:800;color:var(--e-green-dk);margin:0 0 2px;line-height:1}
+  .qp-steps{margin:0;padding-left:19px;font-size:13px;line-height:1.7;color:var(--e-ink2)}
+  .qp-steps li{margin-bottom:3px}
+  .qp-active{border-top:1px solid var(--e-line);margin-top:12px;padding-top:4px}
+  .qp-atag{display:inline-block;background:var(--e-mint);color:var(--e-green-dk);border-radius:7px;
+    padding:4px 9px;font-size:12px;font-weight:700;margin:0 6px 8px 0}
+  .qp-railacts{margin-top:14px}
+  .qp-railacts .qp-btn{width:100%;justify-content:center}
+  .qp-foot{flex:none;background:var(--surface);border-top:1px solid var(--e-line)}
+  .qp-footin{max-width:1320px;margin:0 auto;padding:20px 28px;display:flex;align-items:center;gap:11px}
+  .qp-footword{font-family:var(--disp);font-weight:800;font-size:15px;color:var(--e-ink)}
+  .qp-foottag{font-size:12.5px;color:var(--e-ink3)}
+  /* The lower section on setup, so the page ends rather than stopping. */
+  .qp-how{margin-top:26px;background:var(--surface);border:1px solid var(--e-line);border-radius:16px;padding:22px 24px}
+  .qp-howrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin-top:14px}
+  .qp-hown{display:grid;place-items:center;width:26px;height:26px;border-radius:8px;background:var(--e-mint);
+    color:var(--e-green-dk);font-weight:800;font-size:13px;margin-bottom:9px}
+  .qp-howt{font-size:14px;font-weight:700;color:var(--e-ink);margin:0 0 5px}
+  .qp-howp{font-size:12.5px;line-height:1.6;color:var(--e-ink2);margin:0}
+  /* The end of the list. Page two holds three rows, and a page that stops in the
+     middle of the column reads as a rendering fault rather than the end of a
+     bank. This says the list is finished and offers the route out of it. */
+  .qp-tail{margin-top:26px;background:var(--surface);border:1px solid var(--e-line);
+    border-radius:16px;padding:22px 24px}
+  .qp-tailh{font-family:var(--disp);font-size:16px;font-weight:700;margin:0 0 7px;color:var(--e-ink)}
+  .qp-tailp{font-size:12.5px;line-height:1.65;color:var(--e-ink2);margin:0 0 15px;max-width:62ch}
+  .qp-tailacts{display:flex;flex-wrap:wrap;gap:10px}
+  .qp-h2{font-family:var(--disp);font-size:18px;font-weight:700;margin:0;color:var(--e-ink)}
   .qp-back{background:none;border:0;font:inherit;font-size:13px;font-weight:700;color:var(--e-ink2);
     cursor:pointer;padding:0;margin-bottom:14px;display:inline-block}
   .qp-back:hover{color:var(--e-green-dk)}
@@ -1793,6 +1854,12 @@
   .qp-rubpre{white-space:pre-wrap;font:inherit;font-size:12.5px;color:var(--e-ink2);background:var(--sunk);
     border-radius:10px;padding:13px 15px;margin:0 0 14px;max-height:220px;overflow:auto}
 
+  @media (max-width:1080px){
+    .qp-grid{grid-template-columns:minmax(0,1fr);padding:24px 20px 44px}
+    .qp-rail{position:static;flex-direction:row;flex-wrap:wrap}
+    .qp-rc{flex:1 1 300px}
+    .qp-howrow{grid-template-columns:1fr}
+  }
   @media (max-width:900px){
     .qp-prev{grid-template-columns:1fr}
     .qp-fact dt{width:130px}

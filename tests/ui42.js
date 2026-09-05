@@ -84,6 +84,7 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  FAIL:', m); 
   ok(rows > 0, 'the question bank loads from the file itself: ' + rows + ' questions');
 
   await p.evaluate(() => { const r = document.querySelector('.qp-row'); r && r.click(); });
+  await p.evaluate(() => { const b = document.querySelector('[data-espick="preview"]'); b && b.click(); });
   await p.evaluate(() => { const s = document.querySelector('#esstart'); s && s.click(); });
   await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow'), null, { timeout: 8000 });
   const reached = await p.evaluate(() => ({

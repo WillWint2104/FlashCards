@@ -40,6 +40,9 @@ async function enter(p, qre) {
     if (t) { t.click(); return t.innerText.replace(/\s+/g, ' ').trim().slice(0, 80); } return null;
   }, qre);
   if (!picked) return null;
+  // Choosing selects; Preview question opens. The step a student takes.
+  await p.evaluate(() => { const b = document.querySelector('[data-espick="preview"]'); b && b.click(); });
+  await p.waitForSelector('#esstart', { timeout: 8000 }).catch(() => {});
   await p.click('#esstart');
   await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow'), null, { timeout: 8000 });
   return picked;

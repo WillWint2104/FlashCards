@@ -4439,12 +4439,42 @@
     // hidden underneath it, because nothing from another stage is emitted: the
     // list is not the setup form with a list appended to it.
     const stage = (sc.questions || []).length ? (f.pickStage || "subject") : "own";
-    const bar = `<div class="qp-bar">
-      <div class="qp-brand">Marginal <span>&middot; essay practice</span>${sc.label ?
-        `<span class="qp-subj">${esc(sc.label)}${sc.stage ? " · " + esc(sc.stage) : ""}</span>` : ""}${
-        ES.demo ? `<span class="es-demobadge">demo</span>` : ""}</div>
-      <button class="qp-close" id="esx" aria-label="Close">close</button>
-    </div>`;
+    // THE PAGE, not a column on it. Header, a main column with a rail beside it,
+    // and a footer. The rail is part of the composition rather than decoration:
+    // without it the right half of a desktop viewport is empty and page two of a
+    // filtered list is three rows in a field of nothing.
+    //
+    // The nav carries the mockup's weight with Marginal's real destinations. It
+    // does not invent a section that does not exist.
+    const nav = `<header class="qp-nav"><div class="qp-navin">
+      <span class="qp-logo" aria-hidden="true">M</span>
+      <span class="qp-word">Marginal</span>
+      <nav class="qp-navlinks">
+        <button type="button" class="qp-navlink on">Essay practice</button>
+        ${/* A nav link is not a stage route, so it does not carry the stage
+              attribute: counting the routes on a screen would have counted it. */ ""}
+        <button type="button" class="qp-navlink" data-esnav="subject">My essays</button>
+      </nav>
+      <div class="qp-navright">
+        ${sc.label ? `<span class="qp-subj">${esc(sc.label)}${sc.stage ? " · " + esc(sc.stage) : ""}</span>` : ""}
+        ${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}
+        <button class="qp-close" id="esx" aria-label="Close">close</button>
+      </div>
+    </div></header>`;
+    const foot = `<footer class="qp-foot"><div class="qp-footin">
+      <span class="qp-logo sm" aria-hidden="true">M</span>
+      <span class="qp-footword">Marginal</span>
+      <span class="qp-foottag">Better practice. Brighter progress.</span>
+    </div></footer>`;
+    // One page shell for every stage, so the stages read as one flow.
+    const shell = (main, rail) => `<div class="qp">${nav}
+      <main class="qp-main"><div class="qp-grid">
+        <div class="qp-col">${main}</div>
+        <aside class="qp-rail">${rail}</aside>
+      </div></main>${foot}</div>`;
+    const railCard = (icon, title, body) =>
+      `<section class="qp-rc"><div class="qp-rchd"><span class="qp-rcicon" aria-hidden="true">${icon}</span>
+        <h2 class="qp-rct">${esc(title)}</h2></div>${body}</section>`;
     const back = (to, label) =>
       `<button type="button" class="qp-back" data-espick="${to}">&larr; ${esc(label)}</button>`;
 
@@ -4504,8 +4534,41 @@
       const pageBtn = (n, label, on, dis) =>
         `<button type="button" class="qp-page ${on ? "on" : ""}"${dis ? " disabled" : ""} data-espage="${n}">${esc(label)}</button>`;
 
-      host.innerHTML = `<div class="qp"><div class="qp-page-wrap">${bar}
-        <div class="qp-body">
+      // The rail says what the filters are doing and what is currently chosen,
+      // which is the half of this page that was blank.
+      const chosen = f.questionId ? qs.find(x => x.id === f.questionId) : null;
+      const active = [];
+      if (f.setupDir) active.push("Directive: " + esDirectiveLabel(f.setupDir));
+      if (f.setupTopic) active.push("Topic: " + ((topics.find(t => t.id === f.setupTopic) || {}).label || f.setupTopic));
+      const rail = railCard("&#9678;", "How filtering works",
+          `<p class="qp-rcp">Use the directive and topic filters to find the kind of question you want to
+            practise. You can combine them, and the list updates as you press.</p>
+           <p class="qp-rcp">Each question shows its full wording, with its topic, directive and marks
+            where a mark value is authored.</p>
+           ${active.length ? `<div class="qp-active"><p class="qp-rclbl">Active filters</p>
+             ${active.map(a => `<span class="qp-atag">${esc(a)}</span>`).join("")}
+             <p class="qp-rcp">${found.length} question${found.length === 1 ? "" : "s"} match${
+               found.length === 1 ? "es" : ""}.</p></div>` : ""}`)
+        + railCard("&#9679;", "Current selection", chosen
+          ? `<p class="qp-rcq">${esc(String(chosen.text || "").trim())}</p>
+             <p class="qp-rcmeta">${[String(chosen.topic || "").trim(),
+               esDirectiveLabel(esDirectiveId(chosen.command)),
+               chosen.marks != null ? chosen.marks + " marks" : null].filter(Boolean).map(esc).join(" · ")}</p>
+             <p class="qp-rclbl">Available support</p>
+             <div class="qp-sup">${esSupportFor(chosen).rows.map(r =>
+               `<div class="qp-suprow ${r.has ? "yes" : "no"}"><span class="qp-supmark">${r.has ? "✓" : "⊘"}</span>
+                 <span class="qp-supname">${esc(r.label)}</span>
+                 <span class="qp-supstate">${r.has ? "Available" : "Not available"}</span></div>`).join("")}</div>
+             <div class="qp-railacts">
+               <button type="button" class="qp-btn qp-go" data-espick="preview">Preview question</button>
+             </div>`
+          : `<p class="qp-rcp">No question chosen yet. Pick one from the list and its wording and available
+              support will appear here before you start.</p>`)
+        + railCard("&#9662;", "Top tip",
+          `<p class="qp-rcp">Read the full question and its available support before you start writing. You
+            can always come back and change your selection.</p>`);
+
+      host.innerHTML = shell(`
           ${back("subject", "Back to setup")}
           <h1 class="qp-h1">Choose a practice question</h1>
           <p class="qp-lead">Select a question to work on. You can change all other settings later.</p>
@@ -4545,8 +4608,17 @@
             ${pageBtn(page + 1, "Next ›", false, page === pages)}
           </div>` : ""}`
             : `<p class="qp-empty">Nothing matches both of those. Clear one of them to see more.</p>`}
-        </div>
-      </div></div>`;
+          <div class="qp-tail">
+            <h2 class="qp-tailh">Not the question you wanted?</h2>
+            <p class="qp-tailp">Clear the filters to see the whole bank, or bring a question from a past
+              paper or your own teacher. Your own question gets the same coaching, and the support it
+              carries is stated before you start either way.</p>
+            <div class="qp-tailacts">
+              <button type="button" class="qp-btn" data-espick="own">Use my own question</button>
+              <button type="button" class="qp-btn" data-espick="subject">Back to setup</button>
+            </div>
+          </div>
+        `, rail);
     }
 
     // ---- stage: the question, before committing to it -----------------------
@@ -4560,13 +4632,11 @@
                      ["This question provides", sup.summary]]
         .filter(r => r[1]).map(r =>
           `<div class="qp-fact"><dt>${esc(r[0])}</dt><dd>${esc(r[1])}</dd></div>`).join("");
-      host.innerHTML = `<div class="qp"><div class="qp-page-wrap">${bar}
-        <div class="qp-body">
+      host.innerHTML = shell(`
           <button type="button" class="qp-back" id="esbacklist">&larr; Back to question list</button>
           <h1 class="qp-h1">Question preview</h1>
           <p class="qp-lead">See the full details before starting.</p>
-          <div class="qp-prev">
-            <div class="qp-card">
+          <div class="qp-card qp-prevcard">
               ${String(q.topic || "").trim() ? `<span class="qp-chip">${esc(String(q.topic).trim())}</span>` : ""}
               <p class="qp-prevq">${esc(String(q.text || "").trim())}</p>
               <p class="qp-prevdir">${esc(esDirectiveLabel(esDirectiveId(q.command)))}${
@@ -4578,27 +4648,41 @@
                 <button type="button" class="qp-btn qp-go" id="esstart">Start this question</button>
                 <button type="button" class="qp-btn" data-espick="list">Choose a different question</button>
               </div>
-            </div>
-            <aside class="qp-side">
-              <p class="qp-sidehd">About this question</p>
-              <p class="qp-sidep">This question offers ${esc(sup.summary)}.</p>
-              <p class="qp-sidehd2">Available support</p>
-              <div class="qp-sup">${sup.rows.map(r =>
-                `<div class="qp-suprow ${r.has ? "yes" : "no"}"><span class="qp-supmark">${r.has ? "✓" : "⊘"}</span>
-                  <span class="qp-supname">${esc(r.label)}</span>
-                  <span class="qp-supstate">${r.has ? "Available" : "Not available"}</span></div>`).join("")}</div>
-              <p class="qp-sidefoot">Support availability depends on how the question was authored. You can
-                always start the question and get feedback on your essay.</p>
-            </aside>
           </div>
-        </div>
-      </div></div>`;
+          <div class="qp-how">
+            <h2 class="qp-h2">What happens when you start</h2>
+            <div class="qp-howrow">
+              <div><div class="qp-hown">1</div><p class="qp-howt">Choose how to begin</p>
+                <p class="qp-howp">Plan the whole response first, or go straight into a paragraph. Whichever
+                  you pick, you can change your mind later.</p></div>
+              <div><div class="qp-hown">2</div><p class="qp-howt">Write with a coach</p>
+                <p class="qp-howp">A coach works through the paragraph with you one sentence at a time, or
+                  you can switch to a full timed attempt.</p></div>
+              <div><div class="qp-hown">3</div><p class="qp-howt">Get feedback</p>
+                <p class="qp-howp">Your writing is read against the marking guidance for this question, and
+                  the guidance says where it came from.</p></div>
+            </div>
+          </div>
+        `,
+        railCard("&#9678;", "About this question",
+          `<p class="qp-rcp">This question offers ${esc(sup.summary)}.</p>
+           <p class="qp-rclbl">Available support</p>
+           <div class="qp-sup">${sup.rows.map(r =>
+             `<div class="qp-suprow ${r.has ? "yes" : "no"}"><span class="qp-supmark">${r.has ? "✓" : "⊘"}</span>
+               <span class="qp-supname">${esc(r.label)}</span>
+               <span class="qp-supstate">${r.has ? "Available" : "Not available"}</span></div>`).join("")}</div>`)
+        + railCard("&#9679;", "What support means",
+          `<p class="qp-rcp">Support availability depends on how the question was authored. Nothing is
+            borrowed from another question, so a question shows only what somebody wrote for it.</p>
+           <p class="qp-rcp">You can always start the question and get feedback on your essay.</p>`)
+        + railCard("&#9662;", "Top tip",
+          `<p class="qp-rcp">A question with less support is still worth practising. You write it the same
+            way; there is simply less scaffolding on the way through.</p>`));
     }
 
     // ---- stage: a question the student brings -------------------------------
     else if (stage === "own") {
-      host.innerHTML = `<div class="qp"><div class="qp-page-wrap">${bar}
-        <div class="qp-body">
+      host.innerHTML = shell(`
           ${(sc.questions || []).length ? back("subject", "Back to setup") : ""}
           <h1 class="qp-h1">Your essay question</h1>
           <p class="qp-lead">Paste or type the whole question, including the directive.</p>
@@ -4616,14 +4700,27 @@
               <button type="button" class="qp-btn qp-go" id="esstart">Start practising</button>
             </div>
           </div>
-        </div>
-      </div></div>`;
+        `,
+        railCard("&#9678;", "Writing your own question",
+          `<p class="qp-rcp">Paste the whole question, including the directive. The directive is what tells
+            the guidance whether you are explaining, assessing or judging.</p>
+           <p class="qp-rcp">Marking guidance is generated from the question when none is written for it,
+            and you can review or replace it under Essay options.</p>`)
+        + railCard("&#9679;", "Next steps",
+          `<ol class="qp-steps"><li>Paste or type your question.</li><li>Set the marks and structure if you
+            want to change them.</li><li>Write one paragraph at a time, with a coach.</li></ol>`));
     }
 
     // ---- stage: setting up --------------------------------------------------
     else {
-      host.innerHTML = `<div class="qp"><div class="qp-page-wrap">${bar}
-        <div class="qp-body">
+      // Real numbers about the real bank. A question is imported when it came
+      // through the importer rather than with the app, which the runtime adapter
+      // records; nothing here is estimated.
+      const bank = sc.questions || [];
+      const imported = bank.filter(q => q.origin === "imported").length;
+      const topicCount = new Set(bank.map(q => esTopicId(q.topic)).filter(Boolean)).size;
+      const savedCount = (ES.list || []).length;
+      host.innerHTML = shell(`
           <h1 class="qp-h1">Set up your essay</h1>
           <p class="qp-lead">Choose a subject and a practice question. You can change everything else later.</p>
           <div class="qp-card">
@@ -4639,9 +4736,44 @@
             </div>
             ${options}
           </div>
+          <section class="qp-how">
+            <h2 class="qp-h2">How essay practice works</h2>
+            <div class="qp-howrow">
+              <div class="qp-howcell"><span class="qp-hown">1</span>
+                <p class="qp-howt">Choose a question</p>
+                <p class="qp-howp">Pick one from the bank, or paste your own. Every question shows what
+                  support it carries before you start.</p></div>
+              <div class="qp-howcell"><span class="qp-hown">2</span>
+                <p class="qp-howt">Write one paragraph at a time</p>
+                <p class="qp-howp">A coach works through the response with you, one sentence at a time, or
+                  you can switch to a full timed attempt.</p></div>
+              <div class="qp-howcell"><span class="qp-hown">3</span>
+                <p class="qp-howt">Get feedback</p>
+                <p class="qp-howp">Your writing is read against the marking guidance for the question, and
+                  the guidance says where it came from.</p></div>
+            </div>
+          </section>
           ${resume}
-        </div>
-      </div></div>`;
+        `,
+        railCard("&#9678;", "Next steps",
+          `<ol class="qp-steps">
+            <li>Choose a subject.</li>
+            <li>Pick a practice question, or bring your own.</li>
+            <li>Read what support it carries.</li>
+            <li>Start writing.</li>
+          </ol>`)
+        + railCard("&#9679;", "This question bank",
+          `<p class="qp-rcbig">${bank.length}</p>
+           <p class="qp-rcp">question${bank.length === 1 ? "" : "s"} in ${esc(sc.label || "this subject")}${
+             topicCount ? ", across " + topicCount + " topic" + (topicCount === 1 ? "" : "s") : ""}.</p>
+           ${imported ? `<p class="qp-rcp">${imported} of them ${imported === 1 ? "was" : "were"} imported
+             through Teacher tools, and appear here exactly like the rest.</p>`
+             : `<p class="qp-rcp">A teacher can add more through Teacher tools, and they appear here
+             exactly like the rest.</p>`}
+           ${savedCount ? `<p class="qp-rcp">You have ${savedCount} saved essay${savedCount === 1 ? "" : "s"}.</p>` : ""}`)
+        + railCard("&#9662;", "Top tip",
+          `<p class="qp-rcp">You only need a question to start. Marks, structure and marking guidance all
+            have sensible defaults and can be changed at any point.</p>`));
     }
 
     $("#esx").onclick = esClose;
@@ -4657,6 +4789,9 @@
     });
     // Stage navigation. "own" is the existing typed-question route and keeps its
     // mode flag, so nothing about that path changes.
+    host.querySelectorAll("[data-esnav]").forEach(b => b.onclick = () => {
+      f.pickStage = b.dataset.esnav; esRender();
+    });
     host.querySelectorAll("[data-espick]").forEach(b => b.onclick = () => {
       const to = b.dataset.espick;
       if (to === "own") { f.setupMode = "own"; f.pickStage = "own"; f.questionId = null; }
@@ -4718,10 +4853,10 @@
         f.question = qq.text; f.questionId = qq.id;
         if (!f.topic) f.topic = qq.topic || "";
         if (qq.marks) f.marks = qq.marks;
-        // Choosing shows the question in full before anything starts. A student
-        // committing to twenty minutes of writing should see what they are
-        // committing to, and what support it actually carries.
-        f.pickStage = "preview";
+        // Choosing a row SELECTS it and stays on the list: the rail fills with
+        // the question, its metadata and what support it carries, and Preview
+        // question is the step from there. Jumping straight to the preview took
+        // the list away from a student who was still comparing.
         esRender();
         const box = $("#esq"); if (box) box.focus();
       }

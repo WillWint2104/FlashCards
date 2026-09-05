@@ -199,6 +199,7 @@ async function toChooser(page) {
     // sees are stated as a fact about the question. #esmarks is the editable
     // form field and lives with the other settings on the setup stage, not here.
     await page.click('.qp-row[data-esq="' + ID + '"]');
+    await page.evaluate(() => { const b = document.querySelector('[data-espick="preview"]'); b && b.click(); });
     await page.waitForSelector(".qp-prevq", { timeout: 8000 });
     const marks = await page.evaluate(() => {
       const r = [...document.querySelectorAll(".qp-fact")].find(x => /Marks/.test(x.querySelector("dt").textContent));
@@ -226,6 +227,7 @@ async function toChooser(page) {
     // before starting it.
     await pageTo(page, '.qp-row[data-esq="' + ID + '"]');
     await page.click('.qp-row[data-esq="' + ID + '"]');
+    await page.evaluate(() => { const b = document.querySelector('[data-espick="preview"]'); b && b.click(); });
     await page.waitForSelector("#esstart", { timeout: 8000 });
     await page.click("#esstart");
     await page.waitForTimeout(900);

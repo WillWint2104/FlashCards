@@ -1,4 +1,4 @@
-const { chromium, T, OUT, BASE, fileUrl, usePractice } = require('./env');
+const { chromium, T, OUT, BASE, fileUrl, usePractice, chooseQuestion } = require('./env');
 
 // Waits that name their condition. This app fetches nothing and renders
 // synchronously, so the effect of a click is present on the next frame:
@@ -22,7 +22,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   await settled(p);
   await p.selectOption('#essubject','business_studies').catch(()=>{});
   await settled(p);
-  await usePractice(p); await p.$$eval('.qp-row',es=>{const t=es.find(x=>/target markets/i.test(x.textContent));t&&t.click();});
+  await chooseQuestion(p, /target markets/i);
   await settled(p);
   await p.click('#esstart');
   await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
