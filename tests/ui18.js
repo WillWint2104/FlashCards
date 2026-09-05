@@ -1,6 +1,6 @@
 // The verification gate: evidence without a recorded source is never offered to a
 // student, and everything else about the paragraph keeps working without it.
-const { chromium, T, OUT, BASE, fileUrl, usePractice, climbLadder } = require('./env');
+const { chromium, T, OUT, BASE, fileUrl, usePractice, climbLadder, chooseQuestion } = require('./env');
 
 // Waits that name their condition. This app fetches nothing and renders
 // synchronously, so the effect of a click is present on the next frame:
@@ -19,7 +19,7 @@ async function run(sourced){
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await settled(p);
   await p.selectOption('#essubject','business_studies'); await settled(p);
-  await usePractice(p); await p.$$eval('.qp-row',es=>{const t=es.find(x=>/target markets/i.test(x.textContent));t&&t.click();});
+  await chooseQuestion(p, /target markets/i);
   await settled(p);
   await p.click('#esstart');
   await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });

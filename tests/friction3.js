@@ -1,4 +1,4 @@
-const { chromium, T, OUT, BASE, fileUrl, usePractice } = require('./env');
+const { chromium, T, OUT, BASE, fileUrl, usePractice, chooseQuestion } = require('./env');
 (async () => {
   const b = await chromium.launch();
   const p = await (await b.newContext({ viewport: { width: 1500, height: 1000 } })).newPage();
@@ -8,7 +8,7 @@ const { chromium, T, OUT, BASE, fileUrl, usePractice } = require('./env');
   await p.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await p.waitForTimeout(400);
   await p.selectOption('#essubject', 'business_studies'); await p.waitForTimeout(200);
-  await usePractice(p); await p.$$eval('.qp-row', es => { const t = es.find(x => /target markets/i.test(x.textContent)); t && t.click(); });
+  await chooseQuestion(p, /target markets/i);
   await p.selectOption('#esstruct', 'six'); await p.waitForTimeout(150);
   await p.click('#esstart'); await p.waitForTimeout(400);
   const pick = async re => { await p.$$eval('[data-espath]', (es, r) => { const x = es.find(e => new RegExp(r, 'i').test(e.textContent)); x && x.click(); }, re); await p.waitForTimeout(250); };

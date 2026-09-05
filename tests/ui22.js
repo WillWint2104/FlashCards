@@ -1,7 +1,7 @@
 // Second architecture case. fin-01 names a cause and an effect but fixes NO
 // areas, so choosing which strategies to argue is part of the answer. Nothing
 // about it is special-cased: the same fields drive both questions.
-const { chromium, T, OUT, usePractice } = require('./env');
+const { chromium, T, OUT, usePractice, chooseQuestion } = require('./env');
 
 // Waits that name their condition. This app fetches nothing and renders
 // synchronously, so the effect of a click is present on the next frame:
@@ -17,7 +17,7 @@ async function open(p, re){
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await settled(p);
   await p.selectOption('#essubject','business_studies'); await settled(p);
-  await usePractice(p); await p.$$eval('.qp-row',(es,r)=>{const t=es.find(x=>new RegExp(r,'i').test(x.textContent));t&&t.click();}, re.source);
+  await chooseQuestion(p, re);
   await p.click('#esstart');
   await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
   await planAll(p);

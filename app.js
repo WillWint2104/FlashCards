@@ -4823,11 +4823,6 @@
       const picked = f.questionId && sc.questions.find(x => x.id === f.questionId);
       if (picked && picked.text.trim() !== q.value.trim()) f.questionId = null;
     };
-    host.querySelectorAll("[data-esmode]").forEach(b => b.onclick = () => {
-      f.setupMode = b.dataset.esmode;
-      if (f.setupMode === "own") { f.questionId = null; }
-      esRender();
-    });
     // Stage navigation. "own" is the existing typed-question route and keeps its
     // mode flag, so nothing about that path changes.
     // Navigation moves between destinations and touches NOTHING else on the

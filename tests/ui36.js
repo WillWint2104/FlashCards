@@ -5,7 +5,7 @@
 // it named; and the grid stayed one column because only one class was toggled. Each
 // was found by a single suite that happened to use the right question, so this walks
 // the combinations instead: role x mode x which support surface is open.
-const { chromium, T, OUT, usePractice } = require('./env');
+const { chromium, T, OUT, usePractice, chooseQuestion } = require('./env');
 
 // Waits that name their condition. This app fetches nothing and renders
 // synchronously, so the effect of a click is present on the next frame:
@@ -29,7 +29,7 @@ async function open(p, re) {
   await p.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await settled(p);
   await p.selectOption('#essubject', 'business_studies').catch(() => {});
-  await usePractice(p); await p.$$eval('.qp-row', (es, r) => { const t = es.find(x => new RegExp(r, 'i').test(x.textContent)); t && t.click(); }, re.source);
+  await chooseQuestion(p, re);
   await p.click('#esstart');
   await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
   await p.click('#esposdefer').catch(() => {});

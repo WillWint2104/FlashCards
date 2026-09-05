@@ -7,7 +7,7 @@
 // lesson is assembled from concepts authored once, in the same schema, and
 // declaring a concept is what makes it eligible: nothing is shown because it
 // merely exists.
-const { chromium, T, OUT, usePractice } = require('./env');
+const { chromium, T, OUT, usePractice, chooseQuestion } = require('./env');
 
 // Waits that name their condition. This app fetches nothing and renders
 // synchronously, so the effect of a click is present on the next frame:
@@ -23,7 +23,7 @@ async function open(p){
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await settled(p);
   await p.selectOption('#essubject','business_studies'); await settled(p);
-  await usePractice(p); await p.$$eval('.qp-row',es=>{const t=es.find(x=>/target markets affect/i.test(x.textContent));t&&t.click();});
+  await chooseQuestion(p, /target markets affect/i);
   await p.click('#esstart');
   await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
 }

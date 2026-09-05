@@ -1,6 +1,6 @@
 // The reference area works on BOTH paragraph models, so choosing TDECC does not
 // drop the student onto generic guidance.
-const { chromium, T, OUT, BASE, fileUrl, usePractice, ladderOffered, climbLadder } = require('./env');
+const { chromium, T, OUT, BASE, fileUrl, usePractice, ladderOffered, climbLadder, chooseQuestion } = require('./env');
 
 // Waits that name their condition. This app fetches nothing and renders
 // synchronously, so the effect of a click is present on the next frame:
@@ -22,17 +22,20 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await settled(p);
   await p.selectOption('#essubject','business_studies'); await settled(p);
-  await usePractice(p); await p.$$eval('.qp-row',es=>{const t=es.find(x=>/target markets/i.test(x.textContent));t&&t.click();});
-  await settled(p);
-  const models=await p.$$eval('#esmodel option',es=>es.map(e=>e.textContent.trim())).catch(()=>[]);
+  // The paragraph model is a SETUP setting, so it is chosen before the question.
+  const sum = await p.$('#esmoreopts > summary'); if (sum) { await sum.click(); await settled(p); }
+  const models=await p.$$eval('#esparamodel option',es=>es.map(e=>e.textContent.trim())).catch(()=>[]);
   console.log('   paragraph models offered:',JSON.stringify(models));
   // selectOption waits the full 30 second default before rejecting when the
   // select is absent, and the catch below then hid that as a fallback path. The
   // suite spent 30 of its 34 seconds inside a timeout nobody could see.
-  const hasModel = await p.$('#esmodel');
-  await (hasModel ? p.selectOption('#esmodel','tdecc') : Promise.reject(new Error('no #esmodel'))).catch(async()=>{
-    await p.$$eval('select',es=>{const s=es.find(x=>[...x.options].some(o=>o.value==='tdecc')); if(s){s.value='tdecc';s.dispatchEvent(new Event('change',{bubbles:true}));}});
-  });
+  // Named, not swept for. The old fallback searched every select on the page for
+  // one holding "tdecc", found the structure select instead, set nothing, and the
+  // suite went on to measure TEEEC while asserting TDECC.
+  const hasModel = await p.$('#esparamodel');
+  ok(!!hasModel, 'the paragraph model is chosen on the setup stage, as #esparamodel');
+  if (hasModel) { await p.selectOption('#esparamodel', 'tdecc'); await settled(p); }
+  await chooseQuestion(p, /target markets/i);
   await settled(p);
   await p.click('#esstart');
   await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });

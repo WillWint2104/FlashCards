@@ -1,7 +1,7 @@
 // Third architecture case: a judgement question. The student decides what to
 // discuss AND what they think, each argument declares what it does for that
 // judgement, and the conclusion can weigh them. Same fields, different mode.
-const { chromium, T, OUT, usePractice } = require('./env');
+const { chromium, T, OUT, usePractice, chooseQuestion } = require('./env');
 
 // Waits that name their condition. This app fetches nothing and renders
 // synchronously, so the effect of a click is present on the next frame:
@@ -17,7 +17,7 @@ async function open(p, re){
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await settled(p);
   await p.selectOption('#essubject','business_studies'); await settled(p);
-  await usePractice(p); await p.$$eval('.qp-row',(es,r)=>{const t=es.find(x=>new RegExp(r,'i').test(x.textContent));t&&t.click();}, re.source);
+  await chooseQuestion(p, re);
   await p.click('#esstart');
   await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
   await planAll(p);

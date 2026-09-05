@@ -1,5 +1,5 @@
 // Question Decode: the stem is readable, pressable, and derives what it can.
-const { chromium, T, OUT, ownQuestion, usePractice } = require('./env');
+const { chromium, T, OUT, ownQuestion, usePractice, chooseQuestion } = require('./env');
 
 // Waits that name their condition. This app fetches nothing and renders
 // synchronously, so the effect of a click is present on the next frame:
@@ -19,7 +19,7 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await settled(p);
   await p.selectOption('#essubject','business_studies'); await settled(p);
-  await usePractice(p); await p.$$eval('.qp-row',es=>{const t=es.find(x=>/target markets affect/i.test(x.textContent));t&&t.click();});
+  await chooseQuestion(p, /target markets affect/i);
   await p.click('#esstart');
   await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
   await planAll(p);

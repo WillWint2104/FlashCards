@@ -1,4 +1,4 @@
-const { chromium, T, OUT, BASE, fileUrl, usePractice } = require('./env');
+const { chromium, T, OUT, BASE, fileUrl, usePractice, chooseQuestion } = require('./env');
 const { planAll } = require('./env');
 (async()=>{
   const b=await chromium.launch();
@@ -12,7 +12,7 @@ const { planAll } = require('./env');
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await p.waitForTimeout(400);
   await p.selectOption('#essubject','business_studies'); await p.waitForTimeout(200);
-  await usePractice(p); await p.$$eval('.qp-row',es=>{const t=es.find(x=>/target markets/i.test(x.textContent));t&&t.click();});
+  await chooseQuestion(p, /target markets/i);
   await p.waitForTimeout(200);
   await p.click('#esstart'); await p.waitForTimeout(500);
   await planAll(p);
