@@ -383,6 +383,35 @@
   // answer as a short answer and not as a miniature essay.
   //
   // opts.plan is the student's own plan and opts.validContent our authored argument
+  // A REQUEST THAT CANNOT HANG.
+  //
+  // Both calls to the marking worker were bare awaits inside a try/catch, which
+  // handles a refused connection and a bad status honestly and does nothing at
+  // all about the case in between: a worker that accepts the connection and then
+  // never answers. There the student waits with no message and no way to tell
+  // whether anything is happening, which is the one failure the catch below was
+  // written to prevent.
+  //
+  // 45 seconds because a marking call is a model call and is legitimately slow;
+  // the point is not to be strict, it is that there IS a bound. On timeout the
+  // abort surfaces as an ordinary error, so both callers degrade the way they
+  // already degrade for every other failure, with a reason on screen.
+  const ES_REQUEST_MS = 45000;
+  async function esPostJSON(url, body) {
+    const ctrl = typeof AbortController === "function" ? new AbortController() : null;
+    const timer = ctrl ? setTimeout(() => ctrl.abort(), ES_REQUEST_MS) : null;
+    try {
+      return await fetch(url, {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify(body), signal: ctrl ? ctrl.signal : undefined,
+      });
+    } catch (e) {
+      if (e && (e.name === "AbortError" || e.name === "TimeoutError"))
+        throw new Error("no answer in " + Math.round(ES_REQUEST_MS / 1000) + " seconds");
+      throw e;
+    } finally { if (timer) clearTimeout(timer); }
+  }
+
   // pathways. Both are sent, and the worker routes them to the DIAGNOSIS pass only:
   // they are context for reading the response, never a checklist that awards marks.
   function responseTypeOf(card, opts) {
@@ -394,9 +423,7 @@
     if (state.endpoint) {
       try {
         const mc = markingContext(card);
-        const res = await fetch(state.endpoint, {
-          method: "POST", headers: { "content-type": "application/json" },
-          body: JSON.stringify({
+        const res = await esPostJSON(state.endpoint, {
             prompt: card.prompt, marks: card.marks, model_answer: card.model, vocab: card.vocab, answer,
             scaffold: card.scaffold, faults: card.faults,
             command: card.command || commandOf(card.prompt) || undefined,
@@ -406,7 +433,6 @@
             rubric: card.rubric || undefined,
             plan: opts.plan, validContent: opts.validContent, blocks: opts.blocks,
             code: state.code || undefined
-          })
         });
         if (!res.ok) throw new Error("proxy " + res.status);
         const g = await res.json();
@@ -9692,7 +9718,7 @@
           code: state.code || undefined
         };
         if ((d.rubric || "").trim()) payload.rubric = d.rubric.trim(); // omit when skipped -> generic bands
-        const res = await fetch(state.endpoint, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
+        const res = await esPostJSON(state.endpoint, payload);
         if (!res.ok) throw new Error("coach " + res.status);
         fb = esNormalizeCoach(await res.json(), "", p.role);
       } catch (e) {
