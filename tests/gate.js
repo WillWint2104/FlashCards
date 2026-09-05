@@ -110,10 +110,15 @@ const TIERS = {
   journeys: { budget: 180, suites: ["ui13", "ui30", "ui40", "ui50", "ui51", "ui53"] },
   // Everything run.js knows about, the journeys included, plus the suites in no
   // tier: both student matrices are here and only here, ui54's four profiles on
-  // the imported question and the bots' seven on the bundled bank. It cannot
-  // cost less than journeys, and its budget is set from the same measurements
-  // rather than from what it used to be.
-  full: { budget: 480, suites: [] },
+  // the imported question and the bots' seven on the bundled bank.
+  //
+  // 600, from the measured run: 74 suites, 2944 assertions, 474.4s. The previous
+  // 480 was an estimate written before the tier had ever been run to completion,
+  // and 474 of 480 is 1.2% of headroom, which ordinary machine variance eats.
+  // There is nothing to move out of the tier that runs everything, so the only
+  // honest choice here is a number with room in it and the run that set it
+  // written down beside it.
+  full: { budget: 600, suites: [] },
 };
 
 const tier = (process.argv[2] || "").toLowerCase();
