@@ -208,6 +208,78 @@ async function toPicker(page) {
   ok(String(adopted) === "20",
     "choosing a question that authors marks adopts the authored value: " + adopted);
 
+  console.log("5b. removing a saved essay is asked about first");
+  {
+    // The control sits beside Resume and there is no undo behind it, so the two
+    // halves are tested separately: cancelling must change nothing at all, and
+    // confirming must remove exactly the one that was aimed at.
+    const ctx5 = await browser.newContext({ viewport: { width: 1440, height: 960 } });
+    ctx5.on("page", pg => pg.on("pageerror", e => errs.push(String(e).slice(0, 200))));
+    const p5 = await ctx5.newPage();
+    await p5.route(/workers\.dev/, r => r.abort());
+    await toPicker(p5);
+    // Two essays, made through the real flow, so there is a wrong one to lose.
+    for (const id of ["mkt-01", "fin-02"]) {
+      await usePractice(p5);
+      await pageTo(p5, '.qp-row[data-esq="' + id + '"]');
+      await p5.click('.qp-row[data-esq="' + id + '"]');
+      await p5.click('[data-espick="preview"]');
+      await p5.waitForSelector("#esstart", { timeout: 8000 });
+      await p5.click("#esstart");
+      await p5.waitForTimeout(700);
+      await p5.click("#esqchange");
+      await p5.waitForTimeout(350);
+    }
+    const toEssays = async () => {
+      await p5.evaluate(() => [...document.querySelectorAll(".qp-navlink")]
+        .find(x => /my essays/i.test(x.textContent)).click());
+      await p5.waitForTimeout(300);
+    };
+    const listed = () => p5.$$eval(".qp-essay", es => es.map(e => e.dataset.resrow));
+    await toEssays();
+    const before = await listed();
+    ok(before.length === 2, "two essays are saved: " + before.length);
+
+    // CANCEL. Nothing is asked of the store and nothing leaves the page.
+    let asked = null;
+    p5.once("dialog", async d => { asked = d.message(); await d.dismiss(); });
+    await p5.click(".qp-essay [data-esdelete]");
+    await p5.waitForTimeout(400);
+    ok(!!asked, "pressing remove asks first: " + JSON.stringify(asked));
+    ok(/cannot be undone/i.test(asked || ""),
+      "and says the essay is not coming back: " + JSON.stringify(asked));
+    const afterCancel = await listed();
+    ok(String(afterCancel) === String(before),
+      "cancelling leaves both essays exactly where they were: " + JSON.stringify(afterCancel));
+    const storedAfterCancel = await p5.evaluate(() => Object.values(
+      JSON.parse(localStorage.getItem("marginal.essay.v1") || "{}"))
+      .reduce((n, b) => n + ((b && b.drafts) || []).length, 0));
+    ok(storedAfterCancel === 2, "and nothing was removed from the store: " + storedAfterCancel);
+
+    // CONFIRM, on the first one. Only that one goes.
+    const target = before[0], survivor = before[1];
+    p5.once("dialog", async d => { await d.accept(); });
+    await p5.click('.qp-essay[data-resrow="' + target + '"] [data-esdelete]');
+    await p5.waitForTimeout(500);
+    const afterConfirm = await listed();
+    ok(afterConfirm.length === 1 && afterConfirm[0] === survivor,
+      "confirming removes only the one it was aimed at: " + JSON.stringify(afterConfirm));
+    const storedAfterConfirm = await p5.evaluate(() => Object.values(
+      JSON.parse(localStorage.getItem("marginal.essay.v1") || "{}"))
+      .reduce((n, b) => n + ((b && b.drafts) || []).length, 0));
+    ok(storedAfterConfirm === 1, "and the store agrees: " + storedAfterConfirm);
+
+    // The last one out leaves the page in its empty state rather than an empty
+    // card with nothing in it.
+    p5.once("dialog", async d => { await d.accept(); });
+    await p5.click('.qp-essay[data-resrow="' + survivor + '"] [data-esdelete]');
+    await p5.waitForTimeout(600);
+    const emptied = await stageOf(p5);
+    ok(emptied.essays === 0 && emptied.empty,
+      "removing the last one leaves the empty state: " + JSON.stringify(emptied));
+    await ctx5.close();
+  }
+
   console.log("6. an essay is filed under its own question's topic");
   // Found by looking at My essays with two essays on it: the second was chipped
   // with the first one's topic. Choosing a row only filled the topic when it was

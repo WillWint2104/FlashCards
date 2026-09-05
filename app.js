@@ -4929,11 +4929,23 @@
     });
     // Delete a saved essay: remove from localStorage + list, then drop just this
     // row from the DOM (no full re-render, no flash). Section goes if it empties.
+    // Asked first, every time. A saved essay is an afternoon of somebody's work
+    // and this control sits beside Resume, so a mis-aimed press was one click
+    // from losing it with nothing to undo. The wording says what is going and
+    // that it is not coming back, and cancelling changes nothing at all: the
+    // deletion happens after the answer, not before it.
     host.querySelectorAll("[data-esdelete]").forEach(b => b.onclick = () => {
       const id = b.dataset.esdelete;
+      if (!window.confirm("Remove this saved essay? This cannot be undone.")) return;
       esDeleteDraft(id);
       const row = host.querySelector('[data-resrow="' + id + '"]'); if (row) row.remove();
-      if (!ES.list.length) { const sec = host.querySelector("[data-resume]"); if (sec) sec.remove(); }
+      // The list may have emptied. On My essays that means the empty state,
+      // which is a different page rather than a section to remove, so the
+      // re-render is how it gets there.
+      if (!ES.list.length) {
+        const sec = host.querySelector("[data-resume]"); if (sec) sec.remove();
+        if ((ES.form || {}).pickStage === "essays") esRender();
+      }
     });
     // The stages that are choosing rather than starting have no start control, so
     // the binding is guarded rather than assumed. It threw on the list stage,

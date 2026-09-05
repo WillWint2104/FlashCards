@@ -89,7 +89,7 @@ function helpOf(guidance) {
     ladder.forEach(rung => {
       if (rung.rung === "hint") h.hint = rung.text;
       else if (rung.rung === "needs") h.needs = rung.text;
-      else if (rung.rung === "direction") h.direction = { type: TYPE.direction, text: rung.text };
+      else if (rung.rung === "direction") h.direction = { text: rung.text };
       else if (rung.rung === "frame") h.frame = { type: TYPE.frame, text: rung.text };
       else if (rung.rung === "starter") h.starter = { type: TYPE.starter, text: rung.text };
       else if (rung.rung === "example") h.example = { type: TYPE.example, text: rung.text,
