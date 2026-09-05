@@ -171,18 +171,16 @@ async function toChooser(page) {
   {
     const page = written;
     await toChooser(page);
-    const preview = await page.$eval('.es-qrow[data-esq="' + ID + '"]', e => e.textContent.trim());
-    // The list strips the leading directive word, which is app behaviour that
-    // predates imports and applies to every question. So the expected string is
-    // computed the same way the app computes it, from the AUTHORED text, rather
-    // than being a literal that would hide a change to either.
-    const cmd = PKG.question.directive;
-    const expect = PKG.question.text.toLowerCase().startsWith(cmd)
-      ? PKG.question.text.slice(cmd.length).replace(/^[:\s-]+/, "") : PKG.question.text;
-    ok(preview === expect, "the row shows the authored stem, directive stripped as for any question: " +
-      JSON.stringify(preview) + " vs " + JSON.stringify(expect));
-    ok(preview.indexOf("marketing mix") >= 0 && preview.indexOf("target market") >= 0,
-      "and it is this package's words, not another question's");
+    // The row carries the COMPLETE authored question. It used to be the stem with
+    // the directive stripped, which this assertion used to encode; that was a
+    // display fault applying to every question, bundled and imported, and it is
+    // fixed. tests/ui51.js is the regression for it across the whole bank.
+    const rowq = await page.$eval('.es-qrow[data-esq="' + ID + '"] .es-qrowq', e => e.textContent.trim());
+    ok(rowq === PKG.question.text.trim(),
+      "the row is the authored question, whole: " + JSON.stringify(rowq));
+    const rowmeta = await page.$eval('.es-qrow[data-esq="' + ID + '"] .es-qrowmeta', e => e.textContent.trim());
+    ok(/Marketing/.test(rowmeta) && /Explain/.test(rowmeta) && /8 marks/.test(rowmeta),
+      "with its authored topic, directive and marks beneath: " + JSON.stringify(rowmeta));
     await page.click('.es-qrow[data-esq="' + ID + '"]');
     await page.waitForTimeout(300);
     const marks = await page.$eval("#esmarks", e => e.value).catch(() => null);
