@@ -89,13 +89,22 @@ const TIERS = {
   // ui53 is the longest chain in the repository and belongs nowhere else: it
   // publishes an externally authored package through the real importer and then
   // walks four simulated students through it, so it crosses every surface the
-  // project has. The budget went to 240 with it, which is the honest cost of the
-  // suite rather than headroom taken back: the run is 205s and the tier is not
-  // one people run out of habit.
-  journeys: { budget: 240, suites: ["ui13", "ui30", "ui40", "ui50", "ui51", "ui53", "bots"] },
+  // project has.
+  //
+  // 300, from a measurement rather than an estimate. The tier was 165s of 180
+  // before ui53, which was already the "not a budget" problem written about
+  // above, and the first attempt at a number here was 240 against a guess of
+  // 205: the measured run is 248.1s. There is nothing to move out to avoid the
+  // raise, which is the difference between this and checkpoint: every suite in
+  // this tier is an end-to-end walk, which is what the tier is for. So the
+  // number says what the tier costs, with the headroom stated, and the run that
+  // set it is on the record.
+  journeys: { budget: 300, suites: ["ui13", "ui30", "ui40", "ui50", "ui51", "ui53", "bots"] },
   // Everything run.js knows about, the journeys included. An empty list means
-  // "pass no filter".
-  full: { budget: 360, suites: [] },
+  // "pass no filter". It carries every suite in the tiers above plus the ones in
+  // no tier, so it cannot cost less than journeys and its budget is set from the
+  // same measurement.
+  full: { budget: 480, suites: [] },
 };
 
 const tier = (process.argv[2] || "").toLowerCase();
