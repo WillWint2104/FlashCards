@@ -551,6 +551,18 @@ f({ path: "pathways[].guidance.<slot>.ladder[].text", owner: "pathway", type: "s
   surface: "the stuck helper",
   good: 'at the example rung, a worked sentence about a DIFFERENT context',
   bad: 'a sentence about this question that a student can paste. Nothing may write into a student sentence' });
+f({ path: "pathways[].guidance.<slot>.ladder[].context", owner: "pathway", type: "string", required: false,
+  omission: "level:the example rung is withheld", studentProse: true, answerSpecific: false,
+  means: "at the example rung only, the different situation the worked sentence is set in, in a few words. The rung is WITHHELD without it: an example whose context is not named reads as a sentence about this question, which is the one thing an example may never be. The runtime has always read this field and the contract never defined it, so an author had no way to know to write it and every imported example rung was silently dropped.",
+  surface: "beside the example rung's label",
+  good: '"a gym and time-poor professionals"',
+  bad: 'the case study this question is about, which makes the example the answer' });
+f({ path: "pathways[].guidance.<slot>.ladder[].pattern", owner: "pathway", type: "string", required: false,
+  omission: "none", studentProse: true, answerSpecific: false,
+  means: "at the example rung only, the shape the example demonstrates, so a student can see what transfers and what does not.",
+  surface: "under the example rung",
+  good: '"target-market characteristic, then strategy, then why it suits that market"',
+  bad: 'a restatement of the example sentence' });
 f({ path: "pathways[].vocabRefs", owner: "pathway", type: "vocabRef[]", refTo: "vocabulary",
   required: false, omission: "none", studentProse: false, answerSpecific: false,
   means: "terms this argument asks for by name.",

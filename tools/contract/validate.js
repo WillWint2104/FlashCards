@@ -93,6 +93,14 @@ function collect(root, spec) {
 }
 const blank = v => v == null || (Array.isArray(v) ? !v.length : (typeof v === "string" ? !v.trim() : false));
 
+// The app's own rules for a ladder rung, restated here so an author is told at
+// import time rather than finding out from a student who climbed the ladder and
+// was handed the same rung six times. app.js is the authority; these mirror
+// esValidDirection, esValidFrame and esValidExample, and tests/t22.mjs holds the
+// two copies to each other.
+const PLACEHOLDER = /\[[^\]]+\]|_{3,}/g;
+const IMPERATIVE = /^(say|show|name|explain|define|describe|start|make|point|establish|set|move|work|turn|give|trace|follow|decide|choose|avoid|do not|don't|keep|use|take|put|open|finish|land|connect|apply|state|treat|write|read|check)\b/i;
+
 function validate(pkg, man, opts) {
   const F = [];
   const add = (sev, code, p, message) => F.push({ severity: sev, code: code, path: p || "(root)", message: message });
@@ -394,6 +402,36 @@ function validate(pkg, man, opts) {
       " on the Learn surface and " + (nd.length === 1 ? "is" : "are") + " not offered in the vocabulary panel: " +
       nd.slice(0, 6).join(", ") + (nd.length > 6 ? " and " + (nd.length - 6) + " more" : "") +
       " (each is missing " + [...new Set(Object.values(notDisplayable).map(a => a.join(" and ")))].join("; ") + ")");
+
+  // ---- ladder rungs the app will withhold ---------------------------------
+  // An authored rung that never reaches a student is the "silently demoted"
+  // failure this contract exists to prevent, and it was happening: the app
+  // withholds a direction that does not address the writer, a frame with fewer
+  // than two blanks, and an example whose different context is not named, and
+  // nothing told the author any of it. The rung is still withheld, because each
+  // of those rules protects something a student sees. It is now SAID.
+  const withheld = [];
+  (pkg.pathways || []).forEach((pw, i) => {
+    Object.keys((pw || {}).guidance || {}).forEach(slot => {
+      ((pw.guidance[slot] || {}).ladder || []).forEach((r, j) => {
+        if (!r || !r.rung) return;
+        const at = "pathways[" + i + "].guidance." + slot + ".ladder[" + j + "]";
+        const text = String(r.text || "");
+        let why = null;
+        if (r.rung === "direction" && !/\b(you|your)\b/i.test(text) && !IMPERATIVE.test(text))
+          why = "a direction has to address the writer: it needs \"you\" or \"your\", or it has to start with an instruction";
+        else if (r.rung === "direction" && text.trim().length > 320)
+          why = "a direction over 320 characters is a paragraph rather than a push";
+        else if (r.rung === "frame" && (text.match(PLACEHOLDER) || []).length < 2)
+          why = "a frame needs at least two blanks, written as [something] or ___. One blank is a sentence with a gap in it";
+        else if (r.rung === "example" && !String(r.context || "").trim())
+          why = "an example rung needs a context naming the different situation it is set in, or it reads as a sentence about this question";
+        if (why) withheld.push({ at: at, rung: r.rung, why: why });
+      });
+    });
+  });
+  withheld.forEach(w => add(SEV.shortfall, "LADDER_RUNG_WITHHELD", w.at,
+    "this " + w.rung + " rung is authored and will not be shown to a student: " + w.why));
 
   // ---- requires -----------------------------------------------------------
   REQUIRABLE.forEach(kind => {

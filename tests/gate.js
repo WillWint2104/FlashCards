@@ -86,24 +86,33 @@ const TIERS = {
   // ui13, ui30 and ui51 joined when checkpoint went over its minute. All three
   // are end-to-end walks rather than seam checks, which is what this tier is for.
   //
-  // ui53 is the longest chain in the repository and belongs nowhere else: it
-  // publishes an externally authored package through the real importer and then
-  // walks four simulated students through it, so it crosses every surface the
-  // project has.
+  // ui53 publishes an externally authored package through the real importer and
+  // carries ONE representative student through to a finished response, so it
+  // crosses every surface the project has and does it once. That is the seam,
+  // and it belongs here.
   //
-  // 300, from a measurement rather than an estimate. The tier was 165s of 180
-  // before ui53, which was already the "not a budget" problem written about
-  // above, and the first attempt at a number here was 240 against a guess of
-  // 205: the measured run is 248.1s. There is nothing to move out to avoid the
-  // raise, which is the difference between this and checkpoint: every suite in
-  // this tier is an end-to-end walk, which is what the tier is for. So the
-  // number says what the tier costs, with the headroom stated, and the run that
-  // set it is on the record.
-  journeys: { budget: 300, suites: ["ui13", "ui30", "ui40", "ui50", "ui51", "ui53", "bots"] },
-  // Everything run.js knows about, the journeys included. An empty list means
-  // "pass no filter". It carries every suite in the tiers above plus the ones in
-  // no tier, so it cannot cost less than journeys and its budget is set from the
-  // same measurement.
+  // The four-profile matrix on the same question is tests/ui54.js and is in full
+  // only. Both halves were one suite and the tier went to 248.1s against a
+  // budget of 180, which is not a budget; the first fix was raising the number
+  // to 300, and a budget raised to fit whatever the tier grew into stops meaning
+  // anything. The split is the real fix: the routine gate keeps cross-surface
+  // imported-package coverage, and the study of how four different students fare
+  // on one question is paid for where the expensive things live.
+  //
+  // The bundled bots went with it, for the same reason and not to make a number.
+  // Splitting ui53 alone left the tier at 207.2s, because the bots are 125s of
+  // it: seven simulated students walking questions that SHIPPED. That is the
+  // same kind of work as ui54 and belongs in the same place, and leaving it here
+  // meant this tier paid for two student matrices while calling itself the
+  // routine gate. What stays is what the tier is for: the seams. Six suites that
+  // each cross a boundary once, including one imported package walked end to end
+  // by one student, in 71.7s against 180.
+  journeys: { budget: 180, suites: ["ui13", "ui30", "ui40", "ui50", "ui51", "ui53"] },
+  // Everything run.js knows about, the journeys included, plus the suites in no
+  // tier: both student matrices are here and only here, ui54's four profiles on
+  // the imported question and the bots' seven on the bundled bank. It cannot
+  // cost less than journeys, and its budget is set from the same measurements
+  // rather than from what it used to be.
   full: { budget: 480, suites: [] },
 };
 

@@ -5473,7 +5473,9 @@
     const step = slotsForRole(p.role).find(x => x.key === b.slot) || null;
     if (!step) return "";
     const g = esGuideFor(p, step);
-    return `<div class="es-guide"><div class="es-guideh">${esc(g.head)}</div><div class="es-guidejob">${esc(g.job)}</div></div>`;
+    const gap = esEvidenceGap(p, step);
+    return `<div class="es-guide"><div class="es-guideh">${esc(g.head)}</div><div class="es-guidejob">${esc(g.job)}</div>${
+      gap ? `<div class="es-evgap">${esc(gap)}</div>` : ""}</div>`;
   }
 
   // ---- help level belongs to the BLOCK, and is reset when its context moves ----
@@ -6280,7 +6282,8 @@
         // tells the student nothing they can act on and says the product is
         // unfinished, which is not their problem to carry. Absence is absence.
         body = `<p class="es-drawer-none">No verified evidence is available for this argument yet.</p>
-          <p class="es-drawer-note">You can keep writing and use evidence you already know.</p>`;
+          <p class="es-drawer-note">Your response still needs a case study or example. Use one from your
+            own course: Marginal has none authored for this question and will not supply one.</p>`;
       } else
       // "Fits this argument" is a claim about the content, so it is only made where
       // the content makes it. Where nothing is linked, the heading says what these
@@ -6901,6 +6904,24 @@
   function esEvidenceByLabel(label) {
     const b = busContent(); const key = busTopicKey();
     return ((b && key && b.evidence && b.evidence[key]) || []).find(e => e.label === label) || null;
+  }
+  // TWO FACTS, NEVER ONE. "This paragraph needs a case study" and "Marginal has a
+  // case study for you" are separate, and collapsing them is wrong in both
+  // directions. Dropping the sentence job because no evidence is authored would
+  // quietly remove a thing the response is marked on. Leaving the job alone and
+  // saying nothing else lets a student hunt through an Evidence tool that has
+  // nothing in it and conclude they have missed something.
+  //
+  // So the demand stands, always, and where Marginal has nothing to offer for
+  // this question it says so and hands the work back explicitly. Nothing here
+  // invents evidence, and nothing here removes a sentence the marker wants.
+  const ES_EVIDENCE_SLOTS = ["evidence", "example"];
+  function esEvidenceGap(p, step) {
+    if (!step || ES_EVIDENCE_SLOTS.indexOf(step.key) < 0) return "";
+    const bank = esEvidenceBank();
+    if (bank.usable.length) return "";
+    return "Marginal has no evidence authored for this question, so use a case study or example " +
+      "from your own course.";
   }
   // The guide for the active sentence, now shaped by what the student chose. An
   // authored pathway guide for this slot wins; otherwise the slot's own job stands.
@@ -8483,6 +8504,8 @@
                   </span>
                 </div>
                 <div class="es-guidejob">${esc(guide.job)}</div>
+                ${(() => { const g = esEvidenceGap(p, esStepDef(p));
+                  return g ? `<div class="es-evgap">${esc(g)}</div>` : ""; })()}
                 ${(() => {
                   // The shapes are authored per stage and are content free. They teach
                   // the grammar of the sentence, which is a different thing from the

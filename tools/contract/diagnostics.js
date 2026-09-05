@@ -43,6 +43,12 @@ const GROUPS = [
       "EVIDENCE_RECORD_PARTIAL", "SYLLABUS_RECORD_PARTIAL", "RESOURCE_RECORD_PARTIAL",
       "CRITERION_RECORD_PARTIAL", "SHAPE_RECORD_PARTIAL", "RECORD_PARTIAL"] },
 
+  { id: "withheld", title: "Authored, and a student will not see it",
+    says: "Each of these is written and will not reach a student, because the surface that shows it " +
+      "has a rule the content does not meet. Nothing is dropped in silence and nothing is guessed at: " +
+      "the rung stays withheld and this says which one and why.",
+    codes: ["LADDER_RUNG_WITHHELD"] },
+
   { id: "self", title: "The package disagrees with itself",
     says: "Two places in the file say different things: its requires list against what it actually " +
       "references, and single fields given twice in two shapes.",

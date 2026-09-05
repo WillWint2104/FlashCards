@@ -536,6 +536,8 @@
             },
             {
               "rung": "example",
+              "context": "a proofreader and a long manuscript",
+              "pattern": "where the check happens, then what is not wasted when it finds something",
               "text": "In a different context: a proofreader who reads each chapter as it is written finds a wrong character name before the next twelve chapters are built on it."
             }
           ]
@@ -607,6 +609,8 @@
             },
             {
               "rung": "example",
+              "context": "a printer and paper of one weight",
+              "pattern": "consistent input, then the work that no longer has to be done",
               "text": "In a different context: a printer given paper of one weight does not have to reset the press between jobs."
             }
           ]
@@ -670,7 +674,7 @@
             },
             {
               "rung": "direction",
-              "text": "Separate the time spent working from the time spent waiting, and say which one this changes."
+              "text": "Separate the time spent working from the time spent waiting, then say which of the two your strategy changes."
             },
             {
               "rung": "frame",
@@ -682,6 +686,8 @@
             },
             {
               "rung": "example",
+              "context": "a kitchen and its bookings",
+              "pattern": "what is prepared against, then the wait that disappears",
               "text": "In a different context: a kitchen that preps to the bookings does not wait for the wrong prep to be redone."
             }
           ]
@@ -753,6 +759,8 @@
             },
             {
               "rung": "example",
+              "context": "a road and its narrowest section",
+              "pattern": "the constraint, then what shortening it does to the whole",
               "text": "In a different context: widening the narrowest section of a road changes the journey; widening a section that was already clear does not."
             }
           ]
@@ -816,7 +824,7 @@
             },
             {
               "rung": "direction",
-              "text": "Contrast paying for capacity with paying for use."
+              "text": "Contrast what the business paid for capacity with what it now pays for use, and say which of the two your sentence is about."
             },
             {
               "rung": "frame",
@@ -828,6 +836,8 @@
             },
             {
               "rung": "example",
+              "context": "hiring a van against owning one",
+              "pattern": "paying for capacity against paying for use",
               "text": "In a different context: hiring a van for the two days you move costs less than owning one you use twice a year."
             }
           ]
@@ -891,7 +901,7 @@
             },
             {
               "rung": "direction",
-              "text": "Space, handling, insurance, and money that cannot be spent on anything else."
+              "text": "Name at least two of them: the space, the handling, the insurance, and the money that cannot be spent on anything else."
             },
             {
               "rung": "frame",
@@ -903,6 +913,8 @@
             },
             {
               "rung": "example",
+              "context": "a second fridge bought for one party",
+              "pattern": "what is held, then what holding it costs while it sits",
               "text": "In a different context: a second fridge bought for one party costs power in every week there is no party."
             }
           ]
@@ -978,6 +990,8 @@
             },
             {
               "rung": "example",
+              "context": "a menu built on one stock",
+              "pattern": "what is shared, then what does not have to change",
               "text": "In a different context: a menu built on one stock can add a dish without a new delivery."
             }
           ]
@@ -1053,6 +1067,8 @@
             },
             {
               "rung": "example",
+              "context": "one oven and a changing menu",
+              "pattern": "what one thing can be set for, then what it costs to be able to",
               "text": "In a different context: one oven that roasts and bakes serves a changing menu, and does neither as fast as a dedicated one."
             }
           ]

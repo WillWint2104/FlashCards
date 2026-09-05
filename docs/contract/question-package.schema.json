@@ -748,6 +748,16 @@
                         "description": "what this rung actually offers.",
                         "type": "string",
                         "minLength": 1
+                      },
+                      "context": {
+                        "description": "at the example rung only, the different situation the worked sentence is set in, in a few words. The rung is WITHHELD without it: an example whose context is not named reads as a sentence about this question, which is the one thing an example may never be. The runtime has always read this field and the contract never defined it, so an author had no way to know to write it and every imported example rung was silently dropped.",
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "pattern": {
+                        "description": "at the example rung only, the shape the example demonstrates, so a student can see what transfers and what does not.",
+                        "type": "string",
+                        "minLength": 1
                       }
                     }
                   }

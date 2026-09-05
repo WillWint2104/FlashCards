@@ -148,7 +148,9 @@
           "ladder": [
             {
               "rung": "hint",
-              "text": ""
+              "text": "",
+              "context": "",
+              "pattern": ""
             }
           ]
         }

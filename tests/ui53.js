@@ -24,9 +24,9 @@
 // fiction. A source question edited to make the imported one work. And support
 // shown to a student that the imported question does not carry, borrowed from a
 // question that happens to have more.
-const { chromium, T, OUT, usePractice, allRows, pageTo } = require("./env");
+const { chromium, T, OUT, usePractice, allRows, pageTo, climbLadder } = require("./env");
 const { runJourney } = require("./bots/journey");
-const { ZERO, STRONG, WRONG, PARTIAL } = require("./bots/profiles");
+const { PARTIAL } = require("./bots/profiles");
 const fs = require("fs");
 const path = require("path");
 const ROOT = path.resolve(__dirname, "..");
@@ -192,65 +192,226 @@ async function toChooser(page) {
     await page.close();
   }
 
-  console.log("5. four students write it, on its own support");
+  let ladderPage = null;
+  console.log("4b. an authored help ladder reaches the student, rung by rung");
+  {
+    // The fault this section exists for. The app discriminates the rungs above
+    // "what this part has to do" by a type tag, and the runtime adapter emitted
+    // none, so on an imported question the direction, the frame, the start and
+    // the worked example were all withheld however carefully they were authored.
+    // A simulated student climbed six times and was handed rung two every time.
+    // Nothing said so: the package validated clean and the picker reported
+    // pathway guidance as available, which it was, one rung deep.
+    const authored = (PKG.pathways || []).map(pw => ({
+      id: pw.id,
+      rungs: ((pw.guidance.explain || {}).ladder || []).map(r => r.rung),
+    }));
+    ok(authored.every(a => a.rungs.length === 6),
+      "every argument authors a full six-rung ladder: " +
+      JSON.stringify(authored.map(a => a.rungs.length)));
+    const runtimeQ = rt.toRuntimeQuestion(PKG, { topics: TOPICS });
+    runtimeQ.pathways.forEach(pw => {
+      const h = (pw.help || {}).explain || {};
+      // The tags the app checks for. Without them the rung is dropped and the
+      // student is told there is nothing further to show.
+      ok((h.direction || {}).type === "reasoningDirection", pw.id + ": the direction is typed");
+      ok((h.frame || {}).type === "scaffoldFrame", pw.id + ": the frame is typed");
+      ok((h.starter || {}).type === "sentenceStarter", pw.id + ": the start is typed");
+      ok((h.example || {}).type === "differentContextExample", pw.id + ": the example is typed");
+      ok(String((h.example || {}).context || "").trim(),
+        pw.id + ": and names the different context it is set in");
+    });
+    // And in the running app: five rungs, because a direction and a frame are
+    // alternatives at rung three by design, not six.
+    const page = await ctx.newPage();
+    await toChooser(page);
+    await pageTo(page, '.qp-row[data-esq="' + ID + '"]');
+    await page.click('.qp-row[data-esq="' + ID + '"]');
+    await page.click('[data-espick="preview"]');
+    await page.waitForSelector("#esstart", { timeout: 8000 });
+    await page.click("#esstart");
+    await page.waitForTimeout(800);
+    await page.$$eval(".es-startrow", es => { const t = es.filter(x => /Body/.test(x.textContent))[0]; t && t.click(); });
+    await page.waitForTimeout(600);
+    // Whichever argument this paragraph offers. The pathways are filtered by the
+    // area the paragraph is about, so naming one here would be naming the plan.
+    const chose = await page.$$eval("[data-espath]", es => { if (!es[0]) return null; es[0].click(); return es[0].dataset.espath; });
+    ok(!!chose, "an argument is offered in the first body paragraph: " + chose);
+    await page.waitForTimeout(600);
+    const sw = await page.$("#esstartwriting");
+    if (sw) { await sw.click(); await page.waitForTimeout(600); }
+    // The ladder is authored on the explain slot, which is the second sentence,
+    // so the first one is written and accepted to get there. That is the route a
+    // student takes, and the rung the ladder was silently truncated at.
+    await page.fill("#esline", "Checking quality at each stage affects the number of defects at McDonald's.").catch(() => {});
+    const accept = await page.$("#esaccept, #esok, [data-esaccept]");
+    if (accept) { await accept.click(); await page.waitForTimeout(600); }
+    const deepest = await climbLadder(page);
+    ok(deepest >= 5, "the ladder climbs past the second rung in the app: reached " + deepest);
+    const labels = await page.$$eval(".es-runglbl", es => es.map(e => e.textContent.replace(/\s+/g, " ").trim()));
+    ok(labels.some(l => /direction|structure to fill/i.test(l)),
+      "the third rung is the authored direction or frame: " + JSON.stringify(labels));
+    ok(labels.some(l => /start you finish/i.test(l)), "the fourth is the start: " + JSON.stringify(labels));
+    ok(labels.some(l => /somewhere else/i.test(l)), "the fifth is the worked example: " + JSON.stringify(labels));
+    // Left open on purpose: the next section asks a different question of this
+    // same sentence, and reopening it would be eight seconds spent re-walking.
+    await page.keyboard.press("Escape").catch(() => {});
+    ladderPage = page;
+  }
+
+  console.log("4c. the response still needs evidence, and Marginal says it has none");
+  {
+    // Two facts, and the suite exists because they are easy to collapse into one.
+    // "This paragraph needs a case study" is about the essay and is true whatever
+    // Marginal holds. "Marginal has a case study for you" is about the content and
+    // is false here: this package authors no evidence, because it has no source it
+    // could cite. Removing the sentence job would delete something the response is
+    // marked on; saying nothing would send a student hunting through an empty tool.
+    // The same composer 4b left open. Walking back in from the question list to
+    // ask a second question of the same sentence costs another eight seconds and
+    // proves nothing the first walk did not.
+    const page = ladderPage;
+    // Walk the sentence jobs to the one that asks for evidence.
+    let atEvidence = null;
+    for (let i = 0; i < 6; i++) {
+      const st = await page.evaluate(() => ({
+        head: ((document.querySelector(".es-guideh") || {}).textContent || "").trim(),
+        job: ((document.querySelector(".es-guidejob") || {}).textContent || "").trim(),
+        gap: ((document.querySelector(".es-evgap") || {}).textContent || "").trim(),
+      }));
+      if (/example|evidence/i.test(st.head)) { atEvidence = st; break; }
+      const next = await page.$("#esnextguide:not([disabled])");
+      if (!next) break;
+      await next.click(); await page.waitForTimeout(320);
+    }
+    ok(!!atEvidence, "the composer reaches a sentence that asks for evidence: " +
+      JSON.stringify(atEvidence && atEvidence.head));
+    if (atEvidence) {
+      // FACT ONE. The job is still there. This is the assertion that fails if
+      // anybody "fixes" the empty evidence bank by deleting the demand.
+      ok(/example|evidence|case study/i.test(atEvidence.job),
+        "the sentence still asks for a case study or example: " + JSON.stringify(atEvidence.job));
+      // FACT TWO, and it is a different sentence in a different element, so one
+      // cannot be mistaken for the other or quietly absorbed into the other.
+      ok(/no evidence authored for this question/i.test(atEvidence.gap),
+        "and says plainly that Marginal has none for this question: " + JSON.stringify(atEvidence.gap));
+      ok(/your own course/i.test(atEvidence.gap),
+        "handing the work back explicitly rather than leaving a gap: " + JSON.stringify(atEvidence.gap));
+      ok(atEvidence.job.indexOf(atEvidence.gap) < 0,
+        "the two are separate statements, not one sentence doing both jobs");
+    }
+    // And the Evidence tool itself does not pretend. It offers nothing, says so,
+    // and repeats where the evidence has to come from instead.
+    await page.click('[data-estool="evidence"]').catch(() => {});
+    await page.waitForTimeout(500);
+    const drawer = await page.evaluate(() => ({
+      none: ((document.querySelector(".es-drawer-none") || {}).textContent || "").trim(),
+      note: [...document.querySelectorAll(".es-drawer-note")].map(e => e.textContent.trim()).join(" "),
+      rows: document.querySelectorAll(".es-evrow, .es-evitem").length,
+    }));
+    ok(drawer.rows === 0, "the Evidence tool offers no items: " + drawer.rows);
+    ok(/no verified evidence/i.test(drawer.none), "it says so: " + JSON.stringify(drawer.none));
+    ok(/still needs a case study or example/i.test(drawer.note),
+      "and still names what the response needs: " + JSON.stringify(drawer.note));
+    ok(/will not supply one/i.test(drawer.note),
+      "without offering to supply it: " + JSON.stringify(drawer.note));
+    await page.close(); ladderPage = null;
+
+    // THE OTHER STATE, or the assertions above only prove the note is always
+    // printed. The bundled evidence bank ships with no checked sources, which is
+    // why it is withheld, so the suite supplies sources rather than weakening the
+    // rule under test, and then the same sentence must carry the job and NOT the
+    // note: Marginal does have evidence here.
+    const p2 = await ctx.newPage();
+    await p2.route(/workers\.dev/, r => r.abort());
+    await p2.goto(T);
+    await p2.waitForSelector(".navtab", { timeout: 8000 });
+    await p2.evaluate(() => { Object.keys((window.BUSCONTENT || {}).evidence || {}).forEach(k =>
+      window.BUSCONTENT.evidence[k].forEach(e => { e.source = "test fixture source"; e.checked = "2026-08-19"; })); });
+    for (const t of await p2.$$(".navtab")) {
+      if (/essay/i.test((await t.textContent()) || "")) { await t.click(); break; }
+    }
+    await p2.waitForSelector("#essubject", { timeout: 8000 });
+    await p2.selectOption("#essubject", "business_studies");
+    await p2.waitForTimeout(300);
+    await usePractice(p2);
+    await pageTo(p2, '.qp-row[data-esq="mkt-01"]');
+    await p2.click('.qp-row[data-esq="mkt-01"]');
+    await p2.click('[data-espick="preview"]');
+    await p2.waitForSelector("#esstart", { timeout: 8000 });
+    await p2.click("#esstart");
+    await p2.waitForTimeout(900);
+    await p2.$$eval(".es-startrow", es => { const t = es.filter(x => /Body/.test(x.textContent))[0]; t && t.click(); });
+    await p2.waitForTimeout(700);
+    await p2.$$eval("[data-espath]", es => es[0] && es[0].click());
+    await p2.waitForTimeout(600);
+    const sw3 = await p2.$("#esstartwriting");
+    if (sw3) { await sw3.click(); await p2.waitForTimeout(600); }
+    let withEvidence = null;
+    for (let i = 0; i < 6; i++) {
+      const st = await p2.evaluate(() => ({
+        head: ((document.querySelector(".es-guideh") || {}).textContent || "").trim(),
+        job: ((document.querySelector(".es-guidejob") || {}).textContent || "").trim(),
+        gap: ((document.querySelector(".es-evgap") || {}).textContent || "").trim(),
+      }));
+      if (/example|evidence/i.test(st.head)) { withEvidence = st; break; }
+      const next = await p2.$("#esnextguide:not([disabled])");
+      if (!next) break;
+      await next.click(); await p2.waitForTimeout(320);
+    }
+    ok(!!withEvidence, "a question WITH usable evidence reaches the same sentence: " +
+      JSON.stringify(withEvidence && withEvidence.head));
+    if (withEvidence) {
+      ok(/example|evidence|case study/i.test(withEvidence.job),
+        "which still asks for a case study: " + JSON.stringify(withEvidence.job));
+      ok(withEvidence.gap === "",
+        "and carries no note about Marginal having none, because it has some: " +
+        JSON.stringify(withEvidence.gap));
+    }
+    await p2.close();
+  }
+
+  console.log("5. one student writes it, end to end, on its own support");
+  // ONE student here, on purpose. This tier answers "does the seam between the
+  // importer and the student runtime still work", and one representative walk
+  // answers it. The full four-profile matrix - zero knowledge, competent, wrong
+  // turn, strong independent - is tests/ui54.js, which runs in the full tier:
+  // four walks through one question is a study of the pedagogy rather than a
+  // check on the architecture, and paying for it on every journeys run turned
+  // this tier into a small full suite.
+  //
+  // The partial-knowledge student is the representative one. It chooses a
+  // supplied argument, reads the pathway lesson, climbs the help ladder and
+  // finishes, so a single walk crosses store, picker, preview, workspace,
+  // lesson and ladder. tests/bots/profiles.js calls it the profile a real
+  // student is likeliest to be, and that is the same reason.
   const q = rt.toRuntimeQuestion(PKG, { topics: TOPICS });
   const subjectContent = (() => {
     const { E } = lib.build();
     return E.subjects.business_studies;
   })();
-  const RUNS = [
-    { prof: ZERO, bodies: 3 },
-    { prof: PARTIAL, bodies: 3 },
-    { prof: WRONG, bodies: 3 },
-    { prof: STRONG, bodies: 2 },
-  ];
-  const by = {};
-  const page = await ctx.newPage();
-  const traces = [];
-  for (const r of RUNS) {
-    const res = await runJourney(page, {
-      T, subject: "business_studies", qre: new RegExp("operations strategies affect the quality", "i"),
-      q: q, subjectContent: subjectContent, prof: r.prof, bodies: r.bodies,
-    });
-    by[r.prof.name] = res;
-    traces.push(res.trace.report());
-    console.log(res.trace.report() + "\n");
-  }
-  fs.writeFileSync(path.join(OUT, "external-journeys.txt"), traces.join("\n\n") + "\n");
-
-  console.log("6. every one of them finished, and the four journeys differ");
-  // Never refused means every paragraph started was finished, in prose. It is
-  // NOT trace.m.blocked, which counts something else: a student writing without
-  // a concept it needed and the app could have explained. That number is above
-  // zero on the questions that shipped too, so asserting zero here would be
-  // asserting that an imported question is better resourced than a bundled one.
-  RUNS.forEach(r => {
-    const t = by[r.prof.name].trace;
-    ok(t.m.paragraphs === r.bodies,
-      r.prof.name + " finished every paragraph it started: " + t.m.paragraphs + " of " + r.bodies);
-    ok(t.m.sentences >= r.bodies,
-      r.prof.name + " wrote prose in all of them: " + t.m.sentences + " sentences");
-    console.log("    " + r.prof.name + ": wrote without a concept it needed " + t.m.blocked + " time(s)" +
-      (t.m.unexplained.length ? "; never explained: " + t.m.unexplained.join(", ") : ""));
+  const page5 = await ctx.newPage();
+  const res = await runJourney(page5, {
+    T, subject: "business_studies", qre: new RegExp("operations strategies affect the quality", "i"),
+    q: q, subjectContent: subjectContent, prof: PARTIAL, bodies: 3,
   });
-  const zero = by["zero knowledge"].trace.m, strong = by["strong independent"].trace.m;
-  const wrong = by["plausible wrong turn"].trace.m, part = by["partial knowledge"].trace.m;
-  // The four profiles differ only in what they know and what they will do about
-  // it, so if their journeys look the same the harness is not modelling students
-  // and nothing above this line means anything.
-  ok(zero.surfacesOpened > strong.surfacesOpened,
-    "the student who knew nothing opened more support than the one who knew it: " +
-    zero.surfacesOpened + " against " + strong.surfacesOpened);
-  ok(zero.lessonOpens > 0, "and read a lesson: " + zero.lessonOpens + " (" + zero.lessonWords + " words)");
-  ok(strong.lessonOpens === 0, "while the strong student read none: " + strong.lessonOpens);
-  ok(zero.termsAcquired > 0,
-    "the zero-knowledge student learned something from this question's own words: " +
-    zero.termsAcquired + " of " + zero.teachable);
-  ok(wrong.helpRungs > 0 || wrong.prompts > 0,
-    "the wrong turn was answered rather than blocked: " + wrong.helpRungs + " rungs, " + wrong.prompts + " prompts");
-  ok(part.lessonOpens > 0 && part.surfacesOpened <= zero.surfacesOpened,
-    "and the partial student took the middle road: " + part.lessonOpens + " lessons, " +
-    part.surfacesOpened + " surfaces");
+  console.log(res.trace.report() + "\n");
+  fs.writeFileSync(path.join(OUT, "external-smoke-journey.txt"), res.trace.report() + "\n");
+
+  console.log("6. it finished, on the support this package carries");
+  {
+    const t = res.trace;
+    ok(t.m.paragraphs === 3, "every paragraph started was finished: " + t.m.paragraphs + " of 3");
+    ok(t.m.sentences >= 3, "in prose: " + t.m.sentences + " sentences");
+    ok(t.m.suppliedArguments > 0,
+      "it chose arguments this package authored: " + t.m.suppliedArguments);
+    ok(t.m.lessonOpens > 0,
+      "and read a lesson this package wrote: " + t.m.lessonOpens + " (" + t.m.lessonWords + " words)");
+    ok(t.m.termsAcquired > 0,
+      "learning something from the question's own words: " + t.m.termsAcquired + " of " + t.m.teachable);
+    console.log("    wrote without a concept it needed " + t.m.blocked + " time(s)" +
+      (t.m.unexplained.length ? "; never explained: " + t.m.unexplained.join(", ") : ""));
+  }
 
   console.log("7. nothing was borrowed, and nothing in the source bank moved");
   {

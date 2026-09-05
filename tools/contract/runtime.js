@@ -74,13 +74,26 @@ function helpOf(guidance) {
     const ladder = (guidance[slot] || {}).ladder || [];
     if (!ladder.length) return;
     const h = {};
+    // The app discriminates the rungs above "what this part has to do" by a type
+    // tag, and withholds any rung that does not carry the one it expects. This
+    // adapter used to emit { text } with no tag, so on an imported question every
+    // rung above the second was silently dropped: the direction, the frame, the
+    // start you finish and the worked example, however carefully they were
+    // authored. A simulated student climbed the ladder six times and was handed
+    // rung two every time, which is what "the app had nothing further to show"
+    // meant. The contract already names the kind, as ladder[].rung, so this is a
+    // translation between two names for one thing rather than a field invented
+    // here: nothing is added to a rung the author did not write.
+    const TYPE = { direction: "reasoningDirection", frame: "scaffoldFrame",
+                   starter: "sentenceStarter", example: "differentContextExample" };
     ladder.forEach(rung => {
       if (rung.rung === "hint") h.hint = rung.text;
       else if (rung.rung === "needs") h.needs = rung.text;
-      else if (rung.rung === "direction") h.direction = { text: rung.text };
-      else if (rung.rung === "frame") h.frame = { text: rung.text };
-      else if (rung.rung === "starter") h.starter = { text: rung.text };
-      else if (rung.rung === "example") h.example = { text: rung.text, context: rung.context || undefined, pattern: rung.pattern || undefined };
+      else if (rung.rung === "direction") h.direction = { type: TYPE.direction, text: rung.text };
+      else if (rung.rung === "frame") h.frame = { type: TYPE.frame, text: rung.text };
+      else if (rung.rung === "starter") h.starter = { type: TYPE.starter, text: rung.text };
+      else if (rung.rung === "example") h.example = { type: TYPE.example, text: rung.text,
+        context: rung.context || undefined, pattern: rung.pattern || undefined };
     });
     out[slot] = h;
   });
