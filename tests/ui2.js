@@ -39,9 +39,9 @@ const REVIEW = {
 
   // ---- pick an AUTHORED question: its definition must travel with the response
   await usePractice(p);
-  const chip = await p.$('.es-qrow');
+  const chip = await p.$('.qp-row');
   ok(!!chip,'authored question chips are offered');
-  const chips = await p.$$('.es-qrow');
+  const chips = await p.$$('.qp-row');
   // ah-religion is the second Ancient History question
   await chips[1].click(); await settled(p);
   // Choosing a practice question no longer types it into a box: the box only
@@ -49,7 +49,7 @@ const REVIEW = {
   // and the id is what travels with the response.
   const qtext = await p.evaluate(() => {
     const c = document.querySelector('.es-chosenq');
-    const on = document.querySelector('.es-qrow.on');
+    const on = document.querySelector('.qp-row.on');
     return { shown: c ? c.textContent : '', id: on ? on.dataset.esq : null };
   });
   ok(/religious beliefs/.test(qtext.shown),'the chosen question is stated back: '+JSON.stringify(qtext.shown.slice(0,50)));

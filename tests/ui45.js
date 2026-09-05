@@ -36,7 +36,7 @@ async function enter(p, qre) {
   await p.selectOption('#essubject', 'business_studies');
   await usePractice(p);
   const picked = await p.evaluate(r => {
-    const t = [...document.querySelectorAll('.es-qrow')].find(x => new RegExp(r, 'i').test(x.textContent));
+    const t = [...document.querySelectorAll('.qp-row')].find(x => new RegExp(r, 'i').test(x.textContent));
     if (t) { t.click(); return t.innerText.replace(/\s+/g, ' ').trim().slice(0, 80); } return null;
   }, qre);
   if (!picked) return null;

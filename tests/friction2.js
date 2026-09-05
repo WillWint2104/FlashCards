@@ -9,7 +9,7 @@ const { chromium, T, OUT, BASE, fileUrl, usePractice } = require('./env');
   await p.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await p.waitForTimeout(400);
   await p.selectOption('#essubject', 'business_studies'); await p.waitForTimeout(200);
-  await usePractice(p); await p.$$eval('.es-qrow', es => { const t = es.find(x => /target markets/i.test(x.textContent)); t && t.click(); });
+  await usePractice(p); await p.$$eval('.qp-row', es => { const t = es.find(x => /target markets/i.test(x.textContent)); t && t.click(); });
   await p.selectOption('#esstruct', 'six'); await p.waitForTimeout(150);
   await p.click('#esstart'); await p.waitForTimeout(400);
 

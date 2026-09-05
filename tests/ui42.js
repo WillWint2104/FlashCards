@@ -79,11 +79,11 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  FAIL:', m); 
   await p.waitForSelector('#essubject', { timeout: 8000 });
   await p.selectOption('#essubject', 'business_studies').catch(() => {});
   await usePractice(p);
-  await p.waitForSelector('.es-qrow', { timeout: 8000 });
-  const rows = await p.$$eval('.es-qrow', es => es.length);
+  await p.waitForSelector('.qp-row', { timeout: 8000 });
+  const rows = await p.$$eval('.qp-row', es => es.length);
   ok(rows > 0, 'the question bank loads from the file itself: ' + rows + ' questions');
 
-  await p.evaluate(() => { const r = document.querySelector('.es-qrow'); r && r.click(); });
+  await p.evaluate(() => { const r = document.querySelector('.qp-row'); r && r.click(); });
   await p.evaluate(() => { const s = document.querySelector('#esstart'); s && s.click(); });
   await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow'), null, { timeout: 8000 });
   const reached = await p.evaluate(() => ({

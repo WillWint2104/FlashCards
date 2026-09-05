@@ -10,7 +10,7 @@
 // Both are display faults over correct data, and both are the kind that a suite
 // asserting "the list has 13 rows" would never see. So this one reads what is on
 // the screen and compares it with what the author wrote.
-const { chromium, T, usePractice } = require("./env");
+const { chromium, T, usePractice, allRows, pageTo } = require("./env");
 const fs = require("fs");
 const path = require("path");
 const ROOT = path.resolve(__dirname, "..");
@@ -33,12 +33,9 @@ async function chooser(page, subject) {
   await page.waitForTimeout(300);
   await usePractice(page);
 }
-const rowsOf = page => page.$$eval(".es-qrow", es => es.map(e => ({
-  id: e.dataset.esq,
-  q: ((e.querySelector(".es-qrowq") || {}).textContent || "").trim(),
-  meta: ((e.querySelector(".es-qrowmeta") || {}).textContent || "").trim(),
-  whole: (e.textContent || "").trim(),
-})));
+// Across every page of the current filter, not just the page on screen. The list
+// paginates at ten, so reading .qp-row alone reads a page and calls it the set.
+const rowsOf = page => allRows(page);
 
 (async () => {
   const browser = await chromium.launch();
@@ -144,7 +141,7 @@ const rowsOf = page => page.$$eval(".es-qrow", es => es.map(e => ({
     const page = await ctx.newPage();
     await chooser(page);
     const before = await page.$$eval("[data-essetupdir]", es => es.map(e => e.dataset.essetupdir).filter(Boolean));
-    const beforeCount = await page.$eval('[data-essetupdir="explain"] .es-pilln', e => Number(e.textContent));
+    const beforeCount = await page.$eval('[data-essetupdir="explain"] .qp-n', e => Number(e.textContent));
     await page.evaluate(doc => {
       window.localStorage.setItem("marginal.import.pkg." + doc.question.id, JSON.stringify({
         schema: "marginal.published-package", version: 1,
@@ -155,7 +152,7 @@ const rowsOf = page => page.$$eval(".es-qrow", es => es.map(e => ({
     const after = await page.$$eval("[data-essetupdir]", es => es.map(e => e.dataset.essetupdir).filter(Boolean));
     ok(JSON.stringify(after) === JSON.stringify(before),
       "importing a lowercase explain adds NO new directive filter: " + JSON.stringify(after));
-    const afterCount = await page.$eval('[data-essetupdir="explain"] .es-pilln', e => Number(e.textContent));
+    const afterCount = await page.$eval('[data-essetupdir="explain"] .qp-n', e => Number(e.textContent));
     ok(afterCount === beforeCount + 1,
       "it is counted under the one that is there: " + beforeCount + " then " + afterCount);
     const rows = await rowsOf(page);
@@ -181,16 +178,18 @@ const rowsOf = page => page.$$eval(".es-qrow", es => es.map(e => ({
     await chooser(page);
     const read = () => page.evaluate(() => ({
       dirs: [...document.querySelectorAll("[data-essetupdir]")].filter(e => e.dataset.essetupdir).map(e => ({
-        id: e.dataset.essetupdir, n: Number((e.querySelector(".es-pilln") || {}).textContent) })),
+        id: e.dataset.essetupdir, n: Number((e.querySelector(".qp-n") || {}).textContent) })),
       topics: [...document.querySelectorAll("[data-essetuptopic]")].filter(e => e.dataset.essetuptopic).map(e => ({
-        id: e.dataset.essetuptopic, n: Number((e.querySelector(".es-pilln") || {}).textContent) })),
-      all: Number((document.querySelector('[data-essetupdir=""] .es-pilln') || {}).textContent),
-      count: (document.querySelector(".es-resultcount") || {}).textContent.trim(),
-      rows: document.querySelectorAll(".es-qrow").length,
+        id: e.dataset.essetuptopic, n: Number((e.querySelector(".qp-n") || {}).textContent) })),
+      all: Number((document.querySelector('[data-essetupdir=""] .qp-n') || {}).textContent),
+      count: (document.querySelector(".qp-count") || {}).textContent.trim(),
+      rows: document.querySelectorAll(".qp-row").length,
     }));
     const all = await read();
-    ok(/^13 questions/.test(all.count), "the count line is above the results and says 13: " + all.count);
-    ok(all.rows === 13, "and there are 13 rows");
+    // The count line names the RANGE and the total, because the list paginates.
+    ok(/^1–10 of 13 questions/.test(all.count),
+      "the count line is above the results and says the range and the total: " + all.count);
+    ok(all.rows === 10, "and a page holds ten of them: " + all.rows);
     ok(all.dirs.reduce((n, d) => n + d.n, 0) === 13, "the directive counts sum to the bank: " +
       JSON.stringify(all.dirs));
     ok(all.all === 13, "and the All pill says the same total: " + all.all);
@@ -199,7 +198,7 @@ const rowsOf = page => page.$$eval(".es-qrow", es => es.map(e => ({
     await page.waitForTimeout(250);
     const fin = await read();
     ok(fin.rows === 3, "Finance has three questions: " + fin.rows);
-    ok(/^3 questions of 13/.test(fin.count), "the count says how many of how many: " + fin.count);
+    ok(/^1–3 of 3 questions/.test(fin.count), "the count says the range and the filtered total: " + fin.count);
     ok(fin.dirs.reduce((n, d) => n + d.n, 0) === 3,
       "and the directive counts now sum to what Finance holds, not to the bank: " + JSON.stringify(fin.dirs));
     const empty = fin.dirs.filter(d => d.n === 0);
@@ -214,7 +213,7 @@ const rowsOf = page => page.$$eval(".es-qrow", es => es.map(e => ({
     ok(!!clear, "there is an All pill to go back to all of them");
     await clear.click();
     await page.waitForTimeout(250);
-    ok((await read()).rows === 13, "which restores every question");
+    ok((await read()).rows === 10, "which restores the full list, a page at a time: " + (await read()).rows);
     await page.close();
   }
 
@@ -241,18 +240,20 @@ const rowsOf = page => page.$$eval(".es-qrow", es => es.map(e => ({
     // rubric and nothing else. If the preview said the same thing about both, it
     // would be decoration.
     const read = async id => {
-      await page.click('.es-qrow[data-esq="' + id + '"]');
-      await page.waitForSelector(".es-prevq", { timeout: 8000 });
+      // The question may be on a later page.
+      await pageTo(page, '.qp-row[data-esq="' + id + '"]');
+      await page.click('.qp-row[data-esq="' + id + '"]');
+      await page.waitForSelector(".qp-prevq", { timeout: 8000 });
       const out = await page.evaluate(() => ({
-        q: document.querySelector(".es-prevq").textContent.trim(),
-        facts: [...document.querySelectorAll(".es-factrow")].map(r => [
+        q: document.querySelector(".qp-prevq").textContent.trim(),
+        facts: [...document.querySelectorAll(".qp-fact")].map(r => [
           r.querySelector("dt").textContent.trim(), r.querySelector("dd").textContent.trim()]),
-        support: [...document.querySelectorAll(".es-suprow")].map(r => ({
-          name: r.querySelector(".es-supname").textContent.trim(),
-          state: r.querySelector(".es-supstate").textContent.trim() })),
+        support: [...document.querySelectorAll(".qp-suprow")].map(r => ({
+          name: r.querySelector(".qp-supname").textContent.trim(),
+          state: r.querySelector(".qp-supstate").textContent.trim() })),
       }));
       await page.click("#esbacklist");
-      await page.waitForSelector(".es-qrow", { timeout: 8000 });
+      await page.waitForSelector(".qp-row", { timeout: 8000 });
       return out;
     };
     const guided = await read("mkt-01");
@@ -302,9 +303,9 @@ const rowsOf = page => page.$$eval(".es-qrow", es => es.map(e => ({
     await page.selectOption("#essubject", "business_studies");
     await page.waitForTimeout(250);
     const stage = () => page.evaluate(() => ({
-      heading: (document.querySelector(".es-h1, .es-h2") || {}).textContent,
-      rows: document.querySelectorAll(".es-qrow").length,
-      preview: !!document.querySelector(".es-prevq"),
+      heading: (document.querySelector(".qp-h1") || {}).textContent,
+      rows: document.querySelectorAll(".qp-row").length,
+      preview: !!document.querySelector(".qp-prevq"),
       subject: !!document.querySelector("#essubject"),
       // Present is not the question; VISIBLE is. A field inside a hidden wrapper
       // is not part of the screen even though it is in the document.
@@ -315,18 +316,26 @@ const rowsOf = page => page.$$eval(".es-qrow", es => es.map(e => ({
       "stage one is the subject and no list: " + JSON.stringify(one));
     await page.click('[data-espick="list"]'); await page.waitForTimeout(250);
     const two = await stage();
-    ok(/Choose a practice question/.test(two.heading) && two.rows === 13 && !two.subject,
+    ok(/Choose a practice question/.test(two.heading) && two.rows === 10 && !two.subject,
       "stage two is the list, with its own heading and no setup form: " + JSON.stringify(two));
     ok(!two.settings, "and the settings are not carried down it: " + two.settings);
-    await page.click('.es-qrow[data-esq="mkt-01"]'); await page.waitForTimeout(250);
+    // The settings live on the SETUP stage, which is where setting up happens.
+    // They must be reachable from there, folded, or a student who wants a
+    // different structure has nowhere to go.
+    await page.click('.qp-row[data-esq="mkt-01"]'); await page.waitForTimeout(250);
     const three = await stage();
     ok(three.preview && three.rows === 0, "stage three is the question: " + JSON.stringify(three));
-    ok(three.settings, "with the settings reachable, folded, so nothing became unreachable");
+    ok(!three.settings, "and the preview carries no settings either: " + three.settings);
     // Back, all the way.
     await page.click("#esbacklist"); await page.waitForTimeout(250);
-    ok((await stage()).rows === 13, "back returns to the list");
+    ok((await stage()).rows === 10, "back returns to the list");
     await page.click('[data-espick="subject"]'); await page.waitForTimeout(250);
-    ok((await stage()).subject, "and back again returns to the subject");
+    const home = await stage();
+    ok(home.subject, "and back again returns to the subject");
+    ok(!!(await page.$("#esmoreopts")), "where the essay options are, folded away");
+    await page.click("#esmoreopts > summary"); await page.waitForTimeout(200);
+    ok(!!(await page.$("#esstruct")) && !!(await page.$("#esmarks")),
+      "and one press opens structure and marks, so nothing became unreachable");
     await page.close();
   }
 

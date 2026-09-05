@@ -32,7 +32,7 @@ async function enter(p, opts) {
   await p.waitForSelector('#essubject', { timeout: 8000 });
   await p.selectOption('#essubject', 'business_studies');
   await usePractice(p);
-  await p.evaluate(() => { const t = [...document.querySelectorAll('.es-qrow')].find(x => /target markets/i.test(x.textContent)); t && t.click(); });
+  await p.evaluate(() => { const t = [...document.querySelectorAll('.qp-row')].find(x => /target markets/i.test(x.textContent)); t && t.click(); });
   await p.click('#esstart');
   await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow'), null, { timeout: 8000 });
   await p.evaluate(() => { const t = [...document.querySelectorAll('.es-startrow')].find(x => /Body 1/.test(x.textContent)); t && t.click(); });

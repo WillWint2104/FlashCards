@@ -14,7 +14,7 @@
 // the questions that shipped are no longer the objects they were. A collision
 // resolved by picking a winner instead of refusing. And support offered on an
 // imported question that nobody authored for it.
-const { chromium, T, usePractice } = require("./env");
+const { chromium, T, usePractice, allRows, pageTo } = require("./env");
 const fs = require("fs");
 const path = require("path");
 const ROOT = path.resolve(__dirname, "..");
@@ -122,7 +122,7 @@ async function toChooser(page) {
   {
     const page = await ctx.newPage();
     await toChooser(page);
-    const rows = await page.$$eval(".es-qrow", es => es.map(e => e.dataset.esq));
+    const rows = (await allRows(page)).map(r => r.id);
     ok(rows.indexOf(ID) >= 0, "the imported question is in the list: " + JSON.stringify(rows));
     // Every question that shipped is still there, and the imported one sits
     // among them in the ordinary order rather than in a section of its own. The
@@ -130,14 +130,18 @@ async function toChooser(page) {
     // check; being indistinguishable in the ordering is.
     const busSource = SOURCE_IDS.filter(id => rows.indexOf(id) >= 0);
     ok(busSource.length === 13, "all 13 Business Studies questions that shipped are still listed: " + busSource.length);
-    const meta = await page.$$eval(".es-qrow", es => es.map(e => ({
-      id: e.dataset.esq, topic: ((e.querySelector(".es-qrowmeta") || {}).textContent || "").split("\u00b7")[0].trim() })));
+    const meta = (await allRows(page)).map(r => ({ id: r.id, topic: r.meta.split("\u00b7")[0].trim() }));
     const topics = meta.map(m => m.topic);
     ok(JSON.stringify(topics) === JSON.stringify(topics.slice().sort()),
       "the list is in topic order: " + JSON.stringify(topics));
+    // Ordered like any other question. Where it lands is whatever its topic
+    // says, which for this one is Marketing: among the Marketing questions and
+    // before the Operations ones, not appended after everything.
     const mine = meta.findIndex(m => m.id === ID);
-    ok(mine > 0 && mine < meta.length - 1,
-      "and the imported question sits inside that order, not bolted to an end: position " +
+    const mkt = meta.filter(m => m.topic === "Marketing").map(m => m.id);
+    ok(mkt.indexOf(ID) >= 0, "the imported question sits with its own topic: " + JSON.stringify(mkt));
+    ok(meta.slice(mine + 1).some(m => m.topic !== "Marketing"),
+      "with other topics after it, so it is ordered rather than appended: position " +
       (mine + 1) + " of " + meta.length);
     // There is no separate route, list or badge for imported questions.
     const routes = await page.$$eval("[data-espick]", es => es.map(e => e.dataset.espick));
@@ -184,17 +188,26 @@ async function toChooser(page) {
     // the directive stripped, which this assertion used to encode; that was a
     // display fault applying to every question, bundled and imported, and it is
     // fixed. tests/ui51.js is the regression for it across the whole bank.
-    const rowq = await page.$eval('.es-qrow[data-esq="' + ID + '"] .es-qrowq', e => e.textContent.trim());
+    await pageTo(page, '.qp-row[data-esq="' + ID + '"]');
+    const rowq = await page.$eval('.qp-row[data-esq="' + ID + '"] .qp-q', e => e.textContent.trim());
     ok(rowq === PKG.question.text.trim(),
       "the row is the authored question, whole: " + JSON.stringify(rowq));
-    const rowmeta = await page.$eval('.es-qrow[data-esq="' + ID + '"] .es-qrowmeta', e => e.textContent.trim());
+    const rowmeta = await page.$eval('.qp-row[data-esq="' + ID + '"] .qp-meta', e => e.textContent.trim());
     ok(/Marketing/.test(rowmeta) && /Explain/.test(rowmeta) && /8 marks/.test(rowmeta),
       "with its authored topic, directive and marks beneath: " + JSON.stringify(rowmeta));
-    await page.click('.es-qrow[data-esq="' + ID + '"]');
-    await page.waitForTimeout(300);
-    const marks = await page.$eval("#esmarks", e => e.value).catch(() => null);
+    // Choosing the row opens the preview, which is where the marks a student
+    // sees are stated as a fact about the question. #esmarks is the editable
+    // form field and lives with the other settings on the setup stage, not here.
+    await page.click('.qp-row[data-esq="' + ID + '"]');
+    await page.waitForSelector(".qp-prevq", { timeout: 8000 });
+    const marks = await page.evaluate(() => {
+      const r = [...document.querySelectorAll(".qp-fact")].find(x => /Marks/.test(x.querySelector("dt").textContent));
+      return r ? r.querySelector("dd").textContent.trim() : null;
+    });
     ok(String(marks) === String(PKG.question.marks),
-      "the marks are the authored " + PKG.question.marks + ": " + marks);
+      "the preview states the authored " + PKG.question.marks + " marks: " + marks);
+    await page.click("#esbacklist");
+    await page.waitForSelector(".qp-row", { timeout: 8000 });
     // A package that authors NO marks must not acquire a number here. Inventing
     // one tells a student how much the question is worth on nobody's authority,
     // and it is the single easiest fabrication for an adapter to introduce.
@@ -209,6 +222,11 @@ async function toChooser(page) {
     }, noMarks);
     ok(inPage.marks === undefined || inPage.marks === null,
       "and the same is true of the adapter running in the page: " + JSON.stringify(inPage));
+    // Back on the list after reading the marks, so the question is reopened
+    // before starting it.
+    await pageTo(page, '.qp-row[data-esq="' + ID + '"]');
+    await page.click('.qp-row[data-esq="' + ID + '"]');
+    await page.waitForSelector("#esstart", { timeout: 8000 });
     await page.click("#esstart");
     await page.waitForTimeout(900);
     const host = await page.$eval("#eshost", e => e.innerText);
@@ -272,7 +290,7 @@ async function toChooser(page) {
     ok(stored.indexOf(ID) >= 0, "the store still holds it after a reload: " + JSON.stringify(stored));
     const other = await ctx.newPage();
     await toChooser(other);
-    const rows = await other.$$eval(".es-qrow", es => es.map(e => e.dataset.esq));
+    const rows = (await allRows(other)).map(r => r.id);
     ok(rows.indexOf(ID) >= 0, "and a second tab lists it too");
     await other.close(); await page.close();
   }
@@ -284,7 +302,7 @@ async function toChooser(page) {
     // a different one under a familiar id.
     const page = await ctx.newPage();
     await toChooser(page);
-    const before = await page.$eval('.es-qrow[data-esq="mkt-01"]', e => e.textContent.trim());
+    const before = await page.$eval('.qp-row[data-esq="mkt-01"]', e => e.textContent.trim());
     const report = await page.evaluate(() => {
       window.localStorage.setItem("marginal.import.pkg.mkt-01", JSON.stringify({
         schema: "marginal.published-package", version: 1,
@@ -304,7 +322,7 @@ async function toChooser(page) {
     await page.reload();
     await page.waitForSelector(".navtab", { timeout: 8000 });
     await toChooser(page);
-    const after = await page.$eval('.es-qrow[data-esq="mkt-01"]', e => e.textContent.trim());
+    const after = await page.$eval('.qp-row[data-esq="mkt-01"]', e => e.textContent.trim());
     ok(after === before, "the row a student sees is unchanged: " + JSON.stringify(after.slice(0, 40)));
     await page.evaluate(() => window.localStorage.removeItem("marginal.import.pkg.mkt-01"));
     await page.close();
@@ -314,7 +332,7 @@ async function toChooser(page) {
   {
     const page = await ctx.newPage();
     await toChooser(page);
-    const beforeRows = await page.$$eval(".es-qrow", es => es.map(e => e.dataset.esq));
+    const beforeRows = (await allRows(page)).map(r => r.id);
     await page.evaluate(() => {
       // The store's own clear, which removes its keys and nothing else. A blanket
       // localStorage.clear() would take the app's saved essays with it, which is
@@ -326,7 +344,7 @@ async function toChooser(page) {
     await page.reload();
     await page.waitForSelector(".navtab", { timeout: 8000 });
     await toChooser(page);
-    const afterRows = await page.$$eval(".es-qrow", es => es.map(e => e.dataset.esq));
+    const afterRows = (await allRows(page)).map(r => r.id);
     ok(afterRows.indexOf(ID) < 0, "the imported question is gone: " + JSON.stringify(afterRows));
     ok(JSON.stringify(afterRows) === JSON.stringify(beforeRows.filter(r => r !== ID)),
       "and every question that shipped is exactly as it was: " + afterRows.length + " rows");

@@ -47,7 +47,7 @@ async function openFixture(p){
   await settled(p);
   await p.selectOption('#essubject','evidence_contract');
   await settled(p);
-  await usePractice(p); await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/fixture marketing question/i.test(x.textContent));t&&t.click();});
+  await usePractice(p); await p.$$eval('.qp-row',es=>{const t=es.find(x=>/fixture marketing question/i.test(x.textContent));t&&t.click();});
   await settled(p);
   await p.click('#esstart');
   await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });

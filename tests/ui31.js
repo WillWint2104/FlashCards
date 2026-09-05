@@ -23,7 +23,7 @@ async function open(p){
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await settled(p);
   await p.selectOption('#essubject','business_studies'); await settled(p);
-  await usePractice(p); await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/target markets affect/i.test(x.textContent));t&&t.click();});
+  await usePractice(p); await p.$$eval('.qp-row',es=>{const t=es.find(x=>/target markets affect/i.test(x.textContent));t&&t.click();});
   await p.click('#esstart');
   await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
 }

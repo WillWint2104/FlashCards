@@ -20,7 +20,7 @@ async function open(p, re, structure){
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await settled(p);
   await p.selectOption('#essubject','business_studies'); await settled(p);
-  await usePractice(p); await p.$$eval('.es-qrow',(es,r)=>{const t=es.find(x=>new RegExp(r,'i').test(x.textContent));t&&t.click();}, re.source);
+  await usePractice(p); await p.$$eval('.qp-row',(es,r)=>{const t=es.find(x=>new RegExp(r,'i').test(x.textContent));t&&t.click();}, re.source);
   if (structure) { await p.selectOption('#esstruct', structure); await settled(p); }
   await p.click('#esstart');
   await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });

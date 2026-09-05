@@ -38,8 +38,8 @@ async function guidance(p, q) {
   await p.evaluate(() => { const b = document.querySelector('#esrubopen'); b && b.click(); });
   await settled(p);
   return p.evaluate(() => {
-    const box = document.querySelector('.es-rubpre');
-    const status = document.querySelector('.es-rubstatus');
+    const box = document.querySelector('.qp-rubpre');
+    const status = document.querySelector('.qp-rub');
     return { text: box ? box.textContent.replace(/\s+/g, ' ').trim() : '',
       status: status ? status.textContent.replace(/\s+/g, ' ').trim() : '' };
   });
@@ -63,7 +63,7 @@ async function guidance(p, q) {
   const mode = await p.evaluate(() => {
     const routes = [...document.querySelectorAll('[data-espick]')].map(x => ({
       to: x.dataset.espick, label: x.textContent.trim(),
-      primary: x.classList.contains('es-btn-go') }));
+      primary: x.classList.contains('qp-go') }));
     return { routes: routes, box: !!document.querySelector('#esq') };
   });
   ok(mode.routes.length === 2, 'the first screen offers exactly two routes: ' +
@@ -138,7 +138,7 @@ async function guidance(p, q) {
   ok(!!dir, 'a directive can be chosen: ' + JSON.stringify(dir));
   await settled(p);
   const pills = await p.evaluate(() => [...document.querySelectorAll('[data-essetuptopic]')].map(x => {
-    const n = x.querySelector('.es-pilln');
+    const n = x.querySelector('.qp-n');
     return { label: x.textContent.replace(/\s+/g, ' ').trim(),
       zero: n ? n.textContent.trim() === '0' : false,
       disabled: x.disabled, faded: x.classList.contains('empty') };

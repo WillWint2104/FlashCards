@@ -30,7 +30,7 @@ async function toWriting(p) {
   await p.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await settled(p);
   await p.selectOption('#essubject', 'business_studies').catch(() => {});
-  await usePractice(p); await p.$$eval('.es-qrow', es => { const t = es.find(x => /target markets affect/i.test(x.textContent)); t && t.click(); });
+  await usePractice(p); await p.$$eval('.qp-row', es => { const t = es.find(x => /target markets affect/i.test(x.textContent)); t && t.click(); });
   await p.click('#esstart');
   await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
   if (await p.$('.es-startrow')) await p.$$eval('.es-startrow', es => { const t = es.filter(x => /Body/.test(x.textContent))[0]; t && t.click(); });

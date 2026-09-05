@@ -1647,81 +1647,162 @@
   .es-pill.empty:hover{border-color:var(--line);background:none}
   .es-pilln{font-size:11px;color:var(--ink-3);font-weight:600}
   .es-pill.on .es-pilln{color:var(--green-dk)}
-  /* Choosing a question, laid out as choosing a question: the filters together at
-     the top, the count immediately above what it counts, then one card per
-     question with the whole authored wording as the dominant text. */
-  .es-filters{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-bottom:12px}
-  .es-filter{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-  .es-filterlbl{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:700}
-  .es-countrow{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 8px}
-  .es-resultcount{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:0}
-  .es-sortnote{font-size:12px;color:var(--ink-3);font-weight:600}
-  .es-qrows{display:flex;flex-direction:column;gap:8px}
-  .es-qrow{text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:12px;
-    padding:13px 15px;font:inherit;color:var(--ink);cursor:pointer;display:block;width:100%;
-    transition:border-color .12s,background .12s}
-  .es-qrow:hover{border-color:var(--green)}
-  .es-qrow.on{border-color:var(--green);background:var(--green-soft);box-shadow:inset 3px 0 0 var(--green)}
-  .es-qrowq{display:block;font-size:14.5px;line-height:1.5;color:var(--ink)}
-  .es-qrow.on .es-qrowq{font-weight:600}
-  .es-qrowmeta{display:block;margin-top:5px;font-size:11.5px;color:var(--ink-3);font-weight:600}
-  .es-qrowmeta i{font-style:normal;margin:0 6px;color:var(--line)}
-  /* A row is a choice, so it looks like one: a radio, the question, then what is
-     authored about it. The radio is drawn rather than an input, because the row
-     is the control and a nested input would be a second target inside it. */
-  .es-qrow{display:flex;gap:13px;align-items:flex-start}
-  .es-qradio{flex:none;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--ink-3);
-    margin-top:2px;display:block;position:relative}
-  .es-qrow.on .es-qradio{border-color:var(--green);border-width:2px}
-  .es-qrow.on .es-qradio::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--green)}
-  .es-qrowtext{flex:1;min-width:0}
-  /* Getting in: subject, then a question. Two routes, stated as two buttons. */
-  .es-choicerow{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
-  .es-btn{font:inherit;font-size:14px;font-weight:600;border-radius:11px;padding:11px 18px;
-    border:1.5px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
-  .es-btn:hover{border-color:var(--green);color:var(--green-dk)}
-  .es-btn-go{background:var(--green);border-color:var(--green);color:#fff}
-  .es-btn-go:hover{background:var(--green-dk);border-color:var(--green-dk);color:#fff}
-  .es-startnote{display:flex;gap:11px;align-items:flex-start;background:var(--surface);
-    border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-top:18px;
-    font-size:13px;color:var(--ink-2);line-height:1.55}
-  .es-startnote b{color:var(--ink);display:block}
-  .es-i{flex:none;width:17px;height:17px;border-radius:50%;border:1.5px solid var(--ink-3);
-    color:var(--ink-3);font-size:11px;font-weight:800;display:grid;place-items:center;margin-top:1px}
-  .es-backlink{display:inline-block;margin-bottom:12px;font-size:13px}
-  .es-h2{font-size:22px;font-weight:800;letter-spacing:-.3px;margin:0 0 4px}
-  .es-lead2{font-size:13.5px;color:var(--ink-2);margin:0 0 16px}
-  /* The question, before committing to it, beside what it can actually give. */
-  .es-prevwrap{display:grid;grid-template-columns:1.5fr 1fr;gap:18px;align-items:start}
-  .es-prevmain,.es-prevside{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:18px 20px}
-  .es-prevside{background:var(--surface)}
-  .es-chip{display:inline-block;background:var(--green-soft);color:var(--green-dk);border-radius:7px;
-    padding:3px 9px;font-size:11.5px;font-weight:700;margin-bottom:10px}
-  .es-prevq{font-size:19px;line-height:1.45;font-weight:600;color:var(--ink);margin:0 0 6px}
-  .es-prevmeta{font-size:13px;color:var(--ink-2);font-weight:600;margin:0 0 16px}
-  .es-prevmeta i{font-style:normal;color:var(--line)}
-  .es-facts{margin:0 0 18px;border-top:1px solid var(--line);padding-top:13px}
-  .es-factrow{display:flex;gap:16px;padding:5px 0;font-size:13px}
-  .es-factrow dt{flex:none;width:150px;color:var(--ink-2);font-weight:600;margin:0}
-  .es-factrow dd{margin:0;color:var(--ink);font-weight:600}
-  .es-sidehd{font-size:13.5px;font-weight:800;margin:0 0 8px}
-  .es-sidep{font-size:12.5px;color:var(--ink-2);line-height:1.6;margin:0 0 10px}
-  .es-suplist{border-top:1px solid var(--line);padding-top:10px}
-  .es-suprow{display:flex;align-items:center;gap:9px;padding:6px 0;font-size:12.5px}
-  .es-supmark{flex:none;width:16px;text-align:center;font-weight:800}
-  .es-suprow.yes .es-supmark{color:var(--green-dk)}
-  .es-suprow.no .es-supmark{color:var(--ink-3)}
-  .es-supname{flex:1;font-weight:600;color:var(--ink)}
-  .es-suprow.no .es-supname{color:var(--ink-3)}
-  .es-supstate{color:var(--ink-3);font-weight:600;font-size:11.5px}
-  .es-suprow.yes .es-supstate{color:var(--green-dk)}
-  .es-moreopts{margin-top:20px;border-top:1px solid var(--line);padding-top:14px}
-  .es-moreopts > summary{font-size:13px;font-weight:700;color:var(--ink-2);cursor:pointer;list-style:none}
-  .es-moreopts > summary::-webkit-details-marker{display:none}
-  .es-moreopts > summary::before{content:"+ ";color:var(--ink-3)}
-  .es-moreopts[open] > summary::before{content:"\2212 "}
-  .es-moreopts > summary:hover{color:var(--green-dk)}
-  @media (max-width:820px){ .es-prevwrap{grid-template-columns:1fr} }
+  /* ===================== CHOOSING A QUESTION =============================
+     Its own namespace, because the generic es- names are already spoken for:
+     .es-btn is defined twice in this file and carries a 4px green under-edge,
+     which is why every button in the first version of this flow grew one.
+     One surface, one card system, four stages that look like one flow. */
+  /* A FULL SCREEN SURFACE, not a section appended to the page underneath. It
+     was rendering inside the Study tab, so Backup & restore and the topic map
+     sat above the question list: the flow has to own the viewport the way the
+     workspace it leads into does. */
+  .qp{position:fixed;inset:0;overflow:auto;z-index:120;background:var(--page);color:var(--e-ink)}
+  .qp-page-wrap{max-width:1080px;margin:0 auto;padding:0 0 56px}
+  .qp-bar{display:flex;align-items:center;gap:12px;padding:15px 4px;border-bottom:1px solid var(--e-line);margin-bottom:26px}
+  .qp-brand{font-family:var(--disp);font-weight:700;font-size:15px;color:var(--e-ink)}
+  .qp-brand span{font-weight:600;color:var(--e-ink2)}
+  .qp-subj{margin-left:10px;font-size:13px;font-weight:600;color:var(--e-ink3)}
+  .qp-close{margin-left:auto;background:none;border:0;font:inherit;font-size:13px;font-weight:600;
+    color:var(--e-ink2);cursor:pointer}
+  .qp-close:hover{color:var(--e-ink)}
+  .qp-body{padding:0 4px}
+  .qp-back{background:none;border:0;font:inherit;font-size:13px;font-weight:700;color:var(--e-ink2);
+    cursor:pointer;padding:0;margin-bottom:14px;display:inline-block}
+  .qp-back:hover{color:var(--e-green-dk)}
+  .qp-h1{font-family:var(--disp);font-size:30px;font-weight:700;letter-spacing:-.5px;margin:0 0 6px;color:var(--e-ink)}
+  .qp-lead{font-size:15px;color:var(--e-ink2);margin:0 0 22px}
+  .qp-card{background:var(--surface);border:1px solid var(--e-line);border-radius:16px;padding:22px 24px}
+
+  .qp-field{margin-bottom:16px}
+  .qp-label{display:block;font-size:12.5px;font-weight:700;color:var(--e-ink2);margin-bottom:6px}
+  .qp-hint{font-size:12px;color:var(--e-ink3);margin:0 0 7px}
+  .qp-req{color:var(--e-green-dk);font-weight:700}
+  .qp-input{width:100%;font:inherit;font-size:14.5px;color:var(--e-ink);background:var(--surface);
+    border:1.5px solid var(--e-line);border-radius:11px;padding:11px 13px}
+  .qp-input:focus{outline:none;border-color:var(--e-green)}
+  .qp-marks{max-width:120px}
+  .qp-ta{resize:vertical;line-height:1.55}
+  .qp-select{appearance:auto}
+
+  .qp-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+  .qp-btn{font:inherit;font-size:14.5px;font-weight:600;border-radius:11px;padding:12px 20px;
+    border:1.5px solid var(--e-line);background:var(--surface);color:var(--e-ink);cursor:pointer;
+    box-shadow:none;transition:border-color .12s,background .12s}
+  .qp-btn:hover{border-color:var(--e-green);color:var(--e-green-dk)}
+  .qp-go{background:var(--e-green);border-color:var(--e-green);color:#fff}
+  .qp-go:hover{background:var(--e-green-dk);border-color:var(--e-green-dk);color:#fff}
+  .qp-notes{display:flex;gap:26px;flex-wrap:wrap;margin-top:22px;padding-top:18px;border-top:1px solid var(--e-line)}
+  .qp-note1{font-size:12.5px;color:var(--e-ink2);line-height:1.5}
+  .qp-note1 b{display:block;color:var(--e-ink)}
+
+  /* Filters: compact, strong, and the first thing under the heading. */
+  .qp-filters{background:var(--surface);border:1px solid var(--e-line);border-radius:14px;padding:13px 15px;margin-bottom:16px}
+  .qp-frow{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  .qp-frow + .qp-frow{margin-top:9px}
+  .qp-flabel{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--e-ink3);width:74px;flex:none}
+  .qp-pill{background:var(--surface);border:1.5px solid var(--e-line);border-radius:9px;padding:6px 11px;
+    font:inherit;font-size:13px;font-weight:600;color:var(--e-ink);cursor:pointer;display:inline-flex;
+    align-items:center;gap:6px;transition:border-color .12s,background .12s}
+  .qp-pill:hover{border-color:var(--e-green);color:var(--e-green-dk)}
+  .qp-pill.on{background:var(--e-mint);border-color:var(--e-green);color:var(--e-green-dk)}
+  .qp-pill.empty{opacity:.4;cursor:default}
+  .qp-pill.empty:hover{border-color:var(--e-line);color:var(--e-ink)}
+  .qp-n{font-size:11px;color:var(--e-ink3);font-weight:700}
+  .qp-pill.on .qp-n{color:var(--e-green-dk)}
+
+  .qp-count{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 9px;
+    font-size:12.5px;font-weight:600;color:var(--e-ink2)}
+  .qp-sort{color:var(--e-ink3)}
+
+  /* Rows: compact, so ten of them are a page and not a scroll. */
+  .qp-rows{display:flex;flex-direction:column;gap:6px}
+  .qp-row{display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;
+    background:var(--surface);border:1.5px solid var(--e-line);border-radius:11px;padding:11px 14px;
+    font:inherit;color:var(--e-ink);cursor:pointer;box-shadow:none;transition:border-color .12s,background .12s}
+  .qp-row:hover{border-color:var(--e-green)}
+  .qp-row.on{background:var(--e-mint);border-color:var(--e-green)}
+  .qp-radio{flex:none;width:17px;height:17px;border-radius:50%;border:1.5px solid var(--e-ink3);
+    margin-top:2px;position:relative;background:var(--surface)}
+  .qp-row.on .qp-radio{border-color:var(--e-green);border-width:2px}
+  .qp-row.on .qp-radio::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--e-green)}
+  .qp-rowtext{flex:1;min-width:0}
+  .qp-q{display:block;font-size:14px;line-height:1.45;color:var(--e-ink)}
+  .qp-row.on .qp-q{font-weight:600}
+  .qp-meta{display:block;margin-top:3px;font-size:11.5px;color:var(--e-ink3);font-weight:600}
+  .qp-meta i{font-style:normal;color:var(--e-line)}
+  .qp-empty{font-size:13.5px;color:var(--e-ink2);background:var(--surface);border:1px solid var(--e-line);
+    border-radius:12px;padding:18px 20px;margin:0}
+
+  /* Pagination, because the bank grows every time an import succeeds. */
+  .qp-pager{display:flex;align-items:center;gap:6px;margin-top:16px;flex-wrap:wrap}
+  .qp-pagenums{display:flex;gap:4px}
+  .qp-pagemob{display:none;font-size:12.5px;font-weight:600;color:var(--e-ink2)}
+  .qp-page{min-width:34px;background:var(--surface);border:1.5px solid var(--e-line);border-radius:9px;
+    padding:7px 11px;font:inherit;font-size:13px;font-weight:600;color:var(--e-ink);cursor:pointer}
+  .qp-page:hover:not([disabled]){border-color:var(--e-green);color:var(--e-green-dk)}
+  .qp-page.on{background:var(--e-green);border-color:var(--e-green);color:#fff}
+  .qp-page[disabled]{opacity:.38;cursor:default}
+
+  /* The question itself, beside what it can actually give. */
+  .qp-prev{display:grid;grid-template-columns:1.55fr 1fr;gap:18px;align-items:start}
+  .qp-chip{display:inline-block;background:var(--e-mint);color:var(--e-green-dk);border-radius:8px;
+    padding:4px 10px;font-size:12px;font-weight:700;margin-bottom:12px}
+  .qp-prevq{font-family:var(--disp);font-size:23px;line-height:1.35;font-weight:700;color:var(--e-ink);margin:0 0 7px}
+  .qp-prevdir{font-size:13.5px;color:var(--e-ink2);font-weight:600;margin:0 0 18px}
+  .qp-prevdir i{font-style:normal;color:var(--e-line)}
+  .qp-facts{margin:0;border-top:1px solid var(--e-line);padding-top:14px}
+  .qp-fact{display:flex;gap:18px;padding:6px 0;font-size:13.5px}
+  .qp-fact dt{flex:none;width:170px;color:var(--e-ink2);font-weight:600;margin:0}
+  .qp-fact dd{margin:0;color:var(--e-ink);font-weight:600}
+  .qp-note{font-size:12.5px;color:var(--e-ink2);background:var(--sunk);border-radius:10px;
+    padding:11px 13px;margin:14px 0 0;line-height:1.55}
+  .qp-side{background:var(--surface);border:1px solid var(--e-line);border-radius:16px;padding:20px 22px}
+  .qp-sidehd{font-family:var(--disp);font-size:16px;font-weight:700;margin:0 0 8px;color:var(--e-ink)}
+  .qp-sidep{font-size:13px;color:var(--e-ink2);line-height:1.6;margin:0 0 16px}
+  .qp-sidehd2{font-size:13.5px;font-weight:700;margin:0 0 6px;color:var(--e-ink)}
+  .qp-sup{border-top:1px solid var(--e-line)}
+  .qp-suprow{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13px;border-bottom:1px solid var(--e-line)}
+  .qp-suprow:last-child{border-bottom:0}
+  .qp-supmark{flex:none;width:17px;text-align:center;font-weight:800}
+  .qp-suprow.yes .qp-supmark{color:var(--e-green-dk)}
+  .qp-suprow.no .qp-supmark{color:var(--e-ink3)}
+  .qp-supname{flex:1;font-weight:600;color:var(--e-ink)}
+  .qp-suprow.no .qp-supname{color:var(--e-ink3)}
+  .qp-supstate{color:var(--e-ink3);font-weight:600;font-size:12px}
+  .qp-suprow.yes .qp-supstate{color:var(--e-green-dk)}
+  .qp-sidefoot{font-size:12px;color:var(--e-ink2);background:var(--sunk);border-radius:10px;
+    padding:11px 13px;margin:16px 0 0;line-height:1.55}
+
+  /* Setting up is where the settings are, folded. Not on the list, not on the
+     preview: those are for choosing. */
+  .qp-opts{margin-top:20px;border-top:1px solid var(--e-line);padding-top:15px}
+  .qp-opts > summary{font-size:13px;font-weight:700;color:var(--e-ink2);cursor:pointer;list-style:none}
+  .qp-opts > summary::-webkit-details-marker{display:none}
+  .qp-opts > summary::before{content:"+ ";color:var(--e-ink3)}
+  .qp-opts[open] > summary::before{content:"\2212 "}
+  .qp-opts > summary:hover{color:var(--e-green-dk)}
+  .qp-optsbody{padding-top:16px}
+  .qp-rub{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:13.5px}
+  .qp-rubtick{color:var(--e-green-dk);font-weight:800}
+  .qp-rubtext{color:var(--e-ink)}
+  .qp-rubprov{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--e-ink3);background:var(--sunk);border-radius:6px;padding:3px 7px}
+  .qp-link{background:none;border:0;font:inherit;font-size:13px;font-weight:700;color:var(--e-green-dk);cursor:pointer;padding:0}
+  .qp-rubbox{margin-top:12px}
+  .qp-rubpre{white-space:pre-wrap;font:inherit;font-size:12.5px;color:var(--e-ink2);background:var(--sunk);
+    border-radius:10px;padding:13px 15px;margin:0 0 14px;max-height:220px;overflow:auto}
+
+  @media (max-width:900px){
+    .qp-prev{grid-template-columns:1fr}
+    .qp-fact dt{width:130px}
+  }
+  @media (max-width:620px){
+    .qp-h1{font-size:24px}
+    .qp-flabel{width:100%}
+    .qp-pagenums{display:none}
+    .qp-pagemob{display:inline}
+  }
   /* Marking guidance: a status line, with the detail one press away. */
   .es-rubstatus{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
   .es-rubtick{color:var(--green-dk);font-weight:800}
@@ -1886,7 +1967,7 @@
      the work, text is charcoal rather than grey-green, and green is used for
      state and primary action instead of as an outline around everything.
      ========================================================================== */
-  .es-scrim{
+  .es-scrim, .qp{
     --page:#F6F9F9; --surface:#FFFFFF; --sunk:#FAFCFC;
     --e-ink:#18272D; --e-ink2:#63787F; --e-ink3:#95A7AD;
     --e-green:#12B27A; --e-green-dk:#0E9765; --e-mint:#E7F8F0; --e-mint2:#F2FBF7;
