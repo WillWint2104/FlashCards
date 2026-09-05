@@ -72,7 +72,16 @@ const controlsOn = page => page.evaluate(skip => {
       label: (b.textContent || "").replace(/\s+/g, " ").trim().slice(0, 40),
     });
   });
-  return named.filter(x => x.sel);
+  // Rows are rows and pills are pills: pressing ten identical rows proves
+  // nothing two do not, and the sweep was spending most of its time doing it.
+  // Every uniquely named control is kept; the repeated shapes are sampled. ui40
+  // opens every question in the bank through its row, so nothing is lost.
+  const seenShape = {};
+  return named.filter(x => x.sel).filter(x => {
+    const shape = x.id ? "id:" + x.id : x.sel.replace(/="[^"]*"/, '="*"');
+    seenShape[shape] = (seenShape[shape] || 0) + 1;
+    return seenShape[shape] <= 2;
+  });
 }, SKIP);
 
 async function toStage(page, stage) {
