@@ -52,9 +52,24 @@ const TIERS = {
   // behaviour rather than of the architecture a change is touching, so they moved
   // to their own tier and to full. Checkpoint answers one question: did this
   // change break the thing I am working on.
+  //
+  // The tier reached 73.4s once the picker rewrite landed, which is not a budget
+  // either. Three suites left rather than the budget moving, and they left on one
+  // criterion: does this suite establish an invariant at one seam, or does it
+  // drive a student across screens end to end? ui13 and ui30 walk the whole
+  // writing flow - picker, plan, paragraph, learning, repair, retry - and ui51
+  // renders the picker in four browser pages as a whole-surface sweep. Its static
+  // half, t22, stays here, and that is the half that catches a field going
+  // missing on the way through the contract. ui35, ui37 and ui46 stayed: each
+  // measures one seam, and one of them being red is the signal this tier exists
+  // to give.
+  //
+  // ui52 arrived here for the same reason. A header link whose destination does
+  // not exist is an architectural fault, not a journey, and it is the fault this
+  // flow already shipped once.
   checkpoint: {
     budget: 60,
-    suites: ["t1", "t2", "t17", "t18", "t19", "t20", "t21", "t22", "ui13", "ui30", "ui35", "ui37", "ui38", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49", "ui51"],
+    suites: ["t1", "t2", "t17", "t18", "t19", "t20", "t21", "t22", "ui35", "ui37", "ui38", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49", "ui52"],
   },
   // ui40 joined this tier when ui51 arrived. It walks EVERY question through the
   // shell, which is an exhaustive sweep and 6.2s of it, and the picker it swept
@@ -68,7 +83,9 @@ const TIERS = {
   //
   // The cross-journey assertions compare the students to each other, so there is
   // no honest subset of the bots: that part is all of them or none.
-  journeys: { budget: 180, suites: ["ui40", "ui50", "bots"] },
+  // ui13, ui30 and ui51 joined when checkpoint went over its minute. All three
+  // are end-to-end walks rather than seam checks, which is what this tier is for.
+  journeys: { budget: 180, suites: ["ui13", "ui30", "ui40", "ui50", "ui51", "bots"] },
   // Everything run.js knows about, the journeys included. An empty list means
   // "pass no filter".
   full: { budget: 360, suites: [] },

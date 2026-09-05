@@ -27,9 +27,18 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log("  FAIL:", 
 const url = f => new URL("../" + f, import.meta.url);
 const read = f => JSON.parse(readFileSync(url(f), "utf8"));
 const MAN = lib.manifest();
+const { packagize } = require("../tools/contract/packagize.js");
 const { E } = lib.build();
 const BUS = E.subjects.business_studies.questions || [];
-const pkgOf = id => read("docs/contract/example-" + id + ".json");
+// GENERATED HERE, not read off disk. This suite spent its whole life comparing
+// docs/contract/example-*.json against source, which is a check on those files
+// rather than on the code that writes them: every one of the five fidelity
+// findings could be reintroduced into packagize.js and this suite stayed green
+// until somebody happened to regenerate the artefacts. It calls packagize now,
+// so the round trip under test is the live one. Section 6 holds the committed
+// artefacts to the same output, which is the check that was here before.
+const pkgOf = id => packagize(id).pkg;
+const filedOf = id => read("docs/contract/example-" + id + ".json");
 // The topic index the student build ships: topic ids to the labels the syllabus
 // library authors. A question carries a ref, and the label belongs to the record
 // the ref names.
@@ -183,6 +192,27 @@ console.log("5. the exclusions are a decision, not an accident");
   ok(!unexplained.length,
     "every field a bundled question carries is either round tripped or named as one way: " +
     JSON.stringify(unexplained));
+}
+
+console.log("6. the committed packages are what packagize writes today");
+{
+  // The check that used to BE this suite, now stated as what it actually is: the
+  // artefacts in docs/contract are a snapshot, and a snapshot that has drifted
+  // from the generator is a document that lies about the format. It is not the
+  // fidelity test, because it compares two things that both come from the same
+  // side of the round trip.
+  const stale = [];
+  BUS.forEach(q => {
+    let filed = null;
+    try { filed = filedOf(q.id); } catch (e) { stale.push(q.id + ": no committed package"); return; }
+    if (JSON.stringify(filed) !== JSON.stringify(pkgOf(q.id))) stale.push(q.id + ": differs from packagize output");
+  });
+  ok(!stale.length, "every committed Business Studies package is current: " + JSON.stringify(stale.slice(0, 4)));
+  // And the fabrication is gone from the artefacts too, not only from the code.
+  const noMarks = BUS.filter(q => q.marks == null).map(q => q.id);
+  ok(noMarks.length === 9, "nine bundled questions author no marks: " + noMarks.length);
+  const invented = noMarks.filter(id => { try { return filedOf(id).question.marks != null; } catch (e) { return false; } });
+  ok(!invented.length, "and no committed package gives one of them a mark value: " + JSON.stringify(invented));
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

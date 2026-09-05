@@ -4380,28 +4380,6 @@
     // its own set. Otherwise hide the block cleanly (the student types their own).
     const qChips = sc.hasQuestions ? sc.questions.map(q =>
       `<button class="es-qchip" data-esq="${esc(q.id)}"><span class="es-qcmd">${esc(q.command)}</span> ${esc(esQuestionPreview(q))}</button>`).join("") : "";
-    // Discrete, most-recent-first list (not one combined pill); each row deletes.
-    const saved = esRecent(ES.list).slice(0, 12);
-    const resume = saved.length ? `
-      <div class="es-resume" data-resume>
-        <p class="es-label">Your saved essays</p>
-        <div class="es-reslist">${saved.map(d => {
-          const mastered = (d.paras || []).filter(x => x.mastered).length, np = (d.paras || []).length;
-          const q = (d.question || "").trim();
-          return `<div class="es-resitem" data-resrow="${esc(d.id)}">
-             <div class="es-resmain">
-               ${d.topic ? `<span class="es-restoplabel">${esc(d.topic)}</span>` : ""}
-               <span class="es-resq">${esc(q.slice(0, 110))}${q.length > 110 ? "…" : ""}</span>
-               <span class="es-resmeta">${np ? mastered + "/" + np + " mastered" : "draft"}</span>
-             </div>
-             <div class="es-resactions">
-               <button class="es-misstier" data-esresume="${esc(d.id)}">Resume</button>
-               <button class="es-misstier ghost" data-estemplate="${esc(d.id)}">Use as template</button>
-               <button class="es-resdel" data-esdelete="${esc(d.id)}" aria-label="Delete this saved essay" title="Delete this saved essay">remove</button>
-             </div>
-           </div>`;
-        }).join("")}</div>
-      </div>` : "";
     const structOpts = (window.ESSAY.structures || []).map(s =>
       `<option value="${esc(s.key)}" ${s.key === f.structure ? "selected" : ""}>${esc(s.label)}</option>`).join("");
     const bandsRef = (window.ESSAY.bands || []).map(b =>
@@ -4450,10 +4428,14 @@
       <span class="qp-logo" aria-hidden="true">M</span>
       <span class="qp-word">Marginal</span>
       <nav class="qp-navlinks">
-        <button type="button" class="qp-navlink on">Essay practice</button>
-        ${/* A nav link is not a stage route, so it does not carry the stage
-              attribute: counting the routes on a screen would have counted it. */ ""}
-        <button type="button" class="qp-navlink" data-esnav="subject">My essays</button>
+        ${/* A nav link is not a stage route within the picker, so it does not
+              carry the stage attribute: counting the routes on a screen would
+              have counted it. Both links go somewhere real; the one you are on
+              is marked rather than repeated. */ ""}
+        <button type="button" class="qp-navlink ${stage === "essays" ? "" : "on"}"
+          data-esnav="back">Essay practice</button>
+        <button type="button" class="qp-navlink ${stage === "essays" ? "on" : ""}"
+          data-esnav="essays">My essays</button>
       </nav>
       <div class="qp-navright">
         ${sc.label ? `<span class="qp-subj">${esc(sc.label)}${sc.stage ? " · " + esc(sc.stage) : ""}</span>` : ""}
@@ -4486,7 +4468,11 @@
       <div class="qp-optsbody">
         ${rubricStatus}
         <div class="qp-field">
-          <label class="qp-label" for="esmarks">Marks this question is worth</label>
+          ${/* Not "marks this question is worth": that states a mark value as a
+                fact about the question, and a question has one only when somebody
+                authored it. This field is the student's own setting for the mark
+                split on a full attempt, so it says so. */ ""}
+          <label class="qp-label" for="esmarks">Mark my attempt out of</label>
           <p class="qp-hint">Used only when you submit a full attempt for marking.</p>
           <input id="esmarks" class="qp-input qp-marks" type="number" min="1" max="60" step="1" value="${esc(String(f.marks))}">
         </div>
@@ -4680,6 +4666,56 @@
             way; there is simply less scaffolding on the way through.</p>`));
     }
 
+    // ---- stage: My essays ---------------------------------------------------
+    // The nav link needs somewhere real to land. The saved essays used to sit at
+    // the bottom of the setup page, where a student who came back to carry on
+    // had to scroll past the whole setup form to find them, and where the nav
+    // link pointing at them was indistinguishable from Back to setup. They have
+    // their own destination now, with an empty state, so the link is never dead.
+    else if (stage === "essays") {
+      const mine = esRecent(ES.list || []).slice(0, 12);
+      host.innerHTML = shell(`
+          <h1 class="qp-h1">My essays</h1>
+          <p class="qp-lead">Everything you have started, most recent first.</p>
+          ${mine.length ? `<div class="qp-card qp-essays">${mine.map(d => {
+            const mastered = (d.paras || []).filter(x => x.mastered).length, np = (d.paras || []).length;
+            const qtext = String(d.question || "").trim();
+            return `<div class="qp-essay" data-resrow="${esc(d.id)}">
+              <div class="qp-essaymain">
+                ${d.topic ? `<span class="qp-chip sm">${esc(d.topic)}</span>` : ""}
+                <p class="qp-essayq">${esc(qtext)}</p>
+                <p class="qp-essaymeta">${np ? mastered + " of " + np + " paragraph" +
+                  (np === 1 ? "" : "s") + " mastered" : "not started yet"}</p>
+              </div>
+              <div class="qp-essayacts">
+                <button type="button" class="qp-btn qp-go sm" data-esresume="${esc(d.id)}">Resume</button>
+                <button type="button" class="qp-btn sm" data-estemplate="${esc(d.id)}">Use as template</button>
+                <button type="button" class="qp-linkbtn" data-esdelete="${esc(d.id)}"
+                  aria-label="Delete this saved essay">remove</button>
+              </div>
+            </div>`;
+          }).join("")}</div>`
+          : `<div class="qp-card qp-empty2">
+              <p class="qp-emptyh">You have not started an essay yet.</p>
+              <p class="qp-emptyp">Once you start one it is saved here automatically, and you can come back
+                to it, carry on where you left off, or use it as the template for another.</p>
+              <div class="qp-actions">
+                <button type="button" class="qp-btn qp-go" data-esnav="back">Set up an essay</button>
+              </div>
+            </div>`}
+        `,
+        railCard("&#9678;", "How saving works",
+          `<p class="qp-rcp">Your writing is saved as you go, on this device. Nothing is submitted anywhere
+            unless you ask for feedback.</p>
+           <p class="qp-rcp">Resume opens an essay where you left it. Use as template starts a new essay
+            from the same question and settings, without copying the writing.</p>`)
+        + railCard("&#9679;", "What is saved",
+          `<p class="qp-rcbig">${mine.length}</p>
+           <p class="qp-rcp">essay${mine.length === 1 ? "" : "s"} on this device.${
+             (ES.list || []).length > mine.length
+               ? " The most recent " + mine.length + " are listed." : ""}</p>`));
+    }
+
     // ---- stage: a question the student brings -------------------------------
     else if (stage === "own") {
       host.innerHTML = shell(`
@@ -4753,7 +4789,6 @@
                   the guidance says where it came from.</p></div>
             </div>
           </section>
-          ${resume}
         `,
         railCard("&#9678;", "Next steps",
           `<ol class="qp-steps">
@@ -4770,10 +4805,16 @@
              through Teacher tools, and appear here exactly like the rest.</p>`
              : `<p class="qp-rcp">A teacher can add more through Teacher tools, and they appear here
              exactly like the rest.</p>`}
-           ${savedCount ? `<p class="qp-rcp">You have ${savedCount} saved essay${savedCount === 1 ? "" : "s"}.</p>` : ""}`)
+           ${savedCount ? `<p class="qp-rcp">You have ${savedCount} saved essay${
+             savedCount === 1 ? "" : "s"}. <button type="button" class="qp-linkbtn"
+             data-esnav="essays">Open My essays</button></p>` : ""}`)
         + railCard("&#9662;", "Top tip",
-          `<p class="qp-rcp">You only need a question to start. Marks, structure and marking guidance all
-            have sensible defaults and can be changed at any point.</p>`));
+          // Marks are academic metadata. A question has a mark value only when
+          // somebody authored one, so nothing here may suggest Marginal supplies
+          // a default for it. Structure and marking guidance are app settings and
+          // are named as optional settings, which is what they are.
+          `<p class="qp-rcp">You only need a question to start. Optional settings such as structure and
+            marking guidance can be changed later.</p>`));
     }
 
     $("#esx").onclick = esClose;
@@ -4789,8 +4830,22 @@
     });
     // Stage navigation. "own" is the existing typed-question route and keeps its
     // mode flag, so nothing about that path changes.
+    // Navigation moves between destinations and touches NOTHING else on the
+    // form. The subject, the chosen question, the filters, the page and the
+    // settings are all state a student built up, and a nav press that quietly
+    // reset any of them would lose their work. Leaving My essays returns to the
+    // stage they left, not to the top of the flow.
     host.querySelectorAll("[data-esnav]").forEach(b => b.onclick = () => {
-      f.pickStage = b.dataset.esnav; esRender();
+      const to = b.dataset.esnav;
+      if (to === "essays") {
+        if (f.pickStage !== "essays") f.pickReturn = f.pickStage || "subject";
+        f.pickStage = "essays";
+      } else if (to === "back") {
+        f.pickStage = f.pickReturn || "subject";
+      } else {
+        f.pickStage = to;
+      }
+      esRender();
     });
     host.querySelectorAll("[data-espick]").forEach(b => b.onclick = () => {
       const to = b.dataset.espick;
@@ -4851,7 +4906,13 @@
       // unattached: the row appeared to do nothing when it had in fact worked.
       if (qq) {
         f.question = qq.text; f.questionId = qq.id;
-        if (!f.topic) f.topic = qq.topic || "";
+        // The question's own topic, every time. The guard here was written when a
+        // student typed their topic into a field and it had to survive choosing a
+        // question; that field is gone, so the only thing the guard protected was
+        // the PREVIOUS question's topic. Choosing a Finance question after a
+        // Marketing one filed the essay under Marketing, and the topic reaches
+        // marking, so this was not only a wrong label on My essays.
+        f.topic = qq.topic || "";
         if (qq.marks) f.marks = qq.marks;
         // Choosing a row SELECTS it and stays on the list: the rail fills with
         // the question, its metadata and what support it carries, and Preview
