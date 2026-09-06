@@ -8583,6 +8583,17 @@
                 the bar was supposed to remove. */ ""}
           <div class="es-navrow"></div>
           <div class="es-linehost" data-linehost>${esLinesBlock(p)}</div>
+          ${/* WHERE THE COACH'S ANSWER GOES.
+                esGetFeedback writes its result into .es-margin and esCoachMargin
+                renders it, and nothing in the application created that element:
+                the two-column coach layout was taken out of the render and its
+                writer was left behind, so every piece of feedback a student ever
+                asked for was fetched, normalised, saved into the draft and never
+                shown. The screen went on saying "Asking the coach…". It did the
+                same on a successful response as on a failed one, and no suite has
+                ever pressed Check this paragraph, which is why it survived.
+                One container, in the column the composer already renders. */ ""}
+          <div class="es-margin">${esCoachMargin(p)}</div>
           <div class="es-seqhost">${esSeqNudge(p)}</div>
           ${esRespNavHTML(d)}
         </div>
@@ -8818,6 +8829,16 @@
     const ask = $("#esask"); if (!ask) return;
     const canAsk = !p.feedback || ((p.text || "").trim() !== (p.gradedText || "").trim());
     ask.disabled = !canAsk || ES.pending;
+    // The LABEL, which nothing restored. esGetFeedback sets it to "Asking the
+    // coach…" while the request is out and this function put the button back to
+    // enabled without ever changing the words on it, so the control a student
+    // was watching went on saying it was still asking after the answer had
+    // arrived, been saved and been rendered. Same rule as the markup that first
+    // draws it, in one place, so the two cannot disagree.
+    const role = String((p && p.role) || "");
+    ask.textContent = ES.pending ? "Checking\u2026"
+      : /introduction/i.test(role) ? "Check introduction"
+      : /conclusion/i.test(role) ? "Check conclusion" : "Check this paragraph";
     ask.classList.toggle("primary", canAsk); ask.classList.toggle("ghost", !canAsk);
     const cd = document.querySelector(".es-cooldown"); if (cd) cd.style.display = canAsk ? "none" : "";
   }

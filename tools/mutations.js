@@ -199,6 +199,32 @@ module.exports = [
     manualOnly: true,
   },
 
+  // ---- the coach's answer reaching the student ----------------------------
+  {
+    id: "feedback-has-nowhere-to-render",
+    file: "app.js",
+    find: '          <div class="es-margin">${esCoachMargin(p)}</div>\n',
+    replace: "",
+    owner: "ui56",
+    why: "esGetFeedback writes into .es-margin and nothing created it, so every piece of feedback was fetched, saved and never shown",
+  },
+  {
+    id: "ask-button-keeps-asking",
+    file: "app.js",
+    find: '    ask.textContent = ES.pending ? "Checking\\u2026"',
+    replace: '    ask.textContent = ask.textContent;',
+    owner: "ui56",
+    why: "the button went on saying it was asking the coach after the answer had arrived, been saved and been rendered",
+  },
+  {
+    id: "worker-request-unbounded",
+    file: "app.js",
+    find: "        body: JSON.stringify(body), signal: ctrl ? ctrl.signal : undefined,",
+    replace: "        body: JSON.stringify(body),",
+    owner: "ui56",
+    why: "a worker that accepts the connection and never answers left the student waiting with no message and no bound",
+  },
+
   // ---- the harness watching itself ----------------------------------------
   {
     id: "gate-drops-a-suite",

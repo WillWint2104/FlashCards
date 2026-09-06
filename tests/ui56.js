@@ -1,17 +1,18 @@
 // THE MARKING WORKER FAILS, AND THE STUDENT IS TOLD.
 //
-// THIS SUITE CURRENTLY FAILS, ON PURPOSE, AND IS IN NO TIER.
-// It found a defect and the defect is not fixed. Section 2 asks for coached
-// feedback with the worker intercepted, and the student is never shown an
-// answer: the feedback IS produced and IS saved into the draft, and the screen
-// goes on saying "Asking the coach…" indefinitely. It does that on a SUCCESSFUL
-// response too, so it is not a failure-path bug, it is the feedback render.
-// Nothing anywhere in the harness clicks #esask - "Check this paragraph", the
-// main way a student asks for feedback - which is why it has never been caught.
+// IT FOUND TWO DEFECTS, AND THEY ARE WHY IT EXISTS.
 //
-// It is committed failing rather than deleted or weakened, because the failure
-// is the finding. tests/t23.mjs lists it as exempt with this reason so the
-// inventory stays honest and CI stays green on work that is finished.
+// esGetFeedback wrote its result into .es-margin and esCoachMargin rendered it,
+// and nothing in the application ever created that element: the coach's column
+// had been taken out of the render and its writer left behind. Every piece of
+// feedback a student asked for was fetched, normalised, saved into the draft and
+// never shown. And esRefreshAskButton restored the button's enabled state without
+// its label, so the control went on saying "Asking the coach…" after the answer
+// had arrived. Both on a SUCCESSFUL response, not only a failing one.
+//
+// Nothing in the harness had ever clicked #esask - "Check this paragraph", the
+// main way a student asks for feedback - which is why 74 suites were green over
+// it. That is the hole this file closes.
 //
 // Both calls to the worker were bare awaits inside a try/catch. That handles a
 // refused connection and a bad status, and does nothing at all about the case in
@@ -87,6 +88,89 @@ async function toComposer(page) {
     const m = src.match(/ES_REQUEST_MS = (\d+)/);
     ok(m && Number(m[1]) > 0 && Number(m[1]) <= 120000,
       "the bound is a stated number of milliseconds: " + (m && m[1]));
+  }
+
+  console.log("1b. a successful response reaches the student");
+  {
+    // The case that was broken, and the one that matters: the coach answers and
+    // the student is shown the answer. Everything about the failure states below
+    // is worth nothing if this does not hold.
+    const NOTE = "STUBBED-COACH-NOTE-7f3a";
+    const ctx = await browser.newContext({ viewport: { width: 1500, height: 1050 } });
+    const page = await ctx.newPage();
+    const errs = []; page.on("pageerror", e => errs.push(String(e).slice(0, 140)));
+    let calls = 0;
+    await page.route(/workers\.dev/, r => { calls++; return r.fulfill({ status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ note: NOTE, missing: ["explain"], nudges: [] }) }); });
+    await toComposer(page);
+    for (let i = 0; i < 6; i++) {
+      const box = await page.$("#esline"); if (!box) break;
+      await page.fill("#esline", "Customers wanting speed push the business to rebuild step " + (i + 1) + " of ordering.").catch(() => {});
+      const a = await page.$("#esaccept"); if (!a) break;
+      await a.click(); await page.waitForTimeout(350);
+    }
+    const proseBefore = await page.$$eval(".es-said", es => es.map(e => e.textContent));
+    const posBefore = await page.evaluate(() => {
+      try { const raw = JSON.parse(localStorage.getItem("marginal.essay.v1") || "{}");
+        return (Object.values(raw).flatMap(b => (b && b.drafts) || [])[0] || {}).pos; } catch (e) { return null; }
+    });
+    const asker = await page.$("#esask");
+    ok(!!asker, "Check this paragraph is offered once the paragraph is written");
+    // The pending state is shown WHILE the request is out. Read from the control
+    // the student is looking at, not from a flag they cannot see.
+    const pendingSeen = await (async () => {
+      const before = asker ? await asker.textContent() : "";
+      if (asker) await asker.click();
+      for (let i = 0; i < 20; i++) {
+        const t = await page.$eval("#esask", e => e.textContent).catch(() => "");
+        if (/asking|checking/i.test(t)) return true;
+        if (t && t !== before) break;
+        await page.waitForTimeout(50);
+      }
+      return false;
+    })();
+    ok(pendingSeen, "and says it is asking while the request is out");
+    await page.waitForFunction(t => document.body.innerText.indexOf(t) >= 0, NOTE, { timeout: 15000 })
+      .then(() => ok(true, "the coach's answer appears on screen"))
+      .catch(() => ok(false, "the coach's answer appears on screen: it never did"));
+    ok(calls === 1, "the worker was called exactly once: " + calls);
+    const after = await page.evaluate(() => ({
+      pending: /Asking the coach|Checking/i.test(((document.querySelector("#esask") || {}).textContent) || ""),
+      margin: !!document.querySelector(".es-margin"),
+      said: [...document.querySelectorAll(".es-said")].map(e => e.textContent),
+      surface: !!document.querySelector("#eshost"),
+    }));
+    ok(!after.pending, "the asking state clears: " + JSON.stringify(
+      after.pending ? "still asking" : "back to Check this paragraph"));
+    ok(after.margin, "the coach has a place on the page to write into");
+    ok(JSON.stringify(after.said) === JSON.stringify(proseBefore),
+      "and the student's own sentences are unchanged, word for word: " + after.said.length);
+    ok(after.surface, "the essay surface is still there");
+    const posAfter = await page.evaluate(() => {
+      const raw = JSON.parse(localStorage.getItem("marginal.essay.v1") || "{}");
+      return (Object.values(raw).flatMap(b => (b && b.drafts) || [])[0] || {}).pos;
+    });
+    ok(posAfter === posBefore, "and the student is on the same paragraph: " + posBefore + " -> " + posAfter);
+    // Persisted, and still there when they come back.
+    const saved = await page.evaluate(t => {
+      const raw = JSON.parse(localStorage.getItem("marginal.essay.v1") || "{}");
+      const d = Object.values(raw).flatMap(b => (b && b.drafts) || [])[0] || {};
+      const par = (d.paras || []).find(x => x.feedback);
+      return par && par.feedback ? String(par.feedback.note || "").indexOf(t) >= 0 : false;
+    }, NOTE);
+    ok(saved, "the feedback is saved with the essay");
+    await page.reload();
+    await page.waitForTimeout(1200);
+    const survived = await page.evaluate(t => {
+      const raw = JSON.parse(localStorage.getItem("marginal.essay.v1") || "{}");
+      const d = Object.values(raw).flatMap(b => (b && b.drafts) || [])[0] || {};
+      const par = (d.paras || []).find(x => x.feedback);
+      return par && par.feedback ? String(par.feedback.note || "").indexOf(t) >= 0 : false;
+    }, NOTE);
+    ok(survived, "and survives a reload");
+    ok(errs.length === 0, "no page error: " + JSON.stringify(errs.slice(0, 1)));
+    await ctx.close();
   }
 
   console.log("2. every way the worker can fail leaves the student writing");
