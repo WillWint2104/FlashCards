@@ -88,9 +88,15 @@ const TIERS = {
   // widths and asks whether the bar still fits and still reaches everything.
   // That is a layout invariant measured in place, which is what this tier is
   // for, and it is 21s because resizing is cheap next to walking.
+  //
+  // ui59 is here for the same reason and a sharper one. It reads the labels on
+  // one surface after each change, which is a state invariant measured where the
+  // state is, and the fault it guards - two subjects named at once - is the kind
+  // that reaches a screenshot sent for approval rather than the kind a walk trips
+  // over. It belongs in the tier that runs on the way past.
   checkpoint: {
     budget: 60,
-    suites: ["t1", "t2", "t17", "t18", "t19", "t20", "t21", "t22", "t23", "t24", "t25", "ui35", "ui38", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49", "ui58"],
+    suites: ["t1", "t2", "t17", "t18", "t19", "t20", "t21", "t22", "t23", "t24", "t25", "ui35", "ui38", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49", "ui58", "ui59"],
   },
   // ui40 joined this tier when ui51 arrived. It walks EVERY question through the
   // shell, which is an exhaustive sweep and 6.2s of it, and the picker it swept

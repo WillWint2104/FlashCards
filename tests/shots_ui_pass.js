@@ -165,6 +165,21 @@ async function writeOut(p) {
   await p.click("#esmenu"); await p.waitForTimeout(350);
   await shot(p, "16-narrow-setup-menu-open");
   await p.keyboard.press("Escape"); await p.waitForTimeout(250);
+  // The subject shown in two places at once: the menu heading and the form. They
+  // read one committed value, so the shot is of them agreeing.
+  await p.$$eval('[data-espick="own"]', es => es[0] && es[0].click()); await p.waitForTimeout(400);
+  await p.selectOption("#essubject", "business_studies").catch(() => {});
+  await p.waitForTimeout(400);
+  await p.click("#esmenu"); await p.waitForTimeout(350);
+  await shot(p, "17-narrow-subject-context");
+  const agree = await p.evaluate(() => {
+    const sel = document.getElementById("essubject");
+    const bar = document.querySelector(".qp-subj");
+    return { form: sel && sel.options[sel.selectedIndex] && sel.options[sel.selectedIndex].text,
+      menu: bar && bar.textContent.trim() };
+  });
+  console.log("  subject shown in the form:", JSON.stringify(agree.form), " in the menu:", JSON.stringify(agree.menu));
+  await p.keyboard.press("Escape"); await p.waitForTimeout(200);
   await p.setViewportSize({ width: 1500, height: 1180 }); await p.waitForTimeout(400);
 
   await p.context().close();

@@ -12438,10 +12438,18 @@ module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf,
   const ESSAY_FALLBACK_EXAMPLE_SUBJECT = "ancient_history";
   // A subject's display label. Falls back to a humanised key (e.g. "economics" ->
   // "Economics") when the subject has no content yet, and to "" for an unknown code.
+  // Whether the application is in a subject it can show a student anything about.
+  // A class code routing to a subject whose content is not written yet leaves
+  // ES.subject holding a key nothing resolves. That is supported, and it is not
+  // the same thing as the student being in that subject.
+  function esHasSubject() { return !!esSubjectContent(ES.subject); }
   function esSubjectLabel() {
     const sc = esSubjectContent(ES.subject);
     if (sc && sc.label) return sc.label;
-    if (ES.subject) return String(ES.subject).replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+    // A key with no content behind it is not a subject to name. Humanising it
+    // produced "Economics" in the header of an application that has never held a
+    // single economics question, which is a label invented from a routing rule
+    // rather than from anything a student could open.
     return "";
   }
   // The normalised view the screens render from. Always non-null: the core works for
@@ -13322,6 +13330,11 @@ module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf,
   function esOpen(opts) {
     opts = opts || {};
     ES.demo = !!opts.demo;
+    // A routing rule may name a subject whose content is not written yet, and
+    // that is a supported state: the core works for every login and only the
+    // subject-specific add-ons are missing. What is NOT supported is a screen
+    // claiming the student is in a subject when they are not. See esSubjectLabel
+    // and the picker, which is where the two disagreeing labels came from.
     ES.subject = opts.subject || subjectForCode(currentClassCode());
     ES.code = opts.code || currentClassCode() || (ES.demo ? "11Anc1" : "");
     ES.form = null; ES.draft = null; ES.screen = "setup"; ES.pending = false;
@@ -13642,7 +13655,14 @@ module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf,
     const subjectPicker = subjectList.length > 1 ? `
       <div class="qp-field">
         <label class="qp-label" for="essubject">Subject</label>
-        <select id="essubject" class="qp-input qp-select">${subjectList.map(s =>
+        ${/* A <select> with no option marked shows its FIRST one, and that is how
+              this control came to display "Ancient History" while the header said
+              "Economics": the routed subject was in neither the list nor the
+              label, so each fell back to something different. When the student is
+              not in a subject the picker says so now, in a real option, rather
+              than presenting one they never chose as chosen. */ ""}
+        <select id="essubject" class="qp-input qp-select">${
+          esHasSubject() ? "" : `<option value="" selected>Choose a subject</option>`}${subjectList.map(s =>
           `<option value="${esc(s.key)}" ${s.key === ES.subject ? "selected" : ""}>${esc(s.label)}</option>`).join("")}</select>
       </div>` : "";
     // Paragraph-structure picker (e.g. Business Studies TEEEC vs TDECC), only when
@@ -14173,6 +14193,7 @@ module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf,
     const stt = $("#esstruct"); if (stt) stt.onchange = () => { f.structure = stt.value; };
     const subjSel = $("#essubject");
     if (subjSel) subjSel.onchange = () => {
+      if (!subjSel.value) return;              // the "Choose a subject" placeholder
       ES.subject = subjSel.value;
       const nv = esView();                       // new subject defaults
       f.structure = nv.defaultStructure;
