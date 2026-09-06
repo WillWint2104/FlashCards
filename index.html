@@ -133,7 +133,8 @@
   .pop b{font-family:var(--disp);display:block;margin-bottom:3px;color:#fff;text-transform:capitalize}
   .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;font-weight:700;font-size:14px;padding:11px 20px;border-radius:99px;z-index:200}
 
-  .nav{display:flex;gap:6px;background:#E2EAEA;border-radius:99px;padding:5px;width:max-content;margin-bottom:20px}
+  .nav{display:flex;gap:6px;background:#E2EAEA;border-radius:99px;padding:5px;width:max-content;max-width:100%;flex-wrap:wrap;margin-bottom:20px}
+  .navtab{white-space:nowrap}
   .navtab{font-family:var(--disp);font-weight:600;font-size:14px;border:none;background:none;color:var(--ink-2);padding:8px 22px;border-radius:99px}
   .navtab.on{background:var(--card);color:var(--green-dk);box-shadow:0 1px 4px rgba(60,74,74,.12)}
   .bcard{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:18px;margin-bottom:16px}
@@ -1707,6 +1708,111 @@
   .qp-navlink.on{color:var(--e-ink);border-bottom-color:var(--e-green);font-weight:700}
   .qp-navright{margin-left:auto;display:flex;align-items:center;gap:14px}
   .qp-subj{font-size:13px;font-weight:600;color:var(--e-ink3)}
+  /* ---- THE BAR ON A NARROW SCREEN ----
+     The desktop bar simply went on running horizontally and was clipped after
+     the subject label, which meant that on a phone the way out of the essay was
+     off the side of the screen. It is one component, so it gets one responsive
+     model rather than a second bar built for small screens:
+       - the wordmark stays, because identity is not a low-frequency action
+       - the section you are on is named, since the links themselves have folded
+       - the way OUT never folds: Exit essay and Home stay on the bar
+       - everything else goes behind one More button
+     The controls inside the menu are the same elements as on desktop, with the
+     same ids: the stylesheet changes where that group sits, not what is in it. */
+  .es-navnow{display:none}
+  .es-menubtn{display:none}
+  .es-keepout{flex:none}
+
+  @media (max-width: 860px) {
+    /* Two rows, because the four things on this bar do not fit on one at 390px
+       and the one that was losing was the section name: it has flex-shrink and
+       a min-width of 0, so it collapsed to nothing rather than pushing anything
+       else off. Row one is the brand and the two controls, row two is where the
+       student is. Nothing competes and nothing is ellipsised. */
+    .qp-navin, .es-scrim .es-wrap > .es-top, .es-top{position:relative;gap:8px;flex-wrap:wrap;
+      justify-content:flex-start}
+    .qp-navin{padding:10px 14px}
+    /* The links folded into the menu WITH the rest of the group, so the bar
+       says where you are instead. */
+    /* It GROWS into the spare room rather than relying on an auto margin to push
+       the rest along. With space-between on one bar and no justify-content on
+       another, an auto margin left this collapsed to nothing on the workspace
+       while working on the picker; flex-grow behaves the same on both. */
+    .es-navnow{display:block;order:9;flex:1 0 100%;font-family:var(--body);font-size:12.5px;
+      font-weight:700;letter-spacing:.02em;color:var(--e-ink2);white-space:nowrap;
+      overflow:hidden;text-overflow:ellipsis;margin-top:-2px}
+    .qp-brand{margin-right:auto}
+    .es-keepout, .es-menubtn{margin-left:0}
+    .es-menubtn{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 11px;
+      background:var(--surface);border:1px solid var(--e-line);border-radius:10px;
+      font-family:var(--body);font-size:12.5px;font-weight:600;color:var(--e-ink2);cursor:pointer;flex:none}
+    .es-menubtn .es-ico{width:16px;height:16px;flex:none}
+    .es-menubtn:hover{border-color:var(--e-green);color:var(--e-green-dk)}
+    .es-menubtn:focus-visible{outline:2px solid var(--e-green);outline-offset:2px}
+    .es-menubtn[aria-expanded="true"]{background:var(--e-mint);border-color:var(--e-green);color:var(--e-green-dk)}
+    /* The same group, now a panel. Hidden until asked for, and never wider than
+       the screen it is on. */
+    .qp-navin > .qp-navright, .es-scrim .es-top > .es-topbtns, .es-top > .es-topbtns{
+      display:none;position:absolute;top:calc(100% + 6px);right:10px;left:auto;
+      z-index:60;flex-direction:column;align-items:stretch;gap:6px;
+      width:min(268px, calc(100vw - 20px));max-height:70vh;overflow:auto;
+      background:var(--surface);border:1px solid var(--e-line);border-radius:14px;
+      box-shadow:0 10px 32px rgba(18,48,58,.14);padding:8px;margin-left:0}
+    .qp-navin > .qp-navright[data-open], .es-scrim .es-top > .es-topbtns[data-open], .es-top > .es-topbtns[data-open]{display:flex}
+    /* Inside the panel every control is a full-width row, so the menu reads as a
+       list of destinations rather than as the desktop row folded over. */
+    .es-top > .es-topbtns .es-util, .qp-navin > .qp-navright .es-util{width:100%;justify-content:flex-start;
+      height:38px;border-color:transparent;background:none}
+    .es-top > .es-topbtns .es-util:hover, .qp-navin > .qp-navright .es-util:hover{background:var(--sunk);border-color:var(--e-line)}
+    .es-top > .es-topbtns .qp-navlinks, .qp-navin > .qp-navright .qp-navlinks{display:flex;flex-direction:column;
+      align-items:stretch;gap:2px;margin:0 0 4px;padding-bottom:6px;border-bottom:1px solid var(--e-line)}
+    .es-top .qp-navlink, .qp-navin .qp-navlink{border-bottom:0;border-radius:9px;padding:9px 12px;text-align:left;font-size:13.5px}
+    .es-top .qp-navlink:hover, .qp-navin .qp-navlink:hover{background:var(--sunk)}
+    .es-top .qp-navlink.on, .qp-navin .qp-navlink.on{background:var(--e-mint);color:var(--e-green-dk)}
+    .es-top > .es-topbtns .qp-subj, .qp-navin > .qp-navright .qp-subj{padding:5px 12px 3px;margin-right:0;
+      font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--e-ink3)}
+    .es-scrim .es-topbtns .qp-subj{margin-right:0}
+    /* The wordmark is the smallest thing that can go without losing identity, and
+       it only goes where there is genuinely no room for it. */
+    .es-scrim .es-wrap > .es-top{padding-left:14px;padding-right:14px}
+  }
+  /* Between about 400 and 470 the bar is brand, section, Exit essay and More,
+     and the four of them do not fit with every label showing. The label that
+     goes is More's: it is the one control here whose icon is universally read,
+     it keeps its accessible name, and dropping it leaves both the wordmark and
+     the labelled way out intact at every width a student holds. */
+  @media (max-width: 470px) {
+    .es-menubtn span{display:none}
+    .es-menubtn{padding:0;width:34px;justify-content:center}
+  }
+
+  /* The fixed footer bar had the same fault as the header: three controls in a
+     row that does not fit, overlapping the writing behind them. */
+  @media (max-width: 860px) {
+    /* One row, not two. Wrapping made this fixed bar tall enough to sit over the
+       writing behind it, which is worse than a tight row: the words a student is
+       reading disappeared under their own controls. "Saved" keeps its mark and
+       loses its word, the three controls share what is left, and the workspace
+       gets bottom room so nothing is ever underneath the bar. */
+    /* One row, never two. Wrapping made this fixed bar tall enough to sit over
+       the writing behind it, which is worse than a tight row: the words a
+       student is reading disappeared under their own controls. The two
+       navigational controls keep their icons and lose their words; the action
+       keeps both, because it is the one a student is looking for. */
+    .es-footbar-in{flex-wrap:nowrap;gap:6px;padding:7px 10px}
+    .es-footbar .es-btn{flex:none;white-space:nowrap}
+    .es-footbar #esfootoutline span, .es-footbar #esfootpreview span{
+      position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+    .es-footbar #esfootoutline, .es-footbar #esfootpreview{padding:7px 10px}
+    .es-footbar .es-btn.primary{flex:0 1 auto;min-width:0}
+    .es-footbar .es-btn.primary span{overflow:hidden;text-overflow:ellipsis}
+    .es-footsave{flex:none;gap:0}
+    .es-footsave-w{display:none}
+    .es-footbar .es-sp{flex:1 0 0;min-width:0}
+    /* Room under the writing for a bar that floats over it. */
+    .es-scrim .es-canvas, .es-scrim .es-wrap{padding-bottom:72px}
+  }
+
   .qp-main{flex:1 0 auto;width:100%;max-width:none;margin:0;padding:0}
   .qp-grid{max-width:1320px;margin:0 auto;padding:30px 28px 52px;display:grid;
     grid-template-columns:minmax(0,1fr) 348px;gap:26px;align-items:start}
@@ -2134,6 +2240,12 @@
      The writing screens used to carry a different mark, different type and two
      underlined-looking words where the picker had navigation. */
   .es-scrim .es-top{gap:14px}
+  /* The group holds both halves of the bar now, so on a wide screen it spans it:
+     the links keep their place beside the brand and the utilities keep theirs at
+     the end. Narrow, the same group becomes the menu panel. */
+  .qp-navright, .es-topbtns{flex:1 1 auto;min-width:0}
+  .qp-navright{display:flex;align-items:center;gap:14px}
+  .qp-navright .qp-navlinks, .es-topbtns .qp-navlinks{margin-right:auto}
   .es-scrim .qp-navlinks{margin-left:6px}
   .es-scrim .es-topbtns{gap:8px;margin-left:auto}
   .es-scrim .es-topbtns .qp-subj{margin-right:6px}
@@ -2178,6 +2290,11 @@
      below because all three share an edge. */
   .es-scrim .es-belt{background:var(--surface);border:1px solid var(--e-line);border-radius:16px;
     box-shadow:var(--e-shadow);padding:5px;gap:2px;margin-bottom:16px;flex-wrap:nowrap;width:auto}
+  /* nowrap is right on a wide screen and pushes the last tool off the side of a
+     phone. It wraps rather than scrolls: three tools on two lines are all
+     visible, and a strip that scrolls sideways hides whichever tool a student
+     has not thought to drag for. */
+  @media (max-width: 860px) { .es-scrim .es-belt{flex-wrap:wrap} }
   .es-scrim .es-belt-b{background:none;border:none;border-radius:11px;padding:10px 16px;
     font-family:var(--body);font-size:13.5px;font-weight:600;color:var(--e-ink2);gap:8px}
   .es-scrim .es-belt-b .es-ico{color:var(--e-ink3)}
@@ -2445,6 +2562,14 @@
   .es-scrim .es-btn.ghost:not(.sm){font-size:13.5px;padding:10px 16px}
   .es-scrim .es-btn.ghost .es-ico{width:15px;height:15px;flex:none;color:var(--e-ink3)}
   .es-scrim .es-btn.ghost:hover .es-ico{color:var(--e-green-dk)}
+  /* The prominent secondary. Tinted surface, green edge and green words, so it
+     reads above the plain white controls beside it and below the solid primary.
+     One green fill on this card, and Continue has it. */
+  .es-scrim .es-btn.ghost.strong{background:var(--e-mint);border-color:var(--e-green);
+    color:var(--e-green-dk);font-weight:700}
+  .es-scrim .es-btn.ghost.strong .es-ico{color:var(--e-green-dk)}
+  .es-scrim .es-btn.ghost.strong:hover{background:var(--e-mint2);border-color:var(--e-green-dk);
+    color:var(--e-green-dk);box-shadow:inset 0 0 0 1px var(--e-green)}
   .es-scrim .es-btn:focus-visible{outline:2px solid var(--e-green);outline-offset:2px}
   .es-donebtns{gap:10px}
 

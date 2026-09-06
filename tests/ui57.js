@@ -31,8 +31,12 @@ const SENTENCE = "Convenience-oriented customers lead a business towards process
 // Essay Practice is open when its host is in the document. Closed means gone,
 // not hidden: that is what the tab's own close has always done.
 const isOpen = page => page.evaluate(() => !!document.getElementById("eshost"));
+// The WHOLE bar. Home and Exit essay deliberately sit outside the group that
+// folds into the menu on a narrow screen, so a reader that looked only inside
+// that group stopped finding them the day they were moved out - and reported
+// their absence, which was exactly wrong.
 const barText = page => page.evaluate(() => {
-  const t = document.querySelector(".es-top .es-topbtns") || document.querySelector(".qp-navright");
+  const t = document.querySelector(".qp-navin") || document.querySelector(".es-top");
   return t ? t.textContent.replace(/\s+/g, " ").trim() : "(no bar)";
 });
 

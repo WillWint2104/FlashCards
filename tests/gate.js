@@ -83,9 +83,14 @@ const TIERS = {
   // UI consistency pass - 66.2s on main, 61.6s with ui52 still in it - and the
   // overrun was never ui52 alone, but ui52 was the one suite here that did not
   // belong.
+  // ui58 is here, not in journeys, and the difference is real rather than
+  // convenient. It does not walk a student anywhere: it puts one surface at four
+  // widths and asks whether the bar still fits and still reaches everything.
+  // That is a layout invariant measured in place, which is what this tier is
+  // for, and it is 21s because resizing is cheap next to walking.
   checkpoint: {
     budget: 60,
-    suites: ["t1", "t2", "t17", "t18", "t19", "t20", "t21", "t22", "t23", "t24", "t25", "ui35", "ui38", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49"],
+    suites: ["t1", "t2", "t17", "t18", "t19", "t20", "t21", "t22", "t23", "t24", "t25", "ui35", "ui38", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49", "ui58"],
   },
   // ui40 joined this tier when ui51 arrived. It walks EVERY question through the
   // shell, which is an exhaustive sweep and 6.2s of it, and the picker it swept
@@ -175,7 +180,34 @@ const TIERS = {
   // There is nothing to move out of the tier that runs everything, so the only
   // honest choice here is a number with room in it and the run that set it
   // written down beside it.
-  full: { budget: 600, suites: [] },
+  // 660, set from measurement rather than from a round number, and recorded so
+  // the next person can see whether it was earned:
+  //
+  //   595.3s  before the UI consistency pass
+  //   615.9s  after it, the difference being ui57, the navigation regression
+  //           that proves leaving and resuming preserves a student's attempt
+  //   574.9s  the same tree plus ui58, the responsive-navigation regression,
+  //           measured 41s FASTER than the run before it
+  //   660     the highest of those plus headroom
+  //
+  // That third number is the one that matters when reading the first two. This
+  // tier varies by around 40s between runs on the same tree - it is 80 suites
+  // each launching a browser on a shared machine - so a single measurement is
+  // not a cost and 615.9 was not purely growth. 660 is set above the worst
+  // observed run, not above the average, because a budget that the tier crosses
+  // on a bad afternoon teaches everyone to ignore it.
+  //
+  // This is the exhaustive tier growing in scope, not a budget moved to hide a
+  // regression: fast, checkpoint and journeys are unchanged at 40, 60 and 180,
+  // and each of them is inside its number. The distinction matters and is the
+  // reason this comment exists rather than a bare integer.
+  //
+  // 660 is provisional. bots is 132.7s of this tier and ui54 is 79.4s - 35% of
+  // the whole harness between two suites - and Gate 2 rewrites the bot
+  // acceptance. Profile both again from the post-Gate-2 composition and set this
+  // from what is measured then. Do not move core coverage out of full to get
+  // under a clock: full is the tier that is allowed to be slow.
+  full: { budget: 660, suites: [] },
 };
 
 const tier = (process.argv[2] || "").toLowerCase();

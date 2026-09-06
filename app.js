@@ -4156,11 +4156,55 @@
     document.body.classList.add("es-lock");
     esRender();
   }
-  // Leaving Essay Practice, from anywhere. The draft is written down first, so
-  // "Exit essay" and "Home" cannot be the two controls that lose a student's
-  // work: the attempt, its question, its feedback and its position are all in
-  // the store before the surface is removed, and Resume in My essays restores
-  // that same attempt rather than a fresh one.
+  // Leaving Essay Practice, from anywhere.
+  //
+  // The save here is INSURANCE, not the mechanism, and the harness says so:
+  // removing it is a mutation that ui57 survives, because an accepted sentence
+  // and an arriving piece of feedback each write the draft already. It stays
+  // because a future path that mutates the draft without saving would otherwise
+  // lose it on the way out, and this is the one place every exit goes through.
+  // What is actually guaranteed - and what ui57 asserts - is the observable
+  // outcome: after leaving, the attempt, its question, its feedback and its
+  // position are in the store, and Resume in My essays reopens that same
+  // attempt rather than a fresh one.
+  // The narrow-screen navigation menu. One binder, called from every surface that
+  // wears the bar, because the bar is one component and its behaviour should not
+  // be reimplemented per screen. It closes the ways a menu closes: choosing
+  // something, pressing away from it, and Escape.
+  function esBindNavMenu() {
+    const btn = document.getElementById("esmenu");
+    const panel = document.getElementById("esnavpanel");
+    if (!btn || !panel) return;
+    const shut = () => {
+      ES.ui.navMenu = false;
+      btn.setAttribute("aria-expanded", "false");
+      panel.removeAttribute("data-open");
+      document.removeEventListener("click", away, true);
+      document.removeEventListener("keydown", esc, true);
+    };
+    const away = e => {
+      if (panel.contains(e.target)) return;
+      if (e.target.closest && e.target.closest("#esmenu")) return;
+      shut();
+    };
+    const esc = e => { if (e.key === "Escape") { shut(); btn.focus(); } };
+    btn.onclick = () => {
+      if (ES.ui.navMenu) { shut(); return; }
+      ES.ui.navMenu = true;
+      btn.setAttribute("aria-expanded", "true");
+      panel.setAttribute("data-open", "");
+      // Bound while open and dropped on close, so nothing accumulates across
+      // the renders this application does on almost every press.
+      document.addEventListener("click", away, true);
+      document.addEventListener("keydown", esc, true);
+    };
+    // Choosing something inside the menu is the end of using the menu. Bound in
+    // the capture phase so it runs whatever the control itself goes on to do,
+    // including the ones that re-render the page underneath it.
+    panel.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+      if (ES.ui.navMenu) shut();
+    }, true));
+  }
   function esLeave() {
     if (ES.draft) { try { esSaveDraft(); } catch (e) { /* private mode: the in-memory draft still stands */ } }
     esClose();
@@ -4492,13 +4536,16 @@
             than repeated. The same component is worn by the writing surfaces, so
             the destinations do not appear and disappear as a student moves. */ ""}
       ${esNavLeftHTML(stage === "essays" ? "essays" : "practice")}
-      <div class="qp-navright">
+      ${/* A full-page section of the application, so its way out is Home: it leaves
+            Essay Practice for Marginal, exactly as the wordmark does. "Close" was
+            the word a modal uses, and this has not been a modal for a long time.
+            Like Exit essay on the workspace, it never folds into the menu. */ ""}
+      <button type="button" class="es-util quiet es-keepout" id="eshome" data-esnav="marginalhome" aria-label="Marginal home">${esIcon("home")}<span>Home</span></button>
+      ${esMenuBtnHTML()}
+      <div class="qp-navright" id="esnavpanel"${ES.ui.navMenu ? " data-open" : ""}>
+        ${esNavLinksHTML(stage === "essays" ? "essays" : "practice")}
         ${sc.label ? `<span class="qp-subj">${esc(sc.label)}${sc.stage ? " · " + esc(sc.stage) : ""}</span>` : ""}
         ${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}
-        ${/* A full-page section of the application, so its way out is Home: it leaves
-              Essay Practice for Marginal, exactly as the wordmark does. "Close" was
-              the word a modal uses, and this has not been a modal for a long time. */ ""}
-        <button type="button" class="es-util quiet" id="eshome" data-esnav="marginalhome">${esIcon("home")}<span>Home</span></button>
       </div>
     </div></header>`;
     const foot = `<footer class="qp-foot"><div class="qp-footin">
@@ -4877,6 +4924,7 @@
 
     // This surface has no exit control of its own any more: Home is a nav route,
     // bound with the rest of them below.
+    esBindNavMenu();
     const q = $("#esq"); if (q) q.oninput = () => {
       f.question = q.value;
       const picked = f.questionId && sc.questions.find(x => x.id === f.questionId);
@@ -5197,19 +5245,48 @@
     // The wordmark is Home, and Home is MARGINAL's home, not the top of the essay
     // flow. It leaves Essay Practice the way the tab entered it, from any surface,
     // so it is never a control that reloads the page the student is standing on.
+    //
+    // .es-navnow names the section on a narrow screen, where the links themselves
+    // have gone into the menu. It is the same word the marked link carries, so a
+    // student is never told two different things about where they are.
     return `<button type="button" class="qp-brand" id="esbrandhome" data-esnav="marginalhome" aria-label="Marginal home">
         <span class="qp-logo" aria-hidden="true">M</span><span class="qp-word">Marginal</span></button>
-      <nav class="qp-navlinks" aria-label="Marginal">
+      <span class="es-navnow">${current === "essays" ? "My essays" : "Essay practice"}</span>`;
+  }
+  // The section links. They live INSIDE the collapsible group rather than beside
+  // the brand, because a link that is hidden at 390px and not in the menu is a
+  // destination a student on a phone cannot reach at all. On a wide screen the
+  // group is a row and they sit where they always sat.
+  function esNavLinksHTML(current) {
+    const link = (to, label, on) =>
+      `<button type="button" class="qp-navlink${on ? " on" : ""}"${on ? ' aria-current="page"' : ""} data-esnav="${to}">${label}</button>`;
+    return `<nav class="qp-navlinks" aria-label="Marginal">
         ${link("back", "Essay practice", current !== "essays")}
         ${link("essays", "My essays", current === "essays")}
       </nav>`;
+  }
+  // The menu the collapsible half of the bar folds into below 860px. One button,
+  // one panel, and the SAME controls inside it at every width: nothing is
+  // duplicated for narrow screens, so no control can exist twice with one id and
+  // no fix can land on only one of them. The stylesheet decides whether that
+  // group is a row on the bar or a panel under a button; the markup does not know.
+  function esMenuBtnHTML() {
+    return `<button type="button" class="es-menubtn" id="esmenu" aria-expanded="${
+      ES.ui.navMenu ? "true" : "false"}" aria-controls="esnavpanel" aria-label="More">${
+      esIcon("menu")}<span>More</span></button>`;
   }
 
   function esTopBarHTML(sc, switchLabel) {
     return `
       <div class="es-top">
         ${esNavLeftHTML("practice")}
-        <div class="es-topbtns">
+        ${/* The way out never folds into a menu. Everything else on this bar can
+              wait behind one press; leaving cannot, and a student on a phone who
+              wants to stop writing must not have to find it. */ ""}
+        <button type="button" class="es-util quiet es-keepout" id="esexit" data-esnav="marginalhome" aria-label="Exit essay">${esIcon("exit")}<span>Exit essay</span></button>
+        ${esMenuBtnHTML()}
+        <div class="es-topbtns" id="esnavpanel"${ES.ui.navMenu ? " data-open" : ""}>
+          ${esNavLinksHTML("practice")}
           ${sc.label ? `<span class="qp-subj">${esc(sc.label)}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}
           ${/* Learn and Notebook are utilities: they make sense whatever sentence
                 the student is on, they open their own floating windows, and they
@@ -5222,11 +5299,6 @@
                 buttons and two underlined-looking words. */ ""}
           <button type="button" class="es-util quiet" id="esmodeswitch">${esIcon("switch")}<span>${esc(switchLabel)}</span></button>
           <button type="button" class="es-util quiet" id="esx" aria-label="Back to setup">${esIcon("back")}<span>Setup</span></button>
-          ${/* The workspace never had a way out. Setup is a step backwards inside
-                Essay Practice, not a way to leave it, and a wordmark is not a
-                discoverable exit. This is the labelled one, and it saves before it
-                goes so the attempt is waiting in My essays. */ ""}
-          <button type="button" class="es-util quiet" id="esexit" data-esnav="marginalhome">${esIcon("exit")}<span>Exit essay</span></button>
         </div>
       </div>`;
   }
@@ -5743,6 +5815,8 @@
     next: '<path d="m9 18 6-6-6-6" />',
     // switch between coached practice and a full attempt
     switch: '<path d="M8 3 4 7l4 4" /> <path d="M4 7h16" /> <path d="m16 21 4-4-4-4" /> <path d="M20 17H4" />',
+    // the compact navigation menu on a narrow screen
+    menu: '<path d="M4 6h16" /> <path d="M4 12h16" /> <path d="M4 18h16" />',
     // a disclosure that is shut, and the same one open
     chevright: '<path d="m9 18 6-6-6-6" />',
     chevdown: '<path d="m6 9 6 6 6-6" />',
@@ -8476,10 +8550,12 @@
       : /introduction/i.test(role) ? "Check introduction"
       : /conclusion/i.test(role) ? "Check conclusion" : "Check this paragraph";
     return `<div class="es-footbar"><div class="es-footbar-in">
-      <span class="es-footsave">${esIcon("save")}Saved</span>
+      <span class="es-footsave">${esIcon("save")}<span class="es-footsave-w">Saved</span></span>
       <span class="es-sp"></span>
-      <button type="button" class="es-btn ghost sm" id="esfootoutline">Outline</button>
-      <button type="button" class="es-btn ghost sm" id="esfootpreview">Preview response</button>
+      ${/* Icon and label, so that on a phone the label can go and the control
+            still says what it is to a screen reader and to a finger. */ ""}
+      <button type="button" class="es-btn ghost sm" id="esfootoutline" aria-label="Outline">${esIcon("structure")}<span>Outline</span></button>
+      <button type="button" class="es-btn ghost sm" id="esfootpreview" aria-label="Preview response">${esIcon("open")}<span>Preview response</span></button>
       ${can ? `<button type="button" class="es-btn primary" id="esask" ${ES.pending ? "disabled" : ""}>${esIcon("feedback")}<span>${esc(label)}</span></button>` : ""}
     </div></div>`;
   }
@@ -8625,14 +8701,18 @@
             <div class="es-done">
               <div class="es-doneh"><span class="es-donetick">${esIcon("check")}</span>Paragraph complete<span class="es-donew">${words} word${words === 1 ? "" : "s"}</span></div>
               <p class="es-donesub">Every part of this paragraph has something in it. Read it back before you move on: click any sentence above to rewrite it.</p>
-              ${/* Four things a student can do next, so four controls of the same
-                    kind: one carries the flow forward and is the primary, the other
-                    three are alternatives to it. They used to be one button and
-                    three underlined words, which read as a button and a footnote. */ ""}
+              ${/* Four things a student can do next, in three weights. Continue is
+                    the primary. Check this paragraph is the one action here that
+                    asks the app to read what was written, so it is a prominent
+                    secondary rather than a peer of the two conveniences beside it;
+                    it is deliberately not a second solid green button, because
+                    there is one way forward and this is not it. Add another
+                    sentence and Memorise it are tertiary. Same height throughout,
+                    and they keep stacking cleanly on a narrow screen. */ ""}
               <div class="es-donebtns">
                 <button type="button" class="es-btn primary" id="esdonenext">${esIcon("forward")}<span>${nextPara ? "Continue to " + esc(nextPara.role.toLowerCase()) : "Review the whole response"}</span></button>
+                <button type="button" class="es-btn ghost strong" id="esdonecheck">${esIcon("feedback")}<span>Check this paragraph</span></button>
                 <button type="button" class="es-btn ghost" id="esmoreline">${esIcon("add")}<span>Add another sentence</span></button>
-                <button type="button" class="es-btn ghost" id="esdonecheck">${esIcon("feedback")}<span>Check this paragraph</span></button>
                 <button type="button" class="es-btn ghost" id="esquizlink">${esIcon("memorise")}<span>Memorise it</span></button>
               </div>
             </div>`;
@@ -9446,11 +9526,13 @@
     const head = `
       <div class="es-top">
         ${esNavLeftHTML("practice")}
-        <div class="es-topbtns">
+        <button type="button" class="es-util quiet es-keepout" id="esexit" data-esnav="marginalhome" aria-label="Exit essay">${esIcon("exit")}<span>Exit essay</span></button>
+        ${esMenuBtnHTML()}
+        <div class="es-topbtns" id="esnavpanel"${ES.ui.navMenu ? " data-open" : ""}>
+          ${esNavLinksHTML("practice")}
           ${sc.label ? `<span class="qp-subj">${esc(sc.label)}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}
           <button type="button" class="es-util quiet" id="esquizcoach">${esIcon("back")}<span>Back to coaching</span></button>
           <button type="button" class="es-util quiet" id="esx" aria-label="Back to setup">${esIcon("back")}<span>Setup</span></button>
-          <button type="button" class="es-util quiet" id="esexit" data-esnav="marginalhome">${esIcon("exit")}<span>Exit essay</span></button>
         </div>
       </div>
       <div class="es-qbar"><div><div class="es-qbar-mode">memorise</div><div class="es-qbar-q">${esc(d.question)}</div></div>${d.topic ? `<span class="es-restag">${esc(d.topic)}</span>` : ""}</div>`;
@@ -9872,6 +9954,7 @@
 
   function esBindWritingHead() {
     esBindDecode();
+    esBindNavMenu();
     const x = $("#esx"); if (x) x.onclick = () => { ES.screen = "setup"; esRender(); };
     // The global bar is the same component here as on the picker, so its routes
     // are bound here too. Leaving the writing surface never touches the draft:

@@ -144,12 +144,29 @@ async function writeOut(p) {
   await shot(p, "11-narrow-paragraph-complete", ".es-done");
   await shot(p, "12-narrow-workspace");
   const wrap = await p.$$eval(".es-donebtns button", es => es.map(e => {
-    const r = e.getBoundingClientRect();
-    return { id: e.id, top: Math.round(r.top), h: Math.round(r.height), w: Math.round(r.width),
-      right: Math.round(r.right), overflow: r.right > document.documentElement.clientWidth };
+    const r = e.getBoundingClientRect(), c = getComputedStyle(e);
+    return { id: e.id, top: Math.round(r.top), h: Math.round(r.height),
+      bg: c.backgroundColor, border: c.borderColor, colour: c.color,
+      overflow: r.right > document.documentElement.clientWidth };
   }));
-  console.log("  narrow Paragraph complete actions:", JSON.stringify(wrap));
-  console.log("  all four present:", wrap.length === 4, " none overflowing:", wrap.every(x => !x.overflow));
+  console.log("  narrow Paragraph complete actions:");
+  wrap.forEach(x => console.log("   ", JSON.stringify(x)));
+  console.log("  all four present:", wrap.length === 4, " none overflowing:", wrap.every(x => !x.overflow),
+    " one height:", new Set(wrap.map(x => x.h)).size === 1);
+  await shot(p, "13-narrow-workspace-header", ".es-top");
+  await p.click("#esmenu"); await p.waitForTimeout(350);
+  await shot(p, "14-narrow-menu-open");
+  await p.keyboard.press("Escape"); await p.waitForTimeout(250);
+  // the picker at the same width, since its bar is the same component
+  await p.click("#esexit"); await p.waitForTimeout(400);
+  await p.$$eval(".navtab", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
+  await p.waitForTimeout(500);
+  await shot(p, "15-narrow-setup-header");
+  await p.click("#esmenu"); await p.waitForTimeout(350);
+  await shot(p, "16-narrow-setup-menu-open");
+  await p.keyboard.press("Escape"); await p.waitForTimeout(250);
+  await p.setViewportSize({ width: 1500, height: 1180 }); await p.waitForTimeout(400);
+
   await p.context().close();
 
   await b.close();
