@@ -73,7 +73,7 @@ const TIERS = {
   // flow already shipped once.
   checkpoint: {
     budget: 60,
-    suites: ["t1", "t2", "t17", "t18", "t19", "t20", "t21", "t22", "t23", "t24", "ui35", "ui38", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49", "ui52", "ui56"],
+    suites: ["t1", "t2", "t17", "t18", "t19", "t20", "t21", "t22", "t23", "t24", "ui35", "ui38", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49", "ui52"],
   },
   // ui40 joined this tier when ui51 arrived. It walks EVERY question through the
   // shell, which is an exhaustive sweep and 6.2s of it, and the picker it swept
@@ -118,12 +118,17 @@ const TIERS = {
   // tier to 132.8s against its minute, which is the mistake this file keeps
   // making and the one the budget is not allowed to absorb.
   //
+  // ui56 came here for the same reason and by the same criterion: it drives the
+  // composer to a finished paragraph five times over, once per way the coach can
+  // answer, which is a walk rather than a seam. In checkpoint it took that tier
+  // to 99s.
+  //
   // ui37 came here when checkpoint measured 62s twice against its minute. It was
   // the borderline one when the tier was last split: it guards a seam, the
   // capture and restore of a sentence in progress, but it guards it by leaving
   // the writing screen and coming back through half a dozen controls, which is a
   // walk. ui35 and ui46 stayed because each measures its invariant in place.
-  journeys: { budget: 180, suites: ["ui13", "ui30", "ui37", "ui40", "ui50", "ui51", "ui53", "ui55"] },
+  journeys: { budget: 180, suites: ["ui13", "ui30", "ui37", "ui40", "ui50", "ui51", "ui53", "ui55", "ui56"] },
   // Everything run.js knows about, the journeys included, plus the suites in no
   // tier: both student matrices are here and only here, ui54's four profiles on
   // the imported question and the bots' seven on the bundled bank.

@@ -33,9 +33,11 @@ const { chromium, T, usePractice, pageTo } = require("./env");
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log("  FAIL:", m); } };
 
-// Shorter than the app's 45s bound so the suite does not sit through it, and
-// long enough that a request which resolves normally still would.
-const HANG_MS = 8000;
+// Shorter than the app's 45s bound so the suite never sits through it, and long
+// enough to be unmistakably a hang beside the stubbed responses, which return
+// instantly. The app's own abort is asserted from the source in section 1: a
+// suite that waited 45 seconds to watch it fire would cost more than it proves.
+const HANG_MS = 3000;
 
 const CASES = [
   { id: "refused", why: "the worker cannot be reached at all",
