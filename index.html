@@ -724,35 +724,55 @@
   .es-stfall{font-size:12.5px;font-weight:700;color:var(--ink-2);margin:0;padding:12px;
     border:1px solid var(--line);border-radius:10px;background:var(--bg)}
 
+  #esnbhost, #esstudyhost{
+    --page:#F6F9F9; --surface:#FFFFFF; --sunk:#FAFCFC;
+    --e-ink:#18272D; --e-ink2:#63787F; --e-ink3:#95A7AD;
+    --e-green:#12B27A; --e-green-dk:#0E9765; --e-mint:#E7F8F0; --e-mint2:#F2FBF7;
+    --e-line:#E8EEEF; --e-line2:#F1F6F6;
+    --e-shadow:0 1px 2px rgba(18,48,58,.04), 0 10px 28px rgba(18,48,58,.05);
+  }
   #esnbhost{position:fixed;inset:0;z-index:300;pointer-events:none}
+  /* THE NOTEBOOK, IN MARGINAL'S OWN LANGUAGE.
+     It was cream stationery with underlined text controls: a convincing notebook,
+     and convincingly a different application from the one around it. The
+     behaviour is unchanged - floating, resizable, paged, saved - and the surface
+     now uses the same white ground, border, radius and shadow as every other
+     panel. The ruled line survives as one faint cue under the writing rather than
+     as a theme, because the point was always "write what you want to remember",
+     not "here is a picture of a notepad". */
   .es-nb{position:absolute;right:26px;bottom:26px;pointer-events:auto;resize:both;overflow:hidden;
-    min-width:300px;min-height:280px;max-width:92vw;max-height:88vh;
-    background:#fffdf7;border:1.5px solid var(--line);border-radius:14px;
-    box-shadow:0 26px 70px rgba(28,40,40,.32);display:flex;flex-direction:column}
-  .es-nbhead{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #eadfc6;flex:0 0 auto}
-  .es-nbtitle{font-family:var(--disp);font-weight:600;font-size:14.5px;color:#2c2a24;flex:1}
-  .es-nbact{background:none;border:none;padding:0;cursor:pointer;font:inherit;font-size:12.5px;
-    color:#6b6455;text-decoration:underline}
-  .es-nbact:hover{color:var(--green-dk)}
-  .es-nbx{background:none;border:none;cursor:pointer;color:#6b6455;padding:3px;display:grid;place-items:center;border-radius:7px}
-  .es-nbx:hover{background:var(--green-soft);color:var(--green-dk)}
-  /* Ruled paper. The lines sit under the text at the same rhythm as the line
-     height, so writing lands on them. */
+    min-width:320px;min-height:300px;max-width:92vw;max-height:88vh;
+    background:var(--surface);border:1px solid var(--e-line);border-radius:16px;
+    box-shadow:0 26px 70px rgba(28,40,40,.28);display:flex;flex-direction:column}
+  .es-nbhead{display:flex;align-items:center;gap:9px;padding:12px 14px;
+    border-bottom:1px solid var(--e-line);flex:0 0 auto}
+  .es-nbmark{display:grid;place-items:center;width:26px;height:26px;border-radius:8px;
+    background:var(--e-mint);color:var(--e-green-dk);flex:0 0 auto}
+  .es-nbmark .es-ico{width:15px;height:15px}
+  .es-nbtitle{font-family:var(--disp);font-weight:700;font-size:14.5px;color:var(--e-ink);flex:1}
+  .es-nbtools,.es-nbfootacts{display:flex;align-items:center;gap:2px}
+  /* One icon button, used by every control in this window. Same size, same
+     target, same states, so nothing reads as a stray text link again. */
+  .es-nbico{background:none;border:1px solid transparent;border-radius:9px;cursor:pointer;
+    color:var(--e-ink2);width:32px;height:32px;display:grid;place-items:center;padding:0}
+  .es-nbico .es-ico{width:16px;height:16px}
+  .es-nbico:hover{background:var(--e-mint);border-color:var(--e-line);color:var(--e-green-dk)}
+  .es-nbico:focus-visible{outline:2px solid var(--e-green);outline-offset:1px}
+  .es-nbico:disabled{opacity:.3;cursor:default}
+  .es-nbico:disabled:hover{background:none;border-color:transparent;color:var(--e-ink2)}
+  .es-nbico.danger:hover{background:#fdeceb;border-color:#f6cfcb;color:#9b2c22}
   .es-nbpaper{flex:1;min-height:0;width:100%;border:none;outline:none;resize:none;
-    font:inherit;font-size:15px;line-height:28px;color:#1d1b16;background-color:#fffdf7;
-    background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 27px,#e7dcc2 27px,#e7dcc2 28px);
-    background-attachment:local;padding:6px 16px 16px;letter-spacing:.1px}
-  .es-nbpaper::placeholder{color:#a9a08c}
-  .es-nbfoot{display:flex;align-items:center;gap:8px;padding:8px 12px;border-top:1px solid #eadfc6;flex:0 0 auto}
-  .es-nbstep{background:none;border:1px solid #e0d5bb;border-radius:7px;cursor:pointer;color:#4a4438;
-    width:26px;height:26px;display:grid;place-items:center;font-size:15px}
-  .es-nbstep:disabled{opacity:.35;cursor:default}
-  .es-nbstep:not(:disabled):hover{border-color:var(--green);color:var(--green-dk)}
-  .es-nbpagename{flex:1;min-width:0;font:inherit;font-size:13px;font-weight:700;color:#2c2a24;
-    background:none;border:1px solid transparent;border-radius:6px;padding:3px 6px}
-  .es-nbpagename:hover{border-color:#e0d5bb}
-  .es-nbpagename:focus{outline:none;border-color:var(--green);background:#fff}
-  .es-nbcount{font-size:12px;color:#6b6455;white-space:nowrap}
+    font:inherit;font-size:15px;line-height:28px;color:var(--e-ink);background-color:var(--surface);
+    background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 27px,#eef2f1 27px,#eef2f1 28px);
+    background-attachment:local;padding:8px 18px 18px;letter-spacing:.1px}
+  .es-nbpaper::placeholder{color:var(--e-ink3)}
+  .es-nbfoot{display:flex;align-items:center;gap:8px;padding:9px 12px;
+    border-top:1px solid var(--e-line);flex:0 0 auto}
+  .es-nbpagename{flex:1;min-width:0;font:inherit;font-size:13px;font-weight:700;color:var(--e-ink);
+    background:none;border:1px solid transparent;border-radius:8px;padding:5px 8px}
+  .es-nbpagename:hover{border-color:var(--e-line)}
+  .es-nbpagename:focus{outline:none;border-color:var(--e-green);background:#fff}
+  .es-nbcount{font-size:12px;color:var(--e-ink3);white-space:nowrap}
   .es-nbbar{display:flex;gap:8px;padding:10px 12px 4px;align-items:center;flex-wrap:wrap}
   .es-nbname{flex:1;min-width:140px;font:inherit;font-size:13.5px;border:1.5px solid #e0d5bb;border-radius:8px;
     padding:6px 9px;background:#fff;color:#1d1b16}
@@ -1251,7 +1271,6 @@
   /* The instruction now leads the writing rather than trailing it, so it is the
      largest text in the composer. Nothing else here is 17px at 700. */
   .es-guidejob{font-size:17px;font-weight:700;line-height:1.5;color:var(--ink);margin-top:3px}
-  .es-shapebtn{margin-top:7px;display:inline-block}
   .es-shapes{margin-top:7px;display:flex;flex-direction:column;gap:5px}
   .es-shape{font-size:13.5px;line-height:1.6;color:var(--ink-2);margin:0;
     background:var(--bg);border-radius:8px;padding:7px 10px}
@@ -1467,8 +1486,6 @@
   /* the composer takes the canvas: the writing has to be the dominant thing on screen */
   .es-shell:has(.es-canvas){max-width:min(1480px,94vw)}
   .es-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
-  .es-brand{font-family:var(--disp);font-weight:600;font-size:15px;color:var(--ink);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-  .es-subj{font-size:12.5px;font-weight:700;color:var(--ink-2)}
   .es-demobadge{font-family:var(--disp);font-weight:600;font-size:11px;color:var(--green-dk);background:var(--green-soft);border-radius:99px;padding:2px 10px}
   .es-topbtns{display:flex;align-items:center;gap:10px;flex:none}
   .es-x{background:none;border:none;font-family:var(--disp);font-weight:600;font-size:13px;color:var(--ink-2);padding:6px 12px;border-radius:10px;cursor:pointer}
@@ -1670,6 +1687,15 @@
   .qp-nav{display:block;position:static;padding:0;max-width:none;gap:0;
     background:var(--surface);border-bottom:1px solid var(--e-line);flex:none}
   .qp-navin{max-width:1320px;margin:0 auto;padding:13px 28px;display:flex;align-items:center;gap:16px}
+  /* The brand is the home route on every surface, so it is a button, not a
+     word. .static is the one surface with nowhere to go: the flow failed to
+     load, and offering a destination it cannot reach would be a lie. */
+  .qp-brand{display:inline-flex;align-items:center;gap:10px;background:none;border:0;padding:4px 6px;
+    margin-left:-6px;border-radius:10px;cursor:pointer;font:inherit;color:inherit}
+  .qp-brand:hover .qp-word{color:var(--e-green-dk)}
+  .qp-brand:focus-visible{outline:2px solid var(--e-green);outline-offset:2px}
+  .qp-brand.static{cursor:default}
+  .qp-brand.static:hover .qp-word{color:var(--e-ink)}
   .qp-logo{width:30px;height:30px;border-radius:9px;background:var(--e-green);color:#fff;flex:none;
     display:grid;place-items:center;font-family:var(--disp);font-weight:800;font-size:16px}
   .qp-logo.sm{width:24px;height:24px;font-size:13px;border-radius:7px}
@@ -1681,14 +1707,16 @@
   .qp-navlink.on{color:var(--e-ink);border-bottom-color:var(--e-green);font-weight:700}
   .qp-navright{margin-left:auto;display:flex;align-items:center;gap:14px}
   .qp-subj{font-size:13px;font-weight:600;color:var(--e-ink3)}
-  .qp-close{background:none;border:0;font:inherit;font-size:13px;font-weight:600;color:var(--e-ink2);cursor:pointer}
-  .qp-close:hover{color:var(--e-ink)}
   .qp-main{flex:1 0 auto;width:100%;max-width:none;margin:0;padding:0}
   .qp-grid{max-width:1320px;margin:0 auto;padding:30px 28px 52px;display:grid;
     grid-template-columns:minmax(0,1fr) 348px;gap:26px;align-items:start}
   .qp-col{min-width:0}
   .qp-rail{display:flex;flex-direction:column;gap:16px;position:sticky;top:22px}
-  .qp-rc{background:var(--surface);border:1px solid var(--e-line);border-radius:16px;padding:18px 20px}
+  /* A card is a card on both surfaces. The picker drew the same white panel as
+     the writing screens and left the shadow token off, so the two halves of the
+     app lit their cards differently. */
+  .qp-rc{background:var(--surface);border:1px solid var(--e-line);border-radius:16px;padding:18px 20px;
+    box-shadow:var(--e-shadow)}
   .qp-rchd{display:flex;align-items:center;gap:10px;margin-bottom:10px}
   .qp-rcicon{width:30px;height:30px;border-radius:9px;background:var(--e-mint);color:var(--e-green-dk);
     flex:none;display:grid;place-items:center;font-size:14px}
@@ -1754,7 +1782,8 @@
   .qp-back:hover{color:var(--e-green-dk)}
   .qp-h1{font-family:var(--disp);font-size:30px;font-weight:700;letter-spacing:-.5px;margin:0 0 6px;color:var(--e-ink)}
   .qp-lead{font-size:15px;color:var(--e-ink2);margin:0 0 22px}
-  .qp-card{background:var(--surface);border:1px solid var(--e-line);border-radius:16px;padding:22px 24px}
+  .qp-card{background:var(--surface);border:1px solid var(--e-line);border-radius:16px;padding:22px 24px;
+    box-shadow:var(--e-shadow)}
 
   .qp-field{margin-bottom:16px}
   .qp-label{display:block;font-size:12.5px;font-weight:700;color:var(--e-ink2);margin-bottom:6px}
@@ -2056,6 +2085,15 @@
      the work, text is charcoal rather than grey-green, and green is used for
      state and primary action instead of as an outline around everything.
      ========================================================================== */
+  /* The floating hosts are appended to <body>, outside .es-scrim and .qp, so the
+     palette does not reach them: the notebook asked for var(--surface) with
+     nothing to resolve it and rendered transparent, with the marking guidance
+     showing through the page it was sitting on. The old cream styling used
+     literal hex and never noticed.
+     The tokens are inherited below. The PAINT is not: this rule also sets a
+     background, and #esnbhost is a fixed full-screen layer, so painting it filled
+     the viewport with --page and hid the writer completely. Variables travel;
+     surfaces do not. */
   .es-scrim, .qp{
     --page:#F6F9F9; --surface:#FFFFFF; --sunk:#FAFCFC;
     --e-ink:#18272D; --e-ink2:#63787F; --e-ink3:#95A7AD;
@@ -2092,12 +2130,19 @@
   .es-scrim .es-wrap > .es-top{background:var(--surface);border-bottom:1px solid var(--e-line);
     padding:0 max(clamp(16px,2.4vw,26px),calc((100% - (var(--main) + var(--rail) + var(--e-gap)))/2));
     margin-bottom:22px;height:62px;align-items:center}
-  .es-scrim .es-brand{font-size:16.5px;color:var(--e-ink);gap:12px}
-  .es-scrim .es-mark{width:32px;height:32px;border-radius:10px;background:var(--e-green);color:#fff;
-    display:grid;place-items:center;font-family:var(--disp);font-weight:600;font-size:17px;
-    box-shadow:0 2px 0 var(--e-green-dk)}
-  .es-scrim .es-subj{font-size:14.5px;font-weight:500;color:var(--e-ink2)}
-  .es-scrim .es-topbtns{gap:8px}
+  /* Same bar, same order: brand, destinations, then whatever this surface owns.
+     The writing screens used to carry a different mark, different type and two
+     underlined-looking words where the picker had navigation. */
+  .es-scrim .es-top{gap:14px}
+  .es-scrim .qp-navlinks{margin-left:6px}
+  .es-scrim .es-topbtns{gap:8px;margin-left:auto}
+  .es-scrim .es-topbtns .qp-subj{margin-right:6px}
+  /* The quiet member of the utility family: same height, same shape, same
+     target, one step back in weight because it is a route out rather than a
+     tool you open on the page. */
+  .es-util.quiet{background:none;border-color:transparent;color:var(--e-ink2);font-weight:600}
+  .es-util.quiet:hover{background:var(--sunk);border-color:var(--e-line);color:var(--e-ink)}
+  .es-util.quiet:focus-visible{outline:2px solid var(--e-green);outline-offset:2px}
   .es-util{display:inline-flex;align-items:center;gap:8px;background:var(--surface);
     border:1px solid var(--e-line);border-radius:11px;padding:8px 14px;font-family:var(--body);
     font-size:13.5px;font-weight:600;color:var(--e-ink);cursor:pointer}
@@ -2234,11 +2279,25 @@
   .es-scrim .es-rung.example{border-color:var(--e-line)}
   .es-scrim .es-help.exonly .es-rung{border-left:3px solid var(--e-green);padding-left:15px}
 
-  /* local sentence actions, side by side under the prompt */
-  .es-promptacts{display:flex;align-items:center;gap:18px;margin-top:9px;flex-wrap:wrap}
-  .es-scrim .es-shapebtn,.es-scrim .es-stuckbtn{font-family:var(--body);font-size:12.5px;font-weight:600;
-    color:var(--e-green-dk);text-decoration:none;padding:0}
-  .es-scrim .es-shapebtn:hover,.es-scrim .es-stuckbtn:hover{text-decoration:underline;text-underline-offset:3px}
+  /* Local sentence actions, side by side under the prompt. Both are the same
+     kind of thing to a student: help with the sentence in hand. So they are one
+     control shape, not two, and neither of them is a text link. */
+  .es-promptacts{display:flex;align-items:center;gap:8px;margin-top:11px;flex-wrap:wrap}
+  .es-scrim .es-helpact{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 12px;
+    background:var(--surface);border:1px solid var(--e-line);border-radius:10px;
+    font-family:var(--body);font-size:12.5px;font-weight:600;line-height:1;color:var(--e-ink2);
+    text-decoration:none;cursor:pointer}
+  .es-scrim .es-helpact .es-ico{width:15px;height:15px;flex:none;color:var(--e-ink3)}
+  .es-scrim .es-helpact span{line-height:1}
+  .es-scrim .es-helpact:hover{border-color:var(--e-green);color:var(--e-green-dk);background:var(--surface)}
+  .es-scrim .es-helpact:hover .es-ico{color:var(--e-green-dk)}
+  .es-scrim .es-helpact:focus-visible{outline:2px solid var(--e-green);outline-offset:2px}
+  /* The band behind these controls is already mint, so a mint fill would say
+     nothing. On this surface the open state is carried by the ring, which is
+     heavier than hover and cannot be confused with it. */
+  .es-scrim .es-helpact[aria-expanded="true"]{background:var(--surface);border-color:var(--e-green);
+    box-shadow:inset 0 0 0 1px var(--e-green);color:var(--e-green-dk)}
+  .es-scrim .es-helpact[aria-expanded="true"] .es-ico{color:var(--e-green-dk)}
   /* ---- vocabulary: a term, what it means twice, and it doing its job ---- */
   .es-vocab{border:1px solid var(--e-line);border-radius:12px;padding:12px 14px;margin-bottom:9px;background:var(--surface)}
   .es-vocabterm{font-family:var(--disp);font-weight:600;font-size:15px;color:var(--e-ink);margin-bottom:7px}
@@ -2373,10 +2432,56 @@
   /* nothing to add yet reads as nothing to add yet, rather than as a live button */
   .es-scrim .es-btn.primary[disabled]{background:var(--e-mint);color:#6FAF94;box-shadow:none;cursor:default}
   .es-scrim .es-btn.primary{background:var(--e-green);box-shadow:0 2px 0 var(--e-green-dk);border-radius:11px;
-    font-family:var(--body);font-weight:600;font-size:13.5px;padding:11px 20px}
+    font-family:var(--body);font-weight:600;font-size:13.5px;padding:11px 20px;line-height:1.25}
   .es-scrim .es-btn.ghost,.es-scrim .es-btn.sm{border:1px solid var(--e-line);background:var(--surface);
     color:var(--e-ink);border-radius:11px;font-family:var(--body);font-weight:600}
   .es-scrim .es-btn.ghost:hover{border-color:var(--e-green);color:var(--e-green-dk)}
+  /* A secondary action stands beside the primary, so it is the same height as
+     the primary. Underlined words beside a filled button read as a footnote,
+     not as the three other things you can do here. .sm keeps its own size:
+     those live in the fixed footer bar, where the row is deliberately shorter. */
+  .es-scrim .es-btn.ghost,.es-scrim .es-btn.primary{display:inline-flex;align-items:center;gap:8px;line-height:1.25}
+  .es-scrim .es-btn.primary .es-ico{width:15px;height:15px;flex:none}
+  .es-scrim .es-btn.ghost:not(.sm){font-size:13.5px;padding:10px 16px}
+  .es-scrim .es-btn.ghost .es-ico{width:15px;height:15px;flex:none;color:var(--e-ink3)}
+  .es-scrim .es-btn.ghost:hover .es-ico{color:var(--e-green-dk)}
+  .es-scrim .es-btn:focus-visible{outline:2px solid var(--e-green);outline-offset:2px}
+  .es-donebtns{gap:10px}
+
+  /* ---- COACH FEEDBACK ----
+     The one panel on this screen that answers the student's own writing, and the
+     only one that had never been given Marginal's surface language: lowercase
+     grey headings where the rest of the app sets small caps, underlined words
+     where the rest of the app has controls, and a text-glyph chevron. It is one
+     named component now, built from the same parts as everything around it. */
+  .es-scrim .es-mhead{display:flex;align-items:center;gap:8px;font-family:var(--body);font-size:10px;
+    font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--e-ink3);margin-bottom:10px}
+  .es-scrim .es-mhead .es-ico{width:14px;height:14px;flex:none;color:var(--e-ink3)}
+  .es-scrim .es-mempty{background:var(--sunk);border:1px solid var(--e-line);border-radius:12px;
+    padding:13px 15px;font-size:13px;font-weight:500;line-height:1.6;color:var(--e-ink2)}
+  .es-scrim .es-mempty b{font-weight:700;color:var(--e-ink)}
+  .es-scrim .es-demonote{background:var(--e-mint);border:1px solid var(--e-green);border-radius:10px;
+    padding:8px 12px;font-size:12px;font-weight:600;color:var(--e-green-dk);margin-bottom:12px}
+  .es-scrim .es-asking{font-size:12.5px;font-weight:600;color:var(--e-green-dk);margin-bottom:10px}
+  .es-scrim .es-mnote{font-size:14px;font-weight:500;line-height:1.65;color:var(--e-ink);margin-bottom:14px;max-width:74ch}
+  /* Same label as every other section label on this screen, so a heading in the
+     margin reads as a heading rather than as faded body text. */
+  .es-scrim .es-mh{font-family:var(--body);font-size:10px;font-weight:700;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--e-ink3);margin-bottom:8px}
+  .es-scrim .es-miss{background:var(--surface);border:1px solid var(--e-line);
+    border-left:3px solid var(--e-green);border-radius:12px;padding:12px 14px;margin-bottom:9px}
+  .es-scrim .es-missh{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--e-ink);margin-bottom:4px}
+  .es-scrim .es-missjob{font-size:13px;font-weight:500;line-height:1.6;color:var(--e-ink2);max-width:72ch}
+  .es-scrim .es-miss .es-exact{margin-top:10px}
+  .es-scrim .es-scaffhint{font-size:12.5px;font-weight:500;color:var(--e-ink3);line-height:1.55;margin-top:8px}
+  .es-scrim .es-nudge{background:var(--sunk);border:1px solid var(--e-line);border-left:3px solid var(--e-green);
+    border-radius:10px;padding:10px 13px;font-size:13px;font-weight:500;line-height:1.6;
+    color:var(--e-ink);margin-bottom:8px;max-width:74ch}
+  .es-scrim .es-nudge.expr,.es-scrim .es-nudge.sign{border-left-color:var(--e-line)}
+  .es-scrim .es-check{border-top:1px solid var(--e-line);margin-top:14px;padding-top:12px;
+    font-size:12.5px;font-weight:500;font-style:normal;line-height:1.6;color:var(--e-ink3)}
+  .es-scrim .es-polish{border-top:1px solid var(--e-line);margin-top:12px;padding-top:12px}
+  .es-scrim .es-polishbody{margin-top:10px}
 
   /* ---- rail panel ---- */
   .es-rp{background:var(--surface);border:1px solid var(--e-line);border-radius:16px;
@@ -2418,7 +2523,8 @@
   .es-footsave{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--e-ink3);font-weight:500}
   .es-footsave .es-ico{width:15px;height:15px}
   .es-footbar .es-sp{flex:1}
-  .es-footbar .es-btn{padding:7px 13px;font-size:13px}
+  .es-footbar .es-btn{padding:7px 13px;font-size:13px;display:inline-flex;align-items:center;gap:7px;line-height:1.3}
+  .es-footbar .es-btn .es-ico{width:15px;height:15px;flex:none}
   .es-footbar .es-btn.primary{padding:8px 16px}
 
   /* ---- responsive ---- */

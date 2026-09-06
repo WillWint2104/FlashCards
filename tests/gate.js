@@ -44,7 +44,7 @@ const TIERS = {
   // when a maintained test is outside both. It costs nothing and belongs in the
   // tier that runs most often, because the thing it catches is a test drifting
   // out of the harness, which is invisible by definition.
-  fast: { budget: 40, suites: ["t1", "t17", "t18", "t19", "t20", "t21", "t22", "t23", "t24", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49"] },
+  fast: { budget: 40, suites: ["t1", "t17", "t18", "t19", "t20", "t21", "t22", "t23", "t24", "t25", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49"] },
   // Adds the interaction surfaces that the shell rewrite touched, and the setup
   // and marking paths. This is the gate to pass before pushing, and its whole
   // value is that it is cheap enough to run out of habit.
@@ -73,7 +73,7 @@ const TIERS = {
   // flow already shipped once.
   checkpoint: {
     budget: 60,
-    suites: ["t1", "t2", "t17", "t18", "t19", "t20", "t21", "t22", "t23", "t24", "ui35", "ui38", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49", "ui52"],
+    suites: ["t1", "t2", "t17", "t18", "t19", "t20", "t21", "t22", "t23", "t24", "t25", "ui35", "ui38", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49", "ui52"],
   },
   // ui40 joined this tier when ui51 arrived. It walks EVERY question through the
   // shell, which is an exhaustive sweep and 6.2s of it, and the picker it swept

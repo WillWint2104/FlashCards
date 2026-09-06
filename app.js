@@ -3698,11 +3698,23 @@
     const place = pos ? `left:${pos.left}px;top:${pos.top}px;right:auto;bottom:auto` : "";
     return `<div class="es-nb" style="width:${sz.w}px;height:${sz.h}px;${place}" role="dialog" aria-label="Notebook">
       <div class="es-nbhead">
+        ${/* The toolbar was four underlined text links in a cream stationery shell,
+              which read as a different application sitting on top of this one. Icon
+              buttons in Marginal's own language, with the accessible name on the
+              control rather than on the picture. */ ""}
+        <span class="es-nbmark">${esIcon("note")}</span>
         <span class="es-nbtitle">Notebook</span>
-        <button type="button" class="es-nbact" data-esnbhome title="Put the notebook back in its default corner">reset position</button>
-        <button type="button" class="es-nbact" data-esnbmode="${mode === "save" ? "" : "save"}">save notebook</button>
-        <button type="button" class="es-nbact" data-esnbmode="${mode === "open" ? "" : "open"}">open</button>
-        <button type="button" class="es-nbx" data-esnbclose aria-label="Close notebook">${esIcon("close")}</button>
+        <span class="es-nbtools">
+          <button type="button" class="es-nbico" data-esnbmode="${mode === "save" ? "" : "save"}"
+            aria-label="Save this notebook" title="Save this notebook">${esIcon("save")}</button>
+          <button type="button" class="es-nbico" data-esnbmode="${mode === "open" ? "" : "open"}"
+            aria-label="Open a saved notebook" title="Open a saved notebook">${esIcon("open")}</button>
+          <button type="button" class="es-nbico" data-esnbhome
+            aria-label="Put the notebook back in its default corner"
+            title="Put the notebook back in its default corner">${esIcon("reset")}</button>
+          <button type="button" class="es-nbico" data-esnbclose
+            aria-label="Close notebook" title="Close notebook">${esIcon("close")}</button>
+        </span>
       </div>
       ${mode === "save" ? `<div class="es-nbbar">
         <input class="es-nbname" data-esnbname placeholder="Name this notebook" value="${esc(ES.ui.nbName || "")}">
@@ -3718,12 +3730,16 @@
       </div>` : ""}
       <textarea class="es-nbpaper" data-esnbbody placeholder="Write what you want to remember, in your own words.">${esc(pg ? pg.body : "")}</textarea>
       <div class="es-nbfoot">
-        <button type="button" class="es-nbstep" data-esnbgo="-1" ${n.active === 0 ? "disabled" : ""} aria-label="Previous page">\u2039</button>
+        <button type="button" class="es-nbico" data-esnbgo="-1" ${n.active === 0 ? "disabled" : ""}
+          aria-label="Previous page" title="Previous page">${esIcon("prev")}</button>
         <input class="es-nbpagename" data-esnbrename value="${esc(pg ? pg.name : "")}" aria-label="Page name">
         <span class="es-nbcount">${n.active + 1} of ${n.pages.length}</span>
-        <button type="button" class="es-nbstep" data-esnbgo="1" ${n.active >= n.pages.length - 1 ? "disabled" : ""} aria-label="Next page">\u203a</button>
-        <button type="button" class="es-nbact" data-esnbadd>+ new page</button>
-        <button type="button" class="es-nbact" data-esnbdel>delete page</button>
+        <button type="button" class="es-nbico" data-esnbgo="1" ${n.active >= n.pages.length - 1 ? "disabled" : ""}
+          aria-label="Next page" title="Next page">${esIcon("next")}</button>
+        <span class="es-nbfootacts">
+          <button type="button" class="es-nbico" data-esnbadd aria-label="New page" title="New page">${esIcon("add")}</button>
+          <button type="button" class="es-nbico danger" data-esnbdel aria-label="Delete this page" title="Delete this page">${esIcon("delete")}</button>
+        </span>
       </div>
     </div>`;
   }
@@ -3847,7 +3863,7 @@
   function esStudyRow(r) {
     const sub = [r.provider, r.note].filter(Boolean).join(" · ");
     return '<div class="es-stres">' +
-      '<span class="es-stico">' + esIcon("book") + '</span>' +
+      '<span class="es-stico">' + esIcon("understand") + '</span>' +
       '<span class="es-sttext"><span class="es-stlabel">' + esc(r.label || r.id) + '</span>' +
       (sub ? '<span class="es-stsub">' + esc(sub) + '</span>' : '') + '</span>' +
       // The guaranteed route. Everything else in this window is an enhancement
@@ -3871,7 +3887,7 @@
     // One sentence does not need a 400 by 220 window. Empty, it sizes to what it
     // has to say, the way the tool window does.
     return '<aside class="es-study' + (nothing && !prev ? " empty" : "") + '" role="dialog" aria-label="Study resources"' + style + '>' +
-      '<div class="es-sthead">' + esIcon("book") +
+      '<div class="es-sthead">' + esIcon("understand") +
         '<span class="es-sttitle">Study resources</span>' +
         '<button type="button" class="es-nbact" data-esstudyhome title="Put the window back where it opens">reset position</button>' +
         '<button type="button" class="es-nbx" data-esstudyclose aria-label="Close">' + esIcon("close") + '</button></div>' +
@@ -4184,7 +4200,11 @@
   function esRenderUnavailable(host) {
     host.innerHTML = `
     <div class="es-scrim"><div class="es-shell"><div class="es-wrap">
-      <div class="es-top"><div class="es-brand">Marginal · essay practice</div><button class="es-x" id="esx" aria-label="Close">close</button></div>
+      ${/* Nowhere to navigate to: the flow did not load. The brand is still the
+            brand, so the surface is recognisably Marginal, but it does not offer
+            destinations it cannot reach. */ ""}
+      <div class="es-top"><div class="qp-brand static"><span class="qp-logo" aria-hidden="true">M</span><span class="qp-word">Marginal</span></div>
+        <div class="es-topbtns"><button type="button" class="es-util quiet" id="esx" aria-label="Close">Close</button></div></div>
       <div class="es-empty"><h2 class="es-h1">Not available right now</h2><p class="es-lead">Essay practice could not load. Please refresh, or check back shortly.</p></div>
     </div></div></div>`;
     const x = $("#esx"); if (x) x.onclick = esClose;
@@ -4451,22 +4471,16 @@
     // The nav carries the mockup's weight with Marginal's real destinations. It
     // does not invent a section that does not exist.
     const nav = `<header class="qp-nav"><div class="qp-navin">
-      <span class="qp-logo" aria-hidden="true">M</span>
-      <span class="qp-word">Marginal</span>
-      <nav class="qp-navlinks">
-        ${/* A nav link is not a stage route within the picker, so it does not
-              carry the stage attribute: counting the routes on a screen would
-              have counted it. Both links go somewhere real; the one you are on
-              is marked rather than repeated. */ ""}
-        <button type="button" class="qp-navlink ${stage === "essays" ? "" : "on"}"
-          data-esnav="back">Essay practice</button>
-        <button type="button" class="qp-navlink ${stage === "essays" ? "on" : ""}"
-          data-esnav="essays">My essays</button>
-      </nav>
+      ${/* A nav link is not a stage route within the picker, so it does not carry
+            the stage attribute: counting the routes on a screen would have counted
+            it. Both links go somewhere real; the one you are on is marked rather
+            than repeated. The same component is worn by the writing surfaces, so
+            the destinations do not appear and disappear as a student moves. */ ""}
+      ${esNavLeftHTML(stage === "essays" ? "essays" : "practice", stage === "subject" || stage === "own")}
       <div class="qp-navright">
         ${sc.label ? `<span class="qp-subj">${esc(sc.label)}${sc.stage ? " · " + esc(sc.stage) : ""}</span>` : ""}
         ${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}
-        <button class="qp-close" id="esx" aria-label="Close">close</button>
+        <button type="button" class="es-util quiet" id="esx" aria-label="Close essay practice">${esIcon("exit")}<span>Close</span></button>
       </div>
     </div></header>`;
     const foot = `<footer class="qp-foot"><div class="qp-footin">
@@ -4552,7 +4566,7 @@
       const active = [];
       if (f.setupDir) active.push("Directive: " + esDirectiveLabel(f.setupDir));
       if (f.setupTopic) active.push("Topic: " + ((topics.find(t => t.id === f.setupTopic) || {}).label || f.setupTopic));
-      const rail = railCard("&#9678;", "How filtering works",
+      const rail = railCard(esIcon("help"), "How filtering works",
           `<p class="qp-rcp">Use the directive and topic filters to find the kind of question you want to
             practise. You can combine them, and the list updates as you press.</p>
            <p class="qp-rcp">Each question shows its full wording, with its topic, directive and marks
@@ -4561,14 +4575,14 @@
              ${active.map(a => `<span class="qp-atag">${esc(a)}</span>`).join("")}
              <p class="qp-rcp">${found.length} question${found.length === 1 ? "" : "s"} match${
                found.length === 1 ? "es" : ""}.</p></div>` : ""}`)
-        + railCard("&#9679;", "Current selection", chosen
+        + railCard(esIcon("target"), "Current selection", chosen
           ? `<p class="qp-rcq">${esc(String(chosen.text || "").trim())}</p>
              <p class="qp-rcmeta">${[String(chosen.topic || "").trim(),
                esDirectiveLabel(esDirectiveId(chosen.command)),
                chosen.marks != null ? chosen.marks + " marks" : null].filter(Boolean).map(esc).join(" · ")}</p>
              <p class="qp-rclbl">Available support</p>
              <div class="qp-sup">${esSupportFor(chosen).rows.map(r =>
-               `<div class="qp-suprow ${r.has ? "yes" : "no"}"><span class="qp-supmark">${r.has ? "✓" : "⊘"}</span>
+               `<div class="qp-suprow ${r.has ? "yes" : "no"}"><span class="qp-supmark">${esIcon(r.has ? "check" : "unavailable")}</span>
                  <span class="qp-supname">${esc(r.label)}</span>
                  <span class="qp-supstate">${r.has ? "Available" : "Not available"}</span></div>`).join("")}</div>
              <div class="qp-railacts">
@@ -4576,7 +4590,7 @@
              </div>`
           : `<p class="qp-rcp">No question chosen yet. Pick one from the list and its wording and available
               support will appear here before you start.</p>`)
-        + railCard("&#9662;", "Top tip",
+        + railCard(esIcon("tip"), "Top tip",
           `<p class="qp-rcp">Read the full question and its available support before you start writing. You
             can always come back and change your selection.</p>`);
 
@@ -4676,18 +4690,18 @@
             </div>
           </div>
         `,
-        railCard("&#9678;", "About this question",
+        railCard(esIcon("help"), "About this question",
           `<p class="qp-rcp">This question offers ${esc(sup.summary)}.</p>
            <p class="qp-rclbl">Available support</p>
            <div class="qp-sup">${sup.rows.map(r =>
-             `<div class="qp-suprow ${r.has ? "yes" : "no"}"><span class="qp-supmark">${r.has ? "✓" : "⊘"}</span>
+             `<div class="qp-suprow ${r.has ? "yes" : "no"}"><span class="qp-supmark">${esIcon(r.has ? "check" : "unavailable")}</span>
                <span class="qp-supname">${esc(r.label)}</span>
                <span class="qp-supstate">${r.has ? "Available" : "Not available"}</span></div>`).join("")}</div>`)
-        + railCard("&#9679;", "What support means",
+        + railCard(esIcon("info"), "What support means",
           `<p class="qp-rcp">Support availability depends on how the question was authored. Nothing is
             borrowed from another question, so a question shows only what somebody wrote for it.</p>
            <p class="qp-rcp">You can always start the question and get feedback on your essay.</p>`)
-        + railCard("&#9662;", "Top tip",
+        + railCard(esIcon("tip"), "Top tip",
           `<p class="qp-rcp">A question with less support is still worth practising. You write it the same
             way; there is simply less scaffolding on the way through.</p>`));
     }
@@ -4730,12 +4744,12 @@
               </div>
             </div>`}
         `,
-        railCard("&#9678;", "How saving works",
+        railCard(esIcon("help"), "How saving works",
           `<p class="qp-rcp">Your writing is saved as you go, on this device. Nothing is submitted anywhere
             unless you ask for feedback.</p>
            <p class="qp-rcp">Resume opens an essay where you left it. Use as template starts a new essay
             from the same question and settings, without copying the writing.</p>`)
-        + railCard("&#9679;", "What is saved",
+        + railCard(esIcon("save"), "What is saved",
           `<p class="qp-rcbig">${mine.length}</p>
            <p class="qp-rcp">essay${mine.length === 1 ? "" : "s"} on this device.${
              (ES.list || []).length > mine.length
@@ -4763,12 +4777,12 @@
             </div>
           </div>
         `,
-        railCard("&#9678;", "Writing your own question",
+        railCard(esIcon("note"), "Writing your own question",
           `<p class="qp-rcp">Paste the whole question, including the directive. The directive is what tells
             the guidance whether you are explaining, assessing or judging.</p>
            <p class="qp-rcp">Marking guidance is generated from the question when none is written for it,
             and you can review or replace it under Essay options.</p>`)
-        + railCard("&#9679;", "Next steps",
+        + railCard(esIcon("steps"), "Next steps",
           `<ol class="qp-steps"><li>Paste or type your question.</li><li>Set the marks and structure if you
             want to change them.</li><li>Write one paragraph at a time, with a coach.</li></ol>`));
     }
@@ -4816,14 +4830,14 @@
             </div>
           </section>
         `,
-        railCard("&#9678;", "Next steps",
+        railCard(esIcon("steps"), "Next steps",
           `<ol class="qp-steps">
             <li>Choose a subject.</li>
             <li>Pick a practice question, or bring your own.</li>
             <li>Read what support it carries.</li>
             <li>Start writing.</li>
           </ol>`)
-        + railCard("&#9679;", "This question bank",
+        + railCard(esIcon("bank"), "This question bank",
           `<p class="qp-rcbig">${bank.length}</p>
            <p class="qp-rcp">question${bank.length === 1 ? "" : "s"} in ${esc(sc.label || "this subject")}${
              topicCount ? ", across " + topicCount + " topic" + (topicCount === 1 ? "" : "s") : ""}.</p>
@@ -4834,7 +4848,7 @@
            ${savedCount ? `<p class="qp-rcp">You have ${savedCount} saved essay${
              savedCount === 1 ? "" : "s"}. <button type="button" class="qp-linkbtn"
              data-esnav="essays">Open My essays</button></p>` : ""}`)
-        + railCard("&#9662;", "Top tip",
+        + railCard(esIcon("tip"), "Top tip",
           // Marks are academic metadata. A question has a mark value only when
           // somebody authored one, so nothing here may suggest Marginal supplies
           // a default for it. Structure and marking guidance are app settings and
@@ -4862,7 +4876,20 @@
         if (f.pickStage !== "essays") f.pickReturn = f.pickStage || "subject";
         f.pickStage = "essays";
       } else if (to === "back") {
+        // A student who reached My essays FROM their draft is returned to the
+        // draft, not dropped at the top of a picker they did not ask to see.
+        // The draft itself is never the thing that was navigated away from.
+        if (f.pickReturnScreen && ES.draft) {
+          const back = f.pickReturnScreen;
+          f.pickReturnScreen = null;
+          ES.screen = back; esRender(); return;
+        }
         f.pickStage = f.pickReturn || "subject";
+      } else if (to === "home") {
+        // Home is the top of the flow, and it is a destination, so it forgets
+        // the way back rather than pretending the student is still mid-journey.
+        f.pickReturnScreen = null;
+        f.pickStage = (sc.questions || []).length ? "subject" : "own";
       } else {
         f.pickStage = to;
       }
@@ -5141,19 +5168,46 @@
   function esWritingHead(sc, modeLabel, switchLabel, switchTo, boxElsewhere) {
     return esTopBarHTML(sc, switchLabel) + esQuestionCardHTML(modeLabel, boxElsewhere);
   }
+  // ---- the one navigation bar every Marginal surface wears ----------------
+  // Before this the picker and the writer had different brand marks, different
+  // wordmark type, different destinations and different ways back, so moving
+  // between them read as moving between two products. The left half of the bar
+  // is now one component: the brand IS the home route, and the same two
+  // destinations are reachable from wherever the student is standing. The right
+  // half is whatever that surface actually owns, and nothing else.
+  function esNavLeftHTML(current, atHome) {
+    const link = (to, label, on) =>
+      `<button type="button" class="qp-navlink${on ? " on" : ""}"${on ? ' aria-current="page"' : ""} data-esnav="${to}">${label}</button>`;
+    // Standing on the top of the flow, the brand is a brand. It becomes a route
+    // only where pressing it would actually take the student somewhere: a home
+    // link that reloads the page you are already on is a dead control.
+    const brand = `<span class="qp-logo" aria-hidden="true">M</span><span class="qp-word">Marginal</span>`;
+    return (atHome
+        ? `<div class="qp-brand static">${brand}</div>`
+        : `<button type="button" class="qp-brand" data-esnav="home" aria-label="Marginal home">${brand}</button>`) +
+      `<nav class="qp-navlinks" aria-label="Marginal">
+        ${link("back", "Essay practice", current !== "essays")}
+        ${link("essays", "My essays", current === "essays")}
+      </nav>`;
+  }
+
   function esTopBarHTML(sc, switchLabel) {
     return `
       <div class="es-top">
-        <div class="es-brand"><span class="es-mark">M</span>Marginal ${sc.label ? `<span class="es-subj">${esc(sc.label)}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}</div>
+        ${esNavLeftHTML("practice")}
         <div class="es-topbtns">
+          ${sc.label ? `<span class="qp-subj">${esc(sc.label)}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}
           ${/* Learn and Notebook are utilities: they make sense whatever sentence
                 the student is on, they open their own floating windows, and they
                 stay open across the writing. The four writing tools are not
                 utilities and stay on the belt above the writer. */ ""}
-          <button type="button" class="es-util" data-estool="understand" aria-expanded="${ES.ui.studyOpen ? "true" : "false"}">${esIcon("book")}<span>Learn</span></button>
+          <button type="button" class="es-util" data-estool="understand" aria-expanded="${ES.ui.studyOpen ? "true" : "false"}">${esIcon("understand")}<span>Learn</span></button>
           <button type="button" class="es-util" data-esnbtoggle aria-expanded="${ES.ui.nbOpen ? "true" : "false"}">${esIcon("note")}<span>Notebook</span></button>
-          <button class="es-linkbtn" id="esmodeswitch">${esc(switchLabel)}</button>
-          <button class="es-x" id="esx" aria-label="Back to setup">setup</button>
+          ${/* These two are controls, not sentences. They join the utility family
+                beside them so the bar has one control shape rather than two
+                buttons and two underlined-looking words. */ ""}
+          <button type="button" class="es-util quiet" id="esmodeswitch">${esIcon("switch")}<span>${esc(switchLabel)}</span></button>
+          <button type="button" class="es-util quiet" id="esx" aria-label="Back to setup">${esIcon("back")}<span>Setup</span></button>
         </div>
       </div>`;
   }
@@ -5567,16 +5621,19 @@
   // is the whole mental model.
   // ===========================================================================
   const ES_TOOLS = [
-    { key: "understand", label: "Learn",      icon: "book" },
-    { key: "ideas",      label: "Arguments", icon: "bulb" },
-    { key: "evidence",   label: "Evidence",   icon: "search" },
-    { key: "structure",  label: "Structure",  icon: "blocks" },
+    // The icon name is a registry key. It is checked by t25, because an unknown
+    // name renders nothing at all and the belt lost every icon it had without a
+    // single suite in the checkpoint tier noticing.
+    { key: "understand", label: "Learn",      icon: "understand" },
+    { key: "ideas",      label: "Arguments",  icon: "ideas" },
+    { key: "evidence",   label: "Evidence",   icon: "evidence" },
+    { key: "structure",  label: "Structure",  icon: "structure" },
     // hideWhenEmpty: a disabled control is still the app showing a student a piece
     // of itself that is not finished. A tool with nothing behind it that would only
     // ever say "nothing has been written yet" is better absent: the application
     // knows the gap, the readiness report says so, and the student is not asked to
     // read about our authoring backlog.
-    { key: "vocabulary", label: "Vocabulary", icon: "type", hideWhenEmpty: true },
+    { key: "vocabulary", label: "Vocabulary", icon: "vocabulary", hideWhenEmpty: true },
   ];
   // The tools a student may see right now. A hidden tool is hidden everywhere it
   // could be reached from, not just the belt, or the routes that bypass the belt
@@ -5585,26 +5642,106 @@
     return ES_TOOLS.filter(t => t.key !== "understand")
       .filter(t => !t.hideWhenEmpty || !!esToolData(t.key, p));
   }
-  // One inline SVG set, defined once. No icon font and no CDN: the app ships as a
-  // single self-contained file.
-  const ES_ICONS = {
-    book: '<path d="M3 4.5A1.5 1.5 0 0 1 4.5 3H9a3 3 0 0 1 3 3v9a2.5 2.5 0 0 0-2.5-2.5H3z"/><path d="M21 4.5A1.5 1.5 0 0 0 19.5 3H15a3 3 0 0 0-3 3v9a2.5 2.5 0 0 1 2.5-2.5H21z"/>',
-    bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.4.3.6.7.6 1.1V16h5.8v-1c0-.4.2-.8.6-1.1A6 6 0 0 0 12 3z"/>',
-    search: '<circle cx="11" cy="11" r="6"/><path d="m20 20-4.4-4.4"/>',
-    blocks: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
-    type: '<path d="M4 7V5h16v2M12 5v14M9 19h6"/>',
-    close: '<path d="M6 6l12 12M18 6 6 18"/>',
-    check: '<path d="m5 12.5 4.5 4.5L19 7"/>',
-    // A link that leaves Marginal, and a note that is not a warning.
-    open: '<path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
-    info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/>',
-    note: '<rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8.5 3v18"/>',
-    cloud: '<path d="M17.5 19H7a5 5 0 0 1-.5-9.98A6 6 0 0 1 18 8.5a4.5 4.5 0 0 1-.5 10.5z"/><path d="m9.5 13.5 2 2 3.5-4"/>',
-    note: '<rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8.5 3v18"/>',
-    cloud: '<path d="M17.5 19H7a5 5 0 0 1-.5-9.98A6 6 0 0 1 18 8.5a4.5 4.5 0 0 1-.5 10.5z"/><path d="m9.5 13.5 2 2 3.5-4"/>',
+  // THE ICON REGISTRY.
+  //
+  // One icon family, named by what an icon MEANS in Marginal rather than by what
+  // it looks like, so a call site asks for "stuck" and never picks a picture.
+  //
+  // The artwork is Lucide, unmodified: every path below is copied out of
+  // lucide-static@1.41.0 rather than drawn here. An approximation that calls
+  // itself a standard icon set is a small lie that gets harder to correct, and
+  // the app previously carried eleven hand-drawn SVGs beside circle glyphs and
+  // a tick character, which is what made the interface look assembled rather
+  // than designed. Only the icons this application actually uses are here.
+  //
+  // Lucide is ISC licensed; the licence is in LICENSES/lucide.txt. It ships
+  // inside this file and is never fetched at runtime, so the application stays
+  // one self-contained page.
+  //
+  // An icon is decoration. Every one is rendered aria-hidden and the control
+  // around it carries the accessible name, so no icon is the only way to read
+  // what a control does.
+  const ES_ICON_SRC = {
+    // the Learn surface
+    understand: '<path d="M12 5v16" /> <path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z" />',
+    // arguments to choose between
+    ideas: '<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" /> <path d="M9 18h6" /> <path d="M10 22h4" />',
+    // the evidence tool
+    evidence: '<path d="m21 21-4.34-4.34" /> <circle cx="11" cy="11" r="8" />',
+    // the structure tool
+    structure: '<path d="M10 22V7a1 1 0 0 0-1-1H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5a1 1 0 0 0-1-1H2" /> <rect x="14" y="2" width="8" height="8" rx="1" />',
+    // the vocabulary panel
+    vocabulary: '<path d="M12 4v16" /> <path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2" /> <path d="M9 20h6" />',
+    // dismiss a panel or dialog
+    close: '<path d="M18 6 6 18" /> <path d="m6 6 12 12" />',
+    // support available, and a completed state
+    check: '<path d="M20 6 9 17l-5-5" />',
+    // support this question does not carry
+    unavailable: '<circle cx="12" cy="12" r="10" /> <line x1="9" x2="15" y1="15" y2="9" />',
+    // open a saved thing
+    open: '<path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2" />',
+    // an explanatory rail card
+    info: '<circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" />',
+    // the notebook
+    note: '<path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4" /> <path d="M2 6h4" /> <path d="M2 10h4" /> <path d="M2 14h4" /> <path d="M2 18h4" /> <path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z" />',
+    // saved, and the save action
+    save: '<path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" /> <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7" /> <path d="M7 3v4a1 1 0 0 0 1 1h7" />',
+    // a rail card explaining how something works
+    help: '<circle cx="12" cy="12" r="10" /> <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /> <path d="M12 17h.01" />',
+    // next steps
+    steps: '<path d="M13 5h8" /> <path d="M13 12h8" /> <path d="M13 19h8" /> <path d="m3 17 2 2 4-4" /> <path d="m3 7 2 2 4-4" />',
+    // top tip
+    tip: '<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" /> <path d="M9 18h6" /> <path d="M10 22h4" />',
+    // show sentence shape
+    shape: '<path d="M8.3 10a.7.7 0 0 1-.626-1.079L11.4 3a.7.7 0 0 1 1.198-.043L16.3 8.9a.7.7 0 0 1-.572 1.1Z" /> <rect x="3" y="14" width="7" height="7" rx="1" /> <circle cx="17.5" cy="17.5" r="3.5" />',
+    // I am stuck on this sentence
+    stuck: '<circle cx="12" cy="12" r="10" /> <path d="m4.93 4.93 4.24 4.24" /> <path d="m14.83 9.17 4.24-4.24" /> <path d="m14.83 14.83 4.24 4.24" /> <path d="m9.17 14.83-4.24 4.24" /> <circle cx="12" cy="12" r="4" />',
+    // check this paragraph, and coach feedback
+    feedback: '<path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" /> <path d="M7 11h10" /> <path d="M7 15h6" /> <path d="M7 7h8" />',
+    // continue to the next section
+    forward: '<path d="M5 12h14" /> <path d="m12 5 7 7-7 7" />',
+    // add another sentence, and a new notebook page
+    add: '<path d="M5 12h14" /> <path d="M12 5v14" />',
+    // memorise it
+    memorise: '<path d="M12 18V5" /> <path d="M15 13a4.17 4.17 0 0 1-3-4 4.17 4.17 0 0 1-3 4" /> <path d="M17.598 6.5A3 3 0 1 0 12 5a3 3 0 1 0-5.598 1.5" /> <path d="M17.997 5.125a4 4 0 0 1 2.526 5.77" /> <path d="M18 18a4 4 0 0 0 2-7.464" /> <path d="M19.967 17.483A4 4 0 1 1 12 18a4 4 0 1 1-7.967-.517" /> <path d="M6 18a4 4 0 0 1-2-7.464" /> <path d="M6.003 5.125a4 4 0 0 0-2.526 5.77" />',
+    // the question bank
+    bank: '<path d="m16 6 4 14" /> <path d="M12 6v14" /> <path d="M8 8v12" /> <path d="M4 4v16" />',
+    // reset the notebook position
+    reset: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /> <path d="M3 3v5h5" />',
+    // delete a page or a saved essay
+    delete: '<path d="M10 11v6" /> <path d="M14 11v6" /> <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /> <path d="M3 6h18" /> <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />',
+    // back to the previous stage
+    back: '<path d="m12 19-7-7 7-7" /> <path d="M19 12H5" />',
+    // exit the essay from the writing workspace
+    exit: '<path d="m16 17 5-5-5-5" /> <path d="M21 12H9" /> <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />',
+    // the previous notebook page
+    prev: '<path d="m15 18-6-6 6-6" />',
+    // the next notebook page
+    next: '<path d="m9 18 6-6-6-6" />',
+    // switch between coached practice and a full attempt
+    switch: '<path d="M8 3 4 7l4 4" /> <path d="M4 7h16" /> <path d="m16 21 4-4-4-4" /> <path d="M20 17H4" />',
+    // a disclosure that is shut, and the same one open
+    chevright: '<path d="m9 18 6-6-6-6" />',
+    chevdown: '<path d="m6 9 6 6 6-6" />',
+    // the current selection
+    target: '<circle cx="12" cy="12" r="10" /> <circle cx="12" cy="12" r="6" /> <circle cx="12" cy="12" r="2" />',
   };
-  function esIcon(name) {
-    return '<svg class="es-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ES_ICONS[name] || "") + '</svg>';
+  // Retitling a control must not delete the icon beside it. Every control built
+  // as icon + label keeps its words in a span, and this is the only way they are
+  // rewritten, so no call site can go back to wiping the button.
+  function esSetLabel(el, text) {
+    if (!el) return;
+    const lbl = el.querySelector("span");
+    if (lbl) lbl.textContent = text; else el.textContent = text;
+  }
+  function esIcon(name, cls) {
+    // An unknown name is a bug in a call site, not something to paper over with a
+    // blank square: it returns nothing and the label beside it still reads.
+    const d = ES_ICON_SRC[name];
+    if (!d) return "";
+    return '<svg class="es-ico' + (cls ? " " + cls : "") + '" viewBox="0 0 24 24" fill="none" ' +
+      'stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" ' +
+      'aria-hidden="true" focusable="false">' + d + '</svg>';
   }
 
   // ---- resolving what each tool has to show, from authored content only -------
@@ -8025,7 +8162,7 @@
     const done = esPlanned(d);
     host.innerHTML = `
     <div class="es-scrim"><div class="es-shell"><div class="es-wrap es-canvas">
-      ${esWritingHead(sc, "Planning", "full attempt", "full")}
+      ${esWritingHead(sc, "Planning", "Full attempt", "full")}
       <div class="es-planwrap">
         <div class="es-planhead">
           <h3 class="es-planhh">${ES.ui.planAll ? "Plan your response" : "Your response"}</h3>
@@ -8316,11 +8453,11 @@
       : /introduction/i.test(role) ? "Check introduction"
       : /conclusion/i.test(role) ? "Check conclusion" : "Check this paragraph";
     return `<div class="es-footbar"><div class="es-footbar-in">
-      <span class="es-footsave">${esIcon("cloud")}Saved</span>
+      <span class="es-footsave">${esIcon("save")}Saved</span>
       <span class="es-sp"></span>
       <button type="button" class="es-btn ghost sm" id="esfootoutline">Outline</button>
       <button type="button" class="es-btn ghost sm" id="esfootpreview">Preview response</button>
-      ${can ? `<button type="button" class="es-btn primary" id="esask" ${ES.pending ? "disabled" : ""}>${esc(label)}</button>` : ""}
+      ${can ? `<button type="button" class="es-btn primary" id="esask" ${ES.pending ? "disabled" : ""}>${esIcon("feedback")}<span>${esc(label)}</span></button>` : ""}
     </div></div>`;
   }
   function esBindWorkspace(host, d) {
@@ -8402,10 +8539,10 @@
     const chipEv = (p.evidenceIds || []).map(esEvidenceByLabel).filter(Boolean);
     const chips = (esIsIntro(p) || esIsConcl(p)) ? "" : `
       <div class="es-chips">
-        ${chipArg ? `<button type="button" class="es-chip-arg" data-esrestchange="argument" title="Change what this paragraph argues">${esIcon("bulb")}<span>${esc(chipArg)}</span></button>`
-                  : `<button type="button" class="es-chip-arg empty" data-esrestchange="argument">${esIcon("bulb")}<span>choose what this paragraph argues</span></button>`}
-        ${chipEv.length ? chipEv.map(e => `<button type="button" class="es-chip-ev" data-esrestchange="evidence" title="Change your evidence">${esIcon("search")}<span>${esc(e.label)}</span></button>`).join("")
-                  : `<button type="button" class="es-chip-ev empty" data-esrestchange="evidence">${esIcon("search")}<span>evidence</span></button>`}
+        ${chipArg ? `<button type="button" class="es-chip-arg" data-esrestchange="argument" title="Change what this paragraph argues">${esIcon("ideas")}<span>${esc(chipArg)}</span></button>`
+                  : `<button type="button" class="es-chip-arg empty" data-esrestchange="argument">${esIcon("ideas")}<span>choose what this paragraph argues</span></button>`}
+        ${chipEv.length ? chipEv.map(e => `<button type="button" class="es-chip-ev" data-esrestchange="evidence" title="Change your evidence">${esIcon("evidence")}<span>${esc(e.label)}</span></button>`).join("")
+                  : `<button type="button" class="es-chip-ev empty" data-esrestchange="evidence">${esIcon("evidence")}<span>evidence</span></button>`}
         ${(p.point || "").trim() ? `<span class="es-chip-note" title="your note for this paragraph">${esc(p.point)}</span>` : ""}
         ${esLearning(p) ? `<button type="button" class="es-chip-more" data-eslessonchip title="what this argument means, and one thing to try">understand this argument</button>` : ""}
         <button type="button" class="es-chip-more" id="espointtoggle" title="a one line note of what this paragraph argues">${ES.ui.pointOpen ? "hide my point" : "edit my point"}</button>
@@ -8465,11 +8602,15 @@
             <div class="es-done">
               <div class="es-doneh"><span class="es-donetick">${esIcon("check")}</span>Paragraph complete<span class="es-donew">${words} word${words === 1 ? "" : "s"}</span></div>
               <p class="es-donesub">Every part of this paragraph has something in it. Read it back before you move on: click any sentence above to rewrite it.</p>
+              ${/* Four things a student can do next, so four controls of the same
+                    kind: one carries the flow forward and is the primary, the other
+                    three are alternatives to it. They used to be one button and
+                    three underlined words, which read as a button and a footnote. */ ""}
               <div class="es-donebtns">
-                <button type="button" class="es-btn primary" id="esdonenext">${nextPara ? "Continue to " + esc(nextPara.role.toLowerCase()) : "Review the whole response"}</button>
-                <button type="button" class="es-linkbtn" id="esmoreline">Add another sentence</button>
-                <button type="button" class="es-linkbtn" id="esdonecheck">Check this paragraph</button>
-                <button type="button" class="es-linkbtn" id="esquizlink">Memorise it</button>
+                <button type="button" class="es-btn primary" id="esdonenext">${esIcon("forward")}<span>${nextPara ? "Continue to " + esc(nextPara.role.toLowerCase()) : "Review the whole response"}</span></button>
+                <button type="button" class="es-btn ghost" id="esmoreline">${esIcon("add")}<span>Add another sentence</span></button>
+                <button type="button" class="es-btn ghost" id="esdonecheck">${esIcon("feedback")}<span>Check this paragraph</span></button>
+                <button type="button" class="es-btn ghost" id="esquizlink">${esIcon("memorise")}<span>Memorise it</span></button>
               </div>
             </div>`;
     const canAsk = (p.text || "").trim() && (!p.feedback || ((p.text || "").trim() !== (p.gradedText || "").trim()));
@@ -8480,7 +8621,7 @@
       ${/* The writing screen owns the host itself, in the columns below, in every
             state including setup. The old flag made the stem render a second one
             whenever the argument picker was showing. */ ""}
-      ${esTopBarHTML(sc, "full attempt")}
+      ${esTopBarHTML(sc, "Full attempt")}
       ${/* The question card and the belt are inside the workspace grid, not above
             it, so the rail can begin beside the question rather than halfway down
             the page next to the writer. */ ""}
@@ -8557,9 +8698,17 @@
                   // state, so it must not re-enter the render pipeline: that is what
                   // made a two-word control feel like the page reloading.
                   const open = !!ES.ui.shapeOpen;
+                  // TWO CORE INSTRUCTIONAL CONTROLS, not two links that happen to be
+                  // here. They were es-linkbtn in two different colours at two
+                  // different weights, sitting at a drifting baseline, which read as
+                  // incidental text beside the sentence job. Same component, same
+                  // height, icon and label, subordinate to the job above them and
+                  // unmistakably pressable.
                   return `<div class="es-promptacts">
-                      <button type="button" class="es-linkbtn es-shapebtn" id="esshape" aria-expanded="${open}">${open ? "Hide sentence shape" : "Show sentence shape"}</button>
-                      <button type="button" class="es-linkbtn es-stuckbtn" id="esstuck" aria-expanded="${ES.ui.stuckOpen ? "true" : "false"}">I am stuck on this sentence</button>
+                      <button type="button" class="es-helpact" id="esshape" aria-expanded="${open}">${
+                        esIcon("shape")}<span>${open ? "Hide sentence shape" : "Show sentence shape"}</span></button>
+                      <button type="button" class="es-helpact" id="esstuck" aria-expanded="${
+                        ES.ui.stuckOpen ? "true" : "false"}">${esIcon("stuck")}<span>I am stuck on this sentence</span></button>
                     </div>
                     ${esStuckHTML(p)}
                     <div class="es-shapes${v2 ? " v2" : ""}" id="esshapes"${open ? "" : " hidden"}>${v2 || all.map(x =>
@@ -8739,7 +8888,7 @@
       const box = document.getElementById("esshapes");
       if (box) box.hidden = !ES.ui.shapeOpen;
       sh.setAttribute("aria-expanded", ES.ui.shapeOpen ? "true" : "false");
-      sh.textContent = ES.ui.shapeOpen ? "Hide sentence shape" : "Show sentence shape";
+      esSetLabel(sh, ES.ui.shapeOpen ? "Hide sentence shape" : "Show sentence shape");
     };
     const mp = $("#esmappop");
     if (mp) mp.onclick = () => {
@@ -8836,9 +8985,9 @@
     // arrived, been saved and been rendered. Same rule as the markup that first
     // draws it, in one place, so the two cannot disagree.
     const role = String((p && p.role) || "");
-    ask.textContent = ES.pending ? "Checking\u2026"
+    esSetLabel(ask, ES.pending ? "Checking\u2026"
       : /introduction/i.test(role) ? "Check introduction"
-      : /conclusion/i.test(role) ? "Check conclusion" : "Check this paragraph";
+      : /conclusion/i.test(role) ? "Check conclusion" : "Check this paragraph");
     ask.classList.toggle("primary", canAsk); ask.classList.toggle("ghost", !canAsk);
     const cd = document.querySelector(".es-cooldown"); if (cd) cd.style.display = canAsk ? "none" : "";
   }
@@ -8846,12 +8995,16 @@
   // the notes check), with expression and signposting polish plus word chips tucked
   // behind a quiet "polish the wording" reveal so it stays de-emphasised early.
   function esCoachMargin(p) {
-    if (ES.pending) return `<div class="es-mempty">Asking the coach for suggestions on this paragraph…</div>`;
+    // The panel is named in every state. It used to be six stacked blocks with no
+    // header, so the one part of the screen that answers the student's writing
+    // was the only part that did not say what it was.
+    const head = `<div class="es-mhead">${esIcon("feedback")}<span>Coach feedback</span></div>`;
+    if (ES.pending) return head + `<div class="es-mempty">Asking the coach for suggestions on this paragraph…</div>`;
     const fb = p.feedback;
-    if (!fb) return `<div class="es-mempty">Write the paragraph one sentence at a time. The guide under the line you are on says what that sentence has to do, and <b>Help me</b> takes you further only if you ask. When the paragraph is done, press <b>Check this paragraph</b> and suggestions appear here. Nothing is ever written into your draft for you.</div>`;
+    if (!fb) return head + `<div class="es-mempty">Write the paragraph one sentence at a time. The guide under the line you are on says what that sentence has to do, and <b>Help me</b> takes you further only if you ask. When the paragraph is done, press <b>Check this paragraph</b> and suggestions appear here. Nothing is ever written into your draft for you.</div>`;
     const demo = fb.demoNote ? `<div class="es-demonote">${esc(fb.demoNote)}</div>` : "";
     const note = fb.note ? `<div class="es-mnote">${esc(fb.note)}</div>` : "";
-    const scaff = fb.missing.length ? `<div class="es-scaffhint">the dashed rows under your paragraph show each of these in order, where it belongs.</div>` : "";
+    const scaff = fb.missing.length ? `<div class="es-scaffhint">The dashed rows under your paragraph show each of these in order, where it belongs.</div>` : "";
     const miss = fb.missing.length ? `<div class="es-mblock"><div class="es-mh">missing elements</div>${fb.missing.map(slot => esMissCard(p, slot)).join("")}${scaff}</div>` : "";
     const onTarget = fb.nudges.filter(n => n.category === "on_target");
     const polish = fb.nudges.filter(n => n.category !== "on_target");
@@ -8866,9 +9019,10 @@
         (fb.chips.length ? `<div class="es-chipwrap">${fb.chips.map(c =>
           `<div class="es-chipline"><span class="es-chipfrom">instead of “${esc(c.from)}”</span><span class="es-chipopts">${c.options.map(o =>
             `<button class="es-chip" data-eschip="1" data-eschipfrom="${esc(c.from)}" data-eschipopt="${esc(o)}">${esc(o)}</button>`).join("")}</span></div>`).join("")}</div>` : "");
-      polishBlock = `<div class="es-polish"><button class="es-polishtoggle" id="espolish"><span class="es-polishchev">${ES.ui.polishOpen ? "▾" : "▸"}</span> polish the wording (${polishCount})</button><div class="es-polishbody" data-polishbody${ES.ui.polishOpen ? "" : " hidden"}>${bodyInner}</div></div>`;
+      polishBlock = `<div class="es-polish"><button type="button" class="es-btn ghost sm es-polishtoggle" id="espolish" aria-expanded="${ES.ui.polishOpen ? "true" : "false"}">${
+        esIcon(ES.ui.polishOpen ? "chevdown" : "chevright")}<span>Polish the wording (${polishCount})</span></button><div class="es-polishbody" data-polishbody${ES.ui.polishOpen ? "" : " hidden"}>${bodyInner}</div></div>`;
     }
-    return demo + note + miss + onT + check + polishBlock;
+    return head + demo + note + miss + onT + check + polishBlock;
   }
   // A missing-element card: names the element, its job, and where it goes (Tier 0).
   // "Show scaffold" reveals a simple blank frame (Tier 1); "more guidance" offers a
@@ -8899,8 +9053,8 @@
     const article = /^[aeiou]/i.test(def.label) ? "an" : "a";
     const hide = cond => cond ? "" : " hidden";
     const ex = esWorkedExample(slot);
-    const exBlock = ex ? `<button type="button" class="es-linkbtn" data-esmiss-ex="${esc(slot)}"${hide(!m.example)}>see a worked example</button>` +
-      `<div class="es-example" data-example${hide(m.example)}><div class="es-exh">model to study, not to copy</div><div class="es-exsub">a different topic on purpose: ${esc(ex.label)}</div>${ex.placeholder ? `<div class="es-exph">Placeholder: a model from another subject, until your subject's own worked examples are added. The analytical shape still transfers.</div>` : ""}<div class="es-extext">${esc(ex.text)}</div><button type="button" class="es-linkbtn" data-esmiss-ex="${esc(slot)}">hide example</button></div>` : "";
+    const exBlock = ex ? `<button type="button" class="es-btn ghost sm es-exact" data-esmiss-ex="${esc(slot)}"${hide(!m.example)}>${esIcon("open")}<span>See a worked example</span></button>` +
+      `<div class="es-example" data-example${hide(m.example)}><div class="es-exh">model to study, not to copy</div><div class="es-exsub">a different topic on purpose: ${esc(ex.label)}</div>${ex.placeholder ? `<div class="es-exph">Placeholder: a model from another subject, until your subject's own worked examples are added. The analytical shape still transfers.</div>` : ""}<div class="es-extext">${esc(ex.text)}</div><button type="button" class="es-btn ghost sm es-exact" data-esmiss-ex="${esc(slot)}">${esIcon("close")}<span>Hide example</span></button></div>` : "";
     return `<div class="es-miss" data-slot="${esc(slot)}">
       <div class="es-missh">${article} ${esc(def.label)} sentence is missing</div>
       <div class="es-missjob">Its job: ${esc(def.job)}${where ? ", " + esc(where) : ""}.</div>
@@ -8980,7 +9134,11 @@
     if (pol) pol.onclick = () => {
       ES.ui.polishOpen = !ES.ui.polishOpen;
       const body = host.querySelector("[data-polishbody]"); if (body) body.hidden = !ES.ui.polishOpen;
-      const chev = pol.querySelector(".es-polishchev"); if (chev) chev.textContent = ES.ui.polishOpen ? "▾" : "▸";
+      // The chevron is an icon now, so it is replaced rather than retyped, and
+      // the control reports its own state to a screen reader.
+      pol.setAttribute("aria-expanded", ES.ui.polishOpen ? "true" : "false");
+      const chev = pol.querySelector(".es-ico");
+      if (chev) chev.outerHTML = esIcon(ES.ui.polishOpen ? "chevdown" : "chevright");
     };
     host.querySelectorAll("[data-eschip]").forEach(b => b.onclick = () => esApplyChip(ES.draft.pos, b.dataset.eschipfrom, b.dataset.eschipopt));
     host.querySelectorAll("[data-esmiss-ex]").forEach(b => b.onclick = () => {
@@ -9252,10 +9410,11 @@
     const total = d.paras.length, n = d.pos + 1;
     const head = `
       <div class="es-top">
-        <div class="es-brand">Marginal · essay practice ${sc.label ? `<span class="es-subj">${esc(sc.label)}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}</div>
+        ${esNavLeftHTML("practice")}
         <div class="es-topbtns">
-          <button class="es-linkbtn" id="esquizcoach">back to coaching</button>
-          <button class="es-x" id="esx" aria-label="Back to setup">setup</button>
+          ${sc.label ? `<span class="qp-subj">${esc(sc.label)}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}
+          <button type="button" class="es-util quiet" id="esquizcoach">Back to coaching</button>
+          <button type="button" class="es-util quiet" id="esx" aria-label="Back to setup">${esIcon("back")}<span>Setup</span></button>
         </div>
       </div>
       <div class="es-qbar"><div><div class="es-qbar-mode">memorise</div><div class="es-qbar-q">${esc(d.question)}</div></div>${d.topic ? `<span class="es-restag">${esc(d.topic)}</span>` : ""}</div>`;
@@ -9361,7 +9520,7 @@
     const firstGap = d.paras.findIndex(pp => !esWordsOf(pp.text));
     host.innerHTML = `
     <div class="es-scrim"><div class="es-shell"><div class="es-wrap es-canvas">
-      ${esWritingHead(sc, "Review", "Write a full attempt instead", "full")}
+      ${esWritingHead(sc, "Review", "Full attempt", "full")}
       <div class="es-rvwrap">
         <div class="es-rvhead">
           <h3 class="es-rvh">Your response, read straight through</h3>
@@ -9436,7 +9595,7 @@
       `<button class="es-linkbtn" data-escoachpara="${x.i}">Coach ${esc(d.paras[x.i].role.toLowerCase())}</button>`).join("") : `<span class="es-help">Start writing, then you can take any paragraph into practice.</span>`;
     host.innerHTML = `
     <div class="es-scrim"><div class="es-shell"><div class="es-wrap es-wide">
-      ${esWritingHead(sc, "Full attempt", "Switch to coached practice", "coached")}
+      ${esWritingHead(sc, "Full attempt", "Coached practice", "coached")}
       <p class="es-standing">Writing cold to build exam stamina. Prefer guidance on a paragraph? <button class="es-inlinelink" id="esstanding">switch to practice</button>.</p>
       <textarea id="esfull" class="es-input es-fullbox" rows="18" placeholder="Write your whole essay here, in one go. Separate paragraphs with a blank line.">${esc(text)}</textarea>
       <div class="es-coachstrip"><span class="es-help">Take a paragraph into practice without losing it from here:</span> ${coachLinks}</div>
@@ -9678,6 +9837,21 @@
   function esBindWritingHead() {
     esBindDecode();
     const x = $("#esx"); if (x) x.onclick = () => { ES.screen = "setup"; esRender(); };
+    // The global bar is the same component here as on the picker, so its routes
+    // are bound here too. Leaving the writing surface never touches the draft:
+    // it is still in ES.draft, and the way back to it is remembered.
+    document.querySelectorAll("[data-esnav]").forEach(b => b.onclick = () => {
+      const to = b.dataset.esnav, f = ES.form || (ES.form = {});
+      if (to === "essays") {
+        f.pickReturnScreen = ES.screen;
+        if (f.pickStage !== "essays") f.pickReturn = f.pickStage || "subject";
+        f.pickStage = "essays";
+      } else if (to === "home") {
+        f.pickReturnScreen = null;
+        f.pickStage = (esView().questions || []).length ? "subject" : "own";
+      } else return;   // "back" is the surface you are already on
+      ES.screen = "setup"; esRender();
+    });
     // Change question lands on the chooser with the current question in it, in the
     // mode it was chosen from, so the student is looking at the list they picked
     // from rather than at a blank configuration screen.
@@ -9718,7 +9892,9 @@
     // arrives via one scroll-preserving esRender.
     ES.pending = true;
     const askBtn = $("#esask");
-    if (askBtn) { askBtn.disabled = true; askBtn.textContent = "Asking the coach…"; askBtn.classList.remove("primary"); askBtn.classList.add("ghost"); }
+    // The label, not the button: the control carries an icon beside it and
+    // writing textContent on the button would delete it mid-request.
+    if (askBtn) { askBtn.disabled = true; esSetLabel(askBtn, "Asking the coach\u2026"); askBtn.classList.remove("primary"); askBtn.classList.add("ghost"); }
     const marginEl = document.querySelector(".es-margin");
     if (marginEl && !marginEl.querySelector(".es-asking")) marginEl.insertAdjacentHTML("afterbegin", '<div class="es-asking">asking the coach…</div>');
     let fb;
