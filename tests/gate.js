@@ -68,12 +68,24 @@ const TIERS = {
   // measures one seam, and one of them being red is the signal this tier exists
   // to give.
   //
-  // ui52 arrived here for the same reason. A header link whose destination does
-  // not exist is an architectural fault, not a journey, and it is the fault this
-  // flow already shipped once.
+  // ui52 arrived here on the argument that a header link whose destination does
+  // not exist is an architectural fault rather than a journey. That was half
+  // true and it put the suite in the wrong tier. Whether the destination EXISTS
+  // is a seam and could be asserted in a second; what ui52 actually does is
+  // drive a student from setup through the list, into the writing, out to My
+  // essays, back in through Resume, and through a delete confirmation twice - a
+  // walk across five screens, and 15.8s of a 60s tier, a quarter of it for one
+  // suite. Every other walk in the harness is in journeys, and this one was the
+  // exception because of how it was argued for rather than what it does. It has
+  // gone where the rule always put it.
+  //
+  // That leaves this tier at 45.8s. It had been over its minute since before the
+  // UI consistency pass - 66.2s on main, 61.6s with ui52 still in it - and the
+  // overrun was never ui52 alone, but ui52 was the one suite here that did not
+  // belong.
   checkpoint: {
     budget: 60,
-    suites: ["t1", "t2", "t17", "t18", "t19", "t20", "t21", "t22", "t23", "t24", "t25", "ui35", "ui38", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49", "ui52"],
+    suites: ["t1", "t2", "t17", "t18", "t19", "t20", "t21", "t22", "t23", "t24", "t25", "ui35", "ui38", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49"],
   },
   // ui40 joined this tier when ui51 arrived. It walks EVERY question through the
   // shell, which is an exhaustive sweep and 6.2s of it, and the picker it swept
@@ -128,7 +140,31 @@ const TIERS = {
   // capture and restore of a sentence in progress, but it guards it by leaving
   // the writing screen and coming back through half a dozen controls, which is a
   // walk. ui35 and ui46 stayed because each measures its invariant in place.
-  journeys: { budget: 180, suites: ["ui13", "ui30", "ui37", "ui40", "ui50", "ui51", "ui53", "ui55", "ui56"] },
+  //
+  // ui55 LEFT for full, and the reason is a distinction this file had not drawn
+  // before. Every other suite here walks ONE route and asks whether it works.
+  // ui55 walks every stage and presses EVERY control on each: it is an
+  // exhaustive sweep, not a journey. Two things follow from that, and neither is
+  // about the clock. Its cost grows with the number of controls in the product
+  // rather than with the number of routes worth guarding, so it gets slower
+  // every time the picker gains a button and there is no version of this tier in
+  // which that stops. And what it finds - a control that leads nowhere - is a
+  // completeness failure rather than a broken route: nothing a student is doing
+  // mid-session breaks because a control is inert. Exhaustive completeness
+  // checks are what the lower-frequency tier is for.
+  //
+  // Said plainly, because it matters: the clock is what made me look. The tier
+  // measured 183.3s once ui57 joined, and ui55 is 46.6s of it. The argument
+  // above is the reason it moved, and it would have been the same argument at
+  // 120s, but it was the number that prompted the question. What replaces its
+  // cover here is narrower and deliberate: ui57 presses every way out of every
+  // surface, which is the class of dead control that actually strands a student.
+  //
+  // ui57 is here because it is a journey in the strict sense: it leaves the
+  // writing workspace mid-paragraph, goes to another surface, comes back, and
+  // asks whether the attempt survived the trip. That question cannot be asked at
+  // a seam - it is the trip.
+  journeys: { budget: 180, suites: ["ui13", "ui30", "ui37", "ui40", "ui50", "ui51", "ui52", "ui53", "ui56", "ui57"] },
   // Everything run.js knows about, the journeys included, plus the suites in no
   // tier: both student matrices are here and only here, ui54's four profiles on
   // the imported question and the bots' seven on the bundled bank.
@@ -201,10 +237,23 @@ child.on("close", code => {
     ? failed.map(k => k + " (" + seen.get(k).fail + ")").join(", ")
     : "none"));
   if (missing.length) console.log("  did not report  " + missing.join(" "));
-  console.log("  elapsed         " + secs.toFixed(1) + "s (target under " + TIERS[tier].budget + "s)");
+  const budget = TIERS[tier].budget;
+  const over = secs > budget;
+  console.log("  elapsed         " + secs.toFixed(1) + "s (budget " + budget + "s)" +
+    (over ? "  OVER BUDGET by " + (secs - budget).toFixed(1) + "s" : ""));
 
+  // Two facts, and the report used to collapse them into one word. A run where
+  // every suite is green and the tier took longer than its budget is not a pass
+  // against the budget, and printing "PASS" over it is how a budget quietly
+  // stops being one. The verdict now names which of the two held.
   const green = code === 0 && failed.length === 0 && missing.length === 0 && ran.length > 0;
-  console.log("\n" + label + (green ? " PASS" : " FAIL") + " — " + ran.length + " suites — " +
-    assertions + " assertions — " + secs.toFixed(1) + "s");
+  const verdict = !green ? " FAIL" : over ? " GREEN, OVER BUDGET" : " PASS";
+  console.log("\n" + label + verdict + " — " + ran.length + " suites — " +
+    assertions + " assertions — " + secs.toFixed(1) + "s" +
+    (green && over ? " against a " + budget + "s budget" : ""));
+  if (green && over) {
+    console.log("  Every suite passed. The tier is over its budget, which is a result to act on,");
+    console.log("  by re-tiering or by making a suite cheaper, not by moving the number.");
+  }
   process.exit(green ? 0 : 1);
 });

@@ -62,9 +62,14 @@ const badTool = [...new Set(tools)].filter(n => !keys.has(n));
 ok(badTool.length === 0, "every tool's icon names a real icon: " + JSON.stringify(badTool));
 
 // Ternaries: esIcon(cond ? "a" : "b"). Both arms are call sites.
-const dyn = [...src.matchAll(/esIcon\([^)"]*\?\s*"([a-z]+)"\s*:\s*"([a-z]+)"/g)]
+// The condition itself may contain string literals - esIcon(k === "x" ? "a" : "b")
+// - so it is bounded by the closing paren, not by the absence of a quote. The
+// first version of this line was bounded by quotes and silently matched nothing
+// for exactly that shape, which is the same class of blind spot as the one this
+// file exists to close.
+const dyn = [...src.matchAll(/esIcon\([^)]*\?\s*"([a-z]+)"\s*:\s*"([a-z]+)"\s*\)/g)]
   .flatMap(m => [m[1], m[2]]);
-ok(dyn.length >= 2, "icons chosen by state are covered too: " + dyn.length);
+ok(dyn.length >= 6, "icons chosen by state are covered too: " + dyn.length);
 const badDyn = [...new Set(dyn)].filter(n => !keys.has(n));
 ok(badDyn.length === 0, "both arms of every state-chosen icon exist: " + JSON.stringify(badDyn));
 
@@ -85,6 +90,36 @@ ok(/const d = ES_ICON_SRC\[name\];\s*\n\s*if \(!d\) return "";/.test(fn),
   "esIcon returns nothing for a name it does not know");
 ok(/aria-hidden="true"/.test(fn.slice(0, 800)), "an icon is decoration: it is hidden from a screen reader");
 ok(/stroke="currentColor"/.test(fn.slice(0, 800)), "an icon takes its colour from the control it sits in");
+
+// ---- 5. an icon with no words beside it still has to say what it does ------
+console.log("--- 5. every icon-only control has an accessible name");
+// The notebook toolbar, the paging controls and the panel dismissals are icons
+// alone: their labels are not on screen. A control like that is unusable to a
+// screen reader, and unguessable to anyone else, without an accessible name. The
+// rule is checked here rather than per-surface because these controls are spread
+// across the notebook, the drawers and the writing screens, and a rule enforced
+// on one of them is a rule that decays on the other two.
+const buttons = [...src.matchAll(/<button\b([^>]*)>((?:(?!<\/button>|<button\b)[\s\S])*)<\/button>/g)]
+  .map(m => ({ attrs: m[1], inner: m[2] }));
+ok(buttons.length > 40, "the app builds many buttons: " + buttons.length);
+const iconOnly = buttons.filter(bt => /esIcon\(/.test(bt.inner) &&
+  // no <span> label, and no bare words outside the icon call
+  !/<span/.test(bt.inner) &&
+  !/[A-Za-z]{3,}/.test(bt.inner.replace(/\$\{[\s\S]*?\}/g, "").replace(/<[^>]*>/g, "")));
+ok(iconOnly.length >= 8, "some controls are an icon and nothing else: " + iconOnly.length);
+const unnamed = iconOnly.filter(bt => !/aria-label\s*=/.test(bt.attrs));
+ok(unnamed.length === 0, "every one of them carries an aria-label: " +
+  JSON.stringify(unnamed.map(bt => (bt.attrs.match(/(?:id|data-[a-z]+)="?([\w-]+)/) || [])[1] || bt.attrs.trim().slice(0, 40))));
+// A tooltip is not an accessible name, but a sighted student hovering an icon
+// deserves one too, and these are the controls with no visible words at all.
+const untitled = iconOnly.filter(bt => !/\btitle\s*=/.test(bt.attrs) && !/aria-label="Close"/.test(bt.attrs));
+ok(untitled.length <= 2, "and a tooltip, bar the plain dismissals: " +
+  JSON.stringify(untitled.map(bt => (bt.attrs.match(/(?:id|data-[a-z]+)="?([\w-]+)/) || [])[1] || bt.attrs.trim().slice(0, 30))));
+// Keyboard focus has to be visible on them, since there is no text to underline.
+const css = readFileSync(path.join(HERE, "..", "index.html"), "utf8");
+ok(/\.es-nbico:focus-visible\{[^}]*outline:/.test(css), "the notebook's icon buttons show keyboard focus");
+ok(/\.es-util\.quiet:focus-visible\{[^}]*outline:/.test(css), "the global bar's controls show keyboard focus");
+ok(/\.qp-brand:focus-visible\{[^}]*outline:/.test(css), "the wordmark shows keyboard focus");
 
 console.log("");
 console.log(pass + " passed, " + fail + " failed");

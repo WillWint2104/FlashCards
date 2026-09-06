@@ -217,21 +217,38 @@ async function toComposer(page) {
     // app saying it could not get any. Waiting for a spinner to disappear would
     // pass instantly on a page that never showed one, which is how the first
     // version of this measured 530ms for a worker that never replied.
-    const answered = await page.waitForFunction(() => {
-      const t = document.body.innerText;
-      return /could not reach coaching|demo coaching|demo suggestions/i.test(t) ||
-        !!document.querySelector(".es-fb, .es-feedback, [data-esfb]");
-    }, null, { timeout: 20000 }).then(() => true).catch(() => false);
+    // Wait for the COMPONENT, not for a sentence. The first version of this
+    // matched three phrases out of the app's fallback copy, and the day that copy
+    // was reworded the suite stopped detecting an answer that was plainly on
+    // screen: four cases each sat out the full twenty seconds and the tier went
+    // from 175s to 261s. The banner is a stable contract - it is the element the
+    // app renders whenever what came back is not live feedback - and the wording
+    // inside it is read afterwards, as evidence, not as the signal.
+    const answered = await page.waitForFunction(() =>
+      !!document.querySelector(".es-demonote") ||
+      !!document.querySelector(".es-margin .es-mblock, .es-fb, .es-feedback, [data-esfb]"),
+      null, { timeout: 20000 }).then(() => true).catch(() => false);
     const elapsed = Date.now() - t0;
     const state = await page.evaluate(() => ({
       kept: document.querySelectorAll(".es-said").length,
       canGoOn: !!document.querySelector("#esline, #esnextsec, [data-esgo], .es-startrow, #esfootpreview"),
-      said: (document.body.innerText.match(/[^\n]*(could not reach coaching|demo coaching|demo suggestions)[^\n]*/i) || [])[0] || null,
+      said: ((document.querySelector(".es-demonote") || {}).innerText || "").trim() || null,
+      // A failed call must not be dressed as a completed one. The app has two
+      // banner states and only one of them is a warning.
+      warned: !!document.querySelector(".es-demonote.warn"),
+      tag: ((document.querySelector(".es-mtag") || {}).innerText || "").trim() || null,
     }));
     ok(calls > 0, c.id + ": the worker was actually called: " + calls);
     ok(answered, c.id + ": the student gets an answer rather than waiting for ever");
     ok(elapsed < 20000, c.id + ": within a bound: " + elapsed + "ms");
     ok(!!state.said, c.id + ": and it says what happened: " + JSON.stringify(state.said && state.said.slice(0, 72)));
+    // The four cases in this suite are all failures, so all four must wear the
+    // warning state. Green is what this app uses for something having gone right.
+    ok(state.warned, c.id + ": the failure is shown as a warning, not as success");
+    // The tag is set in small caps by the stylesheet, so innerText comes back
+    // uppercased. The rule is about the words, not about the casing CSS chose.
+    ok((state.tag || "").toLowerCase() === "not your feedback",
+      c.id + ": and the panel says the guidance is not about their paragraph: " + JSON.stringify(state.tag));
     ok(state.kept > 0, c.id + ": the sentences they wrote are still there: " + state.kept);
     ok(state.canGoOn, c.id + ": and there is a way to carry on");
     ok(errs.length === 0, c.id + ": no page error: " + JSON.stringify(errs.slice(0, 1)));
@@ -255,7 +272,7 @@ async function toComposer(page) {
     const coach = await page.$("#escoach, [data-escoach], #esaskcoach");
     if (coach) { await coach.click(); await page.waitForTimeout(2500); }
     const said = await page.evaluate(() =>
-      (document.body.innerText.match(/[^\n]*(could not reach|demo coaching|demo suggestions)[^\n]*/i) || [])[0] || null);
+      ((document.querySelector(".es-demonote") || {}).innerText || "").trim() || null);
     // Where the control is not on this surface the claim is not made, rather
     // than asserted against whatever happened to be on screen.
     if (coach) {
@@ -271,8 +288,15 @@ async function toComposer(page) {
   {
     const fs = require("fs"), path = require("path");
     const src = fs.readFileSync(path.join(__dirname, "..", "app.js"), "utf8");
-    ok(/Could not reach coaching \(/.test(src),
+    ok(/The live coach could not be reached[^"]*\(" \+ e\.message/.test(src),
       "a failed coaching call says it could not be reached, with the reason");
+    // The sentence a student reads has to say the guidance is not about their
+    // writing. "Showing demo suggestions instead" did not: it read as an
+    // alternative source of feedback rather than as no feedback at all.
+    ok(/nothing below was written about your paragraph/.test(src),
+      "and says the guidance underneath is not about their paragraph");
+    ok(/demoKind/.test(src) && /"unreachable"/.test(src),
+      "a failed call is carried as a failure, not as the same state as demo mode");
     ok(/Couldn't reach your grading endpoint \(/.test(src),
       "a failed marking call says the same about marking");
     ok(/no answer in " \+ Math\.round/.test(src),

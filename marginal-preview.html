@@ -2460,8 +2460,21 @@
   .es-scrim .es-mempty{background:var(--sunk);border:1px solid var(--e-line);border-radius:12px;
     padding:13px 15px;font-size:13px;font-weight:500;line-height:1.6;color:var(--e-ink2)}
   .es-scrim .es-mempty b{font-weight:700;color:var(--e-ink)}
-  .es-scrim .es-demonote{background:var(--e-mint);border:1px solid var(--e-green);border-radius:10px;
-    padding:8px 12px;font-size:12px;font-weight:600;color:var(--e-green-dk);margin-bottom:12px}
+  /* Two states, two colours. .warn is a call that failed: the coach was asked
+     and could not answer, so nothing below was written about this paragraph.
+     .info is demo guidance the student is meant to be seeing. Neither is green,
+     because green in this app means something went right. */
+  .es-scrim .es-demonote{display:flex;align-items:flex-start;gap:9px;border-radius:10px;
+    padding:10px 12px;font-size:12.5px;font-weight:600;line-height:1.55;margin-bottom:12px}
+  .es-scrim .es-demonote .es-ico{width:15px;height:15px;flex:none;margin-top:1px}
+  .es-scrim .es-demonote.warn{background:#FFF6E8;border:1px solid #F0C877;color:#7A5313}
+  .es-scrim .es-demonote.info{background:var(--sunk);border:1px solid var(--e-line);color:var(--e-ink2)}
+  /* The panel's own label for what it is holding, so the state survives being
+     scrolled past the banner. */
+  .es-scrim .es-mtag{margin-left:auto;font-size:9.5px;font-weight:700;letter-spacing:.06em;
+    text-transform:uppercase;background:var(--sunk);border:1px solid var(--e-line);
+    border-radius:99px;padding:3px 8px;color:var(--e-ink2)}
+  .es-scrim .es-mtag.warn{background:#FFF6E8;border-color:#F0C877;color:#7A5313}
   .es-scrim .es-asking{font-size:12.5px;font-weight:600;color:var(--e-green-dk);margin-bottom:10px}
   .es-scrim .es-mnote{font-size:14px;font-weight:500;line-height:1.65;color:var(--e-ink);margin-bottom:14px;max-width:74ch}
   /* Same label as every other section label on this screen, so a heading in the
@@ -13115,7 +13128,13 @@ module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf,
     return w.every(x => ES_FRAME_WORDS.has(x));
   }
   const ES_CATS = ["on_target", "signposting", "expression"];
-  function esNormalizeCoach(raw, demoNote, role) {
+  // demoKind says WHY this is not live feedback, because the three reasons are not
+  // the same thing to a student and must not look the same:
+  //   ""            live feedback on their own writing
+  //   "unreachable" the coach was asked and could not answer. A failure.
+  //   "demo"        demo mode, entered on purpose
+  //   "unconnected" no coach is connected to this class yet. Not a failure.
+  function esNormalizeCoach(raw, demoNote, role, demoKind) {
     raw = raw || {};
     // missing: ABSENT slot keys only, validated against THIS paragraph's slot set,
     // deduped. The model returns keys; the app supplies all card text and frames,
@@ -13161,7 +13180,7 @@ module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf,
       note: esShortPhrase(note, 60) ? note : "",       // a band comment, never a rewrite
       missing, nudges, chips, lines,
       check: (check && esShortPhrase(check, 30)) ? check : "",
-      demoNote: demoNote || ""
+      demoNote: demoNote || "", demoKind: demoNote ? (demoKind || "demo") : ""
     };
   }
   // The labelled demo fallback, made subject/model-aware: the "missing" slots are
@@ -13185,6 +13204,15 @@ module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf,
     if (!document.getElementById("eshost")) { const h = document.createElement("div"); h.id = "eshost"; document.body.appendChild(h); }
     document.body.classList.add("es-lock");
     esRender();
+  }
+  // Leaving Essay Practice, from anywhere. The draft is written down first, so
+  // "Exit essay" and "Home" cannot be the two controls that lose a student's
+  // work: the attempt, its question, its feedback and its position are all in
+  // the store before the surface is removed, and Resume in My essays restores
+  // that same attempt rather than a fresh one.
+  function esLeave() {
+    if (ES.draft) { try { esSaveDraft(); } catch (e) { /* private mode: the in-memory draft still stands */ } }
+    esClose();
   }
   function esClose() {
     const h = document.getElementById("eshost"); if (h) h.remove();
@@ -13240,10 +13268,10 @@ module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf,
             brand, so the surface is recognisably Marginal, but it does not offer
             destinations it cannot reach. */ ""}
       <div class="es-top"><div class="qp-brand static"><span class="qp-logo" aria-hidden="true">M</span><span class="qp-word">Marginal</span></div>
-        <div class="es-topbtns"><button type="button" class="es-util quiet" id="esx" aria-label="Close">Close</button></div></div>
+        <div class="es-topbtns"><button type="button" class="es-util quiet" id="esx" aria-label="Marginal home">${esIcon("home")}<span>Home</span></button></div></div>
       <div class="es-empty"><h2 class="es-h1">Not available right now</h2><p class="es-lead">Essay practice could not load. Please refresh, or check back shortly.</p></div>
     </div></div></div>`;
-    const x = $("#esx"); if (x) x.onclick = esClose;
+    const x = $("#esx"); if (x) x.onclick = esLeave;
   }
 
   // The question text already opens with its command verb, so show the command as
@@ -13512,11 +13540,14 @@ module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf,
             it. Both links go somewhere real; the one you are on is marked rather
             than repeated. The same component is worn by the writing surfaces, so
             the destinations do not appear and disappear as a student moves. */ ""}
-      ${esNavLeftHTML(stage === "essays" ? "essays" : "practice", stage === "subject" || stage === "own")}
+      ${esNavLeftHTML(stage === "essays" ? "essays" : "practice")}
       <div class="qp-navright">
         ${sc.label ? `<span class="qp-subj">${esc(sc.label)}${sc.stage ? " · " + esc(sc.stage) : ""}</span>` : ""}
         ${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}
-        <button type="button" class="es-util quiet" id="esx" aria-label="Close essay practice">${esIcon("exit")}<span>Close</span></button>
+        ${/* A full-page section of the application, so its way out is Home: it leaves
+              Essay Practice for Marginal, exactly as the wordmark does. "Close" was
+              the word a modal uses, and this has not been a modal for a long time. */ ""}
+        <button type="button" class="es-util quiet" id="eshome" data-esnav="marginalhome">${esIcon("home")}<span>Home</span></button>
       </div>
     </div></header>`;
     const foot = `<footer class="qp-foot"><div class="qp-footin">
@@ -13893,7 +13924,8 @@ module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf,
             marking guidance can be changed later.</p>`));
     }
 
-    $("#esx").onclick = esClose;
+    // This surface has no exit control of its own any more: Home is a nav route,
+    // bound with the rest of them below.
     const q = $("#esq"); if (q) q.oninput = () => {
       f.question = q.value;
       const picked = f.questionId && sc.questions.find(x => x.id === f.questionId);
@@ -13921,11 +13953,8 @@ module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf,
           ES.screen = back; esRender(); return;
         }
         f.pickStage = f.pickReturn || "subject";
-      } else if (to === "home") {
-        // Home is the top of the flow, and it is a destination, so it forgets
-        // the way back rather than pretending the student is still mid-journey.
-        f.pickReturnScreen = null;
-        f.pickStage = (sc.questions || []).length ? "subject" : "own";
+      } else if (to === "marginalhome") {
+        esLeave(); return;
       } else {
         f.pickStage = to;
       }
@@ -14211,17 +14240,15 @@ module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf,
   // is now one component: the brand IS the home route, and the same two
   // destinations are reachable from wherever the student is standing. The right
   // half is whatever that surface actually owns, and nothing else.
-  function esNavLeftHTML(current, atHome) {
+  function esNavLeftHTML(current) {
     const link = (to, label, on) =>
       `<button type="button" class="qp-navlink${on ? " on" : ""}"${on ? ' aria-current="page"' : ""} data-esnav="${to}">${label}</button>`;
-    // Standing on the top of the flow, the brand is a brand. It becomes a route
-    // only where pressing it would actually take the student somewhere: a home
-    // link that reloads the page you are already on is a dead control.
-    const brand = `<span class="qp-logo" aria-hidden="true">M</span><span class="qp-word">Marginal</span>`;
-    return (atHome
-        ? `<div class="qp-brand static">${brand}</div>`
-        : `<button type="button" class="qp-brand" data-esnav="home" aria-label="Marginal home">${brand}</button>`) +
-      `<nav class="qp-navlinks" aria-label="Marginal">
+    // The wordmark is Home, and Home is MARGINAL's home, not the top of the essay
+    // flow. It leaves Essay Practice the way the tab entered it, from any surface,
+    // so it is never a control that reloads the page the student is standing on.
+    return `<button type="button" class="qp-brand" id="esbrandhome" data-esnav="marginalhome" aria-label="Marginal home">
+        <span class="qp-logo" aria-hidden="true">M</span><span class="qp-word">Marginal</span></button>
+      <nav class="qp-navlinks" aria-label="Marginal">
         ${link("back", "Essay practice", current !== "essays")}
         ${link("essays", "My essays", current === "essays")}
       </nav>`;
@@ -14244,6 +14271,11 @@ module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf,
                 buttons and two underlined-looking words. */ ""}
           <button type="button" class="es-util quiet" id="esmodeswitch">${esIcon("switch")}<span>${esc(switchLabel)}</span></button>
           <button type="button" class="es-util quiet" id="esx" aria-label="Back to setup">${esIcon("back")}<span>Setup</span></button>
+          ${/* The workspace never had a way out. Setup is a step backwards inside
+                Essay Practice, not a way to leave it, and a wordmark is not a
+                discoverable exit. This is the labelled one, and it saves before it
+                goes so the attempt is waiting in My essays. */ ""}
+          <button type="button" class="es-util quiet" id="esexit" data-esnav="marginalhome">${esIcon("exit")}<span>Exit essay</span></button>
         </div>
       </div>`;
   }
@@ -14716,6 +14748,8 @@ module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf,
     unavailable: '<circle cx="12" cy="12" r="10" /> <line x1="9" x2="15" y1="15" y2="9" />',
     // open a saved thing
     open: '<path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2" />',
+    // something did not work, and the student needs to know before they read on
+    warn: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /> <path d="M12 9v4" /> <path d="M12 17h.01" />',
     // an explanatory rail card
     info: '<circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" />',
     // the notebook
@@ -14748,6 +14782,8 @@ module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf,
     delete: '<path d="M10 11v6" /> <path d="M14 11v6" /> <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /> <path d="M3 6h18" /> <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />',
     // back to the previous stage
     back: '<path d="m12 19-7-7 7-7" /> <path d="M19 12H5" />',
+    // leave Essay Practice for Marginal's home
+    home: '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" /> <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />',
     // exit the essay from the writing workspace
     exit: '<path d="m16 17 5-5-5-5" /> <path d="M21 12H9" /> <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />',
     // the previous notebook page
@@ -18034,11 +18070,23 @@ module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf,
     // The panel is named in every state. It used to be six stacked blocks with no
     // header, so the one part of the screen that answers the student's writing
     // was the only part that did not say what it was.
-    const head = `<div class="es-mhead">${esIcon("feedback")}<span>Coach feedback</span></div>`;
+    const fbk = (p.feedback && p.feedback.demoKind) || "";
+    // The panel says what it is holding. Feedback about the student's own
+    // paragraph and demo guidance that is not about it are not the same panel
+    // with a different sentence at the top.
+    const head = `<div class="es-mhead">${esIcon("feedback")}<span>Coach feedback</span>${
+      fbk ? `<span class="es-mtag ${fbk === "unreachable" ? "warn" : ""}">${
+        fbk === "unreachable" ? "not your feedback" : "demo guidance"}</span>` : ""}</div>`;
     if (ES.pending) return head + `<div class="es-mempty">Asking the coach for suggestions on this paragraph…</div>`;
     const fb = p.feedback;
     if (!fb) return head + `<div class="es-mempty">Write the paragraph one sentence at a time. The guide under the line you are on says what that sentence has to do, and <b>Help me</b> takes you further only if you ask. When the paragraph is done, press <b>Check this paragraph</b> and suggestions appear here. Nothing is ever written into your draft for you.</div>`;
-    const demo = fb.demoNote ? `<div class="es-demonote">${esc(fb.demoNote)}</div>` : "";
+    // A failed call is a warning, not a completion. Green is the colour this app
+    // uses for something having gone right, and a coach that could not be reached
+    // wearing it told the student the opposite of what happened.
+    const demo = fb.demoNote
+      ? `<div class="es-demonote ${fb.demoKind === "unreachable" ? "warn" : "info"}">${
+          esIcon(fb.demoKind === "unreachable" ? "warn" : "info")}<span>${esc(fb.demoNote)}</span></div>`
+      : "";
     const note = fb.note ? `<div class="es-mnote">${esc(fb.note)}</div>` : "";
     const scaff = fb.missing.length ? `<div class="es-scaffhint">The dashed rows under your paragraph show each of these in order, where it belongs.</div>` : "";
     const miss = fb.missing.length ? `<div class="es-mblock"><div class="es-mh">missing elements</div>${fb.missing.map(slot => esMissCard(p, slot)).join("")}${scaff}</div>` : "";
@@ -18449,8 +18497,9 @@ module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf,
         ${esNavLeftHTML("practice")}
         <div class="es-topbtns">
           ${sc.label ? `<span class="qp-subj">${esc(sc.label)}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}
-          <button type="button" class="es-util quiet" id="esquizcoach">Back to coaching</button>
+          <button type="button" class="es-util quiet" id="esquizcoach">${esIcon("back")}<span>Back to coaching</span></button>
           <button type="button" class="es-util quiet" id="esx" aria-label="Back to setup">${esIcon("back")}<span>Setup</span></button>
+          <button type="button" class="es-util quiet" id="esexit" data-esnav="marginalhome">${esIcon("exit")}<span>Exit essay</span></button>
         </div>
       </div>
       <div class="es-qbar"><div><div class="es-qbar-mode">memorise</div><div class="es-qbar-q">${esc(d.question)}</div></div>${d.topic ? `<span class="es-restag">${esc(d.topic)}</span>` : ""}</div>`;
@@ -18882,9 +18931,8 @@ module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf,
         f.pickReturnScreen = ES.screen;
         if (f.pickStage !== "essays") f.pickReturn = f.pickStage || "subject";
         f.pickStage = "essays";
-      } else if (to === "home") {
-        f.pickReturnScreen = null;
-        f.pickStage = (esView().questions || []).length ? "subject" : "own";
+      } else if (to === "marginalhome") {
+        esLeave(); return;
       } else return;   // "back" is the surface you are already on
       ES.screen = "setup"; esRender();
     });
@@ -18955,12 +19003,18 @@ module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf,
         if (!res.ok) throw new Error("coach " + res.status);
         fb = esNormalizeCoach(await res.json(), "", p.role);
       } catch (e) {
-        fb = esNormalizeCoach(esDemoRaw(p.role), "Could not reach coaching (" + e.message + "). Showing demo suggestions instead.", p.role);
+        // Plain words for the student, with the underlying reason kept where it
+        // is useful rather than shouted: "Failed to fetch" is a sentence about
+        // our network, not about their paragraph.
+        fb = esNormalizeCoach(esDemoRaw(p.role),
+          "The live coach could not be reached, so nothing below was written about your paragraph. What follows is demo guidance (" + e.message + ").",
+          p.role, "unreachable");
       }
     } else {
       fb = esNormalizeCoach(esDemoRaw(p.role), ES.demo
-        ? "Demo coaching. Real Haiku feedback switches on once the worker is re-pasted."
-        : "Demo coaching. Real feedback switches on once your teacher connects coaching.", p.role);
+        ? "Demo coaching. Nothing below was written about your paragraph. Real feedback switches on once the worker is re-pasted."
+        : "Demo coaching. Nothing below was written about your paragraph. Real feedback switches on once your teacher connects coaching.",
+        p.role, ES.demo ? "demo" : "unconnected");
     }
     p.feedback = fb; p.gradedText = submittedText; // cooldown anchor: must revise before re-asking
     esResetCoachUI(); // fresh feedback: missing-element cards start collapsed (Tier 0), polish tucked

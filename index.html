@@ -2460,8 +2460,21 @@
   .es-scrim .es-mempty{background:var(--sunk);border:1px solid var(--e-line);border-radius:12px;
     padding:13px 15px;font-size:13px;font-weight:500;line-height:1.6;color:var(--e-ink2)}
   .es-scrim .es-mempty b{font-weight:700;color:var(--e-ink)}
-  .es-scrim .es-demonote{background:var(--e-mint);border:1px solid var(--e-green);border-radius:10px;
-    padding:8px 12px;font-size:12px;font-weight:600;color:var(--e-green-dk);margin-bottom:12px}
+  /* Two states, two colours. .warn is a call that failed: the coach was asked
+     and could not answer, so nothing below was written about this paragraph.
+     .info is demo guidance the student is meant to be seeing. Neither is green,
+     because green in this app means something went right. */
+  .es-scrim .es-demonote{display:flex;align-items:flex-start;gap:9px;border-radius:10px;
+    padding:10px 12px;font-size:12.5px;font-weight:600;line-height:1.55;margin-bottom:12px}
+  .es-scrim .es-demonote .es-ico{width:15px;height:15px;flex:none;margin-top:1px}
+  .es-scrim .es-demonote.warn{background:#FFF6E8;border:1px solid #F0C877;color:#7A5313}
+  .es-scrim .es-demonote.info{background:var(--sunk);border:1px solid var(--e-line);color:var(--e-ink2)}
+  /* The panel's own label for what it is holding, so the state survives being
+     scrolled past the banner. */
+  .es-scrim .es-mtag{margin-left:auto;font-size:9.5px;font-weight:700;letter-spacing:.06em;
+    text-transform:uppercase;background:var(--sunk);border:1px solid var(--e-line);
+    border-radius:99px;padding:3px 8px;color:var(--e-ink2)}
+  .es-scrim .es-mtag.warn{background:#FFF6E8;border-color:#F0C877;color:#7A5313}
   .es-scrim .es-asking{font-size:12.5px;font-weight:600;color:var(--e-green-dk);margin-bottom:10px}
   .es-scrim .es-mnote{font-size:14px;font-weight:500;line-height:1.65;color:var(--e-ink);margin-bottom:14px;max-width:74ch}
   /* Same label as every other section label on this screen, so a heading in the
