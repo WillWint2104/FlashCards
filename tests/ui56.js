@@ -102,9 +102,18 @@ async function toComposer(page) {
     const page = await ctx.newPage();
     const errs = []; page.on("pageerror", e => errs.push(String(e).slice(0, 140)));
     let calls = 0;
-    await page.route(/workers\.dev/, r => { calls++; return r.fulfill({ status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({ note: NOTE, missing: ["explain"], nudges: [] }) }); });
+    // The stub answers after a beat, not instantly. "The button says it is asking
+    // WHILE the request is out" is not observable against a response that has
+    // already arrived, and asserting it that way is a race: it passed run after
+    // run on its own and failed inside the journeys gate, which is the worst way
+    // for a suite to be wrong. The delay makes the window real and the assertion
+    // deterministic; it is the request being genuinely outstanding, not a sleep
+    // bolted on to make a flaky check settle down.
+    const ANSWER_DELAY_MS = 600;
+    await page.route(/workers\.dev/, async r => { calls++;
+      await new Promise(res => setTimeout(res, ANSWER_DELAY_MS));
+      return r.fulfill({ status: 200, contentType: "application/json",
+        body: JSON.stringify({ note: NOTE, missing: ["explain"], nudges: [] }) }); });
     await toComposer(page);
     for (let i = 0; i < 6; i++) {
       const box = await page.$("#esline"); if (!box) break;
@@ -124,11 +133,14 @@ async function toComposer(page) {
     const pendingSeen = await (async () => {
       const before = asker ? await asker.textContent() : "";
       if (asker) await asker.click();
-      for (let i = 0; i < 20; i++) {
+      // Polled across the whole window the request is open for, so a slow first
+      // paint cannot read as a missing pending state.
+      const deadline = Date.now() + ANSWER_DELAY_MS + 2000;
+      while (Date.now() < deadline) {
         const t = await page.$eval("#esask", e => e.textContent).catch(() => "");
         if (/asking|checking/i.test(t)) return true;
-        if (t && t !== before) break;
-        await page.waitForTimeout(50);
+        if (document.body === undefined) break;
+        await page.waitForTimeout(40);
       }
       return false;
     })();
