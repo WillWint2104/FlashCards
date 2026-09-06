@@ -1,6 +1,6 @@
 {
   "schema": "marginal.question-package",
-  "contractVersion": "1.0",
+  "contractVersion": "1.1",
   "origin": {
     "type": "bundled",
     "packageId": null,
@@ -37,6 +37,8 @@
       "first": "Target markets",
       "second": "Marketing strategies"
     },
+    "note": null,
+    "areasLabel": null,
     "overallArgument": "The chosen target market shapes every element of the marketing mix so that strategy fits the customer.",
     "vocabRefs": [],
     "studyRefs": []

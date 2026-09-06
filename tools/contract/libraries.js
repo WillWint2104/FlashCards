@@ -271,4 +271,29 @@ function manifest() {
            notes: notes, records: records };
 }
 
-module.exports = { build, manifest, completeness, id, ns, slug, load, subNodes };
+
+// ---- the destination question registry --------------------------------------
+// What questions ALREADY EXIST where an import would land. This is deliberately
+// not part of manifest(): a manifest describes the SHARED LIBRARIES a package
+// draws on, and a question is not a shared record. Mixing the two would let a
+// question id collision be reported as a library problem, which it is not.
+//
+// It carries id, subject and a fingerprint of the record, and nothing else. The
+// admission stage needs to know that an id is taken and which subject holds it;
+// it must never need the question's contents, because the whole point is that
+// the existing question is not read, not merged and not touched.
+function questionRegistry() {
+  const { E } = build();
+  const questions = {};
+  Object.keys(E.subjects).forEach(sk => {
+    const s = E.subjects[sk];
+    (s.questions || []).forEach(q => {
+      if (!q || !q.id) return;
+      questions[q.id] = { id: q.id, subject: sk, subjectLabel: s.label || sk };
+    });
+  });
+  return { schema: "marginal.question-registry", version: 1,
+           questions: questions, ids: Object.keys(questions).sort() };
+}
+
+module.exports = { build, manifest, questionRegistry, completeness, id, ns, slug, load, subNodes };

@@ -1,6 +1,6 @@
 {
   "schema": "marginal.question-package",
-  "contractVersion": "1.0",
+  "contractVersion": "1.1",
   "origin": {
     "type": "bundled",
     "packageId": null,
@@ -48,6 +48,8 @@
       "first": "Human resource strategies",
       "second": "Business performance"
     },
+    "note": null,
+    "areasLabel": "human resource strategy",
     "overallArgument": "Human resource strategies can be effective in improving performance, measured against indicators such as turnover, absenteeism, disputation and worker satisfaction.",
     "vocabRefs": [],
     "studyRefs": []
@@ -190,7 +192,8 @@
       "recognises a condition or limitation where the evidence supports one, without manufacturing balance",
       "uses one business consistently so the strategies can be weighed against each other"
     ],
-    "syllabusSummary": "Human resources: strategies in human resource management, and measuring the effectiveness of those strategies against indicators such as turnover, absenteeism, disputation and satisfaction."
+    "syllabusSummary": "Human resources: strategies in human resource management, and measuring the effectiveness of those strategies against indicators such as turnover, absenteeism, disputation and satisfaction.",
+    "requiredAreas": []
   },
   "coreAnswer": {
     "mode": "judgement",
@@ -458,7 +461,8 @@
       "mechanism": {
         "status": "unreviewed",
         "text": null,
-        "note": null
+        "note": null,
+        "reason": null
       },
       "conceptRef": null,
       "syllabusRef": "business.hr.strategies-in-human-resource-management.training-and-development",
@@ -498,7 +502,8 @@
       "mechanism": {
         "status": "unreviewed",
         "text": null,
-        "note": null
+        "note": null,
+        "reason": null
       },
       "conceptRef": null,
       "syllabusRef": "business.hr.strategies-in-human-resource-management.training-and-development",
@@ -538,7 +543,8 @@
       "mechanism": {
         "status": "unreviewed",
         "text": null,
-        "note": null
+        "note": null,
+        "reason": null
       },
       "conceptRef": null,
       "syllabusRef": "business.hr.strategies-in-human-resource-management.rewards",
@@ -578,7 +584,8 @@
       "mechanism": {
         "status": "unreviewed",
         "text": null,
-        "note": null
+        "note": null,
+        "reason": null
       },
       "conceptRef": null,
       "syllabusRef": "business.hr.strategies-in-human-resource-management.rewards",
@@ -611,7 +618,8 @@
       "mechanism": {
         "status": "unreviewed",
         "text": null,
-        "note": null
+        "note": null,
+        "reason": null
       },
       "conceptRef": null,
       "syllabusRef": "business.hr.strategies-in-human-resource-management.performance-management",
@@ -651,7 +659,8 @@
       "mechanism": {
         "status": "unreviewed",
         "text": null,
-        "note": null
+        "note": null,
+        "reason": null
       },
       "conceptRef": null,
       "syllabusRef": "business.hr.strategies-in-human-resource-management.performance-management",
@@ -691,7 +700,8 @@
       "mechanism": {
         "status": "unreviewed",
         "text": null,
-        "note": null
+        "note": null,
+        "reason": null
       },
       "conceptRef": null,
       "syllabusRef": "business.hr.strategies-in-human-resource-management.job-design",
@@ -731,7 +741,8 @@
       "mechanism": {
         "status": "unreviewed",
         "text": null,
-        "note": null
+        "note": null,
+        "reason": null
       },
       "conceptRef": null,
       "syllabusRef": "business.hr.strategies-in-human-resource-management.job-design",

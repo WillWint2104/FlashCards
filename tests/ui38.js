@@ -11,7 +11,7 @@
 // So this suite asserts the negative as hard as the positive. An authored
 // mechanism appears, exactly as written. Anything else appears not at all, and
 // the chain falls back to the two-step pairing rather than to nothing.
-const { chromium, T, usePractice } = require('./env');
+const { chromium, T, usePractice, chooseQuestion } = require('./env');
 
 // Waits that name their condition. This app fetches nothing and renders
 // synchronously, so the effect of a click is present on the next frame:
@@ -39,7 +39,7 @@ async function openQuestion(p, qre, bodyIndex) {
   await p.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await settled(p);
   await p.selectOption('#essubject', 'business_studies').catch(() => {});
-  await usePractice(p); await p.$$eval('.es-qrow', (es, r) => { const t = es.find(x => new RegExp(r, 'i').test(x.textContent)); t && t.click(); }, qre);
+  await chooseQuestion(p, qre);
   await p.click('#esstart');
   await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
   if (await p.$('.es-startrow')) await p.$$eval('.es-startrow', (es, n) => {
@@ -159,7 +159,9 @@ const close = async p => { await p.keyboard.press('Escape'); await settled(p); }
   // The objective vocabulary and the intro both became per-question. Operations
   // authors neither, so it must still resolve the six performance objectives, still
   // show its own explanation, and still show no mechanism, because none is authored.
-  await openQuestion(p, 'operations strategies', 0);
+  // Two questions begin "How can operations strategies"; this suite means the
+  // performance objectives one, and the list is ordered now, so it says so.
+  await openQuestion(p, 'operations strategies contribute', 0);
   const o = await chain(p);
   ok(!!o, 'Operations still renders its connect card');
   if (o) {

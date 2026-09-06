@@ -1,6 +1,6 @@
 {
   "schema": "marginal.question-package",
-  "contractVersion": "1.0",
+  "contractVersion": "1.1",
   "origin": {
     "type": "bundled",
     "packageId": null,
@@ -30,11 +30,12 @@
     "topicLabel": null,
     "directive": "how can",
     "text": "How can operations strategies affect corporate social responsibility?",
-    "marks": 20,
     "terms": {
       "first": "Operations strategies",
       "second": "Corporate social responsibility"
     },
+    "note": null,
+    "areasLabel": null,
     "overallArgument": "Operations strategies shape a business's social and environmental responsibilities as much as its efficiency.",
     "vocabRefs": [],
     "studyRefs": []

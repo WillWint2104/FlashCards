@@ -1,0 +1,10 @@
+{
+  "schema": "marginal.topic-index",
+  "version": 1,
+  "topics": {
+    "business.operations": "Operations",
+    "business.marketing": "Marketing",
+    "business.finance": "Finance",
+    "business.hr": "Human resources"
+  }
+}

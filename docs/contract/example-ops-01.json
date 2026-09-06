@@ -1,6 +1,6 @@
 {
   "schema": "marginal.question-package",
-  "contractVersion": "1.0",
+  "contractVersion": "1.1",
   "origin": {
     "type": "bundled",
     "packageId": null,
@@ -34,11 +34,12 @@
     "topicLabel": null,
     "directive": "how can",
     "text": "How can operations strategies contribute to the achievement of performance objectives?",
-    "marks": 20,
     "terms": {
       "first": "Operations strategies",
       "second": "Performance objectives"
     },
+    "note": null,
+    "areasLabel": null,
     "overallArgument": "Operations strategies influence business performance by changing the quality, speed, dependability, flexibility, customisation and cost of outputs.",
     "vocabRefs": [],
     "studyRefs": []

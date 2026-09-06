@@ -1,5 +1,5 @@
 // the plain build on purpose: this suite tests the shipped defaults
-const { chromium, P: T, OUT, usePractice } = require('./env');
+const { chromium, P: T, OUT, usePractice, pageTo } = require('./env');
 
 // Waits that name their condition. This app fetches nothing and renders
 // synchronously, so the effect of a click is present on the next frame:
@@ -39,21 +39,28 @@ const REVIEW = {
 
   // ---- pick an AUTHORED question: its definition must travel with the response
   await usePractice(p);
-  const chip = await p.$('.es-qrow');
+  const chip = await p.$('.qp-row');
   ok(!!chip,'authored question chips are offered');
-  const chips = await p.$$('.es-qrow');
-  // ah-religion is the second Ancient History question
-  await chips[1].click(); await settled(p);
+  // BY ID, not by index. "the second Ancient History question" stopped being
+  // ah-religion when the list started sorting by topic and paginating at ten, and
+  // an index that quietly points at a different question makes every assertion
+  // below about a question this suite did not mean to choose.
+  await pageTo(p, '.qp-row[data-esq="ah-religion"]');
+  await p.click('.qp-row[data-esq="ah-religion"]'); await settled(p);
   // Choosing a practice question no longer types it into a box: the box only
   // exists for a question the student brings. It is stated back to them instead,
-  // and the id is what travels with the response.
+  // and the id is what travels with the response. Choosing SELECTS the row and
+  // fills the rail; the preview is the next step and is where the whole question
+  // is stated. Same property, one screen along, and .es-chosenq is gone.
   const qtext = await p.evaluate(() => {
-    const c = document.querySelector('.es-chosenq');
-    const on = document.querySelector('.es-qrow.on');
+    const c = document.querySelector('.qp-rcq');
+    const on = document.querySelector('.qp-row.on');
     return { shown: c ? c.textContent : '', id: on ? on.dataset.esq : null };
   });
   ok(/religious beliefs/.test(qtext.shown),'the chosen question is stated back: '+JSON.stringify(qtext.shown.slice(0,50)));
   ok(!!qtext.id,'and the row is marked as the chosen one: '+qtext.id);
+  await p.click('[data-espick="preview"]');
+  await here(p, '#esstart');
   await p.click('#esstart');
   await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
 

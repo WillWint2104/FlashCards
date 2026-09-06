@@ -1,4 +1,4 @@
-const { openMap, usePractice } = require('./env');
+const { openMap, usePractice, chooseQuestion } = require('./env');
 
 // Waits that name their condition. This app fetches nothing and renders
 // synchronously, so the effect of a click is present on the next frame:
@@ -27,10 +27,13 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await settled(p);
   await p.selectOption('#essubject','business_studies'); await settled(p);
-  await usePractice(p); await p.$$eval('.es-qrow',es=>{const t=es.find(x=>/target markets/i.test(x.textContent));t&&t.click();});
-  await settled(p);
-  // deliberately start on a 3-body structure so the mismatch offer is exercised
+  // The structure lives with the other settings on the SETUP stage now, folded,
+  // so it is chosen before the question rather than after it. Choosing a question
+  // is choosing; setting up is setting up.
+  const sum = await p.$('#esmoreopts > summary'); if (sum) { await sum.click(); await settled(p); }
   await p.selectOption('#esstruct','five'); await settled(p);
+  await chooseQuestion(p, /target markets/i);
+  await settled(p);
   await p.click('#esstart');
   await p.waitForFunction(() => !!document.querySelector('#esline, .es-startrow, [data-espath]'), null, { timeout: 8000 });
   await planAll(p);

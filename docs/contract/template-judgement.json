@@ -1,6 +1,6 @@
 {
   "schema": "marginal.question-package",
-  "contractVersion": "1.0",
+  "contractVersion": "1.1",
   "origin": {
     "type": "bundled",
     "packageId": "",
@@ -26,6 +26,8 @@
     "directive": "evaluate",
     "text": "",
     "marks": 40,
+    "note": "",
+    "areasLabel": "",
     "terms": {
       "first": "",
       "second": ""
@@ -72,7 +74,13 @@
     "concepts": [],
     "relationships": [],
     "accomplish": [],
-    "syllabusSummary": ""
+    "syllabusSummary": "",
+    "requiredAreas": [
+      {
+        "id": "",
+        "label": ""
+      }
+    ]
   },
   "coreAnswer": {
     "mode": "causal",
@@ -127,6 +135,7 @@
       "commonMistake": "",
       "mechanism": {
         "status": "authored",
+        "reason": "",
         "text": ""
       },
       "conceptRef": null,
@@ -149,7 +158,9 @@
           "ladder": [
             {
               "rung": "hint",
-              "text": ""
+              "text": "",
+              "context": "",
+              "pattern": ""
             }
           ]
         }

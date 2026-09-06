@@ -17,7 +17,11 @@ let REG = null;
 // The contract this generator describes. Major is the compatibility promise;
 // minor rises when something a v1 reader can ignore is added.
 const CONTRACT_MAJOR = 1;
-const CONTRACT_MINOR = 0;
+// 1.1 adds four optional fields the exporter had been dropping: question.note,
+// question.areasLabel, pathways[].mechanism.reason and requirements.requiredAreas.
+// Additive only, so a 1.0 reader still reads a 1.1 package and stores the four
+// it does not interpret, which is what the version-ahead rule is for.
+const CONTRACT_MINOR = 1;
 const CONTRACT_VERSION = CONTRACT_MAJOR + "." + CONTRACT_MINOR;
 const ID_PATTERN = "^[a-z0-9]+([.-][a-z0-9]+)*$";
 const QID_PATTERN = "^[a-z0-9]+(-[a-z0-9]+)*$";

@@ -1,6 +1,6 @@
 {
   "schema": "marginal.question-package",
-  "contractVersion": "1.0",
+  "contractVersion": "1.1",
   "origin": {
     "type": "bundled",
     "packageId": null,
@@ -30,11 +30,12 @@
     "topicLabel": null,
     "directive": "analyse",
     "text": "Analyse how key influences affect human resource management.",
-    "marks": 20,
     "terms": {
       "first": "Key influences",
       "second": "Human resource management"
     },
+    "note": null,
+    "areasLabel": null,
     "overallArgument": "Key influences shape human resource decisions by changing the expectations, constraints and conditions managers must respond to.",
     "vocabRefs": [],
     "studyRefs": []

@@ -1,6 +1,6 @@
 {
   "schema": "marginal.question-package",
-  "contractVersion": "1.0",
+  "contractVersion": "1.1",
   "origin": {
     "type": "bundled",
     "packageId": null,
@@ -30,11 +30,12 @@
     "topicLabel": null,
     "directive": "explain",
     "text": "Explain how financial strategies can achieve liquidity and profitability objectives.",
-    "marks": 20,
     "terms": {
       "first": "Financial management strategies",
       "second": "Liquidity and profitability"
     },
+    "note": "2025 HSC finance question. Constrained selection: liquidity and profitability are mandatory targets.",
+    "areasLabel": null,
     "overallArgument": "Financial strategies can achieve both liquidity and profitability, but the same strategy can help one objective while costing the other.",
     "vocabRefs": [],
     "studyRefs": []

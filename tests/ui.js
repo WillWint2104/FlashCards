@@ -58,10 +58,16 @@ const REVIEW = (marks) => ({
   await p.goto(T + '?essaydemo=1&essaymark=1');
   await settled(p);
   // Setup opens on the practice picker now, not on a question box: the box only
-  // exists once the student says they are bringing their own question.
-  ok(!!(await p.$('[data-esmode]')),'essay setup opens');
+  // exists once the student says they are bringing their own question. The two
+  // routes carry data-espick; data-esmode was the flag the old two-button setup
+  // used and it is gone from the markup, so asserting it was asserting nothing.
+  ok(!!(await p.$('[data-espick="list"]')) && !!(await p.$('[data-espick="own"]')),
+    'essay setup opens on the two routes');
 
   // ---- marks field exists and defaults sensibly
+  // It is one of the essay options and those are folded on the setup stage, so
+  // the fold is opened rather than the field being filled through it.
+  const opts = await p.$('#esmoreopts > summary'); if (opts) { await opts.click(); await settled(p); }
   ok(await p.$eval('#esmarks',e=>e.value)==='20','marks field defaults to 20');
   await p.fill('#esmarks','16');
   await ownQuestion(p, 'Explain how target markets affect e-marketing, people, processes and physical evidence.');

@@ -91,6 +91,64 @@ Where a question came from is metadata beside the id, not part of it, and lives
 in `origin`. Update and replacement semantics are a later design; they are not
 smuggled into first import.
 
+**Where the check lives, and why not in the validator.** `validate(pkg, man)`
+reads a library manifest, which holds shared records and no questions. That is
+not an oversight to be corrected by handing it the bank. A colliding package is
+STRUCTURALLY VALID, and reporting the collision as a schema error would tell an
+author their correct file is malformed and send them to fix nothing.
+
+The check belongs to the stage that knows the destination, and that stage is
+`tools/contract/admit.js`:
+
+    validate   is this file a valid package                 library manifest
+    resolve    do the things it names exist                 shared libraries
+    admit      does the destination have room               question registry
+
+`QUESTION_ID_ALREADY_EXISTS` is raised at the review stage, against the
+destination registry, and carries the subject that holds the id. A package can
+be unpublishable for reasons from more than one stage at once, so the reasons
+are a list and none is folded into another. `admit.plan()` is the only producer
+of a publish set, it refuses to run without a registry rather than defaulting to
+an empty one, and `admit.writes()` re-runs the check against the registry as it
+is at that moment, so a plan is evidence the check ran and never permission to
+skip it. `tests/t20.mjs` is the regression, including the seven bad
+implementations it is written to catch.
+
+**What publication may do, and the unit it does it in.** `tools/contract/
+publish.js` performs exactly the additions a plan carries, or none of them. It
+holds the destination in memory and touches no file, because there is no store
+yet and a model that wrote to disk would be the second write path admit.js
+exists to prevent.
+
+The atomic unit is the PACKAGE, together with the shared records it provides. A
+package writes completely or not at all: everything that can fail happens while
+staging, and promotion is the assignment that cannot, which is the shape
+`build.js` already uses. A BATCH is not atomic. A package already added stays
+added when a later one fails, because undoing a completed addition is itself a
+write, and unwriting on a failure path is where a change is least likely to be
+noticed. The result states which unit is atomic in those words rather than
+leaving it to be inferred.
+
+Three further rules, each because the convenient alternative is worse:
+
+- the destination is checked AGAIN immediately before writing. When it has
+  moved, zero writes happen and the answer is a sentence a teacher can act on,
+  naming what arrived: *"The question bank changed since this preview was
+  created. Review changes again before publishing."* Not a safety error, and no
+  force or publish-anyway path, which would be the overwrite path by another
+  name;
+- the document is checked against a witness of every key path taken from the RAW
+  parsed file. Comparing it with the plan's own copy would be a copy agreeing
+  with itself, so a reader that narrowed documents to the fields it understands
+  would pass. A document that would arrive smaller is refused, never stored
+  short;
+- readiness, capability shortfalls and warnings are reported after the writes
+  and apart from them, because none of them is a change and none of them stopped
+  anything.
+
+`tests/t21.mjs` is the regression, with the eight bad implementations it is
+written to catch and a control edit proving it is not simply failing on change.
+
 **8. Areas are question-local, and are never validated by vocabulary matching.**
 An area has its own stable question-local id and an authored label, and the
 label may be whatever the question genuinely needs. If the author claims a
@@ -252,6 +310,49 @@ next contract adds.
 
 A version that cannot return the document it was given may inspect and must not
 publish, and the report says so by name rather than in a comment.
+
+
+**Contract 1.1, and what a bundled question loses on the way out.** Building the
+inverse of the exporter, so an imported package could reach the student runtime,
+showed that five things did not survive a round trip. Four were dropped in
+silence and one was invented:
+
+| lost | where | 1.1 |
+| --- | --- | --- |
+| `question.note` | two questions | carried |
+| `areasLabel` | two questions | carried |
+| `pathways[].mechanism.reason` | one pathway | carried beside `note`, which is a different field |
+| `requirements.requiredAreas` | one question | carried, ids slugged to match the areas they name |
+| `marks` | fourteen questions | NOT defaulted any more |
+
+The marks one is the one that mattered. `packagize.js` wrote `marks: q.marks ||
+20`, and twenty is the setup form's editable default in `app.js`, not something
+anybody said about those questions. Carrying it into a package turned "the
+student's form starts at 20" into "this question is worth 20", on the header a
+student reads and in the band table the answer is marked against. There is no
+default now. `question.marks` is required, fourteen questions author none, and
+their packages are invalid until somebody says what they are worth. That is a
+content gap stated out loud rather than filled in.
+
+The additions are optional fields, so a 1.0 reader still reads a 1.1 package and
+stores the four it does not interpret. `tests/t22.mjs` round trips every bundled
+Business Studies question, source to package to runtime, and compares field by
+field rather than checking that the result is merely valid.
+
+**A topic's label belongs to the syllabus record, not to the question.** A
+question carries `topicRef` or `topicLabel` and never both, so the runtime
+resolves a ref through a generated topic index, exactly as the manifest resolves
+it. It is never taken apart: `business.hr` is the human resources topic and its
+last segment is a namespace. Where nothing resolves a ref, the question has no
+display topic, because "Hr" is a word nobody wrote.
+
+**Directive identity is canonical and case-insensitive.** `essay-content.js`
+authors "Explain" and the contract stores "explain". Filtering on the raw string
+put one directive in the picker twice, as "Explain 3" and "explain 1". The
+identity is the lowercase form and the label is derived from it, which for every
+directive this bank authors is the authored form exactly. Topics are identified
+the same way, but their label is the authored one, because capitalisation cannot
+be rebuilt from an id.
 
 ## What is still open
 

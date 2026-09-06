@@ -155,6 +155,16 @@
           "minimum": 1,
           "maximum": 40
         },
+        "note": {
+          "description": "where this question came from, in the teacher's words. Not shown to a student.",
+          "type": "string",
+          "minLength": 1
+        },
+        "areasLabel": {
+          "description": "the collective name for this question's areas, used where the screen has to name them as a group.",
+          "type": "string",
+          "minLength": 1
+        },
         "terms": {
           "type": "object",
           "properties": {
@@ -376,6 +386,28 @@
               "description": "the syllabus wording this question sits under, in the author's summary. Original words: syllabus text is not reproduced.",
               "type": "string",
               "minLength": 1
+            },
+            "requiredAreas": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "description": "the id of an area this question defines, which a complete answer has to cover.",
+                    "type": "string",
+                    "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+                  },
+                  "label": {
+                    "description": "how that required area is named where the student is told it is needed.",
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "id",
+                  "label"
+                ]
+              }
             }
           }
         },
@@ -614,6 +646,11 @@
                   "unreviewed"
                 ]
               },
+              "reason": {
+                "description": "why this pathway needs no middle step, where the status says none is required.",
+                "type": "string",
+                "minLength": 1
+              },
               "text": {
                 "description": "the middle step: how the cause reaches the effect. It is the difference between an argument and an assertion.",
                 "type": "string",
@@ -709,6 +746,16 @@
                       },
                       "text": {
                         "description": "what this rung actually offers.",
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "context": {
+                        "description": "at the example rung only, the different situation the worked sentence is set in, in a few words. The rung is WITHHELD without it: an example whose context is not named reads as a sentence about this question, which is the one thing an example may never be. The runtime has always read this field and the contract never defined it, so an author had no way to know to write it and every imported example rung was silently dropped.",
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "pattern": {
+                        "description": "at the example rung only, the shape the example demonstrates, so a student can see what transfers and what does not.",
                         "type": "string",
                         "minLength": 1
                       }

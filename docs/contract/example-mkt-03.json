@@ -1,6 +1,6 @@
 {
   "schema": "marginal.question-package",
-  "contractVersion": "1.0",
+  "contractVersion": "1.1",
   "origin": {
     "type": "bundled",
     "packageId": null,
@@ -30,11 +30,12 @@
     "topicLabel": null,
     "directive": "to what extent",
     "text": "To what extent do influences on marketing determine business success?",
-    "marks": 20,
     "terms": {
       "first": "Influences on marketing",
       "second": "Business success"
     },
+    "note": null,
+    "areasLabel": null,
     "overallArgument": "Influences significantly shape customer behaviour and constrain decisions, though management's response ultimately determines their effect on success.",
     "vocabRefs": [],
     "studyRefs": []

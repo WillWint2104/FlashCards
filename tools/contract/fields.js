@@ -209,6 +209,23 @@ f({ path: "question.marks", owner: "question", type: "integer", range: [1, 40], 
   omission: "invalid", studentProse: true, answerSpecific: false,
   means: "what the question is worth, which sets the expected length and the band table.",
   surface: "the question header, the marking request", good: "20", bad: "0" });
+// Added in 1.1. Authored on four questions and dropped by the exporter until
+// now, which meant a bundled question exported and re-imported lost where it
+// came from. Provenance a student never sees and a teacher relies on.
+f({ path: "question.note", owner: "question", type: "string", required: false, omission: "none",
+  studentProse: false, answerSpecific: false,
+  means: "where this question came from, in the teacher's words. Not shown to a student.",
+  surface: "the teacher's view of the question",
+  good: '"2024 HSC Section IV question."',
+  bad: '"a good one" — a note nobody can act on is not provenance' });
+// Added in 1.1. What this question's areas are collectively called, which two
+// questions author and the exporter dropped.
+f({ path: "question.areasLabel", owner: "question", type: "string", required: false, omission: "none",
+  studentProse: true, answerSpecific: true,
+  means: "the collective name for this question's areas, used where the screen has to name them as a group.",
+  surface: "the area chooser",
+  good: '"financial strategy area"',
+  bad: '"areas" — the point of the field is that this question calls them something' });
 f({ path: "question.terms.first", owner: "question", type: "string", required: false,
   omission: "capability:pathway-guided", studentProse: true, answerSpecific: true,
   means: "the first of the two ends this question joins. The sentence shapes bind to it by name. It is NOT vocabulary: it carries no meaning and is never displayed as a definition.",
@@ -333,6 +350,19 @@ f({ path: "requirements.syllabusSummary", owner: "question", type: "string", req
   omission: "none", studentProse: true, answerSpecific: false,
   means: "the syllabus wording this question sits under, in the author's summary. Original words: syllabus text is not reproduced.",
   surface: "the requirement rail", good: 'a one line summary', bad: 'a quotation from the syllabus document' });
+// Added in 1.1. Which of this question's areas a complete answer must cover.
+// The exporter validated these and then dropped them, so a question that
+// REQUIRED four of its areas came back as one that required none, and nothing
+// said so. Each entry names an area this package defines.
+f({ path: "requirements.requiredAreas[].id", owner: "question", type: "id", required: true,
+  omission: "invalid", studentProse: false, answerSpecific: true,
+  means: "the id of an area this question defines, which a complete answer has to cover.",
+  surface: "the area chooser, which marks these as needed",
+  good: '"e-marketing"', bad: '"the first one"' });
+f({ path: "requirements.requiredAreas[].label", owner: "question", type: "string", required: true,
+  omission: "invalid", studentProse: true, answerSpecific: true,
+  means: "how that required area is named where the student is told it is needed.",
+  surface: "the area chooser", good: '"e-marketing"', bad: '""' });
 
 // ===========================================================================
 // CORE ANSWER
@@ -452,6 +482,16 @@ f({ path: "pathways[].mechanism.status", owner: "pathway", type: "enum", enumNam
   required: true, omission: "capability:pathway-guided", studentProse: false, answerSpecific: false,
   means: "whether the middle step of the relationship has been authored, is not needed, or has not been looked at.",
   surface: "none", good: '"authored"', bad: '"done"' });
+// Added in 1.1. status "none-required" is a JUDGEMENT somebody made, and the
+// reason is the argument for it. Carrying the status without the reason turns a
+// decision into an assertion, and the next reader cannot tell whether it was
+// thought about.
+f({ path: "pathways[].mechanism.reason", owner: "pathway", type: "string", required: false, omission: "none",
+  studentProse: false, answerSpecific: true,
+  means: "why this pathway needs no middle step, where the status says none is required.",
+  surface: "not shown to a student; it is the record of the judgement",
+  good: '"The two ends already meet, and a middle step would restate the relationship."',
+  bad: '"n/a" — that is the status again, not a reason' });
 f({ path: "pathways[].mechanism.text", owner: "pathway", type: "string", required: false,
   omission: "capability:pathway-guided", studentProse: true, answerSpecific: true,
   means: "the middle step: how the cause reaches the effect. It is the difference between an argument and an assertion.",
@@ -511,6 +551,18 @@ f({ path: "pathways[].guidance.<slot>.ladder[].text", owner: "pathway", type: "s
   surface: "the stuck helper",
   good: 'at the example rung, a worked sentence about a DIFFERENT context',
   bad: 'a sentence about this question that a student can paste. Nothing may write into a student sentence' });
+f({ path: "pathways[].guidance.<slot>.ladder[].context", owner: "pathway", type: "string", required: false,
+  omission: "level:the example rung is withheld", studentProse: true, answerSpecific: false,
+  means: "at the example rung only, the different situation the worked sentence is set in, in a few words. The rung is WITHHELD without it: an example whose context is not named reads as a sentence about this question, which is the one thing an example may never be. The runtime has always read this field and the contract never defined it, so an author had no way to know to write it and every imported example rung was silently dropped.",
+  surface: "beside the example rung's label",
+  good: '"a gym and time-poor professionals"',
+  bad: 'the case study this question is about, which makes the example the answer' });
+f({ path: "pathways[].guidance.<slot>.ladder[].pattern", owner: "pathway", type: "string", required: false,
+  omission: "none", studentProse: true, answerSpecific: false,
+  means: "at the example rung only, the shape the example demonstrates, so a student can see what transfers and what does not.",
+  surface: "under the example rung",
+  good: '"target-market characteristic, then strategy, then why it suits that market"',
+  bad: 'a restatement of the example sentence' });
 f({ path: "pathways[].vocabRefs", owner: "pathway", type: "vocabRef[]", refTo: "vocabulary",
   required: false, omission: "none", studentProse: false, answerSpecific: false,
   means: "terms this argument asks for by name.",

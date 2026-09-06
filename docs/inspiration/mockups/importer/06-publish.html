@@ -1,0 +1,421 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Importer mockup 6 &middot; publish</title>
+<!--
+  IMPORTER MOCKUP 6 OF 8. Workflow stage 6 of 6. Nothing is implemented.
+
+  ONE job, and deliberately no other: perform exactly the additions that were
+  reviewed, or perform none of them.
+
+  EVERY STATE ON THIS PAGE IS A REAL RESULT, produced by running the code and
+  transcribing what came back. Reproduce any of them:
+
+    node tools/contract/publish.js docs/contract/example-mkt-01.json \
+      docs/contract/example-ah-religion.json docs/contract/invalid-demo.json \
+      docs/contract/ahead-minor-demo.json
+    node tools/contract/publish.js --fail=ah-religion-ahead docs/contract/ahead-minor-demo.json
+    node tools/contract/publish.js --empty-bank --fail=ah-religion \
+      docs/contract/example-mkt-01.json docs/contract/example-ah-religion.json \
+      docs/contract/ahead-minor-demo.json
+
+  THE PUBLISH SET IS THE ONE THE PREVIEW SHOWED. Screen 6 receives an
+  admit.plan() and never rebuilds one from the files, so what is approved and
+  what is written cannot differ. tools/contract/publish.js takes the plan as its
+  only input: it requires neither the validator nor the file system.
+
+  THE ATOMIC UNIT IS THE PACKAGE, together with the shared records it provides,
+  and the screen says so in those words rather than leaving it to be inferred. A
+  batch is NOT atomic. A package already added stays added when a later one
+  fails, because undoing a completed addition is itself a write, and unwriting
+  on a failure path is how a half understood rollback loses something.
+
+  THE DESTINATION IS CHECKED AGAIN, immediately before writing, against the bank
+  as it is then. When it has moved, the answer is a sentence a teacher can act
+  on and not a safety error:
+
+    "The question bank changed since Review. Nothing was written. Review
+     changes again before publishing."
+
+  Zero writes, and it names what arrived so there is something to look for.
+
+  WHERE THE NUMBERS COME FROM. The live set is the same three files as Screen 5
+  plus ahead-minor-demo.json, whose question id ah-religion-ahead is the only one
+  in the repository that is free against the real 19 question bank. So the real
+  publish set is one question and no shared records, and the primary action reads
+  "Publish 1 question" because that is what the plan says.
+
+  ONE STATE IS DRAWN AGAINST A DIFFERENT DESTINATION, and it is fenced off and
+  labelled. Showing that a failure does not unwind a package already added needs
+  at least two publishable packages, and against the real bank there is exactly
+  one. The fenced state uses the same real fixture documents against an EMPTY
+  bank, which is a stated destination reproducible with --empty-bank, not
+  invented content. Nothing else on the page is hypothetical.
+
+  tests/t21.mjs is the proof, and section 8 of it reads this file, so the page
+  and the code cannot drift apart.
+-->
+<style>
+  :root{
+    --bg:#EEF3F5; --card:#FFFFFF;
+    --ink:#3C4A4A; --ink-2:#7A8A88; --ink-3:#AEBAB8;
+    --green:#1CC47D; --green-dk:#14A368; --green-soft:#E4F9EF;
+    --line:#E7EDED; --amber:#B3730C; --amber-soft:#FDF3E3;
+    --red:#B3403C; --red-soft:#FBEDEC;
+    --body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--body);background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
+  header{display:flex;align-items:center;gap:12px;padding:16px 32px;background:var(--card);border-bottom:1px solid var(--line)}
+  .mk{width:28px;height:28px;border-radius:9px;background:var(--green);flex:none;box-shadow:0 3px 0 var(--green-dk)}
+  .wordmark{font-weight:800;font-size:17px;letter-spacing:-.2px}
+  .where{margin-left:auto;font-size:13px;color:var(--ink-2);font-weight:700}
+  main{max-width:1080px;margin:0 auto;padding:26px 32px 56px}
+  h1{font-size:23px;font-weight:800;letter-spacing:-.3px;margin:0 0 4px}
+  .lede{font-size:14px;color:var(--ink-2);font-weight:600;margin:0 0 22px;max-width:72ch}
+
+  .rail{display:flex;gap:8px;margin:0 0 22px;flex-wrap:wrap}
+  .step{display:flex;align-items:center;gap:9px;background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:7px 15px 7px 8px;font-size:12.5px;font-weight:700;color:var(--ink-3)}
+  .step b{width:22px;height:22px;border-radius:50%;background:var(--bg);color:var(--ink-3);display:grid;place-items:center;font-size:11.5px;font-weight:800}
+  .step.on{border-color:var(--green);color:var(--ink)}
+  .step.on b{background:var(--green);color:#fff}
+  .step.done{color:var(--ink-2)}
+  .step.done b{background:var(--green-soft);color:var(--green-dk)}
+  .step.write{border-style:dashed}
+
+  .cols{display:grid;grid-template-columns:1.45fr 1fr;gap:18px;align-items:start}
+  .card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:18px 20px}
+  .card h2{font-size:14px;font-weight:800;margin:0 0 3px}
+  .card .sub{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:0 0 14px}
+  .count{font-size:19px;font-weight:800;letter-spacing:-.2px;margin:0 0 2px}
+  .count span{color:var(--green-dk)}
+  .count em{font-style:normal;color:var(--red)}
+
+  .grp{border-top:1px solid var(--line);padding:14px 0}
+  .grp:first-of-type{border-top:0}
+  .grph{display:flex;align-items:baseline;gap:10px;margin-bottom:3px}
+  .grph .n{font-size:13px;font-weight:800;flex:1}
+  .grpw{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:0 0 8px}
+
+  .w{display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--line);font-size:12.5px}
+  .w:first-of-type{border-top:0}
+  .w .k{width:18px;flex:none;font-weight:800;text-align:center}
+  .w .k.add{color:var(--green-dk)} .w .k.same{color:var(--ink-3)} .w .k.stop{color:var(--red)}
+  .w .t{flex:1;font-weight:700}
+  .w .t small{display:block;font-weight:600;color:var(--ink-2);font-size:11.5px}
+  .w .t code{font-family:var(--mono);font-size:11px;color:var(--ink-2)}
+
+  .tag{font-size:11.5px;font-weight:800;border-radius:99px;padding:4px 11px;white-space:nowrap}
+  .good{background:var(--green-soft);color:var(--green-dk)}
+  .warnt{background:var(--amber-soft);color:var(--amber)}
+  .badt{background:var(--red-soft);color:var(--red)}
+  .neutral{background:var(--bg);color:var(--ink-2)}
+  .blockt{background:var(--bg);color:var(--ink-2);border:1.5px dashed var(--ink-3);padding:3px 10px}
+
+  .btnrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px}
+  .btn{font:inherit;font-size:13px;font-weight:800;border-radius:12px;padding:10px 16px;border:1.5px solid var(--line);background:#fff;color:var(--ink);cursor:default}
+  .btn.primary{background:var(--green);border-color:var(--green);color:#fff;box-shadow:0 2px 0 var(--green-dk)}
+  .btn.off{background:var(--bg);border-color:var(--line);color:var(--ink-3);box-shadow:none}
+  /* Enabled in appearance and not pressable, because the example state HAS a
+     publishable addition. A grey button here would teach the opposite rule. */
+  .btn.inert{cursor:not-allowed}
+  .note{font-size:12px;color:var(--ink-2);font-weight:600;margin:10px 0 0}
+  .quiet{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:0 0 11px}
+  .quiet b{color:var(--ink)}
+  .rule{font-size:12.5px;color:var(--ink-2);font-weight:600;background:var(--bg);border-radius:12px;padding:11px 14px;margin:14px 0 0}
+  .rule b{color:var(--ink)}
+  .invariant{background:var(--green-soft);border:1.5px solid #CFF0E0;border-radius:14px;padding:13px 16px;margin-top:18px;font-size:13px;font-weight:700;color:var(--green-dk)}
+  details{font-size:12.5px}
+  summary{font-weight:800;font-size:12.5px;cursor:default;color:var(--ink)}
+  details p{color:var(--ink-2);font-weight:600;margin:9px 0 0}
+
+  /* The example state is fenced off, because a reader must never mistake it for
+     the import in front of them. Dashed is already spoken for by "blocked", so
+     the separation is a hard rule, a stated end to the live screen, and a badge
+     on every element inside. */
+  .fence{margin:34px 0 0;border-top:2px solid var(--ink-3);padding-top:10px}
+  .fence .end{font-size:12px;font-weight:800;color:var(--ink-2);text-transform:uppercase;letter-spacing:.06em}
+  .demo{background:#E8EDEF;border:1.5px solid #D3DCDD;border-radius:18px;padding:18px 20px;margin-top:10px}
+  .demo .lbl{display:inline-block;font-size:11px;font-weight:800;color:#FFFFFF;background:var(--ink-2);
+    border-radius:99px;padding:3px 11px;margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em}
+  .demo h2{font-size:14px;font-weight:800;margin:0 0 3px}
+  .demo .sub{font-size:12.5px;color:var(--ink-2);font-weight:600;margin:0 0 14px}
+  .demo .card{background:var(--card);opacity:.94}
+</style>
+<style>
+  /* Screen 6 only. The result states are outcomes of one screen, not four
+     screens, so each is a banner over the same layout rather than a new page. */
+  .banner{border-radius:18px;padding:16px 20px;margin-bottom:18px;border:1.5px solid var(--line);background:var(--card)}
+  .banner .hd{font-size:19px;font-weight:800;letter-spacing:-.2px;margin:0 0 3px}
+  .banner .bd{font-size:13px;font-weight:600;color:var(--ink-2);margin:0;max-width:74ch}
+  .banner.good{background:var(--green-soft);border-color:#CFF0E0}
+  .banner.good .hd{color:var(--green-dk)}
+  .banner.good .bd{color:var(--green-dk)}
+  .banner.stop{background:var(--red-soft);border-color:#F2D8D6}
+  .banner.stop .hd{color:var(--red)}
+  .banner.warn{background:var(--amber-soft);border-color:#F2E2C6}
+  .banner.warn .hd{color:var(--amber)}
+  .state{margin-top:26px;border-top:1px solid var(--line);padding-top:20px}
+  .state > .lbl{display:inline-block;font-size:11px;font-weight:800;color:var(--ink-2);background:var(--bg);
+    border:1.5px solid var(--line);border-radius:99px;padding:3px 11px;margin-bottom:10px;
+    text-transform:uppercase;letter-spacing:.06em}
+  .atomic{font-size:12.5px;font-weight:700;color:var(--ink);background:var(--bg);border-radius:12px;
+    padding:11px 14px;margin:14px 0 0}
+  .atomic span{display:block;font-weight:600;color:var(--ink-2);margin-top:4px}
+  .cmd{font-family:var(--mono);font-size:11px;color:var(--ink-2);background:var(--bg);border-radius:8px;
+    padding:6px 9px;margin:10px 0 0;overflow-x:auto;white-space:pre}
+</style>
+
+<header>
+  <div class="mk"></div><div class="wordmark">Marginal</div>
+  <div class="where">Teacher tools &middot; import questions &middot; 6 of 6</div>
+</header>
+
+<main>
+  <h1>Publish</h1>
+  <p class="lede">This step performs the additions you reviewed, and nothing else. It adds; it never
+    replaces. Everything below was checked again against the question bank a moment before it is written.</p>
+
+  <div class="rail">
+    <div class="step done"><b>&check;</b> Choose files</div>
+    <div class="step done"><b>&check;</b> Parse</div>
+    <div class="step done"><b>&check;</b> Validate</div>
+    <div class="step done"><b>&check;</b> Resolve references</div>
+    <div class="step done"><b>&check;</b> Review changes</div>
+    <div class="step on"><b>6</b> Publish</div>
+  </div>
+
+  <div class="cols">
+    <div>
+      <div class="card">
+        <p class="count"><span>1 question</span> will be added</p>
+        <p class="sub">The same publish set you reviewed, listed again in short. Nothing here is new,
+          and nothing has been re-decided.</p>
+        <div class="w"><span class="k add">+</span><span class="t">ah-religion-ahead
+          <small>New question in Ancient History, from ahead-minor-demo.json.</small></span></div>
+        <div class="w"><span class="k add">+</span><span class="t">No shared library records
+          <small>This package provides none.</small></span></div>
+        <div class="w"><span class="k same">=</span><span class="t">19 existing questions, untouched
+          <small>Including mkt-01 and ah-religion, whose ids are taken and which are not being published.</small></span></div>
+        <div class="rule">Two files were held and one was not included at earlier steps. They are listed
+          on the right so the set does not appear to have shrunk, and none of them is publishable from
+          this screen.</div>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <h2>What Publish will do</h2>
+        <p class="sub">In order, and it stops at the first line that fails.</p>
+        <div class="w"><span class="k same">1</span><span class="t">Check the question bank again
+          <small>Against the bank as it is now, not as it was when you reviewed. If a question has been
+          added since, nothing is written and you are sent back to Review.</small></span></div>
+        <div class="w"><span class="k same">2</span><span class="t">Prepare the whole package
+          <small>The document, and any records it provides, are prepared together. Every check that can
+          fail happens here, before anything is added.</small></span></div>
+        <div class="w"><span class="k same">3</span><span class="t">Add it
+          <small>One step that cannot half succeed. After this the question is in the bank.</small></span></div>
+        <div class="atomic">A package writes completely or not at all, together with the shared records
+          it provides.
+          <span>A batch is not atomic. If you publish several and one fails, the ones already added stay
+          added, because removing them would itself be a change you did not ask for. The result names
+          exactly which packages were added and which were not.</span></div>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <h2>What is stored</h2>
+        <div class="w"><span class="k add">+</span><span class="t">The package document, whole
+          <small>All 58 values in the file, including the 5 written against a later contract that this
+          version does not interpret. It is checked against the file before writing, so a document that
+          would arrive smaller is refused rather than stored short.</small></span></div>
+        <div class="w"><span class="k same">=</span><span class="t">Nothing is derived away
+          <small>Everything Marginal uses is rebuilt from the document, so a later version reads the
+          fields this one is only keeping.</small></span></div>
+      </div>
+
+      <div class="invariant">Publish adds the one question above. It will not modify, replace or merge
+        any existing question or shared record, and there is no control on this screen that could.</div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2>Ready</h2>
+        <p class="quiet">Checked against the 19 questions in this bank, a moment ago. The check runs
+          again as the first thing Publish does.</p>
+        <div class="btnrow">
+          <button class="btn primary">Publish 1 question</button>
+          <button class="btn">Back to review</button>
+        </div>
+        <p class="note">The button names the count from the publish set. When the set is empty there is
+          no Publish button on this screen at all, because there would be nothing for it to do.</p>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <h2>Not being published</h2>
+        <p class="sub">Carried from Review so the set stays whole.</p>
+        <div class="w"><span class="k stop">x</span><span class="t">mkt-01<small>Id already in Business Studies</small></span></div>
+        <div class="w"><span class="k stop">x</span><span class="t">ah-religion<small>Id already in Ancient History</small></span></div>
+        <div class="w"><span class="k stop">x</span><span class="t">invalid-demo.json<small>Rejected at Validate</small></span></div>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <h2>Readiness, reported after</h2>
+        <p class="quiet">ah-religion-ahead reaches <b>importable</b> and does not reach five
+          capabilities. That is content work and it has no bearing on whether it can be published, so it
+          is reported once it is in, and never as a reason to stop.</p>
+        <p class="quiet">It also carries one warning: it was written against contract 1.7 and this
+          version reads 1.x, so five of its fields are stored without being interpreted.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="state">
+    <span class="lbl">Result state &middot; it worked</span>
+    <div class="banner good">
+      <p class="hd">1 question added</p>
+      <p class="bd">ah-religion-ahead is now in Ancient History. No existing question or shared record
+        changed.</p>
+    </div>
+    <div class="cols">
+      <div>
+        <div class="card">
+          <h2>What was added</h2>
+          <div class="w"><span class="k add">+</span><span class="t">ah-religion-ahead
+            <small>Ancient History, from ahead-minor-demo.json. Stored whole, all 58 values.</small></span></div>
+          <div class="w"><span class="k same">=</span><span class="t">0 shared library records added<small>It provided none</small></span></div>
+          <div class="w"><span class="k same">=</span><span class="t">19 existing questions unchanged
+            <small>Nothing read them, nothing wrote to them.</small></span></div>
+        </div>
+        <div class="card" style="margin-top:18px">
+          <h2>Still not published</h2>
+          <div class="w"><span class="k stop">x</span><span class="t">mkt-01<small>Held. Id already in Business Studies, and the existing question is unchanged.</small></span></div>
+          <div class="w"><span class="k stop">x</span><span class="t">ah-religion<small>Held. Id already in Ancient History, and the existing question is unchanged.</small></span></div>
+          <div class="w"><span class="k stop">x</span><span class="t">invalid-demo.json<small>Not included. Rejected at Validate with 32 errors.</small></span></div>
+          <div class="rule">These did not fail at Publish. They never entered the publish set, and the
+            result repeats them so the outcome accounts for every file you chose.</div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <h2>Worth doing next</h2>
+          <p class="quiet">Reported separately from the writes, because none of it is a change and none
+            of it stopped anything.</p>
+          <p class="quiet"><b>ah-religion-ahead is importable</b> and does not yet reach writing-ready,
+            pathway-guided, learning-complete, assessment-complete or evidence-complete. A student can
+            meet the question; the guided writing support is not there yet.</p>
+          <p class="quiet"><b>One warning.</b> Contract 1.7, read by a 1.x reader. Five fields are stored
+            and not interpreted: accessibility, marking.rubricRef, marking.text, question.readingAge and
+            requirements.sourceSkills.</p>
+          <div class="btnrow">
+            <button class="btn primary">Open ah-religion-ahead</button>
+            <button class="btn">Import more</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="state">
+    <span class="lbl">Result state &middot; the bank moved</span>
+    <div class="banner warn">
+      <p class="hd">Nothing was written</p>
+      <p class="bd">The question bank changed since Review. Nothing was written. Review changes again before publishing.</p>
+    </div>
+    <div class="cols">
+      <div>
+        <div class="card">
+          <h2>What happened</h2>
+          <p class="sub">Publish checks the bank again as its first step. It did not match, so it stopped
+            before writing anything.</p>
+          <div class="w"><span class="k same">=</span><span class="t">You reviewed against 19 questions
+            <small>The bank now holds 20.</small></span></div>
+          <div class="w"><span class="k add">+</span><span class="t">ops-04 was added since
+            <small>By someone or something else, not by this import.</small></span></div>
+          <div class="w"><span class="k same">=</span><span class="t">0 questions written, 0 attempted
+            <small>Not a failed write. The write never began.</small></span></div>
+          <div class="rule">Your files are unchanged and still chosen. Reviewing again re-checks the ids
+            against the bank as it is now, which is the only thing that could have changed the answer.</div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <h2>What to do</h2>
+          <p class="quiet">Go back to Review. It will say the same thing as before unless one of your
+            question ids is among what arrived, in which case that package moves to already exists.</p>
+          <div class="btnrow">
+            <button class="btn primary">Review changes again</button>
+            <button class="btn">Back to files</button>
+          </div>
+          <p class="note">There is no force, publish anyway or overwrite option here, and adding one
+            would be the overwrite path the rest of the importer is built to avoid.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="state">
+    <span class="lbl">Result state &middot; a write failed</span>
+    <div class="banner stop">
+      <p class="hd">Nothing was written</p>
+      <p class="bd">ah-religion-ahead could not be added. Nothing of it reached the bank, and the bank is
+        exactly as it was.</p>
+    </div>
+    <div class="cols">
+      <div>
+        <div class="card">
+          <h2>What failed</h2>
+          <div class="w"><span class="k stop">x</span><span class="t">ah-religion-ahead
+            <small>The destination refused the write. Nothing of this package was written.</small></span></div>
+          <div class="w"><span class="k same">=</span><span class="t">19 existing questions unchanged
+            <small>The bank holds what it held before you pressed Publish.</small></span></div>
+          <div class="atomic">A package writes completely or not at all, together with the shared records
+            it provides.
+            <span>This package provides none, so the whole of it is one question, and the question is not
+            there. Had it provided records, none of those would be there either. There is no state in
+            which part of a package is in the bank.</span></div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <h2>What to do</h2>
+          <p class="quiet">Nothing was half done, so there is nothing to clean up. Publishing again is
+            safe: it re-checks the bank first, and the id is still free.</p>
+          <div class="btnrow">
+            <button class="btn primary">Publish 1 question</button>
+            <button class="btn">Review changes</button>
+          </div>
+          <p class="note">If it fails again, Review will say the same thing, because the file and the
+            bank are both unchanged.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fence">
+    <p class="end">End of the states drawn from this import. Below is one state that needs a different
+      destination, and says so.</p>
+  </div>
+
+  <div class="demo">
+    <div class="lbl">Different destination, stated</div>
+    <h2>What a failure does to packages already added</h2>
+    <p class="sub">Showing this needs at least two publishable packages, and against the real 19 question
+      bank there is exactly one, because every other fixture id is already taken. So this state uses the
+      same real fixture documents against an <b>empty bank</b>, which is a destination you can reproduce
+      with <code>--empty-bank</code>, not invented content. It is not what your import would do.</p>
+    <div class="cmd">node tools/contract/publish.js --empty-bank --fail=ah-religion \
+  docs/contract/example-mkt-01.json docs/contract/example-ah-religion.json docs/contract/ahead-minor-demo.json</div>
+    <div class="card" style="margin-top:14px">
+      <p class="count">2 added, <em>1 failed</em></p>
+      <div class="w"><span class="k add">+</span><span class="t">mkt-01<small>Added, and it stays added.</small></span></div>
+      <div class="w"><span class="k stop">x</span><span class="t">ah-religion<small>Failed. Nothing of it was written.</small></span></div>
+      <div class="w"><span class="k add">+</span><span class="t">ah-religion-ahead<small>Added after the failure. One package failing does not stop the next being attempted.</small></span></div>
+      <div class="atomic">The batch is not atomic, and this is what that means.
+        <span>mkt-01 was added before the failure and is still there. Removing it would be a change
+        nobody asked for, made on a failure path, which is exactly where a change is least likely to be
+        noticed. The result names all three so there is no doubt which is which.</span></div>
+    </div>
+    <p class="note">There is no fixture in the repository that provides a shared library record, so the
+      case where a failing package would have added a question and records together is described in the
+      failure state above and not drawn. Inventing a package to fill it is how an earlier screen got a
+      fabricated example into a file claiming every number was real.</p>
+  </div>
+</main>

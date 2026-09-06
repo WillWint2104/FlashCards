@@ -1,6 +1,6 @@
 {
   "schema": "marginal.question-package",
-  "contractVersion": "1.0",
+  "contractVersion": "1.1",
   "origin": {
     "type": "bundled",
     "packageId": null,
@@ -45,6 +45,8 @@
       "first": "Financial management strategies",
       "second": "Objectives of financial management"
     },
+    "note": "2024 HSC Section IV question.",
+    "areasLabel": "financial strategy area",
     "overallArgument": "Financial strategies substantially help businesses achieve financial objectives by controlling cash, working capital, costs, revenues and financial risk, though achieving one objective can involve a trade-off with another.",
     "vocabRefs": [],
     "studyRefs": []
@@ -180,7 +182,8 @@
       "weighs at least one trade-off, because no strategy improves every objective at once",
       "uses one business consistently so the strategies can be compared against each other"
     ],
-    "syllabusSummary": "Finance: financial management strategies, and the objectives of liquidity, profitability, efficiency, growth and solvency."
+    "syllabusSummary": "Finance: financial management strategies, and the objectives of liquidity, profitability, efficiency, growth and solvency.",
+    "requiredAreas": []
   },
   "coreAnswer": {
     "mode": "causal",
@@ -370,7 +373,8 @@
       "mechanism": {
         "status": "unreviewed",
         "text": null,
-        "note": null
+        "note": null,
+        "reason": null
       },
       "conceptRef": null,
       "syllabusRef": "business.finance.financial-management-strategies.cash-flow-management",
@@ -406,7 +410,8 @@
       "mechanism": {
         "status": "unreviewed",
         "text": null,
-        "note": null
+        "note": null,
+        "reason": null
       },
       "conceptRef": null,
       "syllabusRef": "business.finance.financial-management-strategies.cash-flow-management",
@@ -435,7 +440,8 @@
       "mechanism": {
         "status": "unreviewed",
         "text": null,
-        "note": null
+        "note": null,
+        "reason": null
       },
       "conceptRef": null,
       "syllabusRef": "business.finance.financial-management-strategies.working-capital-management",
@@ -471,7 +477,8 @@
       "mechanism": {
         "status": "unreviewed",
         "text": null,
-        "note": null
+        "note": null,
+        "reason": null
       },
       "conceptRef": null,
       "syllabusRef": "business.finance.financial-management-strategies.working-capital-management",
@@ -507,7 +514,8 @@
       "mechanism": {
         "status": "unreviewed",
         "text": null,
-        "note": null
+        "note": null,
+        "reason": null
       },
       "conceptRef": null,
       "syllabusRef": "business.finance.financial-management-strategies.profitability-management",
@@ -543,7 +551,8 @@
       "mechanism": {
         "status": "unreviewed",
         "text": null,
-        "note": null
+        "note": null,
+        "reason": null
       },
       "conceptRef": null,
       "syllabusRef": "business.finance.financial-management-strategies.profitability-management",
@@ -579,7 +588,8 @@
       "mechanism": {
         "status": "unreviewed",
         "text": null,
-        "note": null
+        "note": null,
+        "reason": null
       },
       "conceptRef": null,
       "syllabusRef": "business.finance.financial-management-strategies.global-financial-management",
@@ -615,7 +625,8 @@
       "mechanism": {
         "status": "unreviewed",
         "text": null,
-        "note": null
+        "note": null,
+        "reason": null
       },
       "conceptRef": null,
       "syllabusRef": "business.finance.financial-management-strategies.global-financial-management",

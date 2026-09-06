@@ -1,6 +1,6 @@
 {
   "schema": "marginal.question-package",
-  "contractVersion": "1.0",
+  "contractVersion": "1.1",
   "origin": {
     "type": "bundled",
     "packageId": null,
@@ -31,11 +31,12 @@
     "topicLabel": null,
     "directive": "assess",
     "text": "Assess the impact of globalisation on operations management.",
-    "marks": 20,
     "terms": {
       "first": "Globalisation",
       "second": "Operations management"
     },
+    "note": null,
+    "areasLabel": null,
     "overallArgument": "Globalisation can substantially improve cost competitiveness and innovation but exposes businesses to greater supply-chain and global risk.",
     "vocabRefs": [],
     "studyRefs": []

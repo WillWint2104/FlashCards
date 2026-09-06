@@ -19,7 +19,7 @@
 // Geometry is asserted against a baseline captured at runtime, never against a
 // pixel constant. The contract is that the writing does not move, not that a
 // particular viewport produces a particular number.
-const { chromium, T, usePractice, openMap, closeMap } = require('./env');
+const { chromium, T, usePractice, chooseQuestion, openMap, closeMap } = require('./env');
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  FAIL:', m); } };
 const TOL = 1;
@@ -61,11 +61,7 @@ async function toWriting(p, qre) {
   await p.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await here(p, '#essubject');
   await p.selectOption('#essubject', 'business_studies').catch(() => {});
-  await usePractice(p);
-  const chip = await p.evaluate(r => {
-    const t = [...document.querySelectorAll('.es-qrow')].find(x => new RegExp(r, 'i').test(x.textContent));
-    if (t) { t.click(); return true; } return false;
-  }, qre);
+  const chip = await chooseQuestion(p, qre);
   if (!chip) return false;
   await p.click('#esstart');
   // Either the composer or the start surface: which one is the question's business.

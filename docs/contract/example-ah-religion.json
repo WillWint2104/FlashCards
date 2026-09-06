@@ -1,6 +1,6 @@
 {
   "schema": "marginal.question-package",
-  "contractVersion": "1.0",
+  "contractVersion": "1.1",
   "origin": {
     "type": "bundled",
     "packageId": null,
@@ -33,6 +33,8 @@
       "first": null,
       "second": null
     },
+    "note": null,
+    "areasLabel": null,
     "overallArgument": null,
     "vocabRefs": [],
     "studyRefs": []
@@ -61,7 +63,8 @@
       "draws on more than one kind of source and says what each one proves",
       "separates what the sources show from what they leave unclear"
     ],
-    "syllabusSummary": "Features of ancient societies: religion, belief and their place in daily life. The society is the student's own choice and is never named here."
+    "syllabusSummary": "Features of ancient societies: religion, belief and their place in daily life. The society is the student's own choice and is never named here.",
+    "requiredAreas": []
   },
   "coreAnswer": null,
   "workingAnswer": null,

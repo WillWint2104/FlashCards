@@ -1,7 +1,7 @@
 {
   "schema": "marginal.fixture-manifest",
   "version": 1,
-  "note": "Describes the simulations. Does not run them: that is work for after the importer, against externally authored packs rather than against this bank.",
+  "note": "Describes the simulations. tests/ui53.js runs them against an externally authored package rather than against this bank, which is what this manifest was written for.",
   "personas": [
     {
       "id": "zeroKnowledgeStudent",
@@ -70,19 +70,10 @@
   "runnable": {
     "zeroKnowledgeStudent": [],
     "strongIndependentStudent": [
-      "ops-01",
-      "ops-02",
-      "ops-03",
       "mkt-01",
       "mkt-04",
-      "mkt-02",
-      "mkt-03",
       "fin-01",
-      "fin-02",
-      "fin-03",
-      "hr-01",
-      "hr-02",
-      "hr-03"
+      "hr-01"
     ],
     "misconceptionStudent": [
       "mkt-01",
@@ -135,7 +126,7 @@
           "supportedInGuidedWriting": true,
           "sentenceShapes": 0
         },
-        "marks": 20,
+        "marks": null,
         "areas": [],
         "slots": [],
         "claims": 0,
@@ -245,7 +236,7 @@
           "supportedInGuidedWriting": true,
           "sentenceShapes": 0
         },
-        "marks": 20,
+        "marks": null,
         "areas": [],
         "slots": [],
         "claims": 0,
@@ -300,7 +291,7 @@
           "supportedInGuidedWriting": true,
           "sentenceShapes": 0
         },
-        "marks": 20,
+        "marks": null,
         "areas": [],
         "slots": [],
         "claims": 0,
@@ -355,7 +346,7 @@
           "supportedInGuidedWriting": true,
           "sentenceShapes": 0
         },
-        "marks": 20,
+        "marks": null,
         "areas": [],
         "slots": [],
         "claims": 0,
@@ -410,7 +401,7 @@
           "supportedInGuidedWriting": true,
           "sentenceShapes": 4
         },
-        "marks": 20,
+        "marks": null,
         "areas": [],
         "slots": [],
         "claims": 0,
@@ -451,13 +442,13 @@
       "package": "ops-01",
       "capabilities": {
         "importable": "reached",
-        "writing-ready": "reached",
+        "writing-ready": "not-reached",
         "pathway-guided": "not-reached",
         "learning-complete": "not-reached",
         "assessment-complete": "not-reached",
         "evidence-complete": "not-reached"
       },
-      "headline": "Writing ready - missing pathway-guided, learning-complete, assessment-complete, evidence-complete",
+      "headline": "Importable - missing writing-ready, pathway-guided, learning-complete, assessment-complete, evidence-complete",
       "handles": {
         "directive": {
           "command": "how can",
@@ -465,7 +456,7 @@
           "supportedInGuidedWriting": true,
           "sentenceShapes": 4
         },
-        "marks": 20,
+        "marks": null,
         "areas": [],
         "slots": [],
         "claims": 4,
@@ -482,8 +473,8 @@
         },
         {
           "persona": "strongIndependentStudent",
-          "applicable": true,
-          "why": null
+          "applicable": false,
+          "why": "needs writing-ready, which this package does not reach"
         },
         {
           "persona": "misconceptionStudent",
@@ -506,13 +497,13 @@
       "package": "ops-02",
       "capabilities": {
         "importable": "reached",
-        "writing-ready": "reached",
+        "writing-ready": "not-reached",
         "pathway-guided": "not-reached",
         "learning-complete": "not-reached",
         "assessment-complete": "not-reached",
         "evidence-complete": "not-reached"
       },
-      "headline": "Writing ready - missing pathway-guided, learning-complete, assessment-complete, evidence-complete",
+      "headline": "Importable - missing writing-ready, pathway-guided, learning-complete, assessment-complete, evidence-complete",
       "handles": {
         "directive": {
           "command": "assess",
@@ -520,7 +511,7 @@
           "supportedInGuidedWriting": true,
           "sentenceShapes": 0
         },
-        "marks": 20,
+        "marks": null,
         "areas": [],
         "slots": [],
         "claims": 4,
@@ -537,8 +528,8 @@
         },
         {
           "persona": "strongIndependentStudent",
-          "applicable": true,
-          "why": null
+          "applicable": false,
+          "why": "needs writing-ready, which this package does not reach"
         },
         {
           "persona": "misconceptionStudent",
@@ -561,13 +552,13 @@
       "package": "ops-03",
       "capabilities": {
         "importable": "reached",
-        "writing-ready": "reached",
+        "writing-ready": "not-reached",
         "pathway-guided": "not-reached",
         "learning-complete": "not-reached",
         "assessment-complete": "not-reached",
         "evidence-complete": "not-reached"
       },
-      "headline": "Writing ready - missing pathway-guided, learning-complete, assessment-complete, evidence-complete",
+      "headline": "Importable - missing writing-ready, pathway-guided, learning-complete, assessment-complete, evidence-complete",
       "handles": {
         "directive": {
           "command": "how can",
@@ -575,7 +566,7 @@
           "supportedInGuidedWriting": true,
           "sentenceShapes": 4
         },
-        "marks": 20,
+        "marks": null,
         "areas": [],
         "slots": [],
         "claims": 4,
@@ -592,8 +583,8 @@
         },
         {
           "persona": "strongIndependentStudent",
-          "applicable": true,
-          "why": null
+          "applicable": false,
+          "why": "needs writing-ready, which this package does not reach"
         },
         {
           "persona": "misconceptionStudent",
@@ -955,13 +946,13 @@
       "package": "mkt-02",
       "capabilities": {
         "importable": "reached",
-        "writing-ready": "reached",
+        "writing-ready": "not-reached",
         "pathway-guided": "not-reached",
         "learning-complete": "not-reached",
         "assessment-complete": "not-reached",
         "evidence-complete": "not-reached"
       },
-      "headline": "Writing ready - missing pathway-guided, learning-complete, assessment-complete, evidence-complete",
+      "headline": "Importable - missing writing-ready, pathway-guided, learning-complete, assessment-complete, evidence-complete",
       "handles": {
         "directive": {
           "command": "assess",
@@ -969,7 +960,7 @@
           "supportedInGuidedWriting": true,
           "sentenceShapes": 0
         },
-        "marks": 20,
+        "marks": null,
         "areas": [],
         "slots": [],
         "claims": 4,
@@ -986,8 +977,8 @@
         },
         {
           "persona": "strongIndependentStudent",
-          "applicable": true,
-          "why": null
+          "applicable": false,
+          "why": "needs writing-ready, which this package does not reach"
         },
         {
           "persona": "misconceptionStudent",
@@ -1010,13 +1001,13 @@
       "package": "mkt-03",
       "capabilities": {
         "importable": "reached",
-        "writing-ready": "reached",
+        "writing-ready": "not-reached",
         "pathway-guided": "not-reached",
         "learning-complete": "not-reached",
         "assessment-complete": "not-reached",
         "evidence-complete": "not-reached"
       },
-      "headline": "Writing ready - missing pathway-guided, learning-complete, assessment-complete, evidence-complete",
+      "headline": "Importable - missing writing-ready, pathway-guided, learning-complete, assessment-complete, evidence-complete",
       "handles": {
         "directive": {
           "command": "to what extent",
@@ -1024,7 +1015,7 @@
           "supportedInGuidedWriting": true,
           "sentenceShapes": 0
         },
-        "marks": 20,
+        "marks": null,
         "areas": [],
         "slots": [],
         "claims": 4,
@@ -1041,8 +1032,8 @@
         },
         {
           "persona": "strongIndependentStudent",
-          "applicable": true,
-          "why": null
+          "applicable": false,
+          "why": "needs writing-ready, which this package does not reach"
         },
         {
           "persona": "misconceptionStudent",
@@ -1256,13 +1247,13 @@
       "package": "fin-02",
       "capabilities": {
         "importable": "reached",
-        "writing-ready": "reached",
+        "writing-ready": "not-reached",
         "pathway-guided": "not-reached",
         "learning-complete": "not-reached",
         "assessment-complete": "not-reached",
         "evidence-complete": "not-reached"
       },
-      "headline": "Writing ready - missing pathway-guided, learning-complete, assessment-complete, evidence-complete",
+      "headline": "Importable - missing writing-ready, pathway-guided, learning-complete, assessment-complete, evidence-complete",
       "handles": {
         "directive": {
           "command": "explain",
@@ -1270,7 +1261,7 @@
           "supportedInGuidedWriting": true,
           "sentenceShapes": 4
         },
-        "marks": 20,
+        "marks": null,
         "areas": [],
         "slots": [],
         "claims": 4,
@@ -1287,8 +1278,8 @@
         },
         {
           "persona": "strongIndependentStudent",
-          "applicable": true,
-          "why": null
+          "applicable": false,
+          "why": "needs writing-ready, which this package does not reach"
         },
         {
           "persona": "misconceptionStudent",
@@ -1311,13 +1302,13 @@
       "package": "fin-03",
       "capabilities": {
         "importable": "reached",
-        "writing-ready": "reached",
+        "writing-ready": "not-reached",
         "pathway-guided": "not-reached",
         "learning-complete": "not-reached",
         "assessment-complete": "not-reached",
         "evidence-complete": "not-reached"
       },
-      "headline": "Writing ready - missing pathway-guided, learning-complete, assessment-complete, evidence-complete",
+      "headline": "Importable - missing writing-ready, pathway-guided, learning-complete, assessment-complete, evidence-complete",
       "handles": {
         "directive": {
           "command": "assess",
@@ -1325,7 +1316,7 @@
           "supportedInGuidedWriting": true,
           "sentenceShapes": 0
         },
-        "marks": 20,
+        "marks": null,
         "areas": [],
         "slots": [],
         "claims": 4,
@@ -1342,8 +1333,8 @@
         },
         {
           "persona": "strongIndependentStudent",
-          "applicable": true,
-          "why": null
+          "applicable": false,
+          "why": "needs writing-ready, which this package does not reach"
         },
         {
           "persona": "misconceptionStudent",
@@ -1557,13 +1548,13 @@
       "package": "hr-02",
       "capabilities": {
         "importable": "reached",
-        "writing-ready": "reached",
+        "writing-ready": "not-reached",
         "pathway-guided": "not-reached",
         "learning-complete": "not-reached",
         "assessment-complete": "not-reached",
         "evidence-complete": "not-reached"
       },
-      "headline": "Writing ready - missing pathway-guided, learning-complete, assessment-complete, evidence-complete",
+      "headline": "Importable - missing writing-ready, pathway-guided, learning-complete, assessment-complete, evidence-complete",
       "handles": {
         "directive": {
           "command": "analyse",
@@ -1571,7 +1562,7 @@
           "supportedInGuidedWriting": true,
           "sentenceShapes": 4
         },
-        "marks": 20,
+        "marks": null,
         "areas": [],
         "slots": [],
         "claims": 4,
@@ -1588,8 +1579,8 @@
         },
         {
           "persona": "strongIndependentStudent",
-          "applicable": true,
-          "why": null
+          "applicable": false,
+          "why": "needs writing-ready, which this package does not reach"
         },
         {
           "persona": "misconceptionStudent",
@@ -1612,13 +1603,13 @@
       "package": "hr-03",
       "capabilities": {
         "importable": "reached",
-        "writing-ready": "reached",
+        "writing-ready": "not-reached",
         "pathway-guided": "not-reached",
         "learning-complete": "not-reached",
         "assessment-complete": "not-reached",
         "evidence-complete": "not-reached"
       },
-      "headline": "Writing ready - missing pathway-guided, learning-complete, assessment-complete, evidence-complete",
+      "headline": "Importable - missing writing-ready, pathway-guided, learning-complete, assessment-complete, evidence-complete",
       "handles": {
         "directive": {
           "command": "to what extent",
@@ -1626,7 +1617,7 @@
           "supportedInGuidedWriting": true,
           "sentenceShapes": 0
         },
-        "marks": 20,
+        "marks": null,
         "areas": [],
         "slots": [],
         "claims": 4,
@@ -1643,8 +1634,8 @@
         },
         {
           "persona": "strongIndependentStudent",
-          "applicable": true,
-          "why": null
+          "applicable": false,
+          "why": "needs writing-ready, which this package does not reach"
         },
         {
           "persona": "misconceptionStudent",
