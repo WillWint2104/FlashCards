@@ -95,6 +95,18 @@ const TIERS = {
   // it offers - and a rule nobody can see on screen is exactly the kind that
   // decays quietly between passes.
   //
+  // ui62 is in journeys beside ui61. It changes login twice, starts an attempt,
+  // leaves it, comes back through My essays and reads the labels at two widths -
+  // a walk through the whole lifecycle, which is the only place the rule it holds
+  // can be broken.
+  //
+  // ui63 is in NEITHER, which is to say full and only full. It publishes four
+  // packages through the real five-step importer and validates four more against
+  // the shipped manifest: one authored package re-declared as each subject in
+  // turn, plus the cross-wired negatives. That is an exhaustive cross-product of
+  // declared subjects, which is the kind of sweep the exhaustive tier exists for
+  // - the same reason ui40's walk of every question moved out of checkpoint.
+  //
   // ui61 is in JOURNEYS, not here, and the difference is the importer. It
   // publishes a package through the real importer's five steps, walks the
   // paginated bank to the question that produced, starts an attempt from it and
@@ -188,7 +200,7 @@ const TIERS = {
   // writing workspace mid-paragraph, goes to another surface, comes back, and
   // asks whether the attempt survived the trip. That question cannot be asked at
   // a seam - it is the trip.
-  journeys: { budget: 180, suites: ["ui13", "ui30", "ui37", "ui40", "ui50", "ui51", "ui52", "ui53", "ui56", "ui57", "ui61"] },
+  journeys: { budget: 180, suites: ["ui13", "ui30", "ui37", "ui40", "ui50", "ui51", "ui52", "ui53", "ui56", "ui57", "ui61", "ui62"] },
   // Everything run.js knows about, the journeys included, plus the suites in no
   // tier: both student matrices are here and only here, ui54's four profiles on
   // the imported question and the bots' seven on the bundled bank.

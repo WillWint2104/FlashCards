@@ -3368,15 +3368,31 @@
     return null;
   }
 
-  function esSubjectsList() {
+  // ---- THREE SUBJECT STATES, NOT TWO ---------------------------------------
+  //
+  //   REGISTERED   in the registry. esSubjectContent resolves it, so stored
+  //                attempts, routing rules and legacy data keep working.
+  //   SELECTABLE   offered in the current Essay Practice picker: a course we are
+  //                taking new students into.
+  //   LEGACY       registered and not selectable.
+  //
+  // One word - "active" - was carrying both of the first two, and they are not the
+  // same claim. A package existing is not a reason to offer it, and a package not
+  // being offered is not a reason to stop resolving it. Told apart here so neither
+  // can be changed by accident while meaning to change the other.
+  function esSubjectsRegistered() {
     const subs = esAllSubjects().subjects;
-    return Object.keys(subs)
-      .filter(k => subs[k] && subs[k].key)
-      .map(k => ({ key: k, label: subs[k].label || k }));
+    return Object.keys(subs).filter(k => subs[k] && subs[k].key)
+      .map(k => ({ key: k, label: subs[k].label || k, legacy: !!subs[k].legacy }));
+  }
+  function esSubjectsList() { return esSubjectsRegistered().filter(s => !s.legacy); }
+  function esSubjectIsLegacy(key) {
+    const sc = key ? esSubjectContent(key) : null;
+    return !!(sc && sc.legacy);
   }
   // A model's short label (e.g. "teeec" -> "TEEEC") from the subject's scaffolds.
   function esParaModelLabel(model) {
-    const sc = esSubjectContent(ES.subject);
+    const sc = esAttemptPackage();
     const m = sc && sc.scaffolds && sc.scaffolds[model];
     return (m && m.label) || String(model || "").toUpperCase();
   }
@@ -3384,10 +3400,17 @@
   // placeholder. Examples are ALWAYS fixed and pre-written (never generated), whether
   // a subject's own or the borrowed fallback.
   function esWorkedExampleSet() {
-    const sc = esSubjectContent(ES.subject);
+    // THE ATTEMPT's package, like every other academic resolver. This was the last
+    // read of the picker left in the writing surfaces, and it decided whether the
+    // borrowed model carries its "a model from another subject" note: computed
+    // from the picker, the note describes a subject the student may not be
+    // writing in, and a package that ships its own examples silently returns
+    // placeholder:false - which is the label disappearing exactly when the
+    // borrowed material is most specific.
+    const sc = esAttemptPackage();
     if (sc && Array.isArray(sc.examples) && sc.examples.length) return { list: sc.examples, placeholder: false };
     const g = (window.ESSAY && window.ESSAY.slots && window.ESSAY.slots.examples) || [];
-    return { list: g, placeholder: ES.subject !== ESSAY_FALLBACK_EXAMPLE_SUBJECT };
+    return { list: g, placeholder: esAttemptSubject() !== ESSAY_FALLBACK_EXAMPLE_SUBJECT };
   }
   function esStructureDef(key) {
     const S = (window.ESSAY && window.ESSAY.structures) || [];
@@ -3414,7 +3437,7 @@
   // chosen from the draft (or the setup form before a draft exists). Returns null
   // when the subject ships no scaffolds, so the shared slot model is used instead.
   function esActiveScaffold() {
-    const sc = esSubjectContent(ES.subject);
+    const sc = esAttemptPackage();
     const models = sc && sc.scaffolds;
     if (!models) return null;
     const chosen = (ES.draft && ES.draft.paraModel) || (ES.form && ES.form.paraModel) ||
@@ -4579,8 +4602,19 @@
               label, so each fell back to something different. When the student is
               not in a subject the picker says so now, in a real option, rather
               than presenting one they never chose as chosen. */ ""}
+        ${/* A LEGACY subject the student is already in is shown, and is not
+              offered. Those are different things and the difference is the whole
+              lifecycle: a student routed here by /^11Anc/, or reopening a stored
+              attempt, must see the subject they are actually in - anything else
+              is the "one screen says Economics, another says Ancient History"
+              fault arriving from the other side. It is rendered disabled and
+              named as no longer current, so it can be read and not chosen, and it
+              appears for nobody else. */ ""}
         <select id="essubject" class="qp-input qp-select">${
-          esHasSubject() ? "" : `<option value="" selected>Choose a subject</option>`}${subjectList.map(s =>
+          esHasSubject() ? "" : `<option value="" selected>Choose a subject</option>`}${
+          (esHasSubject() && esSubjectIsLegacy(ES.subject))
+            ? `<option value="${esc(ES.subject)}" selected disabled>${esc(esSubjectLabel())} (not a current course)</option>`
+            : ""}${subjectList.map(s =>
           `<option value="${esc(s.key)}" ${s.key === ES.subject ? "selected" : ""}>${esc(s.label)}</option>`).join("")}</select>
       </div>` : "";
     // Paragraph-structure picker (e.g. Business Studies TEEEC vs TDECC), only when
@@ -5697,7 +5731,7 @@
     });
     return leaked.length ? null : text;
   }
-  function esSubjectCaseStudy() { const sc = esSubjectContent(ES.subject); return (sc && sc.caseStudy) || ""; }
+  function esSubjectCaseStudy() { const sc = esAttemptPackage(); return (sc && sc.caseStudy) || ""; }
   // A level 5 example is a fully written sentence, so the only thing that makes it
   // safe is that it is set somewhere else. It must declare its context, and it must
   // not mention the case study the student is writing about.
@@ -6029,7 +6063,7 @@
   // is the "I do not understand the content" layer: written for the concept rather
   // than scraped from the paragraph, and reachable without leaving the sentence.
   function esConceptFor(p) {
-    const sc = esSubjectContent(ES.subject);
+    const sc = esAttemptPackage();
     const bank = (sc && sc.concepts) || null; if (!bank) return null;
     const path = esPathway(p);
     const key = path && path.concept && path.concept.key;
@@ -7206,7 +7240,7 @@
   // Understand which concept to open. All authored, so nothing here calls a model.
   // ===========================================================================
   function esQuestionDef() {
-    const d = ES.draft, sc = esSubjectContent(ES.subject);
+    const d = ES.draft, sc = esAttemptPackage();
     if (!d || !sc) return null;
     const qs = sc.questions || [];
     if (d.questionId) { const byId = qs.find(x => x.id === d.questionId); if (byId) return byId; }
@@ -7524,7 +7558,7 @@
   // Optional ones are never shown unasked and exist so the deeper material can
   // reach them.
   function esConceptStore() {
-    const sub = esSubjectContent(ES.subject);
+    const sub = esAttemptPackage();
     return (sub && sub.concepts) || {};
   }
   function esConceptsFor(p, tier) {
@@ -8510,7 +8544,11 @@
   // not rendered at all and the rail simply gets shorter.
   function esMarkingPanel() {
     const q = esQuestionDef();
-    const sc = esSubjectContent(ES.subject);
+    // The criteria a student READS while writing must be the ones their response
+    // will be marked against, which is the attempt's package - the same source
+    // esMarkCard sends. Read from the picker they could differ from the marking
+    // silently, which is worse than showing none.
+    const sc = esAttemptPackage();
     const dec = q && q.decode;
     const lead = (dec && dec.verbMeaning) || "";
     const crit = (sc && sc.markingCriteria) || [];
@@ -9442,7 +9480,7 @@
   // Candidate paragraph angles: the exemplar plan on a question bank item when the
   // student picked one, otherwise the syllabus sections for the resolved topic.
   function esPlanOptions() {
-    const d = ES.draft, sc = esSubjectContent(ES.subject);
+    const d = ES.draft, sc = esAttemptPackage();
     const qs = (sc && sc.questions) || [];
     const q = qs.find(x => x.text && d.question && x.text.trim() === d.question.trim());
     if (q && Array.isArray(q.plan) && q.plan.length) return q.plan.slice();

@@ -50,6 +50,18 @@ window.ESSAY = {
       key: "ancient_history",
       label: "Ancient History",
       stage: "Year 11",
+      // LEGACY. Registered, not selectable.
+      //
+      // Three states, and this entry is the reason they had to be told apart. It
+      // is REGISTERED - esSubjectContent resolves it, so a stored attempt, an
+      // 11Anc routing rule and the worked-example set all keep working. It is not
+      // SELECTABLE - the current Essay Practice picker does not offer it, because
+      // this is not a course we are taking new students into.
+      //
+      // "Active" was doing both jobs at once and the two kept being confused for
+      // each other. Its questions and criteria stay exactly as they are; nothing
+      // here is deleted and nothing that resolves a committed subject is filtered.
+      legacy: true,
       // Marked against THIS subject's dimensions, never another's. Original wording.
       markingCriteria: [
         "historical argument and judgement",

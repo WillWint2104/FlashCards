@@ -64,6 +64,16 @@ const barGeometry = page => page.evaluate(() => {
     barScroll: bar.scrollWidth - bar.clientWidth };
 });
 
+// A resize is finished when the document reports the new width; the frame after
+// it is the reflow rather than a guess at one. This replaced a flat 350ms sleep
+// after every setViewportSize - eight of them in the width loops alone - which
+// was the single largest cost in a suite that only ever reads layout.
+async function atWidth(page, w, h) {
+  await page.setViewportSize({ width: w, height: h || 900 });
+  await page.waitForFunction(x => document.documentElement.clientWidth === x, w, { timeout: 4000 });
+  await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+}
+
 async function toPicker(page) {
   await page.goto(T);
   await page.waitForSelector(".navtab", { timeout: 8000 });
@@ -96,7 +106,7 @@ async function intoWriting(page) {
   console.log("--- 1. the setup page's bar, narrowed");
   await toPicker(p);
   for (const w of WIDTHS) {
-    await p.setViewportSize({ width: w, height: 900 }); await p.waitForTimeout(350);
+    await atWidth(p, w);
     const g = await barGeometry(p);
     ok(!!g, w + "px: there is a bar");
     if (!g) continue;
@@ -111,7 +121,7 @@ async function intoWriting(page) {
   }
 
   console.log("--- 2. the section a student is in is still named");
-  await p.setViewportSize({ width: 390, height: 900 }); await p.waitForTimeout(350);
+  await atWidth(p, 390);
   const now = await p.$eval(".es-navnow", e => e.innerText.trim()).catch(() => null);
   ok(now === "Essay practice", "the bar names the section: " + JSON.stringify(now));
   // The links are INSIDE the group, so what folds is the group. Reading
@@ -154,11 +164,11 @@ async function intoWriting(page) {
   ok(await p.$eval("#esmenu", e => e.getAttribute("aria-expanded") === "false"), "and so does pressing away from it");
 
   console.log("--- 4. the writing workspace, where leaving matters most");
-  await p.setViewportSize({ width: 1400, height: 1000 }); await p.waitForTimeout(300);
+  await atWidth(p, 1400, 1000);
   await toPicker(p);
   await intoWriting(p);
   for (const w of WIDTHS) {
-    await p.setViewportSize({ width: w, height: 900 }); await p.waitForTimeout(350);
+    await atWidth(p, w);
     const g = await barGeometry(p);
     ok(!!g, w + "px: the workspace has a bar");
     if (!g) continue;
@@ -171,7 +181,7 @@ async function intoWriting(page) {
   }
 
   console.log("--- 5. what folded away is still usable");
-  await p.setViewportSize({ width: 390, height: 900 }); await p.waitForTimeout(350);
+  await atWidth(p, 390);
   await p.click("#esmenu"); await p.waitForTimeout(300);
   const inMenu = await p.$$eval("#esnavpanel button", es => es.map(e => e.id || (e.innerText || "").trim().slice(0, 20)));
   console.log("    workspace menu holds:", JSON.stringify(inMenu));
@@ -213,7 +223,7 @@ async function intoWriting(page) {
   }
 
   console.log("--- 6. Exit essay works at phone width");
-  await p.setViewportSize({ width: 390, height: 900 }); await p.waitForTimeout(300);
+  await atWidth(p, 390);
   const exit = await p.$("#esexit");
   ok(!!exit, "Exit essay is there");
   if (exit) {
@@ -222,7 +232,7 @@ async function intoWriting(page) {
   }
 
   console.log("--- 7. the desktop bar is unchanged");
-  await p.setViewportSize({ width: 1400, height: 1000 }); await p.waitForTimeout(300);
+  await atWidth(p, 1400, 1000);
   await toPicker(p);
   ok(await p.$eval(".qp-navlinks", e => getComputedStyle(e).display !== "none"), "the links are back on the bar");
   ok(await p.$eval("#esmenu", e => getComputedStyle(e).display === "none"), "and the menu button is not shown");

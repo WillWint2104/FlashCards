@@ -280,7 +280,38 @@ async function climbLadder(page) {
   return page.$$eval('.es-rung', es => es.length).catch(() => 0);
 }
 
-module.exports = { usePractice, ownQuestion, closeMap, ladderOffered, climbLadder,
+// ARRIVING AS A DIFFERENT LOGIN.
+//
+// The class code is read at runtime from the stored trial state - Cloud.who(),
+// then state.code, then CONFIG.code - so it is changed by rewriting the seed and
+// reloading, exactly as a different student would arrive. Setting CONFIG.code
+// after boot does nothing, because the stored code wins.
+//
+// This exists because of a stall that has now cost two passes. A subject that is
+// no longer offered cannot be reached with selectOption: Playwright retries for
+// the full 8s default and then a .catch swallows it, so the suite silently does
+// not do the thing it says it does AND takes eight seconds not doing it. Two
+// suites did that and put the checkpoint tier 20s over its budget. Reaching a
+// legacy subject the way a student reaches it is both honest and instant.
+//
+//   11Anc1    routes to ancient_history, which is registered and not selectable
+//   12Ec126   routes to economics, the shipped teacher default
+async function loginAs(page, code, url) {
+  await page.goto(url);
+  await page.waitForSelector('.navtab', { timeout: 8000 });
+  await page.evaluate(c => {
+    try {
+      const raw = JSON.parse(localStorage.getItem('marginal.trial.v1') || '{}');
+      raw.code = c; localStorage.setItem('marginal.trial.v1', JSON.stringify(raw));
+    } catch (e) { /* private mode */ }
+  }, code);
+  await page.reload();
+  await page.waitForSelector('.navtab', { timeout: 8000 });
+  await page.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
+  await page.waitForSelector('#essubject', { timeout: 8000 }).catch(() => {});
+}
+
+module.exports = { loginAs, usePractice, ownQuestion, closeMap, ladderOffered, climbLadder,
   nextSection, prevSection, planAll, openMap,
   chromium, ROOT, OUT, BASE: OUT, pickQuestion, chooseQuestion, allRows, pageTo,
   WALK, T: url(WALK),

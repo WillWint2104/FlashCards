@@ -52,7 +52,10 @@ const GROUPS = [
   { id: "self", title: "The package disagrees with itself",
     says: "Two places in the file say different things: its requires list against what it actually " +
       "references, and single fields given twice in two shapes.",
-    codes: ["REQUIRES_MISMATCH", "FIELD_CONFLICT", "PROVIDES_CONFLICT"] },
+    // SUBJECT_CROSS_WIRED is here rather than in a group of its own: the package
+    // names a subject in question.subject and then uses another subject's
+    // records, which is two places in the file saying different things.
+    codes: ["REQUIRES_MISMATCH", "FIELD_CONFLICT", "PROVIDES_CONFLICT", "SUBJECT_CROSS_WIRED"] },
 ];
 
 function groupOf(code) {

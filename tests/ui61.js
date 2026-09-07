@@ -60,11 +60,20 @@ const pkg = (page, k) => page.evaluate(key => {
   await p.route(/workers\.dev/, r => r.abort());
 
   // ---- 1. three packages, three identities -------------------------------
-  console.log("--- 1. all three are real, selectable packages");
+  console.log("--- 1. three registered packages, and only the current ones are offered");
   await enter(p);
-  const offered = await p.$$eval("#essubject option", es => es.map(o => o.value).filter(Boolean));
+  const offered = await p.$$eval("#essubject option:not([disabled])", es => es.map(o => o.value).filter(Boolean));
   console.log("    offered:", JSON.stringify(offered));
-  for (const k of PKGS) ok(offered.indexOf(k) >= 0, k + " is offered as a Long Response subject");
+  // REGISTERED and SELECTABLE are different states, and conflating them is what
+  // let a locked product decision be undone by a refactor. All three packages are
+  // registered - old attempts, routing rules and the worked-example set need them
+  // resolvable. Only the current courses are offered.
+  const registered = await p.evaluate(() => Object.keys((window.__esSubjects && window.__esSubjects()) || {}));
+  for (const k of PKGS) ok(registered.indexOf(k) >= 0, k + " is a registered package");
+  ok(offered.indexOf("business_studies") >= 0, "Business Studies is offered");
+  ok(offered.indexOf("economics") >= 0, "Economics is offered");
+  ok(offered.indexOf("ancient_history") < 0,
+    "Ancient History is legacy and is NOT offered in the current picker: " + JSON.stringify(offered));
 
   const packs = {};
   for (const k of PKGS) packs[k] = await pkg(p, k);
@@ -91,7 +100,7 @@ const pkg = (page, k) => page.evaluate(key => {
 
   // ---- 2. every label agrees, for each package ---------------------------
   console.log("--- 2. every visible label agrees, in each package");
-  for (const k of PKGS) {
+  for (const k of ["business_studies", "economics"]) {
     await p.selectOption("#essubject", k); await p.waitForTimeout(400);
     const seen = await p.evaluate(() => {
       const sel = document.getElementById("essubject");
@@ -115,8 +124,10 @@ const pkg = (page, k) => page.evaluate(key => {
     await p.$$eval('[data-espick="own"]', es => es[0] && es[0].click()); await p.waitForTimeout(300);
     await p.fill("#esq", BUS_PHRASE_Q);
     await p.dispatchEvent("#esq", "input"); await p.waitForTimeout(200);
-    // the panel renders on a render, so force one through the picker
-    const other = subject === "economics" ? "ancient_history" : "economics";
+    // The panel renders on a render, so force one through the picker. The other
+    // subject has to be a SELECTABLE one: a legacy package is not offered, so
+    // selecting it here would throw rather than test anything.
+    const other = subject === "economics" ? "business_studies" : "economics";
     await p.selectOption("#essubject", other); await p.waitForTimeout(300);
     await p.selectOption("#essubject", subject); await p.waitForTimeout(350);
     await p.$$eval('[data-espick="own"]', es => es[0] && es[0].click()); await p.waitForTimeout(300);
@@ -131,7 +142,7 @@ const pkg = (page, k) => page.evaluate(key => {
     });
   };
   const BUS_TOPICS = /\b(Operations|Marketing|Finance|Human resources)\b/;
-  for (const k of ["ancient_history", "economics"]) {
+  for (const k of ["economics"]) {
     const g = await topicFor(k);
     console.log("    " + k + " -> " + JSON.stringify(g.topic));
     ok(!BUS_TOPICS.test(String(g.topic)),
@@ -193,6 +204,34 @@ const pkg = (page, k) => page.evaluate(key => {
   // The source-level invariant: nothing on the marking path reads ES.subject.
   ok(/const sc = esAttemptPackage\(d\);/.test(app),
     "esMarkCard resolves the attempt's package, not the picker's");
+  // EVERY academic resolver, not just the marker. A resolver still reading the
+  // picker is a surface that can disagree with the marking, and the worked-example
+  // set was the last one: it decided whether the borrowed model kept its "from
+  // another subject" note, so reading the picker there could strip the label off
+  // cross-subject material exactly when it was most specific.
+  const pickerReads = app.split("\n")
+    .map((l, i) => ({ n: i + 1, l: l }))
+    .filter(x => /esSubjectContent\(ES\.subject\)/.test(x.l));
+  const ALLOWED = [
+    "esHasSubject",        // asks about the committed subject on purpose
+    "esSubjectLabel",      // the picker's label, for the setup screens
+    "esView",              // the setup screens' own view
+    "scObj",               // the setup form's paragraph-model picker
+    "sc2",                 // draft creation, recording which package the question came from
+  ];
+  const named = pickerReads.map(x => {
+    const ctx = app.split("\n").slice(Math.max(0, x.n - 4), x.n).join(" ");
+    return { n: x.n, allowed: ALLOWED.some(a2 => ctx.indexOf(a2) >= 0) };
+  });
+  ok(named.every(x => x.allowed),
+    "no academic resolver reads the picker; unexplained reads at " +
+    JSON.stringify(named.filter(x => !x.allowed).map(x => "app.js:" + x.n)));
+  ok(/function esWorkedExampleSet\(\)\s*\{[\s\S]{0,600}?esAttemptPackage\(\)/.test(app),
+    "the worked-example set follows the attempt");
+  ok(/placeholder: esAttemptSubject\(\) !== ESSAY_FALLBACK_EXAMPLE_SUBJECT/.test(app),
+    "and so does the label that says it came from another subject");
+  ok(/function esMarkingPanel\(\)[\s\S]{0,400}?esAttemptPackage\(\)/.test(app),
+    "the criteria a student reads while writing come from the attempt too");
   ok(!/subject: ES\.subject \|\| undefined/.test(app),
     "and the coach payload no longer sends the picker's subject");
 

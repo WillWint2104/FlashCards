@@ -144,12 +144,14 @@ async function toPicker(page) {
 
   // ---- 4. the own-question route, which is where it was seen --------------
   console.log("--- 4. the same, in the own-question flow");
+  // A package with no bundled bank opens ON the own-question stage, so the route
+  // to it is not rendered - there is nowhere to go. Either way the form must be
+  // reachable, which is what this section is about.
   const own = await p.$('[data-espick="own"]');
-  ok(!!own, "there is an own-question route");
-  if (own) {
-    await own.click(); await p.waitForTimeout(400);
+  if (own) { await own.click(); await p.waitForTimeout(400); }
+  ok(!!(await p.$("#esq")), "the own-question form is reachable");
+  {
     const o = await subjectsOnScreen(p);
-    ok(!!(await p.$("#esq")), "the own-question form is on screen");
     ok(agrees(o), "its subject agrees with the header: header=" + JSON.stringify(o.header) + " picker=" + JSON.stringify(o.pickerText));
     // and it still agrees after a change made from THIS stage
     const other = o.options.map(x => x.v).filter(Boolean).find(k => k !== o.picker);

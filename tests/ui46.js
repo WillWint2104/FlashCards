@@ -11,7 +11,7 @@
 //   the mechanism is optional metadata and is never a slot.
 //
 // This suite is those rules.
-const { chromium, T, usePractice } = require('./env');
+const { loginAs, chromium, T, usePractice } = require('./env');
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  FAIL:', m); } };
 const rf = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
@@ -231,9 +231,9 @@ const slots = p => p.$$eval('.es-shape2frame .es-sl', es => es.map(e => ({
     await p.goto(T); await p.waitForSelector('.navtab', { timeout: 8000 });
     await p.evaluate(() => localStorage.removeItem('marginal.essay.v1'));
     await p.goto(T); await p.waitForSelector('.navtab', { timeout: 8000 });
-    await p.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
-    await p.waitForSelector('#essubject', { timeout: 8000 });
-    await p.selectOption('#essubject', 'ancient_history').catch(() => {});
+    // Ancient History is legacy: registered, and not offered in the current
+    // picker. Reached as the login that routes there.
+    await loginAs(p, '11Anc1', T);
     await rf(p);
     await usePractice(p);
     const any = await p.evaluate(() => { const t = document.querySelector('.qp-row'); if (t) { t.click(); return true; } return false; });

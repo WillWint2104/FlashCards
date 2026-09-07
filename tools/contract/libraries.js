@@ -240,7 +240,23 @@ function manifest() {
   const records = {}, counts = {};
   Object.keys(L).forEach(kind => {
     records[kind] = {};
-    Object.keys(L[kind]).forEach(rid => { records[kind][rid] = completeness(kind, L[kind][rid]); });
+    Object.keys(L[kind]).forEach(rid => {
+      const c = completeness(kind, L[kind][rid]);
+      // WHOSE the record is, carried beside whether it is written.
+      //
+      // completeness() answers one question - is this record finished - and the
+      // manifest was only ever that answer, so a validator reading the manifest
+      // could not tell that business.operations belongs to Business Studies. A
+      // package declaring another subject could reference it and publish
+      // cleanly, and the student then read Topic: Operations on a question in
+      // their own subject's bank. The owner travels with the summary now, so
+      // validate.js can refuse the cross-wire while the package is still a file.
+      // A record with no owner (a sentence shape) is shared on purpose and is
+      // left without one here.
+      const owner = L[kind][rid] && L[kind][rid].subject;
+      if (owner) c.subject = owner;
+      records[kind][rid] = c;
+    });
     const ids = Object.keys(records[kind]);
     counts[kind] = { records: ids.length, complete: ids.filter(i => records[kind][i].complete).length };
   });
