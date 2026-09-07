@@ -1962,27 +1962,41 @@ window.ESSAY = {
     // one example serves every question that uses the shape. `fills` maps the
     // example's own words back onto the shape's slots, which is what lets the
     // student see which part is which.
+    // EVERY EXAMPLE NAMES THE SUBJECT THAT OWNS IT.
+    //
+    // A sentence shape is shared across subjects on purpose: the same shape is the
+    // same shape whatever is being written about. The example FILLING it is not -
+    // it is academic material somebody wrote for a course, and all four of these
+    // are Business Studies. Without an owner they were reachable from any subject
+    // that happened to use the same shape, so an Ancient History student could be
+    // shown a human resources sentence under "the same shape, somewhere else",
+    // which discloses a context and not a subject.
+    //
+    // app.js resolves these against the attempt's subject and shows nothing where
+    // there is no example of that subject's own. An example with no subject is
+    // therefore unreachable, which is the right direction to fail in: unattributed
+    // academic material is not shown to anybody.
     examples: {
       "causal.body.topic": [
-        { id: "gym-timepoor", context: "a gym, and time-poor professionals",
+        { id: "gym-timepoor", subject: "business_studies", context: "a gym, and time-poor professionals",
           text: "A gym targeting time-poor professionals may offer app-based booking because customers can arrange sessions without calling during business hours.",
           fills: { cause: "time-poor professionals", effect: "app-based booking",
                    reasoning: "customers can arrange sessions without calling during business hours" } }
       ],
       "causal.introduction.thesis": [
-        { id: "hr-motivation", context: "employee motivation, in human resources",
+        { id: "hr-motivation", subject: "business_studies", context: "employee motivation, in human resources",
           text: "Employee motivation affects productivity, retention and workplace culture because a business gets the behaviour its rewards actually encourage.",
           fills: { concept: "Employee motivation", areas: "productivity, retention and workplace culture",
                    principle: "a business gets the behaviour its rewards actually encourage" } }
       ],
       "causal.conclusion.restate": [
-        { id: "hr-motivation", context: "employee motivation, in human resources",
+        { id: "hr-motivation", subject: "business_studies", context: "employee motivation, in human resources",
           text: "Across productivity, retention and workplace culture, the same thing was doing the work: what the business chose to reward.",
           fills: { areas: "productivity, retention and workplace culture",
                    pattern: "the same thing was doing the work: what the business chose to reward" } }
       ],
       "causal.conclusion.judgement": [
-        { id: "hr-motivation", context: "employee motivation, in human resources",
+        { id: "hr-motivation", subject: "business_studies", context: "employee motivation, in human resources",
           text: "Therefore, employee motivation affects how a workforce performs, because the rewards a business sets are what its staff respond to.",
           fills: { answer: "employee motivation affects how a workforce performs, because the rewards a business sets are what its staff respond to" } }
       ]

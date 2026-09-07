@@ -3287,7 +3287,17 @@
   }
   // Read only, for the suites that need to see what the merge produced. It
   // computes nothing of its own and cannot change anything.
-  try { window.__esSubjects = () => esAllSubjects().subjects; window.__esImports = esImportReport; } catch (e) { /* not a browser */ }
+  try {
+    window.__esSubjects = () => esAllSubjects().subjects; window.__esImports = esImportReport;
+    // Reading only, like the two above. A sentence shape resolves for a paragraph
+    // deep inside the writing flow and only where a question authors pathways,
+    // which today is Business Studies alone - so the rule that an example belongs
+    // to a subject could not be asked about from outside without walking a route
+    // that does not exist for the subject the rule is about. This asks it
+    // directly, against the real data, for whichever subject is committed.
+    window.__esShapeExample = id => esShapeExample(id);
+    window.__esWorkedExamples = () => esWorkedExampleSet();
+  } catch (e) { /* not a browser */ }
   function esSubjectContent(subject) {
     const subs = esAllSubjects().subjects;
     return (subs && subs[subject]) || null;
@@ -3366,6 +3376,63 @@
     const qs = d.questionSubject || null;
     if (qs && d.subject && qs !== d.subject) return { attempt: d.subject, question: qs };
     return null;
+  }
+
+  // ---- WRITE-ONLY PRACTICE, DECLARED BEFORE A WORD IS WRITTEN --------------
+  //
+  // A package can carry questions and no marking criteria. An imported one
+  // declaring a subject nothing registers is the ordinary case: mergeSubjects
+  // makes it a container so its question is not invisible, and a container has
+  // nothing to mark against. The old behaviour was to let the student choose it,
+  // plan, write the whole response, press Check this paragraph and only THEN be
+  // refused - a fail-closed at the latest possible moment, which is a nasty
+  // surprise dressed as a safety property.
+  //
+  // Writing is not gated on it. Marginal lets a student practise where support is
+  // incomplete, and taking that away to avoid an awkward message would be the
+  // wrong trade. What changes is that the state is DECLARED, on the screen where
+  // the attempt is chosen, before anything is written.
+  //
+  // The question is asked of markingContext rather than answered again beside it.
+  // Whatever it would decide when the response is sent is exactly what the
+  // student is promised beforehand, so the promise cannot drift from the rule.
+  function esAssessmentState(d) {
+    d = (d === undefined) ? ES.draft : d;
+    const key = esAttemptSubject(d);
+    if (!key) return { available: false, reason: "no-subject" };
+    // Before an attempt exists there is no draft to ask about, so the committed
+    // subject stands in for one. Nothing else about the stub matters: the package
+    // is resolved from the subject and the criteria come from the package.
+    const probe = d || { id: "es-probe", subject: key, paras: [] };
+    let mc = null;
+    try { mc = markingContext(esMarkCard(probe)); } catch (e) { mc = null; }
+    if (!mc) return { available: false, reason: "no-criteria", subject: esSubjectLabel(key) || key };
+    if (mc.unresolved) {
+      return { available: false, reason: "no-criteria",
+        subject: mc.subject || esSubjectLabel(key) || key, why: mc.why || "" };
+    }
+    return { available: true, subject: mc.subject || esSubjectLabel(key) || key };
+  }
+  function esAssessmentAvailable(d) { return esAssessmentState(d).available; }
+  // The same two facts wherever they are said, so the picker, the preview and the
+  // workspace cannot end up promising different things.
+  const ES_WRITE_ONLY_HEAD = "Writing available";
+  const ES_WRITE_ONLY_SUB = "Coach and marking feedback unavailable for this subject";
+  function esWriteOnlyHTML(st) {
+    if (!st || st.available) return "";
+    const named = st.reason === "no-subject" ? "" : (st.subject || "");
+    return `<div class="qp-cap" data-escap="${esc(st.reason)}">
+      <div class="qp-capr"><span class="qp-captick">${esIcon("check")}</span><b>${esc(ES_WRITE_ONLY_HEAD)}</b></div>
+      <div class="qp-capr"><span class="qp-capno">${esIcon("warn")}</span><span class="qp-capsub">${
+        esc(ES_WRITE_ONLY_SUB)}</span></div>
+      ${/* markingContext's own `why` is carried in the state and is not printed
+             here: it says the same thing in the validator's words, and the two
+             sentences beside each other read as two different problems. */ ""}
+      <p class="qp-hint">${named ? esc(named) + " carries no marking criteria." : "No subject is chosen yet."}
+        You can plan, write, save and come back to this essay. Nothing will be read
+        against another subject's criteria, and nothing is sent for feedback while
+        this subject has none of its own.</p>
+    </div>`;
   }
 
   // ---- THREE SUBJECT STATES, NOT TWO ---------------------------------------
@@ -3576,11 +3643,29 @@
   function esShapeExample(shapeId) {
     const all = (((window.ESSAY || {}).shapes || {}).examples || {})[shapeId] || [];
     if (!all.length) return null;
+    // OWNED BY A SUBJECT FIRST, checked against the live question second.
+    //
+    // The shape is shared; the example filling it is academic material and belongs
+    // to the course it was written for. All four authored examples are Business
+    // Studies and were reachable from any subject using the same shape, because
+    // selection asked only whether the words collided with the question in front
+    // of the student. "See this shape used elsewhere" discloses a context, not an
+    // owner, and an Ancient History student reading a human resources sentence has
+    // not been told whose it is.
+    //
+    // There is no fallback here on purpose. Where a subject has no example of its
+    // own the route is withheld: borrowing one and labelling it harder is still
+    // borrowing, and writing one for the subject would be inventing academic
+    // material to fill a gap. An example carrying no subject is unreachable for
+    // the same reason - unattributed material is not shown to anybody.
+    const mine = esAttemptSubject();
+    const owned = mine ? all.filter(x => x && x.subject === mine) : [];
+    if (!owned.length) return null;
     const q = esQuestionDef();
     const banned = (esRequiredAreas(q) || [])
       .concat([(q && q.term1) || "", (q && q.term2) || ""])
       .map(x => String(x || "").toLowerCase().trim()).filter(x => x.length > 2);
-    return all.find(ex => {
+    return owned.find(ex => {
       const t = String(ex.text || "").toLowerCase();
       return !banned.some(b => t.indexOf(b) >= 0);
     }) || null;
@@ -4588,6 +4673,10 @@
     // Optional subject picker: any login can load a subject's question bank and
     // paragraph scaffold, defaulting to the subject routed from their class code.
     const subjectList = esSubjectsList();
+    // Said before the attempt starts, on every stage that can start one. The
+    // subject about to be used is the committed one, not a draft's: this screen is
+    // where a student picks what they are about to write in.
+    const assessNote = esWriteOnlyHTML(esAssessmentState(null));
     // Offered whenever there is a subject to adopt, not only when there are two to
     // choose between. The shipped teacher default class code is "12Ec126", which
     // routes to a subject whose Long Response package is not written yet: that
@@ -4881,6 +4970,7 @@
               <dl class="qp-facts">${facts}</dl>
               ${q.marks == null ? `<p class="qp-note">No mark value is authored for this question. You can
                 still plan, write and get feedback on your essay.</p>` : ""}
+              ${assessNote}
               <div class="qp-actions">
                 <button type="button" class="qp-btn qp-go" id="esstart">Start this question</button>
                 <button type="button" class="qp-btn" data-espick="list">Choose a different question</button>
@@ -4978,6 +5068,7 @@
                   the subject picker has to be on this stage as well: otherwise a
                   student on Economics has no way to reach Business Studies. */ ""}
             ${subjectPicker}
+            ${assessNote}
             <div class="qp-field">
               <label class="qp-label" for="esq">Essay question <span class="qp-req">needed</span></label>
               <textarea id="esq" class="qp-input qp-ta" rows="3" placeholder="Paste or type the whole question, including the directive.">${esc(f.question)}</textarea>
@@ -5012,6 +5103,7 @@
           <p class="qp-lead">Choose a subject and a practice question. You can change everything else later.</p>
           <div class="qp-card">
             ${subjectPicker}
+            ${assessNote}
             <div class="qp-actions">
               <button type="button" class="qp-btn qp-go" data-espick="list">Choose a practice question</button>
               <button type="button" class="qp-btn" data-espick="own">Use my own question</button>
@@ -5286,7 +5378,12 @@
   function esRequiredAreas(q) {
     const r = (q && q.requirements) || {};
     if ((r.requiredAreas || []).length) return r.requiredAreas.map(a => a.label || a.id);
-    return ((q.decode && q.decode.highlights) || []).filter(h => h.kind === "requiredArea").map(h => h.anchor);
+    // Line one already guards a null question and line two did not, so a caller
+    // with no question definition - the ordinary case on a student's own question -
+    // threw instead of answering "no required areas". Nothing reached it because
+    // the one caller that can pass null is only reachable where a question is
+    // authored; that is a coincidence of the content, not a guarantee.
+    return (((q && q.decode) && q.decode.highlights) || []).filter(h => h.kind === "requiredArea").map(h => h.anchor);
   }
   function esDecodeCoverage(q) {
     const r = (q && q.requirements) || {};
@@ -8707,6 +8804,11 @@
   function esFootBarHTML(d, p, canAsk) {
     const role = (p && p.role) || "";
     const can = !!canAsk;
+    // WITHHELD WITH A REASON, not removed and not left live to fail later. A
+    // subject with no marking criteria has nothing to read this against, and the
+    // student was told so before they started; this is the same fact where the
+    // control would have been, so the absence is never a mystery.
+    const assess = esAssessmentState(d);
     const label = ES.pending ? "Checking\u2026"
       : /introduction/i.test(role) ? "Check introduction"
       : /conclusion/i.test(role) ? "Check conclusion" : "Check this paragraph";
@@ -8717,7 +8819,10 @@
             still says what it is to a screen reader and to a finger. */ ""}
       <button type="button" class="es-btn ghost sm" id="esfootoutline" aria-label="Outline">${esIcon("structure")}<span>Outline</span></button>
       <button type="button" class="es-btn ghost sm" id="esfootpreview" aria-label="Preview response">${esIcon("open")}<span>Preview response</span></button>
-      ${can ? `<button type="button" class="es-btn primary" id="esask" ${ES.pending ? "disabled" : ""}>${esIcon("feedback")}<span>${esc(label)}</span></button>` : ""}
+      ${!assess.available
+        ? `<span class="es-nofb" data-escap="${esc(assess.reason)}">${esIcon("warn")}<span>No feedback in ${
+            esc(assess.subject || "this subject")}: it carries no marking criteria</span></span>`
+        : can ? `<button type="button" class="es-btn primary" id="esask" ${ES.pending ? "disabled" : ""}>${esIcon("feedback")}<span>${esc(label)}</span></button>` : ""}
     </div></div>`;
   }
   function esBindWorkspace(host, d) {
@@ -8872,7 +8977,10 @@
                     and they keep stacking cleanly on a narrow screen. */ ""}
               <div class="es-donebtns">
                 <button type="button" class="es-btn primary" id="esdonenext">${esIcon("forward")}<span>${nextPara ? "Continue to " + esc(nextPara.role.toLowerCase()) : "Review the whole response"}</span></button>
-                <button type="button" class="es-btn ghost strong" id="esdonecheck">${esIcon("feedback")}<span>Check this paragraph</span></button>
+                ${esAssessmentAvailable(d)
+                  ? `<button type="button" class="es-btn ghost strong" id="esdonecheck">${esIcon("feedback")}<span>Check this paragraph</span></button>`
+                  : `<span class="es-nofb" data-escap="no-criteria">${esIcon("warn")}<span>Checking is unavailable: ${
+                      esc(esAssessmentState(d).subject || "this subject")} carries no marking criteria</span></span>`}
                 <button type="button" class="es-btn ghost" id="esmoreline">${esIcon("add")}<span>Add another sentence</span></button>
                 <button type="button" class="es-btn ghost" id="esquizlink">${esIcon("memorise")}<span>Memorise it</span></button>
               </div>
@@ -10033,6 +10141,23 @@
     if (!answer.trim()) { toast("Write your essay before submitting."); return; }
     const host = document.getElementById("eshost");
     const box = host.querySelector(".es-completion");
+    // The subject's own state comes first: marking being switched on cannot help a
+    // package that has nothing to mark against, and saying "when marking is
+    // switched on for your subject" here would promise something that arriving
+    // would not deliver.
+    const assess = esAssessmentState(d);
+    if (!assess.available) {
+      box.innerHTML = `
+      <div class="es-submitted">
+        <div class="es-submittedh">Saved. Your full attempt is kept as one draft.</div>
+        <p class="es-help">${esc(ES_WRITE_ONLY_SUB)}. ${esc(assess.subject || "This subject")} carries no
+          marking criteria, so this was not sent anywhere and was not read against another subject's.
+          Everything you wrote is saved and you can come back to it.</p>
+        <button class="es-linkbtn" id="esbacksetup">Back to setup</button>
+      </div>`;
+      const b0 = $("#esbacksetup"); if (b0) b0.onclick = () => { ES.screen = "setup"; esRender(); };
+      return;
+    }
     if (!essayMarkingEnabled()) {
       box.innerHTML = `
       <div class="es-submitted">
@@ -10196,6 +10321,16 @@
   async function esGetFeedback(idx) {
     const d = ES.draft, p = d.paras[idx];
     if (!p || !(p.text || "").trim()) { toast("Write something in this paragraph first."); return; }
+    // NO REQUEST WITHOUT CRITERIA. The controls that reach here are withheld when
+    // this is true, so arriving is a keyboard route or a stale render rather than
+    // an ordinary press - and either way the answer is the same one the student
+    // was given before they started, not a request the coach would answer against
+    // whatever criteria it could find.
+    const assess = esAssessmentState(d);
+    if (!assess.available) {
+      toast(ES_WRITE_ONLY_SUB + ".");
+      return;
+    }
     // Snapshot the paragraph as submitted: the textarea stays editable while the
     // request is in flight, so feedback (and the cooldown anchor) must tie to the
     // version actually reviewed, not whatever the student typed meanwhile.

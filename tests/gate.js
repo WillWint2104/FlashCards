@@ -100,6 +100,21 @@ const TIERS = {
   // a walk through the whole lifecycle, which is the only place the rule it holds
   // can be broken.
   //
+  // t26 is in CHECKPOINT and not in fast. It is the mutation runner's own guards -
+  // clean tracked tree before a fault is applied, tree back afterwards, no flag
+  // past either - checked against a throwaway checkout it makes and deletes. It
+  // holds one seam and takes a third of a second on its own, so fast is where it
+  // belongs by cost; it is not there because of what it costs the TIER. Every
+  // suite in fast is a process launch and the tier crossed 40s when this one was
+  // added to it, and fast is the tier whose whole point is that nobody thinks
+  // about whether to run it.
+  //
+  // ui64 is full-only for the same reason as ui63 and one more: it publishes a
+  // package, walks a student from the picker into the workspace, out again and
+  // back through My essays, and then asks the shape resolver four questions per
+  // subject. It is a journey and a sweep in one file, and the journeys tier has
+  // 8s of headroom.
+  //
   // ui63 is in NEITHER, which is to say full and only full. It publishes four
   // packages through the real five-step importer and validates four more against
   // the shipped manifest: one authored package re-declared as each subject in
@@ -121,7 +136,7 @@ const TIERS = {
   // over. It belongs in the tier that runs on the way past.
   checkpoint: {
     budget: 60,
-    suites: ["t1", "t2", "t17", "t18", "t19", "t20", "t21", "t22", "t23", "t24", "t25", "ui35", "ui38", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49", "ui58", "ui59"],
+    suites: ["t1", "t2", "t17", "t18", "t19", "t20", "t21", "t22", "t23", "t24", "t25", "t26", "ui35", "ui38", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49", "ui58", "ui59"],
   },
   // ui40 joined this tier when ui51 arrived. It walks EVERY question through the
   // shell, which is an exhaustive sweep and 6.2s of it, and the picker it swept

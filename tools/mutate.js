@@ -59,14 +59,66 @@ function lock(m) {
   }, null, 2) + "\n");
 }
 function unlock() { try { fs.unlinkSync(LOCK); } catch (e) { /* already gone */ } }
-["exit", "SIGINT", "SIGTERM", "SIGHUP"].forEach(sig =>
-  process.on(sig, () => { unlock(); if (sig !== "exit") process.exit(130); }));
+// Only when this file IS the run. tests/t26.mjs requires it to test the guards,
+// and a required copy registering an exit handler would delete a lock belonging
+// to a real run happening in another process.
+const IS_RUN = require.main === module;
+if (IS_RUN) {
+  ["exit", "SIGINT", "SIGTERM", "SIGHUP"].forEach(sig =>
+    process.on(sig, () => { unlock(); if (sig !== "exit") process.exit(130); }));
+}
+
+// ---- THE TREE THIS RUN IS ALLOWED TO START FROM ---------------------------
+//
+// A mutation is applied by writing a file and undone by writing back what was
+// read. That is only an undo if what was read was committed: run it over
+// uncommitted work and the "restore" writes back the uncommitted version, which
+// is right until anything goes wrong, and then there is nothing to compare
+// against and no way to tell the fault from the work.
+//
+// It went wrong here in the worst available way. Mutation testing was done by
+// hand, in shell blocks, and `git checkout <file>` was used to undo a mutation on
+// three files that had uncommitted changes in them. The changes were gone. They
+// were reconstructed from diffs printed earlier in the same session, which worked
+// and is not a recovery procedure - it depends on having printed the right thing
+// before needing it.
+//
+// So: tracked files must be clean before a single mutation is applied, and the
+// tree is checked again after every one. Not the files this run intends to touch -
+// ALL of them - because the value of the check is that "clean" is a fact about
+// the tree a person can act on, and a partial clean is not one.
+//
+// Returns null when this is not a git checkout at all, which is a different
+// answer from "clean" and is refused for its own reason: nothing there can undo a
+// mutation if the process dies between applying and restoring.
+function trackedDirty(cwd) {
+  try {
+    // stderr ignored on purpose: "not a git repository" is an ANSWER here, not a
+    // problem to print. It is returned as null and refused with its own words.
+    return execFileSync("git", ["status", "--porcelain", "--untracked-files=no"],
+      { cwd: cwd || ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] })
+      .split("\n").filter(Boolean).map(l => l.slice(3).trim()).filter(Boolean);
+  } catch (e) { return null; }
+}
+// The words, apart from the check, so a test can assert what a person is told and
+// not merely that something was refused.
+function dirtyRefusal(paths) {
+  if (paths === null) {
+    return "REFUSING TO START: this is not a git checkout.\n" +
+      "A mutation is undone by writing a file back, and nothing here can recover if that does not happen.";
+  }
+  if (!paths.length) return null;
+  return "REFUSING TO START: " + paths.length + " tracked file" + (paths.length === 1 ? " has" : "s have") +
+    " uncommitted changes:\n  " + paths.join("\n  ") +
+    "\nCommit or stash them first. A mutation run writes files and writes them back," +
+    "\nand over uncommitted work that is not an undo. There is no flag for this.";
+}
 
 const argv = process.argv.slice(2);
 const flag = n => argv.indexOf(n) >= 0;
 const val = n => { const i = argv.indexOf(n); return i >= 0 ? argv[i + 1] : null; };
 
-if (flag("--list")) {
+if (IS_RUN && flag("--list")) {
   MUTATIONS.forEach((m, i) => console.log(
     String(i + 1).padStart(3) + "  " + m.id.padEnd(28) + m.owner.padEnd(10) + m.why));
   console.log("\n" + MUTATIONS.length + " mutations");
@@ -171,7 +223,11 @@ function commandFor(owner) {
 
 const secs = ms => (ms / 1000).toFixed(1) + "s";
 
-(async () => {
+module.exports = { trackedDirty, dirtyRefusal, MUTATIONS };
+
+if (IS_RUN) main();
+
+async function main() {
   const done = priorResults();
   let list = MUTATIONS;
   const only = val("--only");
@@ -187,8 +243,9 @@ const secs = ms => (ms / 1000).toFixed(1) + "s";
   console.log("MUTATION RUN — " + list.length + " selected, " +
     (list.length - todo.length) + " already recorded, " + todo.length + " to run");
   console.log("  per-mutant timeout " + secs(timeout) + " | results " + path.relative(ROOT, OUT));
-  if (!todo.length) { console.log("\nnothing to do."); summarise(list, done); return; }
-
+  // Both refusals come BEFORE the "nothing to do" return. A resumed run that turns
+  // out to have no work is refused on a dirty tree too, because the answer to "is
+  // it safe to run mutations here" must not depend on what happens to be recorded.
   if (fs.existsSync(LOCK)) {
     console.error("REFUSING TO START: " + path.relative(ROOT, LOCK) + " exists.\n" +
       fs.readFileSync(LOCK, "utf8") +
@@ -196,21 +253,12 @@ const secs = ms => (ms / 1000).toFixed(1) + "s";
       "Check `git status` before deleting it.");
     process.exit(2);
   }
-  // A file with uncommitted work in it cannot be safely restored: apply() puts
-  // back what it read, which would be the uncommitted version, and any confusion
-  // about which is which lands in a commit.
-  let dirty = [];
-  try {
-    dirty = execFileSync("git", ["status", "--porcelain"], { cwd: ROOT, encoding: "utf8" })
-      .split("\n").filter(Boolean).map(l => l.slice(3).trim());
-  } catch (e) { /* not a checkout */ }
-  const willTouch = [...new Set(todo.map(m => m.file))];
-  const clash = willTouch.filter(f => dirty.indexOf(f) >= 0);
-  if (clash.length && !flag("--dirty-ok")) {
-    console.error("REFUSING TO START: these files are to be mutated and have uncommitted changes:\n  " +
-      clash.join("\n  ") + "\nCommit or stash first, or pass --dirty-ok if you know what you are doing.");
-    process.exit(2);
-  }
+  // Every tracked file, not only the ones this run means to touch. See
+  // trackedDirty above for why, and for the afternoon that made it a rule.
+  const refusal = dirtyRefusal(trackedDirty());
+  if (refusal) { console.error(refusal); process.exit(2); }
+
+  if (!todo.length) { console.log("\nnothing to do."); summarise(list, done); return; }
 
   const base = census();
   console.log("  processes at start: node " + base.node + ", browser " + base.browser + "\n");
@@ -259,7 +307,25 @@ const secs = ms => (ms / 1000).toFixed(1) + "s";
       }
     } finally {
       a.restore();
+      // A mutation in a source file also lives in what the build wrote from it, and
+      // the built files are tracked. Restoring the source and leaving the artefacts
+      // mutated is the state that put the wrong bytes in b9c2d59: the lock says a
+      // fault is in the tree, and after this line it no longer is.
+      if (NEEDS_BUILD.test(m.file)) rebuild(timeout);
       unlock();
+    }
+    // THE TREE WENT BACK. Checked rather than assumed: restore() writes back what
+    // it read, which is correct until a suite writes into a tracked file, a build
+    // half finishes, or a timeout kills something mid-write. Anything left over is
+    // a deliberate fault loose in a clean tree, so the run stops on the spot and
+    // says which file rather than carrying it into the next mutant.
+    const drift = trackedDirty();
+    if (drift === null || drift.length) {
+      console.log("\n\nSTOPPING: the tree did not go back after " + m.id + ".");
+      console.log(drift === null ? "  the checkout is no longer readable"
+        : "  still changed:\n    " + drift.join("\n    "));
+      console.log("  Compare against HEAD before doing anything else; the fault may still be in these files.");
+      process.exit(2);
     }
     ms = ms || (Date.now() - t0);
 
@@ -291,7 +357,7 @@ const secs = ms => (ms / 1000).toFixed(1) + "s";
   const built = rebuild(timeout);
   if (!built.ok) console.log("\nWARNING: the final rebuild failed; run node build.js by hand");
   summarise(list, priorResults());
-})();
+}
 
 function summarise(list, byId) {
   const rows = list.map(m => byId[m.id]).filter(Boolean);

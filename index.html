@@ -2001,6 +2001,24 @@
   .qp-opts[open] > summary::before{content:"\2212 "}
   .qp-opts > summary:hover{color:var(--e-green-dk)}
   .qp-optsbody{padding-top:16px}
+  /* WRITE-ONLY PRACTICE, stated on the surface that starts an attempt.
+     Two lines, one true of this subject and one not, and they are not allowed to
+     read as one banner: the tick and the warning triangle carry the difference,
+     because a student skimming reads the icons before the words. Amber rather
+     than red - nothing has gone wrong and the writing is available. */
+  .qp-cap{border:1px solid #F0C877;background:#FFF9EF;border-radius:12px;padding:12px 14px;margin:0 0 16px}
+  .qp-capr{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--e-ink)}
+  .qp-capr + .qp-capr{margin-top:5px}
+  .qp-captick{color:var(--e-green-dk);display:inline-flex}
+  .qp-capno{color:#B5751A;display:inline-flex}
+  .qp-captick svg,.qp-capno svg{width:16px;height:16px}
+  .qp-capsub{color:#7A5313;font-weight:700}
+  .qp-cap .qp-hint{margin:8px 0 0;color:#7A5313}
+  /* And where the control it explains would have been. Not a disabled button:
+     a dead green button invites a press and says nothing about why. */
+  .es-nofb{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;
+    color:#7A5313;background:#FFF6E8;border:1px solid #F0C877;border-radius:9px;padding:7px 11px}
+  .es-nofb svg{width:15px;height:15px;flex:0 0 auto}
   .qp-rub{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:13.5px}
   .qp-rubtick{color:var(--e-green-dk);font-weight:800}
   .qp-rubtext{color:var(--e-ink)}
