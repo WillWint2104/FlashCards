@@ -125,8 +125,10 @@ module.exports = [
   {
     id: "app-nav-resets-picker",
     file: "app.js",
-    find: '      } else if (to === "back") {\n        f.pickStage = f.pickReturn || "subject";',
-    replace: '      } else if (to === "back") {\n        f.pickStage = "subject"; f.questionId = null;',
+    // The branch grew a return-to-the-draft case in between, so the mutation is
+    // anchored on the line it is actually about and the branch that follows it.
+    find: '        f.pickStage = f.pickReturn || "subject";\n      } else if (to === "marginalhome") {',
+    replace: '        f.pickStage = "subject"; f.questionId = null;\n      } else if (to === "marginalhome") {',
     owner: "ui52",
     why: "a nav press is navigation; losing the chosen question and the filters on the way is losing the student's work",
   },
@@ -211,8 +213,12 @@ module.exports = [
   {
     id: "ask-button-keeps-asking",
     file: "app.js",
-    find: '    ask.textContent = ES.pending ? "Checking\\u2026"',
-    replace: '    ask.textContent = ask.textContent;',
+    // Rewritten when the control gained an icon beside its label: writing
+    // textContent on the button would have deleted the icon, so the LABEL is
+    // written now and the mutation follows it. The entry had gone STALE and was
+    // testing nothing, which the runner used to report as a pass.
+    find: '    esSetLabel(ask, ES.pending ? "Checking\\u2026"',
+    replace: '    if (false) esSetLabel(ask, ES.pending ? "Checking\\u2026"',
     owner: "ui56",
     why: "the button went on saying it was asking the coach after the answer had arrived, been saved and been rendered",
   },
@@ -319,8 +325,9 @@ module.exports = [
   {
     id: "gate-drops-a-suite",
     file: "tests/run.js",
-    find: '"ui52", "ui53", "ui54", "ui55"]',
-    replace: '"ui52", "ui53", "ui54"]',
+    // Follows the end of the list, which moves every time a suite is added.
+    find: '"ui63", "ui64"]',
+    replace: '"ui63"]',
     owner: "t23",
     why: "a maintained regression outside the runner is invisible, which is how twenty-eight suites rotted unnoticed",
   },

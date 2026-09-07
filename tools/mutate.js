@@ -394,9 +394,15 @@ function summarise(list, byId) {
     console.log("\n  slowest:");
     slow.forEach(r => console.log("    " + secs(r.ms).padStart(8) + "  " + r.id + " (" + r.owner + ")"));
   }
-  const survived = by("SURVIVED").concat(by("TIMEOUT"));
+  // STALE IS NOT A PASS. Its `find` no longer matches, which means the fault was
+  // never applied and the owning suite was never asked about it - the catalogue
+  // quietly stopped testing something, which the header of mutations.js calls the
+  // same failure as a suite that quietly stopped running. It was being counted
+  // separately and left out of the verdict, so a run with three stale entries
+  // printed "every mutation was killed by its owning regression".
+  const survived = by("SURVIVED").concat(by("TIMEOUT")).concat(by("STALE")).concat(by("BUILD_FAILED"));
   if (survived.length) {
-    console.log("\n  NOT KILLED — each of these is a fault no regression noticed:");
+    console.log("\n  NOT KILLED — each of these is a fault nothing was asked about:");
     survived.forEach(r => console.log("    " + r.verdict + "  " + r.id + " — " + r.why +
       "\n           owner " + r.owner + ", which reported " + JSON.stringify(r.detail)));
   }

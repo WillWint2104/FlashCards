@@ -158,6 +158,32 @@ console.log("--- 3. no flag, and a check after every mutant");
     JSON.stringify(missed));
 }
 
+// ---- 5. the catalogue is still testing what it says it tests ------------
+console.log("--- 5. no entry has quietly stopped mutating anything");
+// A `find` that no longer matches is reported STALE, which means the fault was
+// never applied and the owning suite was never asked about it. Three entries had
+// gone stale during one branch - a control that gained an icon, a branch that
+// grew a case, a list that gained a suite - and the campaign printed "every
+// mutation was killed by its owning regression" over them. Checked here so it is
+// a failure in seconds rather than a wrong verdict after ten minutes.
+{
+  const stale = [];
+  for (const m of mutate.MUTATIONS) {
+    const f = path.join(ROOT, m.file);
+    if (!fs.existsSync(f)) { stale.push(m.id + " (no " + m.file + ")"); continue; }
+    const n = fs.readFileSync(f, "utf8").split(m.find).length - 1;
+    if (n !== 1) stale.push(m.id + " matches " + n + " times in " + m.file);
+  }
+  ok(stale.length === 0, "every mutation still has exactly one place to go: " + JSON.stringify(stale));
+  const owners = mutate.MUTATIONS.filter(m => !m.owner);
+  ok(owners.length === 0, "and every one names the regression that owns it");
+}
+{
+  const src = fs.readFileSync(path.join(ROOT, "tools/mutate.js"), "utf8");
+  ok(/by\("SURVIVED"\)\.concat\(by\("TIMEOUT"\)\)\.concat\(by\("STALE"\)\)/.test(src),
+    "and a stale entry fails the run rather than being counted beside it");
+}
+
 fs.rmSync(TMP, { recursive: true, force: true });
 fs.rmSync(notARepo, { recursive: true, force: true });
 
