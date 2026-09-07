@@ -45,7 +45,7 @@ async function openFixture(p){
   }, F);
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await settled(p);
-  await p.selectOption('#essubject','evidence_contract');
+  await p.selectOption('#essubject', F.subject.key);
   await settled(p);
   await chooseQuestion(p, /fixture marketing question/i);
   await settled(p);

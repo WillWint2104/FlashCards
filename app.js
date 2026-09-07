@@ -357,10 +357,37 @@
     // Test mode (a whole imported paper) may carry its own subject/criteria; it is
     // defined only when that mode is present, so reach for it defensively.
     const paper = (typeof EXAM !== "undefined" && EXAM && EXAM.paper) ? EXAM.paper : null;
-    const label = (card && card.subject) || (paper && paper.subject) || C.subject || "";
-    const sub = essaySubjectByLabel(label);
+    // ---- WHICH PACKAGE IS MARKING THIS -------------------------------------
+    //
+    // Two different situations were sharing one fallback chain, and the shared
+    // ending was C.markingCriteria - the FLASHCARD half's criteria, which are
+    // Economics. For a flashcard that is correct: window.CONTENT is that card's
+    // own package. For a Long Response attempt it was a silent cross-subject
+    // substitution, and it fired whenever a label failed to match.
+    //
+    // They are separated here. A card that DECLARES a subject must resolve to
+    // that package or fail closed; a card that declares none is flashcard content
+    // and window.CONTENT is its package by definition, not by fallback.
+    const declaredKey = (card && card.subjectKey) || null;
+    const declaredLabel = (card && card.subject) || (paper && paper.subject) || "";
+    const declares = !!(declaredKey || declaredLabel);
+    // By KEY first. The label match is a string comparison that has already been
+    // seen to miss on authored whitespace; a key cannot.
+    const sub = (declaredKey && esSubjectContent(declaredKey)) ||
+      (declaredLabel ? essaySubjectByLabel(declaredLabel) : null);
+    const label = declaredLabel || (sub && sub.label) || (declares ? "" : C.subject) || "";
     let criteria = (card && card.markingCriteria) || (paper && paper.markingCriteria) || null;
-    if (!criteria) criteria = (sub && sub.markingCriteria) || C.markingCriteria || null;
+    if (!criteria) criteria = (sub && sub.markingCriteria) || null;
+    // FAIL CLOSED. A response that names a subject the application cannot resolve,
+    // or resolves to a package carrying no criteria, is not marked against
+    // somebody else's. The caller refuses rather than sending a request that would
+    // come back looking authoritative.
+    if (declares && !criteria) {
+      return { unresolved: true, subject: label || declaredKey || undefined,
+        why: sub ? "the " + (sub.label || declaredKey) + " package carries no marking criteria"
+                 : "no subject package named " + JSON.stringify(declaredKey || label) + " is registered" };
+    }
+    if (!declares && !criteria) criteria = C.markingCriteria || null;
     // Band expectations. A question may ship its own; criteria.bands === null means
     // "use the general ones", which is the normal case while no official set is
     // authored. The general set is written originally and is subject-agnostic.
@@ -423,6 +450,13 @@
     if (state.endpoint) {
       try {
         const mc = markingContext(card);
+        // Refuse rather than send. A request that goes out with the wrong
+        // package's criteria comes back looking exactly like a right one, so the
+        // only safe move on an unresolved subject is not to ask.
+        if (mc.unresolved) {
+          return { error: "subject-unresolved", subject: mc.subject,
+            note: "This response was not marked: " + mc.why + ". Marking it against another subject's criteria would not tell you anything true about it." };
+        }
         const res = await esPostJSON(state.endpoint, {
             prompt: card.prompt, marks: card.marks, model_answer: card.model, vocab: card.vocab, answer,
             scaffold: card.scaffold, faults: card.faults,
@@ -3295,13 +3329,49 @@
   // Subjects a student can pick in setup: any that ship their own questions or a
   // paragraph scaffold. Lets any login load a subject's bank without a class-code
   // rule (the routed subject is just the default selection).
-  // The subjects a student may choose. Every registered subject is a real Long
-  // Response subject and is offered; a subject is not hidden for shipping less
-  // than another does.
+  // Every registered subject is a Long Response subject and is offered. The old
+  // filter - "has questions or a scaffold" - made the picker a list of subjects
+  // that happened to be authored rather than a list of subjects that exist, so a
+  // package with no bundled bank could not be reached at all even when the
+  // student's own class code routed to it. A package that ships less says so on
+  // the screens that would have shown it; it is not hidden.
+  // ---- WHICH PACKAGE AN ATTEMPT BELONGS TO --------------------------------
+  //
+  // Not the picker. A draft is bound to the package its question came from at the
+  // moment it was started and stays bound to it: switching the subject selector
+  // starts a DIFFERENT attempt rather than changing this one underneath the
+  // student. Attempts are already bagged per subject (esBagKey), so a draft that
+  // keeps its own subject stays where it was saved and is reopened from My essays
+  // in the subject it was written in.
+  //
+  // Before this, esMarkCard and the coach payload both read the live ES.subject,
+  // and d.subject was written once and never read. A student who began in
+  // Business Studies, went back to setup and changed the picker, then submitted,
+  // was marked against the other subject's criteria with nothing on screen saying
+  // so.
+  function esAttemptSubject(d) {
+    d = (d === undefined) ? ES.draft : d;
+    return (d && d.subject) || ES.subject || null;
+  }
+  function esAttemptPackage(d) {
+    const k = esAttemptSubject(d);
+    return k ? esSubjectContent(k) : null;
+  }
+  // FAIL CLOSED. A question that names one package and an attempt that names
+  // another is not a disagreement to settle by preferring either. Returns the
+  // disagreement so a caller can refuse rather than guess.
+  function esSubjectMismatch(d) {
+    d = (d === undefined) ? ES.draft : d;
+    if (!d) return null;
+    const qs = d.questionSubject || null;
+    if (qs && d.subject && qs !== d.subject) return { attempt: d.subject, question: qs };
+    return null;
+  }
+
   function esSubjectsList() {
     const subs = esAllSubjects().subjects;
     return Object.keys(subs)
-      .filter(k => { const s = subs[k]; return s && ((Array.isArray(s.questions) && s.questions.length) || s.scaffolds); })
+      .filter(k => subs[k] && subs[k].key)
       .map(k => ({ key: k, label: subs[k].label || k }));
   }
   // A model's short label (e.g. "teeec" -> "TEEEC") from the subject's scaffolds.
@@ -4326,9 +4396,15 @@
   // Only phrases of two or more words count. Single words like "business" or
   // "management" appear in half the syllabus and would match everything.
   function esSyllabusPhrases() {
-    if (ES._phrases) return ES._phrases;
+    // Cached per subject. A single cache would be filled the first time a Business
+    // Studies student used the screen and then served to every subject after,
+    // which is the gate defeating itself one call later.
+    const ck = esAttemptSubject() || "";
+    if (ES._phrases && ES._phrasesFor === ck) return ES._phrases;
     const out = [];
-    const topics = (window.BUSCONTENT && window.BUSCONTENT.topics) || {};
+    // Gated with the rest. This is the detector that told an Ancient History
+    // student their question was about Operations.
+    const topics = (busAllowed() && window.BUSCONTENT && window.BUSCONTENT.topics) || {};
     Object.keys(topics).forEach(key => {
       (topics[key].sections || []).forEach(sec => {
         (sec.points || []).forEach(pt => {
@@ -4356,7 +4432,7 @@
     });
     // Longest first, so "operations strategies" wins over "strategies".
     out.sort((a, b) => b.phrase.length - a.phrase.length);
-    ES._phrases = out;
+    ES._phrases = out; ES._phrasesFor = ck;
     return out;
   }
   function esDetectFromText(text) {
@@ -4425,7 +4501,15 @@
       : "Name the step between cause and effect rather than asserting the link.");
     lines.push("");
     lines.push("Evidence");
-    lines.push("Support each claim with a specific case study fact, and say what it demonstrates rather than leaving it to speak for itself.");
+    // "case study fact" is the Business Studies evidence genre, and it was being
+    // told to every subject: Ancient History marks use of SOURCES, Economics marks
+    // use of evidence and DATA. The neutral sentence is the honest default, and a
+    // package that names its own convention gets its own words. Nothing is
+    // invented for a package that has not said.
+    const conv = (esAttemptPackage() || {}).evidenceConvention;
+    lines.push(conv
+      ? "Support each claim with " + conv + ", and say what it demonstrates rather than leaving it to speak for itself."
+      : "Support each claim with specific evidence, and say what it demonstrates rather than leaving it to speak for itself.");
     lines.push("");
     lines.push("Organisation");
     lines.push("One idea per paragraph, each tied back to the question, in an order a reader can follow.");
@@ -5110,6 +5194,16 @@
             "\"? Your current response has " + written + " words in it and starting a different question replaces it.")) return;
       ES.draft = {
         id: esId(), subject: ES.subject, code: ES.code,
+        // The package the QUESTION belongs to, recorded separately from the
+        // attempt's own subject so the two can be compared later. For a bundled
+        // question they are the same by construction; for an imported one the
+        // package says which subject it was authored for, and that is the one
+        // that has to win.
+        questionSubject: (function () {
+          const sc2 = esSubjectContent(ES.subject);
+          const qq = (f.questionId && sc2 && (sc2.questions || []).find(x => x.id === f.questionId)) || null;
+          return (qq && qq.subject) || ES.subject || null;
+        })(),
         question, topic: (f.topic || "").trim(), rubric: (f.rubric || "").trim(),
         marks: (f.marks >= 1 && f.marks <= 60) ? f.marks : 20,
         questionId: f.questionId || null,
@@ -9305,7 +9399,22 @@
   //             plan, which is what keeps a long response consistent.
   //   Evidence  their case study bank (McDonald's), with how to deploy each item.
   // Content comes from window.BUSCONTENT; the widget hides itself when none is loaded.
-  function busContent() { return window.BUSCONTENT || null; }
+  // ---- THE BUSINESS STUDIES DATA GATE --------------------------------------
+  //
+  // window.BUSCONTENT is Business Studies' syllabus, topics and evidence bank, and
+  // index.html loads it unconditionally. Four subsystems read it with no subject
+  // check at all - the Learn resolver, the evidence bank, the generated-guidance
+  // topic detector and this hints widget - so an Ancient History question
+  // containing the word "production" resolved the Business topic "Operations",
+  // and an Economics question naming "government policies" was told the same.
+  // Reproduced on the deployed build before this gate existed.
+  //
+  // Business Studies academic data runs for Business Studies attempts. For any
+  // other package the answer is nothing, and the surfaces above say the support is
+  // unavailable rather than filling it from somebody else's course.
+  const ES_BUS_SUBJECT = "business_studies";
+  function busAllowed(d) { return esAttemptSubject(d === undefined ? ES.draft : d) === ES_BUS_SUBJECT; }
+  function busContent() { return busAllowed() ? (window.BUSCONTENT || null) : null; }
   function busTopics() { const b = busContent(); return (b && b.topics) || {}; }
   // Resolve which syllabus topic this essay sits in: the student's locked choice
   // first, then the tag on a picked question bank item, then a keyword match on the
@@ -9384,9 +9493,23 @@
          <div class="es-hintlockrow"><span class="es-help" id="eshintcount">${plan.picks.length} chosen</span>
            <button class="es-btn primary" id="eshintlock" ${plan.picks.length ? "" : "disabled"}>Lock in this plan</button></div>`;
     // --- Evidence: the case study bank ---
-    const ev = (busContent().evidence || {})[key] || [];
+    // THE SAME PUBLICATION GATE AS THE EVIDENCE TOOL.
+    //
+    // This read the bank raw. esEvidenceUsable withholds any record without both a
+    // source and a checked date, and today that is every record in the bank - so
+    // the Evidence tool correctly said it had nothing, while this panel listed the
+    // very same unverified claims a tab away. An application that says evidence is
+    // unavailable and then shows it has not withheld anything.
+    //
+    // The gate is applied here, not relaxed there. Until the sources are verified
+    // the hints have nothing to show either, and they say so.
+    const evAll = (busContent().evidence || {})[key] || [];
+    const ev = evAll.filter(esEvidenceUsable);
+    const withheld = evAll.length - ev.length;
     const evidence = !key
       ? `<p class="es-hintlead">Pick a topic on the Know tab and your case study evidence loads here.</p>`
+      : (!ev.length && withheld)
+        ? `<p class="es-hintlead">Evidence for ${esc(busTopicLabel(key))} is not available yet: ${withheld === 1 ? "one item has" : withheld + " items have"} no verified source, so ${withheld === 1 ? "it is" : "they are"} withheld here exactly as in the Evidence tool. Use a case study or example from your own notes.</p>`
       : ev.length
         ? `<p class="es-hintlead">McDonald's evidence for ${esc(busTopicLabel(key))}. Markers reward evidence that is applied, so use the "how to use it" line.</p>` +
           ev.map(e => `<div class="es-hintev">
@@ -9840,7 +9963,10 @@
   // answer, no metalanguage list and no anticipated faults for a question the
   // student brought, so those go across empty and the marker marks the writing.
   function esMarkCard(d) {
-    const sc = esSubjectContent(ES.subject);
+    // THE ATTEMPT'S package, not the picker's. This read used to be ES.subject,
+    // which is what let a draft be marked against whichever subject happened to
+    // be selected when the student pressed submit.
+    const sc = esAttemptPackage(d);
     // When the student started from one of our questions, its definition travels
     // with the response: what the question requires, and which bands to judge it
     // against. On their own question there is no definition, and the marker marks
@@ -9851,7 +9977,11 @@
       prompt: d.question, command: d.command || commandOf(d.question),
       marks: d.marks || (def && def.marks) || 20,
       topic: d.topic || (def && def.topic) || "",
-      subject: esSubjectLabel() || undefined,
+      // The label of the attempt's own package, and the key beside it. The label
+      // alone was the only subject identity crossing the wire on this path, and
+      // it was resolved back by a string match that could miss; the key cannot.
+      subject: (sc && sc.label) || undefined,
+      subjectKey: esAttemptSubject(d) || undefined,
       markingCriteria: (sc && sc.markingCriteria) || undefined,
       requirements: (def && def.requirements) || undefined,
       criteria: (def && def.criteria) || undefined,
@@ -10052,7 +10182,7 @@
           action: "coach",
           paragraph_text: submittedText, paragraph_role: p.role, planned_point: p.point || "",
           question: d.question, topic: d.topic || "",
-          structure: esStructureLabel(d.structure), subject: ES.subject || undefined,
+          structure: esStructureLabel(d.structure), subject: esAttemptSubject(d) || undefined,
           paragraph_model: d.paraModel || undefined,
           // Tell the coach the exact slots expected for THIS paragraph (key + label +
           // job). Lets the worker detect absent elements for any scaffold (TEEEC/

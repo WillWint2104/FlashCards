@@ -83,16 +83,28 @@ async function toPicker(page) {
   await toPicker(p);
   let s = await subjectsOnScreen(p);
   console.log("    picker:", JSON.stringify(s.picker), " header:", JSON.stringify(s.header));
-  // Two honest states, and no third. Either the student is in a subject, and
-  // every label says the same one; or they are not, the picker says so in a real
-  // option, and no label names a subject at all. This fixture's class code routes
-  // to "economics", which has never had any content, so it is the second.
+  // Two honest states, and no third. Either the student is in a subject, and every
+  // label says the same one; or they are not, the picker says so in a real option,
+  // and no label names a subject at all. This fixture's class code routes to
+  // "economics", which is now a registered package, so it is the first.
   ok(s.picker !== null, "the picker has a selected option");
   ok(s.options.some(o => o.v === s.picker), "and it is one of the options it offers: " + JSON.stringify(s.picker));
   ok(agrees(s), "the header agrees with it: header=" + JSON.stringify(s.header) + " picker=" + JSON.stringify(s.pickerText));
   ok(s.picker !== "" || !s.header,
     "with no subject chosen, nothing on screen names one: " + JSON.stringify(s.header));
-  ok(s.header !== "Economics", "no subject is named that the application has no content for");
+  // The rule is not "Economics must not appear" - Economics is a registered Long
+  // Response package now and naming it is correct. The rule is that a name on
+  // screen must belong to a package the application actually has: a label is
+  // never invented from a routing rule for a key nothing resolves.
+  const named = await p.evaluate(() => {
+    const bar = document.querySelector(".qp-subj");
+    if (!bar) return { shown: null, registered: true };
+    const want = bar.textContent.split("·")[0].trim();
+    const subs = (window.__esSubjects && window.__esSubjects()) || {};
+    return { shown: want, registered: Object.keys(subs).some(k => (subs[k].label || "") === want) };
+  });
+  ok(named.registered, "any subject named on screen is one the application has a package for: " +
+    JSON.stringify(named.shown));
   ok(s.picker !== "" || s.pickerText === "Choose a subject",
     "and the picker says so rather than showing whichever option is first: " + JSON.stringify(s.pickerText));
 

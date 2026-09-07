@@ -138,6 +138,38 @@ window.ESSAY = {
     // HSC finance relationships and are flagged as such. No case-study content is
     // asserted here: the student supplies the business evidence.
     // -------------------------------------------------------------------------
+    // ---- ECONOMICS -----------------------------------------------------------
+    // A REAL Long Response package, thin on purpose.
+    //
+    // It has been routed to since /^12Ec/ was written - and the shipped teacher
+    // default class code is 12Ec126 - but it has never had an entry here, so
+    // esSubjectContent returned null and every subject-shaped surface resolved to
+    // nothing. Worse, the marking resolver's terminal fallback happened to be the
+    // FLASHCARD half's criteria, which are Economics: an Economics essay reached
+    // Economics criteria by coincidence rather than by ownership, and so did every
+    // other subject whose label failed to resolve.
+    //
+    // These four criteria are the same four, moved here deliberately rather than
+    // reached for. content.js:11 describes them as "the four dimensions this
+    // subject's extended responses are marked against", which is this evaluation
+    // model, so they belong to this package. The flashcard copy stays where it is
+    // for the flashcard half; nothing now reads across.
+    //
+    // No questions, no pathways, no scaffolds, no concepts, no evidence. Those are
+    // capabilities this package does not have yet, and the application says so
+    // rather than borrowing another subject's.
+    economics: {
+      key: "economics",
+      label: "Economics",
+      stage: "Year 12",
+      markingCriteria: [
+        "thesis and sustained judgement",
+        "use of evidence and data",
+        "economic terminology",
+        "cohesion"
+      ],
+      questions: []
+    },
     business_studies: {
       key: "business_studies",
       label: "Business Studies",
@@ -146,6 +178,10 @@ window.ESSAY = {
       // rejected in code if it mentions this, because an example in the student's
       // own context is a sentence to copy rather than a pattern to learn.
       caseStudy: "McDonald",
+      // What this course counts as evidence, in its own words. Used only in
+      // structural guidance; a package that does not declare one gets the neutral
+      // wording rather than another subject's.
+      evidenceConvention: "a specific case study fact",
       // The four dimensions an HSC Business Studies extended response is assessed on,
       // described in original wording.
       markingCriteria: [

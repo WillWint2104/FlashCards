@@ -95,6 +95,13 @@ const TIERS = {
   // it offers - and a rule nobody can see on screen is exactly the kind that
   // decays quietly between passes.
   //
+  // ui61 is in JOURNEYS, not here, and the difference is the importer. It
+  // publishes a package through the real importer's five steps, walks the
+  // paginated bank to the question that produced, starts an attempt from it and
+  // reads what the draft recorded - a journey through four surfaces, and 30s of
+  // it. The parts that are seams (which package owns which criteria, where the
+  // gate sits) it checks in place; the part that is a walk is a walk.
+  //
   // ui59 is here for the same reason and a sharper one. It reads the labels on
   // one surface after each change, which is a state invariant measured where the
   // state is, and the fault it guards - two subjects named at once - is the kind
@@ -181,7 +188,7 @@ const TIERS = {
   // writing workspace mid-paragraph, goes to another surface, comes back, and
   // asks whether the attempt survived the trip. That question cannot be asked at
   // a seam - it is the trip.
-  journeys: { budget: 180, suites: ["ui13", "ui30", "ui37", "ui40", "ui50", "ui51", "ui52", "ui53", "ui56", "ui57"] },
+  journeys: { budget: 180, suites: ["ui13", "ui30", "ui37", "ui40", "ui50", "ui51", "ui52", "ui53", "ui56", "ui57", "ui61"] },
   // Everything run.js knows about, the journeys included, plus the suites in no
   // tier: both student matrices are here and only here, ui54's four profiles on
   // the imported question and the bots' seven on the bundled bank.

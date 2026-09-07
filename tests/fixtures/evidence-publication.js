@@ -55,11 +55,20 @@ const EVIDENCE_FIXTURE = {
       use: "Fixture use text.",
       source: "   ", sourceUrl: "https://example.invalid/confirmed", checked: "  " }
   ],
-  // the subject, whose question text has to resolve to a known topic so the bank
-  // is reachable at all. Asserted in the tests rather than assumed.
+  // The subject. It is business_studies, and that is not incidental: the bank
+  // this fixture patches IS Business Studies' evidence bank, and Business
+  // Studies academic data now runs only for Business Studies attempts. A fixture
+  // that invented its own subject key and then read that bank would be asserting
+  // exactly the cross-subject access the gate exists to refuse - it passed
+  // before the gate, and it would have gone on passing while the product leaked.
+  //
+  // The suite replaces the bank's marketing records for its run; it replaces the
+  // package the same way and for the same reason. Its question text still has to
+  // resolve to a known topic so the bank is reachable, which the tests assert
+  // rather than assume.
   subject: {
-    key: "evidence_contract",
-    label: "Evidence contract",
+    key: "business_studies",
+    label: "Business Studies",
     stage: "Test fixture",
     markingCriteria: ["a criterion, because the shape requires one"],
     concepts: {},
