@@ -102,7 +102,7 @@ const TIERS = {
   // over. It belongs in the tier that runs on the way past.
   checkpoint: {
     budget: 60,
-    suites: ["t1", "t2", "t17", "t18", "t19", "t20", "t21", "t22", "t23", "t24", "t25", "ui35", "ui38", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49", "ui58", "ui59", "ui60"],
+    suites: ["t1", "t2", "t17", "t18", "t19", "t20", "t21", "t22", "t23", "t24", "t25", "ui35", "ui38", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49", "ui58", "ui59"],
   },
   // ui40 joined this tier when ui51 arrived. It walks EVERY question through the
   // shell, which is an exhaustive sweep and 6.2s of it, and the picker it swept

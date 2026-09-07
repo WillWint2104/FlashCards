@@ -1,24 +1,5 @@
 const { chromium, T, OUT, BASE, fileUrl, ownQuestion } = require('./env');
 
-// Ancient History is legacy: it is offered in the picker only to a student the
-// routing has already put there, so the honest way into it is to arrive as an
-// 11Anc login rather than to pick it. selectOption on an option that no longer
-// exists does not fail loudly - it retries for the full 8s default and then the
-// .catch swallows it - so the old line cost eight seconds and silently did
-// nothing at all.
-async function asAncientHistory(page, T) {
-  await page.evaluate(() => {
-    try {
-      const raw = JSON.parse(localStorage.getItem("marginal.trial.v1") || "{}");
-      raw.code = "11Anc1";
-      localStorage.setItem("marginal.trial.v1", JSON.stringify(raw));
-    } catch (e) { /* private mode */ }
-  });
-  await page.goto(T);
-  await page.waitForSelector(".navtab", { timeout: 8000 });
-  await page.$$eval(".navtab", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
-}
-
 // Waits that name their condition. This app fetches nothing and renders
 // synchronously, so the effect of a click is present on the next frame:
 // settled() is that frame, not a shorter guess at a duration.
@@ -88,7 +69,9 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
     const p2 = await ctx.newPage();
     await p2.route(/workers\.dev/, r=>r.abort());
     await p2.goto(T); await here(p2, '.navtab');
-    await asAncientHistory(p2, T);
+    await p2.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
+    await settled(p2);
+    await p2.selectOption('#essubject','ancient_history').catch(()=>{});
     await settled(p2);
     await ownQuestion(p2, 'Explain how religious beliefs shaped everyday life in one ancient society you have studied.');
     await p2.click('#esstart');

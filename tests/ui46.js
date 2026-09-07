@@ -12,25 +12,6 @@
 //
 // This suite is those rules.
 const { chromium, T, usePractice } = require('./env');
-
-// Ancient History is legacy: it is offered in the picker only to a student the
-// routing has already put there, so the honest way into it is to arrive as an
-// 11Anc login rather than to pick it. selectOption on an option that no longer
-// exists does not fail loudly - it retries for the full 8s default and then the
-// .catch swallows it - so the old line cost eight seconds and silently did
-// nothing at all.
-async function asAncientHistory(page, T) {
-  await page.evaluate(() => {
-    try {
-      const raw = JSON.parse(localStorage.getItem("marginal.trial.v1") || "{}");
-      raw.code = "11Anc1";
-      localStorage.setItem("marginal.trial.v1", JSON.stringify(raw));
-    } catch (e) { /* private mode */ }
-  });
-  await page.goto(T);
-  await page.waitForSelector(".navtab", { timeout: 8000 });
-  await page.$$eval(".navtab", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
-}
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  FAIL:', m); } };
 const rf = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
@@ -250,8 +231,9 @@ const slots = p => p.$$eval('.es-shape2frame .es-sl', es => es.map(e => ({
     await p.goto(T); await p.waitForSelector('.navtab', { timeout: 8000 });
     await p.evaluate(() => localStorage.removeItem('marginal.essay.v1'));
     await p.goto(T); await p.waitForSelector('.navtab', { timeout: 8000 });
-    await asAncientHistory(p, T);
+    await p.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
     await p.waitForSelector('#essubject', { timeout: 8000 });
+    await p.selectOption('#essubject', 'ancient_history').catch(() => {});
     await rf(p);
     await usePractice(p);
     const any = await p.evaluate(() => { const t = document.querySelector('.qp-row'); if (t) { t.click(); return true; } return false; });

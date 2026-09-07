@@ -195,12 +195,6 @@ function report() {
   const rows = [];
   Object.keys(E.subjects || {}).forEach(key => {
     const subject = E.subjects[key];
-    // Readiness is about what students are being offered. A legacy subject is
-    // content the application still depends on and no longer offers, so counting
-    // it would report authoring debt for a bank nobody can choose. Ancient
-    // History happens to produce no rows today because none of its questions
-    // carries a pathway; this makes that a rule rather than a coincidence.
-    if (subject.legacy) return;
     (subject.questions || []).forEach(q => {
       if (!(q.pathways || []).length) return;      // nothing to be ready FOR yet
       rows.push(Object.assign({ subject: key }, questionRow(q, subject, evIndex)));

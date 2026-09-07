@@ -53,29 +53,8 @@ const agrees = s => {
   return !!opt && opt.t === s.header;
 };
 
-// The class code is read from the stored trial state at runtime, so a login is
-// changed by rewriting the seed. It only has to be written ONCE: localStorage
-// survives navigation within the context, and esOpen re-reads the code every
-// time Essay Practice is entered.
-// One reload, because currentClassCode() reads the in-memory state loaded at boot
-// before it reaches CONFIG - writing the seed alone changes nothing until the
-// page is read again. Called ONCE for the whole suite; every later re-entry goes
-// through toPicker, which does not reload.
-async function loginAs(page, code) {
-  await page.evaluate(c => {
-    try {
-      const raw = JSON.parse(localStorage.getItem("marginal.trial.v1") || "{}");
-      raw.code = c; localStorage.setItem("marginal.trial.v1", JSON.stringify(raw));
-    } catch (e) { /* private mode */ }
-  }, code);
-  await page.reload();
-  await page.waitForSelector(".navtab", { timeout: 8000 });
-}
-
-// Re-entering Essay Practice, WITHOUT reloading the page. Leaving and coming
-// back is a route a student has, esOpen re-routes the subject from the stored
-// code on the way in, and it costs nothing: four page reloads were most of what
-// this suite spent. Falls back to a reload only if the surface is not open.
+// Re-entering Essay Practice without reloading the page. Leaving and coming back
+// is a route a student has, and esOpen re-reads the routed subject on the way in.
 async function toPicker(page) {
   const open = await page.evaluate(() => !!document.getElementById("eshost"));
   if (open) {
@@ -119,22 +98,11 @@ async function toPicker(page) {
 
   // ---- 2. changing it moves everything ------------------------------------
   console.log("--- 2. changing the subject moves every label at once");
-  // Two subjects are needed to watch the labels move, and since Ancient History
-  // became legacy the only login offered two is one already routed into it. That
-  // is the harder case anyway: a legacy subject shown as chosen, beside a current
-  // one, is exactly where a stale label would hide.
-  // One login switch for the rest of the suite. Ancient History is offered only
-  // to a student the routing already put there, so this is the only login that
-  // sees two subjects - and it is the harder case: a legacy subject shown as
-  // chosen, beside a current one, is where a stale label would hide.
-  await loginAs(p, "11Anc1");
-  await toPicker(p);
-  s = await subjectsOnScreen(p);
+  // Every registered subject is offered, so the labels can be watched moving
+  // between any two of them. The placeholder is not a subject and is not one.
   const all = s.options.map(o => o.v).filter(Boolean);
-  console.log("    as an 11Anc login the picker offers:", JSON.stringify(all));
+  console.log("    the picker offers:", JSON.stringify(all));
   ok(all.length >= 2, "there is more than one subject to move between: " + JSON.stringify(all));
-  ok(agrees(s), "and the labels agree before anything is changed: header=" +
-    JSON.stringify(s.header) + " picker=" + JSON.stringify(s.pickerText));
   for (const want of all) {
     await p.selectOption("#essubject", want);
     await p.waitForTimeout(350);
@@ -145,29 +113,25 @@ async function toPicker(page) {
 
   // ---- 3. nothing carries over --------------------------------------------
   console.log("--- 3. the previous subject is not left behind anywhere");
-  // Start again on the login that offers both, note the legacy subject as the
-  // committed one, then leave it. A label that lags by one change is the failure
-  // this section is for.
-  await toPicker(p);
-  const before3 = await subjectsOnScreen(p);
-  ok(before3.picker === "ancient_history", "starting committed to the legacy subject: " + before3.picker);
-  await p.selectOption("#essubject", "business_studies"); await p.waitForTimeout(400);
-  const after3 = await subjectsOnScreen(p);
-  ok(after3.picker === "business_studies", "moved to the current subject: " + after3.picker);
-  ok(agrees(after3), "and no label still says the one before it: " + JSON.stringify(after3.header));
-  ok(after3.header !== before3.header, "the header actually changed: " +
-    JSON.stringify([before3.header, after3.header]));
-  // Leaving a legacy subject is a one-way door, and that is deliberate: it is
-  // offered only to a student the routing already put there, never as a choice to
-  // someone who has moved on. Asserted because it is a rule, not a side effect.
-  ok(!after3.options.some(o => o.v === "ancient_history"),
-    "and the legacy subject is no longer offered once it has been left: " +
-    JSON.stringify(after3.options.map(o => o.v)));
+  // Move to the second subject, then back to the first, reading the page each
+  // time. Moving BACK is what catches a stale label: one hop can look right by
+  // luck, two cannot.
+  await p.selectOption("#essubject", all[1]); await p.waitForTimeout(400);
+  const second = await subjectsOnScreen(p);
+  ok(second.picker === all[1], "moved to the second subject: " + second.picker);
+  ok(agrees(second), "labels agree there: " + JSON.stringify(second.header));
+  await p.selectOption("#essubject", all[0]); await p.waitForTimeout(400);
+  const back = await subjectsOnScreen(p);
+  ok(back.picker === all[0], "back on the first: " + back.picker);
+  ok(agrees(back), "and no label still says the one before it: " + JSON.stringify(back.header));
+  ok(back.header !== second.header, "the header actually changed: " +
+    JSON.stringify([second.header, back.header]));
+  ok(back.options.length === second.options.length,
+    "and every subject is still offered after moving between them: " +
+    JSON.stringify(back.options.map(o => o.v)));
 
   // ---- 4. the own-question route, which is where it was seen --------------
   console.log("--- 4. the same, in the own-question flow");
-  // Back on the login that offers two, so a change can be made from this stage.
-  await toPicker(p);
   const own = await p.$('[data-espick="own"]');
   ok(!!own, "there is an own-question route");
   if (own) {
@@ -188,10 +152,6 @@ async function toPicker(page) {
 
   // ---- 5. narrow, where the subject heading lives inside the menu ---------
   console.log("--- 5. the responsive menu carries the same subject");
-  // Section 4 left the picker on a current subject, and a legacy subject is not
-  // offered once it has been left. Re-enter as the login that has two, then
-  // narrow: the menu heading has to agree with the form at this width as well.
-  await toPicker(p);
   await p.setViewportSize({ width: 390, height: 900 }); await p.waitForTimeout(400);
   const menu = await p.$("#esmenu");
   ok(!!menu, "there is a menu at 390px");

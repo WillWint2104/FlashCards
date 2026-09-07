@@ -50,21 +50,6 @@ window.ESSAY = {
       key: "ancient_history",
       label: "Ancient History",
       stage: "Year 11",
-      // LEGACY. Not offered as a current subject in Essay Practice.
-      //
-      // Two different things were being confused by one registry entry: a subject
-      // a student may choose today, and a body of content the application still
-      // depends on. This is the second. Its questions stay, and its worked
-      // examples stay, because ESSAY_FALLBACK_EXAMPLE_SUBJECT points here and
-      // every other subject borrows them as a clearly-labelled placeholder until
-      // its own are written. What changes is only that the picker stops offering
-      // it to students who are not already in it.
-      //
-      // Nothing here is deleted and nothing that resolves a committed subject is
-      // filtered: esSubjectContent still returns this entry, so a student routed
-      // to it by /^11Anc/ or by ?essaydemo=1 keeps their questions, scaffolds and
-      // saved drafts. The rule lives in esSubjectsList alone.
-      legacy: true,
       // Marked against THIS subject's dimensions, never another's. Original wording.
       markingCriteria: [
         "historical argument and judgement",
