@@ -153,17 +153,30 @@ const landed = (page, id) => page.evaluate(qid => {
   const clean = await errorsFor(cases.bus.file);
   ok(clean.n === 0, "the control publishes with no errors: " + JSON.stringify(clean));
 
+  // The rule has two halves and they are named apart, because a fixture caught by
+  // both proves neither. `at` says which half found it: a path inside question or
+  // pathways is a REFERENCE into another subject's library; a path under provides
+  // is another subject's record shipped inside the file.
   const xw = [
-    [cases.busInEco, "Business Studies records under an Economics declaration"],
-    [cases.busInAnc, "the same records under a legacy Ancient History declaration"],
-    [cases.ecoInBus, "Economics-owned records shipped inside a Business Studies package"],
+    [cases.busInEco, "question.", "Business Studies records under an Economics declaration"],
+    [cases.busInAnc, "question.", "the same records under a legacy Ancient History declaration"],
+    [cases.ecoInBus, "provides.", "Economics-owned records shipped inside a Business Studies package"],
+    [cases.libRefOnly, "question.topicRef",
+      "a self-contained package re-declared as Economics that only REFERENCES a Business topic"],
   ];
-  for (const [c, why] of xw) {
+  for (const [c, at, why] of xw) {
     const r = await errorsFor(c.file);
-    console.log("    " + c.id + " -> " + r.n + " errors " + JSON.stringify(r.codes) + " first at " + JSON.stringify(r.where[0]));
+    console.log("    " + c.id + " -> " + r.n + " errors " + JSON.stringify(r.codes) + " at " + JSON.stringify(r.where));
     ok(r.codes.indexOf("SUBJECT_CROSS_WIRED") >= 0, why + ": refused as cross-wired, codes " + JSON.stringify(r.codes));
     ok(r.n > 0, why + ": with at least one error, so it cannot be published");
+    ok(r.where.some(x => String(x).indexOf(at) === 0),
+      why + ": and the half that found it is " + at + ", not somewhere else: " + JSON.stringify(r.where));
   }
+  // The reference case again, on its own terms: ONE error and nothing else, so a
+  // pass here cannot be coming from a second rule firing on the same file.
+  const only = await errorsFor(cases.libRefOnly.file);
+  ok(only.n === 1 && only.where[0] === "question.topicRef",
+    "the reference into another subject's syllabus is refused on its own: " + JSON.stringify(only));
   const none = await errorsFor(cases.noSubject.file);
   ok(none.codes.indexOf("FIELD_MISSING") >= 0,
     "a package naming no subject at all is refused for the missing field: " + JSON.stringify(none.codes));

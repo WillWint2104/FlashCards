@@ -75,6 +75,23 @@ function providing(pkg, subject) {
   return v;
 }
 
+// A package whose ONLY cross-subject signal is a library reference: the
+// self-contained Ancient History package, re-declared as Economics, with its
+// prose topicLabel swapped for a ref into the Business syllabus. It provides no
+// records of its own to be caught by the other half of the rule, so it is the
+// case that can only be found by comparing a REFERENCE against the declaration -
+// and it is the exact shape that reproduced Topic: Operations on an Economics
+// question. Without it a mutation that deletes the reference check passes,
+// because every other cross-wired fixture is also caught by the provides check.
+function referencing(pkg, topicRef) {
+  const v = clone(pkg);
+  delete v.question.topicLabel;
+  v.question.topicRef = topicRef;
+  v.requires = v.requires || {};
+  v.requires.syllabus = (v.requires.syllabus || []).concat([topicRef]);
+  return v;
+}
+
 function write(id, pkg) {
   fs.mkdirSync(OUT, { recursive: true });
   const f = path.join(OUT, id + ".json");
@@ -97,8 +114,9 @@ function build() {
     busInEco: mk("xw-bus-in-eco", declaring(BUS, "economics")),
     busInAnc: mk("xw-bus-in-anc", declaring(BUS, "ancient_history")),
     ecoInBus: mk("xw-eco-in-bus", providing(BUS, "economics")),
+    libRefOnly: mk("xw-libref-only", referencing(declaring(AH, "economics"), "business.operations")),
     noSubject: mk("xw-no-subject", declaring(BUS, null)),
   };
 }
 
-module.exports = { build, BUS_SRC, AH_SRC, OUT, named, declaring, providing, load, write };
+module.exports = { build, BUS_SRC, AH_SRC, OUT, named, declaring, providing, referencing, load, write };
