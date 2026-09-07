@@ -120,7 +120,65 @@ const capState = page => page.evaluate(() => {
   ok(/no marking criteria/i.test(String(foot.nofb)), "which names the reason rather than going quiet");
   ok(/Geography/.test(String(foot.nofb)), "and names the subject it is about: " + JSON.stringify(foot.nofb));
 
-  console.log("--- 2b. nothing was sent");
+  console.log("--- 2b. and the same at the end of the paragraph");
+  // The paragraph-complete card offers Check this paragraph as its own control,
+  // which is a second place the promise can be broken. Reaching it means filling
+  // every part of the structure, which is what a student does.
+  for (let i = 0; i < 8 && !(await p.$(".es-done")); i++) {
+    if (!(await p.$("#esline"))) break;
+    await p.fill("#esline", "Sentence " + (i + 2) + " continues the same account of the evidence.");
+    await p.click("#esaccept").catch(() => {});
+    await p.waitForTimeout(350);
+  }
+  const done = await p.evaluate(() => {
+    const card = document.querySelector(".es-done");
+    if (!card) return null;
+    const n = card.querySelector(".es-nofb");
+    return { check: !!card.querySelector("#esdonecheck"),
+      nofb: n ? n.innerText.replace(/\s+/g, " ").trim() : null };
+  });
+  ok(!!done, "the paragraph can be completed: " + JSON.stringify(done));
+  if (done) {
+    ok(!done.check, "and it offers no Check control either");
+    ok(/no marking criteria/i.test(String(done.nofb)),
+      "saying why in its place: " + JSON.stringify(done.nofb));
+  }
+
+  console.log("--- 2c. a stale control still sends nothing");
+  // The guard inside the request is not a duplicate of the withheld control: a
+  // control rendered while criteria existed and pressed after they stopped is a
+  // real sequence, and it is the one the guard is written for. Criteria are put in
+  // place, the page renders the control, and they are taken away again WITHOUT a
+  // re-render, so what is on screen is genuinely out of date.
+  const stale = await p.evaluate(() => {
+    const subs = window.ESSAY.subjects, on = {};
+    Object.keys(subs).forEach(k => { on[k] = subs[k]; });
+    on.geography = { key: "geography", label: "Geography",
+      markingCriteria: ["a criterion supplied by tests/ui64.js", "b", "c", "d"] };
+    window.ESSAY.subjects = on;
+    return true;
+  });
+  ok(stale, "criteria are put in place");
+  await p.evaluate(() => { const b = document.querySelector("#esfootoutline"); b && b.click(); });
+  await p.waitForTimeout(400);
+  await p.evaluate(() => { const b = document.querySelector("[data-esrespgo]"); b && b.click(); });
+  await p.waitForTimeout(500);
+  const appeared = !!(await p.$("#esask, #esdonecheck"));
+  ok(appeared, "the control comes back when the subject can be marked");
+  await p.evaluate(() => {
+    const subs = window.ESSAY.subjects, off = {};
+    Object.keys(subs).forEach(k => { if (k !== "geography") off[k] = subs[k]; });
+    off.geography = { key: "geography", label: "Geography", markingCriteria: [] };
+    window.ESSAY.subjects = off;          // a new object, so the merge is recomputed
+  });
+  const pressed = await p.evaluate(() => {
+    const b = document.querySelector("#esask") || document.querySelector("#esdonecheck");
+    if (!b) return false; b.click(); return true;
+  });
+  ok(pressed, "the stale control is still on screen and can be pressed");
+  await p.waitForTimeout(900);
+
+  console.log("--- 2d. nothing was sent");
   ok(asked.length === 0, "no request reached the coach at any point: " + JSON.stringify(asked));
 
   console.log("--- 3. writing, saving and resuming are untouched");

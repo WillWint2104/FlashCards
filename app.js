@@ -376,8 +376,14 @@
     const sub = (declaredKey && esSubjectContent(declaredKey)) ||
       (declaredLabel ? essaySubjectByLabel(declaredLabel) : null);
     const label = declaredLabel || (sub && sub.label) || (declares ? "" : C.subject) || "";
-    let criteria = (card && card.markingCriteria) || (paper && paper.markingCriteria) || null;
-    if (!criteria) criteria = (sub && sub.markingCriteria) || null;
+    // AN EMPTY LIST IS NOT A LIST OF CRITERIA. [] is truthy, so a package carrying
+    // markingCriteria: [] passed every check below and was sent to the marker with
+    // nothing to mark against - the exact substitution the fail-closed underneath
+    // exists to prevent, walking straight past it. Found by a test that took a
+    // subject's criteria away and pressed the control that was still on screen.
+    const some = c => (Array.isArray(c) && c.length) ? c : null;
+    let criteria = some(card && card.markingCriteria) || some(paper && paper.markingCriteria) || null;
+    if (!criteria) criteria = some(sub && sub.markingCriteria) || null;
     // FAIL CLOSED. A response that names a subject the application cannot resolve,
     // or resolves to a package carrying no criteria, is not marked against
     // somebody else's. The caller refuses rather than sending a request that would
@@ -387,7 +393,7 @@
         why: sub ? "the " + (sub.label || declaredKey) + " package carries no marking criteria"
                  : "no subject package named " + JSON.stringify(declaredKey || label) + " is registered" };
     }
-    if (!declares && !criteria) criteria = C.markingCriteria || null;
+    if (!declares && !criteria) criteria = some(C.markingCriteria) || null;
     // Band expectations. A question may ship its own; criteria.bands === null means
     // "use the general ones", which is the normal case while no official set is
     // authored. The general set is written originally and is subject-agnostic.

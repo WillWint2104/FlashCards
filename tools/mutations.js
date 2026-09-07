@@ -251,6 +251,14 @@ module.exports = [
     why: "a paragraph in a subject with no criteria was still sent to the coach, which would answer against whatever it could find",
   },
   {
+    id: "empty-criteria-counts-as-criteria",
+    file: "app.js",
+    find: "    const some = c => (Array.isArray(c) && c.length) ? c : null;",
+    replace: "    const some = c => c || null;",
+    owner: "ui64",
+    why: "markingCriteria: [] is truthy, so a package with an empty list walked past the fail-closed and was sent to the marker with nothing to mark against",
+  },
+  {
     id: "shape-example-unowned",
     file: "app.js",
     find: "    const owned = mine ? all.filter(x => x && x.subject === mine) : [];",

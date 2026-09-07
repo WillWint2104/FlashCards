@@ -136,7 +136,17 @@ function priorResults() {
   });
   return by;
 }
+// Appended to the file AND kept here. summarise() used to re-read the file
+// through priorResults(), which honours --repeat by returning nothing: a --repeat
+// run therefore matched none of its own results and printed
+//
+//   MUTATION RESULTS - 0 of 10 recorded ... MUTATION RUN PASS
+//
+// over three mutations that had just survived. A summary that cannot see the run
+// it is summarising is worse than no summary, because it is green.
+const THIS_RUN = {};
 function record(r) {
+  THIS_RUN[r.id] = r;
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
   fs.appendFileSync(OUT, JSON.stringify(r) + "\n");
 }
@@ -202,7 +212,16 @@ function apply(m) {
 // has to be built before it can be tested. A contract mutation does not, and
 // paying 6 seconds for a build it does not need on every mutant is most of the
 // runtime of a contract-only campaign.
-const NEEDS_BUILD = /^(app\.js|index\.html|tools\/contract\/.*\.js|build\.js)$/;
+// EVERY FILE build.js READS, and this list being short by four is how a mutation
+// came back SURVIVED with nothing having been tested. essay-content.js is inlined
+// into the page like app.js is; removing a field from an authored example there
+// and not rebuilding meant the browser suite read the PREVIOUS fixture, passed,
+// and reported the fault as one no regression notices. A missing entry here does
+// not fail, it lies, so it is written from build.js's own reads:
+//
+//   index.html content.js essay-content.js business-content.js student-imports.js
+//   app.js, plus the contract modules the bundle carries and build.js itself.
+const NEEDS_BUILD = /^(app\.js|index\.html|content\.js|essay-content\.js|business-content\.js|student-imports\.js|importer\.html|importer\.js|tools\/contract\/.*\.js|build\.js)$/;
 function rebuild(ms) {
   const b = runBounded("node", ["build.js"], ms);
   if (b.code !== 0 || b.timedOut) return { ok: false, out: b.out, ms: b.ms };
@@ -356,7 +375,7 @@ async function main() {
   // The tree is left as it was found, whatever happened above.
   const built = rebuild(timeout);
   if (!built.ok) console.log("\nWARNING: the final rebuild failed; run node build.js by hand");
-  summarise(list, priorResults());
+  summarise(list, Object.assign({}, priorResults(), THIS_RUN));
 }
 
 function summarise(list, byId) {

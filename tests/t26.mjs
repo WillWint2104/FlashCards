@@ -123,6 +123,39 @@ console.log("--- 3. no flag, and a check after every mutant");
     "with the run stopping rather than carrying a loose fault into the next mutant");
   ok(/if \(NEEDS_BUILD\.test\(m\.file\)\) rebuild\(timeout\);/.test(src),
     "a built artefact is rebuilt from the restored source, so the check can be honest");
+
+  // ---- 4. the two ways a run can report a lie -----------------------------
+  console.log("--- 4. a run cannot report green over its own results");
+  // A --repeat run matched none of its own results, because summarise() re-read
+  // the results FILE through priorResults(), which returns nothing under
+  // --repeat. It printed "0 of 10 recorded ... MUTATION RUN PASS" over three
+  // mutations that had just survived.
+  ok(/const THIS_RUN = \{\};/.test(src), "results are kept as the run makes them");
+  ok(/summarise\(list, Object\.assign\(\{\}, priorResults\(\), THIS_RUN\)\);/.test(src),
+    "and the summary reads them, not only what was on disk before it started");
+
+  // A mutation in a file the page is BUILT from, with no rebuild, tests the
+  // previous fixture: the suite passes and the fault is filed as one nothing
+  // notices. The list is therefore checked against build.js's own reads rather
+  // than against memory.
+  const build = fs.readFileSync(path.join(ROOT, "build.js"), "utf8");
+  const readsAtTop = [...build.matchAll(/read\("([^"]+)"\)/g)].map(m => m[1]);
+  const inlined = [...build.matchAll(/<script src="([^"]+)"><\/script>/g)].map(m => m[1]);
+  // Only the ones that EXIST. contract-bundle.js and importer-data.js are script
+  // tags build.js replaces with generated text; there is no such file to mutate.
+  const inputs = [...new Set(readsAtTop.concat(inlined))]
+    .filter(f => /\.(js|html)$/.test(f))
+    .filter(f => fs.existsSync(path.join(ROOT, f)));
+  const NEEDS_BUILD = (() => {
+    const m = src.match(/const NEEDS_BUILD = (\/\^.*\$\/);/);
+    return m ? eval(m[1]) : null;   // the runner's own literal, not a copy of it
+  })();
+  ok(!!NEEDS_BUILD, "the runner's build-needed test is readable");
+  const missed = inputs.filter(f => NEEDS_BUILD && !NEEDS_BUILD.test(f));
+  console.log("    build inputs:", JSON.stringify(inputs));
+  ok(missed.length === 0,
+    "every file the page is built from forces a rebuild before its mutation is tested: missing " +
+    JSON.stringify(missed));
 }
 
 fs.rmSync(TMP, { recursive: true, force: true });

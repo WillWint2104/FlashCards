@@ -264,8 +264,12 @@ const pkg = (page, k) => page.evaluate(key => {
   ok(/unresolved: true/.test(app), "markingContext can report an unresolved subject");
   ok(/subject-unresolved/.test(app), "and gradeWritten refuses rather than sending");
   // the Economics fallthrough is gone from the declared path
-  ok(/if \(!declares && !criteria\) criteria = C\.markingCriteria/.test(app),
+  ok(/if \(!declares && !criteria\) criteria = some\(C\.markingCriteria\)/.test(app),
     "C.markingCriteria is reached only when nothing declares a subject, which is flashcard content");
+  // And an empty list is not a list. [] is truthy, so a package carrying
+  // markingCriteria: [] used to walk past the fail-closed below it.
+  ok(/const some = c => \(Array\.isArray\(c\) && c\.length\) \? c : null;/.test(app),
+    "and an empty criteria list counts as none, at every step of that chain");
   ok(!/if \(!criteria\) criteria = \(sub && sub\.markingCriteria\) \|\| C\.markingCriteria/.test(app),
     "the old unconditional fallthrough to Economics is gone");
 
