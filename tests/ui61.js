@@ -89,6 +89,30 @@ const pkg = (page, k) => page.evaluate(key => {
   ok(/sources and evidence/.test(packs.ancient_history.criteriaText), "Ancient History marks sources");
   ok(/economic terminology/.test(packs.economics.criteriaText), "Economics marks economic terminology");
 
+  console.log("--- 1a. Economics criteria exist twice, and the copies are held together");
+  // TWO AUTHORITIES, byte for byte identical, in two files. content.js owns the
+  // FLASHCARD half's criteria (window.CONTENT is Economics by construction) and
+  // essay-content.js owns the Long Response package's. markingContext reaches the
+  // flashcard copy only when nothing declares a subject, so a Long Response
+  // Economics attempt reads one and a flashcard reads the other and they never
+  // meet - which is exactly how a duplicate drifts without anyone noticing.
+  //
+  // Choosing one authority is a product decision and is not made here. This holds
+  // the copies to each other so the drift is loud rather than silent, the same
+  // way t22 holds app.js's ladder rules to the validator's.
+  const ecoPair = await p.evaluate(() => {
+    const subs = (window.__esSubjects && window.__esSubjects()) || {};
+    return { flashcard: ((window.CONTENT || {}).markingCriteria || []).slice(),
+      essay: ((subs.economics || {}).markingCriteria || []).slice(),
+      flashcardSubject: (window.CONTENT || {}).subject || null };
+  });
+  ok(ecoPair.flashcardSubject === "Economics", "the flashcard half is Economics: " + JSON.stringify(ecoPair.flashcardSubject));
+  ok(ecoPair.flashcard.length === 4 && ecoPair.essay.length === 4,
+    "both copies carry four criteria: " + ecoPair.flashcard.length + " and " + ecoPair.essay.length);
+  ok(JSON.stringify(ecoPair.flashcard) === JSON.stringify(ecoPair.essay),
+    "and they still say the same thing:\n      content.js      " + JSON.stringify(ecoPair.flashcard) +
+    "\n      essay-content.js " + JSON.stringify(ecoPair.essay));
+
   console.log("--- 1b. thin is allowed, borrowed is not");
   ok(packs.business_studies.questions === 13, "Business Studies is the deep package: " + packs.business_studies.questions + " questions");
   ok(packs.ancient_history.questions === 6, "Ancient History keeps its six: " + packs.ancient_history.questions);
