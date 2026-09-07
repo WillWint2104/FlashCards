@@ -3295,11 +3295,24 @@
   // Subjects a student can pick in setup: any that ship their own questions or a
   // paragraph scaffold. Lets any login load a subject's bank without a class-code
   // rule (the routed subject is just the default selection).
+  // The subjects a student may CHOOSE, which is not the same set as the subjects
+  // the application can resolve. A legacy subject is content the app still
+  // depends on and no longer offers: its entry stays, esSubjectContent still
+  // returns it, and only this list leaves it out.
+  //
+  // With one exception, and it is the whole reason this is a list rather than a
+  // filter. A student routed to a legacy subject - /^11Anc/, or ?essaydemo=1 - is
+  // ALREADY IN IT. Dropping it here would leave the picker with no option
+  // matching ES.subject, and a <select> with nothing marked shows its first
+  // option as chosen: the same "header says one subject, control says another"
+  // fault that ui59 exists for, reintroduced from the other side. So the
+  // committed subject is always offered. It is never offered to anyone else.
   function esSubjectsList() {
     const subs = esAllSubjects().subjects;
+    const shipsContent = s => s && ((Array.isArray(s.questions) && s.questions.length) || s.scaffolds);
     return Object.keys(subs)
-      .filter(k => { const s = subs[k]; return s && ((Array.isArray(s.questions) && s.questions.length) || s.scaffolds); })
-      .map(k => ({ key: k, label: subs[k].label || k }));
+      .filter(k => shipsContent(subs[k]) && (!subs[k].legacy || k === ES.subject))
+      .map(k => ({ key: k, label: subs[k].label || k, legacy: !!subs[k].legacy }));
   }
   // A model's short label (e.g. "teeec" -> "TEEEC") from the subject's scaffolds.
   function esParaModelLabel(model) {
@@ -4478,7 +4491,12 @@
     // Optional subject picker: any login can load a subject's question bank and
     // paragraph scaffold, defaulting to the subject routed from their class code.
     const subjectList = esSubjectsList();
-    const subjectPicker = subjectList.length > 1 ? `
+    // Offered whenever there is a subject to adopt, not only when there are two to
+    // choose between. The shipped teacher default class code is "12Ec126", which
+    // routes to a subject with no content, and once legacy subjects are no longer
+    // offered there is exactly one left: at "> 1" the control disappeared and that
+    // student had no way to reach any subject at all.
+    const subjectPicker = subjectList.length >= 1 ? `
       <div class="qp-field">
         <label class="qp-label" for="essubject">Subject</label>
         ${/* A <select> with no option marked shows its FIRST one, and that is how

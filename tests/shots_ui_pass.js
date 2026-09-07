@@ -182,6 +182,19 @@ async function writeOut(p) {
   await p.keyboard.press("Escape"); await p.waitForTimeout(200);
   await p.setViewportSize({ width: 1500, height: 1180 }); await p.waitForTimeout(400);
 
+  // The active subject picker, open. Ancient History is legacy and is not among
+  // the subjects offered; the routed subject has no content, so the picker asks
+  // rather than adopting the survivor on the student's behalf.
+  await p.goto(T); await p.waitForTimeout(600);
+  await p.$$eval(".navtab", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
+  await p.waitForTimeout(500);
+  const offered = await p.$$eval("#essubject option", es => es.map(o => o.value + " | " + o.text));
+  console.log("  the active picker offers:", JSON.stringify(offered));
+  await p.$eval("#essubject", e => e.scrollIntoView({ block: "center" })).catch(() => {});
+  await p.waitForTimeout(200);
+  await shot(p, "18-active-picker-no-legacy", ".qp-card");
+  await shot(p, "19-choose-a-subject");
+
   await p.context().close();
 
   await b.close();
