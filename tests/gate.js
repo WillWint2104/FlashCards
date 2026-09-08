@@ -44,7 +44,7 @@ const TIERS = {
   // when a maintained test is outside both. It costs nothing and belongs in the
   // tier that runs most often, because the thing it catches is a test drifting
   // out of the harness, which is invisible by definition.
-  fast: { budget: 40, suites: ["t1", "t17", "t18", "t19", "t20", "t21", "t22", "t23", "t24", "t25", "t27", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49"] },
+  fast: { budget: 40, suites: ["t1", "t17", "t18", "t19", "t20", "t21", "t22", "t23", "t24", "t25", "t26", "t27", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49"] },
   // Adds the interaction surfaces that the shell rewrite touched, and the setup
   // and marking paths. This is the gate to pass before pushing, and its whole
   // value is that it is cheap enough to run out of habit.
@@ -100,14 +100,18 @@ const TIERS = {
   // a walk through the whole lifecycle, which is the only place the rule it holds
   // can be broken.
   //
-  // t26 is in CHECKPOINT and not in fast. It is the mutation runner's own guards -
-  // clean tracked tree before a fault is applied, tree back afterwards, no flag
-  // past either - checked against a throwaway checkout it makes and deletes. It
-  // holds one seam and takes a third of a second on its own, so fast is where it
-  // belongs by cost; it is not there because of what it costs the TIER. Every
-  // suite in fast is a process launch and the tier crossed 40s when this one was
-  // added to it, and fast is the tier whose whole point is that nobody thinks
-  // about whether to run it.
+  // t26 and t27 are in FAST and only fast, and they are placed by kind rather than
+  // by the clock. Both establish one invariant at one seam with no browser at all -
+  // t26 the mutation runner's guards against a throwaway checkout it makes and
+  // deletes, t27 the coach contract against the shipped normaliser - and between
+  // them they cost about a second. fast is the tier of cheap seam checks; putting
+  // them in checkpoint as well bought nothing and took the tier over its budget
+  // for the sake of running the same second twice.
+  //
+  // They are in checkpoint as well because t23 holds the rule that checkpoint runs
+  // everything fast runs, which is what makes checkpoint a superset rather than a
+  // second opinion. The two of them together cost the tier about a second, and
+  // ui59 gave back four by no longer sleeping through its own re-renders.
   //
   // ui65 and ui66 are full-only, and for the plainest reason: between them they
   // stub the coach eleven times and walk a student through an introduction, a

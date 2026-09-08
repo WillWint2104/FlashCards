@@ -25,6 +25,12 @@
 //   the narrow menu, which carries the subject heading, agrees too
 const { chromium, T } = require("./env");
 
+// The app re-renders synchronously on a change, so waiting for two frames is
+// waiting for the render rather than guessing how long it takes. This replaced a
+// flat 350-400ms sleep after every selectOption and every click in this file,
+// which was most of what the suite cost the checkpoint tier.
+const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log("  FAIL:", m); } };
 
@@ -117,7 +123,7 @@ async function toPicker(page) {
   ok(all.length >= 2, "there is more than one subject to move between: " + JSON.stringify(all));
   for (const want of all) {
     await p.selectOption("#essubject", want);
-    await p.waitForTimeout(350);
+    await settled(p);
     const t = await subjectsOnScreen(p);
     ok(t.picker === want, "choosing " + want + " commits it: " + t.picker);
     ok(agrees(t), "and every label on screen says so: header=" + JSON.stringify(t.header) + " picker=" + JSON.stringify(t.pickerText));
@@ -128,11 +134,11 @@ async function toPicker(page) {
   // Move to the second subject, then back to the first, reading the page each
   // time. Moving BACK is what catches a stale label: one hop can look right by
   // luck, two cannot.
-  await p.selectOption("#essubject", all[1]); await p.waitForTimeout(400);
+  await p.selectOption("#essubject", all[1]); await settled(p);
   const second = await subjectsOnScreen(p);
   ok(second.picker === all[1], "moved to the second subject: " + second.picker);
   ok(agrees(second), "labels agree there: " + JSON.stringify(second.header));
-  await p.selectOption("#essubject", all[0]); await p.waitForTimeout(400);
+  await p.selectOption("#essubject", all[0]); await settled(p);
   const back = await subjectsOnScreen(p);
   ok(back.picker === all[0], "back on the first: " + back.picker);
   ok(agrees(back), "and no label still says the one before it: " + JSON.stringify(back.header));
@@ -148,7 +154,7 @@ async function toPicker(page) {
   // to it is not rendered - there is nowhere to go. Either way the form must be
   // reachable, which is what this section is about.
   const own = await p.$('[data-espick="own"]');
-  if (own) { await own.click(); await p.waitForTimeout(400); }
+  if (own) { await own.click(); await settled(p); }
   ok(!!(await p.$("#esq")), "the own-question form is reachable");
   {
     const o = await subjectsOnScreen(p);
@@ -157,7 +163,7 @@ async function toPicker(page) {
     const other = o.options.map(x => x.v).filter(Boolean).find(k => k !== o.picker);
     ok(!!other, "there is another subject to move to from here: " + JSON.stringify(other));
     if (other) {
-      await p.selectOption("#essubject", other); await p.waitForTimeout(400);
+      await p.selectOption("#essubject", other); await settled(p);
       const o2 = await subjectsOnScreen(p);
       ok(o2.picker === other, "changing subject from the own-question stage commits: " + o2.picker);
       ok(agrees(o2), "and both labels move together: header=" + JSON.stringify(o2.header) + " picker=" + JSON.stringify(o2.pickerText));
@@ -166,11 +172,11 @@ async function toPicker(page) {
 
   // ---- 5. narrow, where the subject heading lives inside the menu ---------
   console.log("--- 5. the responsive menu carries the same subject");
-  await p.setViewportSize({ width: 390, height: 900 }); await p.waitForTimeout(400);
+  await p.setViewportSize({ width: 390, height: 900 }); await settled(p);
   const menu = await p.$("#esmenu");
   ok(!!menu, "there is a menu at 390px");
   if (menu) {
-    await menu.click(); await p.waitForTimeout(350);
+    await menu.click(); await settled(p);
     const m = await subjectsOnScreen(p);
     ok(agrees(m), "the subject in the open menu agrees with the form: header=" +
       JSON.stringify(m.header) + " picker=" + JSON.stringify(m.pickerText));
@@ -178,9 +184,9 @@ async function toPicker(page) {
     const other = m.options.map(x => x.v).filter(Boolean).find(k => k !== m.picker);
     ok(!!other, "there is another subject to move to at narrow width: " + JSON.stringify(other));
     if (other) {
-      await p.keyboard.press("Escape"); await p.waitForTimeout(250);
-      await p.selectOption("#essubject", other); await p.waitForTimeout(400);
-      await p.click("#esmenu"); await p.waitForTimeout(350);
+      await p.keyboard.press("Escape"); await settled(p);
+      await p.selectOption("#essubject", other); await settled(p);
+      await p.click("#esmenu"); await settled(p);
       const m2 = await subjectsOnScreen(p);
       ok(m2.picker === other, "the change commits at narrow width too: " + m2.picker);
       ok(agrees(m2), "and the menu heading followed it: header=" + JSON.stringify(m2.header));
@@ -190,11 +196,11 @@ async function toPicker(page) {
 
   // ---- 6. it survives the walk into the writing --------------------------
   console.log("--- 6. and it is still the same subject inside the writing");
-  await p.setViewportSize({ width: 1500, height: 1100 }); await p.waitForTimeout(300);
+  await p.setViewportSize({ width: 1500, height: 1100 }); await settled(p);
   await toPicker(p);
-  await p.selectOption("#essubject", "business_studies"); await p.waitForTimeout(400);
+  await p.selectOption("#essubject", "business_studies"); await settled(p);
   const before = await subjectsOnScreen(p);
-  await p.$$eval('[data-espick="own"]', es => es[0] && es[0].click()); await p.waitForTimeout(400);
+  await p.$$eval('[data-espick="own"]', es => es[0] && es[0].click()); await settled(p);
   await p.fill("#esq", "Explain how one operations strategy affects the cost of production.").catch(() => {});
   await p.waitForTimeout(200);
   const start = await p.$("#esstart");
