@@ -10026,7 +10026,10 @@
         tag ? `<span class="es-modaltag">${esc(tag)}</span>` : ""}
         <button type="button" class="es-util quiet" id="esmodalx" aria-label="Close">${esIcon("close")}</button></div>
       <div class="es-modalbody">${body}</div>
-      <div class="es-modalfoot"><button type="button" class="es-btn ghost sm" id="esmodalclose">Close</button></div>
+      ${/* ONE WAY OUT. The header X and a full-width Close in a footer are the same
+             control said twice, and a student reading a three-line explanation had
+             to choose between them. The X is the one that is always in the same
+             place whatever the window is showing, so it is the one that stays. */ ""}
     </div></div>`;
   }
   // WHY, NOT ANOTHER SHAPE. The first version filled this with the slot's other
@@ -10048,7 +10051,7 @@
     const h = esAuthoredHelp(p, def) || {};
     const needs = String(h.needs || "").trim();
     const hint = String(h.hint || "").trim();
-    return esModalShell("More help — " + esCap(def.label || key), "", `
+    return esModalShell("More help: " + esCap(def.label || key), "", `
       <section class="es-mdsec"><h3>What this part does</h3>
         <p>${esc(esCap(def.job))}${where ? ", " + esc(where) : ""}.</p></section>
       ${needs ? `<section class="es-mdsec"><h3>What it has to do in this question</h3>
@@ -10064,7 +10067,7 @@
       return `<tr><th scope="row" class="es-exkey">${esc((def && def.label) || k)}</th>
         <td class="es-exval">${esc(String(got.ex.slots[k] || ""))}</td></tr>`;
     }).join("");
-    return esModalShell("Complete " + got.what + " — different question", got.ex.label || "", `
+    return esModalShell("Complete " + got.what + ", from a different question", got.ex.label || "", `
       <p class="es-rhint">${got.source ? esc(got.source) + ". " : ""}A complete ${esc(got.family)} example from another ${
         esc(got.subject || "")} question, on ${esc(got.ex.label || "another topic")}. It shows how the parts fit together. It is not an answer to your question, and nothing in it belongs in your paragraph.</p>
       <table class="es-extable">${rows}</table>`);
@@ -10203,14 +10206,13 @@
     el.querySelectorAll("button:not([type])").forEach(b => (b.type = "button"));
     const close = () => esCloseModals(p);
     const x = el.querySelector("#esmodalx"); if (x) x.onclick = close;
-    const c = el.querySelector("#esmodalclose"); if (c) c.onclick = close;
     // Pressing away from the card closes it; pressing inside it does not.
     const scrim = el.querySelector("[data-esmodalscrim]");
     if (scrim) scrim.onmousedown = ev => { if (ev.target === scrim) close(); };
     esModalKey._close = close;
     document.addEventListener("keydown", esModalKey, true);
     esPlaceTermCard();
-    const first = el.querySelector("#esmodalclose") || el.querySelector("#esmodalx");
+    const first = el.querySelector("#esmodalx");
     if (first) first.focus({ preventScroll: true });
   }
   function esModalKey(ev) {

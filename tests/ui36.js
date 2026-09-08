@@ -85,7 +85,7 @@ const chips = p => p.$$eval('[data-esdecode],[data-esdecopen]', es => es.length)
             return box && !box.hidden ? 'opens' : 'DEAD';
           });
           ok(bound === 'opens', `${label} + tool: a highlighted question word still explains itself: ${bound}`);
-          await p.evaluate(() => { const c = document.querySelector('#esmodalclose'); if (c) c.click(); });
+          await p.evaluate(() => { const c = document.querySelector("#esmodalx"); if (c) c.click(); });
           await settled(p);
         }
         await p.keyboard.press('Escape'); await settled(p);

@@ -225,7 +225,17 @@ async function writeAndCheck(p, lines) {
   ok(/what this part does/i.test(help), "it says what the structural job is");
   ok(help.length < 900, "and stays short rather than becoming a second report: " + help.length + " chars");
   ok(!/common problems/i.test(help), "with no invented common-problems list");
-  await p.$eval("#esmodalclose", e => e.click()); await settled(p);
+  // ONE WAY OUT, and one that reads as one. An X in the corner and a Close button
+  // in a footer are the same control offered twice; the review asked for one
+  // obvious close affordance and this is where the count is held.
+  const closers = await p.$$eval(".es-modal button", es =>
+    es.filter(e => /close/i.test((e.getAttribute("aria-label") || "") + " " + e.textContent)).length);
+  ok(closers === 1, "the window offers exactly one close control, not two: " + closers);
+  // NO EM DASHES IN STUDENT-FACING TEXT, including the titles of windows this
+  // branch added. It is a house rule and a title is the easiest place to break it.
+  const title = await p.$eval(".es-modalt", e => e.textContent).catch(() => "");
+  ok(title.indexOf("\u2014") < 0, "and its title carries no em dash: " + JSON.stringify(title));
+  await p.$eval("#esmodalx", e => e.click()); await settled(p);
   ok(!(await p.$(".es-modal")), "Close puts it away");
   const kept = await p.$eval("[data-esrbox]", e => e.value).catch(() => "");
   ok(kept === draftText, "and the half-typed revision survived it: " + JSON.stringify(kept.slice(0, 30)));
