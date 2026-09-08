@@ -445,6 +445,15 @@ module.exports = [
     why: "an example that declares no directive family was offered as the model shape anyway, so a judgement example could model a causal answer",
   },
 
+  {
+    id: "term-card-never-flips",
+    file: "app.js",
+    find: "      const above = t.top - gap - c.height;",
+    replace: "      const above = -9999;",
+    owner: "ui66",
+    why: "the term card only ever opened downwards, so every term in the lower half of the page opened one off the bottom of the screen",
+  },
+
   // ---- the harness watching itself ----------------------------------------
   {
     id: "gate-drops-a-suite",
