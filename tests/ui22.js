@@ -79,11 +79,21 @@ async function open(p, re){
   ok(!/All four areas/i.test(cover),'with no invented list of required parts');
   const hl=await p.$$eval('.es-dec',es=>es.map(e=>e.textContent.trim()));
   ok(hl.length===3,'three parts of the stem are pressable: '+JSON.stringify(hl));
+  // A highlighted term now opens the small card beside it rather than expanding a
+  // panel inside the page: the panel moved everything below it and took the
+  // student's place with it. The question-level chips above still open panels,
+  // which is why those assertions are unchanged; this is the TERM click.
+  const beforeH=await p.evaluate(()=>document.documentElement.scrollHeight);
   await p.$$eval('.es-dec',es=>{const t=es.find(x=>/objectives of financial/i.test(x.textContent));t&&t.click();});
   await settled(p);
-  const eff=await p.$$eval('.es-decpanel',es=>es.filter(e=>!e.hidden).map(e=>e.innerText.replace(/\s+/g,' '))[0]||'');
-  ok(/what has to move/i.test(eff),'a new kind of highlight carries its own label: '+eff.slice(0,50));
+  const eff=await p.$eval('.es-termcard',e=>e.innerText.replace(/\s+/g,' ')).catch(()=>'');
+  ok(/objectives of financial/i.test(eff),'the term opens its own card: '+eff.slice(0,50));
+  ok(/In this question/i.test(eff),'which carries the authored question context');
   ok(/liquidity, profitability/i.test(eff),'and names the objectives');
+  ok((await p.evaluate(()=>document.documentElement.scrollHeight))===beforeH,
+    'and the page underneath does not move');
+  await p.keyboard.press('Escape'); await settled(p);
+  ok(!(await p.$('.es-termcard')),'Escape closes it');
   await p.screenshot({path:OUT+'shot-fin01-plan.png'});
 
   console.log('6. the rest of the stack works on it with no special casing');

@@ -2019,6 +2019,95 @@
   .es-nofb{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;
     color:#7A5313;background:#FFF6E8;border:1px solid #F0C877;border-radius:9px;padding:7px 11px}
   .es-nofb svg{width:15px;height:15px;flex:0 0 auto}
+  /* ---- THE PARAGRAPH REVIEW ------------------------------------------------
+     One row of structural jobs, one open issue, and the sentence it belongs to lit
+     in the paragraph itself. The tab row is the navigator: nothing stacks. */
+  /* The route into writing, above the plan rather than under it. */
+  .es-startgo{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 16px;
+    padding:14px 16px;background:var(--sunk);border-radius:12px}
+  .es-startopt{flex:1 1 220px;min-width:200px;font-size:12.5px;color:var(--e-ink3);line-height:1.5}
+  .es-review{display:block}
+  .es-rtabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+  .es-rtab{display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:12.5px;font-weight:700;
+    padding:6px 11px;border-radius:999px;cursor:pointer;background:var(--sunk);border:1px solid transparent;
+    color:var(--e-ink2)}
+  .es-rtab svg{width:14px;height:14px;flex:0 0 auto}
+  .es-rtab.ok{color:var(--e-green-dk)}
+  .es-rtab.needs_work,.es-rtab.missing{color:#A33A2B;background:#FDEEEA}
+  .es-rtab.unassessed{color:var(--e-ink3)}
+  .es-rtab.edited{color:#7A5313;background:#FFF6E8}
+  .es-rtab.on{border-color:currentColor;box-shadow:0 0 0 1px currentColor inset}
+  .es-rtab:hover{filter:brightness(.97)}
+  .es-rstale{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:#7A5313;
+    background:#FFF9EF;border:1px solid #F0C877;border-radius:10px;padding:9px 11px;margin:0 0 12px}
+  .es-rstale svg{width:15px;height:15px;flex:0 0 auto;margin-top:1px}
+  .es-rbody{display:block}
+  .es-rhead{display:flex;align-items:center;gap:7px;font-size:14px;margin:0 0 5px}
+  .es-rhead svg{width:16px;height:16px;flex:0 0 auto}
+  .es-rhead.ok{color:var(--e-green-dk)}
+  .es-rhead.needs_work,.es-rhead.missing{color:#A33A2B}
+  .es-rhead.edited{color:#7A5313}
+  .es-rhead.unassessed{color:var(--e-ink3)}
+  .es-rjob{margin:0 0 8px;font-size:13px;color:var(--e-ink2)}
+  .es-rissue{margin:0 0 12px;font-size:13.5px;color:var(--e-ink);line-height:1.5}
+  .es-rhint{margin:8px 0 0;font-size:12.5px;color:var(--e-ink3)}
+  .es-rquote{margin:0;padding:8px 11px;border-left:3px solid var(--e-green);background:var(--sunk);
+    border-radius:0 8px 8px 0;font-size:13px;color:var(--e-ink2)}
+  .es-rlbl{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--e-ink3);margin:0 0 5px}
+  .es-rscaff{margin:0 0 12px}
+  .es-rframe{background:#EEF3FB;border:1px solid #CFDDF0;border-radius:10px;padding:10px 12px;
+    font-size:13px;line-height:1.6;color:var(--e-ink2)}
+  .es-rblank{display:inline;font-weight:700;color:#4A5FA0}
+  .es-rrewrite{margin:0 0 12px}
+  .es-rbox{width:100%;min-height:76px;resize:vertical}
+  .es-rrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .es-rrow .es-sp{flex:1 1 auto}
+  .es-ractions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px;
+    padding-top:12px;border-top:1px solid var(--line)}
+  /* The sentence the open row is about, in the paragraph. */
+  .es-said.es-rlit{background:#E7F3EC;box-shadow:0 0 0 2px #E7F3EC}
+  .es-said.es-rlit.es-rlit-warn{background:#FDEEEA;box-shadow:0 0 0 2px #FDEEEA}
+  /* ---- THE OPTIONAL WINDOWS ----------------------------------------------- */
+  #esmodalhost{position:relative;z-index:80}
+  .es-scrim2{position:fixed;inset:0;background:rgba(23,32,28,.34);display:flex;align-items:center;
+    justify-content:center;padding:24px;z-index:80}
+  .es-modal{background:#fff;border-radius:16px;max-width:620px;width:100%;max-height:82vh;
+    display:flex;flex-direction:column;box-shadow:0 18px 48px rgba(0,0,0,.22)}
+  .es-modalhd{display:flex;align-items:center;gap:10px;padding:16px 18px 12px;border-bottom:1px solid var(--line)}
+  .es-modalt{margin:0;font-size:16px;font-weight:800;flex:1 1 auto}
+  .es-modaltag{font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+    color:var(--e-green-dk);background:#E7F3EC;border-radius:6px;padding:3px 8px}
+  .es-modalbody{padding:16px 18px;overflow:auto}
+  .es-modalfoot{padding:12px 18px 16px;display:flex;justify-content:flex-end;border-top:1px solid var(--line)}
+  .es-mdsec{margin:0 0 16px}
+  .es-mdsec h3{margin:0 0 6px;font-size:13px;font-weight:800}
+  .es-mdsec p{margin:0;font-size:13.5px;color:var(--e-ink2);line-height:1.55}
+  .es-mdalt{margin:0 0 10px}
+  .es-mdaltt{display:block;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+    color:var(--e-ink3);margin:0 0 4px}
+  .es-extable{width:100%;border-collapse:collapse;margin-top:12px}
+  .es-extable th,.es-extable td{text-align:left;vertical-align:top;padding:9px 10px;border-top:1px solid var(--line);font-size:13px}
+  .es-exkey{width:118px;color:var(--e-green-dk);font-weight:800}
+  .es-exval{color:var(--e-ink2);line-height:1.55}
+  /* The term card: small, anchored, and it never moves the page under it. */
+  .es-termscrim{align-items:center;justify-content:center;background:rgba(23,32,28,.18)}
+  .es-termcard{background:#fff;border-radius:14px;max-width:360px;width:100%;
+    box-shadow:0 14px 38px rgba(0,0,0,.2);padding:14px 16px 12px}
+  .es-termhd{display:flex;align-items:center;gap:8px;margin:0 0 8px}
+  .es-termt{margin:0;font-size:15px;font-weight:800;flex:1 1 auto}
+  .es-termdef{margin:0 0 10px;font-size:13.5px;color:var(--e-ink2);line-height:1.5}
+  .es-termq{background:#E7F3EC;border-radius:10px;padding:10px 12px}
+  .es-termqh{font-size:12px;font-weight:800;color:var(--e-green-dk);margin:0 0 3px}
+  .es-termqp{margin:0;font-size:13px;color:var(--e-ink2);line-height:1.5}
+  .es-termfoot{display:flex;justify-content:flex-end;margin-top:10px}
+  @media (max-width:560px){
+    /* A tiny anchored popover on a phone is a target nobody can hit, so the same
+       content arrives as a sheet from the bottom instead. */
+    .es-termscrim{align-items:flex-end;padding:0}
+    .es-termcard{max-width:none;border-radius:16px 16px 0 0;padding:16px 18px 20px}
+    .es-scrim2{padding:0;align-items:flex-end}
+    .es-modal{border-radius:16px 16px 0 0;max-height:88vh}
+  }
   .qp-rub{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:13.5px}
   .qp-rubtick{color:var(--e-green-dk);font-weight:800}
   .qp-rubtext{color:var(--e-ink)}

@@ -33,10 +33,15 @@ const wa = p => p.$eval('.es-watext',e=>e.textContent.trim()).catch(()=>'');
   ok((await p.$$eval('.es-startrow',es=>es.length))===6,'the shape of the response is shown, all six sections');
   const idle=await p.$$eval('.es-startrow:not(.planned):not(.written)',es=>es.length);
   ok(idle===6,'all inert, none demanding completion: '+idle);
-  const routes=await p.$$eval('.es-startbtns button',es=>es.map(e=>e.textContent.trim()));
+  // The same three routes, moved ABOVE the plan rather than under it: Gate 1 found
+  // students landing here without an obvious way into writing, because the actions
+  // sat below the working answer, the coverage list and the six rows.
+  const routes=await p.$$eval('.es-startgo button, .es-startbtns button',es=>es.map(e=>e.textContent.trim()));
   console.log('   ',JSON.stringify(routes));
   ok(routes.length===3,'three ways in: '+routes.length);
-  ok(/introduction/i.test(routes[0])&&/body 1/i.test(routes[1])&&/plan all/i.test(routes[2]),'write, start a body, or plan everything');
+  ok(/start writing/i.test(routes[0])&&/body 1/i.test(routes[1])&&/plan all/i.test(routes[2]),'write, start a body, or plan everything');
+  ok((await p.$$eval('.es-startgo button',es=>es.length))===2,'and the two that start writing are the ones above the plan');
+  ok(/optional/i.test(await p.$eval('.es-startopt',e=>e.textContent)),'with planning stated to be optional');
 
   console.log('2. the working answer starts broad and says so');
   const w0=await wa(p);
@@ -103,7 +108,7 @@ const wa = p => p.$eval('.es-watext',e=>e.textContent.trim()).catch(()=>'');
   console.log('   ',cov.slice(0,120));
   ok(/required in your response/i.test(cov),'the four required parts are shown up front');
   ok(/start anywhere/i.test(cov),'as information, not a gate');
-  ok((await p.$$eval('.es-startbtns button',es=>es.length))===3,'and the same three routes are offered');
+  ok((await p.$$eval('.es-startgo button, .es-startbtns button',es=>es.length))===3,'and the same three routes are offered');
   await p.click('#esstartintro'); await settled(p);
   await p.fill('#esline','Target markets shape every marketing decision a business makes.');
   await p.click('#esaccept'); await settled(p);

@@ -3494,6 +3494,7 @@
   const ES = { subject: null, code: "", demo: false, screen: "setup", draft: null, list: [], form: null, pending: false,
     ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, planAll: false, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false, tryPick: null, lessonMore: false, lessonJump: null,
       shapeSlot: null, shapeEx: false, shapeAlts: false, shapeAlt: null,
+      reviewSlot: null, reviewHelp: null, reviewExample: null, term: null,
       studyOpen: false, studyPreview: null, studyPos: null, stuckOpen: false },  // transient guided-view state, reset on paragraph change
     hint: { open: false, tab: "know" },          // study hints: persists across paragraphs on purpose
     // The Learning Centre is off the student route. This is the only way back to
@@ -3502,7 +3503,8 @@
     quiz: { revealed: false, peeked: false, attempt: "", result: null } };
   const ES_KEY = "marginal.essay.v1";
   function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, planAll: false, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false, tryPick: null, lessonMore: false, lessonJump: null,
-    shapeSlot: null, shapeEx: false, shapeAlts: false, shapeAlt: null }; }
+    shapeSlot: null, shapeEx: false, shapeAlts: false, shapeAlt: null,
+    reviewSlot: null, reviewHelp: null, reviewExample: null, term: null }; }
   // peeked persists for the whole attempt: revealing once disqualifies mastery even
   // if the answer is hidden again before checking. Cleared only on a new attempt.
   function esResetQuiz() { ES.quiz = { revealed: false, peeked: false, attempt: "", result: null }; }
@@ -4280,7 +4282,8 @@
   //   "unreachable" the coach was asked and could not answer. A failure.
   //   "demo"        demo mode, entered on purpose
   //   "unconnected" no coach is connected to this class yet. Not a failure.
-  function esNormalizeCoach(raw, demoNote, role, demoKind) {
+  const ES_SLOT_STATUS = ["ok", "needs_work", "missing"];
+  function esNormalizeCoach(raw, demoNote, role, demoKind, blocks) {
     raw = raw || {};
     // missing: ABSENT slot keys only, validated against THIS paragraph's slot set,
     // deduped. The model returns keys; the app supplies all card text and frames,
@@ -4320,11 +4323,46 @@
       .filter(l => /_{2,}/.test(l.fix) && esIsFrame(l.fix))
       .map(l => ({ ...l, severity: ["critical", "should", "optional"].includes(l.severity) ? l.severity : "should" }))
       .slice(0, 5);
+    // ---- slotFeedback: one validated result per authored slot -----------------
+    //
+    // Checked here as well as in the worker, because the same rule enforced at both
+    // ends is the pattern this file already uses for frames and chips: an older or
+    // misbehaving worker must not be able to put a diagnosis on the wrong sentence.
+    //
+    // A slot the worker did not report is NOT filled in and is NOT ok. Silence is
+    // not evidence that a sentence is doing its job, so an unreported slot stays
+    // unassessed and the tab says so.
+    const byId = new Map((blocks || []).map(b => [b.id, b]));
+    const sfSeen = new Set();
+    const slotFeedback = (Array.isArray(raw.slotFeedback) ? raw.slotFeedback : [])
+      .map(f => ({
+        slot: String((f && f.slot) || "").trim(),
+        status: String((f && f.status) || "").trim(),
+        blockId: String((f && f.blockId) || "").trim(),
+        issue: String((f && f.issue) || "").trim(),
+      }))
+      .filter(f => valid.has(f.slot) && ES_SLOT_STATUS.indexOf(f.status) >= 0)
+      .filter(f => !sfSeen.has(f.slot) && sfSeen.add(f.slot))
+      .filter(f => {
+        if (!f.blockId) return f.status === "missing";
+        const b = byId.get(f.blockId);
+        if (!b) return false;                       // an id we never sent
+        if (b.slot && b.slot !== f.slot) return false;  // it disagrees with what the sentence was written as
+        return true;
+      })
+      .map(f => (f.status === "ok" ? { slot: f.slot, status: "ok", blockId: f.blockId, issue: "" } : f))
+      .filter(f => f.status === "ok" || (f.issue && esShortPhrase(f.issue, 34)))
+      .slice(0, 8);
     const note = String(raw.note || "").trim();
     const check = String(raw.check || "").trim();
     return {
       note: esShortPhrase(note, 60) ? note : "",       // a band comment, never a rewrite
-      missing, nudges, chips, lines,
+      missing, nudges, chips, lines, slotFeedback,
+      // How many per-slot results ARRIVED, beside how many survived. A worker that
+      // sent none is an older one and gets the older panel; a worker that sent some
+      // and had them all refused is a different situation, and hiding that behind
+      // the old panel would present a review that silently did not happen.
+      slotFeedbackSent: (Array.isArray(raw.slotFeedback) ? raw.slotFeedback.length : 0),
       check: (check && esShortPhrase(check, 30)) ? check : "",
       demoNote: demoNote || "", demoKind: demoNote ? (demoKind || "demo") : ""
     };
@@ -4333,11 +4371,24 @@
   // derived from THIS paragraph's actual slot set (two middle slots) so the ordered
   // skeleton demo works for any scaffold, including Business Studies TEEEC/TDECC.
   // Note and chips come from the shared demo sample (generic, clearly labelled).
-  function esDemoRaw(role) {
+  function esDemoRaw(role, p) {
     const base = (window.ESSAY && window.ESSAY.coachSample) || {};
     const slots = slotsForRole(role);
     const mid = slots.slice(1, 3).map(s => ({ slot: s.key }));
-    return Object.assign({}, base, { missing: mid.length ? mid : (base.missing || []) });
+    // The demo result speaks the same shape as a real one, so the review surface is
+    // exercised by demo mode rather than only by a live worker. Statuses are derived
+    // from what the paragraph actually contains: a slot with a sentence written for
+    // it is reported needs_work, one with no sentence at all is missing, and nothing
+    // is reported ok, because a demo cannot know that.
+    const blocks = p ? esBlocks(p) : [];
+    const owned = {};
+    blocks.forEach(b => { if (b.slot && !owned[b.slot]) owned[b.slot] = b.id; });
+    const slotFeedback = slots.map(s => (owned[s.key]
+      ? { slot: s.key, status: "needs_work", blockId: owned[s.key],
+          issue: "Demo guidance: this was not written about your sentence." }
+      : { slot: s.key, status: "missing", blockId: "",
+          issue: "Demo guidance: no sentence is doing this job yet." }));
+    return Object.assign({}, base, { missing: mid.length ? mid : (base.missing || []), slotFeedback: slotFeedback });
   }
 
   function esOpen(opts) {
@@ -5481,7 +5532,20 @@
       });
     };
     host.querySelectorAll("[data-esdecopen]").forEach(b => b.onclick = () => show(b.dataset.esdecopen));
-    host.querySelectorAll("[data-esdecode]").forEach(b => b.onclick = () => show(b.dataset.esdecode));
+    // A highlighted term opens the small card beside it rather than expanding a
+    // panel inside the page. The panel moved everything below it and took the
+    // student's place with it; the card is a separate node over the top and the
+    // page underneath does not move at all. A term with nothing authored behind it
+    // falls through to the old panel rather than opening an empty card.
+    host.querySelectorAll("[data-esdecode]").forEach(b => b.onclick = () => {
+      const i = b.dataset.esdecode;
+      if (esTermInfo(esQuestionDef(), i)) {
+        ES.ui.term = i;
+        esRepaintModals(ES.draft && ES.draft.paras ? ES.draft.paras[ES.draft.pos] : null);
+        return;
+      }
+      show(i);
+    });
     const x = host.querySelector("[data-esdecclose]"); if (x) x.onclick = () => show(openKey);
   }
 
@@ -5722,7 +5786,98 @@
   function esCommitBlocks(p) {
     p.text = p.blocks.map(b => String(b.text || "").trim()).filter(Boolean).join(" ");
     p.blocksFrom = p.text;
-    if (p.feedback && (p.gradedText || "") !== p.text) { p.feedback = null; p.gradedText = null; }
+    // THE FEEDBACK STAYS. It used to be deleted here the moment the text differed
+    // by one character, which took the diagnosis away from the student exactly as
+    // they started acting on it, and left nothing on screen to say a check had ever
+    // happened. It is kept, marked as belonging to the previous version, and
+    // replaced only by a new check. esFeedbackStale is the whole of that rule.
+  }
+  // ---- ONE ROW PER AUTHORED STRUCTURAL JOB ---------------------------------
+  //
+  // The paragraph review renders from THIS and nothing else, so it follows whatever
+  // the paragraph model declares: TEEEC's five, TDECC's five, the shared four, the
+  // introduction's two, the conclusion's two, and whatever a later structure
+  // declares. No label and no count is written into the renderer.
+  //
+  // FOUR STATES, and the fourth is the point:
+  //
+  //   ok          the coach said this element is doing its job
+  //   needs_work  present and weak, with the sentence it belongs to
+  //   missing     no sentence is doing this job
+  //   unassessed  the coach did not report it
+  //
+  // unassessed is NOT ok. A tick that appears because nothing was said would be the
+  // app inventing praise out of silence, and a student reading it would stop looking
+  // at a sentence nobody has judged.
+  //
+  // `edited` sits beside the status rather than replacing it: the sentence has
+  // changed since the check, so what the coach said is about the previous version.
+  // It never becomes ok on its own, because only a check can decide that.
+  function esSlotStatuses(p) {
+    const slots = slotsForRole(p.role);
+    const fb = p.feedback;
+    const sf = (fb && Array.isArray(fb.slotFeedback)) ? fb.slotFeedback : [];
+    const byBlock = {};
+    esBlocks(p).forEach(b => { byBlock[b.id] = b; });
+    return slots.map(s => {
+      const f = sf.find(x => x.slot === s.key) || null;
+      const status = f ? f.status : "unassessed";
+      const blockId = (f && f.blockId) || "";
+      // A referenced sentence that is no longer in the paragraph is not re-pointed
+      // at another one: the row keeps its diagnosis and loses its anchor.
+      const block = blockId && byBlock[blockId] ? byBlock[blockId] : null;
+      return {
+        key: s.key,
+        label: s.label || s.key,
+        job: String(s.job || ""),
+        status: status,
+        issue: (f && f.issue) || "",
+        blockId: block ? blockId : "",
+        text: block ? String(block.text || "") : "",
+        edited: !!(blockId && esBlockEdited(p, blockId)),
+        needsWork: status === "needs_work" || status === "missing",
+      };
+    });
+  }
+  // No byFamily resolution here on purpose: slotsForRole already ran every slot
+  // through esSlotByFamily, so the label and job arriving are the ones the
+  // directive chose. Resolving it twice would be a second place for the rule that
+  // keeps evaluative wording off a causal question to be got wrong.
+  // Which row the review has open. Defaults to the first that needs work, so
+  // pressing Check lands on a problem rather than on whatever is first.
+  function esActiveReviewSlot(p) {
+    const rows = esSlotStatuses(p);
+    const want = ES.ui.reviewSlot;
+    if (want && rows.some(r => r.key === want)) return want;
+    const first = rows.find(r => r.needsWork) || rows[0];
+    return first ? first.key : null;
+  }
+
+  // ---- IS THIS FEEDBACK STILL ABOUT THIS PARAGRAPH -------------------------
+  //
+  // Derived, every time, by comparing the paragraph as it stands against the copy
+  // taken when it was checked. There is deliberately no `fixed` or `resolved` flag
+  // to set: a second status maintained by hand is one that can say a sentence was
+  // dealt with when the text says otherwise.
+  function esCheckedSnapshot(p) {
+    const fb = p && p.feedback;
+    return (fb && fb.checked && Array.isArray(fb.checked.blocks)) ? fb.checked : null;
+  }
+  function esFeedbackStale(p) {
+    if (!p || !p.feedback) return false;
+    return (p.gradedText || "") !== (p.text || "");
+  }
+  // Whether ONE sentence has changed since the check. An id that was not in the
+  // snapshot is a sentence written afterwards, which is also a change.
+  function esBlockEdited(p, blockId) {
+    if (!blockId) return false;
+    const snap = esCheckedSnapshot(p);
+    if (!snap) return false;
+    const was = snap.blocks.find(b => b.id === blockId);
+    const now = esBlocks(p).find(b => b.id === blockId);
+    if (!was) return !!now;
+    if (!now) return true;                       // the sentence it was about is gone
+    return String(was.text || "").trim() !== String(now.text || "").trim();
   }
   // Changing the argument or the evidence does NOT silently relabel sentences that
   // were written to argue something else. Their provenance stays, they are flagged
@@ -6060,6 +6215,8 @@
     // the question bank
     bank: '<path d="m16 6 4 14" /> <path d="M12 6v14" /> <path d="M8 8v12" /> <path d="M4 4v16" />',
     // reset the notebook position
+    // the student has changed this since it was checked
+    edit: '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" /> <path d="m15 5 4 4" />',
     reset: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /> <path d="M3 3v5h5" />',
     // delete a page or a saved essay
     delete: '<path d="M10 11v6" /> <path d="M14 11v6" /> <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /> <path d="M3 6h18" /> <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />',
@@ -8412,10 +8569,20 @@
         ${req.map(a => `<span class="es-covitem ${used[a] ? "on" : ""}">${esc(a)}${used[a] ? " \u00b7 " + esc(used[a]) : ""}</span>`).join("")}
         <span class="es-wanote">start anywhere; this is checked before you submit</span>
       </div>` : ""}
+      ${/* THE WAY IN, ABOVE THE PLAN RATHER THAN UNDER IT.
+             Gate 1 found a student landing here with no obvious route into writing:
+             the actions were real but sat below the working answer, the coverage
+             list and the paragraph rows, which reads as a form to complete first.
+             Planning is optional and now says so in the one place that decides
+             whether a student believes it. Choosing a specific paragraph is still
+             one press, on the rows underneath. */ ""}
+      <div class="es-startgo">
+        <button class="es-btn primary" id="esstartintro">${esIcon("forward")}<span>Start writing</span></button>
+        ${firstBody != null ? `<button class="es-btn ghost" id="esstartbody">Start ${esc(d.paras[firstBody].role.toLowerCase())} instead</button>` : ""}
+        <span class="es-startopt">Planning is optional. You can plan the whole response first, or start writing and plan each paragraph as you reach it.</span>
+      </div>
       <div class="es-startrows">${rows}</div>
       <div class="es-startbtns">
-        <button class="es-btn primary" id="esstartintro">Write the introduction</button>
-        ${firstBody != null ? `<button class="es-btn ghost" id="esstartbody">Start ${esc(d.paras[firstBody].role.toLowerCase())}</button>` : ""}
         <button class="es-linkbtn" id="esplanall">Plan all paragraphs first</button>
       </div>
     </div>`;
@@ -8901,7 +9068,7 @@
       ? `<div class="es-editrow"><textarea class="es-input es-linebox" data-esedit="${k}" rows="2">${esc(b.text)}</textarea>
          ${esEditGuideHTML(p, b)}
          <div class="es-linebtns"><button type="button" class="es-btn primary sm" data-essaveedit="${k}">Save</button><button type="button" class="es-linkbtn" data-escanceledit>Cancel</button><button type="button" class="es-linkbtn es-del" data-esdelblock="${k}">Delete sentence</button></div></div>`
-      : `<span class="es-said ${(b.ambiguous || b.needsReview) ? "flagged" : ""}" data-esreopen="${k}" title="Click to rewrite this sentence">${esc(b.text)}</span>${(b.ambiguous || b.needsReview) ? `<span class="es-checkline">${esReviewWhy(b)} <button type="button" class="es-linkbtn" data-esreopen="${k}">Review sentence</button> <button type="button" class="es-linkbtn" data-esok="${k}">Still works</button></span>` : ""}`).join(" ");
+      : `<span class="es-said ${(b.ambiguous || b.needsReview) ? "flagged" : ""}" data-esreopen="${k}" data-esblock="${esc(b.id)}" title="Click to rewrite this sentence">${esc(b.text)}</span>${(b.ambiguous || b.needsReview) ? `<span class="es-checkline">${esReviewWhy(b)} <button type="button" class="es-linkbtn" data-esreopen="${k}">Review sentence</button> <button type="button" class="es-linkbtn" data-esok="${k}">Still works</button></span>` : ""}`).join(" ");
 
     // Argument and evidence stop being cards and become chips once chosen. The
     // decision deserved a card while it was being made; carrying it at full size
@@ -9372,6 +9539,162 @@
   // The margin. Substance first (note, missing-element cards, on-target questions,
   // the notes check), with expression and signposting polish plus word chips tucked
   // behind a quiet "polish the wording" reveal so it stays de-emphasised early.
+  // ---- A COMPLETE EXAMPLE, OR AN HONEST ABSENCE -----------------------------
+  //
+  // Same subject, different question, authored, and labelled as both. The attempt's
+  // OWN package only: the shared set that esWorkedExampleSet falls back to is
+  // Ancient History, and a Business Studies student being shown it as "a complete
+  // example" would be exactly the silent cross-subject borrowing the shape examples
+  // were just closed for. A borrowed model sentence discloses itself and teaches a
+  // shape; a whole borrowed paragraph presented as the structure does not.
+  //
+  // It must also cover THIS paragraph's jobs. Business Studies ships two complete
+  // TEEEC-slot examples and no introduction or conclusion, so the control appears
+  // on a body paragraph and is withheld on the other two rather than showing
+  // something that does not answer the question the button asks.
+  function esCompleteExample(p) {
+    const sc = esAttemptPackage();
+    const list = (sc && Array.isArray(sc.examples)) ? sc.examples : [];
+    if (!list.length) return null;
+    const keys = slotsForRole(p.role).map(x => x.key);
+    if (!keys.length) return null;
+    const q = esQuestionDef();
+    const hit = list.find(ex => {
+      const slots = (ex && ex.slots) || {};
+      if (!keys.every(k => String(slots[k] || "").trim())) return false;
+      // A different question, said as a fact rather than hoped for: an example
+      // whose topic is the one the student is writing about is not "elsewhere".
+      const t = String(ex.topic || "").trim().toLowerCase();
+      const qt = String((q && q.topic) || "").trim().toLowerCase();
+      return !t || !qt || t !== qt;
+    });
+    if (!hit) return null;
+    return { ex: hit, what: esExampleWhat(p), keys: keys, subject: (sc && sc.label) || "" };
+  }
+  function esExampleWhat(p) {
+    if (esIsIntro(p)) return "introduction";
+    if (esIsConcl(p)) return "conclusion";
+    const scaf = esActiveScaffold();
+    return (scaf && scaf.label) ? scaf.label + " example" : "example";
+  }
+  // Why the control is not there, in words, rather than a button that does nothing.
+  function esExampleWhyNot(p) {
+    const sc = esAttemptPackage();
+    const name = (sc && sc.label) || "this subject";
+    return "No complete " + esExampleWhat(p) + " has been written for " + name + " yet, so there is nothing to show you here. Nothing from another subject is used in its place.";
+  }
+
+  // ---- THE PARAGRAPH REVIEW ------------------------------------------------
+  //
+  // Rendered entirely from esSlotStatuses, which is rendered entirely from the
+  // authored paragraph model. Nothing below names a structure, counts a row or
+  // writes a label: TEEEC gets five tabs and the introduction gets two because
+  // that is what those models declare.
+  const ES_STATUS_ICON = { ok: "check", needs_work: "warn", missing: "warn", unassessed: "info" };
+  function esStatusWord(r) {
+    if (r.edited) return "edited";
+    return r.status === "ok" ? "doing its job"
+      : r.status === "needs_work" ? "needs work"
+      : r.status === "missing" ? "missing" : "not checked";
+  }
+  function esReviewHTML(p) {
+    const rows = esSlotStatuses(p);
+    if (!rows.length) return `<div class="es-mempty">This paragraph declares no structural parts to review.</div>`;
+    const active = esActiveReviewSlot(p);
+    const stale = esFeedbackStale(p);
+    const tabs = rows.map(r => `<button type="button" class="es-rtab ${esc(r.status)}${r.edited ? " edited" : ""}${
+      r.key === active ? " on" : ""}" data-esrtab="${esc(r.key)}" aria-pressed="${r.key === active ? "true" : "false"}"
+      >${esIcon(r.edited ? "edit" : (ES_STATUS_ICON[r.status] || "info"))}<span>${esc(esCap(r.label))}</span></button>`).join("");
+    const row = rows.find(r => r.key === active) || rows[0];
+    // Said once, at the top, rather than on every row: the paragraph has moved on
+    // since this was checked. The findings stay on screen because they are still
+    // what was said, and the student is told what they now refer to.
+    const staleBar = stale ? `<div class="es-rstale">${esIcon("info")}<span>This is the check of the previous version of your paragraph. Re-check when you have finished editing.</span></div>` : "";
+    // Every result refused. The rows stay, unassessed, and the reason is said: a
+    // check that came back unusable is not the same as a check that came back
+    // clean, and the difference is the whole point of failing closed.
+    const refused = (!(p.feedback.slotFeedback || []).length && p.feedback.slotFeedbackSent)
+      ? `<div class="es-rstale">${esIcon("warn")}<span>The coach's answer could not be matched to the sentences in this paragraph, so nothing below is claimed about it. Re-check to try again.</span></div>` : "";
+    return `<div class="es-review">
+      <div class="es-rtabs" role="group" aria-label="Structural parts of this paragraph">${tabs}</div>
+      ${staleBar}${refused}
+      ${esReviewRowHTML(p, row)}
+      <div class="es-ractions">
+        <button type="button" class="es-btn primary sm" id="esrecheck">${esIcon("feedback")}<span>Re-check paragraph</span></button>
+        ${rows.filter(r => r.needsWork).length > 1
+          ? `<button type="button" class="es-linkbtn" id="esrnext">Next part that needs work</button>` : ""}
+      </div>
+    </div>`;
+  }
+  // One row, open. An element doing its job says so in one line and stops; the app
+  // writes that line from the authored job, so nothing a model wrote about a
+  // sentence it approved of can reach the student.
+  function esReviewRowHTML(p, r) {
+    if (!r) return "";
+    if (r.status === "unassessed") {
+      return `<div class="es-rbody"><div class="es-rhead unassessed">${esIcon("info")}<b>${esc(esCap(r.label))} was not checked</b></div>
+        <p class="es-rjob">${esc(r.job)}</p>
+        <p class="es-rhint">The coach did not report on this part, so nothing is claimed about it either way.</p></div>`;
+    }
+    if (r.status === "ok" && !r.edited) {
+      return `<div class="es-rbody"><div class="es-rhead ok">${esIcon("check")}<b>Doing its job</b></div>
+        <p class="es-rjob">${esc(r.job)}</p>
+        ${r.text ? `<blockquote class="es-rquote">${esc(r.text)}</blockquote>` : ""}</div>`;
+    }
+    const head = r.edited
+      ? `<div class="es-rhead edited">${esIcon("edit")}<b>${esc(esCap(r.label))} · edited</b></div>
+         <p class="es-rhint">You have changed this sentence since the check, so what the coach said below was about the previous version. Re-check to find out whether it is fixed.</p>`
+      : `<div class="es-rhead ${esc(r.status)}">${esIcon("warn")}<b>${esc(esCap(r.label))} ${r.status === "missing" ? "is missing" : "needs work"}</b></div>`;
+    const diagnosis = r.issue ? `<p class="es-rissue">${esc(r.issue)}</p>` : "";
+    const frame = esSlotFrame(p, r.key);
+    // TRY THIS STRUCTURE is authored content, from this subject's scaffold for this
+    // job, with the directive's family already applied. It is never model output:
+    // the app has held these frames all along and they name what goes in each blank,
+    // which is more use than a row of anonymous underscores.
+    const scaffold = frame ? `<div class="es-rscaff"><div class="es-rlbl">try this structure</div>
+      <div class="es-rframe">${esFrameHTML(frame)}</div></div>` : "";
+    const editing = ES.ui.editBlock != null;
+    const rewrite = r.blockId
+      ? `<div class="es-rrewrite"><div class="es-rlbl">rewrite your sentence</div>
+          <textarea class="es-input es-rbox" data-esrbox="${esc(r.blockId)}" rows="3">${esc(r.text)}</textarea></div>`
+      : `<div class="es-rrewrite"><div class="es-rlbl">write this sentence</div>
+          <textarea class="es-input es-rbox" data-esrbox="" data-esrslot="${esc(r.key)}" rows="3" placeholder="${
+            esc("Add your " + r.label + " sentence")}"></textarea></div>`;
+    const ex = esCompleteExample(p);
+    return `<div class="es-rbody">
+      ${head}${diagnosis}${scaffold}${rewrite}
+      <div class="es-rrow">
+        <button type="button" class="es-btn ghost sm" id="esrhelp">${esIcon("note")}<span>More help</span></button>
+        ${ex ? `<button type="button" class="es-btn ghost sm" id="esrexample">${esIcon("open")}<span>See complete ${esc(ex.what)}</span></button>` : ""}
+        <span class="es-sp"></span>
+        <button type="button" class="es-btn primary sm" id="esrsave">${esIcon("save")}<span>Save revision</span></button>
+      </div>
+      ${ex ? "" : `<p class="es-rhint">${esc(esExampleWhyNot(p))}</p>`}
+      ${void editing || ""}
+    </div>`;
+  }
+  // The authored frame for a slot, with the blanks left exactly as authored.
+  function esSlotFrame(p, key) {
+    const t = slotTemplates(key);
+    if (!t) return "";
+    const fam = esDirectiveFamily();
+    const byFam = t.byFamily && t.byFamily[fam];
+    return String((byFam && byFam.tier1) || t.tier1 || (typeof t === "string" ? t : "") || "");
+  }
+  // [named blanks] are what the student fills. Marked up so they read as holes and
+  // never as words to keep.
+  function esFrameHTML(frame) {
+    // The brackets stay. They are what makes a hole read as a hole rather than as a
+    // word the student is meant to keep, and the authored blanks NAME what goes in
+    // them, which is more use than a row of anonymous underscores.
+    return esc(frame).replace(/\[([^\]]+)\]/g, (m, inner) => `<span class="es-rblank">[${inner}]</span>`)
+      .replace(/_{2,}/g, '<span class="es-rblank">[&nbsp;&nbsp;&nbsp;]</span>');
+  }
+  // Authored labels are lower case because they are written to sit mid-sentence
+  // ("a concluding link sentence is missing"). A control and a heading start a
+  // sentence, so they start with a capital. The authored string is not changed.
+  function esCap(t) { const x = String(t || ""); return x ? x.charAt(0).toUpperCase() + x.slice(1) : x; }
+
   function esCoachMargin(p) {
     // The panel is named in every state. It used to be six stacked blocks with no
     // header, so the one part of the screen that answers the student's writing
@@ -9393,6 +9716,23 @@
       ? `<div class="es-demonote ${fb.demoKind === "unreachable" ? "warn" : "info"}">${
           esIcon(fb.demoKind === "unreachable" ? "warn" : "info")}<span>${esc(fb.demoNote)}</span></div>`
       : "";
+    // ---- THE PARAGRAPH REVIEW -------------------------------------------
+    //
+    // One structural job at a time. What used to be here was every finding the
+    // coach returned, stacked: a note, the missing elements, questions to push
+    // thinking, wording advice, chips, warnings. All of it true, all of it at
+    // once, and a student with a weak Explain sentence had to read six blocks to
+    // find out which sentence to change.
+    //
+    // Now the tabs are the navigator, one row is open, and under it is the
+    // shortest thing that can be acted on: what is wrong, the authored scaffold
+    // for that job, and their own sentence in a box they type in.
+    // Only when there is something validated to review. A worker that returns no
+    // slot results, or whose results were all refused for naming a sentence or a
+    // slot that is not in this paragraph, falls through to the panel below rather
+    // than showing an empty review: the note and the questions it did return are
+    // still worth reading, and an older worker keeps working unchanged.
+    if (Array.isArray(fb.slotFeedback) && (fb.slotFeedback.length || fb.slotFeedbackSent)) return head + demo + esReviewHTML(p);
     const note = fb.note ? `<div class="es-mnote">${esc(fb.note)}</div>` : "";
     const scaff = fb.missing.length ? `<div class="es-scaffhint">The dashed rows under your paragraph show each of these in order, where it belongs.</div>` : "";
     const miss = fb.missing.length ? `<div class="es-mblock"><div class="es-mh">missing elements</div>${fb.missing.map(slot => esMissCard(p, slot)).join("")}${scaff}</div>` : "";
@@ -9518,8 +9858,233 @@
   // rebuild the margin. State is stored on ES.ui so a later full render (e.g.
   // paragraph nav) reproduces the same open/closed state. The single scaffold toggle
   // lives here in the margin but flips the skeleton block in the writing column.
+  // ---- THE OPTIONAL WINDOWS ------------------------------------------------
+  //
+  // More help, the complete example and the term card all render into ONE overlay
+  // node that lives beside the writer and is repainted on its own. The writer, the
+  // paragraph and a half-typed revision are never re-rendered to open or close one
+  // of these, which is the whole reason they are here rather than expanded into
+  // the flow: the previous term explainer injected a block into the page, moved
+  // everything under it, and lost the student's place.
+  //
+  // EVERY LINE IN THEM IS AUTHORED. More help says what the job is and where it
+  // goes, and offers the other authored shapes for that sentence. There is no
+  // "common problems" list, because nothing in this repository authors one, and
+  // inventing curriculum claims to fill a window is the thing this project does
+  // not do.
+  function esModalHTML(p) {
+    if (ES.ui.reviewHelp) return esHelpModalHTML(p, ES.ui.reviewHelp);
+    if (ES.ui.reviewExample) return esExampleModalHTML(p);
+    if (ES.ui.term != null) return esTermModalHTML(p, ES.ui.term);
+    return "";
+  }
+  function esModalShell(title, tag, body) {
+    return `<div class="es-scrim2" data-esmodalscrim><div class="es-modal" role="dialog" aria-modal="true" aria-label="${esc(title)}">
+      <div class="es-modalhd"><h2 class="es-modalt">${esc(title)}</h2>${
+        tag ? `<span class="es-modaltag">${esc(tag)}</span>` : ""}
+        <button type="button" class="es-util quiet" id="esmodalx" aria-label="Close">${esIcon("close")}</button></div>
+      <div class="es-modalbody">${body}</div>
+      <div class="es-modalfoot"><button type="button" class="es-btn ghost sm" id="esmodalclose">Close</button></div>
+    </div></div>`;
+  }
+  function esHelpModalHTML(p, key) {
+    const def = slotDef(p.role, key); if (!def) return "";
+    const where = ES_WHERE[key] || "";
+    const t = slotTemplates(key) || {};
+    const alts = Array.isArray(t.tier2) ? t.tier2 : [];
+    return esModalShell("More help — " + esCap(def.label || key), "", `
+      <section class="es-mdsec"><h3>What this part does</h3>
+        <p>${esc(esCap(def.job))}${where ? ", " + esc(where) : ""}.</p></section>
+      ${alts.length ? `<section class="es-mdsec"><h3>Other shapes this sentence can take</h3>
+        ${alts.map(a => `<div class="es-mdalt"><span class="es-mdaltt">${esc(a.type || "")}</span>
+          <div class="es-rframe">${esFrameHTML(a.frame || "")}</div></div>`).join("")}
+        <p class="es-rhint">Each of these is a shape to type over. None of them is a sentence to keep.</p>
+      </section>` : ""}`);
+  }
+  function esExampleModalHTML(p) {
+    const got = esCompleteExample(p); if (!got) return "";
+    const rows = got.keys.map(k => {
+      const def = slotDef(p.role, k);
+      return `<tr><th scope="row" class="es-exkey">${esc((def && def.label) || k)}</th>
+        <td class="es-exval">${esc(String(got.ex.slots[k] || ""))}</td></tr>`;
+    }).join("");
+    return esModalShell("Complete " + got.what + " — different question", got.ex.label || "", `
+      <p class="es-rhint">A complete example from another ${esc(got.subject || "")} question. It shows how the parts fit together. It is not an answer to your question, and nothing in it belongs in your paragraph.</p>
+      <table class="es-extable">${rows}</table>`);
+  }
+
+  // ---- THE TERM CARD, FROM WHATEVER IS AUTHORED -----------------------------
+  //
+  // TWO INDEPENDENT AUTHORED SOURCES, and the card renders whichever of them
+  // actually exists:
+  //
+  //   a subject-owned VOCABULARY RECORD  -> what the term means
+  //   the question's own HIGHLIGHT NOTE  -> what it means IN THIS QUESTION
+  //
+  // Neither is invented and neither substitutes for the other. There are no
+  // displayable vocabulary records in the build today, so most terms open with the
+  // question note alone, which is the honest card rather than a dictionary entry
+  // written to fill the space above it. A term with neither is not an explainer and
+  // does not behave like one.
+  function esTermInfo(q, i) {
+    const dec = esDecodeOf(q); if (!dec) return null;
+    const h = (dec.highlights || [])[Number(i)];
+    if (!h) return null;
+    const inQuestion = String(h.note || "").trim();
+    // The vocabulary side, by exact term, from THIS attempt's subject only. A record
+    // is shown when it resolves complete; esVocabRecord already refuses a partial
+    // one, and nothing here reaches into another subject's library for a definition.
+    let plain = "";
+    const recs = (esVocabStore().records) || {};
+    const want = String(h.anchor || "").trim().toLowerCase();
+    Object.keys(recs).forEach(id => {
+      if (plain) return;
+      const rec = esVocabRecord(id);
+      if (rec && String(rec.term || "").trim().toLowerCase() === want) plain = String(rec.plain || "").trim();
+    });
+    if (!inQuestion && !plain) return null;
+    return { anchor: h.anchor, kind: h.kind || "", label: h.label || "", plain: plain, inQuestion: inQuestion };
+  }
+  function esTermModalHTML(p, i) {
+    const info = esTermInfo(esQuestionDef() || (ES.draft && ES.draft.questionDef) || null, i);
+    if (!info) return "";
+    const sc = esAttemptPackage();
+    return `<div class="es-scrim2 es-termscrim" data-esmodalscrim><div class="es-termcard" role="dialog" aria-modal="true" aria-label="${esc(info.anchor)}">
+      <div class="es-termhd"><h2 class="es-termt">${esc(info.anchor)}</h2>${
+        sc && sc.label ? `<span class="es-modaltag">${esc(sc.label)}</span>` : ""}
+        <button type="button" class="es-util quiet" id="esmodalx" aria-label="Close">${esIcon("close")}</button></div>
+      ${info.plain ? `<p class="es-termdef">${esc(info.plain)}</p>` : ""}
+      ${info.inQuestion ? `<div class="es-termq"><div class="es-termqh">In this question</div>
+        <p class="es-termqp">${esc(info.inQuestion)}</p></div>` : ""}
+      <div class="es-termfoot"><button type="button" class="es-btn ghost sm" id="esmodalclose">Close</button></div>
+    </div></div>`;
+  }
+
+  // ---- REVIEW BINDINGS -----------------------------------------------------
+  //
+  // Only the review panel is re-rendered when a tab changes: the writer, the
+  // paragraph and any half-typed revision above it stay exactly where they are.
+  function esRepaintReview(p) {
+    const host = document.getElementById("eshost"); if (!host) return;
+    const m = host.querySelector(".es-margin");
+    if (!m) { esRender(); return; }
+    m.innerHTML = esCoachMargin(p);
+    m.querySelectorAll("button:not([type])").forEach(b => (b.type = "button"));
+    esBindCoachMargin(p);
+    esPaintReviewHighlight(p);
+  }
+  // The sentence the open row belongs to, marked in the paragraph itself. This is
+  // what makes "which sentence is this about" answerable without reading.
+  function esPaintReviewHighlight(p) {
+    const host = document.getElementById("eshost"); if (!host) return;
+    const rows = esSlotStatuses(p);
+    const active = esActiveReviewSlot(p);
+    const row = rows.find(r => r.key === active);
+    host.querySelectorAll("[data-esblock]").forEach(el => {
+      const on = !!(row && row.blockId && el.dataset.esblock === row.blockId);
+      el.classList.toggle("es-rlit", on);
+      el.classList.toggle("es-rlit-warn", on && row.needsWork && !row.edited);
+    });
+  }
+  // ONE NODE, repainted alone. Created once and reused, so opening or closing a
+  // window never touches the writer: no remount, no reflow, and a revision the
+  // student is half way through typing is still there afterwards.
+  function esModalHost() {
+    let el = document.getElementById("esmodalhost");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "esmodalhost";
+      document.body.appendChild(el);
+    }
+    return el;
+  }
+  function esCloseModals(p) {
+    ES.ui.reviewHelp = null; ES.ui.reviewExample = null; ES.ui.term = null;
+    esRepaintModals(p);
+  }
+  function esRepaintModals(p) {
+    const el = esModalHost();
+    const html = esModalHTML(p);
+    el.innerHTML = html;
+    if (!html) { document.removeEventListener("keydown", esModalKey, true); return; }
+    el.querySelectorAll("button:not([type])").forEach(b => (b.type = "button"));
+    const close = () => esCloseModals(p);
+    const x = el.querySelector("#esmodalx"); if (x) x.onclick = close;
+    const c = el.querySelector("#esmodalclose"); if (c) c.onclick = close;
+    // Pressing away from the card closes it; pressing inside it does not.
+    const scrim = el.querySelector("[data-esmodalscrim]");
+    if (scrim) scrim.onmousedown = ev => { if (ev.target === scrim) close(); };
+    esModalKey._close = close;
+    document.addEventListener("keydown", esModalKey, true);
+    const first = el.querySelector("#esmodalclose") || el.querySelector("#esmodalx");
+    if (first) first.focus();
+  }
+  function esModalKey(ev) {
+    if (ev.key !== "Escape") return;
+    ev.stopPropagation();
+    if (esModalKey._close) esModalKey._close();
+  }
+
+  function esBindReview(p, host) {
+    host.querySelectorAll("[data-esrtab]").forEach(b => b.onclick = () => {
+      ES.ui.reviewSlot = b.dataset.esrtab;
+      esRepaintReview(p);
+    });
+    const nx = host.querySelector("#esrnext");
+    if (nx) nx.onclick = () => {
+      const rows = esSlotStatuses(p).filter(r => r.needsWork);
+      if (!rows.length) return;
+      const at = rows.findIndex(r => r.key === esActiveReviewSlot(p));
+      ES.ui.reviewSlot = rows[(at + 1 + rows.length) % rows.length].key;
+      esRepaintReview(p);
+    };
+    const rc = host.querySelector("#esrecheck");
+    if (rc) rc.onclick = () => esGetFeedback(ES.draft ? ES.draft.pos : 0);
+    // SAVE REVISION writes the student's own characters and nothing else. There is
+    // no control anywhere on this panel that puts the scaffold, the diagnosis or any
+    // model text into the paragraph: the box starts as their sentence, they change
+    // it, and this stores what the box now says.
+    const sv = host.querySelector("#esrsave");
+    if (sv) sv.onclick = () => {
+      const box = host.querySelector("[data-esrbox]");
+      if (!box) return;
+      const text = String(box.value || "").trim();
+      if (!text) { toast("Write the sentence first."); return; }
+      const id = box.dataset.esrbox || "";
+      const d = ES.draft;
+      const blocks = esBlocks(p);
+      if (id) {
+        const b = blocks.find(x => x.id === id);
+        if (!b) { toast("That sentence is no longer in this paragraph."); return; }
+        b.text = text;
+      } else {
+        // No sentence was doing this job, so this is a new one, written for it.
+        const nb = esNewBlock(d, text, box.dataset.esrslot || null, "written");
+        const order = slotsForRole(p.role).map(x => x.key);
+        const at = order.indexOf(nb.slot);
+        const before = blocks.findIndex(x => x.slot && order.indexOf(x.slot) > at);
+        if (at >= 0 && before >= 0) blocks.splice(before, 0, nb); else blocks.push(nb);
+      }
+      esCommitBlocks(p);
+      esSaveDraft();
+      // Straight to the next thing that still needs work, unless nothing does.
+      const rows = esSlotStatuses(p).filter(r => r.needsWork && !r.edited);
+      if (rows.length) ES.ui.reviewSlot = rows[0].key;
+      esRender();
+      toast("Saved. Re-check the paragraph when you are ready.");
+    };
+    const hp = host.querySelector("#esrhelp");
+    if (hp) hp.onclick = () => { ES.ui.reviewHelp = esActiveReviewSlot(p); esRepaintModals(p); };
+    const exb = host.querySelector("#esrexample");
+    if (exb) exb.onclick = () => { ES.ui.reviewExample = true; esRepaintModals(p); };
+    // Painted here rather than at each call site, so every path that rebinds the
+    // panel also lights the sentence the open row is about.
+    esPaintReviewHighlight(p);
+  }
+
   function esBindCoachMargin(p) {
     const host = document.getElementById("eshost"); if (!host) return;
+    esBindReview(p, host);
     const pol = $("#espolish");
     if (pol) pol.onclick = () => {
       ES.ui.polishOpen = !ES.ui.polishOpen;
@@ -10058,7 +10623,10 @@
       if (!d.paras[i]) d.paras[i] = { role: "Body " + (i + 1), point: "", text: "", feedback: null, gradedText: null };
       if ((d.paras[i].text || "") !== incoming) {
         d.paras[i].text = incoming;
-        if (d.paras[i].feedback && (d.paras[i].gradedText || "") !== incoming) { d.paras[i].feedback = null; d.paras[i].gradedText = null; }
+        // Kept, not deleted, for the same reason as esCommitBlocks: the student
+        // returning to a paragraph they edited elsewhere should see what the last
+        // check said and that it was about the previous version, not a blank panel.
+        void incoming;
       }
     }
     if (d.paras.length > keep) d.paras.length = keep;
@@ -10368,26 +10936,45 @@
           // TDECC included) without a per-subject worker change. Backward compatible:
           // an older worker ignores it and falls back to its built-in slot keys.
           slots: slotsForRole(p.role).map(s => ({ key: s.key, label: s.label, job: s.job })),
+          // THE PARAGRAPH'S OWN SENTENCES, WITH THEIR IDS. The marking path has
+          // always sent these; the coach did not, so a per-sentence diagnosis came
+          // back carrying a quote and was matched by prefix with a fall back to
+          // position. Position is a guess. These ids are minted per draft and never
+          // reused, so a diagnosis can name one exactly and be checked against the
+          // list it was given.
+          blocks: esBlocks(p).map(b => ({ id: b.id, slot: b.slot || "", text: String(b.text || "") })),
           code: state.code || undefined
         };
         if ((d.rubric || "").trim()) payload.rubric = d.rubric.trim(); // omit when skipped -> generic bands
         const res = await esPostJSON(state.endpoint, payload);
         if (!res.ok) throw new Error("coach " + res.status);
-        fb = esNormalizeCoach(await res.json(), "", p.role);
+        fb = esNormalizeCoach(await res.json(), "", p.role, "", payload.blocks);
       } catch (e) {
         // Plain words for the student, with the underlying reason kept where it
         // is useful rather than shouted: "Failed to fetch" is a sentence about
         // our network, not about their paragraph.
-        fb = esNormalizeCoach(esDemoRaw(p.role),
+        fb = esNormalizeCoach(esDemoRaw(p.role, p),
           "The live coach could not be reached, so nothing below was written about your paragraph. What follows is demo guidance (" + e.message + ").",
-          p.role, "unreachable");
+          p.role, "unreachable", esBlocks(p));
       }
     } else {
-      fb = esNormalizeCoach(esDemoRaw(p.role), ES.demo
+      fb = esNormalizeCoach(esDemoRaw(p.role, p), ES.demo
         ? "Demo coaching. Nothing below was written about your paragraph. Real feedback switches on once the worker is re-pasted."
         : "Demo coaching. Nothing below was written about your paragraph. Real feedback switches on once your teacher connects coaching.",
-        p.role, ES.demo ? "demo" : "unconnected");
+        p.role, ES.demo ? "demo" : "unconnected", esBlocks(p));
     }
+    // WHAT WAS CHECKED, recorded beside the result.
+    //
+    // Feedback used to be deleted the instant the paragraph changed, which is the
+    // one thing a student must not have happen: the diagnosis they were working
+    // from vanished the moment they started acting on it. It is kept now, and
+    // whether it is still current is DERIVED by comparing this snapshot against the
+    // paragraph as it stands. Nothing here is a second status that can drift: it is
+    // a copy of the text that produced the feedback.
+    fb.checked = {
+      text: submittedText,
+      blocks: esBlocks(p).map(b => ({ id: b.id, text: String(b.text || "") })),
+    };
     p.feedback = fb; p.gradedText = submittedText; // cooldown anchor: must revise before re-asking
     esResetCoachUI(); // fresh feedback: missing-element cards start collapsed (Tier 0), polish tucked
     ES.pending = false; esSaveDraft();
@@ -10397,7 +10984,7 @@
     if (ES.screen === "coached" && ES.draft && ES.draft.pos === idx) {
       const host = document.getElementById("eshost");
       const m = host && host.querySelector(".es-margin");
-      if (m) { m.innerHTML = esCoachMargin(p); host.querySelectorAll("button:not([type])").forEach(b => b.type = "button"); esBindCoachMargin(p); }
+      if (m) { m.innerHTML = esCoachMargin(p); host.querySelectorAll("button:not([type])").forEach(b => b.type = "button"); esBindCoachMargin(p); esPaintReviewHighlight(p); }
       // The missing set changed, so rebuild the ordered shape and rebind it. It stays
       // on screen either way; what changes is which rows read as done and which gaps
       // open their frame.

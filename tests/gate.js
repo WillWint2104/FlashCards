@@ -109,6 +109,11 @@ const TIERS = {
   // added to it, and fast is the tier whose whole point is that nobody thinks
   // about whether to run it.
   //
+  // ui65 and ui66 are full-only, and for the plainest reason: between them they
+  // stub the coach eleven times and walk a student through an introduction, a
+  // conclusion and two body paragraphs. They are the paragraph review's own
+  // regression, and the review is checked by driving it, not by sampling it.
+  //
   // ui64 is full-only for the same reason as ui63 and one more: it publishes a
   // package, walks a student from the picker into the workspace, out again and
   // back through My essays, and then asks the shape resolver four questions per

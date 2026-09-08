@@ -124,11 +124,14 @@ async function toComposer(p){
   ok((await p.$$('[data-esdecbox]')).length===1,'and the panel container they need is present');
   if (dec.length){
     await p.$$eval('[data-esdecode]',es=>es[0].click()); await settled(p);
+    // A term with authored question context opens its own card; one without falls
+    // through to the panel. Either way exactly one thing opens.
     const shown = await p.evaluate(()=>({
       panels:[...document.querySelectorAll('[data-esdecpanel]')].filter(x=>!x.hidden).length,
+      cards:document.querySelectorAll('.es-termcard').length,
       boxHidden:document.querySelector('[data-esdecbox]')?.hidden }));
-    ok(shown.panels===1,'pressing a highlighted word opens exactly one panel');
-    ok(shown.boxHidden===false,'and the decoder box is visible rather than a dead control');
+    ok(shown.panels+shown.cards===1,'pressing a highlighted word opens exactly one explanation: '+JSON.stringify(shown));
+    ok(shown.cards===1 || shown.boxHidden===false,'and it is a real explanation rather than a dead control');
   }
 
   console.log('pageerrors:', errs.length?errs.slice(0,3):'none');
