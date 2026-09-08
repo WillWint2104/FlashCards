@@ -1,4 +1,4 @@
-const { chromium, T, OUT, BASE, fileUrl, ownQuestion } = require('./env');
+const { loginAs, chromium, T, OUT, BASE, fileUrl, ownQuestion } = require('./env');
 
 // Waits that name their condition. This app fetches nothing and renders
 // synchronously, so the effect of a click is present on the next frame:
@@ -68,10 +68,10 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   {
     const p2 = await ctx.newPage();
     await p2.route(/workers\.dev/, r=>r.abort());
-    await p2.goto(T); await here(p2, '.navtab');
-    await p2.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
-    await settled(p2);
-    await p2.selectOption('#essubject','ancient_history').catch(()=>{});
+    // Ancient History is legacy: registered, and not offered in the current
+    // picker. The way into it is the login that routes there, which is also the
+    // only way a student is in it at all.
+    await loginAs(p2, '11Anc1', T);
     await settled(p2);
     await ownQuestion(p2, 'Explain how religious beliefs shaped everyday life in one ancient society you have studied.');
     await p2.click('#esstart');

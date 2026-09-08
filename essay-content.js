@@ -50,6 +50,18 @@ window.ESSAY = {
       key: "ancient_history",
       label: "Ancient History",
       stage: "Year 11",
+      // LEGACY. Registered, not selectable.
+      //
+      // Three states, and this entry is the reason they had to be told apart. It
+      // is REGISTERED - esSubjectContent resolves it, so a stored attempt, an
+      // 11Anc routing rule and the worked-example set all keep working. It is not
+      // SELECTABLE - the current Essay Practice picker does not offer it, because
+      // this is not a course we are taking new students into.
+      //
+      // "Active" was doing both jobs at once and the two kept being confused for
+      // each other. Its questions and criteria stay exactly as they are; nothing
+      // here is deleted and nothing that resolves a committed subject is filtered.
+      legacy: true,
       // Marked against THIS subject's dimensions, never another's. Original wording.
       markingCriteria: [
         "historical argument and judgement",
@@ -138,6 +150,38 @@ window.ESSAY = {
     // HSC finance relationships and are flagged as such. No case-study content is
     // asserted here: the student supplies the business evidence.
     // -------------------------------------------------------------------------
+    // ---- ECONOMICS -----------------------------------------------------------
+    // A REAL Long Response package, thin on purpose.
+    //
+    // It has been routed to since /^12Ec/ was written - and the shipped teacher
+    // default class code is 12Ec126 - but it has never had an entry here, so
+    // esSubjectContent returned null and every subject-shaped surface resolved to
+    // nothing. Worse, the marking resolver's terminal fallback happened to be the
+    // FLASHCARD half's criteria, which are Economics: an Economics essay reached
+    // Economics criteria by coincidence rather than by ownership, and so did every
+    // other subject whose label failed to resolve.
+    //
+    // These four criteria are the same four, moved here deliberately rather than
+    // reached for. content.js:11 describes them as "the four dimensions this
+    // subject's extended responses are marked against", which is this evaluation
+    // model, so they belong to this package. The flashcard copy stays where it is
+    // for the flashcard half; nothing now reads across.
+    //
+    // No questions, no pathways, no scaffolds, no concepts, no evidence. Those are
+    // capabilities this package does not have yet, and the application says so
+    // rather than borrowing another subject's.
+    economics: {
+      key: "economics",
+      label: "Economics",
+      stage: "Year 12",
+      markingCriteria: [
+        "thesis and sustained judgement",
+        "use of evidence and data",
+        "economic terminology",
+        "cohesion"
+      ],
+      questions: []
+    },
     business_studies: {
       key: "business_studies",
       label: "Business Studies",
@@ -146,6 +190,10 @@ window.ESSAY = {
       // rejected in code if it mentions this, because an example in the student's
       // own context is a sentence to copy rather than a pattern to learn.
       caseStudy: "McDonald",
+      // What this course counts as evidence, in its own words. Used only in
+      // structural guidance; a package that does not declare one gets the neutral
+      // wording rather than another subject's.
+      evidenceConvention: "a specific case study fact",
       // The four dimensions an HSC Business Studies extended response is assessed on,
       // described in original wording.
       markingCriteria: [
@@ -1914,27 +1962,41 @@ window.ESSAY = {
     // one example serves every question that uses the shape. `fills` maps the
     // example's own words back onto the shape's slots, which is what lets the
     // student see which part is which.
+    // EVERY EXAMPLE NAMES THE SUBJECT THAT OWNS IT.
+    //
+    // A sentence shape is shared across subjects on purpose: the same shape is the
+    // same shape whatever is being written about. The example FILLING it is not -
+    // it is academic material somebody wrote for a course, and all four of these
+    // are Business Studies. Without an owner they were reachable from any subject
+    // that happened to use the same shape, so an Ancient History student could be
+    // shown a human resources sentence under "the same shape, somewhere else",
+    // which discloses a context and not a subject.
+    //
+    // app.js resolves these against the attempt's subject and shows nothing where
+    // there is no example of that subject's own. An example with no subject is
+    // therefore unreachable, which is the right direction to fail in: unattributed
+    // academic material is not shown to anybody.
     examples: {
       "causal.body.topic": [
-        { id: "gym-timepoor", context: "a gym, and time-poor professionals",
+        { id: "gym-timepoor", subject: "business_studies", context: "a gym, and time-poor professionals",
           text: "A gym targeting time-poor professionals may offer app-based booking because customers can arrange sessions without calling during business hours.",
           fills: { cause: "time-poor professionals", effect: "app-based booking",
                    reasoning: "customers can arrange sessions without calling during business hours" } }
       ],
       "causal.introduction.thesis": [
-        { id: "hr-motivation", context: "employee motivation, in human resources",
+        { id: "hr-motivation", subject: "business_studies", context: "employee motivation, in human resources",
           text: "Employee motivation affects productivity, retention and workplace culture because a business gets the behaviour its rewards actually encourage.",
           fills: { concept: "Employee motivation", areas: "productivity, retention and workplace culture",
                    principle: "a business gets the behaviour its rewards actually encourage" } }
       ],
       "causal.conclusion.restate": [
-        { id: "hr-motivation", context: "employee motivation, in human resources",
+        { id: "hr-motivation", subject: "business_studies", context: "employee motivation, in human resources",
           text: "Across productivity, retention and workplace culture, the same thing was doing the work: what the business chose to reward.",
           fills: { areas: "productivity, retention and workplace culture",
                    pattern: "the same thing was doing the work: what the business chose to reward" } }
       ],
       "causal.conclusion.judgement": [
-        { id: "hr-motivation", context: "employee motivation, in human resources",
+        { id: "hr-motivation", subject: "business_studies", context: "employee motivation, in human resources",
           text: "Therefore, employee motivation affects how a workforce performs, because the rewards a business sets are what its staff respond to.",
           fills: { answer: "employee motivation affects how a workforce performs, because the rewards a business sets are what its staff respond to" } }
       ]

@@ -125,8 +125,10 @@ module.exports = [
   {
     id: "app-nav-resets-picker",
     file: "app.js",
-    find: '      } else if (to === "back") {\n        f.pickStage = f.pickReturn || "subject";',
-    replace: '      } else if (to === "back") {\n        f.pickStage = "subject"; f.questionId = null;',
+    // The branch grew a return-to-the-draft case in between, so the mutation is
+    // anchored on the line it is actually about and the branch that follows it.
+    find: '        f.pickStage = f.pickReturn || "subject";\n      } else if (to === "marginalhome") {',
+    replace: '        f.pickStage = "subject"; f.questionId = null;\n      } else if (to === "marginalhome") {',
     owner: "ui52",
     why: "a nav press is navigation; losing the chosen question and the filters on the way is losing the student's work",
   },
@@ -211,8 +213,12 @@ module.exports = [
   {
     id: "ask-button-keeps-asking",
     file: "app.js",
-    find: '    ask.textContent = ES.pending ? "Checking\\u2026"',
-    replace: '    ask.textContent = ask.textContent;',
+    // Rewritten when the control gained an icon beside its label: writing
+    // textContent on the button would have deleted the icon, so the LABEL is
+    // written now and the mutation follows it. The entry had gone STALE and was
+    // testing nothing, which the runner used to report as a pass.
+    find: '    esSetLabel(ask, ES.pending ? "Checking\\u2026"',
+    replace: '    if (false) esSetLabel(ask, ES.pending ? "Checking\\u2026"',
     owner: "ui56",
     why: "the button went on saying it was asking the coach after the answer had arrived, been saved and been rendered",
   },
@@ -225,12 +231,103 @@ module.exports = [
     why: "a worker that accepts the connection and never answers left the student waiting with no message and no bound",
   },
 
+  // ---- subject isolation, at both ends -------------------------------------
+  {
+    id: "assess-state-always-available",
+    file: "app.js",
+    find: "  function esAssessmentAvailable(d) { return esAssessmentState(d).available; }",
+    replace: "  function esAssessmentAvailable(d) { return true; }",
+    owner: "ui64",
+    why: "a subject with no marking criteria was selectable and only refused after a whole essay had been written",
+  },
+  {
+    id: "assess-state-never-declared",
+    file: "app.js",
+    find: "    if (!st || st.available) return \"\";",
+    replace: "    return \"\";",
+    owner: "ui64",
+    why: "the write-only state existed and was never said on the screen the attempt is started from",
+  },
+  {
+    id: "assess-sends-anyway",
+    file: "app.js",
+    find: "    const assess = esAssessmentState(d);\n    if (!assess.available) {\n      toast(ES_WRITE_ONLY_SUB + \".\");\n      return;\n    }",
+    replace: "    const assess = { available: true };",
+    owner: "ui64",
+    why: "a paragraph in a subject with no criteria was still sent to the coach, which would answer against whatever it could find",
+  },
+  {
+    id: "empty-criteria-counts-as-criteria",
+    file: "app.js",
+    find: "    const some = c => (Array.isArray(c) && c.length) ? c : null;",
+    replace: "    const some = c => c || null;",
+    owner: "ui64",
+    why: "markingCriteria: [] is truthy, so a package with an empty list walked past the fail-closed and was sent to the marker with nothing to mark against",
+  },
+  {
+    id: "shape-example-unowned",
+    file: "app.js",
+    find: "    const owned = mine ? all.filter(x => x && x.subject === mine) : [];",
+    replace: "    const owned = all;",
+    owner: "ui64",
+    why: "a Business Studies human resources example was shown to any subject that used the same sentence shape",
+  },
+  {
+    id: "shape-example-loses-its-owner",
+    file: "essay-content.js",
+    find: '{ id: "gym-timepoor", subject: "business_studies", context:',
+    replace: '{ id: "gym-timepoor", context:',
+    owner: "ui64",
+    why: "an authored example with no subject is academic material nobody owns, and it was reachable from everywhere",
+  },
+  {
+    id: "worked-example-drops-disclosure",
+    file: "app.js",
+    find: "    return { list: g, placeholder: esAttemptSubject() !== ESSAY_FALLBACK_EXAMPLE_SUBJECT };",
+    replace: "    return { list: g, placeholder: false };",
+    owner: "ui64",
+    why: "the borrowed worked example stopped saying it came from another subject, which is the only thing making it safe",
+  },
+  {
+    id: "picker-offers-legacy",
+    file: "app.js",
+    find: "  function esSubjectsList() { return esSubjectsRegistered().filter(s => !s.legacy); }",
+    replace: "  function esSubjectsList() { return esSubjectsRegistered(); }",
+    owner: "ui63",
+    why: "a legacy subject was offered to new students again, which is a product decision undone by a refactor",
+  },
+  {
+    id: "validate-allows-cross-wired-refs",
+    file: "tools/contract/validate.js",
+    find: "    if (declaredSubject && rec.subject && rec.subject !== declaredSubject)",
+    replace: "    if (false && declaredSubject && rec.subject && rec.subject !== declaredSubject)",
+    owner: "ui63",
+    why: "an Economics-declared package carrying topicRef business.operations published cleanly and read Topic: Operations",
+  },
+  {
+    id: "manifest-drops-record-owner",
+    file: "tools/contract/libraries.js",
+    find: "      if (owner) c.subject = owner;",
+    replace: "      if (false) c.subject = owner;",
+    owner: "ui63",
+    why: "the manifest said whether a record was finished and never whose it was, so no validator could see a cross-wire",
+  },
+  {
+    id: "runtime-drops-question-subject",
+    file: "tools/contract/runtime.js",
+    find: "    subject: q.subject || undefined,",
+    replace: "    subject: undefined,",
+    owner: "ui63",
+    why: "question.subject was dropped at the runtime adapter, leaving evaluation nothing to read but the picker",
+  },
+
   // ---- the harness watching itself ----------------------------------------
   {
     id: "gate-drops-a-suite",
     file: "tests/run.js",
-    find: '"ui52", "ui53", "ui54", "ui55"]',
-    replace: '"ui52", "ui53", "ui54"]',
+    // Follows the end of the list, which moves every time a suite is added.
+    find: '"ui63", "ui64"]',
+    replace: '"ui63"]',
     owner: "t23",
     why: "a maintained regression outside the runner is invisible, which is how twenty-eight suites rotted unnoticed",
   },

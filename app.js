@@ -357,10 +357,43 @@
     // Test mode (a whole imported paper) may carry its own subject/criteria; it is
     // defined only when that mode is present, so reach for it defensively.
     const paper = (typeof EXAM !== "undefined" && EXAM && EXAM.paper) ? EXAM.paper : null;
-    const label = (card && card.subject) || (paper && paper.subject) || C.subject || "";
-    const sub = essaySubjectByLabel(label);
-    let criteria = (card && card.markingCriteria) || (paper && paper.markingCriteria) || null;
-    if (!criteria) criteria = (sub && sub.markingCriteria) || C.markingCriteria || null;
+    // ---- WHICH PACKAGE IS MARKING THIS -------------------------------------
+    //
+    // Two different situations were sharing one fallback chain, and the shared
+    // ending was C.markingCriteria - the FLASHCARD half's criteria, which are
+    // Economics. For a flashcard that is correct: window.CONTENT is that card's
+    // own package. For a Long Response attempt it was a silent cross-subject
+    // substitution, and it fired whenever a label failed to match.
+    //
+    // They are separated here. A card that DECLARES a subject must resolve to
+    // that package or fail closed; a card that declares none is flashcard content
+    // and window.CONTENT is its package by definition, not by fallback.
+    const declaredKey = (card && card.subjectKey) || null;
+    const declaredLabel = (card && card.subject) || (paper && paper.subject) || "";
+    const declares = !!(declaredKey || declaredLabel);
+    // By KEY first. The label match is a string comparison that has already been
+    // seen to miss on authored whitespace; a key cannot.
+    const sub = (declaredKey && esSubjectContent(declaredKey)) ||
+      (declaredLabel ? essaySubjectByLabel(declaredLabel) : null);
+    const label = declaredLabel || (sub && sub.label) || (declares ? "" : C.subject) || "";
+    // AN EMPTY LIST IS NOT A LIST OF CRITERIA. [] is truthy, so a package carrying
+    // markingCriteria: [] passed every check below and was sent to the marker with
+    // nothing to mark against - the exact substitution the fail-closed underneath
+    // exists to prevent, walking straight past it. Found by a test that took a
+    // subject's criteria away and pressed the control that was still on screen.
+    const some = c => (Array.isArray(c) && c.length) ? c : null;
+    let criteria = some(card && card.markingCriteria) || some(paper && paper.markingCriteria) || null;
+    if (!criteria) criteria = some(sub && sub.markingCriteria) || null;
+    // FAIL CLOSED. A response that names a subject the application cannot resolve,
+    // or resolves to a package carrying no criteria, is not marked against
+    // somebody else's. The caller refuses rather than sending a request that would
+    // come back looking authoritative.
+    if (declares && !criteria) {
+      return { unresolved: true, subject: label || declaredKey || undefined,
+        why: sub ? "the " + (sub.label || declaredKey) + " package carries no marking criteria"
+                 : "no subject package named " + JSON.stringify(declaredKey || label) + " is registered" };
+    }
+    if (!declares && !criteria) criteria = some(C.markingCriteria) || null;
     // Band expectations. A question may ship its own; criteria.bands === null means
     // "use the general ones", which is the normal case while no official set is
     // authored. The general set is written originally and is subject-agnostic.
@@ -423,6 +456,13 @@
     if (state.endpoint) {
       try {
         const mc = markingContext(card);
+        // Refuse rather than send. A request that goes out with the wrong
+        // package's criteria comes back looking exactly like a right one, so the
+        // only safe move on an unresolved subject is not to ask.
+        if (mc.unresolved) {
+          return { error: "subject-unresolved", subject: mc.subject,
+            note: "This response was not marked: " + mc.why + ". Marking it against another subject's criteria would not tell you anything true about it." };
+        }
         const res = await esPostJSON(state.endpoint, {
             prompt: card.prompt, marks: card.marks, model_answer: card.model, vocab: card.vocab, answer,
             scaffold: card.scaffold, faults: card.faults,
@@ -3253,7 +3293,17 @@
   }
   // Read only, for the suites that need to see what the merge produced. It
   // computes nothing of its own and cannot change anything.
-  try { window.__esSubjects = () => esAllSubjects().subjects; window.__esImports = esImportReport; } catch (e) { /* not a browser */ }
+  try {
+    window.__esSubjects = () => esAllSubjects().subjects; window.__esImports = esImportReport;
+    // Reading only, like the two above. A sentence shape resolves for a paragraph
+    // deep inside the writing flow and only where a question authors pathways,
+    // which today is Business Studies alone - so the rule that an example belongs
+    // to a subject could not be asked about from outside without walking a route
+    // that does not exist for the subject the rule is about. This asks it
+    // directly, against the real data, for whichever subject is committed.
+    window.__esShapeExample = id => esShapeExample(id);
+    window.__esWorkedExamples = () => esWorkedExampleSet();
+  } catch (e) { /* not a browser */ }
   function esSubjectContent(subject) {
     const subs = esAllSubjects().subjects;
     return (subs && subs[subject]) || null;
@@ -3264,10 +3314,18 @@
   const ESSAY_FALLBACK_EXAMPLE_SUBJECT = "ancient_history";
   // A subject's display label. Falls back to a humanised key (e.g. "economics" ->
   // "Economics") when the subject has no content yet, and to "" for an unknown code.
+  // Whether the application is in a subject it can show a student anything about.
+  // A class code routing to a subject whose content is not written yet leaves
+  // ES.subject holding a key nothing resolves. That is supported, and it is not
+  // the same thing as the student being in that subject.
+  function esHasSubject() { return !!esSubjectContent(ES.subject); }
   function esSubjectLabel() {
     const sc = esSubjectContent(ES.subject);
     if (sc && sc.label) return sc.label;
-    if (ES.subject) return String(ES.subject).replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+    // A key with no content behind it is not a subject to name. Humanising it
+    // produced "Economics" in the header of an application that has never held a
+    // single economics question, which is a label invented from a routing rule
+    // rather than from anything a student could open.
     return "";
   }
   // The normalised view the screens render from. Always non-null: the core works for
@@ -3287,15 +3345,127 @@
   // Subjects a student can pick in setup: any that ship their own questions or a
   // paragraph scaffold. Lets any login load a subject's bank without a class-code
   // rule (the routed subject is just the default selection).
-  function esSubjectsList() {
+  // Every registered subject is a Long Response subject and is offered. The old
+  // filter - "has questions or a scaffold" - made the picker a list of subjects
+  // that happened to be authored rather than a list of subjects that exist, so a
+  // package with no bundled bank could not be reached at all even when the
+  // student's own class code routed to it. A package that ships less says so on
+  // the screens that would have shown it; it is not hidden.
+  // ---- WHICH PACKAGE AN ATTEMPT BELONGS TO --------------------------------
+  //
+  // Not the picker. A draft is bound to the package its question came from at the
+  // moment it was started and stays bound to it: switching the subject selector
+  // starts a DIFFERENT attempt rather than changing this one underneath the
+  // student. Attempts are already bagged per subject (esBagKey), so a draft that
+  // keeps its own subject stays where it was saved and is reopened from My essays
+  // in the subject it was written in.
+  //
+  // Before this, esMarkCard and the coach payload both read the live ES.subject,
+  // and d.subject was written once and never read. A student who began in
+  // Business Studies, went back to setup and changed the picker, then submitted,
+  // was marked against the other subject's criteria with nothing on screen saying
+  // so.
+  function esAttemptSubject(d) {
+    d = (d === undefined) ? ES.draft : d;
+    return (d && d.subject) || ES.subject || null;
+  }
+  function esAttemptPackage(d) {
+    const k = esAttemptSubject(d);
+    return k ? esSubjectContent(k) : null;
+  }
+  // FAIL CLOSED. A question that names one package and an attempt that names
+  // another is not a disagreement to settle by preferring either. Returns the
+  // disagreement so a caller can refuse rather than guess.
+  function esSubjectMismatch(d) {
+    d = (d === undefined) ? ES.draft : d;
+    if (!d) return null;
+    const qs = d.questionSubject || null;
+    if (qs && d.subject && qs !== d.subject) return { attempt: d.subject, question: qs };
+    return null;
+  }
+
+  // ---- WRITE-ONLY PRACTICE, DECLARED BEFORE A WORD IS WRITTEN --------------
+  //
+  // A package can carry questions and no marking criteria. An imported one
+  // declaring a subject nothing registers is the ordinary case: mergeSubjects
+  // makes it a container so its question is not invisible, and a container has
+  // nothing to mark against. The old behaviour was to let the student choose it,
+  // plan, write the whole response, press Check this paragraph and only THEN be
+  // refused - a fail-closed at the latest possible moment, which is a nasty
+  // surprise dressed as a safety property.
+  //
+  // Writing is not gated on it. Marginal lets a student practise where support is
+  // incomplete, and taking that away to avoid an awkward message would be the
+  // wrong trade. What changes is that the state is DECLARED, on the screen where
+  // the attempt is chosen, before anything is written.
+  //
+  // The question is asked of markingContext rather than answered again beside it.
+  // Whatever it would decide when the response is sent is exactly what the
+  // student is promised beforehand, so the promise cannot drift from the rule.
+  function esAssessmentState(d) {
+    d = (d === undefined) ? ES.draft : d;
+    const key = esAttemptSubject(d);
+    if (!key) return { available: false, reason: "no-subject" };
+    // Before an attempt exists there is no draft to ask about, so the committed
+    // subject stands in for one. Nothing else about the stub matters: the package
+    // is resolved from the subject and the criteria come from the package.
+    const probe = d || { id: "es-probe", subject: key, paras: [] };
+    let mc = null;
+    try { mc = markingContext(esMarkCard(probe)); } catch (e) { mc = null; }
+    if (!mc) return { available: false, reason: "no-criteria", subject: esSubjectLabel(key) || key };
+    if (mc.unresolved) {
+      return { available: false, reason: "no-criteria",
+        subject: mc.subject || esSubjectLabel(key) || key, why: mc.why || "" };
+    }
+    return { available: true, subject: mc.subject || esSubjectLabel(key) || key };
+  }
+  function esAssessmentAvailable(d) { return esAssessmentState(d).available; }
+  // The same two facts wherever they are said, so the picker, the preview and the
+  // workspace cannot end up promising different things.
+  const ES_WRITE_ONLY_HEAD = "Writing available";
+  const ES_WRITE_ONLY_SUB = "Coach and marking feedback unavailable for this subject";
+  function esWriteOnlyHTML(st) {
+    if (!st || st.available) return "";
+    const named = st.reason === "no-subject" ? "" : (st.subject || "");
+    return `<div class="qp-cap" data-escap="${esc(st.reason)}">
+      <div class="qp-capr"><span class="qp-captick">${esIcon("check")}</span><b>${esc(ES_WRITE_ONLY_HEAD)}</b></div>
+      <div class="qp-capr"><span class="qp-capno">${esIcon("warn")}</span><span class="qp-capsub">${
+        esc(ES_WRITE_ONLY_SUB)}</span></div>
+      ${/* markingContext's own `why` is carried in the state and is not printed
+             here: it says the same thing in the validator's words, and the two
+             sentences beside each other read as two different problems. */ ""}
+      <p class="qp-hint">${named ? esc(named) + " carries no marking criteria." : "No subject is chosen yet."}
+        You can plan, write, save and come back to this essay. Nothing will be read
+        against another subject's criteria, and nothing is sent for feedback while
+        this subject has none of its own.</p>
+    </div>`;
+  }
+
+  // ---- THREE SUBJECT STATES, NOT TWO ---------------------------------------
+  //
+  //   REGISTERED   in the registry. esSubjectContent resolves it, so stored
+  //                attempts, routing rules and legacy data keep working.
+  //   SELECTABLE   offered in the current Essay Practice picker: a course we are
+  //                taking new students into.
+  //   LEGACY       registered and not selectable.
+  //
+  // One word - "active" - was carrying both of the first two, and they are not the
+  // same claim. A package existing is not a reason to offer it, and a package not
+  // being offered is not a reason to stop resolving it. Told apart here so neither
+  // can be changed by accident while meaning to change the other.
+  function esSubjectsRegistered() {
     const subs = esAllSubjects().subjects;
-    return Object.keys(subs)
-      .filter(k => { const s = subs[k]; return s && ((Array.isArray(s.questions) && s.questions.length) || s.scaffolds); })
-      .map(k => ({ key: k, label: subs[k].label || k }));
+    return Object.keys(subs).filter(k => subs[k] && subs[k].key)
+      .map(k => ({ key: k, label: subs[k].label || k, legacy: !!subs[k].legacy }));
+  }
+  function esSubjectsList() { return esSubjectsRegistered().filter(s => !s.legacy); }
+  function esSubjectIsLegacy(key) {
+    const sc = key ? esSubjectContent(key) : null;
+    return !!(sc && sc.legacy);
   }
   // A model's short label (e.g. "teeec" -> "TEEEC") from the subject's scaffolds.
   function esParaModelLabel(model) {
-    const sc = esSubjectContent(ES.subject);
+    const sc = esAttemptPackage();
     const m = sc && sc.scaffolds && sc.scaffolds[model];
     return (m && m.label) || String(model || "").toUpperCase();
   }
@@ -3303,10 +3473,17 @@
   // placeholder. Examples are ALWAYS fixed and pre-written (never generated), whether
   // a subject's own or the borrowed fallback.
   function esWorkedExampleSet() {
-    const sc = esSubjectContent(ES.subject);
+    // THE ATTEMPT's package, like every other academic resolver. This was the last
+    // read of the picker left in the writing surfaces, and it decided whether the
+    // borrowed model carries its "a model from another subject" note: computed
+    // from the picker, the note describes a subject the student may not be
+    // writing in, and a package that ships its own examples silently returns
+    // placeholder:false - which is the label disappearing exactly when the
+    // borrowed material is most specific.
+    const sc = esAttemptPackage();
     if (sc && Array.isArray(sc.examples) && sc.examples.length) return { list: sc.examples, placeholder: false };
     const g = (window.ESSAY && window.ESSAY.slots && window.ESSAY.slots.examples) || [];
-    return { list: g, placeholder: ES.subject !== ESSAY_FALLBACK_EXAMPLE_SUBJECT };
+    return { list: g, placeholder: esAttemptSubject() !== ESSAY_FALLBACK_EXAMPLE_SUBJECT };
   }
   function esStructureDef(key) {
     const S = (window.ESSAY && window.ESSAY.structures) || [];
@@ -3333,7 +3510,7 @@
   // chosen from the draft (or the setup form before a draft exists). Returns null
   // when the subject ships no scaffolds, so the shared slot model is used instead.
   function esActiveScaffold() {
-    const sc = esSubjectContent(ES.subject);
+    const sc = esAttemptPackage();
     const models = sc && sc.scaffolds;
     if (!models) return null;
     const chosen = (ES.draft && ES.draft.paraModel) || (ES.form && ES.form.paraModel) ||
@@ -3472,11 +3649,29 @@
   function esShapeExample(shapeId) {
     const all = (((window.ESSAY || {}).shapes || {}).examples || {})[shapeId] || [];
     if (!all.length) return null;
+    // OWNED BY A SUBJECT FIRST, checked against the live question second.
+    //
+    // The shape is shared; the example filling it is academic material and belongs
+    // to the course it was written for. All four authored examples are Business
+    // Studies and were reachable from any subject using the same shape, because
+    // selection asked only whether the words collided with the question in front
+    // of the student. "See this shape used elsewhere" discloses a context, not an
+    // owner, and an Ancient History student reading a human resources sentence has
+    // not been told whose it is.
+    //
+    // There is no fallback here on purpose. Where a subject has no example of its
+    // own the route is withheld: borrowing one and labelling it harder is still
+    // borrowing, and writing one for the subject would be inventing academic
+    // material to fill a gap. An example carrying no subject is unreachable for
+    // the same reason - unattributed material is not shown to anybody.
+    const mine = esAttemptSubject();
+    const owned = mine ? all.filter(x => x && x.subject === mine) : [];
+    if (!owned.length) return null;
     const q = esQuestionDef();
     const banned = (esRequiredAreas(q) || [])
       .concat([(q && q.term1) || "", (q && q.term2) || ""])
       .map(x => String(x || "").toLowerCase().trim()).filter(x => x.length > 2);
-    return all.find(ex => {
+    return owned.find(ex => {
       const t = String(ex.text || "").toLowerCase();
       return !banned.some(b => t.indexOf(b) >= 0);
     }) || null;
@@ -3698,11 +3893,23 @@
     const place = pos ? `left:${pos.left}px;top:${pos.top}px;right:auto;bottom:auto` : "";
     return `<div class="es-nb" style="width:${sz.w}px;height:${sz.h}px;${place}" role="dialog" aria-label="Notebook">
       <div class="es-nbhead">
+        ${/* The toolbar was four underlined text links in a cream stationery shell,
+              which read as a different application sitting on top of this one. Icon
+              buttons in Marginal's own language, with the accessible name on the
+              control rather than on the picture. */ ""}
+        <span class="es-nbmark">${esIcon("note")}</span>
         <span class="es-nbtitle">Notebook</span>
-        <button type="button" class="es-nbact" data-esnbhome title="Put the notebook back in its default corner">reset position</button>
-        <button type="button" class="es-nbact" data-esnbmode="${mode === "save" ? "" : "save"}">save notebook</button>
-        <button type="button" class="es-nbact" data-esnbmode="${mode === "open" ? "" : "open"}">open</button>
-        <button type="button" class="es-nbx" data-esnbclose aria-label="Close notebook">${esIcon("close")}</button>
+        <span class="es-nbtools">
+          <button type="button" class="es-nbico" data-esnbmode="${mode === "save" ? "" : "save"}"
+            aria-label="Save this notebook" title="Save this notebook">${esIcon("save")}</button>
+          <button type="button" class="es-nbico" data-esnbmode="${mode === "open" ? "" : "open"}"
+            aria-label="Open a saved notebook" title="Open a saved notebook">${esIcon("open")}</button>
+          <button type="button" class="es-nbico" data-esnbhome
+            aria-label="Put the notebook back in its default corner"
+            title="Put the notebook back in its default corner">${esIcon("reset")}</button>
+          <button type="button" class="es-nbico" data-esnbclose
+            aria-label="Close notebook" title="Close notebook">${esIcon("close")}</button>
+        </span>
       </div>
       ${mode === "save" ? `<div class="es-nbbar">
         <input class="es-nbname" data-esnbname placeholder="Name this notebook" value="${esc(ES.ui.nbName || "")}">
@@ -3718,12 +3925,16 @@
       </div>` : ""}
       <textarea class="es-nbpaper" data-esnbbody placeholder="Write what you want to remember, in your own words.">${esc(pg ? pg.body : "")}</textarea>
       <div class="es-nbfoot">
-        <button type="button" class="es-nbstep" data-esnbgo="-1" ${n.active === 0 ? "disabled" : ""} aria-label="Previous page">\u2039</button>
+        <button type="button" class="es-nbico" data-esnbgo="-1" ${n.active === 0 ? "disabled" : ""}
+          aria-label="Previous page" title="Previous page">${esIcon("prev")}</button>
         <input class="es-nbpagename" data-esnbrename value="${esc(pg ? pg.name : "")}" aria-label="Page name">
         <span class="es-nbcount">${n.active + 1} of ${n.pages.length}</span>
-        <button type="button" class="es-nbstep" data-esnbgo="1" ${n.active >= n.pages.length - 1 ? "disabled" : ""} aria-label="Next page">\u203a</button>
-        <button type="button" class="es-nbact" data-esnbadd>+ new page</button>
-        <button type="button" class="es-nbact" data-esnbdel>delete page</button>
+        <button type="button" class="es-nbico" data-esnbgo="1" ${n.active >= n.pages.length - 1 ? "disabled" : ""}
+          aria-label="Next page" title="Next page">${esIcon("next")}</button>
+        <span class="es-nbfootacts">
+          <button type="button" class="es-nbico" data-esnbadd aria-label="New page" title="New page">${esIcon("add")}</button>
+          <button type="button" class="es-nbico danger" data-esnbdel aria-label="Delete this page" title="Delete this page">${esIcon("delete")}</button>
+        </span>
       </div>
     </div>`;
   }
@@ -3847,7 +4058,7 @@
   function esStudyRow(r) {
     const sub = [r.provider, r.note].filter(Boolean).join(" · ");
     return '<div class="es-stres">' +
-      '<span class="es-stico">' + esIcon("book") + '</span>' +
+      '<span class="es-stico">' + esIcon("understand") + '</span>' +
       '<span class="es-sttext"><span class="es-stlabel">' + esc(r.label || r.id) + '</span>' +
       (sub ? '<span class="es-stsub">' + esc(sub) + '</span>' : '') + '</span>' +
       // The guaranteed route. Everything else in this window is an enhancement
@@ -3871,7 +4082,7 @@
     // One sentence does not need a 400 by 220 window. Empty, it sizes to what it
     // has to say, the way the tool window does.
     return '<aside class="es-study' + (nothing && !prev ? " empty" : "") + '" role="dialog" aria-label="Study resources"' + style + '>' +
-      '<div class="es-sthead">' + esIcon("book") +
+      '<div class="es-sthead">' + esIcon("understand") +
         '<span class="es-sttitle">Study resources</span>' +
         '<button type="button" class="es-nbact" data-esstudyhome title="Put the window back where it opens">reset position</button>' +
         '<button type="button" class="es-nbx" data-esstudyclose aria-label="Close">' + esIcon("close") + '</button></div>' +
@@ -4063,7 +4274,13 @@
     return w.every(x => ES_FRAME_WORDS.has(x));
   }
   const ES_CATS = ["on_target", "signposting", "expression"];
-  function esNormalizeCoach(raw, demoNote, role) {
+  // demoKind says WHY this is not live feedback, because the three reasons are not
+  // the same thing to a student and must not look the same:
+  //   ""            live feedback on their own writing
+  //   "unreachable" the coach was asked and could not answer. A failure.
+  //   "demo"        demo mode, entered on purpose
+  //   "unconnected" no coach is connected to this class yet. Not a failure.
+  function esNormalizeCoach(raw, demoNote, role, demoKind) {
     raw = raw || {};
     // missing: ABSENT slot keys only, validated against THIS paragraph's slot set,
     // deduped. The model returns keys; the app supplies all card text and frames,
@@ -4109,7 +4326,7 @@
       note: esShortPhrase(note, 60) ? note : "",       // a band comment, never a rewrite
       missing, nudges, chips, lines,
       check: (check && esShortPhrase(check, 30)) ? check : "",
-      demoNote: demoNote || ""
+      demoNote: demoNote || "", demoKind: demoNote ? (demoKind || "demo") : ""
     };
   }
   // The labelled demo fallback, made subject/model-aware: the "missing" slots are
@@ -4126,6 +4343,11 @@
   function esOpen(opts) {
     opts = opts || {};
     ES.demo = !!opts.demo;
+    // A routing rule may name a subject whose content is not written yet, and
+    // that is a supported state: the core works for every login and only the
+    // subject-specific add-ons are missing. What is NOT supported is a screen
+    // claiming the student is in a subject when they are not. See esSubjectLabel
+    // and the picker, which is where the two disagreeing labels came from.
     ES.subject = opts.subject || subjectForCode(currentClassCode());
     ES.code = opts.code || currentClassCode() || (ES.demo ? "11Anc1" : "");
     ES.form = null; ES.draft = null; ES.screen = "setup"; ES.pending = false;
@@ -4133,6 +4355,59 @@
     if (!document.getElementById("eshost")) { const h = document.createElement("div"); h.id = "eshost"; document.body.appendChild(h); }
     document.body.classList.add("es-lock");
     esRender();
+  }
+  // Leaving Essay Practice, from anywhere.
+  //
+  // The save here is INSURANCE, not the mechanism, and the harness says so:
+  // removing it is a mutation that ui57 survives, because an accepted sentence
+  // and an arriving piece of feedback each write the draft already. It stays
+  // because a future path that mutates the draft without saving would otherwise
+  // lose it on the way out, and this is the one place every exit goes through.
+  // What is actually guaranteed - and what ui57 asserts - is the observable
+  // outcome: after leaving, the attempt, its question, its feedback and its
+  // position are in the store, and Resume in My essays reopens that same
+  // attempt rather than a fresh one.
+  // The narrow-screen navigation menu. One binder, called from every surface that
+  // wears the bar, because the bar is one component and its behaviour should not
+  // be reimplemented per screen. It closes the ways a menu closes: choosing
+  // something, pressing away from it, and Escape.
+  function esBindNavMenu() {
+    const btn = document.getElementById("esmenu");
+    const panel = document.getElementById("esnavpanel");
+    if (!btn || !panel) return;
+    const shut = () => {
+      ES.ui.navMenu = false;
+      btn.setAttribute("aria-expanded", "false");
+      panel.removeAttribute("data-open");
+      document.removeEventListener("click", away, true);
+      document.removeEventListener("keydown", esc, true);
+    };
+    const away = e => {
+      if (panel.contains(e.target)) return;
+      if (e.target.closest && e.target.closest("#esmenu")) return;
+      shut();
+    };
+    const esc = e => { if (e.key === "Escape") { shut(); btn.focus(); } };
+    btn.onclick = () => {
+      if (ES.ui.navMenu) { shut(); return; }
+      ES.ui.navMenu = true;
+      btn.setAttribute("aria-expanded", "true");
+      panel.setAttribute("data-open", "");
+      // Bound while open and dropped on close, so nothing accumulates across
+      // the renders this application does on almost every press.
+      document.addEventListener("click", away, true);
+      document.addEventListener("keydown", esc, true);
+    };
+    // Choosing something inside the menu is the end of using the menu. Bound in
+    // the capture phase so it runs whatever the control itself goes on to do,
+    // including the ones that re-render the page underneath it.
+    panel.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+      if (ES.ui.navMenu) shut();
+    }, true));
+  }
+  function esLeave() {
+    if (ES.draft) { try { esSaveDraft(); } catch (e) { /* private mode: the in-memory draft still stands */ } }
+    esClose();
   }
   function esClose() {
     const h = document.getElementById("eshost"); if (h) h.remove();
@@ -4184,10 +4459,14 @@
   function esRenderUnavailable(host) {
     host.innerHTML = `
     <div class="es-scrim"><div class="es-shell"><div class="es-wrap">
-      <div class="es-top"><div class="es-brand">Marginal · essay practice</div><button class="es-x" id="esx" aria-label="Close">close</button></div>
+      ${/* Nowhere to navigate to: the flow did not load. The brand is still the
+            brand, so the surface is recognisably Marginal, but it does not offer
+            destinations it cannot reach. */ ""}
+      <div class="es-top"><div class="qp-brand static"><span class="qp-logo" aria-hidden="true">M</span><span class="qp-word">Marginal</span></div>
+        <div class="es-topbtns"><button type="button" class="es-util quiet" id="esx" aria-label="Marginal home">${esIcon("home")}<span>Home</span></button></div></div>
       <div class="es-empty"><h2 class="es-h1">Not available right now</h2><p class="es-lead">Essay practice could not load. Please refresh, or check back shortly.</p></div>
     </div></div></div>`;
-    const x = $("#esx"); if (x) x.onclick = esClose;
+    const x = $("#esx"); if (x) x.onclick = esLeave;
   }
 
   // The question text already opens with its command verb, so show the command as
@@ -4231,9 +4510,15 @@
   // Only phrases of two or more words count. Single words like "business" or
   // "management" appear in half the syllabus and would match everything.
   function esSyllabusPhrases() {
-    if (ES._phrases) return ES._phrases;
+    // Cached per subject. A single cache would be filled the first time a Business
+    // Studies student used the screen and then served to every subject after,
+    // which is the gate defeating itself one call later.
+    const ck = esAttemptSubject() || "";
+    if (ES._phrases && ES._phrasesFor === ck) return ES._phrases;
     const out = [];
-    const topics = (window.BUSCONTENT && window.BUSCONTENT.topics) || {};
+    // Gated with the rest. This is the detector that told an Ancient History
+    // student their question was about Operations.
+    const topics = (busAllowed() && window.BUSCONTENT && window.BUSCONTENT.topics) || {};
     Object.keys(topics).forEach(key => {
       (topics[key].sections || []).forEach(sec => {
         (sec.points || []).forEach(pt => {
@@ -4261,7 +4546,7 @@
     });
     // Longest first, so "operations strategies" wins over "strategies".
     out.sort((a, b) => b.phrase.length - a.phrase.length);
-    ES._phrases = out;
+    ES._phrases = out; ES._phrasesFor = ck;
     return out;
   }
   function esDetectFromText(text) {
@@ -4330,7 +4615,15 @@
       : "Name the step between cause and effect rather than asserting the link.");
     lines.push("");
     lines.push("Evidence");
-    lines.push("Support each claim with a specific case study fact, and say what it demonstrates rather than leaving it to speak for itself.");
+    // "case study fact" is the Business Studies evidence genre, and it was being
+    // told to every subject: Ancient History marks use of SOURCES, Economics marks
+    // use of evidence and DATA. The neutral sentence is the honest default, and a
+    // package that names its own convention gets its own words. Nothing is
+    // invented for a package that has not said.
+    const conv = (esAttemptPackage() || {}).evidenceConvention;
+    lines.push(conv
+      ? "Support each claim with " + conv + ", and say what it demonstrates rather than leaving it to speak for itself."
+      : "Support each claim with specific evidence, and say what it demonstrates rather than leaving it to speak for itself.");
     lines.push("");
     lines.push("Organisation");
     lines.push("One idea per paragraph, each tied back to the question, in an order a reader can follow.");
@@ -4386,10 +4679,37 @@
     // Optional subject picker: any login can load a subject's question bank and
     // paragraph scaffold, defaulting to the subject routed from their class code.
     const subjectList = esSubjectsList();
-    const subjectPicker = subjectList.length > 1 ? `
+    // Said before the attempt starts, on every stage that can start one. The
+    // subject about to be used is the committed one, not a draft's: this screen is
+    // where a student picks what they are about to write in.
+    const assessNote = esWriteOnlyHTML(esAssessmentState(null));
+    // Offered whenever there is a subject to adopt, not only when there are two to
+    // choose between. The shipped teacher default class code is "12Ec126", which
+    // routes to a subject whose Long Response package is not written yet: that
+    // student has no committed subject, and at "> 1" a build with a single
+    // registered subject would leave them no way to reach one at all.
+    const subjectPicker = subjectList.length >= 1 ? `
       <div class="qp-field">
         <label class="qp-label" for="essubject">Subject</label>
-        <select id="essubject" class="qp-input qp-select">${subjectList.map(s =>
+        ${/* A <select> with no option marked shows its FIRST one, and that is how
+              this control came to display "Ancient History" while the header said
+              "Economics": the routed subject was in neither the list nor the
+              label, so each fell back to something different. When the student is
+              not in a subject the picker says so now, in a real option, rather
+              than presenting one they never chose as chosen. */ ""}
+        ${/* A LEGACY subject the student is already in is shown, and is not
+              offered. Those are different things and the difference is the whole
+              lifecycle: a student routed here by /^11Anc/, or reopening a stored
+              attempt, must see the subject they are actually in - anything else
+              is the "one screen says Economics, another says Ancient History"
+              fault arriving from the other side. It is rendered disabled and
+              named as no longer current, so it can be read and not chosen, and it
+              appears for nobody else. */ ""}
+        <select id="essubject" class="qp-input qp-select">${
+          esHasSubject() ? "" : `<option value="" selected>Choose a subject</option>`}${
+          (esHasSubject() && esSubjectIsLegacy(ES.subject))
+            ? `<option value="${esc(ES.subject)}" selected disabled>${esc(esSubjectLabel())} (not a current course)</option>`
+            : ""}${subjectList.map(s =>
           `<option value="${esc(s.key)}" ${s.key === ES.subject ? "selected" : ""}>${esc(s.label)}</option>`).join("")}</select>
       </div>` : "";
     // Paragraph-structure picker (e.g. Business Studies TEEEC vs TDECC), only when
@@ -4451,22 +4771,22 @@
     // The nav carries the mockup's weight with Marginal's real destinations. It
     // does not invent a section that does not exist.
     const nav = `<header class="qp-nav"><div class="qp-navin">
-      <span class="qp-logo" aria-hidden="true">M</span>
-      <span class="qp-word">Marginal</span>
-      <nav class="qp-navlinks">
-        ${/* A nav link is not a stage route within the picker, so it does not
-              carry the stage attribute: counting the routes on a screen would
-              have counted it. Both links go somewhere real; the one you are on
-              is marked rather than repeated. */ ""}
-        <button type="button" class="qp-navlink ${stage === "essays" ? "" : "on"}"
-          data-esnav="back">Essay practice</button>
-        <button type="button" class="qp-navlink ${stage === "essays" ? "on" : ""}"
-          data-esnav="essays">My essays</button>
-      </nav>
-      <div class="qp-navright">
+      ${/* A nav link is not a stage route within the picker, so it does not carry
+            the stage attribute: counting the routes on a screen would have counted
+            it. Both links go somewhere real; the one you are on is marked rather
+            than repeated. The same component is worn by the writing surfaces, so
+            the destinations do not appear and disappear as a student moves. */ ""}
+      ${esNavLeftHTML(stage === "essays" ? "essays" : "practice")}
+      ${/* A full-page section of the application, so its way out is Home: it leaves
+            Essay Practice for Marginal, exactly as the wordmark does. "Close" was
+            the word a modal uses, and this has not been a modal for a long time.
+            Like Exit essay on the workspace, it never folds into the menu. */ ""}
+      <button type="button" class="es-util quiet es-keepout" id="eshome" data-esnav="marginalhome" aria-label="Marginal home">${esIcon("home")}<span>Home</span></button>
+      ${esMenuBtnHTML()}
+      <div class="qp-navright" id="esnavpanel"${ES.ui.navMenu ? " data-open" : ""}>
+        ${esNavLinksHTML(stage === "essays" ? "essays" : "practice")}
         ${sc.label ? `<span class="qp-subj">${esc(sc.label)}${sc.stage ? " · " + esc(sc.stage) : ""}</span>` : ""}
         ${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}
-        <button class="qp-close" id="esx" aria-label="Close">close</button>
       </div>
     </div></header>`;
     const foot = `<footer class="qp-foot"><div class="qp-footin">
@@ -4552,7 +4872,7 @@
       const active = [];
       if (f.setupDir) active.push("Directive: " + esDirectiveLabel(f.setupDir));
       if (f.setupTopic) active.push("Topic: " + ((topics.find(t => t.id === f.setupTopic) || {}).label || f.setupTopic));
-      const rail = railCard("&#9678;", "How filtering works",
+      const rail = railCard(esIcon("help"), "How filtering works",
           `<p class="qp-rcp">Use the directive and topic filters to find the kind of question you want to
             practise. You can combine them, and the list updates as you press.</p>
            <p class="qp-rcp">Each question shows its full wording, with its topic, directive and marks
@@ -4561,14 +4881,14 @@
              ${active.map(a => `<span class="qp-atag">${esc(a)}</span>`).join("")}
              <p class="qp-rcp">${found.length} question${found.length === 1 ? "" : "s"} match${
                found.length === 1 ? "es" : ""}.</p></div>` : ""}`)
-        + railCard("&#9679;", "Current selection", chosen
+        + railCard(esIcon("target"), "Current selection", chosen
           ? `<p class="qp-rcq">${esc(String(chosen.text || "").trim())}</p>
              <p class="qp-rcmeta">${[String(chosen.topic || "").trim(),
                esDirectiveLabel(esDirectiveId(chosen.command)),
                chosen.marks != null ? chosen.marks + " marks" : null].filter(Boolean).map(esc).join(" · ")}</p>
              <p class="qp-rclbl">Available support</p>
              <div class="qp-sup">${esSupportFor(chosen).rows.map(r =>
-               `<div class="qp-suprow ${r.has ? "yes" : "no"}"><span class="qp-supmark">${r.has ? "✓" : "⊘"}</span>
+               `<div class="qp-suprow ${r.has ? "yes" : "no"}"><span class="qp-supmark">${esIcon(r.has ? "check" : "unavailable")}</span>
                  <span class="qp-supname">${esc(r.label)}</span>
                  <span class="qp-supstate">${r.has ? "Available" : "Not available"}</span></div>`).join("")}</div>
              <div class="qp-railacts">
@@ -4576,7 +4896,7 @@
              </div>`
           : `<p class="qp-rcp">No question chosen yet. Pick one from the list and its wording and available
               support will appear here before you start.</p>`)
-        + railCard("&#9662;", "Top tip",
+        + railCard(esIcon("tip"), "Top tip",
           `<p class="qp-rcp">Read the full question and its available support before you start writing. You
             can always come back and change your selection.</p>`);
 
@@ -4656,6 +4976,7 @@
               <dl class="qp-facts">${facts}</dl>
               ${q.marks == null ? `<p class="qp-note">No mark value is authored for this question. You can
                 still plan, write and get feedback on your essay.</p>` : ""}
+              ${assessNote}
               <div class="qp-actions">
                 <button type="button" class="qp-btn qp-go" id="esstart">Start this question</button>
                 <button type="button" class="qp-btn" data-espick="list">Choose a different question</button>
@@ -4676,18 +4997,18 @@
             </div>
           </div>
         `,
-        railCard("&#9678;", "About this question",
+        railCard(esIcon("help"), "About this question",
           `<p class="qp-rcp">This question offers ${esc(sup.summary)}.</p>
            <p class="qp-rclbl">Available support</p>
            <div class="qp-sup">${sup.rows.map(r =>
-             `<div class="qp-suprow ${r.has ? "yes" : "no"}"><span class="qp-supmark">${r.has ? "✓" : "⊘"}</span>
+             `<div class="qp-suprow ${r.has ? "yes" : "no"}"><span class="qp-supmark">${esIcon(r.has ? "check" : "unavailable")}</span>
                <span class="qp-supname">${esc(r.label)}</span>
                <span class="qp-supstate">${r.has ? "Available" : "Not available"}</span></div>`).join("")}</div>`)
-        + railCard("&#9679;", "What support means",
+        + railCard(esIcon("info"), "What support means",
           `<p class="qp-rcp">Support availability depends on how the question was authored. Nothing is
             borrowed from another question, so a question shows only what somebody wrote for it.</p>
            <p class="qp-rcp">You can always start the question and get feedback on your essay.</p>`)
-        + railCard("&#9662;", "Top tip",
+        + railCard(esIcon("tip"), "Top tip",
           `<p class="qp-rcp">A question with less support is still worth practising. You write it the same
             way; there is simply less scaffolding on the way through.</p>`));
     }
@@ -4730,12 +5051,12 @@
               </div>
             </div>`}
         `,
-        railCard("&#9678;", "How saving works",
+        railCard(esIcon("help"), "How saving works",
           `<p class="qp-rcp">Your writing is saved as you go, on this device. Nothing is submitted anywhere
             unless you ask for feedback.</p>
            <p class="qp-rcp">Resume opens an essay where you left it. Use as template starts a new essay
             from the same question and settings, without copying the writing.</p>`)
-        + railCard("&#9679;", "What is saved",
+        + railCard(esIcon("save"), "What is saved",
           `<p class="qp-rcbig">${mine.length}</p>
            <p class="qp-rcp">essay${mine.length === 1 ? "" : "s"} on this device.${
              (ES.list || []).length > mine.length
@@ -4753,6 +5074,7 @@
                   the subject picker has to be on this stage as well: otherwise a
                   student on Economics has no way to reach Business Studies. */ ""}
             ${subjectPicker}
+            ${assessNote}
             <div class="qp-field">
               <label class="qp-label" for="esq">Essay question <span class="qp-req">needed</span></label>
               <textarea id="esq" class="qp-input qp-ta" rows="3" placeholder="Paste or type the whole question, including the directive.">${esc(f.question)}</textarea>
@@ -4763,12 +5085,12 @@
             </div>
           </div>
         `,
-        railCard("&#9678;", "Writing your own question",
+        railCard(esIcon("note"), "Writing your own question",
           `<p class="qp-rcp">Paste the whole question, including the directive. The directive is what tells
             the guidance whether you are explaining, assessing or judging.</p>
            <p class="qp-rcp">Marking guidance is generated from the question when none is written for it,
             and you can review or replace it under Essay options.</p>`)
-        + railCard("&#9679;", "Next steps",
+        + railCard(esIcon("steps"), "Next steps",
           `<ol class="qp-steps"><li>Paste or type your question.</li><li>Set the marks and structure if you
             want to change them.</li><li>Write one paragraph at a time, with a coach.</li></ol>`));
     }
@@ -4787,6 +5109,7 @@
           <p class="qp-lead">Choose a subject and a practice question. You can change everything else later.</p>
           <div class="qp-card">
             ${subjectPicker}
+            ${assessNote}
             <div class="qp-actions">
               <button type="button" class="qp-btn qp-go" data-espick="list">Choose a practice question</button>
               <button type="button" class="qp-btn" data-espick="own">Use my own question</button>
@@ -4816,14 +5139,14 @@
             </div>
           </section>
         `,
-        railCard("&#9678;", "Next steps",
+        railCard(esIcon("steps"), "Next steps",
           `<ol class="qp-steps">
             <li>Choose a subject.</li>
             <li>Pick a practice question, or bring your own.</li>
             <li>Read what support it carries.</li>
             <li>Start writing.</li>
           </ol>`)
-        + railCard("&#9679;", "This question bank",
+        + railCard(esIcon("bank"), "This question bank",
           `<p class="qp-rcbig">${bank.length}</p>
            <p class="qp-rcp">question${bank.length === 1 ? "" : "s"} in ${esc(sc.label || "this subject")}${
              topicCount ? ", across " + topicCount + " topic" + (topicCount === 1 ? "" : "s") : ""}.</p>
@@ -4834,7 +5157,7 @@
            ${savedCount ? `<p class="qp-rcp">You have ${savedCount} saved essay${
              savedCount === 1 ? "" : "s"}. <button type="button" class="qp-linkbtn"
              data-esnav="essays">Open My essays</button></p>` : ""}`)
-        + railCard("&#9662;", "Top tip",
+        + railCard(esIcon("tip"), "Top tip",
           // Marks are academic metadata. A question has a mark value only when
           // somebody authored one, so nothing here may suggest Marginal supplies
           // a default for it. Structure and marking guidance are app settings and
@@ -4843,7 +5166,9 @@
             marking guidance can be changed later.</p>`));
     }
 
-    $("#esx").onclick = esClose;
+    // This surface has no exit control of its own any more: Home is a nav route,
+    // bound with the rest of them below.
+    esBindNavMenu();
     const q = $("#esq"); if (q) q.oninput = () => {
       f.question = q.value;
       const picked = f.questionId && sc.questions.find(x => x.id === f.questionId);
@@ -4862,7 +5187,17 @@
         if (f.pickStage !== "essays") f.pickReturn = f.pickStage || "subject";
         f.pickStage = "essays";
       } else if (to === "back") {
+        // A student who reached My essays FROM their draft is returned to the
+        // draft, not dropped at the top of a picker they did not ask to see.
+        // The draft itself is never the thing that was navigated away from.
+        if (f.pickReturnScreen && ES.draft) {
+          const back = f.pickReturnScreen;
+          f.pickReturnScreen = null;
+          ES.screen = back; esRender(); return;
+        }
         f.pickStage = f.pickReturn || "subject";
+      } else if (to === "marginalhome") {
+        esLeave(); return;
       } else {
         f.pickStage = to;
       }
@@ -4908,6 +5243,7 @@
     const stt = $("#esstruct"); if (stt) stt.onchange = () => { f.structure = stt.value; };
     const subjSel = $("#essubject");
     if (subjSel) subjSel.onchange = () => {
+      if (!subjSel.value) return;              // the "Choose a subject" placeholder
       ES.subject = subjSel.value;
       const nv = esView();                       // new subject defaults
       f.structure = nv.defaultStructure;
@@ -4990,6 +5326,16 @@
             "\"? Your current response has " + written + " words in it and starting a different question replaces it.")) return;
       ES.draft = {
         id: esId(), subject: ES.subject, code: ES.code,
+        // The package the QUESTION belongs to, recorded separately from the
+        // attempt's own subject so the two can be compared later. For a bundled
+        // question they are the same by construction; for an imported one the
+        // package says which subject it was authored for, and that is the one
+        // that has to win.
+        questionSubject: (function () {
+          const sc2 = esSubjectContent(ES.subject);
+          const qq = (f.questionId && sc2 && (sc2.questions || []).find(x => x.id === f.questionId)) || null;
+          return (qq && qq.subject) || ES.subject || null;
+        })(),
         question, topic: (f.topic || "").trim(), rubric: (f.rubric || "").trim(),
         marks: (f.marks >= 1 && f.marks <= 60) ? f.marks : 20,
         questionId: f.questionId || null,
@@ -5038,7 +5384,12 @@
   function esRequiredAreas(q) {
     const r = (q && q.requirements) || {};
     if ((r.requiredAreas || []).length) return r.requiredAreas.map(a => a.label || a.id);
-    return ((q.decode && q.decode.highlights) || []).filter(h => h.kind === "requiredArea").map(h => h.anchor);
+    // Line one already guards a null question and line two did not, so a caller
+    // with no question definition - the ordinary case on a student's own question -
+    // threw instead of answering "no required areas". Nothing reached it because
+    // the one caller that can pass null is only reachable where a question is
+    // authored; that is a coincidence of the content, not a guarantee.
+    return (((q && q.decode) && q.decode.highlights) || []).filter(h => h.kind === "requiredArea").map(h => h.anchor);
   }
   function esDecodeCoverage(q) {
     const r = (q && q.requirements) || {};
@@ -5141,19 +5492,73 @@
   function esWritingHead(sc, modeLabel, switchLabel, switchTo, boxElsewhere) {
     return esTopBarHTML(sc, switchLabel) + esQuestionCardHTML(modeLabel, boxElsewhere);
   }
+  // ---- the one navigation bar every Marginal surface wears ----------------
+  // Before this the picker and the writer had different brand marks, different
+  // wordmark type, different destinations and different ways back, so moving
+  // between them read as moving between two products. The left half of the bar
+  // is now one component: the brand IS the home route, and the same two
+  // destinations are reachable from wherever the student is standing. The right
+  // half is whatever that surface actually owns, and nothing else.
+  function esNavLeftHTML(current) {
+    const link = (to, label, on) =>
+      `<button type="button" class="qp-navlink${on ? " on" : ""}"${on ? ' aria-current="page"' : ""} data-esnav="${to}">${label}</button>`;
+    // The wordmark is Home, and Home is MARGINAL's home, not the top of the essay
+    // flow. It leaves Essay Practice the way the tab entered it, from any surface,
+    // so it is never a control that reloads the page the student is standing on.
+    //
+    // .es-navnow names the section on a narrow screen, where the links themselves
+    // have gone into the menu. It is the same word the marked link carries, so a
+    // student is never told two different things about where they are.
+    return `<button type="button" class="qp-brand" id="esbrandhome" data-esnav="marginalhome" aria-label="Marginal home">
+        <span class="qp-logo" aria-hidden="true">M</span><span class="qp-word">Marginal</span></button>
+      <span class="es-navnow">${current === "essays" ? "My essays" : "Essay practice"}</span>`;
+  }
+  // The section links. They live INSIDE the collapsible group rather than beside
+  // the brand, because a link that is hidden at 390px and not in the menu is a
+  // destination a student on a phone cannot reach at all. On a wide screen the
+  // group is a row and they sit where they always sat.
+  function esNavLinksHTML(current) {
+    const link = (to, label, on) =>
+      `<button type="button" class="qp-navlink${on ? " on" : ""}"${on ? ' aria-current="page"' : ""} data-esnav="${to}">${label}</button>`;
+    return `<nav class="qp-navlinks" aria-label="Marginal">
+        ${link("back", "Essay practice", current !== "essays")}
+        ${link("essays", "My essays", current === "essays")}
+      </nav>`;
+  }
+  // The menu the collapsible half of the bar folds into below 860px. One button,
+  // one panel, and the SAME controls inside it at every width: nothing is
+  // duplicated for narrow screens, so no control can exist twice with one id and
+  // no fix can land on only one of them. The stylesheet decides whether that
+  // group is a row on the bar or a panel under a button; the markup does not know.
+  function esMenuBtnHTML() {
+    return `<button type="button" class="es-menubtn" id="esmenu" aria-expanded="${
+      ES.ui.navMenu ? "true" : "false"}" aria-controls="esnavpanel" aria-label="More">${
+      esIcon("menu")}<span>More</span></button>`;
+  }
+
   function esTopBarHTML(sc, switchLabel) {
     return `
       <div class="es-top">
-        <div class="es-brand"><span class="es-mark">M</span>Marginal ${sc.label ? `<span class="es-subj">${esc(sc.label)}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}</div>
-        <div class="es-topbtns">
+        ${esNavLeftHTML("practice")}
+        ${/* The way out never folds into a menu. Everything else on this bar can
+              wait behind one press; leaving cannot, and a student on a phone who
+              wants to stop writing must not have to find it. */ ""}
+        <button type="button" class="es-util quiet es-keepout" id="esexit" data-esnav="marginalhome" aria-label="Exit essay">${esIcon("exit")}<span>Exit essay</span></button>
+        ${esMenuBtnHTML()}
+        <div class="es-topbtns" id="esnavpanel"${ES.ui.navMenu ? " data-open" : ""}>
+          ${esNavLinksHTML("practice")}
+          ${sc.label ? `<span class="qp-subj">${esc(sc.label)}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}
           ${/* Learn and Notebook are utilities: they make sense whatever sentence
                 the student is on, they open their own floating windows, and they
                 stay open across the writing. The four writing tools are not
                 utilities and stay on the belt above the writer. */ ""}
-          <button type="button" class="es-util" data-estool="understand" aria-expanded="${ES.ui.studyOpen ? "true" : "false"}">${esIcon("book")}<span>Learn</span></button>
+          <button type="button" class="es-util" data-estool="understand" aria-expanded="${ES.ui.studyOpen ? "true" : "false"}">${esIcon("understand")}<span>Learn</span></button>
           <button type="button" class="es-util" data-esnbtoggle aria-expanded="${ES.ui.nbOpen ? "true" : "false"}">${esIcon("note")}<span>Notebook</span></button>
-          <button class="es-linkbtn" id="esmodeswitch">${esc(switchLabel)}</button>
-          <button class="es-x" id="esx" aria-label="Back to setup">setup</button>
+          ${/* These two are controls, not sentences. They join the utility family
+                beside them so the bar has one control shape rather than two
+                buttons and two underlined-looking words. */ ""}
+          <button type="button" class="es-util quiet" id="esmodeswitch">${esIcon("switch")}<span>${esc(switchLabel)}</span></button>
+          <button type="button" class="es-util quiet" id="esx" aria-label="Back to setup">${esIcon("back")}<span>Setup</span></button>
         </div>
       </div>`;
   }
@@ -5429,7 +5834,7 @@
     });
     return leaked.length ? null : text;
   }
-  function esSubjectCaseStudy() { const sc = esSubjectContent(ES.subject); return (sc && sc.caseStudy) || ""; }
+  function esSubjectCaseStudy() { const sc = esAttemptPackage(); return (sc && sc.caseStudy) || ""; }
   // A level 5 example is a fully written sentence, so the only thing that makes it
   // safe is that it is set somewhere else. It must declare its context, and it must
   // not mention the case study the student is writing about.
@@ -5567,16 +5972,19 @@
   // is the whole mental model.
   // ===========================================================================
   const ES_TOOLS = [
-    { key: "understand", label: "Learn",      icon: "book" },
-    { key: "ideas",      label: "Arguments", icon: "bulb" },
-    { key: "evidence",   label: "Evidence",   icon: "search" },
-    { key: "structure",  label: "Structure",  icon: "blocks" },
+    // The icon name is a registry key. It is checked by t25, because an unknown
+    // name renders nothing at all and the belt lost every icon it had without a
+    // single suite in the checkpoint tier noticing.
+    { key: "understand", label: "Learn",      icon: "understand" },
+    { key: "ideas",      label: "Arguments",  icon: "ideas" },
+    { key: "evidence",   label: "Evidence",   icon: "evidence" },
+    { key: "structure",  label: "Structure",  icon: "structure" },
     // hideWhenEmpty: a disabled control is still the app showing a student a piece
     // of itself that is not finished. A tool with nothing behind it that would only
     // ever say "nothing has been written yet" is better absent: the application
     // knows the gap, the readiness report says so, and the student is not asked to
     // read about our authoring backlog.
-    { key: "vocabulary", label: "Vocabulary", icon: "type", hideWhenEmpty: true },
+    { key: "vocabulary", label: "Vocabulary", icon: "vocabulary", hideWhenEmpty: true },
   ];
   // The tools a student may see right now. A hidden tool is hidden everywhere it
   // could be reached from, not just the belt, or the routes that bypass the belt
@@ -5585,26 +5993,112 @@
     return ES_TOOLS.filter(t => t.key !== "understand")
       .filter(t => !t.hideWhenEmpty || !!esToolData(t.key, p));
   }
-  // One inline SVG set, defined once. No icon font and no CDN: the app ships as a
-  // single self-contained file.
-  const ES_ICONS = {
-    book: '<path d="M3 4.5A1.5 1.5 0 0 1 4.5 3H9a3 3 0 0 1 3 3v9a2.5 2.5 0 0 0-2.5-2.5H3z"/><path d="M21 4.5A1.5 1.5 0 0 0 19.5 3H15a3 3 0 0 0-3 3v9a2.5 2.5 0 0 1 2.5-2.5H21z"/>',
-    bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.4.3.6.7.6 1.1V16h5.8v-1c0-.4.2-.8.6-1.1A6 6 0 0 0 12 3z"/>',
-    search: '<circle cx="11" cy="11" r="6"/><path d="m20 20-4.4-4.4"/>',
-    blocks: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
-    type: '<path d="M4 7V5h16v2M12 5v14M9 19h6"/>',
-    close: '<path d="M6 6l12 12M18 6 6 18"/>',
-    check: '<path d="m5 12.5 4.5 4.5L19 7"/>',
-    // A link that leaves Marginal, and a note that is not a warning.
-    open: '<path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
-    info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/>',
-    note: '<rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8.5 3v18"/>',
-    cloud: '<path d="M17.5 19H7a5 5 0 0 1-.5-9.98A6 6 0 0 1 18 8.5a4.5 4.5 0 0 1-.5 10.5z"/><path d="m9.5 13.5 2 2 3.5-4"/>',
-    note: '<rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8.5 3v18"/>',
-    cloud: '<path d="M17.5 19H7a5 5 0 0 1-.5-9.98A6 6 0 0 1 18 8.5a4.5 4.5 0 0 1-.5 10.5z"/><path d="m9.5 13.5 2 2 3.5-4"/>',
+  // THE ICON REGISTRY.
+  //
+  // One icon family, named by what an icon MEANS in Marginal rather than by what
+  // it looks like, so a call site asks for "stuck" and never picks a picture.
+  //
+  // The artwork is Lucide, unmodified: every path below is copied out of
+  // lucide-static@1.41.0 rather than drawn here. An approximation that calls
+  // itself a standard icon set is a small lie that gets harder to correct, and
+  // the app previously carried eleven hand-drawn SVGs beside circle glyphs and
+  // a tick character, which is what made the interface look assembled rather
+  // than designed. Only the icons this application actually uses are here.
+  //
+  // Lucide is ISC licensed; the licence is in LICENSES/lucide.txt. It ships
+  // inside this file and is never fetched at runtime, so the application stays
+  // one self-contained page.
+  //
+  // An icon is decoration. Every one is rendered aria-hidden and the control
+  // around it carries the accessible name, so no icon is the only way to read
+  // what a control does.
+  const ES_ICON_SRC = {
+    // the Learn surface
+    understand: '<path d="M12 5v16" /> <path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z" />',
+    // arguments to choose between
+    ideas: '<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" /> <path d="M9 18h6" /> <path d="M10 22h4" />',
+    // the evidence tool
+    evidence: '<path d="m21 21-4.34-4.34" /> <circle cx="11" cy="11" r="8" />',
+    // the structure tool
+    structure: '<path d="M10 22V7a1 1 0 0 0-1-1H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5a1 1 0 0 0-1-1H2" /> <rect x="14" y="2" width="8" height="8" rx="1" />',
+    // the vocabulary panel
+    vocabulary: '<path d="M12 4v16" /> <path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2" /> <path d="M9 20h6" />',
+    // dismiss a panel or dialog
+    close: '<path d="M18 6 6 18" /> <path d="m6 6 12 12" />',
+    // support available, and a completed state
+    check: '<path d="M20 6 9 17l-5-5" />',
+    // support this question does not carry
+    unavailable: '<circle cx="12" cy="12" r="10" /> <line x1="9" x2="15" y1="15" y2="9" />',
+    // open a saved thing
+    open: '<path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2" />',
+    // something did not work, and the student needs to know before they read on
+    warn: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /> <path d="M12 9v4" /> <path d="M12 17h.01" />',
+    // an explanatory rail card
+    info: '<circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" />',
+    // the notebook
+    note: '<path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4" /> <path d="M2 6h4" /> <path d="M2 10h4" /> <path d="M2 14h4" /> <path d="M2 18h4" /> <path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z" />',
+    // saved, and the save action
+    save: '<path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" /> <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7" /> <path d="M7 3v4a1 1 0 0 0 1 1h7" />',
+    // a rail card explaining how something works
+    help: '<circle cx="12" cy="12" r="10" /> <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /> <path d="M12 17h.01" />',
+    // next steps
+    steps: '<path d="M13 5h8" /> <path d="M13 12h8" /> <path d="M13 19h8" /> <path d="m3 17 2 2 4-4" /> <path d="m3 7 2 2 4-4" />',
+    // top tip
+    tip: '<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" /> <path d="M9 18h6" /> <path d="M10 22h4" />',
+    // show sentence shape
+    shape: '<path d="M8.3 10a.7.7 0 0 1-.626-1.079L11.4 3a.7.7 0 0 1 1.198-.043L16.3 8.9a.7.7 0 0 1-.572 1.1Z" /> <rect x="3" y="14" width="7" height="7" rx="1" /> <circle cx="17.5" cy="17.5" r="3.5" />',
+    // I am stuck on this sentence
+    stuck: '<circle cx="12" cy="12" r="10" /> <path d="m4.93 4.93 4.24 4.24" /> <path d="m14.83 9.17 4.24-4.24" /> <path d="m14.83 14.83 4.24 4.24" /> <path d="m9.17 14.83-4.24 4.24" /> <circle cx="12" cy="12" r="4" />',
+    // check this paragraph, and coach feedback
+    feedback: '<path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" /> <path d="M7 11h10" /> <path d="M7 15h6" /> <path d="M7 7h8" />',
+    // continue to the next section
+    forward: '<path d="M5 12h14" /> <path d="m12 5 7 7-7 7" />',
+    // add another sentence, and a new notebook page
+    add: '<path d="M5 12h14" /> <path d="M12 5v14" />',
+    // memorise it
+    memorise: '<path d="M12 18V5" /> <path d="M15 13a4.17 4.17 0 0 1-3-4 4.17 4.17 0 0 1-3 4" /> <path d="M17.598 6.5A3 3 0 1 0 12 5a3 3 0 1 0-5.598 1.5" /> <path d="M17.997 5.125a4 4 0 0 1 2.526 5.77" /> <path d="M18 18a4 4 0 0 0 2-7.464" /> <path d="M19.967 17.483A4 4 0 1 1 12 18a4 4 0 1 1-7.967-.517" /> <path d="M6 18a4 4 0 0 1-2-7.464" /> <path d="M6.003 5.125a4 4 0 0 0-2.526 5.77" />',
+    // the question bank
+    bank: '<path d="m16 6 4 14" /> <path d="M12 6v14" /> <path d="M8 8v12" /> <path d="M4 4v16" />',
+    // reset the notebook position
+    reset: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /> <path d="M3 3v5h5" />',
+    // delete a page or a saved essay
+    delete: '<path d="M10 11v6" /> <path d="M14 11v6" /> <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /> <path d="M3 6h18" /> <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />',
+    // back to the previous stage
+    back: '<path d="m12 19-7-7 7-7" /> <path d="M19 12H5" />',
+    // leave Essay Practice for Marginal's home
+    home: '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" /> <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />',
+    // exit the essay from the writing workspace
+    exit: '<path d="m16 17 5-5-5-5" /> <path d="M21 12H9" /> <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />',
+    // the previous notebook page
+    prev: '<path d="m15 18-6-6 6-6" />',
+    // the next notebook page
+    next: '<path d="m9 18 6-6-6-6" />',
+    // switch between coached practice and a full attempt
+    switch: '<path d="M8 3 4 7l4 4" /> <path d="M4 7h16" /> <path d="m16 21 4-4-4-4" /> <path d="M20 17H4" />',
+    // the compact navigation menu on a narrow screen
+    menu: '<path d="M4 6h16" /> <path d="M4 12h16" /> <path d="M4 18h16" />',
+    // a disclosure that is shut, and the same one open
+    chevright: '<path d="m9 18 6-6-6-6" />',
+    chevdown: '<path d="m6 9 6 6 6-6" />',
+    // the current selection
+    target: '<circle cx="12" cy="12" r="10" /> <circle cx="12" cy="12" r="6" /> <circle cx="12" cy="12" r="2" />',
   };
-  function esIcon(name) {
-    return '<svg class="es-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ES_ICONS[name] || "") + '</svg>';
+  // Retitling a control must not delete the icon beside it. Every control built
+  // as icon + label keeps its words in a span, and this is the only way they are
+  // rewritten, so no call site can go back to wiping the button.
+  function esSetLabel(el, text) {
+    if (!el) return;
+    const lbl = el.querySelector("span");
+    if (lbl) lbl.textContent = text; else el.textContent = text;
+  }
+  function esIcon(name, cls) {
+    // An unknown name is a bug in a call site, not something to paper over with a
+    // blank square: it returns nothing and the label beside it still reads.
+    const d = ES_ICON_SRC[name];
+    if (!d) return "";
+    return '<svg class="es-ico' + (cls ? " " + cls : "") + '" viewBox="0 0 24 24" fill="none" ' +
+      'stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" ' +
+      'aria-hidden="true" focusable="false">' + d + '</svg>';
   }
 
   // ---- resolving what each tool has to show, from authored content only -------
@@ -5672,7 +6166,7 @@
   // is the "I do not understand the content" layer: written for the concept rather
   // than scraped from the paragraph, and reachable without leaving the sentence.
   function esConceptFor(p) {
-    const sc = esSubjectContent(ES.subject);
+    const sc = esAttemptPackage();
     const bank = (sc && sc.concepts) || null; if (!bank) return null;
     const path = esPathway(p);
     const key = path && path.concept && path.concept.key;
@@ -6849,7 +7343,7 @@
   // Understand which concept to open. All authored, so nothing here calls a model.
   // ===========================================================================
   function esQuestionDef() {
-    const d = ES.draft, sc = esSubjectContent(ES.subject);
+    const d = ES.draft, sc = esAttemptPackage();
     if (!d || !sc) return null;
     const qs = sc.questions || [];
     if (d.questionId) { const byId = qs.find(x => x.id === d.questionId); if (byId) return byId; }
@@ -7167,7 +7661,7 @@
   // Optional ones are never shown unasked and exist so the deeper material can
   // reach them.
   function esConceptStore() {
-    const sub = esSubjectContent(ES.subject);
+    const sub = esAttemptPackage();
     return (sub && sub.concepts) || {};
   }
   function esConceptsFor(p, tier) {
@@ -8025,7 +8519,7 @@
     const done = esPlanned(d);
     host.innerHTML = `
     <div class="es-scrim"><div class="es-shell"><div class="es-wrap es-canvas">
-      ${esWritingHead(sc, "Planning", "full attempt", "full")}
+      ${esWritingHead(sc, "Planning", "Full attempt", "full")}
       <div class="es-planwrap">
         <div class="es-planhead">
           <h3 class="es-planhh">${ES.ui.planAll ? "Plan your response" : "Your response"}</h3>
@@ -8153,7 +8647,11 @@
   // not rendered at all and the rail simply gets shorter.
   function esMarkingPanel() {
     const q = esQuestionDef();
-    const sc = esSubjectContent(ES.subject);
+    // The criteria a student READS while writing must be the ones their response
+    // will be marked against, which is the attempt's package - the same source
+    // esMarkCard sends. Read from the picker they could differ from the marking
+    // silently, which is worse than showing none.
+    const sc = esAttemptPackage();
     const dec = q && q.decode;
     const lead = (dec && dec.verbMeaning) || "";
     const crit = (sc && sc.markingCriteria) || [];
@@ -8312,15 +8810,25 @@
   function esFootBarHTML(d, p, canAsk) {
     const role = (p && p.role) || "";
     const can = !!canAsk;
+    // WITHHELD WITH A REASON, not removed and not left live to fail later. A
+    // subject with no marking criteria has nothing to read this against, and the
+    // student was told so before they started; this is the same fact where the
+    // control would have been, so the absence is never a mystery.
+    const assess = esAssessmentState(d);
     const label = ES.pending ? "Checking\u2026"
       : /introduction/i.test(role) ? "Check introduction"
       : /conclusion/i.test(role) ? "Check conclusion" : "Check this paragraph";
     return `<div class="es-footbar"><div class="es-footbar-in">
-      <span class="es-footsave">${esIcon("cloud")}Saved</span>
+      <span class="es-footsave">${esIcon("save")}<span class="es-footsave-w">Saved</span></span>
       <span class="es-sp"></span>
-      <button type="button" class="es-btn ghost sm" id="esfootoutline">Outline</button>
-      <button type="button" class="es-btn ghost sm" id="esfootpreview">Preview response</button>
-      ${can ? `<button type="button" class="es-btn primary" id="esask" ${ES.pending ? "disabled" : ""}>${esc(label)}</button>` : ""}
+      ${/* Icon and label, so that on a phone the label can go and the control
+            still says what it is to a screen reader and to a finger. */ ""}
+      <button type="button" class="es-btn ghost sm" id="esfootoutline" aria-label="Outline">${esIcon("structure")}<span>Outline</span></button>
+      <button type="button" class="es-btn ghost sm" id="esfootpreview" aria-label="Preview response">${esIcon("open")}<span>Preview response</span></button>
+      ${!assess.available
+        ? `<span class="es-nofb" data-escap="${esc(assess.reason)}">${esIcon("warn")}<span>No feedback in ${
+            esc(assess.subject || "this subject")}: it carries no marking criteria</span></span>`
+        : can ? `<button type="button" class="es-btn primary" id="esask" ${ES.pending ? "disabled" : ""}>${esIcon("feedback")}<span>${esc(label)}</span></button>` : ""}
     </div></div>`;
   }
   function esBindWorkspace(host, d) {
@@ -8402,10 +8910,10 @@
     const chipEv = (p.evidenceIds || []).map(esEvidenceByLabel).filter(Boolean);
     const chips = (esIsIntro(p) || esIsConcl(p)) ? "" : `
       <div class="es-chips">
-        ${chipArg ? `<button type="button" class="es-chip-arg" data-esrestchange="argument" title="Change what this paragraph argues">${esIcon("bulb")}<span>${esc(chipArg)}</span></button>`
-                  : `<button type="button" class="es-chip-arg empty" data-esrestchange="argument">${esIcon("bulb")}<span>choose what this paragraph argues</span></button>`}
-        ${chipEv.length ? chipEv.map(e => `<button type="button" class="es-chip-ev" data-esrestchange="evidence" title="Change your evidence">${esIcon("search")}<span>${esc(e.label)}</span></button>`).join("")
-                  : `<button type="button" class="es-chip-ev empty" data-esrestchange="evidence">${esIcon("search")}<span>evidence</span></button>`}
+        ${chipArg ? `<button type="button" class="es-chip-arg" data-esrestchange="argument" title="Change what this paragraph argues">${esIcon("ideas")}<span>${esc(chipArg)}</span></button>`
+                  : `<button type="button" class="es-chip-arg empty" data-esrestchange="argument">${esIcon("ideas")}<span>choose what this paragraph argues</span></button>`}
+        ${chipEv.length ? chipEv.map(e => `<button type="button" class="es-chip-ev" data-esrestchange="evidence" title="Change your evidence">${esIcon("evidence")}<span>${esc(e.label)}</span></button>`).join("")
+                  : `<button type="button" class="es-chip-ev empty" data-esrestchange="evidence">${esIcon("evidence")}<span>evidence</span></button>`}
         ${(p.point || "").trim() ? `<span class="es-chip-note" title="your note for this paragraph">${esc(p.point)}</span>` : ""}
         ${esLearning(p) ? `<button type="button" class="es-chip-more" data-eslessonchip title="what this argument means, and one thing to try">understand this argument</button>` : ""}
         <button type="button" class="es-chip-more" id="espointtoggle" title="a one line note of what this paragraph argues">${ES.ui.pointOpen ? "hide my point" : "edit my point"}</button>
@@ -8465,11 +8973,22 @@
             <div class="es-done">
               <div class="es-doneh"><span class="es-donetick">${esIcon("check")}</span>Paragraph complete<span class="es-donew">${words} word${words === 1 ? "" : "s"}</span></div>
               <p class="es-donesub">Every part of this paragraph has something in it. Read it back before you move on: click any sentence above to rewrite it.</p>
+              ${/* Four things a student can do next, in three weights. Continue is
+                    the primary. Check this paragraph is the one action here that
+                    asks the app to read what was written, so it is a prominent
+                    secondary rather than a peer of the two conveniences beside it;
+                    it is deliberately not a second solid green button, because
+                    there is one way forward and this is not it. Add another
+                    sentence and Memorise it are tertiary. Same height throughout,
+                    and they keep stacking cleanly on a narrow screen. */ ""}
               <div class="es-donebtns">
-                <button type="button" class="es-btn primary" id="esdonenext">${nextPara ? "Continue to " + esc(nextPara.role.toLowerCase()) : "Review the whole response"}</button>
-                <button type="button" class="es-linkbtn" id="esmoreline">Add another sentence</button>
-                <button type="button" class="es-linkbtn" id="esdonecheck">Check this paragraph</button>
-                <button type="button" class="es-linkbtn" id="esquizlink">Memorise it</button>
+                <button type="button" class="es-btn primary" id="esdonenext">${esIcon("forward")}<span>${nextPara ? "Continue to " + esc(nextPara.role.toLowerCase()) : "Review the whole response"}</span></button>
+                ${esAssessmentAvailable(d)
+                  ? `<button type="button" class="es-btn ghost strong" id="esdonecheck">${esIcon("feedback")}<span>Check this paragraph</span></button>`
+                  : `<span class="es-nofb" data-escap="no-criteria">${esIcon("warn")}<span>Checking is unavailable: ${
+                      esc(esAssessmentState(d).subject || "this subject")} carries no marking criteria</span></span>`}
+                <button type="button" class="es-btn ghost" id="esmoreline">${esIcon("add")}<span>Add another sentence</span></button>
+                <button type="button" class="es-btn ghost" id="esquizlink">${esIcon("memorise")}<span>Memorise it</span></button>
               </div>
             </div>`;
     const canAsk = (p.text || "").trim() && (!p.feedback || ((p.text || "").trim() !== (p.gradedText || "").trim()));
@@ -8480,7 +8999,7 @@
       ${/* The writing screen owns the host itself, in the columns below, in every
             state including setup. The old flag made the stem render a second one
             whenever the argument picker was showing. */ ""}
-      ${esTopBarHTML(sc, "full attempt")}
+      ${esTopBarHTML(sc, "Full attempt")}
       ${/* The question card and the belt are inside the workspace grid, not above
             it, so the rail can begin beside the question rather than halfway down
             the page next to the writer. */ ""}
@@ -8557,9 +9076,17 @@
                   // state, so it must not re-enter the render pipeline: that is what
                   // made a two-word control feel like the page reloading.
                   const open = !!ES.ui.shapeOpen;
+                  // TWO CORE INSTRUCTIONAL CONTROLS, not two links that happen to be
+                  // here. They were es-linkbtn in two different colours at two
+                  // different weights, sitting at a drifting baseline, which read as
+                  // incidental text beside the sentence job. Same component, same
+                  // height, icon and label, subordinate to the job above them and
+                  // unmistakably pressable.
                   return `<div class="es-promptacts">
-                      <button type="button" class="es-linkbtn es-shapebtn" id="esshape" aria-expanded="${open}">${open ? "Hide sentence shape" : "Show sentence shape"}</button>
-                      <button type="button" class="es-linkbtn es-stuckbtn" id="esstuck" aria-expanded="${ES.ui.stuckOpen ? "true" : "false"}">I am stuck on this sentence</button>
+                      <button type="button" class="es-helpact" id="esshape" aria-expanded="${open}">${
+                        esIcon("shape")}<span>${open ? "Hide sentence shape" : "Show sentence shape"}</span></button>
+                      <button type="button" class="es-helpact" id="esstuck" aria-expanded="${
+                        ES.ui.stuckOpen ? "true" : "false"}">${esIcon("stuck")}<span>I am stuck on this sentence</span></button>
                     </div>
                     ${esStuckHTML(p)}
                     <div class="es-shapes${v2 ? " v2" : ""}" id="esshapes"${open ? "" : " hidden"}>${v2 || all.map(x =>
@@ -8739,7 +9266,7 @@
       const box = document.getElementById("esshapes");
       if (box) box.hidden = !ES.ui.shapeOpen;
       sh.setAttribute("aria-expanded", ES.ui.shapeOpen ? "true" : "false");
-      sh.textContent = ES.ui.shapeOpen ? "Hide sentence shape" : "Show sentence shape";
+      esSetLabel(sh, ES.ui.shapeOpen ? "Hide sentence shape" : "Show sentence shape");
     };
     const mp = $("#esmappop");
     if (mp) mp.onclick = () => {
@@ -8836,9 +9363,9 @@
     // arrived, been saved and been rendered. Same rule as the markup that first
     // draws it, in one place, so the two cannot disagree.
     const role = String((p && p.role) || "");
-    ask.textContent = ES.pending ? "Checking\u2026"
+    esSetLabel(ask, ES.pending ? "Checking\u2026"
       : /introduction/i.test(role) ? "Check introduction"
-      : /conclusion/i.test(role) ? "Check conclusion" : "Check this paragraph";
+      : /conclusion/i.test(role) ? "Check conclusion" : "Check this paragraph");
     ask.classList.toggle("primary", canAsk); ask.classList.toggle("ghost", !canAsk);
     const cd = document.querySelector(".es-cooldown"); if (cd) cd.style.display = canAsk ? "none" : "";
   }
@@ -8846,12 +9373,28 @@
   // the notes check), with expression and signposting polish plus word chips tucked
   // behind a quiet "polish the wording" reveal so it stays de-emphasised early.
   function esCoachMargin(p) {
-    if (ES.pending) return `<div class="es-mempty">Asking the coach for suggestions on this paragraph…</div>`;
+    // The panel is named in every state. It used to be six stacked blocks with no
+    // header, so the one part of the screen that answers the student's writing
+    // was the only part that did not say what it was.
+    const fbk = (p.feedback && p.feedback.demoKind) || "";
+    // The panel says what it is holding. Feedback about the student's own
+    // paragraph and demo guidance that is not about it are not the same panel
+    // with a different sentence at the top.
+    const head = `<div class="es-mhead">${esIcon("feedback")}<span>Coach feedback</span>${
+      fbk ? `<span class="es-mtag ${fbk === "unreachable" ? "warn" : ""}">${
+        fbk === "unreachable" ? "not your feedback" : "demo guidance"}</span>` : ""}</div>`;
+    if (ES.pending) return head + `<div class="es-mempty">Asking the coach for suggestions on this paragraph…</div>`;
     const fb = p.feedback;
-    if (!fb) return `<div class="es-mempty">Write the paragraph one sentence at a time. The guide under the line you are on says what that sentence has to do, and <b>Help me</b> takes you further only if you ask. When the paragraph is done, press <b>Check this paragraph</b> and suggestions appear here. Nothing is ever written into your draft for you.</div>`;
-    const demo = fb.demoNote ? `<div class="es-demonote">${esc(fb.demoNote)}</div>` : "";
+    if (!fb) return head + `<div class="es-mempty">Write the paragraph one sentence at a time. The guide under the line you are on says what that sentence has to do, and <b>Help me</b> takes you further only if you ask. When the paragraph is done, press <b>Check this paragraph</b> and suggestions appear here. Nothing is ever written into your draft for you.</div>`;
+    // A failed call is a warning, not a completion. Green is the colour this app
+    // uses for something having gone right, and a coach that could not be reached
+    // wearing it told the student the opposite of what happened.
+    const demo = fb.demoNote
+      ? `<div class="es-demonote ${fb.demoKind === "unreachable" ? "warn" : "info"}">${
+          esIcon(fb.demoKind === "unreachable" ? "warn" : "info")}<span>${esc(fb.demoNote)}</span></div>`
+      : "";
     const note = fb.note ? `<div class="es-mnote">${esc(fb.note)}</div>` : "";
-    const scaff = fb.missing.length ? `<div class="es-scaffhint">the dashed rows under your paragraph show each of these in order, where it belongs.</div>` : "";
+    const scaff = fb.missing.length ? `<div class="es-scaffhint">The dashed rows under your paragraph show each of these in order, where it belongs.</div>` : "";
     const miss = fb.missing.length ? `<div class="es-mblock"><div class="es-mh">missing elements</div>${fb.missing.map(slot => esMissCard(p, slot)).join("")}${scaff}</div>` : "";
     const onTarget = fb.nudges.filter(n => n.category === "on_target");
     const polish = fb.nudges.filter(n => n.category !== "on_target");
@@ -8866,9 +9409,10 @@
         (fb.chips.length ? `<div class="es-chipwrap">${fb.chips.map(c =>
           `<div class="es-chipline"><span class="es-chipfrom">instead of “${esc(c.from)}”</span><span class="es-chipopts">${c.options.map(o =>
             `<button class="es-chip" data-eschip="1" data-eschipfrom="${esc(c.from)}" data-eschipopt="${esc(o)}">${esc(o)}</button>`).join("")}</span></div>`).join("")}</div>` : "");
-      polishBlock = `<div class="es-polish"><button class="es-polishtoggle" id="espolish"><span class="es-polishchev">${ES.ui.polishOpen ? "▾" : "▸"}</span> polish the wording (${polishCount})</button><div class="es-polishbody" data-polishbody${ES.ui.polishOpen ? "" : " hidden"}>${bodyInner}</div></div>`;
+      polishBlock = `<div class="es-polish"><button type="button" class="es-btn ghost sm es-polishtoggle" id="espolish" aria-expanded="${ES.ui.polishOpen ? "true" : "false"}">${
+        esIcon(ES.ui.polishOpen ? "chevdown" : "chevright")}<span>Polish the wording (${polishCount})</span></button><div class="es-polishbody" data-polishbody${ES.ui.polishOpen ? "" : " hidden"}>${bodyInner}</div></div>`;
     }
-    return demo + note + miss + onT + check + polishBlock;
+    return head + demo + note + miss + onT + check + polishBlock;
   }
   // A missing-element card: names the element, its job, and where it goes (Tier 0).
   // "Show scaffold" reveals a simple blank frame (Tier 1); "more guidance" offers a
@@ -8899,8 +9443,8 @@
     const article = /^[aeiou]/i.test(def.label) ? "an" : "a";
     const hide = cond => cond ? "" : " hidden";
     const ex = esWorkedExample(slot);
-    const exBlock = ex ? `<button type="button" class="es-linkbtn" data-esmiss-ex="${esc(slot)}"${hide(!m.example)}>see a worked example</button>` +
-      `<div class="es-example" data-example${hide(m.example)}><div class="es-exh">model to study, not to copy</div><div class="es-exsub">a different topic on purpose: ${esc(ex.label)}</div>${ex.placeholder ? `<div class="es-exph">Placeholder: a model from another subject, until your subject's own worked examples are added. The analytical shape still transfers.</div>` : ""}<div class="es-extext">${esc(ex.text)}</div><button type="button" class="es-linkbtn" data-esmiss-ex="${esc(slot)}">hide example</button></div>` : "";
+    const exBlock = ex ? `<button type="button" class="es-btn ghost sm es-exact" data-esmiss-ex="${esc(slot)}"${hide(!m.example)}>${esIcon("open")}<span>See a worked example</span></button>` +
+      `<div class="es-example" data-example${hide(m.example)}><div class="es-exh">model to study, not to copy</div><div class="es-exsub">a different topic on purpose: ${esc(ex.label)}</div>${ex.placeholder ? `<div class="es-exph">Placeholder: a model from another subject, until your subject's own worked examples are added. The analytical shape still transfers.</div>` : ""}<div class="es-extext">${esc(ex.text)}</div><button type="button" class="es-btn ghost sm es-exact" data-esmiss-ex="${esc(slot)}">${esIcon("close")}<span>Hide example</span></button></div>` : "";
     return `<div class="es-miss" data-slot="${esc(slot)}">
       <div class="es-missh">${article} ${esc(def.label)} sentence is missing</div>
       <div class="es-missjob">Its job: ${esc(def.job)}${where ? ", " + esc(where) : ""}.</div>
@@ -8980,7 +9524,11 @@
     if (pol) pol.onclick = () => {
       ES.ui.polishOpen = !ES.ui.polishOpen;
       const body = host.querySelector("[data-polishbody]"); if (body) body.hidden = !ES.ui.polishOpen;
-      const chev = pol.querySelector(".es-polishchev"); if (chev) chev.textContent = ES.ui.polishOpen ? "▾" : "▸";
+      // The chevron is an icon now, so it is replaced rather than retyped, and
+      // the control reports its own state to a screen reader.
+      pol.setAttribute("aria-expanded", ES.ui.polishOpen ? "true" : "false");
+      const chev = pol.querySelector(".es-ico");
+      if (chev) chev.outerHTML = esIcon(ES.ui.polishOpen ? "chevdown" : "chevright");
     };
     host.querySelectorAll("[data-eschip]").forEach(b => b.onclick = () => esApplyChip(ES.draft.pos, b.dataset.eschipfrom, b.dataset.eschipopt));
     host.querySelectorAll("[data-esmiss-ex]").forEach(b => b.onclick = () => {
@@ -9003,7 +9551,22 @@
   //             plan, which is what keeps a long response consistent.
   //   Evidence  their case study bank (McDonald's), with how to deploy each item.
   // Content comes from window.BUSCONTENT; the widget hides itself when none is loaded.
-  function busContent() { return window.BUSCONTENT || null; }
+  // ---- THE BUSINESS STUDIES DATA GATE --------------------------------------
+  //
+  // window.BUSCONTENT is Business Studies' syllabus, topics and evidence bank, and
+  // index.html loads it unconditionally. Four subsystems read it with no subject
+  // check at all - the Learn resolver, the evidence bank, the generated-guidance
+  // topic detector and this hints widget - so an Ancient History question
+  // containing the word "production" resolved the Business topic "Operations",
+  // and an Economics question naming "government policies" was told the same.
+  // Reproduced on the deployed build before this gate existed.
+  //
+  // Business Studies academic data runs for Business Studies attempts. For any
+  // other package the answer is nothing, and the surfaces above say the support is
+  // unavailable rather than filling it from somebody else's course.
+  const ES_BUS_SUBJECT = "business_studies";
+  function busAllowed(d) { return esAttemptSubject(d === undefined ? ES.draft : d) === ES_BUS_SUBJECT; }
+  function busContent() { return busAllowed() ? (window.BUSCONTENT || null) : null; }
   function busTopics() { const b = busContent(); return (b && b.topics) || {}; }
   // Resolve which syllabus topic this essay sits in: the student's locked choice
   // first, then the tag on a picked question bank item, then a keyword match on the
@@ -9031,7 +9594,7 @@
   // Candidate paragraph angles: the exemplar plan on a question bank item when the
   // student picked one, otherwise the syllabus sections for the resolved topic.
   function esPlanOptions() {
-    const d = ES.draft, sc = esSubjectContent(ES.subject);
+    const d = ES.draft, sc = esAttemptPackage();
     const qs = (sc && sc.questions) || [];
     const q = qs.find(x => x.text && d.question && x.text.trim() === d.question.trim());
     if (q && Array.isArray(q.plan) && q.plan.length) return q.plan.slice();
@@ -9082,9 +9645,23 @@
          <div class="es-hintlockrow"><span class="es-help" id="eshintcount">${plan.picks.length} chosen</span>
            <button class="es-btn primary" id="eshintlock" ${plan.picks.length ? "" : "disabled"}>Lock in this plan</button></div>`;
     // --- Evidence: the case study bank ---
-    const ev = (busContent().evidence || {})[key] || [];
+    // THE SAME PUBLICATION GATE AS THE EVIDENCE TOOL.
+    //
+    // This read the bank raw. esEvidenceUsable withholds any record without both a
+    // source and a checked date, and today that is every record in the bank - so
+    // the Evidence tool correctly said it had nothing, while this panel listed the
+    // very same unverified claims a tab away. An application that says evidence is
+    // unavailable and then shows it has not withheld anything.
+    //
+    // The gate is applied here, not relaxed there. Until the sources are verified
+    // the hints have nothing to show either, and they say so.
+    const evAll = (busContent().evidence || {})[key] || [];
+    const ev = evAll.filter(esEvidenceUsable);
+    const withheld = evAll.length - ev.length;
     const evidence = !key
       ? `<p class="es-hintlead">Pick a topic on the Know tab and your case study evidence loads here.</p>`
+      : (!ev.length && withheld)
+        ? `<p class="es-hintlead">Evidence for ${esc(busTopicLabel(key))} is not available yet: ${withheld === 1 ? "one item has" : withheld + " items have"} no verified source, so ${withheld === 1 ? "it is" : "they are"} withheld here exactly as in the Evidence tool. Use a case study or example from your own notes.</p>`
       : ev.length
         ? `<p class="es-hintlead">McDonald's evidence for ${esc(busTopicLabel(key))}. Markers reward evidence that is applied, so use the "how to use it" line.</p>` +
           ev.map(e => `<div class="es-hintev">
@@ -9252,10 +9829,14 @@
     const total = d.paras.length, n = d.pos + 1;
     const head = `
       <div class="es-top">
-        <div class="es-brand">Marginal · essay practice ${sc.label ? `<span class="es-subj">${esc(sc.label)}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}</div>
-        <div class="es-topbtns">
-          <button class="es-linkbtn" id="esquizcoach">back to coaching</button>
-          <button class="es-x" id="esx" aria-label="Back to setup">setup</button>
+        ${esNavLeftHTML("practice")}
+        <button type="button" class="es-util quiet es-keepout" id="esexit" data-esnav="marginalhome" aria-label="Exit essay">${esIcon("exit")}<span>Exit essay</span></button>
+        ${esMenuBtnHTML()}
+        <div class="es-topbtns" id="esnavpanel"${ES.ui.navMenu ? " data-open" : ""}>
+          ${esNavLinksHTML("practice")}
+          ${sc.label ? `<span class="qp-subj">${esc(sc.label)}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}
+          <button type="button" class="es-util quiet" id="esquizcoach">${esIcon("back")}<span>Back to coaching</span></button>
+          <button type="button" class="es-util quiet" id="esx" aria-label="Back to setup">${esIcon("back")}<span>Setup</span></button>
         </div>
       </div>
       <div class="es-qbar"><div><div class="es-qbar-mode">memorise</div><div class="es-qbar-q">${esc(d.question)}</div></div>${d.topic ? `<span class="es-restag">${esc(d.topic)}</span>` : ""}</div>`;
@@ -9361,7 +9942,7 @@
     const firstGap = d.paras.findIndex(pp => !esWordsOf(pp.text));
     host.innerHTML = `
     <div class="es-scrim"><div class="es-shell"><div class="es-wrap es-canvas">
-      ${esWritingHead(sc, "Review", "Write a full attempt instead", "full")}
+      ${esWritingHead(sc, "Review", "Full attempt", "full")}
       <div class="es-rvwrap">
         <div class="es-rvhead">
           <h3 class="es-rvh">Your response, read straight through</h3>
@@ -9436,7 +10017,7 @@
       `<button class="es-linkbtn" data-escoachpara="${x.i}">Coach ${esc(d.paras[x.i].role.toLowerCase())}</button>`).join("") : `<span class="es-help">Start writing, then you can take any paragraph into practice.</span>`;
     host.innerHTML = `
     <div class="es-scrim"><div class="es-shell"><div class="es-wrap es-wide">
-      ${esWritingHead(sc, "Full attempt", "Switch to coached practice", "coached")}
+      ${esWritingHead(sc, "Full attempt", "Coached practice", "coached")}
       <p class="es-standing">Writing cold to build exam stamina. Prefer guidance on a paragraph? <button class="es-inlinelink" id="esstanding">switch to practice</button>.</p>
       <textarea id="esfull" class="es-input es-fullbox" rows="18" placeholder="Write your whole essay here, in one go. Separate paragraphs with a blank line.">${esc(text)}</textarea>
       <div class="es-coachstrip"><span class="es-help">Take a paragraph into practice without losing it from here:</span> ${coachLinks}</div>
@@ -9534,7 +10115,10 @@
   // answer, no metalanguage list and no anticipated faults for a question the
   // student brought, so those go across empty and the marker marks the writing.
   function esMarkCard(d) {
-    const sc = esSubjectContent(ES.subject);
+    // THE ATTEMPT'S package, not the picker's. This read used to be ES.subject,
+    // which is what let a draft be marked against whichever subject happened to
+    // be selected when the student pressed submit.
+    const sc = esAttemptPackage(d);
     // When the student started from one of our questions, its definition travels
     // with the response: what the question requires, and which bands to judge it
     // against. On their own question there is no definition, and the marker marks
@@ -9545,7 +10129,11 @@
       prompt: d.question, command: d.command || commandOf(d.question),
       marks: d.marks || (def && def.marks) || 20,
       topic: d.topic || (def && def.topic) || "",
-      subject: esSubjectLabel() || undefined,
+      // The label of the attempt's own package, and the key beside it. The label
+      // alone was the only subject identity crossing the wire on this path, and
+      // it was resolved back by a string match that could miss; the key cannot.
+      subject: (sc && sc.label) || undefined,
+      subjectKey: esAttemptSubject(d) || undefined,
       markingCriteria: (sc && sc.markingCriteria) || undefined,
       requirements: (def && def.requirements) || undefined,
       criteria: (def && def.criteria) || undefined,
@@ -9559,6 +10147,23 @@
     if (!answer.trim()) { toast("Write your essay before submitting."); return; }
     const host = document.getElementById("eshost");
     const box = host.querySelector(".es-completion");
+    // The subject's own state comes first: marking being switched on cannot help a
+    // package that has nothing to mark against, and saying "when marking is
+    // switched on for your subject" here would promise something that arriving
+    // would not deliver.
+    const assess = esAssessmentState(d);
+    if (!assess.available) {
+      box.innerHTML = `
+      <div class="es-submitted">
+        <div class="es-submittedh">Saved. Your full attempt is kept as one draft.</div>
+        <p class="es-help">${esc(ES_WRITE_ONLY_SUB)}. ${esc(assess.subject || "This subject")} carries no
+          marking criteria, so this was not sent anywhere and was not read against another subject's.
+          Everything you wrote is saved and you can come back to it.</p>
+        <button class="es-linkbtn" id="esbacksetup">Back to setup</button>
+      </div>`;
+      const b0 = $("#esbacksetup"); if (b0) b0.onclick = () => { ES.screen = "setup"; esRender(); };
+      return;
+    }
     if (!essayMarkingEnabled()) {
       box.innerHTML = `
       <div class="es-submitted">
@@ -9677,7 +10282,22 @@
 
   function esBindWritingHead() {
     esBindDecode();
+    esBindNavMenu();
     const x = $("#esx"); if (x) x.onclick = () => { ES.screen = "setup"; esRender(); };
+    // The global bar is the same component here as on the picker, so its routes
+    // are bound here too. Leaving the writing surface never touches the draft:
+    // it is still in ES.draft, and the way back to it is remembered.
+    document.querySelectorAll("[data-esnav]").forEach(b => b.onclick = () => {
+      const to = b.dataset.esnav, f = ES.form || (ES.form = {});
+      if (to === "essays") {
+        f.pickReturnScreen = ES.screen;
+        if (f.pickStage !== "essays") f.pickReturn = f.pickStage || "subject";
+        f.pickStage = "essays";
+      } else if (to === "marginalhome") {
+        esLeave(); return;
+      } else return;   // "back" is the surface you are already on
+      ES.screen = "setup"; esRender();
+    });
     // Change question lands on the chooser with the current question in it, in the
     // mode it was chosen from, so the student is looking at the list they picked
     // from rather than at a blank configuration screen.
@@ -9707,6 +10327,16 @@
   async function esGetFeedback(idx) {
     const d = ES.draft, p = d.paras[idx];
     if (!p || !(p.text || "").trim()) { toast("Write something in this paragraph first."); return; }
+    // NO REQUEST WITHOUT CRITERIA. The controls that reach here are withheld when
+    // this is true, so arriving is a keyboard route or a stale render rather than
+    // an ordinary press - and either way the answer is the same one the student
+    // was given before they started, not a request the coach would answer against
+    // whatever criteria it could find.
+    const assess = esAssessmentState(d);
+    if (!assess.available) {
+      toast(ES_WRITE_ONLY_SUB + ".");
+      return;
+    }
     // Snapshot the paragraph as submitted: the textarea stays editable while the
     // request is in flight, so feedback (and the cooldown anchor) must tie to the
     // version actually reviewed, not whatever the student typed meanwhile.
@@ -9718,7 +10348,9 @@
     // arrives via one scroll-preserving esRender.
     ES.pending = true;
     const askBtn = $("#esask");
-    if (askBtn) { askBtn.disabled = true; askBtn.textContent = "Asking the coach…"; askBtn.classList.remove("primary"); askBtn.classList.add("ghost"); }
+    // The label, not the button: the control carries an icon beside it and
+    // writing textContent on the button would delete it mid-request.
+    if (askBtn) { askBtn.disabled = true; esSetLabel(askBtn, "Asking the coach\u2026"); askBtn.classList.remove("primary"); askBtn.classList.add("ghost"); }
     const marginEl = document.querySelector(".es-margin");
     if (marginEl && !marginEl.querySelector(".es-asking")) marginEl.insertAdjacentHTML("afterbegin", '<div class="es-asking">asking the coach…</div>');
     let fb;
@@ -9729,7 +10361,7 @@
           action: "coach",
           paragraph_text: submittedText, paragraph_role: p.role, planned_point: p.point || "",
           question: d.question, topic: d.topic || "",
-          structure: esStructureLabel(d.structure), subject: ES.subject || undefined,
+          structure: esStructureLabel(d.structure), subject: esAttemptSubject(d) || undefined,
           paragraph_model: d.paraModel || undefined,
           // Tell the coach the exact slots expected for THIS paragraph (key + label +
           // job). Lets the worker detect absent elements for any scaffold (TEEEC/
@@ -9743,12 +10375,18 @@
         if (!res.ok) throw new Error("coach " + res.status);
         fb = esNormalizeCoach(await res.json(), "", p.role);
       } catch (e) {
-        fb = esNormalizeCoach(esDemoRaw(p.role), "Could not reach coaching (" + e.message + "). Showing demo suggestions instead.", p.role);
+        // Plain words for the student, with the underlying reason kept where it
+        // is useful rather than shouted: "Failed to fetch" is a sentence about
+        // our network, not about their paragraph.
+        fb = esNormalizeCoach(esDemoRaw(p.role),
+          "The live coach could not be reached, so nothing below was written about your paragraph. What follows is demo guidance (" + e.message + ").",
+          p.role, "unreachable");
       }
     } else {
       fb = esNormalizeCoach(esDemoRaw(p.role), ES.demo
-        ? "Demo coaching. Real Haiku feedback switches on once the worker is re-pasted."
-        : "Demo coaching. Real feedback switches on once your teacher connects coaching.", p.role);
+        ? "Demo coaching. Nothing below was written about your paragraph. Real feedback switches on once the worker is re-pasted."
+        : "Demo coaching. Nothing below was written about your paragraph. Real feedback switches on once your teacher connects coaching.",
+        p.role, ES.demo ? "demo" : "unconnected");
     }
     p.feedback = fb; p.gradedText = submittedText; // cooldown anchor: must revise before re-asking
     esResetCoachUI(); // fresh feedback: missing-element cards start collapsed (Tier 0), polish tucked

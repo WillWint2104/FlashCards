@@ -305,6 +305,25 @@ function validate(pkg, man, opts) {
     }
     if (!rec.complete)
       add(SEV.error, codes.partial, at, JSON.stringify(rid) + " exists and is half written: " + (rec.missing || []).join(", ") + " missing");
+    // CROSS-WIRED, and refused while the package is still a file.
+    //
+    // Every shared record belongs to a subject and every package declares one.
+    // A question declared for one subject that reaches into another's syllabus,
+    // vocabulary, concepts or evidence is the cross-subject fault the runtime was
+    // fixed for, arriving from the authoring side instead: it published cleanly,
+    // filed under the subject it declared, and then put the OTHER subject's topic
+    // on the student's own question. Reproduced with an Economics-declared
+    // package carrying topicRef "business.operations", which reached the runtime
+    // reading Topic: Operations inside the Economics bank.
+    //
+    // A record with no subject (a sentence shape) belongs to no subject and is
+    // shared on purpose. A record the package PROVIDES resolves here with no
+    // subject either; those are checked against the declaration separately, below.
+    const declaredSubject = (pkg.question || {}).subject;
+    if (declaredSubject && rec.subject && rec.subject !== declaredSubject)
+      add(SEV.error, "SUBJECT_CROSS_WIRED", at,
+        JSON.stringify(rid) + " belongs to " + rec.subject + " and this question declares " +
+        declaredSubject + ". A package uses its own subject's records");
     return rec;
   }
   function vocabRef(r, at) {
@@ -346,6 +365,22 @@ function validate(pkg, man, opts) {
   const q = pkg.question || {};
   if (q.topicRef && q.topicLabel)
     add(SEV.error, "FIELD_CONFLICT", "question.topicRef", "a question carries a ref or a label, never both");
+  // The same rule for the records the package brings with it. A record it
+  // provides is not in a library yet, so refCheck cannot compare it: this reads
+  // the document. Only a value shaped like a subject KEY is compared, because
+  // VocabularyRecord.subject is contracted as the meaning in prose and a
+  // sentence is not a claim about which course owns the record.
+  const SUBJECT_KEY = /^[a-z0-9]+(_[a-z0-9]+)*$/;
+  ["vocabulary", "concepts", "lessons", "evidence", "syllabus", "resources"].forEach(kind => {
+    const recs = (pkg.provides || {})[kind] || {};
+    Object.keys(recs).forEach(rid => {
+      const owner = recs[rid] && recs[rid].subject;
+      if (!q.subject || typeof owner !== "string" || !SUBJECT_KEY.test(owner)) return;
+      if (owner !== q.subject)
+        add(SEV.error, "SUBJECT_CROSS_WIRED", "provides." + kind + "." + rid + ".subject",
+          JSON.stringify(owner) + " is not the subject this question declares (" + q.subject + ")");
+    });
+  });
   if ((pkg.marking || {}).bands && !String((pkg.marking || {}).bandSource || "").trim())
     add(SEV.error, "BANDS_WITHOUT_SOURCE", "marking.bands",
       "band descriptors are present with no source named. Marking language is quoted from somewhere or it is invented");

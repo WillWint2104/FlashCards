@@ -146,6 +146,17 @@ function toRuntimeQuestion(doc, opts) {
   const out = {
     id: q.id,
     text: q.text,
+    // THE PACKAGE THIS QUESTION BELONGS TO, carried onto the runtime question.
+    //
+    // fields.js:182 has always said what question.subject means - "which
+    // subject's marking criteria, paragraph models and libraries apply" - and it
+    // is required, validated, admitted, published and persisted. Then this
+    // function dropped it, and from here on the only subject any evaluation could
+    // read was ES.subject: a picker selection. It worked because the picker lists
+    // one subject's questions at a time, so the two agreed by construction - a
+    // coincidence of the UI, not an invariant anything checked. Now the question
+    // says which package it belongs to, all the way to the marker.
+    subject: q.subject || undefined,
     command: q.directive || undefined,
     marks: q.marks,
     // topicRef is an id into the syllabus library; topicLabel is prose. The

@@ -39,6 +39,7 @@ const SUPPORT = {
   "mklearnshim.js": "fixture builder",
   "mkwashim.js": "fixture builder",
   "shots_pages.js": "renders the eight approved setup-flow pages for review",
+  "shots_ui_pass.js": "renders the surfaces the UI consistency pass changed, including both Coach Feedback states",
   // Code under test, and the shared modules the worker suites import. They live
   // beside the suites because that is what they are tested through.
   "worker.mjs": "the Cloudflare marking worker itself, imported by t1 to t10",

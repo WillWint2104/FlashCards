@@ -44,7 +44,7 @@ const TIERS = {
   // when a maintained test is outside both. It costs nothing and belongs in the
   // tier that runs most often, because the thing it catches is a test drifting
   // out of the harness, which is invisible by definition.
-  fast: { budget: 40, suites: ["t1", "t17", "t18", "t19", "t20", "t21", "t22", "t23", "t24", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49"] },
+  fast: { budget: 40, suites: ["t1", "t17", "t18", "t19", "t20", "t21", "t22", "t23", "t24", "t25", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49"] },
   // Adds the interaction surfaces that the shell rewrite touched, and the setup
   // and marking paths. This is the gate to pass before pushing, and its whole
   // value is that it is cheap enough to run out of habit.
@@ -68,12 +68,75 @@ const TIERS = {
   // measures one seam, and one of them being red is the signal this tier exists
   // to give.
   //
-  // ui52 arrived here for the same reason. A header link whose destination does
-  // not exist is an architectural fault, not a journey, and it is the fault this
-  // flow already shipped once.
+  // ui52 arrived here on the argument that a header link whose destination does
+  // not exist is an architectural fault rather than a journey. That was half
+  // true and it put the suite in the wrong tier. Whether the destination EXISTS
+  // is a seam and could be asserted in a second; what ui52 actually does is
+  // drive a student from setup through the list, into the writing, out to My
+  // essays, back in through Resume, and through a delete confirmation twice - a
+  // walk across five screens, and 15.8s of a 60s tier, a quarter of it for one
+  // suite. Every other walk in the harness is in journeys, and this one was the
+  // exception because of how it was argued for rather than what it does. It has
+  // gone where the rule always put it.
+  //
+  // That leaves this tier at 45.8s. It had been over its minute since before the
+  // UI consistency pass - 66.2s on main, 61.6s with ui52 still in it - and the
+  // overrun was never ui52 alone, but ui52 was the one suite here that did not
+  // belong.
+  // ui58 is here, not in journeys, and the difference is real rather than
+  // convenient. It does not walk a student anywhere: it puts one surface at four
+  // widths and asks whether the bar still fits and still reaches everything.
+  // That is a layout invariant measured in place, which is what this tier is
+  // for, and it is 21s because resizing is cheap next to walking.
+  //
+  // ui60 sits beside ui59 and for the same reason: it reads what the picker
+  // offers after a registry change, in place, on one surface. It also guards a
+  // product rule - a legacy subject is content the app depends on, not a subject
+  // it offers - and a rule nobody can see on screen is exactly the kind that
+  // decays quietly between passes.
+  //
+  // ui62 is in journeys beside ui61. It changes login twice, starts an attempt,
+  // leaves it, comes back through My essays and reads the labels at two widths -
+  // a walk through the whole lifecycle, which is the only place the rule it holds
+  // can be broken.
+  //
+  // t26 is in CHECKPOINT and not in fast. It is the mutation runner's own guards -
+  // clean tracked tree before a fault is applied, tree back afterwards, no flag
+  // past either - checked against a throwaway checkout it makes and deletes. It
+  // holds one seam and takes a third of a second on its own, so fast is where it
+  // belongs by cost; it is not there because of what it costs the TIER. Every
+  // suite in fast is a process launch and the tier crossed 40s when this one was
+  // added to it, and fast is the tier whose whole point is that nobody thinks
+  // about whether to run it.
+  //
+  // ui64 is full-only for the same reason as ui63 and one more: it publishes a
+  // package, walks a student from the picker into the workspace, out again and
+  // back through My essays, and then asks the shape resolver four questions per
+  // subject. It is a journey and a sweep in one file, and the journeys tier has
+  // 8s of headroom.
+  //
+  // ui63 is in NEITHER, which is to say full and only full. It publishes four
+  // packages through the real five-step importer and validates four more against
+  // the shipped manifest: one authored package re-declared as each subject in
+  // turn, plus the cross-wired negatives. That is an exhaustive cross-product of
+  // declared subjects, which is the kind of sweep the exhaustive tier exists for
+  // - the same reason ui40's walk of every question moved out of checkpoint.
+  //
+  // ui61 is in JOURNEYS, not here, and the difference is the importer. It
+  // publishes a package through the real importer's five steps, walks the
+  // paginated bank to the question that produced, starts an attempt from it and
+  // reads what the draft recorded - a journey through four surfaces, and 30s of
+  // it. The parts that are seams (which package owns which criteria, where the
+  // gate sits) it checks in place; the part that is a walk is a walk.
+  //
+  // ui59 is here for the same reason and a sharper one. It reads the labels on
+  // one surface after each change, which is a state invariant measured where the
+  // state is, and the fault it guards - two subjects named at once - is the kind
+  // that reaches a screenshot sent for approval rather than the kind a walk trips
+  // over. It belongs in the tier that runs on the way past.
   checkpoint: {
     budget: 60,
-    suites: ["t1", "t2", "t17", "t18", "t19", "t20", "t21", "t22", "t23", "t24", "ui35", "ui38", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49", "ui52"],
+    suites: ["t1", "t2", "t17", "t18", "t19", "t20", "t21", "t22", "t23", "t24", "t25", "t26", "ui35", "ui38", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49", "ui58", "ui59"],
   },
   // ui40 joined this tier when ui51 arrived. It walks EVERY question through the
   // shell, which is an exhaustive sweep and 6.2s of it, and the picker it swept
@@ -128,7 +191,31 @@ const TIERS = {
   // capture and restore of a sentence in progress, but it guards it by leaving
   // the writing screen and coming back through half a dozen controls, which is a
   // walk. ui35 and ui46 stayed because each measures its invariant in place.
-  journeys: { budget: 180, suites: ["ui13", "ui30", "ui37", "ui40", "ui50", "ui51", "ui53", "ui55", "ui56"] },
+  //
+  // ui55 LEFT for full, and the reason is a distinction this file had not drawn
+  // before. Every other suite here walks ONE route and asks whether it works.
+  // ui55 walks every stage and presses EVERY control on each: it is an
+  // exhaustive sweep, not a journey. Two things follow from that, and neither is
+  // about the clock. Its cost grows with the number of controls in the product
+  // rather than with the number of routes worth guarding, so it gets slower
+  // every time the picker gains a button and there is no version of this tier in
+  // which that stops. And what it finds - a control that leads nowhere - is a
+  // completeness failure rather than a broken route: nothing a student is doing
+  // mid-session breaks because a control is inert. Exhaustive completeness
+  // checks are what the lower-frequency tier is for.
+  //
+  // Said plainly, because it matters: the clock is what made me look. The tier
+  // measured 183.3s once ui57 joined, and ui55 is 46.6s of it. The argument
+  // above is the reason it moved, and it would have been the same argument at
+  // 120s, but it was the number that prompted the question. What replaces its
+  // cover here is narrower and deliberate: ui57 presses every way out of every
+  // surface, which is the class of dead control that actually strands a student.
+  //
+  // ui57 is here because it is a journey in the strict sense: it leaves the
+  // writing workspace mid-paragraph, goes to another surface, comes back, and
+  // asks whether the attempt survived the trip. That question cannot be asked at
+  // a seam - it is the trip.
+  journeys: { budget: 180, suites: ["ui13", "ui30", "ui37", "ui40", "ui50", "ui51", "ui52", "ui53", "ui56", "ui57", "ui61", "ui62"] },
   // Everything run.js knows about, the journeys included, plus the suites in no
   // tier: both student matrices are here and only here, ui54's four profiles on
   // the imported question and the bots' seven on the bundled bank.
@@ -139,7 +226,34 @@ const TIERS = {
   // There is nothing to move out of the tier that runs everything, so the only
   // honest choice here is a number with room in it and the run that set it
   // written down beside it.
-  full: { budget: 600, suites: [] },
+  // 660, set from measurement rather than from a round number, and recorded so
+  // the next person can see whether it was earned:
+  //
+  //   595.3s  before the UI consistency pass
+  //   615.9s  after it, the difference being ui57, the navigation regression
+  //           that proves leaving and resuming preserves a student's attempt
+  //   574.9s  the same tree plus ui58, the responsive-navigation regression,
+  //           measured 41s FASTER than the run before it
+  //   660     the highest of those plus headroom
+  //
+  // That third number is the one that matters when reading the first two. This
+  // tier varies by around 40s between runs on the same tree - it is 80 suites
+  // each launching a browser on a shared machine - so a single measurement is
+  // not a cost and 615.9 was not purely growth. 660 is set above the worst
+  // observed run, not above the average, because a budget that the tier crosses
+  // on a bad afternoon teaches everyone to ignore it.
+  //
+  // This is the exhaustive tier growing in scope, not a budget moved to hide a
+  // regression: fast, checkpoint and journeys are unchanged at 40, 60 and 180,
+  // and each of them is inside its number. The distinction matters and is the
+  // reason this comment exists rather than a bare integer.
+  //
+  // 660 is provisional. bots is 132.7s of this tier and ui54 is 79.4s - 35% of
+  // the whole harness between two suites - and Gate 2 rewrites the bot
+  // acceptance. Profile both again from the post-Gate-2 composition and set this
+  // from what is measured then. Do not move core coverage out of full to get
+  // under a clock: full is the tier that is allowed to be slow.
+  full: { budget: 660, suites: [] },
 };
 
 const tier = (process.argv[2] || "").toLowerCase();
@@ -201,10 +315,23 @@ child.on("close", code => {
     ? failed.map(k => k + " (" + seen.get(k).fail + ")").join(", ")
     : "none"));
   if (missing.length) console.log("  did not report  " + missing.join(" "));
-  console.log("  elapsed         " + secs.toFixed(1) + "s (target under " + TIERS[tier].budget + "s)");
+  const budget = TIERS[tier].budget;
+  const over = secs > budget;
+  console.log("  elapsed         " + secs.toFixed(1) + "s (budget " + budget + "s)" +
+    (over ? "  OVER BUDGET by " + (secs - budget).toFixed(1) + "s" : ""));
 
+  // Two facts, and the report used to collapse them into one word. A run where
+  // every suite is green and the tier took longer than its budget is not a pass
+  // against the budget, and printing "PASS" over it is how a budget quietly
+  // stops being one. The verdict now names which of the two held.
   const green = code === 0 && failed.length === 0 && missing.length === 0 && ran.length > 0;
-  console.log("\n" + label + (green ? " PASS" : " FAIL") + " — " + ran.length + " suites — " +
-    assertions + " assertions — " + secs.toFixed(1) + "s");
+  const verdict = !green ? " FAIL" : over ? " GREEN, OVER BUDGET" : " PASS";
+  console.log("\n" + label + verdict + " — " + ran.length + " suites — " +
+    assertions + " assertions — " + secs.toFixed(1) + "s" +
+    (green && over ? " against a " + budget + "s budget" : ""));
+  if (green && over) {
+    console.log("  Every suite passed. The tier is over its budget, which is a result to act on,");
+    console.log("  by re-tiering or by making a suite cheaper, not by moving the number.");
+  }
   process.exit(green ? 0 : 1);
 });

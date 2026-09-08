@@ -27,7 +27,16 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log("  FAIL:", m); 
 // them rather than pressing them and testing the rest against the wreckage.
 // Each is covered by a suite that presses it on purpose.
 const SKIP = {
-  esx: "closes the essay surface; ui41 covers it",
+  // esx is Setup on the writing screens and is not on the picker at all, so it
+  // is here only for the failed-to-load surface. The claim that used to sit on
+  // this line - "ui41 covers it" - was simply untrue: ui41 has never referred to
+  // it. A skip carries a real owner or it is not a skip.
+  esx: "leaves the surface; ui57 presses every way out on purpose",
+  eshome: "leaves Essay Practice for Marginal; ui57 section 1b follows it there",
+  esexit: "leaves the writing workspace; ui57 section 4 follows it and checks the attempt survived",
+  // The wordmark only. The other [data-esnav] controls are destinations INSIDE
+  // Essay Practice and the sweep should go on pressing them.
+  esbrandhome: "the wordmark is a Home route out of the application; ui57 covers it",
   "data-esdelete": "deletes a saved essay; ui52 covers both answers to its confirmation",
   esstart: "starts the essay and leaves the picker; ui40 opens every question through it",
   esmarkfull: "submits for marking; ui2 covers the payload",
