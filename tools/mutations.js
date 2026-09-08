@@ -321,13 +321,71 @@ module.exports = [
     why: "question.subject was dropped at the runtime adapter, leaving evaluation nothing to read but the picker",
   },
 
+  // ---- the paragraph review -------------------------------------------------
+  {
+    id: "review-green-from-silence",
+    file: "app.js",
+    find: "      const status = f ? f.status : \"unassessed\";",
+    replace: "      const status = f ? f.status : \"ok\";",
+    owner: "ui65",
+    why: "a slot the coach never reported went green, so the app invented praise out of an absence",
+  },
+  {
+    id: "review-trusts-unknown-block",
+    file: "app.js",
+    find: "        if (!b) return false;                       // an id we never sent",
+    replace: "        if (!b) return true;",
+    owner: "ui65",
+    why: "a diagnosis naming a sentence id the app never sent was accepted and attached to nothing",
+  },
+  {
+    id: "review-trusts-mismatched-slot",
+    file: "app.js",
+    find: "        if (b.slot && b.slot !== f.slot) return false;  // it disagrees with what the sentence was written as",
+    replace: "        return true;",
+    owner: "ui65",
+    why: "a diagnosis was attached to a sentence written for a different structural job",
+  },
+  {
+    id: "review-keeps-model-prose-on-ok",
+    file: "app.js",
+    find: '      .map(f => (f.status === "ok" ? { slot: f.slot, status: "ok", blockId: f.blockId, issue: "" } : f))',
+    replace: "      .map(f => f)",
+    owner: "ui65",
+    why: "model prose about a sentence it approved of reached the student instead of the app's own line",
+  },
+  {
+    id: "review-deletes-feedback-on-edit",
+    file: "app.js",
+    find: "    // THE FEEDBACK STAYS. It used to be deleted here the moment the text differed",
+    replace: "    if (p.feedback && (p.gradedText || \"\") !== p.text) { p.feedback = null; p.gradedText = null; }\n    // THE FEEDBACK STAYS. It used to be deleted here the moment the text differed",
+    owner: "ui65",
+    why: "the diagnosis vanished the moment the student started acting on it, taking the check with it",
+  },
+  {
+    id: "review-example-borrows-fallback",
+    file: "app.js",
+    find: "    const list = (sc && Array.isArray(sc.examples)) ? sc.examples : [];",
+    replace: "    const list = (sc && Array.isArray(sc.examples) && sc.examples.length) ? sc.examples : esWorkedExampleSet().list;",
+    owner: "ui66",
+    why: "a complete example was filled from another subject's set rather than withheld honestly",
+  },
+  {
+    id: "review-invents-a-definition",
+    file: "app.js",
+    find: "    if (!inQuestion && !plain) return null;",
+    replace: "    if (!inQuestion && !plain) return null;\n    if (!plain) plain = String(h.anchor || \"\") + \" is a key term in this subject.\";",
+    owner: "ui66",
+    why: "a definition was written to fill the half of the term card the vocabulary library cannot supply",
+  },
+
   // ---- the harness watching itself ----------------------------------------
   {
     id: "gate-drops-a-suite",
     file: "tests/run.js",
     // Follows the end of the list, which moves every time a suite is added.
-    find: '"ui63", "ui64"]',
-    replace: '"ui63"]',
+    find: '"ui65", "ui66"]',
+    replace: '"ui65"]',
     owner: "t23",
     why: "a maintained regression outside the runner is invisible, which is how twenty-eight suites rotted unnoticed",
   },
