@@ -60,8 +60,26 @@ async function startQuestion(p, re) {
   await p.waitForFunction(() => !!document.querySelector("#esline, .es-startrow"), null, { timeout: 8000 });
   return true;
 }
+// TWO ROUTES IN, because the app has two. The planning entry offers rows; a
+// subject that opens straight into the writer offers the response map instead,
+// and this helper only knew the rows. On Economics, which has no planning entry,
+// every call asking for "Body 1" quietly did nothing and left the suite on the
+// INTRODUCTION - so the section below, written to prove an Economics student is
+// never handed an Ancient History body paragraph, was checking an introduction.
 async function section(p, re) {
-  await p.evaluate(r => { const t = [...document.querySelectorAll(".es-startrow")].find(x => new RegExp(r, "i").test(x.textContent)); t && t.click(); }, re);
+  const byRow = await p.evaluate(r => {
+    const t = [...document.querySelectorAll(".es-startrow")].find(x => new RegExp(r, "i").test(x.textContent));
+    if (!t) return false; t.click(); return true;
+  }, re);
+  if (!byRow) {
+    await p.keyboard.press("Escape").catch(() => {});
+    const pop = await p.$("#esmappop"); if (pop) { await pop.click(); await settled(p); }
+    await p.evaluate(r => {
+      const t = [...document.querySelectorAll(".es-mapitem")].find(x => new RegExp(r, "i").test(x.textContent));
+      t && t.click();
+    }, re);
+    await p.keyboard.press("Escape").catch(() => {});
+  }
   await rf(p); await settled(p);
   const pth = await p.$("[data-espath]"); if (pth) { await pth.click(); await rf(p); }
   const go = await p.$("#esstartwriting"); if (go) { await go.click(); await rf(p); }
@@ -427,19 +445,30 @@ async function writeAndCheck(p, lines) {
   await p.fill("#esq", "Explain how changes in interest rates affect consumption and investment in the Australian economy.");
   await p.dispatchEvent("#esq", "input"); await p.waitForTimeout(200);
   await p.click("#esstart"); await p.waitForTimeout(700);
-  await p.evaluate(() => { const t = [...document.querySelectorAll(".es-startrow")].find(x => /Body 1/i.test(x.textContent)); t && t.click(); });
-  await rf(p); await settled(p);
-  const pth2 = await p.$("[data-espath]"); if (pth2) { await pth2.click(); await rf(p); }
-  const go2 = await p.$("#esstartwriting"); if (go2) { await go2.click(); await rf(p); }
-  await settled(p);
+  await section(p, "Body 1");
   await writeAndCheck(p, [
     "Higher interest rates reduce the money households have available to spend.",
     "Because borrowing costs more, households postpone large purchases.",
   ]);
+  // DECLARE A MATCHING FAMILY ON THE FALLBACK SET, so that the only thing standing
+  // between an Economics student and an Ancient History paragraph is the rule that
+  // a subject does not borrow another subject's examples.
+  //
+  // Without this the assertion below was unfalsifiable: the fallback examples carry
+  // no family, the family gate refuses them, and review-example-borrows-fallback
+  // survived because BOTH protections have to fail for anything to appear. One
+  // protection is stood down here so the other has to hold on its own.
+  await p.evaluate(() => {
+    const set = ((window.ESSAY || {}).slots || {}).examples || [];
+    set.forEach(e => { e.family = "causal"; });
+  });
+  await p.evaluate(() => { const t = document.querySelector(".es-rtab.on") || document.querySelector(".es-rtab"); t && t.click(); });
+  await settled(p);
   const ecoTabs = await p.$$eval(".es-rtab", es => es.map(e => e.innerText.trim()));
   console.log("    economics tabs:", JSON.stringify(ecoTabs));
   ok(ecoTabs.length > 0, "the review renders for a subject with no scaffold of its own");
-  ok(!(await p.$("#esrexample")), "and no complete example is offered");
+  ok(!(await p.$("#esrexample")),
+    "and no complete example is offered, even with the fallback set declaring a matching family");
   const ecoQuiet = await p.evaluate(() => document.body.innerText);
   ok(!/has been written for/i.test(ecoQuiet) && !/nothing to show you here/i.test(ecoQuiet),
     "and the absence is quiet: no repository status in the student's workflow");
