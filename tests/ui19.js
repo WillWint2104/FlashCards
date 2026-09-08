@@ -59,7 +59,11 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   ok(await p.$eval('[data-esdecbox]',e=>e.hidden),'the old in-page panel stays shut');
 
   console.log('4. it closes back, and never touches the writing');
-  await p.$eval('#esmodalclose',e=>e.click()); await settled(p);
+  // ONE close affordance on the anchored card: the X in its corner. It carried an X
+  // and a full-width Close button, which is two answers to one question on a card
+  // three lines tall.
+  ok((await p.$$eval('.es-termcard button',es=>es.length))===1,'the card has one close control');
+  await p.$eval('#esmodalx',e=>e.click()); await settled(p);
   ok(!(await p.$('.es-termcard')),'Close puts it away');
   await p.$$eval('.es-dec',es=>{const t=es.find(x=>/^processes$/.test(x.textContent.trim()));t&&t.click();});
   await settled(p);

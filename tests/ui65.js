@@ -328,6 +328,148 @@ async function check(p) {
   ok(kept.has && kept.snap, "the stale feedback and its snapshot are still stored after a reload");
   ok(kept.stale, "and it is still recorded as being about an earlier version");
 
+  // ---- 8. review is a MODE: one editor, and the composer stands down ------
+  console.log("--- 8. one editing surface, not two");
+  // A fresh attempt: section 7b reloaded the page to prove the stale feedback
+  // survives it, so this starts from the picker rather than from wherever that left.
+  await enter(p);
+  ok(await startQuestion(p, "target markets"), "a fresh attempt opens");
+  ok(await section(p, "Body 1"), "on a body paragraph");
+  await write(p, SENTENCES);
+  await stub(p, body => ({
+    note: "", nudges: [],
+    slotFeedback: (body.slots || []).map((s2, i) => {
+      const own = (body.blocks || []).find(x => x.slot === s2.key);
+      return own
+        ? { slot: s2.key, status: i === 1 ? "needs_work" : "ok", blockId: own.id,
+            issue: i === 1 ? "You identify the change but do not explain why it follows." : "" }
+        : { slot: s2.key, status: "missing", blockId: "", issue: "Nothing is doing this job yet." };
+    }),
+  }));
+  await check(p);
+  {
+    // The first version layered the review under a live composer, so the page said
+    // "the sentence you are writing" while the coach reviewed a different sentence,
+    // and a missing slot gave the student two boxes to write it in.
+    const surfaces = await p.evaluate(() => ({
+      composer: !!document.querySelector("#esline"),
+      guide: !!document.querySelector(".es-guide"),
+      done: !!document.querySelector(".es-done"),
+      boxes: document.querySelectorAll("#esline, [data-esrbox], [data-esedit]").length,
+      prose: !!document.querySelector(".es-prose"),
+      back: !!document.querySelector("#esrclose"),
+    }));
+    console.log("    " + JSON.stringify(surfaces));
+    ok(!surfaces.composer, "the sentence composer is not on screen");
+    ok(!surfaces.guide, "nor the step header telling them which sentence they are writing");
+    ok(!surfaces.done, "nor the completion card, which belongs to writing");
+    ok(surfaces.boxes === 1, "exactly one place to type: " + surfaces.boxes);
+    ok(surfaces.prose, "and the paragraph itself is still on screen above it");
+    ok(surfaces.back, "with a way back to writing");
+    // ONE CHECK ACTION. The bar carried its own Check this paragraph beside the
+    // review's Re-check, one of them disabled, competing for the same press.
+    const checks = await p.evaluate(() => [...document.querySelectorAll("button")]
+      .map(b => (b.innerText || "").trim())
+      .filter(t => /^(check|re-check)/i.test(t)));
+    console.log("    check controls: " + JSON.stringify(checks));
+    ok(checks.length === 1 && /re-check/i.test(checks[0]),
+      "one check action, and it is the one this state calls for: " + JSON.stringify(checks));
+    await p.click("#esrclose"); await settled(p);
+    ok(!!(await p.$("#esline")), "Continue writing brings the composer back");
+    // Never TWO. One or none: with the paragraph unchanged since the check there is
+    // nothing to re-check, which is the cooldown this app has always had, and the
+    // stood-down strip is what says the findings are still there.
+    const after = await p.evaluate(() => [...document.querySelectorAll("button")]
+      .map(b => (b.innerText || "").trim()).filter(t => /^(check|re-check)/i.test(t)));
+    ok(after.length <= 1, "and never two check actions at once: " + JSON.stringify(after));
+    const shut = await p.$eval(".es-rshut", e => e.innerText.replace(/\s+/g, " ")).catch(() => "");
+    ok(/still to work on|still here/i.test(shut), "the findings are stood down, not thrown away: " + JSON.stringify(shut));
+    ok(!!(await p.$("#esropen")), "and one press brings them back");
+    await p.click("#esropen"); await settled(p);
+    ok(!!(await p.$(".es-rtabs")), "which it does");
+  }
+
+  // ---- 9. a missing part cannot coexist with a complete paragraph --------
+  console.log("--- 9. composition completeness is not academic quality");
+  {
+    // A fresh result with parts outstanding, so the claim under test is about THIS
+    // check rather than about whatever the previous section left behind.
+    await p.click("#esrclose").catch(() => {});
+    await settled(p);
+    await p.fill("#esline", "A further sentence, so the paragraph differs from the checked version.").catch(() => {});
+    await p.click("#esaccept").catch(() => {});
+    await settled(p);
+    await check(p);
+    const st = await p.evaluate(() => {
+      const t = document.body.innerText;
+      return { done: /Paragraph complete/i.test(t), memorise: /Ready to memorise/i.test(t),
+        attempted: /All parts attempted/i.test(t),
+        open: [...document.querySelectorAll(".es-rtab")].filter(x => /needs_work|missing/.test(x.className)).length };
+    });
+    console.log("    " + JSON.stringify(st));
+    ok(st.open > 0, "this paragraph has parts outstanding: " + st.open);
+    ok(!st.done, "so it is not called complete");
+    ok(!st.memorise, "and it is not offered for memorising");
+    await p.click("#esrclose"); await settled(p);
+    const st2 = await p.evaluate(() => {
+      const t = document.body.innerText;
+      return { done: /Paragraph complete/i.test(t), memorise: /Ready to memorise/i.test(t),
+        attempted: /All parts attempted/i.test(t) };
+    });
+    console.log("    back in writing: " + JSON.stringify(st2));
+    ok(!st2.done && !st2.memorise, "and the same holds with the composer back");
+    // "All parts attempted" is itself only true when every job HAS a sentence, and
+    // this paragraph is missing two, so the card is not there to say anything. What
+    // matters is that nothing claims more than that.
+    ok(!st2.done && !st2.memorise, "and nothing claims the paragraph is finished");
+  }
+
+  // ---- 10. the scaffold answers the diagnosis --------------------------
+  console.log("--- 10. the scaffold is for the job that was diagnosed");
+  {
+    // The fault this replaced, exactly: the Explanation diagnosis was about
+    // characteristic causing the strategy change, and the generic slot template
+    // underneath it taught strategy causing the downstream objective. A student
+    // following it would not have answered the criticism above it.
+    // Its own attempt, so the row under test is the Explanation of mkt-01 Body 1
+    // and not whatever the section before it happened to leave selected.
+    await enter(p);
+    await startQuestion(p, "target markets");
+    await section(p, "Body 1");
+    await write(p, SENTENCES);
+    await stub(p, body => ({
+      note: "", nudges: [],
+      slotFeedback: (body.slots || []).map(s2 => {
+        const own = (body.blocks || []).find(x => x.slot === s2.key);
+        if (!own) return { slot: s2.key, status: "missing", blockId: "", issue: "Nothing does this job yet." };
+        return s2.key === "explain"
+          ? { slot: "explain", status: "needs_work", blockId: own.id,
+              issue: "You identify the strategy change, but you do not explain why this target-market characteristic causes the business to make that change." }
+          : { slot: s2.key, status: "ok", blockId: own.id, issue: "" };
+      }),
+    }));
+    await check(p);
+    const rows2 = await tabsOf(p);
+    const at = rows2.findIndex(t => /needs_work/.test(t.cls));
+    ok(at >= 0, "the Explanation row is the one that needs work");
+    if (at >= 0) { await p.$$eval(".es-rtab", (es, i2) => es[i2].click(), at); await settled(p); }
+    const seen = await rowOf(p);
+    console.log("    diagnosis: " + JSON.stringify(String(seen.issue || "").slice(0, 70)));
+    console.log("    scaffold:  " + JSON.stringify(String(seen.frame || "")));
+    ok(/target-market characteristic/i.test(String(seen.frame)),
+      "it names the cause the diagnosis is about: " + JSON.stringify(seen.frame));
+    ok(!/the effect on the objective/i.test(String(seen.frame)),
+      "and is not the downstream objective frame the generic template supplied");
+    const authoredFrame = await p.evaluate(() => {
+      const q = ((window.__esSubjects && window.__esSubjects()) || {}).business_studies.questions.find(x => x.id === "mkt-01");
+      const pw = (q.pathways || []).find(x => x.id === "mkt01-em-digital");
+      return ((pw.help || {}).explain || {}).frame.text;
+    });
+    ok(String(seen.frame).trim() === String(authoredFrame).trim(),
+      "because it is the frame the pathway authors for this slot on this question");
+  }
+
+
   console.log("");
   console.log(pass + " passed, " + fail + " failed");
   await b.close();

@@ -3494,7 +3494,7 @@
   const ES = { subject: null, code: "", demo: false, screen: "setup", draft: null, list: [], form: null, pending: false,
     ui: { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, planAll: false, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false, tryPick: null, lessonMore: false, lessonJump: null,
       shapeSlot: null, shapeEx: false, shapeAlts: false, shapeAlt: null,
-      reviewSlot: null, reviewHelp: null, reviewExample: null, term: null,
+      reviewSlot: null, reviewHelp: null, reviewExample: null, term: null, reviewClosed: false,
       studyOpen: false, studyPreview: null, studyPos: null, stuckOpen: false },  // transient guided-view state, reset on paragraph change
     hint: { open: false, tab: "know" },          // study hints: persists across paragraphs on purpose
     // The Learning Centre is off the student route. This is the only way back to
@@ -3504,7 +3504,7 @@
   const ES_KEY = "marginal.essay.v1";
   function esResetCoachUI() { ES.ui = { polishOpen: false, miss: {}, frame: {}, frameOpen: {}, editBlock: null, rung: 0, stayStep: false, tool: null, readMore: false, evAll: false, ctx: null, moreLine: false, pointOpen: false, mapOpen: {}, planOpen: {}, twinOk: {}, planAll: false, coreExplain: false, coreIdea: false, why: null, compare: false, posOpen: false, critOpen: false, tryPick: null, lessonMore: false, lessonJump: null,
     shapeSlot: null, shapeEx: false, shapeAlts: false, shapeAlt: null,
-    reviewSlot: null, reviewHelp: null, reviewExample: null, term: null }; }
+    reviewSlot: null, reviewHelp: null, reviewExample: null, term: null, reviewClosed: false }; }
   // peeked persists for the whole attempt: revealing once disqualifies mastery even
   // if the answer is hidden again before checking. Cleared only on a new attempt.
   function esResetQuiz() { ES.quiz = { revealed: false, peeked: false, attempt: "", result: null }; }
@@ -8577,13 +8577,17 @@
              whether a student believes it. Choosing a specific paragraph is still
              one press, on the rows underneath. */ ""}
       <div class="es-startgo">
-        <button class="es-btn primary" id="esstartintro">${esIcon("forward")}<span>Start writing</span></button>
-        ${firstBody != null ? `<button class="es-btn ghost" id="esstartbody">Start ${esc(d.paras[firstBody].role.toLowerCase())} instead</button>` : ""}
+        ${/* Named by where they go. "Start writing" and "Start body 1 instead" left a
+              student to work out that the first one meant the introduction. */ ""}
+        <button class="es-btn primary" id="esstartintro">${esIcon("forward")}<span>Start with the introduction</span></button>
+        ${firstBody != null ? `<button class="es-btn ghost" id="esstartbody">Start with ${esc(d.paras[firstBody].role.toLowerCase())}</button>` : ""}
         <span class="es-startopt">Planning is optional. You can plan the whole response first, or start writing and plan each paragraph as you reach it.</span>
       </div>
       <div class="es-startrows">${rows}</div>
+      ${/* A real control rather than a line of text that happened to be clickable:
+             it opens the four-card planner, which is a destination. */ ""}
       <div class="es-startbtns">
-        <button class="es-linkbtn" id="esplanall">Plan all paragraphs first</button>
+        <button type="button" class="es-btn ghost sm" id="esplanall">${esIcon("steps")}<span>Plan all paragraphs first</span></button>
       </div>
     </div>`;
   }
@@ -8976,7 +8980,11 @@
   // the current state there is no primary action rather than a dead one.
   function esFootBarHTML(d, p, canAsk) {
     const role = (p && p.role) || "";
-    const can = !!canAsk;
+    // ONE CHECK ACTION AT A TIME. While the review is open it owns the action, and
+    // it is called Re-check there because that is what pressing it does. The bar
+    // carrying its own Check this paragraph beside it put two versions of the same
+    // control on screen, one of them disabled, competing for the same press.
+    const can = !!canAsk && !esInReview(p);
     // WITHHELD WITH A REASON, not removed and not left live to fail later. A
     // subject with no marking criteria has nothing to read this against, and the
     // student was told so before they started; this is the same fact where the
@@ -9138,8 +9146,25 @@
     const nextPara = d.paras[d.pos + 1] || null;
     const doneCard = `
             <div class="es-done">
-              <div class="es-doneh"><span class="es-donetick">${esIcon("check")}</span>Paragraph complete<span class="es-donew">${words} word${words === 1 ? "" : "s"}</span></div>
-              <p class="es-donesub">Every part of this paragraph has something in it. Read it back before you move on: click any sentence above to rewrite it.</p>
+              ${/* WHAT IS TRUE, AND ONLY THAT. Every job having a sentence in it is a
+                    fact about composition. It was being said in success green as
+                    "Paragraph complete", directly above a coach saying an element was
+                    missing and another needed work, and offering to memorise it. The
+                    card now states the fact it can actually stand behind, and where a
+                    check has found something outstanding it says so instead. */ ""}
+              ${(() => {
+                const settled = esParaSettled(p);
+                if (settled === false) {
+                  const open = esSlotStatuses(p).filter(r => r.needsWork).length;
+                  return `<div class="es-doneh open"><span class="es-doneflag">${esIcon("warn")}</span>All parts attempted<span class="es-donew">${words} word${words === 1 ? "" : "s"}</span></div>
+              <p class="es-donesub">The last check left ${open === 1 ? "one part" : open + " parts"} to work on. Open the coach's feedback below to see which.</p>`;
+                }
+                return `<div class="es-doneh"><span class="es-donetick">${esIcon("check")}</span>${
+                  settled === true ? "Paragraph complete" : "All parts attempted"}<span class="es-donew">${words} word${words === 1 ? "" : "s"}</span></div>
+              <p class="es-donesub">${settled === true
+                  ? "Every part of this paragraph has something in it and the last check found nothing outstanding."
+                  : "Every part of this paragraph has something in it. Read it back before you move on: click any sentence above to rewrite it."}</p>`;
+              })()}
               ${/* Four things a student can do next, in three weights. Continue is
                     the primary. Check this paragraph is the one action here that
                     asks the app to read what was written, so it is a prominent
@@ -9149,17 +9174,23 @@
                     sentence and Memorise it are tertiary. Same height throughout,
                     and they keep stacking cleanly on a narrow screen. */ ""}
               <div class="es-donebtns">
-                <button type="button" class="es-btn primary" id="esdonenext">${esIcon("forward")}<span>${nextPara ? "Continue to " + esc(nextPara.role.toLowerCase()) : "Review the whole response"}</span></button>
+                ${/* Moving on and reviewing the WHOLE response are both later layers.
+                      While this paragraph has something outstanding they stop being
+                      the green primary: fixing the paragraph in front of the student
+                      is the path, and a solid green Review the whole response beside
+                      "The answer needs work" says the opposite. */ ""}
+                <button type="button" class="es-btn ${esParaSettled(p) === false ? "ghost" : "primary"}" id="esdonenext">${esIcon("forward")}<span>${nextPara ? "Continue to " + esc(nextPara.role.toLowerCase()) : "Review the whole response"}</span></button>
                 ${esAssessmentAvailable(d)
                   ? `<button type="button" class="es-btn ghost strong" id="esdonecheck">${esIcon("feedback")}<span>Check this paragraph</span></button>`
                   : `<span class="es-nofb" data-escap="no-criteria">${esIcon("warn")}<span>Checking is unavailable: ${
                       esc(esAssessmentState(d).subject || "this subject")} carries no marking criteria</span></span>`}
                 <button type="button" class="es-btn ghost" id="esmoreline">${esIcon("add")}<span>Add another sentence</span></button>
-                <button type="button" class="es-btn ghost" id="esquizlink">${esIcon("memorise")}<span>Memorise it</span></button>
+                ${esParaSettled(p) === false ? "" : `<button type="button" class="es-btn ghost" id="esquizlink">${esIcon("memorise")}<span>Memorise it</span></button>`}
               </div>
             </div>`;
     const canAsk = (p.text || "").trim() && (!p.feedback || ((p.text || "").trim() !== (p.gradedText || "").trim()));
     const askLabel = ES.pending ? "Checking this paragraph…" : "Check this paragraph";
+    const inReview = esInReview(p);
 
     host.innerHTML = `
     <div class="es-scrim"><div class="es-shell"><div class="es-wrap es-canvas">
@@ -9212,7 +9243,7 @@
             ${/* The prompt is a header for the sentence in hand, so it sits above the
                   paragraph rather than wrapping the composer. Mint marks that one
                   strip and stops there: the prose and the editor are on white. */ ""}
-            ${(editing != null || complete) ? "" : `
+            ${(editing != null || complete || inReview) ? "" : `
               <div class="es-guide">
                 <div class="es-guidetop">
                   <span class="es-guideh">${esc(guide.head)} <i>\u00b7 the sentence you are writing</i></span>
@@ -9262,7 +9293,11 @@
               </div>`}
             ${blocks.length ? `<p class="es-prose">${prose}</p>` : `<p class="es-prose empty">Your paragraph builds here, one sentence at a time.</p>`}
             ${editing != null ? help : ""}
-            ${editing != null ? "" : complete ? doneCard : `
+            ${/* ONE EDITING SURFACE. In review the revision box below is it, and the
+                  composer is not rendered at all rather than disabled: a textarea a
+                  student can click into is an invitation, and two of them on one
+                  paragraph is a question they should not have to answer. */ ""}
+            ${editing != null ? "" : inReview ? "" : complete ? doneCard : `
             <div class="es-active">
               <textarea id="esline" class="es-input es-linebox" rows="2" placeholder="Type your next sentence..."></textarea>
               ${help}
@@ -9276,7 +9311,7 @@
                 too put the same button on screen twice, which is the duplication
                 the bar was supposed to remove. */ ""}
           <div class="es-navrow"></div>
-          <div class="es-linehost" data-linehost>${esLinesBlock(p)}</div>
+          <div class="es-linehost" data-linehost>${inReview ? "" : esLinesBlock(p)}</div>
           ${/* WHERE THE COACH'S ANSWER GOES.
                 esGetFeedback writes its result into .es-margin and esCoachMargin
                 renders it, and nothing in the application created that element:
@@ -9483,6 +9518,12 @@
       else { ES.screen = "review"; esSaveDraft(); esRender(); }
     };
     const dc = $("#esdonecheck"); if (dc) dc.onclick = () => esGetFeedback(d.pos);
+    // THE COACH'S PANEL, BOUND ON EVERY RENDER. It used to be bound only by the
+    // in-place update that ran when a result arrived, which was enough while that
+    // was the only way it ever reached the screen. It is not any more: a result now
+    // re-renders the whole workspace, and a review whose tabs are not bound is a row
+    // of controls that do nothing.
+    esBindCoachMargin(p);
     // Finding, after writing four paragraphs, that the evidence supports a
     // different judgement is good evaluation, not a mistake to be prevented.
     // Bound through the same function the targeted swap uses, so the two paths
@@ -9559,9 +9600,26 @@
     const keys = slotsForRole(p.role).map(x => x.key);
     if (!keys.length) return null;
     const q = esQuestionDef();
+    const fam = esDirectiveFamily();
     const hit = list.find(ex => {
       const slots = (ex && ex.slots) || {};
       if (!keys.every(k => String(slots[k] || "").trim())) return false;
+      // COMPATIBLE DIRECTIVE FAMILY, declared by the example and never guessed at.
+      //
+      // Same subject and a different question was not enough. The Finance example
+      // ends "can be highly effective ... provided managers weigh the trade-off with
+      // profitability", which is a judgement, and it was being offered as the model
+      // structure for a causal Explain question. A student following it learns to
+      // put evaluation into an answer that was never asked for one.
+      //
+      // The family has to be AUTHORED on the example. It could be read off the prose
+      // - "effective" and "trade-off" are not subtle - but inferring a directive from
+      // wording is exactly the inference this contract exists to remove, and getting
+      // it wrong teaches the wrong essay. An example that does not declare one is not
+      // offered, and the control disappears rather than showing something that may
+      // not fit.
+      const exFam = String(ex.family || "").trim().toLowerCase();
+      if (!exFam || exFam !== fam) return false;
       // A different question, said as a fact rather than hoped for: an example
       // whose topic is the one the student is writing about is not "elsewhere".
       const t = String(ex.topic || "").trim().toLowerCase();
@@ -9569,7 +9627,8 @@
       return !t || !qt || t !== qt;
     });
     if (!hit) return null;
-    return { ex: hit, what: esExampleWhat(p), keys: keys, subject: (sc && sc.label) || "" };
+    return { ex: hit, what: esExampleWhat(p), keys: keys, subject: (sc && sc.label) || "",
+      family: fam, source: String(hit.source || hit.question || "").trim() };
   }
   function esExampleWhat(p) {
     if (esIsIntro(p)) return "introduction";
@@ -9577,11 +9636,39 @@
     const scaf = esActiveScaffold();
     return (scaf && scaf.label) ? scaf.label + " example" : "example";
   }
-  // Why the control is not there, in words, rather than a button that does nothing.
-  function esExampleWhyNot(p) {
-    const sc = esAttemptPackage();
-    const name = (sc && sc.label) || "this subject";
-    return "No complete " + esExampleWhat(p) + " has been written for " + name + " yet, so there is nothing to show you here. Nothing from another subject is used in its place.";
+
+  // ---- REVIEW IS A MODE OF THE PARAGRAPH, NOT A PANEL UNDER IT --------------
+  //
+  // The first version layered the review beneath the writer and left everything
+  // else running, so the screen said EFFECT - THE SENTENCE YOU ARE WRITING with an
+  // empty composer while the coach reviewed the Explanation underneath it. On a
+  // paragraph with a missing Effect there were then TWO places to write the Effect
+  // sentence: the composer at the top and the revision box in the review. A student
+  // cannot be expected to work out which one is authoritative, and they should not
+  // have to.
+  //
+  // While the review is open there is one editing surface: the revision box for the
+  // selected job. The paragraph stays on screen directly above it, the composer and
+  // its step header collapse, and Continue writing brings them back. Nothing is
+  // remounted either way - the draft, the blocks and the scroll position are the
+  // same objects throughout.
+  function esInReview(p) {
+    const fb = p && p.feedback;
+    if (!fb || !Array.isArray(fb.slotFeedback)) return false;
+    if (!(fb.slotFeedback.length || fb.slotFeedbackSent)) return false;
+    return !ES.ui.reviewClosed;
+  }
+  // Composition completeness is not academic quality, and the screen used to say
+  // both in the same green. A paragraph whose slots all have text was called
+  // "Paragraph complete" and offered "Ready to memorise it?" directly above the
+  // coach saying an element was missing. These are the two facts, told apart:
+  // esParaFilled asks whether every job has a sentence; esParaSettled asks whether
+  // the last check found nothing outstanding in the text as it now stands.
+  function esParaSettled(p) {
+    const fb = p && p.feedback;
+    if (!fb || !Array.isArray(fb.slotFeedback) || !fb.slotFeedback.length) return null;   // never checked: no claim
+    if (esFeedbackStale(p)) return false;                                                  // checked, but not this version
+    return esSlotStatuses(p).every(r => r.status === "ok");
   }
 
   // ---- THE PARAGRAPH REVIEW ------------------------------------------------
@@ -9615,14 +9702,24 @@
     // clean, and the difference is the whole point of failing closed.
     const refused = (!(p.feedback.slotFeedback || []).length && p.feedback.slotFeedbackSent)
       ? `<div class="es-rstale">${esIcon("warn")}<span>The coach's answer could not be matched to the sentences in this paragraph, so nothing below is claimed about it. Re-check to try again.</span></div>` : "";
+    // ONE CARD. The tabs, the open issue, its scaffold, the box the student types
+    // in and the actions are one bordered component, because they are one thing: a
+    // heading, a paragraph, a heading, a blue box, a heading, a textarea and a row
+    // of buttons at the full page width read as seven things that happened to land
+    // together.
+    const openCount = rows.filter(r => r.needsWork).length;
     return `<div class="es-review">
       <div class="es-rtabs" role="group" aria-label="Structural parts of this paragraph">${tabs}</div>
       ${staleBar}${refused}
       ${esReviewRowHTML(p, row)}
       <div class="es-ractions">
         <button type="button" class="es-btn primary sm" id="esrecheck">${esIcon("feedback")}<span>Re-check paragraph</span></button>
-        ${rows.filter(r => r.needsWork).length > 1
-          ? `<button type="button" class="es-linkbtn" id="esrnext">Next part that needs work</button>` : ""}
+        ${openCount > 1
+          ? `<button type="button" class="es-btn ghost sm" id="esrnext">${esIcon("next")}<span>Next part</span></button>` : ""}
+        <span class="es-sp"></span>
+        ${/* The way back to writing. The composer is not on screen while this is
+              open, so leaving has to be a control rather than a scroll. */ ""}
+        <button type="button" class="es-btn ghost sm" id="esrclose">${esIcon("edit")}<span>Continue writing</span></button>
       </div>
     </div>`;
   }
@@ -9652,7 +9749,7 @@
     // the app has held these frames all along and they name what goes in each blank,
     // which is more use than a row of anonymous underscores.
     const scaffold = frame ? `<div class="es-rscaff"><div class="es-rlbl">try this structure</div>
-      <div class="es-rframe">${esFrameHTML(frame)}</div></div>` : "";
+      <div class="es-rframe">${esFrameHTML(frame.text)}</div></div>` : "";
     const editing = ES.ui.editBlock != null;
     const rewrite = r.blockId
       ? `<div class="es-rrewrite"><div class="es-rlbl">rewrite your sentence</div>
@@ -9669,17 +9766,49 @@
         <span class="es-sp"></span>
         <button type="button" class="es-btn primary sm" id="esrsave">${esIcon("save")}<span>Save revision</span></button>
       </div>
-      ${ex ? "" : `<p class="es-rhint">${esc(esExampleWhyNot(p))}</p>`}
+      ${/* When there is no compatible authored example the control is simply not
+             there. It used to be followed by a sentence explaining the state of the
+             content repository, under every conclusion a student ever revised. */ ""}
       ${void editing || ""}
     </div>`;
   }
-  // The authored frame for a slot, with the blanks left exactly as authored.
+  // ---- THE SCAFFOLD FOR THE JOB THAT WAS DIAGNOSED --------------------------
+  //
+  // THE PATHWAY'S FRAME FIRST, and this order is the correction of a real fault
+  // rather than a preference. The generic slot template was used, and on mkt-01 the
+  // coach's diagnosis of the Explanation sentence was
+  //
+  //   "you do not explain why this target-market characteristic causes the
+  //    business to make that change"
+  //
+  // while the template underneath it said
+  //
+  //   "This works because [what the strategy changes] leads to [the effect on the
+  //    objective]."
+  //
+  // Those are two different causal jobs. The diagnosis is about characteristic to
+  // strategy; the template teaches strategy to outcome. A student following it
+  // would have written a sentence that did not answer the criticism above it.
+  //
+  // The pathway they chose authors a frame for that exact slot on that exact
+  // question - "Because [target-market characteristic], the business uses
+  // [strategy] to [effect]." - which is the relationship the diagnosis names. It
+  // was there the whole time and was not being asked for.
+  //
+  // The subject's slot template is the fallback, because it is authored for that
+  // slot's job in that subject. Nothing is shown when neither exists: a scaffold
+  // for the wrong job is worse than no scaffold, since the student acts on it.
   function esSlotFrame(p, key) {
+    const step = slotDef(p.role, key);
+    const h = step ? esAuthoredHelp(p, step) : null;
+    const authored = h && esValidFrame(h.frame, p);
+    if (authored) return { text: String(authored.text || authored), source: "pathway" };
     const t = slotTemplates(key);
-    if (!t) return "";
+    if (!t) return null;
     const fam = esDirectiveFamily();
     const byFam = t.byFamily && t.byFamily[fam];
-    return String((byFam && byFam.tier1) || t.tier1 || (typeof t === "string" ? t : "") || "");
+    const text = String((byFam && byFam.tier1) || t.tier1 || (typeof t === "string" ? t : "") || "");
+    return text ? { text: text, source: "slot" } : null;
   }
   // [named blanks] are what the student fills. Marked up so they read as holes and
   // never as words to keep.
@@ -9732,7 +9861,20 @@
     // slot that is not in this paragraph, falls through to the panel below rather
     // than showing an empty review: the note and the questions it did return are
     // still worth reading, and an older worker keeps working unchanged.
-    if (Array.isArray(fb.slotFeedback) && (fb.slotFeedback.length || fb.slotFeedbackSent)) return head + demo + esReviewHTML(p);
+    if (Array.isArray(fb.slotFeedback) && (fb.slotFeedback.length || fb.slotFeedbackSent)) {
+      // Stood down rather than thrown away. The findings are still here and one
+      // press brings them back; while they are down the bar owns the check action,
+      // so there is still exactly one on screen.
+      if (ES.ui.reviewClosed) {
+        const open = esSlotStatuses(p).filter(r => r.needsWork).length;
+        return head + demo + `<div class="es-rshut">
+          <span>${open ? (open === 1 ? "One part" : open + " parts") + " still to work on from the last check."
+                       : "The last check is still here."}</span>
+          <button type="button" class="es-btn ghost sm" id="esropen">${esIcon("feedback")}<span>Open the feedback</span></button>
+        </div>`;
+      }
+      return head + demo + esReviewHTML(p);
+    }
     const note = fb.note ? `<div class="es-mnote">${esc(fb.note)}</div>` : "";
     const scaff = fb.missing.length ? `<div class="es-scaffhint">The dashed rows under your paragraph show each of these in order, where it belongs.</div>` : "";
     const miss = fb.missing.length ? `<div class="es-mblock"><div class="es-mh">missing elements</div>${fb.missing.map(slot => esMissCard(p, slot)).join("")}${scaff}</div>` : "";
@@ -9887,19 +10029,33 @@
       <div class="es-modalfoot"><button type="button" class="es-btn ghost sm" id="esmodalclose">Close</button></div>
     </div></div>`;
   }
+  // WHY, NOT ANOTHER SHAPE. The first version filled this with the slot's other
+  // authored frames, which is a second copy of Try this structure one press away
+  // from the first. The scaffold belongs to the review; this explains the thinking
+  // behind it, and every line of it is authored:
+  //
+  //   what this part does        the slot's own job, from the paragraph model
+  //   what it has to do here     the pathway's `needs` for this slot on this
+  //                              question, where the student chose a pathway
+  //   a question to ask yourself the pathway's `hint`, which is written as one
+  //
+  // There is no "common mistakes" list because nothing in this repository authors
+  // one, and writing three plausible ones to fill the section would be inventing
+  // curriculum to fill a window.
   function esHelpModalHTML(p, key) {
     const def = slotDef(p.role, key); if (!def) return "";
     const where = ES_WHERE[key] || "";
-    const t = slotTemplates(key) || {};
-    const alts = Array.isArray(t.tier2) ? t.tier2 : [];
+    const h = esAuthoredHelp(p, def) || {};
+    const needs = String(h.needs || "").trim();
+    const hint = String(h.hint || "").trim();
     return esModalShell("More help — " + esCap(def.label || key), "", `
       <section class="es-mdsec"><h3>What this part does</h3>
         <p>${esc(esCap(def.job))}${where ? ", " + esc(where) : ""}.</p></section>
-      ${alts.length ? `<section class="es-mdsec"><h3>Other shapes this sentence can take</h3>
-        ${alts.map(a => `<div class="es-mdalt"><span class="es-mdaltt">${esc(a.type || "")}</span>
-          <div class="es-rframe">${esFrameHTML(a.frame || "")}</div></div>`).join("")}
-        <p class="es-rhint">Each of these is a shape to type over. None of them is a sentence to keep.</p>
-      </section>` : ""}`);
+      ${needs ? `<section class="es-mdsec"><h3>What it has to do in this question</h3>
+        <p>${esc(needs)}</p></section>` : ""}
+      ${hint ? `<section class="es-mdsec"><h3>A question to ask yourself</h3>
+        <p>${esc(hint)}</p></section>` : ""}
+      ${(!needs && !hint) ? `<p class="es-rhint">Nothing further has been written for this part of this question yet.</p>` : ""}`);
   }
   function esExampleModalHTML(p) {
     const got = esCompleteExample(p); if (!got) return "";
@@ -9909,7 +10065,8 @@
         <td class="es-exval">${esc(String(got.ex.slots[k] || ""))}</td></tr>`;
     }).join("");
     return esModalShell("Complete " + got.what + " — different question", got.ex.label || "", `
-      <p class="es-rhint">A complete example from another ${esc(got.subject || "")} question. It shows how the parts fit together. It is not an answer to your question, and nothing in it belongs in your paragraph.</p>
+      <p class="es-rhint">${got.source ? esc(got.source) + ". " : ""}A complete ${esc(got.family)} example from another ${
+        esc(got.subject || "")} question, on ${esc(got.ex.label || "another topic")}. It shows how the parts fit together. It is not an answer to your question, and nothing in it belongs in your paragraph.</p>
       <table class="es-extable">${rows}</table>`);
   }
 
@@ -9945,19 +10102,55 @@
     if (!inQuestion && !plain) return null;
     return { anchor: h.anchor, kind: h.kind || "", label: h.label || "", plain: plain, inQuestion: inQuestion };
   }
+  // ANCHORED BESIDE THE WORD, not centred behind a scrim. A term card is a glance,
+  // and a full-screen dim to answer "what does this mean" takes the whole page away
+  // to say one sentence. The page keeps working behind it, nothing reflows, and the
+  // card sits where the student is already looking. At phone width there is no
+  // sensible anchor for a card this size, so the same content arrives as a sheet.
+  //
+  // One close affordance, not two: the X in the corner. The subject badge is gone -
+  // a student writing a Business Studies essay knows which subject they are in, and
+  // on a card this narrow it pushed the term onto two lines.
   function esTermModalHTML(p, i) {
     const info = esTermInfo(esQuestionDef() || (ES.draft && ES.draft.questionDef) || null, i);
     if (!info) return "";
-    const sc = esAttemptPackage();
-    return `<div class="es-scrim2 es-termscrim" data-esmodalscrim><div class="es-termcard" role="dialog" aria-modal="true" aria-label="${esc(info.anchor)}">
-      <div class="es-termhd"><h2 class="es-termt">${esc(info.anchor)}</h2>${
-        sc && sc.label ? `<span class="es-modaltag">${esc(sc.label)}</span>` : ""}
-        <button type="button" class="es-util quiet" id="esmodalx" aria-label="Close">${esIcon("close")}</button></div>
+    return `<div class="es-termanchor" data-esmodalscrim data-esterm="${esc(String(i))}"><div class="es-termcard" role="dialog" aria-label="${esc(info.anchor)}">
+      <div class="es-termhd"><h2 class="es-termt">${esc(info.anchor)}</h2>
+        <button type="button" class="es-util quiet es-termx" id="esmodalx" aria-label="Close">${esIcon("close")}</button></div>
       ${info.plain ? `<p class="es-termdef">${esc(info.plain)}</p>` : ""}
       ${info.inQuestion ? `<div class="es-termq"><div class="es-termqh">In this question</div>
         <p class="es-termqp">${esc(info.inQuestion)}</p></div>` : ""}
-      <div class="es-termfoot"><button type="button" class="es-btn ghost sm" id="esmodalclose">Close</button></div>
     </div></div>`;
+  }
+  // Put it beside the word it explains, and flip it when the edge is closer than
+  // the card is wide. Measured after render, because the card's height depends on
+  // how much of it is authored.
+  function esPlaceTermCard() {
+    const wrap = document.querySelector(".es-termanchor");
+    const card = wrap && wrap.querySelector(".es-termcard");
+    if (!wrap || !card) return;
+    if (window.matchMedia && window.matchMedia("(max-width: 560px)").matches) { wrap.classList.add("sheet"); return; }
+    wrap.classList.remove("sheet");
+    const term = document.querySelector('[data-esdecode="' + wrap.dataset.esterm + '"]');
+    if (!term) return;
+    const t = term.getBoundingClientRect();
+    const c = card.getBoundingClientRect();
+    const gap = 10, pad = 12;
+    let left = t.left;
+    if (left + c.width > window.innerWidth - pad) left = window.innerWidth - pad - c.width;
+    if (left < pad) left = pad;
+    // Under the word, or above it when there is not room below, and ALWAYS inside
+    // the window: a term scrolled off the top of the page put the card at a
+    // negative offset, where it was placed, visible, and off the screen.
+    let top = t.bottom + gap;
+    if (top + c.height > window.innerHeight - pad) {
+      const above = t.top - gap - c.height;
+      top = above >= pad ? above : window.innerHeight - pad - c.height;
+    }
+    top = Math.min(Math.max(top, pad), Math.max(pad, window.innerHeight - pad - c.height));
+    card.style.left = Math.round(left) + "px";
+    card.style.top = Math.round(top) + "px";
+    card.classList.add("placed");
   }
 
   // ---- REVIEW BINDINGS -----------------------------------------------------
@@ -10016,8 +10209,9 @@
     if (scrim) scrim.onmousedown = ev => { if (ev.target === scrim) close(); };
     esModalKey._close = close;
     document.addEventListener("keydown", esModalKey, true);
+    esPlaceTermCard();
     const first = el.querySelector("#esmodalclose") || el.querySelector("#esmodalx");
-    if (first) first.focus();
+    if (first) first.focus({ preventScroll: true });
   }
   function esModalKey(ev) {
     if (ev.key !== "Escape") return;
@@ -10077,6 +10271,14 @@
     if (hp) hp.onclick = () => { ES.ui.reviewHelp = esActiveReviewSlot(p); esRepaintModals(p); };
     const exb = host.querySelector("#esrexample");
     if (exb) exb.onclick = () => { ES.ui.reviewExample = true; esRepaintModals(p); };
+    const op = host.querySelector("#esropen");
+    if (op) op.onclick = () => { ES.ui.reviewClosed = false; esRender(); };
+    const cl = host.querySelector("#esrclose");
+    if (cl) cl.onclick = () => {
+      // The findings are not thrown away, only stood down: pressing Check again, or
+      // a tab in the paragraph map, brings the same result back.
+      ES.ui.reviewClosed = true; esRender();
+    };
     // Painted here rather than at each call site, so every path that rebinds the
     // panel also lights the sentence the open row is about.
     esPaintReviewHighlight(p);
@@ -10367,7 +10569,11 @@
     // "complete" must reflect the CURRENT text, not a stale submission: the feedback
     // is only trustworthy while the paragraph still matches what was reviewed.
     const cur = (p.text || "").trim();
-    const complete = cur && cur === (p.gradedText || "").trim() && p.feedback && p.feedback.missing.length === 0;
+    // Settled means the last check found nothing outstanding in the text as it now
+    // stands. It used to mean "the coach listed no MISSING elements", which said a
+    // paragraph was ready to memorise while three of its jobs needed work.
+    const settled = esParaSettled(p);
+    const complete = cur && cur === (p.gradedText || "").trim() && settled === true;
     if (allMastered) return `<div class="es-seq">Every paragraph is mastered. <button class="es-inlinelink" id="esseqfull">try a full attempt</button>.</div>`;
     if (p.mastered) return `<div class="es-seq">Mastered. Want to polish the wording now? <button class="es-inlinelink" id="esseqpolish">polish the wording</button>.</div>`;
     if (complete) return `<div class="es-seq">This paragraph looks complete. Ready to memorise it? <button class="es-inlinelink" id="esseqquiz">quiz this paragraph</button>.</div>`;
@@ -10982,12 +11188,17 @@
     // the ask button returns to its cooldown state, the stepper marks this paragraph
     // done, and the sequencing nudge refreshes. No full esRender, so nothing flashes.
     if (ES.screen === "coached" && ES.draft && ES.draft.pos === idx) {
+      // A RESULT CHANGES THE MODE, so this is a full render rather than a panel
+      // swap. The partial update existed so nothing flashed, and it was right while
+      // the review was a panel under the writer; now that arriving feedback stands
+      // the composer down, updating only the margin left the old writing surface on
+      // screen beside it - the step header saying "the sentence you are writing"
+      // above a composer, with the review of a different sentence underneath.
+      esRender();
       const host = document.getElementById("eshost");
       const m = host && host.querySelector(".es-margin");
       if (m) {
-        m.innerHTML = esCoachMargin(p);
-        host.querySelectorAll("button:not([type])").forEach(b => b.type = "button");
-        esBindCoachMargin(p); esPaintReviewHighlight(p);
+        esPaintReviewHighlight(p);
         // BRING IT INTO VIEW, once, when a check has just come back. The review
         // renders under the composer, which is right - the student is still in the
         // writer and the paragraph is still above it - but an answer that arrives

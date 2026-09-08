@@ -39,7 +39,8 @@ const wa = p => p.$eval('.es-watext',e=>e.textContent.trim()).catch(()=>'');
   const routes=await p.$$eval('.es-startgo button, .es-startbtns button',es=>es.map(e=>e.textContent.trim()));
   console.log('   ',JSON.stringify(routes));
   ok(routes.length===3,'three ways in: '+routes.length);
-  ok(/start writing/i.test(routes[0])&&/body 1/i.test(routes[1])&&/plan all/i.test(routes[2]),'write, start a body, or plan everything');
+  ok(/start with the introduction/i.test(routes[0])&&/body 1/i.test(routes[1])&&/plan all/i.test(routes[2]),
+    'each names where it goes: '+JSON.stringify(routes));
   ok((await p.$$eval('.es-startgo button',es=>es.length))===2,'and the two that start writing are the ones above the plan');
   ok(/optional/i.test(await p.$eval('.es-startopt',e=>e.textContent)),'with planning stated to be optional');
 

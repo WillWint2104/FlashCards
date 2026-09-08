@@ -2026,7 +2026,12 @@
   .es-startgo{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 16px;
     padding:14px 16px;background:var(--sunk);border-radius:12px}
   .es-startopt{flex:1 1 220px;min-width:200px;font-size:12.5px;color:var(--e-ink3);line-height:1.5}
-  .es-review{display:block}
+  /* One component, not seven things that landed together. */
+  .es-review{display:block;border:1px solid var(--line);border-radius:14px;padding:14px 16px 12px;background:#fff}
+  .es-rshut{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--e-ink2);
+    border:1px solid var(--line);border-radius:12px;padding:10px 13px;background:var(--sunk)}
+  .es-rshut span{flex:1 1 auto}
+  .es-review .es-rbody{border-top:1px solid var(--line);padding-top:12px;margin-top:2px}
   .es-rtabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
   .es-rtab{display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:12.5px;font-weight:700;
     padding:6px 11px;border-radius:999px;cursor:pointer;background:var(--sunk);border:1px solid transparent;
@@ -2062,8 +2067,12 @@
   .es-rbox{width:100%;min-height:76px;resize:vertical}
   .es-rrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .es-rrow .es-sp{flex:1 1 auto}
-  .es-ractions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px;
+  .es-ractions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px;
     padding-top:12px;border-top:1px solid var(--line)}
+  .es-ractions .es-sp{flex:1 1 auto}
+  .es-doneh.open{color:#A33A2B}
+  .es-doneflag{display:inline-flex;color:#A33A2B}
+  .es-doneflag svg{width:16px;height:16px}
   /* The sentence the open row is about, in the paragraph. */
   .es-said.es-rlit{background:#E7F3EC;box-shadow:0 0 0 2px #E7F3EC}
   .es-said.es-rlit.es-rlit-warn{background:#FDEEEA;box-shadow:0 0 0 2px #FDEEEA}
@@ -2093,22 +2102,28 @@
   .es-extable th,.es-extable td{text-align:left;vertical-align:top;padding:9px 10px;border-top:1px solid var(--line);font-size:13px}
   .es-exkey{width:118px;color:var(--e-green-dk);font-weight:800}
   .es-exval{color:var(--e-ink2);line-height:1.55}
-  /* The term card: small, anchored, and it never moves the page under it. */
-  .es-termscrim{align-items:center;justify-content:center;background:rgba(23,32,28,.18)}
-  .es-termcard{background:#fff;border-radius:14px;max-width:360px;width:100%;
-    box-shadow:0 14px 38px rgba(0,0,0,.2);padding:14px 16px 12px}
-  .es-termhd{display:flex;align-items:center;gap:8px;margin:0 0 8px}
-  .es-termt{margin:0;font-size:15px;font-weight:800;flex:1 1 auto}
+  /* The term card: anchored beside the word, over the page and never in it.
+     No scrim: answering "what does this mean" does not take the page away. The
+     wrapper catches the press-away and nothing else, so the writer underneath keeps
+     its own layout and its own scroll. */
+  .es-termanchor{position:fixed;inset:0;background:transparent;z-index:260}
+  .es-termcard{position:fixed;background:#fff;border-radius:14px;width:min(340px,calc(100vw - 24px));
+    border:1px solid var(--line);box-shadow:0 14px 38px rgba(0,0,0,.18);padding:13px 15px 14px;
+    left:-9999px;top:-9999px;visibility:hidden}
+  .es-termcard.placed{visibility:visible}
+  .es-termhd{display:flex;align-items:flex-start;gap:8px;margin:0 0 8px}
+  .es-termt{margin:0;font-size:15px;font-weight:800;flex:1 1 auto;line-height:1.25}
+  .es-termx{flex:0 0 auto;margin:-4px -6px 0 0}
   .es-termdef{margin:0 0 10px;font-size:13.5px;color:var(--e-ink2);line-height:1.5}
   .es-termq{background:#E7F3EC;border-radius:10px;padding:10px 12px}
   .es-termqh{font-size:12px;font-weight:800;color:var(--e-green-dk);margin:0 0 3px}
   .es-termqp{margin:0;font-size:13px;color:var(--e-ink2);line-height:1.5}
-  .es-termfoot{display:flex;justify-content:flex-end;margin-top:10px}
+  /* A tiny anchored popover on a phone is a target nobody can hit, so the same
+     content arrives as a sheet from the bottom instead. */
+  .es-termanchor.sheet{background:rgba(23,32,28,.18)}
+  .es-termanchor.sheet .es-termcard{position:fixed;left:0;right:0;top:auto;bottom:0;width:auto;
+    max-width:none;border-radius:16px 16px 0 0;padding:16px 18px 22px;visibility:visible}
   @media (max-width:560px){
-    /* A tiny anchored popover on a phone is a target nobody can hit, so the same
-       content arrives as a sheet from the bottom instead. */
-    .es-termscrim{align-items:flex-end;padding:0}
-    .es-termcard{max-width:none;border-radius:16px 16px 0 0;padding:16px 18px 20px}
     .es-scrim2{padding:0;align-items:flex-end}
     .es-modal{border-radius:16px 16px 0 0;max-height:88vh}
   }

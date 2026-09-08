@@ -161,7 +161,9 @@ async function toWriting(page) {
   if (resume) { await resume.click(); await p.waitForTimeout(700); }
   const body = await p.evaluate(() => document.body.innerText);
   ok(/Convenience-oriented customers lead/.test(body), "Resume brings the paragraph back");
-  ok(!!(await p.$("#esline")), "and lands in the writing, not on a setup form");
+  // Either surface counts as the writing: resuming a paragraph that still has
+  // unresolved feedback lands in its review, which stands the composer down.
+  ok(!!(await p.$("#esline, .es-review, .es-rshut")), "and lands in the writing, not on a setup form");
   const fbBack = await p.$(".es-margin .es-review, .es-margin .es-mblock");
   ok(!!fbBack, "the feedback they had is still attached to the paragraph");
 

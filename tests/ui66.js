@@ -124,11 +124,14 @@ async function writeAndCheck(p, lines) {
     "the introduction shows its authored " + model.intro.length + " parts, not the three a mockup drew: " + tabs.length);
   ok(/thesis/i.test(tabs.join(" ")), "one of which is the thesis");
   ok(!/context/i.test(tabs.join(" ")), "and no Context part was invented to match a picture");
-  // The example control has nothing authored behind it for an introduction.
+  // The example control has nothing authored behind it for an introduction, and
+  // absence is QUIET: the control is simply not there. It used to be followed by a
+  // sentence about the state of the content repository, under every conclusion a
+  // student ever revised.
   ok(!(await p.$("#esrexample")), "no complete-introduction control is offered");
-  const why = await p.$eval(".es-rhint", e => e.innerText).catch(() => "");
-  ok(/no complete introduction/i.test(why), "and the absence is stated: " + JSON.stringify(why.slice(0, 70)));
-  ok(/nothing from another subject/i.test(why), "with the promise that nothing is borrowed for it");
+  const quiet = await p.evaluate(() => document.body.innerText);
+  ok(!/has been written for/i.test(quiet) && !/nothing to show you here/i.test(quiet),
+    "and nothing explains the state of the content repository in the workflow");
 
   console.log("--- 1b. the conclusion, the same way");
   await p.evaluate(() => { const t = document.querySelector('[data-esrestchange], .es-btn'); void t; });
@@ -162,8 +165,32 @@ async function writeAndCheck(p, lines) {
     "Convenience-oriented customers value speed and low effort.",
     "Because these customers prefer quick service, the business can simplify its ordering process.",
   ]);
+  // WITHHELD UNTIL THE EXAMPLE DECLARES ITS DIRECTIVE. Same subject and a different
+  // question was not enough: the Finance example ends "can be highly effective ...
+  // provided managers weigh the trade-off with profitability", which is a judgement,
+  // and it was being offered as the model structure for a causal Explain question.
+  // Neither authored example declares a family, so today the control is absent.
+  const authored = await p.evaluate(() => (((window.__esSubjects && window.__esSubjects()) || {})
+    .business_studies.examples || []).map(e => ({ label: e.label, family: e.family || null })));
+  console.log("    authored examples:", JSON.stringify(authored));
+  ok(authored.every(e => !e.family), "no authored example declares a directive family yet");
+  ok(!(await p.$("#esrexample")), "so no complete-example control is offered, rather than one that may not fit");
+
+  console.log("--- 2b. and it appears the moment a compatible family is declared");
+  // Declared here rather than inferred from the prose: reading "effective" and
+  // "trade-off" off an example to decide its directive is the inference this whole
+  // contract exists to remove.
+  await p.evaluate(() => {
+    const subs = window.ESSAY.subjects, next = {};
+    Object.keys(subs).forEach(k => { next[k] = subs[k]; });
+    const bus = Object.assign({}, subs.business_studies);
+    bus.examples = (bus.examples || []).map((e, i) => Object.assign({}, e, { family: i === 1 ? "causal" : "judgement" }));
+    next.business_studies = bus;
+    window.ESSAY.subjects = next;
+  });
+  await p.$$eval(".es-rtab", es => es[0] && es[0].click()); await settled(p);
   const exBtn = await p.$("#esrexample");
-  ok(!!exBtn, "the control is offered on a body paragraph");
+  ok(!!exBtn, "the control appears for the example that declares the matching family");
   const exLabel = exBtn ? await exBtn.innerText() : "";
   ok(/TEEEC/i.test(exLabel), "and names the structure it is an example of: " + JSON.stringify(exLabel.trim()));
   const paraBefore = await p.$eval(".es-cols, .es-canvas", e => e.innerText).catch(() => "");
@@ -175,6 +202,9 @@ async function writeAndCheck(p, lines) {
   const rowsIn = await p.$$eval(".es-extable tr", es => es.map(e => e.innerText.replace(/\s+/g, " ")));
   ok(rowsIn.length >= 5, "every structural part of the example is labelled: " + rowsIn.length + " rows");
   ok(!/target market/i.test(modal), "and it is not about the student's own question: " + JSON.stringify(modal.slice(0, 60)));
+  ok(/causal/i.test(modal), "the window names the directive family it is an example of");
+  ok(!/highly effective|trade-off/i.test(modal),
+    "and the judgement-flavoured example was not the one offered on a causal question");
   // A complete paragraph from ANOTHER SUBJECT would be the borrowing this refuses.
   const ahLeak = /sparta|egypt|pharaoh|spartan/i.test(modal);
   ok(!ahLeak, "no Ancient History example was borrowed to fill a Business Studies window");
@@ -340,8 +370,9 @@ async function writeAndCheck(p, lines) {
   console.log("    economics tabs:", JSON.stringify(ecoTabs));
   ok(ecoTabs.length > 0, "the review renders for a subject with no scaffold of its own");
   ok(!(await p.$("#esrexample")), "and no complete example is offered");
-  const ecoWhy = await p.$eval(".es-rhint", e => e.innerText).catch(() => "");
-  ok(/no complete/i.test(ecoWhy), "the absence is stated: " + JSON.stringify(ecoWhy.slice(0, 60)));
+  const ecoQuiet = await p.evaluate(() => document.body.innerText);
+  ok(!/has been written for/i.test(ecoQuiet) && !/nothing to show you here/i.test(ecoQuiet),
+    "and the absence is quiet: no repository status in the student's workflow");
   const ecoPage = await p.evaluate(() => document.body.innerText);
   ok(!/sparta|egypt|pharaoh/i.test(ecoPage),
     "and no Ancient History paragraph was borrowed to fill the gap");
