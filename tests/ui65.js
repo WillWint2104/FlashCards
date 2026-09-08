@@ -138,7 +138,11 @@ async function check(p) {
       return i === 1
         ? { slot: s.key, status: "needs_work", blockId: own.id,
             issue: "You identify the change but do not explain why the characteristic causes it." }
-        : { slot: s.key, status: "ok", blockId: own.id, issue: "" };
+        // An APPROVED slot carrying model prose anyway. The app writes its own line
+        // for a slot doing its job, from the authored job text, so nothing written
+        // here may reach the student. A worker that praises in its own words is the
+        // easiest way for content to arrive on the one path nobody is watching.
+        : { slot: s.key, status: "ok", blockId: own.id, issue: "MODEL-PROSE-ON-AN-OK-SLOT-9c1f" };
     }),
   }));
   ok(await check(p), "the paragraph can be checked");
@@ -167,6 +171,9 @@ async function check(p) {
   ok(row.bodies === 1, "still exactly one open: " + row.bodies);
   ok(/doing its job/i.test(String(row.head)), "a slot the coach approved says so briefly: " + JSON.stringify(row.head));
   ok(!row.issue, "with no invented criticism attached to it");
+  const page = await p.evaluate(() => document.body.innerText);
+  ok(page.indexOf("MODEL-PROSE-ON-AN-OK-SLOT-9c1f") < 0,
+    "and the model's own words about an approved sentence never reach the screen");
 
   // ---- 3. silence is not a pass ------------------------------------------
   console.log("--- 3. an element the coach did not report is not green");

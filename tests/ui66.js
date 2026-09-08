@@ -273,6 +273,49 @@ async function writeAndCheck(p, lines) {
   ok(!!(await p.$("#esline, [data-espath], #esstartwriting")),
     "pressing it goes straight to writing without completing a plan");
 
+  console.log("--- 6. a subject with no examples of its own is shown none");
+  // The mirror of the case above, and the one that matters most: Economics ships
+  // no complete examples. The shared fallback set DOES carry the shared body slots,
+  // so a resolver that falls back would hand an Economics student a whole Ancient
+  // History paragraph as "a complete example". A borrowed model sentence discloses
+  // itself and teaches a shape; a borrowed paragraph presented as the structure is
+  // simply another subject's work on the screen.
+  const own = await p.evaluate(() => {
+    const subs = (window.__esSubjects && window.__esSubjects()) || {};
+    return { economics: ((subs.economics || {}).examples || []).length,
+      shared: (((window.ESSAY || {}).slots || {}).examples || []).length };
+  });
+  console.log("    economics own examples:", own.economics, "| shared fallback set:", own.shared);
+  ok(own.economics === 0 && own.shared > 0,
+    "Economics authors none and there IS a fallback set to be tempted by");
+  await p.goto(T); await p.waitForSelector(".navtab", { timeout: 8000 });
+  await p.$$eval(".navtab", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
+  await p.waitForSelector("#essubject", { timeout: 8000 });
+  await p.selectOption("#essubject", "economics"); await p.waitForTimeout(400);
+  await p.$$eval('[data-espick="own"]', es => es[0] && es[0].click()); await p.waitForTimeout(300);
+  await p.fill("#esq", "Explain how changes in interest rates affect consumption and investment in the Australian economy.");
+  await p.dispatchEvent("#esq", "input"); await p.waitForTimeout(200);
+  await p.click("#esstart"); await p.waitForTimeout(700);
+  await p.evaluate(() => { const t = [...document.querySelectorAll(".es-startrow")].find(x => /Body 1/i.test(x.textContent)); t && t.click(); });
+  await rf(p); await p.waitForTimeout(400);
+  const pth2 = await p.$("[data-espath]"); if (pth2) { await pth2.click(); await rf(p); }
+  const go2 = await p.$("#esstartwriting"); if (go2) { await go2.click(); await rf(p); }
+  await p.waitForTimeout(300);
+  await writeAndCheck(p, [
+    "Higher interest rates reduce the money households have available to spend.",
+    "Because borrowing costs more, households postpone large purchases.",
+  ]);
+  const ecoTabs = await p.$$eval(".es-rtab", es => es.map(e => e.innerText.trim()));
+  console.log("    economics tabs:", JSON.stringify(ecoTabs));
+  ok(ecoTabs.length > 0, "the review renders for a subject with no scaffold of its own");
+  ok(!(await p.$("#esrexample")), "and no complete example is offered");
+  const ecoWhy = await p.$eval(".es-rhint", e => e.innerText).catch(() => "");
+  ok(/no complete/i.test(ecoWhy), "the absence is stated: " + JSON.stringify(ecoWhy.slice(0, 60)));
+  const ecoPage = await p.evaluate(() => document.body.innerText);
+  ok(!/sparta|egypt|pharaoh/i.test(ecoPage),
+    "and no Ancient History paragraph was borrowed to fill the gap");
+
+
   console.log("");
   console.log(pass + " passed, " + fail + " failed");
   await b.close();
