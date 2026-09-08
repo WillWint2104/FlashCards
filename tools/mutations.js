@@ -347,12 +347,40 @@ module.exports = [
     why: "a diagnosis was attached to a sentence written for a different structural job",
   },
   {
-    id: "review-keeps-model-prose-on-ok",
+    // The app strips model prose from an approved slot AND never renders it, which
+    // is defence in depth and makes the normaliser's copy an equivalent mutant on
+    // this side. So the app-side entry targets the RENDERER, where the protection
+    // is single, and the worker's own stripping is owned by t27 below.
+    id: "review-renders-prose-on-ok",
     file: "app.js",
-    find: '      .map(f => (f.status === "ok" ? { slot: f.slot, status: "ok", blockId: f.blockId, issue: "" } : f))',
-    replace: "      .map(f => f)",
+    find: '        ${r.text ? `<blockquote class="es-rquote">${esc(r.text)}</blockquote>` : ""}</div>`;',
+    replace: '        ${r.issue ? `<p class="es-rissue">${esc(r.issue)}</p>` : ""}${r.text ? `<blockquote class="es-rquote">${esc(r.text)}</blockquote>` : ""}</div>`;',
     owner: "ui65",
-    why: "model prose about a sentence it approved of reached the student instead of the app's own line",
+    why: "model prose about a sentence it approved of was printed instead of the app's own line",
+  },
+  {
+    id: "coach-keeps-prose-on-ok",
+    file: "proxy/worker.js",
+    find: '      if (f.status === "ok") return { slot: f.slot, status: "ok", blockId: f.blockId, issue: "" };',
+    replace: "      if (f.status === \"ok\") return f;",
+    owner: "t27",
+    why: "the worker let the model's own words about a sentence it approved of through to the app",
+  },
+  {
+    id: "coach-trusts-unknown-block",
+    file: "proxy/worker.js",
+    find: "      if (!b) return false;                                // an id we never sent",
+    replace: "      if (!b) return true;",
+    owner: "t27",
+    why: "a diagnosis naming a sentence id the app never sent was passed on to be rendered",
+  },
+  {
+    id: "coach-answers-missing-twice",
+    file: "proxy/worker.js",
+    find: '    legacy.missing = slotFeedback.filter(f => f.status === "missing").map(f => ({ slot: f.slot })).slice(0, 6);',
+    replace: "    void slotFeedback;",
+    owner: "t27",
+    why: "missing was parsed from the model separately from slotFeedback, so the two could disagree about the same paragraph",
   },
   {
     id: "review-deletes-feedback-on-edit",
