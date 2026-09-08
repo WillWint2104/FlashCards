@@ -143,9 +143,14 @@ console.log("--- 5. the tool the model is given is built from this request");
 // prompt text is weaker than asserting on behaviour, and it is what is available:
 // it stops the rule being deleted silently, which is how the last one went.
 {
+  // Resolved from THIS FILE, not from the working directory. The gate runs suites
+  // from its own cwd, so a process.cwd() path made the suite throw there and only
+  // there: run by hand it passed, and the gate reported "did not report" for it.
   const fs = await import("node:fs");
   const path = await import("node:path");
-  const src = fs.readFileSync(path.join(process.cwd(), "proxy", "worker.js"), "utf8");
+  const url = await import("node:url");
+  const here = path.dirname(url.fileURLToPath(import.meta.url));
+  const src = fs.readFileSync(path.join(here, "..", "proxy", "worker.js"), "utf8");
   const i = src.indexOf("const COACH_SYSTEM");
   const j = src.indexOf("`;", i);
   const coach = i >= 0 && j > i ? src.slice(i, j) : "";
