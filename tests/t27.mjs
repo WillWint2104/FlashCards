@@ -130,6 +130,34 @@ console.log("--- 5. the tool the model is given is built from this request");
     "a request with no sentence list offers no ids to choose from");
 }
 
+// ---- THE INSTRUCTION THAT KEEPS A DIAGNOSIS HONEST ABOUT ABSENCE ----------
+//
+// The contract above can prove a diagnosis is anchored to a sentence the app sent.
+// It cannot prove the WORDS of that diagnosis describe it. One screenshot had the
+// coach saying "nothing signposts the order the response will take" directly under
+// the student's own sentence naming the order they would take: correctly anchored,
+// correctly typed needs_work, and false. A student who reads that stops believing
+// the panel, and no schema catches it.
+//
+// So the rule lives in the instruction, and this holds it there. Asserting on
+// prompt text is weaker than asserting on behaviour, and it is what is available:
+// it stops the rule being deleted silently, which is how the last one went.
+{
+  const fs = await import("node:fs");
+  const path = await import("node:path");
+  const src = fs.readFileSync(path.join(process.cwd(), "proxy", "worker.js"), "utf8");
+  const i = src.indexOf("const COACH_SYSTEM");
+  const j = src.indexOf("`;", i);
+  const coach = i >= 0 && j > i ? src.slice(i, j) : "";
+  ok(!!coach, "the coach instruction is where this suite expects it");
+  ok(/NEVER CALL SOMETHING ABSENT THAT IS ON THE PAGE/.test(coach),
+    "the coach is told not to call an element absent when it has pointed at a sentence for it");
+  ok(/blockId/.test(coach) && /contradicts the words/i.test(coach),
+    "and the rule is tied to blockId, which is what makes it checkable rather than a slogan");
+  ok(/present but wrong|present but too general/i.test(coach),
+    "with the alternatives named, so present-but-not-working has somewhere to go");
+}
+
 console.log("");
 console.log(pass + " passed, " + fail + " failed");
 process.exit(fail ? 1 : 0);

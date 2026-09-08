@@ -411,17 +411,60 @@ module.exports = [
   },
 
   {
-    // THE ACADEMIC FAULT the screenshots caught. The generic slot template teaches
-    // strategy-to-outcome; on mkt-01 the coach's diagnosis of the Explanation is
-    // about characteristic-to-strategy, and the pathway authors a frame for
-    // exactly that. Preferring the template puts a structurally wrong shape under
-    // a correct diagnosis, which a student then follows.
+    // THE ACADEMIC FAULT the screenshots caught. The pathway authors a frame for
+    // exactly the job the coach diagnosed, and it was being passed over.
     id: "review-scaffold-ignores-the-pathway",
     file: "app.js",
-    find: '    if (authored) return { text: String(authored.text || authored), source: "pathway" };',
-    replace: "    void authored;",
+    find: '    return authored ? { text: String(authored.text || authored), source: "pathway" } : null;',
+    replace: "    return null;",
     owner: "ui65",
-    why: "the scaffold under a diagnosis taught a different job from the one that was diagnosed",
+    why: "the scaffold under a diagnosis was dropped even where the pathway authors one for that exact job",
+  },
+  {
+    // AND THE OTHER HALF, which the exhibit proved: with no authored frame the
+    // review fell back to the subject's generic slot template, so 27 of the 28
+    // Explain pathways showed "This works because [what the strategy changes] leads
+    // to [the effect on the objective]" under a diagnosis about the characteristic
+    // causing the strategy. Two different causal jobs, and the student writes from
+    // the one underneath the criticism.
+    id: "review-scaffold-falls-back-to-generic",
+    file: "app.js",
+    find: '    return authored ? { text: String(authored.text || authored), source: "pathway" } : null;',
+    replace: '    if (authored) return { text: String(authored.text || authored), source: "pathway" };\n    const t = slotTemplates(key); if (!t) return null;\n    const byFam = t.byFamily && t.byFamily[esDirectiveFamily()];\n    const text = String((byFam && byFam.tier1) || t.tier1 || "");\n    return text ? { text: text, source: "slot" } : null;',
+    owner: "ui65",
+    why: "a scaffold teaching a different causal job from the one just diagnosed was shown rather than none",
+  },
+  {
+    id: "review-save-enabled-without-an-edit",
+    file: "app.js",
+    find: "        sv.disabled = !now.trim() || now.trim() === start.trim();",
+    replace: "        sv.disabled = false;",
+    owner: "ui65",
+    why: "Save wrote the sentence back over itself, dating the check and manufacturing a re-check out of no edit",
+  },
+  {
+    id: "review-recheck-always-live",
+    file: "app.js",
+    find: "    const canRecheck = stale || !!refused;",
+    replace: "    const canRecheck = true;",
+    owner: "ui65",
+    why: "the primary action on an untouched review was to spend a worker call asking the same question about the same words",
+  },
+  {
+    id: "review-ignores-a-changed-argument",
+    file: "app.js",
+    find: "    return esContextChanged(p);",
+    replace: "    return false;",
+    owner: "ui65",
+    why: "a check made under one argument was presented as current after the student chose another, so the guidance described prose written for the old one",
+  },
+  {
+    id: "coach-may-call-present-things-absent",
+    file: "proxy/worker.js",
+    find: "- NEVER CALL SOMETHING ABSENT THAT IS ON THE PAGE.",
+    replace: "- (removed) ",
+    owner: "t27",
+    why: "the coach could tell a student nothing signposts their approach directly underneath the sentence in which they signpost it",
   },
   {
     id: "review-leaves-the-composer-open",

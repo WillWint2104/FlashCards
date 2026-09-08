@@ -15237,7 +15237,19 @@ module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf,
   }
   function esFeedbackStale(p) {
     if (!p || !p.feedback) return false;
-    return (p.gradedText || "") !== (p.text || "");
+    if ((p.gradedText || "") !== (p.text || "")) return true;
+    // The words can be identical and the check still out of date: the paragraph now
+    // argues something else. Guidance is resolved through the current pathway, so a
+    // result obtained under the previous one is not about this paragraph any more.
+    return esContextChanged(p);
+  }
+  // The paragraph's argument or evidence changed after it was checked. Old results
+  // that predate the recording carry no contextVersion and are not called stale on
+  // that account: a missing field is not evidence of a change.
+  function esContextChanged(p) {
+    const snap = p && p.feedback && p.feedback.checked;
+    if (!snap || snap.contextVersion === undefined) return false;
+    return (Number(p.contextVersion) || 0) !== (Number(snap.contextVersion) || 0);
   }
   // Whether ONE sentence has changed since the check. An id that was not in the
   // snapshot is a sentence written afterwards, which is also a change.
@@ -19068,7 +19080,9 @@ module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf,
     // Said once, at the top, rather than on every row: the paragraph has moved on
     // since this was checked. The findings stay on screen because they are still
     // what was said, and the student is told what they now refer to.
-    const staleBar = stale ? `<div class="es-rstale">${esIcon("info")}<span>This is the check of the previous version of your paragraph. Re-check when you have finished editing.</span></div>` : "";
+    const staleBar = stale ? `<div class="es-rstale">${esIcon("info")}<span>${esc(esContextChanged(p)
+      ? "This paragraph argues something different from when it was checked, so what follows was written about the previous argument. Re-check it."
+      : "This is the check of the previous version of your paragraph. Re-check when you have finished editing.")}</span></div>` : "";
     // Every result refused. The rows stay, unassessed, and the reason is said: a
     // check that came back unusable is not the same as a check that came back
     // clean, and the difference is the whole point of failing closed.
@@ -19080,12 +19094,22 @@ module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf,
     // of buttons at the full page width read as seven things that happened to land
     // together.
     const openCount = rows.filter(r => r.needsWork).length;
+    // Stale, or a refused result there is a point in asking again for.
+    const canRecheck = stale || !!refused;
     return `<div class="es-review">
       <div class="es-rtabs" role="group" aria-label="Structural parts of this paragraph">${tabs}</div>
       ${staleBar}${refused}
       ${esReviewRowHTML(p, row)}
+      ${/* RE-CHECK IS FOR A PARAGRAPH THAT HAS MOVED ON. It used to be enabled the
+             moment a result arrived, so the primary action on a review the student
+             had not touched was to spend another worker call asking the same
+             question about the same words. It is offered when the paragraph no
+             longer matches what was checked, and when a result came back unusable
+             and there is genuinely something to retry. */ ""}
       <div class="es-ractions">
-        <button type="button" class="es-btn primary sm" id="esrecheck">${esIcon("feedback")}<span>Re-check paragraph</span></button>
+        <button type="button" class="es-btn primary sm" id="esrecheck"${
+          canRecheck ? "" : " disabled title=\"Nothing has changed since this check\""
+        }>${esIcon("feedback")}<span>Re-check paragraph</span></button>
         ${openCount > 1
           ? `<button type="button" class="es-btn ghost sm" id="esrnext">${esIcon("next")}<span>Next part</span></button>` : ""}
         <span class="es-sp"></span>
@@ -19136,7 +19160,12 @@ module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf,
         <button type="button" class="es-btn ghost sm" id="esrhelp">${esIcon("note")}<span>More help</span></button>
         ${ex ? `<button type="button" class="es-btn ghost sm" id="esrexample">${esIcon("open")}<span>See complete ${esc(ex.what)}</span></button>` : ""}
         <span class="es-sp"></span>
-        <button type="button" class="es-btn primary sm" id="esrsave">${esIcon("save")}<span>Save revision</span></button>
+        ${/* SAVE IS FOR A REVISION. The box opens holding the student's own sentence,
+               so on a review nobody has typed into, Save writes the sentence back
+               over itself - which changes gradedText, makes the feedback stale and
+               manufactures a re-check out of no edit at all. It turns on when the
+               box stops matching the sentence it started from. */ ""}
+        <button type="button" class="es-btn primary sm" id="esrsave" disabled>${esIcon("save")}<span>Save revision</span></button>
       </div>
       ${/* When there is no compatible authored example the control is simply not
              there. It used to be followed by a sentence explaining the state of the
@@ -19167,20 +19196,28 @@ module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf,
   // [strategy] to [effect]." - which is the relationship the diagnosis names. It
   // was there the whole time and was not being asked for.
   //
-  // The subject's slot template is the fallback, because it is authored for that
-  // slot's job in that subject. Nothing is shown when neither exists: a scaffold
-  // for the wrong job is worse than no scaffold, since the student acts on it.
+  // AND THERE IS NO FALLBACK, which is the correction. The subject's slot template
+  // was used when the pathway authored nothing, on the reasoning that a template
+  // authored for that slot's job in that subject is better than an empty section.
+  // It is not, and the exhibit proved it: the template above is what 27 of the 28
+  // Explain pathways were showing under the characteristic-to-strategy diagnosis
+  // above, because only one pathway in the whole subject authors a frame.
+  //
+  // A scaffold in Paragraph Review is not decoration next to a diagnosis: it is the
+  // answer to it, and the student writes their sentence from it. One that teaches a
+  // different causal job than the one just diagnosed is worse than no scaffold at
+  // all. So the review shows the pathway's frame for this slot, on this question,
+  // under this directive family, or it shows no "try this structure" section and
+  // the student gets diagnosis, revision editor and More help.
+  //
+  // THIS IS THE REVIEW'S RULE ONLY. esSlotFrame has exactly one caller, the review
+  // row; the sentence composer resolves its own frames through slotTemplates at
+  // esSlotGuide and keeps every fallback it had.
   function esSlotFrame(p, key) {
     const step = slotDef(p.role, key);
     const h = step ? esAuthoredHelp(p, step) : null;
     const authored = h && esValidFrame(h.frame, p);
-    if (authored) return { text: String(authored.text || authored), source: "pathway" };
-    const t = slotTemplates(key);
-    if (!t) return null;
-    const fam = esDirectiveFamily();
-    const byFam = t.byFamily && t.byFamily[fam];
-    const text = String((byFam && byFam.tier1) || t.tier1 || (typeof t === "string" ? t : "") || "");
-    return text ? { text: text, source: "slot" } : null;
+    return authored ? { text: String(authored.text || authored), source: "pathway" } : null;
   }
   // [named blanks] are what the student fills. Marked up so they read as holes and
   // never as words to keep.
@@ -19612,9 +19649,22 @@ module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf,
     // no control anywhere on this panel that puts the scaffold, the diagnosis or any
     // model text into the paragraph: the box starts as their sentence, they change
     // it, and this stores what the box now says.
+    // SAVE FOLLOWS THE BOX. Rendered disabled, and turned on only while the text in
+    // it differs from the sentence it opened holding. An empty box is never
+    // saveable, whether the slot had a sentence or not.
+    const svBox = host.querySelector("[data-esrbox]");
     const sv = host.querySelector("#esrsave");
+    if (sv && svBox) {
+      const start = String(svBox.value || "");
+      const sync = () => {
+        const now = String(svBox.value || "");
+        sv.disabled = !now.trim() || now.trim() === start.trim();
+      };
+      svBox.oninput = sync;
+      sync();
+    }
     if (sv) sv.onclick = () => {
-      const box = host.querySelector("[data-esrbox]");
+      const box = svBox || host.querySelector("[data-esrbox]");
       if (!box) return;
       const text = String(box.value || "").trim();
       if (!text) { toast("Write the sentence first."); return; }
@@ -20553,6 +20603,13 @@ module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf,
     // a copy of the text that produced the feedback.
     fb.checked = {
       text: submittedText,
+      // WHICH ARGUMENT IT WAS CHECKED UNDER. A student can change a paragraph's
+      // argument after writing it, and the app already flags every written sentence
+      // when they do. The review read none of that: the diagnosis, the scaffold and
+      // More help all resolve through the paragraph's CURRENT pathway, so changing
+      // the argument silently re-pointed the guidance at prose written for the old
+      // one. Recorded here so the review can tell that the check predates the change.
+      contextVersion: Number(p.contextVersion) || 0,
       blocks: esBlocks(p).map(b => ({ id: b.id, text: String(b.text || "") })),
     };
     p.feedback = fb; p.gradedText = submittedText; // cooldown anchor: must revise before re-asking
