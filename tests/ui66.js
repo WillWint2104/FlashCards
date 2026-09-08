@@ -334,10 +334,20 @@ async function writeAndCheck(p, lines) {
     const rows = document.querySelector(".es-startrows");
     return { text: el.innerText.replace(/\s+/g, " "), top: Math.round(r.top),
       rowsTop: rows ? Math.round(rows.getBoundingClientRect().top) : null,
-      btn: !!document.querySelector("#esstartintro") };
+      btn: !!document.querySelector("#esstartintro"),
+      // The BUTTON'S OWN label, not the innerText of the row. This assertion used
+      // to read the row, and the row also carries "you can plan the whole response
+      // first, or START WRITING and plan each paragraph as you reach it" - so it
+      // went on passing after the button was renamed, on a substring of the hint
+      // sitting next to it.
+      label: (document.querySelector("#esstartintro") || {}).innerText || "",
+      second: (document.querySelector("#esstartbody") || {}).innerText || "" };
   });
-  ok(go && go.btn, "there is a Start writing action");
-  ok(go && /start writing/i.test(go.text), "named plainly: " + JSON.stringify(String(go && go.text).slice(0, 40)));
+  ok(go && go.btn, "there is a way straight into writing");
+  ok(go && /start with the introduction/i.test(go.label),
+    "and it names the paragraph it starts: " + JSON.stringify(String(go && go.label).replace(/\s+/g, " ").trim()));
+  ok(go && !/^\s*start writing\s*$/i.test(go.label), "not a bare Start writing");
+  ok(go && /body 1/i.test(go.second), "the other way in names its paragraph too: " + JSON.stringify(String(go && go.second).trim()));
   ok(go && /optional/i.test(go.text), "and planning is stated to be optional");
   ok(go && go.rowsTop != null && go.top < go.rowsTop, "and it sits above the plan, not under it");
   await p.click("#esstartintro"); await settled(p);
