@@ -213,12 +213,15 @@ module.exports = [
   {
     id: "ask-button-keeps-asking",
     file: "app.js",
-    // Rewritten when the control gained an icon beside its label: writing
-    // textContent on the button would have deleted the icon, so the LABEL is
-    // written now and the mutation follows it. The entry had gone STALE and was
-    // testing nothing, which the runner used to report as a pass.
-    find: '    esSetLabel(ask, ES.pending ? "Checking\\u2026"',
-    replace: '    if (false) esSetLabel(ask, ES.pending ? "Checking\\u2026"',
+    // Rewritten TWICE, and the second time is the interesting one. It first
+    // targeted esRefreshAskButton, which was the only thing restoring the label
+    // after a result arrived, because the result did a partial update. The
+    // paragraph review made a result a MODE CHANGE, so that path renders now, and
+    // the render draws the button from the same state - which left the old target
+    // unreachable and the mutation unable to fail. It follows the protection: take
+    // the render away and the label is stranded exactly as it was before.
+    find: "      esRender();\n      const host = document.getElementById(\"eshost\");",
+    replace: "      const host = document.getElementById(\"eshost\");",
     owner: "ui56",
     why: "the button went on saying it was asking the coach after the answer had arrived, been saved and been rendered",
   },

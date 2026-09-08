@@ -20558,15 +20558,14 @@ module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf,
     p.feedback = fb; p.gradedText = submittedText; // cooldown anchor: must revise before re-asking
     esResetCoachUI(); // fresh feedback: missing-element cards start collapsed (Tier 0), polish tucked
     ES.pending = false; esSaveDraft();
-    // Update ONLY the parts that changed, in place: the margin gets the new result,
-    // the ask button returns to its cooldown state, the stepper marks this paragraph
-    // done, and the sequencing nudge refreshes. No full esRender, so nothing flashes.
+    // A RESULT IS A MODE CHANGE, so this renders rather than patching. What follows
+    // the render is placement, not content: the sentence under the open row is
+    // marked and the panel is brought into view once.
     if (ES.screen === "coached" && ES.draft && ES.draft.pos === idx) {
-      // A RESULT CHANGES THE MODE, so this is a full render rather than a panel
-      // swap. The partial update existed so nothing flashed, and it was right while
-      // the review was a panel under the writer; now that arriving feedback stands
-      // the composer down, updating only the margin left the old writing surface on
-      // screen beside it - the step header saying "the sentence you are writing"
+      // The partial update existed so nothing flashed, and it was right while the
+      // review was a panel under the writer. Now that arriving feedback stands the
+      // composer down, updating only the margin left the old writing surface on
+      // screen beside it: the step header saying "the sentence you are writing"
       // above a composer, with the review of a different sentence underneath.
       esRender();
       const host = document.getElementById("eshost");
@@ -20588,14 +20587,13 @@ module.exports = { toRuntimeQuestion, mergeSubjects, SOURCE, guidesOf, helpOf,
           try { first.scrollIntoView({ block: "center", behavior: "smooth" }); } catch (e) { first.scrollIntoView(false); }
         }
       }
-      // The missing set changed, so rebuild the ordered shape and rebind it. It stays
-      // on screen either way; what changes is which rows read as done and which gaps
-      // open their frame.
-      const lh = host && host.querySelector("[data-linehost]");
-      if (lh) { lh.innerHTML = esLinesBlock(p); host.querySelectorAll("button:not([type])").forEach(b => b.type = "button"); esBindLines(); }
-      esRefreshAskButton(p);
-      const step = host && host.querySelectorAll(".es-step")[idx]; if (step) step.classList.add("done");
-      const seqHost = host && host.querySelector(".es-seqhost"); if (seqHost) { seqHost.innerHTML = esSeqNudge(p); esBindSeqNudge(p); }
+      // The lines block, the ask button, the stepper's done mark and the sequencing
+      // nudge were all patched in here, one by one, because there was no render to
+      // draw them. There is now, and it draws every one of them from the same state
+      // this code was reaching in to correct. Patching them again after it was not a
+      // belt and braces: esRefreshAskButton was the only thing restoring the button's
+      // label, so with a render above it that guard stopped being reachable and the
+      // mutation for it stopped being able to fail.
     } else {
       esRender(); // not on this paragraph any more (rare) -> safe full render
     }
