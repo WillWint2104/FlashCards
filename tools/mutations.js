@@ -407,6 +407,44 @@ module.exports = [
     why: "a definition was written to fill the half of the term card the vocabulary library cannot supply",
   },
 
+  {
+    // THE ACADEMIC FAULT the screenshots caught. The generic slot template teaches
+    // strategy-to-outcome; on mkt-01 the coach's diagnosis of the Explanation is
+    // about characteristic-to-strategy, and the pathway authors a frame for
+    // exactly that. Preferring the template puts a structurally wrong shape under
+    // a correct diagnosis, which a student then follows.
+    id: "review-scaffold-ignores-the-pathway",
+    file: "app.js",
+    find: '    if (authored) return { text: String(authored.text || authored), source: "pathway" };',
+    replace: "    void authored;",
+    owner: "ui65",
+    why: "the scaffold under a diagnosis taught a different job from the one that was diagnosed",
+  },
+  {
+    id: "review-leaves-the-composer-open",
+    file: "app.js",
+    find: "    const inReview = esInReview(p);",
+    replace: "    const inReview = false;",
+    owner: "ui65",
+    why: "the review was layered under a live composer, so a missing sentence had two places to write it and no authoritative one",
+  },
+  {
+    id: "review-settles-a-paragraph-with-an-open-issue",
+    file: "app.js",
+    find: "    if (esFeedbackStale(p)) return false;                                                  // checked, but not this version",
+    replace: "    return true;",
+    owner: "ui65",
+    why: "Paragraph complete was shown in success green directly above a coach saying an element was missing",
+  },
+  {
+    id: "review-example-guesses-the-family",
+    file: "app.js",
+    find: "      if (!exFam || exFam !== fam) return false;",
+    replace: "      if (exFam && exFam !== fam) return false;",
+    owner: "ui66",
+    why: "an example that declares no directive family was offered as the model shape anyway, so a judgement example could model a causal answer",
+  },
+
   // ---- the harness watching itself ----------------------------------------
   {
     id: "gate-drops-a-suite",
