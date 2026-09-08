@@ -2068,9 +2068,13 @@
   .es-said.es-rlit{background:#E7F3EC;box-shadow:0 0 0 2px #E7F3EC}
   .es-said.es-rlit.es-rlit-warn{background:#FDEEEA;box-shadow:0 0 0 2px #FDEEEA}
   /* ---- THE OPTIONAL WINDOWS ----------------------------------------------- */
-  #esmodalhost{position:relative;z-index:80}
+  /* ABOVE THE WRITER. .es-scrim is the writing surface at z-index 120 and the
+     review's drawers sit at 150, so a window at 80 existed, measured correctly and
+     was painted underneath the page it was opened from. 260 puts it over the study
+     host at 250, which is the highest thing on this screen. */
+  #esmodalhost{position:relative;z-index:260}
   .es-scrim2{position:fixed;inset:0;background:rgba(23,32,28,.34);display:flex;align-items:center;
-    justify-content:center;padding:24px;z-index:80}
+    justify-content:center;padding:24px;z-index:260}
   .es-modal{background:#fff;border-radius:16px;max-width:620px;width:100%;max-height:82vh;
     display:flex;flex-direction:column;box-shadow:0 18px 48px rgba(0,0,0,.22)}
   .es-modalhd{display:flex;align-items:center;gap:10px;padding:16px 18px 12px;border-bottom:1px solid var(--line)}

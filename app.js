@@ -10984,7 +10984,25 @@
     if (ES.screen === "coached" && ES.draft && ES.draft.pos === idx) {
       const host = document.getElementById("eshost");
       const m = host && host.querySelector(".es-margin");
-      if (m) { m.innerHTML = esCoachMargin(p); host.querySelectorAll("button:not([type])").forEach(b => b.type = "button"); esBindCoachMargin(p); esPaintReviewHighlight(p); }
+      if (m) {
+        m.innerHTML = esCoachMargin(p);
+        host.querySelectorAll("button:not([type])").forEach(b => b.type = "button");
+        esBindCoachMargin(p); esPaintReviewHighlight(p);
+        // BRING IT INTO VIEW, once, when a check has just come back. The review
+        // renders under the composer, which is right - the student is still in the
+        // writer and the paragraph is still above it - but an answer that arrives
+        // below the fold is an answer nobody reads. Only on a new result: pressing
+        // a tab repaints the same panel and must not move the page under the
+        // student's hands.
+        const first = m.querySelector(".es-rtabs");
+        if (first && typeof first.scrollIntoView === "function") {
+          // "center" rather than "nearest": nearest scrolls the minimum, which put the
+          // tab row on the last line of the screen with the diagnosis under the fold.
+          // The paragraph stays visible above it, which is the point of reviewing
+          // inside the writer rather than on a screen of its own.
+          try { first.scrollIntoView({ block: "center", behavior: "smooth" }); } catch (e) { first.scrollIntoView(false); }
+        }
+      }
       // The missing set changed, so rebuild the ordered shape and rebind it. It stays
       // on screen either way; what changes is which rows read as done and which gaps
       // open their frame.

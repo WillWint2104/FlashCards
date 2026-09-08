@@ -216,6 +216,18 @@ async function writeAndCheck(p, lines) {
   ok(!(await p.$(".es-termdef")) || vocab > 0,
     "no definition was invented to fill the half of the card the library cannot supply");
   ok((await p.$$eval(".es-termcard", es => es.length)) === 1, "exactly one card is open");
+  // ON TOP, not merely present. The card measured correctly and read correctly
+  // while painted UNDERNEATH the writing surface, because the writer sits at
+  // z-index 120 and its drawers at 150. Presence and geometry both passed; what
+  // the student could see did not. elementFromPoint is the question actually
+  // being asked here: is this what is in front of them.
+  const front = await p.evaluate(() => {
+    const c = document.querySelector(".es-termcard"); if (!c) return null;
+    const r = c.getBoundingClientRect();
+    const hit = document.elementFromPoint(Math.round(r.left + r.width / 2), Math.round(r.top + 12));
+    return { inCard: !!(hit && c.contains(hit)), hit: hit ? hit.className.toString().slice(0, 40) : null };
+  });
+  ok(front && front.inCard, "and it is the thing in front of the student, not behind the page: " + JSON.stringify(front));
   await p.keyboard.press("Escape"); await p.waitForTimeout(300);
   ok(!(await p.$(".es-termcard")), "Escape closes it");
   await p.evaluate(() => {
@@ -249,6 +261,13 @@ async function writeAndCheck(p, lines) {
   console.log("    sheet:", JSON.stringify(sheet));
   ok(sheet && sheet.bottom <= 2, "it sits against the bottom of the screen rather than floating");
   ok(sheet && !sheet.out, "and nothing runs off the side");
+  const frontNarrow = await p.evaluate(() => {
+    const c = document.querySelector(".es-termcard"); if (!c) return null;
+    const r = c.getBoundingClientRect();
+    const hit = document.elementFromPoint(Math.round(r.left + r.width / 2), Math.round(r.top + 12));
+    return !!(hit && c.contains(hit));
+  });
+  ok(frontNarrow, "and the sheet is in front of the page at this width too");
   await p.keyboard.press("Escape"); await p.waitForTimeout(250);
   await p.setViewportSize({ width: 1500, height: 1100 });
 
