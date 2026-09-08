@@ -26,6 +26,18 @@ const { chromium, T, usePractice } = require("./env");
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log("  FAIL:", m); } };
 const rf = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+// A click that triggers a re-render is finished when the render is, so these wait
+// for two frames rather than for a number. The 1200ms after a check stays: that
+// one is a round trip, not a repaint.
+const settled = rf;
+// A check is finished when the panel stops saying it is asking. The route is
+// stubbed and answers at once, so waiting a flat 1200ms for it was waiting for
+// nothing eleven times over.
+const answered = async p => {
+  await p.waitForFunction(() => !/Asking the coach/i.test(document.body.innerText), null, { timeout: 8000 })
+    .catch(() => {});
+  await settled(p);
+};
 
 async function enter(p) {
   await p.goto(T); await p.waitForSelector(".navtab", { timeout: 8000 });
@@ -41,7 +53,7 @@ async function startQuestion(p, re) {
     const t = [...document.querySelectorAll(".qp-row")].find(x => new RegExp(r, "i").test(x.textContent));
     if (t) { t.click(); return true; } return false; }, re);
   if (!got) return false;
-  await p.waitForTimeout(300);
+  await settled(p);
   await p.evaluate(() => { const b = document.querySelector('[data-espick="preview"]'); b && b.click(); });
   await p.waitForSelector("#esstart", { timeout: 8000 }).catch(() => {});
   await p.click("#esstart");
@@ -50,10 +62,10 @@ async function startQuestion(p, re) {
 }
 async function section(p, re) {
   await p.evaluate(r => { const t = [...document.querySelectorAll(".es-startrow")].find(x => new RegExp(r, "i").test(x.textContent)); t && t.click(); }, re);
-  await rf(p); await p.waitForTimeout(300);
+  await rf(p); await settled(p);
   const pth = await p.$("[data-espath]"); if (pth) { await pth.click(); await rf(p); }
   const go = await p.$("#esstartwriting"); if (go) { await go.click(); await rf(p); }
-  await p.waitForTimeout(300);
+  await settled(p);
   return !!(await p.$("#esline"));
 }
 async function stubAll(p) {
@@ -76,11 +88,11 @@ async function stubAll(p) {
 async function writeAndCheck(p, lines) {
   for (const l of lines) {
     if (!(await p.$("#esline"))) break;
-    await p.fill("#esline", l); await p.click("#esaccept"); await p.waitForTimeout(320);
+    await p.fill("#esline", l); await p.click("#esaccept"); await settled(p);
   }
   for (const sel of ["#esrecheck", "#esask", "#esdonecheck"]) {
     const b = await p.$(sel);
-    if (b && await b.isEnabled()) { await b.click(); await p.waitForTimeout(1200); return true; }
+    if (b && await b.isEnabled()) { await b.click(); await answered(p); return true; }
   }
   return false;
 }
@@ -121,11 +133,11 @@ async function writeAndCheck(p, lines) {
   console.log("--- 1b. the conclusion, the same way");
   await p.evaluate(() => { const t = document.querySelector('[data-esrestchange], .es-btn'); void t; });
   await p.$$eval("[data-esrespgo]", es => { const t = es[es.length - 1]; t && t.click(); }).catch(() => {});
-  await p.waitForTimeout(400);
+  await settled(p);
   const onConcl = await section(p, "Conclusion").catch(() => false);
   if (!onConcl) {
     await p.evaluate(() => { const o = document.querySelector("#esfootoutline"); o && o.click(); });
-    await p.waitForTimeout(400);
+    await settled(p);
     await p.$$eval("[data-esgo]", es => { const t = es.find(x => /Conclusion/i.test(x.textContent)); t && t.click(); });
     await p.waitForTimeout(500);
   }
@@ -155,7 +167,7 @@ async function writeAndCheck(p, lines) {
   const exLabel = exBtn ? await exBtn.innerText() : "";
   ok(/TEEEC/i.test(exLabel), "and names the structure it is an example of: " + JSON.stringify(exLabel.trim()));
   const paraBefore = await p.$eval(".es-cols, .es-canvas", e => e.innerText).catch(() => "");
-  if (exBtn) { await exBtn.click(); await p.waitForTimeout(400); }
+  if (exBtn) { await exBtn.click(); await settled(p); }
   const modal = await p.$eval(".es-modal", e => e.innerText.replace(/\s+/g, " ")).catch(() => "");
   console.log("    example window:", JSON.stringify(modal.slice(0, 110)));
   ok(/different question/i.test(modal), "the window says it is a different question");
@@ -168,7 +180,7 @@ async function writeAndCheck(p, lines) {
   ok(!ahLeak, "no Ancient History example was borrowed to fill a Business Studies window");
   const paraAfter = await p.$eval(".es-cols, .es-canvas", e => e.innerText).catch(() => "");
   ok(paraBefore === paraAfter, "and opening it changed nothing in the writer");
-  await p.keyboard.press("Escape"); await p.waitForTimeout(300);
+  await p.keyboard.press("Escape"); await settled(p);
   ok(!(await p.$(".es-modal")), "Escape closes it");
 
   // ---- 3. More help is authored, optional, and harmless ------------------
@@ -177,13 +189,13 @@ async function writeAndCheck(p, lines) {
   await p.fill("[data-esrbox]", draftText);
   const hp = await p.$("#esrhelp");
   ok(!!hp, "the control is there");
-  if (hp) { await hp.click(); await p.waitForTimeout(400); }
+  if (hp) { await hp.click(); await settled(p); }
   const help = await p.$eval(".es-modal", e => e.innerText.replace(/\s+/g, " ")).catch(() => "");
   console.log("    more help:", JSON.stringify(help.slice(0, 100)));
   ok(/what this part does/i.test(help), "it says what the structural job is");
   ok(help.length < 900, "and stays short rather than becoming a second report: " + help.length + " chars");
   ok(!/common problems/i.test(help), "with no invented common-problems list");
-  await p.$eval("#esmodalclose", e => e.click()); await p.waitForTimeout(300);
+  await p.$eval("#esmodalclose", e => e.click()); await settled(p);
   ok(!(await p.$(".es-modal")), "Close puts it away");
   const kept = await p.$eval("[data-esrbox]", e => e.value).catch(() => "");
   ok(kept === draftText, "and the half-typed revision survived it: " + JSON.stringify(kept.slice(0, 30)));
@@ -204,7 +216,7 @@ async function writeAndCheck(p, lines) {
     if (!t) return false; t.click(); return true;
   });
   ok(opened, "the highlighted term is pressable");
-  await p.waitForTimeout(350);
+  await settled(p);
   const card = await p.$eval(".es-termcard", e => e.innerText.replace(/\s+/g, " ")).catch(() => "");
   console.log("    card:", JSON.stringify(card.slice(0, 130)));
   ok(!!card, "it opens a card");
@@ -228,18 +240,18 @@ async function writeAndCheck(p, lines) {
     return { inCard: !!(hit && c.contains(hit)), hit: hit ? hit.className.toString().slice(0, 40) : null };
   });
   ok(front && front.inCard, "and it is the thing in front of the student, not behind the page: " + JSON.stringify(front));
-  await p.keyboard.press("Escape"); await p.waitForTimeout(300);
+  await p.keyboard.press("Escape"); await settled(p);
   ok(!(await p.$(".es-termcard")), "Escape closes it");
   await p.evaluate(() => {
     const t = [...document.querySelectorAll("[data-esdecode]")].find(x => /physical evidence/i.test(x.textContent));
     t && t.click();
   });
-  await p.waitForTimeout(300);
+  await settled(p);
   await p.$eval("[data-esmodalscrim]", e => {
     const r = e.getBoundingClientRect();
     e.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, clientX: r.left + 4, clientY: r.top + 4 }));
   });
-  await p.waitForTimeout(300);
+  await settled(p);
   ok(!(await p.$(".es-termcard")), "and pressing away from it closes it");
   const stillDraft = await p.$eval("[data-esrbox]", e => e.value).catch(() => "");
   ok(stillDraft === draftText, "the revision box was never remounted through any of that");
@@ -251,7 +263,7 @@ async function writeAndCheck(p, lines) {
     const t = [...document.querySelectorAll("[data-esdecode]")].find(x => /physical evidence/i.test(x.textContent));
     t && t.click();
   });
-  await p.waitForTimeout(400);
+  await settled(p);
   const sheet = await p.evaluate(() => {
     const c = document.querySelector(".es-termcard"); if (!c) return null;
     const r = c.getBoundingClientRect();
@@ -288,7 +300,7 @@ async function writeAndCheck(p, lines) {
   ok(go && /start writing/i.test(go.text), "named plainly: " + JSON.stringify(String(go && go.text).slice(0, 40)));
   ok(go && /optional/i.test(go.text), "and planning is stated to be optional");
   ok(go && go.rowsTop != null && go.top < go.rowsTop, "and it sits above the plan, not under it");
-  await p.click("#esstartintro"); await p.waitForTimeout(600);
+  await p.click("#esstartintro"); await settled(p);
   ok(!!(await p.$("#esline, [data-espath], #esstartwriting")),
     "pressing it goes straight to writing without completing a plan");
 
@@ -310,16 +322,16 @@ async function writeAndCheck(p, lines) {
   await p.goto(T); await p.waitForSelector(".navtab", { timeout: 8000 });
   await p.$$eval(".navtab", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await p.waitForSelector("#essubject", { timeout: 8000 });
-  await p.selectOption("#essubject", "economics"); await p.waitForTimeout(400);
-  await p.$$eval('[data-espick="own"]', es => es[0] && es[0].click()); await p.waitForTimeout(300);
+  await p.selectOption("#essubject", "economics"); await settled(p);
+  await p.$$eval('[data-espick="own"]', es => es[0] && es[0].click()); await settled(p);
   await p.fill("#esq", "Explain how changes in interest rates affect consumption and investment in the Australian economy.");
   await p.dispatchEvent("#esq", "input"); await p.waitForTimeout(200);
   await p.click("#esstart"); await p.waitForTimeout(700);
   await p.evaluate(() => { const t = [...document.querySelectorAll(".es-startrow")].find(x => /Body 1/i.test(x.textContent)); t && t.click(); });
-  await rf(p); await p.waitForTimeout(400);
+  await rf(p); await settled(p);
   const pth2 = await p.$("[data-espath]"); if (pth2) { await pth2.click(); await rf(p); }
   const go2 = await p.$("#esstartwriting"); if (go2) { await go2.click(); await rf(p); }
-  await p.waitForTimeout(300);
+  await settled(p);
   await writeAndCheck(p, [
     "Higher interest rates reduce the money households have available to spend.",
     "Because borrowing costs more, households postpone large purchases.",

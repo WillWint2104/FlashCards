@@ -26,6 +26,18 @@ const { chromium, T, usePractice } = require("./env");
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log("  FAIL:", m); } };
 const rf = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+// A click that triggers a re-render is finished when the render is, so these wait
+// for two frames rather than for a number. The 1200ms after a check stays: that
+// one is a round trip, not a repaint.
+const settled = rf;
+// A check is finished when the panel stops saying it is asking. The route is
+// stubbed and answers at once, so waiting a flat 1200ms for it was waiting for
+// nothing eleven times over.
+const answered = async p => {
+  await p.waitForFunction(() => !/Asking the coach/i.test(document.body.innerText), null, { timeout: 8000 })
+    .catch(() => {});
+  await settled(p);
+};
 
 const SENTENCES = [
   "Convenience-oriented customers value speed and low effort.",
@@ -47,7 +59,7 @@ async function startQuestion(p, re) {
     const t = [...document.querySelectorAll(".qp-row")].find(x => new RegExp(r, "i").test(x.textContent));
     if (t) { t.click(); return true; } return false; }, re);
   if (!got) return false;
-  await p.waitForTimeout(300);
+  await settled(p);
   await p.evaluate(() => { const b = document.querySelector('[data-espick="preview"]'); b && b.click(); });
   await p.waitForSelector("#esstart", { timeout: 8000 }).catch(() => {});
   await p.click("#esstart");
@@ -56,17 +68,17 @@ async function startQuestion(p, re) {
 }
 async function section(p, re) {
   await p.evaluate(r => { const t = [...document.querySelectorAll(".es-startrow")].find(x => new RegExp(r, "i").test(x.textContent)); t && t.click(); }, re);
-  await rf(p); await p.waitForTimeout(300);
+  await rf(p); await settled(p);
   const pth = await p.$("[data-espath]"); if (pth) { await pth.click(); await rf(p); }
   const go = await p.$("#esstartwriting"); if (go) { await go.click(); await rf(p); }
-  await p.waitForTimeout(300);
+  await settled(p);
   return !!(await p.$("#esline"));
 }
 async function write(p, lines) {
   for (const l of lines) {
     if (!(await p.$("#esline"))) break;
     await p.fill("#esline", l);
-    await p.click("#esaccept"); await p.waitForTimeout(350);
+    await p.click("#esaccept"); await settled(p);
   }
 }
 const blocksOf = p => p.evaluate(() => {
@@ -100,7 +112,7 @@ async function stub(p, make) {
 async function check(p) {
   for (const sel of ["#esrecheck", "#esask", "#esdonecheck"]) {
     const b = await p.$(sel);
-    if (b && await b.isEnabled()) { await b.click(); await p.waitForTimeout(1200); return true; }
+    if (b && await b.isEnabled()) { await b.click(); await answered(p); return true; }
   }
   return false;
 }
@@ -166,7 +178,7 @@ async function check(p) {
     "and the revision box starts as their own sentence, unchanged");
 
   console.log("--- 2b. and pressing another tab moves, rather than stacking");
-  await p.$$eval(".es-rtab", es => es[0].click()); await p.waitForTimeout(300);
+  await p.$$eval(".es-rtab", es => es[0].click()); await settled(p);
   row = await rowOf(p);
   ok(row.bodies === 1, "still exactly one open: " + row.bodies);
   ok(/doing its job/i.test(String(row.head)), "a slot the coach approved says so briefly: " + JSON.stringify(row.head));
@@ -203,7 +215,7 @@ async function check(p) {
   const last = tabs[tabs.length - 1];
   console.log("    unreported tab:", JSON.stringify(last));
   ok(/unassessed/.test(last.cls), "it is shown as unassessed, not ok: " + last.cls);
-  await p.$$eval(".es-rtab", es => es[es.length - 1].click()); await p.waitForTimeout(300);
+  await p.$$eval(".es-rtab", es => es[es.length - 1].click()); await settled(p);
   const un = await rowOf(p);
   ok(/not checked/i.test(String(un.head)), "and says so when opened: " + JSON.stringify(un.head));
 
@@ -262,7 +274,7 @@ async function check(p) {
   await check(p);
   const target = (await tabsOf(p)).findIndex(t => /needs_work/.test(t.cls));
   ok(target >= 0, "there is a row that needs work to revise");
-  await p.$$eval(".es-rtab", (es, i2) => es[i2].click(), target); await p.waitForTimeout(300);
+  await p.$$eval(".es-rtab", (es, i2) => es[i2].click(), target); await settled(p);
   const before = await rowOf(p);
   const frameText = String(before.frame || "");
   ok(frameText.length > 10, "an authored scaffold is shown: " + JSON.stringify(frameText.slice(0, 60)));
@@ -305,7 +317,7 @@ async function check(p) {
   console.log("--- 7b. and it survives a reload");
   await p.reload(); await p.waitForSelector(".navtab", { timeout: 8000 });
   await p.$$eval(".navtab", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
-  await p.waitForTimeout(600);
+  await settled(p);
   const kept = await p.evaluate(() => {
     const raw = JSON.parse(localStorage.getItem("marginal.essay.v1") || "{}");
     const d = Object.values(raw).flatMap(bk => (bk && bk.drafts) || [])[0];
