@@ -174,6 +174,18 @@ async function check(p) {
   const page = await p.evaluate(() => document.body.innerText);
   ok(page.indexOf("MODEL-PROSE-ON-AN-OK-SLOT-9c1f") < 0,
     "and the model's own words about an approved sentence never reach the screen");
+  // Not only unprinted: not KEPT. What is written down is what a later render, a
+  // reload or a surface built next year would read, so the prose has to be gone
+  // from the stored result rather than merely skipped by today's renderer.
+  const stored = await p.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem("marginal.essay.v1") || "{}");
+    const d = Object.values(raw).flatMap(bk => (bk && bk.drafts) || [])[0];
+    const pp = d && (d.paras || []).find(x => x.feedback);
+    return JSON.stringify((pp && pp.feedback && pp.feedback.slotFeedback) || []);
+  });
+  ok(stored.indexOf("MODEL-PROSE-ON-AN-OK-SLOT-9c1f") < 0,
+    "nor is it stored on the attempt: " + stored.slice(0, 120));
+  ok(/"status":"ok"/.test(stored), "and the approved result itself was kept");
 
   // ---- 3. silence is not a pass ------------------------------------------
   console.log("--- 3. an element the coach did not report is not green");

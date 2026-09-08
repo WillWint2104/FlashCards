@@ -347,16 +347,16 @@ module.exports = [
     why: "a diagnosis was attached to a sentence written for a different structural job",
   },
   {
-    // The app strips model prose from an approved slot AND never renders it, which
-    // is defence in depth and makes the normaliser's copy an equivalent mutant on
-    // this side. So the app-side entry targets the RENDERER, where the protection
-    // is single, and the worker's own stripping is owned by t27 below.
-    id: "review-renders-prose-on-ok",
+    // The app strips this on the way in AND never renders it, so neither protection
+    // alone is observable on screen. ui65 therefore reads the STORED result: what
+    // was written down is what a later render, a reload or a future surface would
+    // use, and it must carry none of the model's words about an approved sentence.
+    id: "review-keeps-model-prose-on-ok",
     file: "app.js",
-    find: '        ${r.text ? `<blockquote class="es-rquote">${esc(r.text)}</blockquote>` : ""}</div>`;',
-    replace: '        ${r.issue ? `<p class="es-rissue">${esc(r.issue)}</p>` : ""}${r.text ? `<blockquote class="es-rquote">${esc(r.text)}</blockquote>` : ""}</div>`;',
+    find: '      .map(f => (f.status === "ok" ? { slot: f.slot, status: "ok", blockId: f.blockId, issue: "" } : f))',
+    replace: "      .map(f => f)",
     owner: "ui65",
-    why: "model prose about a sentence it approved of was printed instead of the app's own line",
+    why: "model prose about a sentence it approved of was stored on the attempt, ready for any surface to print",
   },
   {
     id: "coach-keeps-prose-on-ok",
