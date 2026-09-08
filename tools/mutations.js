@@ -446,12 +446,18 @@ module.exports = [
   },
 
   {
-    id: "term-card-never-flips",
+    // NOT THE FLIP. The first version of this broke the branch that puts the card
+    // above the word, and it survived - correctly, because every highlighted term
+    // in this app is in the question stem at the top of the page, so that branch
+    // cannot be entered. The reachable half of the same protection is the clamp,
+    // and it is the half that was reported: the stem scrolled off the top and the
+    // card was placed at a negative offset, laid out and off the screen.
+    id: "term-card-placed-off-screen",
     file: "app.js",
-    find: "      const above = t.top - gap - c.height;",
-    replace: "      const above = -9999;",
+    find: "    top = Math.min(Math.max(top, pad), Math.max(pad, window.innerHeight - pad - c.height));",
+    replace: "    void pad;",
     owner: "ui66",
-    why: "the term card only ever opened downwards, so every term in the lower half of the page opened one off the bottom of the screen",
+    why: "a term scrolled above the window opened its card above the window too, where it was present, measurable and invisible",
   },
 
   // ---- the harness watching itself ----------------------------------------

@@ -294,39 +294,52 @@ async function writeAndCheck(p, lines) {
   await settled(p);
   ok(!(await p.$(".es-termcard")), "and pressing away from it closes it");
 
-  // IT FLIPS ABOVE THE WORD when there is no room under it. A popover that only
-  // ever opens downwards is a popover that is off the bottom of the screen for
-  // every term in the lower half of the page, and this app puts the highlighted
-  // words in a question stem that a student reaches by scrolling.
+  // IT IS PULLED BACK INSIDE THE WINDOW when the word it belongs to is not in it.
+  //
+  // The first version of this checked the FLIP - the card going above the word when
+  // there is no room below - and it could not be made to fail, because every
+  // highlighted term in this app lives in the question stem at the top of the page.
+  // There is never room above one, so the flip branch is defensive code for a
+  // layout this app does not produce, and a test that drove it would have been
+  // testing arithmetic rather than the product.
+  //
+  // The repositioning that IS reachable is the one that was reported: scroll the
+  // stem off the top and press a term, and the card was placed at a negative
+  // offset - laid out, visible to a query, and off the screen.
   const tallEnough = await p.evaluate(() => window.innerHeight);
-  await p.setViewportSize({ width: 1280, height: 420 });
-  await p.waitForFunction(() => window.innerHeight === 420, null, { timeout: 4000 }).catch(() => {});
+  await p.setViewportSize({ width: 1280, height: 700 });
+  await p.waitForFunction(() => window.innerHeight === 700, null, { timeout: 4000 }).catch(() => {});
   await settled(p);
-  const flipped = await p.evaluate(() => {
+  const scrolled = await p.evaluate(() => {
     const t = [...document.querySelectorAll("[data-esdecode]")].find(x => /physical evidence/i.test(x.textContent));
     if (!t) return null;
-    t.scrollIntoView({ block: "end" });
-    t.click();
-    return true;
+    let sc = t.parentElement;
+    while (sc && sc !== document.body && sc.scrollHeight <= sc.clientHeight + 4) sc = sc.parentElement;
+    const target = sc && sc !== document.body ? sc : document.scrollingElement;
+    target.scrollTop = target.scrollHeight;
+    return { top: Math.round(t.getBoundingClientRect().top) };
+  });
+  await settled(p);
+  ok(scrolled && scrolled.top < 0, "the term is scrolled off the top of the window: " + JSON.stringify(scrolled));
+  await p.evaluate(() => {
+    const t = [...document.querySelectorAll("[data-esdecode]")].find(x => /physical evidence/i.test(x.textContent));
+    t && t.click();
   });
   await settled(p);
   const place = await p.evaluate(() => {
     const w = document.querySelector(".es-termanchor");
     const c = w && w.querySelector(".es-termcard"); if (!c) return null;
-    const t = document.querySelector('[data-esdecode="' + w.dataset.esterm + '"]');
-    const cr = c.getBoundingClientRect(); const tr = t && t.getBoundingClientRect();
+    const r = c.getBoundingClientRect();
     return { sheet: w.classList.contains("sheet"),
-      inView: cr.top >= 0 && cr.bottom <= window.innerHeight,
-      above: !!tr && cr.bottom <= tr.top + 1, below: !!tr && cr.top >= tr.bottom - 1,
-      top: Math.round(cr.top), bottom: Math.round(cr.bottom), termTop: tr ? Math.round(tr.top) : null };
+      inView: r.top >= 0 && r.bottom <= window.innerHeight && r.left >= 0 && r.right <= window.innerWidth,
+      top: Math.round(r.top), bottom: Math.round(r.bottom), h: Math.round(r.height) };
   });
-  ok(!!flipped && !!place, "the term still opens a card in a short window");
-  ok(place && !place.sheet, "at 1280 wide it is still the anchored card, not the phone sheet");
-  ok(place && place.inView, "and it is inside the window: " + JSON.stringify(place));
-  ok(place && (place.above || place.top >= 0),
-    "placed above the word rather than off the bottom of the screen: " + JSON.stringify(place));
+  ok(!!place, "the card still opens");
+  ok(place && !place.sheet, "at 1280 wide it is the anchored card, not the phone sheet");
+  ok(place && place.top >= 0, "and it is not placed above the top of the window: " + JSON.stringify(place));
+  ok(place && place.inView, "the whole card is inside the window: " + JSON.stringify(place));
   await p.keyboard.press("Escape"); await settled(p);
-  await p.setViewportSize({ width: 1500, height: tallEnough > 400 ? 1000 : 1000 });
+  await p.setViewportSize({ width: 1500, height: tallEnough > 400 ? tallEnough : 1000 });
   await p.waitForFunction(() => window.innerWidth === 1500, null, { timeout: 4000 }).catch(() => {});
   await settled(p);
 
