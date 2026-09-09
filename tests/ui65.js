@@ -389,6 +389,20 @@ async function editThenCheck(p, text) {
   ok(await startQuestion(p, "target markets"), "a fresh attempt opens");
   ok(await section(p, "Body 1"), "on a body paragraph");
   await write(p, SENTENCES);
+  // AN INLINE EDITOR IS ALREADY OPEN when the check comes back. This is not a
+  // contrived order: pressing a sentence opens the editor and leaves "Check this
+  // paragraph" enabled beside it, so a student who reopens a line and then checks
+  // arrives in the review with ES.ui.editBlock still set. The review renders the
+  // paragraph above itself, and without the guard that editor renders with it,
+  // beside the review's own box.
+  const openedEditorFirst = await p.evaluate(() => {
+    const t = document.querySelector("[data-esreopen]"); if (!t) return false; t.click(); return true;
+  });
+  await settled(p);
+  ok(openedEditorFirst, "a sentence can be reopened while writing");
+  ok(!!(await p.$(".es-linebox")), "which opens the inline editor");
+  ok(await p.$eval("#esask", e => !e.disabled).catch(() => false),
+    "and Check this paragraph is still offered beside it, so this order is reachable");
   await stub(p, body => ({
     note: "", nudges: [],
     slotFeedback: (body.slots || []).map((s2, i) => {
@@ -417,6 +431,8 @@ async function editThenCheck(p, text) {
     ok(!surfaces.guide, "nor the step header telling them which sentence they are writing");
     ok(!surfaces.done, "nor the completion card, which belongs to writing");
     ok(surfaces.boxes === 1, "exactly one place to type: " + surfaces.boxes);
+    ok(!(await p.$(".es-linebox")),
+      "the inline editor that was open before the check did not come through with it");
     ok(surfaces.prose, "and the paragraph itself is still on screen above it");
     ok(surfaces.back, "with a way back to writing");
     // AND THE PARAGRAPH IS NOT A SECOND WAY IN. Every sentence on screen used to
