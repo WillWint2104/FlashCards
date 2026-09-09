@@ -257,12 +257,38 @@ const TIERS = {
   // and each of them is inside its number. The distinction matters and is the
   // reason this comment exists rather than a bare integer.
   //
-  // 660 is provisional. bots is 132.7s of this tier and ui54 is 79.4s - 35% of
-  // the whole harness between two suites - and Gate 2 rewrites the bot
-  // acceptance. Profile both again from the post-Gate-2 composition and set this
-  // from what is measured then. Do not move core coverage out of full to get
-  // under a clock: full is the tier that is allowed to be slow.
-  full: { budget: 660, suites: [] },
+  // 720, because 660 had stopped being a budget. The tier grew to 90 suites and
+  // 3640 assertions with the paragraph review's regressions, and the two runs
+  // that followed measured
+  //
+  //   659.8s  the four corrections, with their three new ui65 sections
+  //   659.9s  the same tree after sharing an attempt between two of them
+  //
+  // against a ceiling of 660. That is 0.1s of headroom on a tier this comment
+  // already records as varying by around 40s between runs on the same tree, so
+  // the next ordinary run fails the gate for no reason anyone could act on, and
+  // a gate that fails at random is a gate people learn to re-run rather than
+  // read. The elapsed figure is a real Date.now() delta and is not truncated at
+  // the ceiling, so those two numbers are the tier genuinely at 99.98% of it.
+  //
+  // The extra runtime is accounted for. It is the coverage added in this slice -
+  // the withheld scaffold, the Save and Re-check state machine, and the argument
+  // change that dates a check - not an unexplained slowdown: the same tree was
+  // 644.8s before those sections existed. Shaving it back was tried and returned
+  // 0.7s, which is the honest measurement rather than the five seconds first
+  // claimed for it.
+  //
+  // FAST, CHECKPOINT AND JOURNEYS DO NOT MOVE. They stay at 40, 60 and 180, they
+  // are the tiers a person waits on, and they are the ones where a rising number
+  // is a signal. full is the exhaustive browser-heavy safety net and its budget
+  // is a watchdog ceiling, not a target to spend up to: a run that comes in at
+  // 660 is still a run worth asking about.
+  //
+  // Still provisional, and for the same reason as before: bots is 132.7s of this
+  // tier and ui54 is 79.4s, and Gate 2 rewrites the bot acceptance. Profile both
+  // again from the post-Gate-2 composition and set this from what is measured
+  // then. Do not move core coverage out of full to get under a clock.
+  full: { budget: 720, suites: [] },
 };
 
 const tier = (process.argv[2] || "").toLowerCase();
