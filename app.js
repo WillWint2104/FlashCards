@@ -9050,6 +9050,10 @@
     const step = steps[si] || null;
     const guide = esGuideFor(p, step);
     const editing = (ES.ui.editBlock != null && ES.ui.editBlock < blocks.length) ? ES.ui.editBlock : null;
+    // Computed here rather than beside the markup that uses it, because the PROSE
+    // below has to know: the paragraph stays on screen while the review is open,
+    // and every sentence in it was a control that opened an inline editor.
+    const reviewing = esInReview(p);
     // While the paragraph is choosing its argument there is no writing surface at
     // all, so nothing hidden can take focus and nothing half-visible can confuse.
     const inSetup = esNeedsSetup(p) || !!ES.ui.setupStage;
@@ -9083,11 +9087,22 @@
       return `<span class="es-prog ${state}"><span class="es-progdot"></span>${esc(st.label)}</span>`;
     }).join("");
 
-    // accepted sentences, as ordinary prose. Click one to reopen it.
-    const prose = blocks.map((b, k) => editing === k
+    // Accepted sentences, as ordinary prose. Click one to reopen it - EXCEPT while
+    // the review is open.
+    //
+    // The composer stands down for the review and the completion card goes with it,
+    // but the paragraph itself stays on screen, and every sentence in it carried
+    // data-esreopen. Pressing one opened the inline sentence editor BESIDE the
+    // review's own rewrite box: two live textareas, which is the exact fault the
+    // review was built to remove, reached from the one surface left on screen.
+    // While the review is open it is the way to edit, and its tabs already reach
+    // every sentence that has a structural job. The prose is prose.
+    const prose = blocks.map((b, k) => (!reviewing && editing === k)
       ? `<div class="es-editrow"><textarea class="es-input es-linebox" data-esedit="${k}" rows="2">${esc(b.text)}</textarea>
          ${esEditGuideHTML(p, b)}
          <div class="es-linebtns"><button type="button" class="es-btn primary sm" data-essaveedit="${k}">Save</button><button type="button" class="es-linkbtn" data-escanceledit>Cancel</button><button type="button" class="es-linkbtn es-del" data-esdelblock="${k}">Delete sentence</button></div></div>`
+      : reviewing
+      ? `<span class="es-said ${(b.ambiguous || b.needsReview) ? "flagged" : ""}" data-esblock="${esc(b.id)}">${esc(b.text)}</span>`
       : `<span class="es-said ${(b.ambiguous || b.needsReview) ? "flagged" : ""}" data-esreopen="${k}" data-esblock="${esc(b.id)}" title="Click to rewrite this sentence">${esc(b.text)}</span>${(b.ambiguous || b.needsReview) ? `<span class="es-checkline">${esReviewWhy(b)} <button type="button" class="es-linkbtn" data-esreopen="${k}">Review sentence</button> <button type="button" class="es-linkbtn" data-esok="${k}">Still works</button></span>` : ""}`).join(" ");
 
     // Argument and evidence stop being cards and become chips once chosen. The
@@ -9774,7 +9789,6 @@
     // which is more use than a row of anonymous underscores.
     const scaffold = frame ? `<div class="es-rscaff"><div class="es-rlbl">try this structure</div>
       <div class="es-rframe">${esFrameHTML(frame.text)}</div></div>` : "";
-    const editing = ES.ui.editBlock != null;
     const rewrite = r.blockId
       ? `<div class="es-rrewrite"><div class="es-rlbl">rewrite your sentence</div>
           <textarea class="es-input es-rbox" data-esrbox="${esc(r.blockId)}" rows="3">${esc(r.text)}</textarea></div>`
@@ -9798,7 +9812,6 @@
       ${/* When there is no compatible authored example the control is simply not
              there. It used to be followed by a sentence explaining the state of the
              content repository, under every conclusion a student ever revised. */ ""}
-      ${void editing || ""}
     </div>`;
   }
   // ---- THE SCAFFOLD FOR THE JOB THAT WAS DIAGNOSED --------------------------

@@ -26,7 +26,21 @@ const DIAG_TIMEOUT_MS = 20000;
 // COACHING (essay practice) runs on the cheaper, faster Haiku. Marking above is
 // left on its current model on purpose. Output is capped short (suggestions only).
 const COACH_MODEL = "claude-haiku-4-5-20251001"; // dated pin: the alias claude-haiku-4-5 is rejected on this account
-const COACH_MAX_TOKENS = 700;
+// 1600, from what the tool actually requires rather than from "coaching is short".
+// submit_coaching must return ONE slotFeedback entry per element, and a TEEEC body
+// has five while the schema allows eight; each carries a slot, a status, a blockId
+// and an issue of up to 34 words. On top of that the tool asks for a note, up to
+// four nudges, six chips, a check and five `lines`, each of those last carrying a
+// quote, a diagnosis and a frame. Counted honestly that is around 1150 tokens
+// before JSON overhead, against a cap of 700.
+//
+// The failure was not a short answer. slotFeedback is REQUIRED and is what the
+// whole review renders from, so a response cut off mid-tool-call arrives with no
+// usable tool_use block at all and the student is told the coach returned nothing,
+// on the longer paragraphs most likely to need checking. Haiku output is cheap;
+// paying for the ceiling is cheaper than a check that fails on the paragraphs that
+// matter.
+const COACH_MAX_TOKENS = 1600;
 const WINDOW_MS = 10 * 60 * 1000, MAX_PER_WINDOW = 20;
 const hits = new Map(); // in-memory per-isolate limiter (fine for a small trial)
 const SEVRANK = { critical: 0, should: 1, optional: 2 };
@@ -783,7 +797,17 @@ Coach this paragraph now. Remember: suggest, never substitute. Nudges are questi
     return json({ error: "coach upstream failed" }, 502, cors);
   }
   const block = (data.content || []).find(b => b.type === "tool_use");
-  if (!block || !block.input) return json({ error: "coach returned nothing", stop_reason: data.stop_reason || null }, 502, cors);
+  // TRUNCATION IS NOT AN EMPTY ANSWER, and the two were reported as the same thing.
+  // The marking path already tells them apart; this one said "coach returned
+  // nothing" whether the model declined, the call failed, or the answer was cut off
+  // mid-tool-call, which is the case a longer paragraph actually hits.
+  if (!block || !block.input) {
+    if (data.stop_reason === "max_tokens") {
+      return json({ error: "the coach's answer ran past its limit before it was complete, so nothing was written about this paragraph. Try again.",
+        stop_reason: "max_tokens" }, 502, cors);
+    }
+    return json({ error: "coach returned nothing", stop_reason: data.stop_reason || null }, 502, cors);
+  }
   return json(normalizeCoaching(block.input, slotKeys, blocks), 200, cors);
 }
 

@@ -445,7 +445,10 @@ async function writeAndCheck(p, lines) {
   await p.fill("#esq", "Explain how changes in interest rates affect consumption and investment in the Australian economy.");
   await p.dispatchEvent("#esq", "input"); await p.waitForTimeout(200);
   await p.click("#esstart"); await p.waitForTimeout(700);
-  await section(p, "Body 1");
+  // ASSERTED, like every other call site. The header comment on section() records
+  // the exact fault this line can repeat: the helper found no row, the suite stayed
+  // on the introduction, and the assertions below described the wrong paragraph.
+  ok(await section(p, "Body 1"), "the Economics body paragraph opens, not the introduction");
   await writeAndCheck(p, [
     "Higher interest rates reduce the money households have available to spend.",
     "Because borrowing costs more, households postpone large purchases.",

@@ -419,6 +419,18 @@ async function editThenCheck(p, text) {
     ok(surfaces.boxes === 1, "exactly one place to type: " + surfaces.boxes);
     ok(surfaces.prose, "and the paragraph itself is still on screen above it");
     ok(surfaces.back, "with a way back to writing");
+    // AND THE PARAGRAPH IS NOT A SECOND WAY IN. Every sentence on screen used to
+    // carry data-esreopen, so pressing one opened the inline sentence editor beside
+    // the review's rewrite box: two live textareas, reached from the one surface
+    // the review deliberately leaves on screen. This section asserted "exactly one
+    // place to type" and never pressed a sentence to find out.
+    const reopen = await p.$$eval("[data-esreopen]", es => es.length);
+    ok(reopen === 0, "no sentence in the paragraph is a control while the review is open: " + reopen);
+    await p.evaluate(() => { const t = document.querySelector("[data-esreopen]"); t && t.click(); });
+    await settled(p);
+    const stillOne = await p.evaluate(() =>
+      [...document.querySelectorAll("textarea")].filter(t => t.offsetParent !== null).length);
+    ok(stillOne === 1, "and pressing one cannot open a second editor: " + stillOne + " visible textarea(s)");
     // ONE CHECK ACTION. The bar carried its own Check this paragraph beside the
     // review's Re-check, one of them disabled, competing for the same press.
     const checks = await p.evaluate(() => [...document.querySelectorAll("button")]
@@ -473,8 +485,10 @@ async function editThenCheck(p, text) {
     ok(!st2.done && !st2.memorise, "and the same holds with the composer back");
     // "All parts attempted" is itself only true when every job HAS a sentence, and
     // this paragraph is missing two, so the card is not there to say anything. What
-    // matters is that nothing claims more than that.
-    ok(!st2.done && !st2.memorise, "and nothing claims the paragraph is finished");
+    // matters is that nothing claims more than that - and `attempted` was collected
+    // to check exactly that and then never read, the line under it repeating the
+    // assertion above word for word.
+    ok(!st2.attempted, "and nothing claims every part was attempted: " + JSON.stringify(st2));
   }
 
   // ---- 10. the scaffold answers the diagnosis --------------------------
@@ -529,8 +543,15 @@ async function editThenCheck(p, text) {
     // ON SECTION 10'S REVIEW, not a fresh one. That attempt is already a checked
     // mkt-01 Body 1 on the digital pathway with the Explanation flagged, which is
     // exactly the state these transitions start from. Building a second identical
-    // attempt cost the full gate about five seconds to arrive at the same screen.
+    // attempt cost the full gate a measured 0.7s to arrive at the same screen.
+    // PRESENCE IS READ SEPARATELY FROM DISABLED, because `(el || {}).disabled` is
+    // undefined for a control that is not on the page, and !!undefined is false -
+    // which reads as "enabled". Every assertion below that expects an ENABLED
+    // control would therefore have passed if the control had disappeared entirely,
+    // which is the regression this section exists to catch.
     const state = () => p.evaluate(() => ({
+      hasSave: !!document.querySelector("#esrsave"),
+      hasRecheck: !!document.querySelector("#esrecheck"),
       save: !!(document.querySelector("#esrsave") || {}).disabled,
       recheck: !!(document.querySelector("#esrecheck") || {}).disabled,
       stale: !!document.querySelector(".es-rstale"),
@@ -538,6 +559,7 @@ async function editThenCheck(p, text) {
     }));
     // FRESH
     let st = await state();
+    ok(st.hasSave && st.hasRecheck, "both actions are on the page to begin with: " + JSON.stringify(st));
     ok(st.save, "fresh: Save is disabled, because the box holds the sentence it opened with");
     ok(st.recheck, "fresh: Re-check is disabled, because nothing has changed");
     ok(!st.stale, "fresh: nothing is stale");
@@ -551,12 +573,13 @@ async function editThenCheck(p, text) {
     await p.fill("[data-esrbox]", "Because these customers spend their attention on social platforms, the business puts its offers where that attention already is.");
     await p.$eval("[data-esrbox]", e => e.dispatchEvent(new Event("input", { bubbles: true })));
     await settled(p);
-    ok(!(await state()).save, "a genuine change enables Save");
+    const stEdit = await state();
+    ok(stEdit.hasSave && !stEdit.save, "a genuine change enables Save, and it is still on the page");
     await p.click("#esrsave"); await settled(p); await p.waitForTimeout(600);
     st = await state();
     ok(st.stale, "after saving: the check is stale");
     ok(st.edited >= 1, "after saving: the part is marked edited");
-    ok(!st.recheck, "after saving: Re-check is the live action");
+    ok(st.hasRecheck && !st.recheck, "after saving: Re-check is on the page and is the live action");
     // AND BACK TO REST
     await p.click("#esrecheck");
     await p.waitForFunction(() => { const r = document.querySelector(".es-review"); return r && !r.querySelector(".es-rstale"); }, null, { timeout: 12000 }).catch(() => {});
@@ -564,7 +587,7 @@ async function editThenCheck(p, text) {
     st = await state();
     ok(!st.stale, "after re-checking: the stale state is gone");
     ok(st.edited === 0, "after re-checking: nothing is still marked edited");
-    ok(st.recheck, "after re-checking: Re-check goes inactive again until another edit");
+    ok(st.hasRecheck && st.recheck, "after re-checking: Re-check is still there and inactive again until another edit");
   }
 
   // ---- 12. CHANGING THE ARGUMENT DATES THE CHECK ---------------------------

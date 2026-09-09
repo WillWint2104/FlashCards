@@ -435,6 +435,22 @@ module.exports = [
     why: "a scaffold teaching a different causal job from the one just diagnosed was shown rather than none",
   },
   {
+    id: "review-prose-is-a-second-editor",
+    file: "app.js",
+    find: "    const prose = blocks.map((b, k) => (!reviewing && editing === k)",
+    replace: "    const prose = blocks.map((b, k) => (editing === k)",
+    owner: "ui65",
+    why: "pressing a sentence in the paragraph while the review was open opened the inline editor beside the review's rewrite box, which is the two-editor fault the review exists to remove",
+  },
+  {
+    id: "review-prose-keeps-its-reopen-handles",
+    file: "app.js",
+    find: '      ? `<span class="es-said ${(b.ambiguous || b.needsReview) ? "flagged" : ""}" data-esblock="${esc(b.id)}">${esc(b.text)}</span>`',
+    replace: '      ? `<span class="es-said" data-esreopen="${k}" data-esblock="${esc(b.id)}">${esc(b.text)}</span>`',
+    owner: "ui65",
+    why: "the paragraph offered a second route into editing while the review was the surface that was supposed to own it",
+  },
+  {
     id: "review-save-enabled-without-an-edit",
     file: "app.js",
     find: "        sv.disabled = !now.trim() || now.trim() === start.trim();",
