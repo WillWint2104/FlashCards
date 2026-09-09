@@ -523,8 +523,104 @@ async function editThenCheck(p, text) {
   }
 
 
-  // ---- 11. NO SCAFFOLD RATHER THAN THE WRONG ONE ---------------------------
-  console.log("--- 11. a pathway that authors no frame gets no scaffold");
+  // ---- 11. SAVE AND RE-CHECK FOLLOW THE PARAGRAPH --------------------------
+  console.log("--- 11. the actions are live only when there is something to do");
+  {
+    // ON SECTION 10'S REVIEW, not a fresh one. That attempt is already a checked
+    // mkt-01 Body 1 on the digital pathway with the Explanation flagged, which is
+    // exactly the state these transitions start from. Building a second identical
+    // attempt cost the full gate about five seconds to arrive at the same screen.
+    const state = () => p.evaluate(() => ({
+      save: !!(document.querySelector("#esrsave") || {}).disabled,
+      recheck: !!(document.querySelector("#esrecheck") || {}).disabled,
+      stale: !!document.querySelector(".es-rstale"),
+      edited: [...document.querySelectorAll(".es-rtab")].filter(x => /edited/.test(x.className)).length,
+    }));
+    // FRESH
+    let st = await state();
+    ok(st.save, "fresh: Save is disabled, because the box holds the sentence it opened with");
+    ok(st.recheck, "fresh: Re-check is disabled, because nothing has changed");
+    ok(!st.stale, "fresh: nothing is stale");
+    // TYPING THE SAME TEXT BACK IS NOT AN EDIT
+    const was = await p.$eval("[data-esrbox]", e => e.value);
+    await p.fill("[data-esrbox]", was + " ");
+    await p.$eval("[data-esrbox]", e => e.dispatchEvent(new Event("input", { bubbles: true })));
+    await settled(p);
+    ok((await state()).save, "re-typing the same sentence with trailing space does not enable Save");
+    // A REAL EDIT
+    await p.fill("[data-esrbox]", "Because these customers spend their attention on social platforms, the business puts its offers where that attention already is.");
+    await p.$eval("[data-esrbox]", e => e.dispatchEvent(new Event("input", { bubbles: true })));
+    await settled(p);
+    ok(!(await state()).save, "a genuine change enables Save");
+    await p.click("#esrsave"); await settled(p); await p.waitForTimeout(600);
+    st = await state();
+    ok(st.stale, "after saving: the check is stale");
+    ok(st.edited >= 1, "after saving: the part is marked edited");
+    ok(!st.recheck, "after saving: Re-check is the live action");
+    // AND BACK TO REST
+    await p.click("#esrecheck");
+    await p.waitForFunction(() => { const r = document.querySelector(".es-review"); return r && !r.querySelector(".es-rstale"); }, null, { timeout: 12000 }).catch(() => {});
+    await settled(p); await p.waitForTimeout(400);
+    st = await state();
+    ok(!st.stale, "after re-checking: the stale state is gone");
+    ok(st.edited === 0, "after re-checking: nothing is still marked edited");
+    ok(st.recheck, "after re-checking: Re-check goes inactive again until another edit");
+  }
+
+  // ---- 12. CHANGING THE ARGUMENT DATES THE CHECK ---------------------------
+  console.log("--- 12. a check obtained under a different argument is not current");
+  {
+    // The review resolves the diagnosis's scaffold and More help through the
+    // paragraph's CURRENT pathway. A student may change that pathway after writing,
+    // and the app already flags every written sentence when they do; the review read
+    // none of it, so the guidance quietly re-pointed at prose written for the old
+    // argument. The check is dated instead, using the presentation that already
+    // exists for a paragraph that has moved on.
+    const before = await p.evaluate(() => ({
+      stale: !!document.querySelector(".es-rstale"),
+    }));
+    ok(!before.stale, "the check starts current");
+    // BACK TO THE WRITER FIRST, because that is where the argument chip lives and
+    // the writer stands down while the review is open. Querying for the chip found
+    // it in a surface the student cannot press, so the click went nowhere and the
+    // argument never changed.
+    const back = await p.$("#esrclose"); if (back) { await back.click(); await settled(p); }
+    const changed = await p.evaluate(() => {
+      const chip = document.querySelector('[data-esrestchange="argument"]');
+      if (!chip) return "no argument control"; chip.click(); return "opened";
+    });
+    ok(changed === "opened", "the argument can be changed from the writer: " + changed);
+    await settled(p); await p.waitForTimeout(400);
+    const picked = await p.evaluate(() => {
+      const list = [...document.querySelectorAll("[data-espath]")];
+      const t = list.find(x => !/digital marketing/i.test(x.textContent));
+      if (!t) return { ok: false, saw: list.map(x => x.textContent.replace(/\s+/g, " ").trim().slice(0, 40)) };
+      t.click(); return { ok: true, took: t.textContent.replace(/\s+/g, " ").trim().slice(0, 40) };
+    });
+    console.log("    pathway pick:", JSON.stringify(picked));
+    await settled(p);
+    ok(picked && picked.ok, "and a different pathway chosen with prose already written");
+    await settled(p); await p.waitForTimeout(600);
+    const after = await p.evaluate(() => {
+      const raw = JSON.parse(localStorage.getItem("marginal.essay.v1") || "{}");
+      const d = Object.values(raw).flatMap(bk => (bk && bk.drafts) || [])[0] || {};
+      const x = (d.paras || [])[d.pos] || {};
+      return { arg: x.argumentId, cv: x.contextVersion || 0,
+        checkedCv: ((x.feedback || {}).checked || {}).contextVersion,
+        flagged: (x.blocks || []).filter(b => b.needsReview).length };
+    });
+    ok(after.checkedCv !== undefined, "the check recorded which argument it was made under");
+    ok(after.cv !== after.checkedCv, "the paragraph has moved to another one: " + after.cv + " vs " + after.checkedCv);
+    ok(after.flagged > 0, "and the sentences written for the previous argument are flagged: " + after.flagged);
+    const op = await p.$("#esropen") || await p.$("#esrecheck");
+    if (op) { await op.click().catch(() => {}); await settled(p); }
+    const bar = await p.$eval(".es-rstale", e => e.textContent.replace(/\s+/g, " ").trim()).catch(() => "");
+    ok(!!bar, "the review says the check is no longer current");
+    ok(/argues something different|previous argument/i.test(bar),
+      "and says why, rather than blaming an edit that did not happen: " + JSON.stringify(bar.slice(0, 90)));
+  }
+  // ---- 13. NO SCAFFOLD RATHER THAN THE WRONG ONE ---------------------------
+  console.log("--- 13. a pathway that authors no frame gets no scaffold");
   {
     // The same question, the same directive, the same structural job and the same
     // diagnosis as section 10. The only difference is that this pathway authors no
@@ -570,105 +666,6 @@ async function editThenCheck(p, text) {
       "the rejected strategy-to-objective frame is nowhere on the panel");
     ok(!!(await p.$("[data-esrbox]")) && !!(await p.$("#esrhelp")),
       "the student still has the revision editor and More help");
-  }
-
-  // ---- 12. SAVE AND RE-CHECK FOLLOW THE PARAGRAPH --------------------------
-  console.log("--- 12. the actions are live only when there is something to do");
-  {
-    await enter(p);
-    await startQuestion(p, "target markets");
-    await section(p, "Body 1", "Digital engagement");
-    await write(p, SENTENCES);
-    await stub(p, body => ({
-      note: "", nudges: [],
-      slotFeedback: (body.slots || []).map(s2 => {
-        const own = (body.blocks || []).find(x => x.slot === s2.key);
-        if (!own) return { slot: s2.key, status: "missing", blockId: "", issue: "Nothing does this job yet." };
-        return s2.key === "explain"
-          ? { slot: "explain", status: "needs_work", blockId: own.id, issue: "The causal step is not made." }
-          : { slot: s2.key, status: "ok", blockId: own.id, issue: "" };
-      }),
-    }));
-    await check(p);
-    const state = () => p.evaluate(() => ({
-      save: !!(document.querySelector("#esrsave") || {}).disabled,
-      recheck: !!(document.querySelector("#esrecheck") || {}).disabled,
-      stale: !!document.querySelector(".es-rstale"),
-      edited: [...document.querySelectorAll(".es-rtab")].filter(x => /edited/.test(x.className)).length,
-    }));
-    // FRESH
-    let st = await state();
-    ok(st.save, "fresh: Save is disabled, because the box holds the sentence it opened with");
-    ok(st.recheck, "fresh: Re-check is disabled, because nothing has changed");
-    ok(!st.stale, "fresh: nothing is stale");
-    // TYPING THE SAME TEXT BACK IS NOT AN EDIT
-    const was = await p.$eval("[data-esrbox]", e => e.value);
-    await p.fill("[data-esrbox]", was + " ");
-    await p.$eval("[data-esrbox]", e => e.dispatchEvent(new Event("input", { bubbles: true })));
-    await settled(p);
-    ok((await state()).save, "re-typing the same sentence with trailing space does not enable Save");
-    // A REAL EDIT
-    await p.fill("[data-esrbox]", "Because these customers spend their attention on social platforms, the business puts its offers where that attention already is.");
-    await p.$eval("[data-esrbox]", e => e.dispatchEvent(new Event("input", { bubbles: true })));
-    await settled(p);
-    ok(!(await state()).save, "a genuine change enables Save");
-    await p.click("#esrsave"); await settled(p); await p.waitForTimeout(600);
-    st = await state();
-    ok(st.stale, "after saving: the check is stale");
-    ok(st.edited >= 1, "after saving: the part is marked edited");
-    ok(!st.recheck, "after saving: Re-check is the live action");
-    // AND BACK TO REST
-    await p.click("#esrecheck");
-    await p.waitForFunction(() => { const r = document.querySelector(".es-review"); return r && !r.querySelector(".es-rstale"); }, null, { timeout: 12000 }).catch(() => {});
-    await settled(p); await p.waitForTimeout(400);
-    st = await state();
-    ok(!st.stale, "after re-checking: the stale state is gone");
-    ok(st.edited === 0, "after re-checking: nothing is still marked edited");
-    ok(st.recheck, "after re-checking: Re-check goes inactive again until another edit");
-  }
-
-  // ---- 13. CHANGING THE ARGUMENT DATES THE CHECK ---------------------------
-  console.log("--- 13. a check obtained under a different argument is not current");
-  {
-    // The review resolves the diagnosis's scaffold and More help through the
-    // paragraph's CURRENT pathway. A student may change that pathway after writing,
-    // and the app already flags every written sentence when they do; the review read
-    // none of it, so the guidance quietly re-pointed at prose written for the old
-    // argument. The check is dated instead, using the presentation that already
-    // exists for a paragraph that has moved on.
-    const before = await p.evaluate(() => ({
-      stale: !!document.querySelector(".es-rstale"),
-    }));
-    ok(!before.stale, "the check starts current");
-    const changed = await p.evaluate(() => {
-      const chip = document.querySelector('[data-esrestchange="argument"]');
-      if (!chip) return "no argument control"; chip.click(); return "opened";
-    });
-    ok(changed === "opened", "the argument can be changed from the writer: " + changed);
-    await settled(p); await p.waitForTimeout(400);
-    const picked = await p.evaluate(() => {
-      const list = [...document.querySelectorAll("[data-espath]")];
-      const t = list.find(x => !/digital marketing/i.test(x.textContent));
-      if (!t) return null; t.click(); return true;
-    });
-    ok(!!picked, "and a different pathway chosen with prose already written");
-    await settled(p); await p.waitForTimeout(600);
-    const after = await p.evaluate(() => {
-      const raw = JSON.parse(localStorage.getItem("marginal.essay.v1") || "{}");
-      const d = Object.values(raw).flatMap(bk => (bk && bk.drafts) || [])[0] || {};
-      const x = (d.paras || [])[d.pos] || {};
-      return { arg: x.argumentId, cv: x.contextVersion || 0,
-        checkedCv: ((x.feedback || {}).checked || {}).contextVersion,
-        flagged: (x.blocks || []).filter(b => b.needsReview).length };
-    });
-    ok(after.checkedCv !== undefined, "the check recorded which argument it was made under");
-    ok(after.cv !== after.checkedCv, "the paragraph has moved to another one: " + after.cv + " vs " + after.checkedCv);
-    ok(after.flagged > 0, "and the sentences written for the previous argument are flagged: " + after.flagged);
-    const op = await p.$("#esropen"); if (op) { await op.click(); await settled(p); }
-    const bar = await p.$eval(".es-rstale", e => e.textContent.replace(/\s+/g, " ").trim()).catch(() => "");
-    ok(!!bar, "the review says the check is no longer current");
-    ok(/argues something different|previous argument/i.test(bar),
-      "and says why, rather than blaming an edit that did not happen: " + JSON.stringify(bar.slice(0, 90)));
   }
 
 
