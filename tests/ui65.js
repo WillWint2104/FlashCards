@@ -466,8 +466,25 @@ async function editThenCheck(p, text) {
     const shut = await p.$eval(".es-rshut", e => e.innerText.replace(/\s+/g, " ")).catch(() => "");
     ok(/still to work on|still here/i.test(shut), "the findings are stood down, not thrown away: " + JSON.stringify(shut));
     ok(!!(await p.$("#esropen")), "and one press brings them back");
+    // WITH A SENTENCE REOPENED IN BETWEEN, which is the order that reaches the
+    // guard. Arriving feedback clears ES.ui.editBlock, so an editor opened before a
+    // check never survives into the review; but the findings can be stood down,
+    // a sentence reopened in the writer, and the feedback then brought back with
+    // "Open the feedback", which does not clear it. Without the guard the inline
+    // editor renders inside the review beside its rewrite box.
+    const reopenedMid = await p.evaluate(() => {
+      const t = document.querySelector("[data-esreopen]"); if (!t) return false; t.click(); return true;
+    });
+    await settled(p);
+    ok(reopenedMid, "a sentence can be reopened while the findings are stood down");
+    ok(!!(await p.$(".es-linebox")), "which opens the inline editor in the writer");
     await p.click("#esropen"); await settled(p);
     ok(!!(await p.$(".es-rtabs")), "which it does");
+    ok(!(await p.$(".es-linebox")),
+      "and bringing the feedback back closes that editor rather than sitting beside it");
+    const bothOpen = await p.evaluate(() =>
+      [...document.querySelectorAll("textarea")].filter(t => t.offsetParent !== null).length);
+    ok(bothOpen === 1, "still exactly one place to type: " + bothOpen);
   }
 
   // ---- 9. a missing part cannot coexist with a complete paragraph --------
