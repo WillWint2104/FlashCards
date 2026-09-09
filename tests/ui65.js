@@ -400,7 +400,7 @@ async function editThenCheck(p, text) {
   });
   await settled(p);
   ok(openedEditorFirst, "a sentence can be reopened while writing");
-  ok(!!(await p.$(".es-linebox")), "which opens the inline editor");
+  ok(!!(await p.$("[data-esedit]")), "which opens the inline editor");
   ok(await p.$eval("#esask", e => !e.disabled).catch(() => false),
     "and Check this paragraph is still offered beside it, so this order is reachable");
   await stub(p, body => ({
@@ -431,7 +431,7 @@ async function editThenCheck(p, text) {
     ok(!surfaces.guide, "nor the step header telling them which sentence they are writing");
     ok(!surfaces.done, "nor the completion card, which belongs to writing");
     ok(surfaces.boxes === 1, "exactly one place to type: " + surfaces.boxes);
-    ok(!(await p.$(".es-linebox")),
+    ok(!(await p.$("[data-esedit]")),
       "the inline editor that was open before the check did not come through with it");
     ok(surfaces.prose, "and the paragraph itself is still on screen above it");
     ok(surfaces.back, "with a way back to writing");
@@ -477,14 +477,26 @@ async function editThenCheck(p, text) {
     });
     await settled(p);
     ok(reopenedMid, "a sentence can be reopened while the findings are stood down");
-    ok(!!(await p.$(".es-linebox")), "which opens the inline editor in the writer");
+    // [data-esedit], not .es-linebox: that class is worn by the composer as well, so
+    // it cannot tell the two apart and an assertion on it passes either way.
+    ok(!!(await p.$("[data-esedit]")), "which opens the inline editor in the writer");
     await p.click("#esropen"); await settled(p);
     ok(!!(await p.$(".es-rtabs")), "which it does");
-    ok(!(await p.$(".es-linebox")),
+    ok(!(await p.$("[data-esedit]")),
       "and bringing the feedback back closes that editor rather than sitting beside it");
     const bothOpen = await p.evaluate(() =>
       [...document.querySelectorAll("textarea")].filter(t => t.offsetParent !== null).length);
     ok(bothOpen === 1, "still exactly one place to type: " + bothOpen);
+    // PUT THE REOPENED SENTENCE BACK. The click above leaves ES.ui.editBlock set,
+    // and the review hides it rather than clearing it, so the next section would
+    // start in the writer with an inline editor open and its own first control
+    // missing. A section that changes state cleans up after itself.
+    await p.click("#esrclose"); await settled(p);
+    const cancel = await p.$("[data-escanceledit]");
+    if (cancel) { await cancel.click(); await settled(p); }
+    ok(!(await p.$("[data-esedit]")), "and the reopened sentence is closed again afterwards");
+    await p.click("#esropen"); await settled(p);
+    ok(!!(await p.$(".es-rtabs")), "with the review back where this section found it");
   }
 
   // ---- 9. a missing part cannot coexist with a complete paragraph --------
