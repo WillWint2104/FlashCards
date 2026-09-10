@@ -597,12 +597,26 @@ f({ path: "marking.bandSource", owner: "question", type: "string", required: fal
 f({ path: "VocabularyRecord.term", owner: "shared:vocabulary", type: "string", required: true,
   omission: "invalid", studentProse: true, answerSpecific: false, means: "the term itself.",
   surface: "the vocabulary panel", good: '"market segmentation"', bad: '"segmentation (see also targeting)"' });
-f({ path: "VocabularyRecord.subject", owner: "shared:vocabulary", type: "string", required: true,
+// PROSE, AND NAMED SO. This field was called `subject`, which is also what the
+// library manifest calls the KEY of the course that owns a record. One name, two
+// meanings, and a validator left guessing between them by the SHAPE of the value:
+// a one-word course meaning such as "training" matched the key pattern and was
+// reported as a cross-subject fault, indistinguishable from a real one. The
+// rename is the fix. Ownership is `subjectKey` below and is never inferred.
+f({ path: "VocabularyRecord.subjectMeaning", owner: "shared:vocabulary", type: "string", required: true,
   omission: "invalid", studentProse: true, answerSpecific: false,
-  means: "what it means in this course, which is usually narrower than the plain sense. A record with a term and no subject meaning is a word with nothing attached, which is the thing this library exists to prevent.",
+  means: "what it means in this course, which is usually narrower than the plain sense. A record with a term and no course meaning is a word with nothing attached, which is the thing this library exists to prevent.",
   surface: "the Learn surface's defined terms, and the vocabulary panel",
   good: '"dividing a total market into subgroups so that a business can choose which of them to serve"',
   bad: 'blank' });
+// IDENTITY, AND TYPED. Optional because a record a package provides is ordinarily
+// owned by the package's own subject and says so by saying nothing. Present, it
+// must equal question.subject: a record belonging to another course does not
+// arrive through this package.
+f({ path: "VocabularyRecord.subjectKey", owner: "shared:vocabulary", type: "id", pattern: "^[a-z0-9]+(_[a-z0-9]+)*$",
+  required: false, omission: "level:none", studentProse: false, answerSpecific: false,
+  means: "which course owns this record, when it needs saying. Omitted, the record belongs to the subject the question declares.",
+  surface: "nothing a student sees", good: '"business_studies"', bad: '"Business Studies", or a definition' });
 f({ path: "VocabularyRecord.plain", owner: "shared:vocabulary", type: "string", required: false,
   omission: "level:displayable", studentProse: true, answerSpecific: false,
   means: "what the word means in ordinary English, for a student who has never met it. Without it the record still teaches on the Learn surface and is not offered in the vocabulary panel.",

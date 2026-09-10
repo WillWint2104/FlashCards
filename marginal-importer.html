@@ -740,12 +740,26 @@ f({ path: "marking.bandSource", owner: "question", type: "string", required: fal
 f({ path: "VocabularyRecord.term", owner: "shared:vocabulary", type: "string", required: true,
   omission: "invalid", studentProse: true, answerSpecific: false, means: "the term itself.",
   surface: "the vocabulary panel", good: '"market segmentation"', bad: '"segmentation (see also targeting)"' });
-f({ path: "VocabularyRecord.subject", owner: "shared:vocabulary", type: "string", required: true,
+// PROSE, AND NAMED SO. This field was called `subject`, which is also what the
+// library manifest calls the KEY of the course that owns a record. One name, two
+// meanings, and a validator left guessing between them by the SHAPE of the value:
+// a one-word course meaning such as "training" matched the key pattern and was
+// reported as a cross-subject fault, indistinguishable from a real one. The
+// rename is the fix. Ownership is `subjectKey` below and is never inferred.
+f({ path: "VocabularyRecord.subjectMeaning", owner: "shared:vocabulary", type: "string", required: true,
   omission: "invalid", studentProse: true, answerSpecific: false,
-  means: "what it means in this course, which is usually narrower than the plain sense. A record with a term and no subject meaning is a word with nothing attached, which is the thing this library exists to prevent.",
+  means: "what it means in this course, which is usually narrower than the plain sense. A record with a term and no course meaning is a word with nothing attached, which is the thing this library exists to prevent.",
   surface: "the Learn surface's defined terms, and the vocabulary panel",
   good: '"dividing a total market into subgroups so that a business can choose which of them to serve"',
   bad: 'blank' });
+// IDENTITY, AND TYPED. Optional because a record a package provides is ordinarily
+// owned by the package's own subject and says so by saying nothing. Present, it
+// must equal question.subject: a record belonging to another course does not
+// arrive through this package.
+f({ path: "VocabularyRecord.subjectKey", owner: "shared:vocabulary", type: "id", pattern: "^[a-z0-9]+(_[a-z0-9]+)*$",
+  required: false, omission: "level:none", studentProse: false, answerSpecific: false,
+  means: "which course owns this record, when it needs saying. Omitted, the record belongs to the subject the question declares.",
+  surface: "nothing a student sees", good: '"business_studies"', bad: '"Business Studies", or a definition' });
 f({ path: "VocabularyRecord.plain", owner: "shared:vocabulary", type: "string", required: false,
   omission: "level:displayable", studentProse: true, answerSpecific: false,
   means: "what the word means in ordinary English, for a student who has never met it. Without it the record still teaches on the Learn surface and is not offered in the vocabulary panel.",
@@ -1995,19 +2009,41 @@ function validate(pkg, man, opts) {
     add(SEV.error, "FIELD_CONFLICT", "question.topicRef", "a question carries a ref or a label, never both");
   // The same rule for the records the package brings with it. A record it
   // provides is not in a library yet, so refCheck cannot compare it: this reads
-  // the document. Only a value shaped like a subject KEY is compared, because
-  // VocabularyRecord.subject is contracted as the meaning in prose and a
-  // sentence is not a claim about which course owns the record.
-  const SUBJECT_KEY = /^[a-z0-9]+(_[a-z0-9]+)*$/;
+  // the document.
+  //
+  // IT USED TO GUESS. `subject` on a provided record meant the course meaning in
+  // prose; `subject` on a library record means the key of the course that owns
+  // it. One name, two meanings, and this check told them apart by testing
+  // whether the value LOOKED like a key. A one-word course meaning - "training",
+  // "marketing", "operations" - looks exactly like a key, so a correct record was
+  // reported as cross-wired with the same code, severity and verdict a real
+  // cross-wire produces, and the package did not import. The escape was
+  // accidental: a meaning survived only if it happened to contain a space.
+  //
+  // Identity is now its own typed field and prose is never consulted. A record
+  // that does not say who owns it is owned by the package's own subject, which
+  // is what "provides" already meant.
   ["vocabulary", "concepts", "lessons", "evidence", "syllabus", "resources"].forEach(kind => {
     const recs = (pkg.provides || {})[kind] || {};
     Object.keys(recs).forEach(rid => {
-      const owner = recs[rid] && recs[rid].subject;
-      if (!q.subject || typeof owner !== "string" || !SUBJECT_KEY.test(owner)) return;
+      const owner = recs[rid] && recs[rid].subjectKey;
+      if (!q.subject || blank(owner)) return;
       if (owner !== q.subject)
-        add(SEV.error, "SUBJECT_CROSS_WIRED", "provides." + kind + "." + rid + ".subject",
+        add(SEV.error, "SUBJECT_CROSS_WIRED", "provides." + kind + "." + rid + ".subjectKey",
           JSON.stringify(owner) + " is not the subject this question declares (" + q.subject + ")");
     });
+  });
+  // The rename, reported rather than performed quietly. A package authored
+  // against the old name still imports and its meaning is still read, and the
+  // author is told exactly what to change. What the old field can never do again
+  // is be read as a claim about ownership, whatever it contains.
+  Object.keys((pkg.provides || {}).vocabulary || {}).forEach(rid => {
+    const rec = pkg.provides.vocabulary[rid] || {};
+    if (blank(rec.subject)) return;
+    add(SEV.warning, "VOCAB_SUBJECT_RENAMED", "provides.vocabulary." + rid + ".subject",
+      "`subject` on a vocabulary record is now `subjectMeaning`, because the old name also meant the owning course on library records. The value is read as the course meaning" +
+      (blank(rec.subjectMeaning) ? "" : ", and `subjectMeaning` beside it wins") +
+      ". Ownership, if it needs saying at all, is `subjectKey`");
   });
   if ((pkg.marking || {}).bands && !String((pkg.marking || {}).bandSource || "").trim())
     add(SEV.error, "BANDS_WITHOUT_SOURCE", "marking.bands",
@@ -2051,7 +2087,16 @@ function validate(pkg, man, opts) {
         add(SEV.error, "PROVIDES_CONFLICT", at,
           JSON.stringify(rid) + " already exists in the " + kind + " library. An import adds records; it does not overwrite them");
       const own = FIELDS.filter(f => f.owner === "shared:" + kind && f.required && f.omission === "invalid");
-      const miss = own.map(f => f.path.split(".").slice(1).join(".")).filter(k => blank((provides[kind][rid] || {})[k]));
+      // VocabularyRecord.subject was renamed to subjectMeaning. A package written
+      // against the old name is complete, and is told about the rename by the
+      // warning above rather than by being called half written.
+      const LEGACY = { "vocabulary.subjectMeaning": "subject" };
+      const miss = own.map(f => f.path.split(".").slice(1).join(".")).filter(k => {
+        const rec = provides[kind][rid] || {};
+        if (!blank(rec[k])) return false;
+        const was = LEGACY[kind + "." + k];
+        return was ? blank(rec[was]) : true;
+      });
       if (miss.length) add(SEV.error, (CODES[kind] || {}).partial || "RECORD_PARTIAL", at, "half written: " + miss.join(", ") + " missing");
     });
   });

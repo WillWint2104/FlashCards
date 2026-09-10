@@ -108,6 +108,13 @@
   .sheet h3{font-size:18px;font-weight:600}
   .score{font-family:var(--disp);font-weight:700;font-size:26px;flex:none}
   .score small{font-size:15px;color:var(--ink-2);font-weight:600}
+  /* The state a refused or failed marking lands in. It is deliberately quiet:
+     nothing was judged, so nothing here should read as a verdict. The designed
+     version of this screen is a Gate 3 UI item and this is the honest minimum
+     that replaces "undefined/undefined". */
+  .sheet.unmarked .head{background:var(--bg)}
+  .sheet .score.nomark{font-size:16px;color:var(--ink-2);letter-spacing:.01em}
+  .sheet .whynot{font-size:14px;color:var(--ink-2)}
   .sheet .bd{padding:16px 20px}
   .sheet .bd p{font-size:15px;margin-bottom:10px}
   .working{background:var(--bg);border-radius:12px;padding:10px 14px;font-size:14px!important}
@@ -2307,6 +2314,8 @@
   .exam-ressech{font-family:var(--disp);font-weight:700;color:var(--green-dk);display:flex;justify-content:space-between;margin-bottom:6px}
   .exam-resq{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--ink-2);padding:3px 0}
   .exam-resm{font-weight:800;color:var(--ink);white-space:nowrap}
+  /* A question nothing marked reads as a statement, not as a score. */
+  .exam-resm.nomark{font-weight:600;font-size:13px;color:var(--ink-2)}
 
   /* ==========================================================================
      PR B — THE WRITING WORKSPACE

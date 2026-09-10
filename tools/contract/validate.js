@@ -367,19 +367,41 @@ function validate(pkg, man, opts) {
     add(SEV.error, "FIELD_CONFLICT", "question.topicRef", "a question carries a ref or a label, never both");
   // The same rule for the records the package brings with it. A record it
   // provides is not in a library yet, so refCheck cannot compare it: this reads
-  // the document. Only a value shaped like a subject KEY is compared, because
-  // VocabularyRecord.subject is contracted as the meaning in prose and a
-  // sentence is not a claim about which course owns the record.
-  const SUBJECT_KEY = /^[a-z0-9]+(_[a-z0-9]+)*$/;
+  // the document.
+  //
+  // IT USED TO GUESS. `subject` on a provided record meant the course meaning in
+  // prose; `subject` on a library record means the key of the course that owns
+  // it. One name, two meanings, and this check told them apart by testing
+  // whether the value LOOKED like a key. A one-word course meaning - "training",
+  // "marketing", "operations" - looks exactly like a key, so a correct record was
+  // reported as cross-wired with the same code, severity and verdict a real
+  // cross-wire produces, and the package did not import. The escape was
+  // accidental: a meaning survived only if it happened to contain a space.
+  //
+  // Identity is now its own typed field and prose is never consulted. A record
+  // that does not say who owns it is owned by the package's own subject, which
+  // is what "provides" already meant.
   ["vocabulary", "concepts", "lessons", "evidence", "syllabus", "resources"].forEach(kind => {
     const recs = (pkg.provides || {})[kind] || {};
     Object.keys(recs).forEach(rid => {
-      const owner = recs[rid] && recs[rid].subject;
-      if (!q.subject || typeof owner !== "string" || !SUBJECT_KEY.test(owner)) return;
+      const owner = recs[rid] && recs[rid].subjectKey;
+      if (!q.subject || blank(owner)) return;
       if (owner !== q.subject)
-        add(SEV.error, "SUBJECT_CROSS_WIRED", "provides." + kind + "." + rid + ".subject",
+        add(SEV.error, "SUBJECT_CROSS_WIRED", "provides." + kind + "." + rid + ".subjectKey",
           JSON.stringify(owner) + " is not the subject this question declares (" + q.subject + ")");
     });
+  });
+  // The rename, reported rather than performed quietly. A package authored
+  // against the old name still imports and its meaning is still read, and the
+  // author is told exactly what to change. What the old field can never do again
+  // is be read as a claim about ownership, whatever it contains.
+  Object.keys((pkg.provides || {}).vocabulary || {}).forEach(rid => {
+    const rec = pkg.provides.vocabulary[rid] || {};
+    if (blank(rec.subject)) return;
+    add(SEV.warning, "VOCAB_SUBJECT_RENAMED", "provides.vocabulary." + rid + ".subject",
+      "`subject` on a vocabulary record is now `subjectMeaning`, because the old name also meant the owning course on library records. The value is read as the course meaning" +
+      (blank(rec.subjectMeaning) ? "" : ", and `subjectMeaning` beside it wins") +
+      ". Ownership, if it needs saying at all, is `subjectKey`");
   });
   if ((pkg.marking || {}).bands && !String((pkg.marking || {}).bandSource || "").trim())
     add(SEV.error, "BANDS_WITHOUT_SOURCE", "marking.bands",
@@ -423,7 +445,16 @@ function validate(pkg, man, opts) {
         add(SEV.error, "PROVIDES_CONFLICT", at,
           JSON.stringify(rid) + " already exists in the " + kind + " library. An import adds records; it does not overwrite them");
       const own = FIELDS.filter(f => f.owner === "shared:" + kind && f.required && f.omission === "invalid");
-      const miss = own.map(f => f.path.split(".").slice(1).join(".")).filter(k => blank((provides[kind][rid] || {})[k]));
+      // VocabularyRecord.subject was renamed to subjectMeaning. A package written
+      // against the old name is complete, and is told about the rename by the
+      // warning above rather than by being called half written.
+      const LEGACY = { "vocabulary.subjectMeaning": "subject" };
+      const miss = own.map(f => f.path.split(".").slice(1).join(".")).filter(k => {
+        const rec = provides[kind][rid] || {};
+        if (!blank(rec[k])) return false;
+        const was = LEGACY[kind + "." + k];
+        return was ? blank(rec[was]) : true;
+      });
       if (miss.length) add(SEV.error, (CODES[kind] || {}).partial || "RECORD_PARTIAL", at, "half written: " + miss.join(", ") + " missing");
     });
   });

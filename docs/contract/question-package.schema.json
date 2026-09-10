@@ -880,10 +880,15 @@
           "type": "string",
           "minLength": 1
         },
-        "subject": {
-          "description": "what it means in this course, which is usually narrower than the plain sense. A record with a term and no subject meaning is a word with nothing attached, which is the thing this library exists to prevent.",
+        "subjectMeaning": {
+          "description": "what it means in this course, which is usually narrower than the plain sense. A record with a term and no course meaning is a word with nothing attached, which is the thing this library exists to prevent.",
           "type": "string",
           "minLength": 1
+        },
+        "subjectKey": {
+          "description": "which course owns this record, when it needs saying. Omitted, the record belongs to the subject the question declares.",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(_[a-z0-9]+)*$"
         },
         "plain": {
           "description": "what the word means in ordinary English, for a student who has never met it. Without it the record still teaches on the Learn surface and is not offered in the vocabulary panel.",
@@ -899,7 +904,7 @@
       "required": [
         "id",
         "term",
-        "subject"
+        "subjectMeaning"
       ]
     },
     "ConceptRecord": {

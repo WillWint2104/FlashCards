@@ -262,7 +262,24 @@ const pkg = (page, k) => page.evaluate(key => {
   // ---- 5. unknown subject fails closed ----------------------------------
   console.log("--- 5. an unresolvable subject is refused, not substituted");
   ok(/unresolved: true/.test(app), "markingContext can report an unresolved subject");
-  ok(/subject-unresolved/.test(app), "and gradeWritten refuses rather than sending");
+  ok(/ASSESS\.refuse\(mc\.code/.test(app), "and gradeWritten refuses rather than sending");
+  // THIS ASSERTION USED TO BE THE WHOLE OF IT, and it was not enough. It read the
+  // source for the string "subject-unresolved" and passed, while four callers
+  // took the refusal it was pleased to find and read .score off it: one summed
+  // undefined into NaN and one recorded a zero. A fail-closed tested at the point
+  // of refusal and never at the point of consumption is a fail-closed nobody has
+  // checked. tests/ui68.js now owns the consumption end; what belongs here is the
+  // fact that the refusal cannot be mistaken for a mark by anything.
+  ok(/const isMarked = g => ASSESS\.isMarked\(g\)/.test(app),
+    "and there is one gate in front of every piece of scoring in the file");
+  const scorers = [
+    ["study progress", "if (ok) applyResult(card, g.score, g.max);"],
+    ["the exam sheet", "if (!isMarked(g)) return unmarkedHTML(q, g);"],
+    ["the exam totals", "ASSESS.tally(qs.map("],
+    ["the saved essay mark", "if (!isMarked(g)) {"],
+  ];
+  scorers.forEach(([what, line]) => ok(app.indexOf(line) >= 0,
+    what + " asks whether the response was marked before it uses the number: " + JSON.stringify(line)));
   // the Economics fallthrough is gone from the declared path
   ok(/if \(!declares && !criteria\) criteria = some\(C\.markingCriteria\)/.test(app),
     "C.markingCriteria is reached only when nothing declares a subject, which is flashcard content");
