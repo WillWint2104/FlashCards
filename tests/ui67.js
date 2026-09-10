@@ -136,6 +136,17 @@ async function stubCoach(p, seen) {
     ok(!!req && req.slots.length > 0, label + ": the app sent its authored slot list to the coach");
     ok(!!req && req.blocks.length > 0 && req.blocks.every(b => b.id), label + ": and sent a real id for every sentence");
     ok(R.diagnosed.every(d => R.slots.indexOf(d.slot) >= 0), label + ": every diagnosis named one of those slots");
+    // GROUNDED END TO END, from the product's side. The coach named a block for
+    // the explain slot; the app must have anchored the diagnosis to THAT sentence
+    // and put it in front of the student to edit. This crosses the worker
+    // contract, the render and the editing surface, which is what ui67 is for -
+    // t27 checks the contract alone and cannot see the other two.
+    const sentForExplain = req && (req.blocks.find(b => b.slot === "explain") || {}).id;
+    ok(!!sentForExplain, label + ": the app sent a sentence for the slot the coach diagnosed");
+    ok(R.anchoredTo === sentForExplain,
+      label + ": and anchored the diagnosis to exactly that sentence (" + R.anchoredTo + " vs " + sentForExplain + ")");
+    ok((R.anchoredText || "").trim().length > 0,
+      label + ": the student was shown their own sentence to rewrite, not an empty box");
 
     // THE STUDENT'S OWN WORDS. Nothing the app offered may be written back into
     // the essay: the saved text must be what the profile composed.

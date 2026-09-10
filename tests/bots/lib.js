@@ -106,6 +106,8 @@ class Trace {
       rechecked: 0,         // times they asked for a fresh judgement
       freshAfterRecheck: 0, // times the stale state was gone afterwards
       settledSlots: null,   // slots still needing work when the cycle ended
+      anchoredTo: null,     // the block id the app tied the diagnosis to
+      anchoredText: "",     // and the sentence it showed for it
       demands: [],          // what the CYCLE found missing, apart from the journey's own
       closed: 0,            // returns to writing
       steps: [],            // the twelve-step ledger, so a skipped step is visible
@@ -188,6 +190,7 @@ class Trace {
       "  parts needing work:          " + (r.diagnosed.length
         ? r.diagnosed.map(d => d.slot).join(", ") : "none"),
       "  diagnoses read:              " + r.inspected,
+      "  anchored to sentence:        " + (r.anchoredTo || "-"),
       "  More help opened:            " + r.helpOpened,
       "  revisions saved:             " + r.revised +
         (r.revisedText.length ? " (" + r.revisedText.map(t => JSON.stringify(t.slice(0, 40))).join(", ") + ")" : ""),

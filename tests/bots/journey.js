@@ -258,6 +258,16 @@ async function reviewCycle(p, tr, prof) {
   if (!issue) { demand("a part was flagged but no diagnosis was given for it"); return; }
   step("inspect");
   R.inspected++;
+  // WHICH SENTENCE THE APP ANCHORED IT TO. The rewrite box carries the block id
+  // the coach named, so this is the app's own answer to "which sentence is this
+  // diagnosis about" - captured here so the acceptance suite can hold it against
+  // the id the coach actually sent, across the worker contract, the render and
+  // the surface the student types into.
+  const anchor = await p.$eval("[data-esrbox]", e => ({ id: e.dataset.esrbox || "", text: String(e.value || "") })).catch(() => null);
+  if (!anchor || !anchor.id) { demand("the diagnosis was not anchored to any sentence the student can edit"); return; }
+  R.anchoredTo = anchor.id;
+  R.anchoredText = anchor.text;
+  tr.say("anchor", "the diagnosis is about " + anchor.id + ": " + JSON.stringify(anchor.text.slice(0, 46)));
   R.diagnosed = flagged.map(f => ({ slot: f.key, label: f.label }));
   tr.say("diagnosis", target.key + ": " + issue);
 

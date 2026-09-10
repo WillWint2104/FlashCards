@@ -547,12 +547,18 @@ module.exports = [
   {
     // The stub is what makes the run evidence about the product. One that invents
     // a blockId would let an app that mis-grounds its diagnoses pass.
-    id: "bots-stub-invents-a-reference",
-    file: "tests/ui67.js",
-    find: "      if (!own.id) { ungrounded++; return { slot: s.key, status: \"missing\", blockId: \"\", issue: \"Nothing is doing this job yet.\" }; }",
-    replace: "      if (!own.id) { return { slot: s.key, status: \"needs_work\", blockId: \"b1\", issue: DIAGNOSIS }; }",
+    // NOT the stub's fail-closed branch. That was the first version of this entry
+    // and it survived, correctly: the app always sends an id for every sentence,
+    // so the branch is unreachable and the assertion resting on it was vacuous.
+    // The reachable claim is the one that crosses components - the app anchored
+    // the diagnosis to the very sentence the coach named, and put that sentence
+    // in front of the student.
+    id: "bots-review-ignores-the-anchor",
+    file: "tests/bots/journey.js",
+    find: "  R.anchoredTo = anchor.id;",
+    replace: "  R.anchoredTo = \"b1\";",
     owner: "ui67",
-    why: "the acceptance stub made up a sentence id rather than failing closed, so a diagnosis anchored to nothing would have been accepted",
+    why: "the run stopped checking which sentence the diagnosis was tied to, so a diagnosis rendered against the wrong sentence would have passed",
   },
   {
     id: "bots-students-stop-differing",
