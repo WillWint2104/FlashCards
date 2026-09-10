@@ -97,11 +97,38 @@ async function toChooser(page) {
   {
     ok(SOURCE_IDS.indexOf(ID) < 0, "its id is in no source subject: " + ID);
     const r = validate(PKG, MAN, {});
-    ok(r.verdict === "accepted" && r.counts.error === 0,
+    // THIS PACKAGE USED TO PASS FOR THE WRONG REASON.
+    //
+    // Its seven vocabulary records put "business_studies" in the field the
+    // contract defines as the course MEANING, and the completeness check only
+    // asked whether that field was non-empty. So seven records with no definition
+    // in them read as complete, and this block's green was resting on that. The
+    // records now say what they mean: `subjectKey` for the course that owns them,
+    // `subjectMeaning` for what the term means in it. No definition was rewritten.
+    ok(r.counts.error === 0 && r.wouldImport,
       "it validates against the published contract: " + r.verdict + " " + JSON.stringify(r.counts));
+    ok(/^accepted/.test(r.verdict), "and is accepted: " + r.verdict);
+    ok(r.findings.length === 0, "with nothing to report at all: " +
+      JSON.stringify(r.findings.map(f => f.severity + " " + f.code)));
+    const vocab = Object.values((PKG.provides || {}).vocabulary || {});
+    ok(vocab.length === 7 && vocab.every(v => v.subjectKey === "business_studies"),
+      "every record names the course that owns it, in the typed field: " + vocab.length);
+    ok(vocab.every(v => v.subjectMeaning && v.subjectMeaning.length > 40),
+      "and carries a course meaning rather than a course name");
+    ok(vocab.every(v => !("subject" in v)),
+      "and none of them still writes the overloaded field: " +
+      JSON.stringify(vocab.filter(v => "subject" in v).map(v => v.term)));
     const dims = r.capability.dimensions;
     ["importable", "writing-ready", "pathway-guided", "learning-complete", "assessment-complete"]
       .forEach(k => ok(dims[k].status === "reached", "it reaches " + k + ": " + dims[k].status));
+    // WHAT THIS DOES NOT YET SAY, recorded rather than papered over. These records
+    // now have no `plain`, so they are not displayable and would not be offered in
+    // the vocabulary panel. The validator does not report that, because a record a
+    // package PROVIDES is short-circuited as complete at every ref site and its
+    // displayability is never computed. Written up as gate3-audit.md 3.4; the
+    // relabelling made it load-bearing rather than theoretical.
+    ok(vocab.every(v => !v.plain),
+      "the records carry no ordinary-English gloss, which nothing above noticed");
     // The state the whole design depends on being able to report honestly. This
     // package authors no evidence because it has no source it could cite, and
     // saying so is the point rather than a gap to be closed later.

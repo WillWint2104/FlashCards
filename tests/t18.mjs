@@ -303,8 +303,15 @@ console.log("4. every kind of finding, kept apart");
     "and a ref to nothing that was never declared is an error instead, never both");
   ok(bySev(r, "shortfall").join() === "VOCAB_NOT_YET_DISPLAYABLE",
     "a record complete enough to teach with and not to display is a shortfall: " + JSON.stringify(bySev(r, "shortfall")));
-  ok(bySev(r, "warning").join() === "EM_DASH_IN_STUDENT_TEXT",
+  // Two warnings now: the house style fault, and the notice that this package
+  // still writes VocabularyRecord.subject, which was renamed to subjectMeaning
+  // when identity stopped being guessed from prose. Neither blocks an import,
+  // which is the property under test.
+  ok(bySev(r, "warning").sort().join() === "EM_DASH_IN_STUDENT_TEXT,VOCAB_SUBJECT_RENAMED",
     "and a house style fault does not block an import: " + JSON.stringify(bySev(r, "warning")));
+  ok(r.findings.filter(f => f.code === "VOCAB_SUBJECT_RENAMED")
+     .every(f => /subjectMeaning/.test(f.message) && /subjectKey/.test(f.message)),
+    "and the rename notice names both fields, so an author knows which one they meant");
   // one line about the records, not twenty-one about the places they are named
   const nd = r.findings.filter(f => f.code === "VOCAB_NOT_YET_DISPLAYABLE");
   ok(nd.length === 1, "reported once, about the records: " + nd.length);

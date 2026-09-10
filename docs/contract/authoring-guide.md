@@ -1842,14 +1842,17 @@ whether this argument supports the judgement, limits it, or holds conditionally.
 | field | type | required | leaving it out | student reads it | what it is for |
 | --- | --- | --- | --- | --- | --- |
 | `term` | `string` | **yes** | **invalid** - the package does not import | yes | the term itself. |
-| `subject` | `string` | **yes** | **invalid** - the package does not import | yes | what it means in this course, which is usually narrower than the plain sense. A record with a term and no subject meaning is a word with nothing attached, which is the thing this library exists to prevent. |
+| `subjectMeaning` | `string` | **yes** | **invalid** - the package does not import | yes | what it means in this course, which is usually narrower than the plain sense. A record with a term and no course meaning is a word with nothing attached, which is the thing this library exists to prevent. |
+| `subjectKey` | `id` | for `none` | **level** - the record exists and the `none` surface will not use it | no | which course owns this record, when it needs saying. Omitted, the record belongs to the subject the question declares. |
 | `plain` | `string` | for `displayable` | **level** - the record exists and the `displayable` surface will not use it | yes | what the word means in ordinary English, for a student who has never met it. Without it the record still teaches on the Learn surface and is not offered in the vocabulary panel. |
 | `example` | `string` | for `displayable` | **level** - the record exists and the `displayable` surface will not use it | yes | the term doing its job in a sentence, in a context other than this question. |
 
 - `term` good: "market segmentation"
 - `term` bad: "segmentation (see also targeting)"
-- `subject` good: "dividing a total market into subgroups so that a business can choose which of them to serve"
-- `subject` bad: blank
+- `subjectMeaning` good: "dividing a total market into subgroups so that a business can choose which of them to serve"
+- `subjectMeaning` bad: blank
+- `subjectKey` good: "business_studies"
+- `subjectKey` bad: "Business Studies", or a definition
 - `plain` good: "splitting a large group of people into smaller groups that are alike in some way"
 - `plain` bad: the subject definition again in different words
 - `example` good: one sentence, about a different business

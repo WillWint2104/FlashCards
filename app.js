@@ -6,6 +6,16 @@
 (function () {
   "use strict";
   const C = window.CONTENT;
+  // THE ASSESSMENT SUBSTRATE, inlined by build.js from tools/contract/assessment.js
+  // and tested there in milliseconds by tests/t28.mjs. It holds two rules this file
+  // used to hold badly: which subject's authority marks a response, and what counts
+  // as a result at all. Keeping a second copy here is how the two would come to
+  // disagree, so there is no second copy.
+  const ASSESS = window.MarginalAssessment;
+  const MARKED = r => ASSESS.marked(r);
+  // The one gate in front of every piece of arithmetic, scheduling and progress
+  // state in this file. A refusal and a failure both answer false.
+  const isMarked = g => ASSESS.isMarked(g);
   const CONFIG = window.MARGINAL_CONFIG || {}; // teacher-set defaults (see index.html)
   const LS_KEY = "marginal.trial.v1";
   const BOX_DAYS = { 1: 0, 2: 1, 3: 3, 4: 7, 5: 14 };
@@ -295,14 +305,14 @@
 
   function gradeMC(card, choiceIdx) {
     const ch = card.choices[choiceIdx];
-    return { score: ch.ok ? card.marks : 0, max: card.marks, kind: "mc",
-             correct: ch.ok, why: ch.why || "", answerText: card.choices.find(c => c.ok).t };
+    return MARKED({ score: ch.ok ? card.marks : 0, max: card.marks, kind: "mc",
+             correct: ch.ok, why: ch.why || "", answerText: card.choices.find(c => c.ok).t });
   }
   function gradeCalc(card, answer) {
     const got = parseFloat(String(answer).replace(/[^0-9.\-]/g, ""));
     const ok = Number.isFinite(got) && Math.abs(got - card.expected) <= card.tolerance;
-    return { score: ok ? card.marks : 0, max: card.marks, kind: "calc",
-             correct: ok, working: card.working || "", model: card.model };
+    return MARKED({ score: ok ? card.marks : 0, max: card.marks, kind: "calc",
+             correct: ok, working: card.working || "", model: card.model });
   }
   function gradeLocal(card, answer) {
     const a = norm(answer);
@@ -315,8 +325,8 @@
     const lengthOk = a.split(" ").length >= card.marks * 8;
     let ratio = (need.length ? 0.55 * (hit.length / need.length) : 0.3) + 0.35 * Math.min(overlap * 1.6, 1) + (lengthOk ? 0.1 : 0);
     ratio = Math.max(0, Math.min(1, ratio));
-    return { score: Math.round(ratio * card.marks), max: card.marks, kind: "local",
-             matched: hit, missing: need.filter(t => !hit.includes(t)), model: card.model };
+    return MARKED({ score: Math.round(ratio * card.marks), max: card.marks, kind: "local",
+             matched: hit, missing: need.filter(t => !hit.includes(t)), model: card.model });
   }
   // The subject namespace whose label matches this one, or null. Subject content is
   // the source of truth for criteria and band expectations, so adding a subject
@@ -353,10 +363,25 @@
   // expectations to judge against, and what this question requires. Marking used to
   // be hardcoded to Economics; the subject namespace is now the source of truth,
   // and a card or an imported paper can override.
+  // Object identity, not an id, because an exam question has no id: examRender
+  // hands markingContext the very object it read out of the paper. A flashcard,
+  // a custom-set card and an Essay Suite draft card are all built elsewhere and
+  // none of them can be in this list.
+  function examOwns(card) {
+    const p = (typeof EXAM !== "undefined" && EXAM) ? EXAM.paper : null;
+    if (!p || !card) return null;
+    return (p.sections || []).some(sec => (sec.questions || []).indexOf(card) >= 0) ? p : null;
+  }
   function markingContext(card) {
-    // Test mode (a whole imported paper) may carry its own subject/criteria; it is
-    // defined only when that mode is present, so reach for it defensively.
-    const paper = (typeof EXAM !== "undefined" && EXAM && EXAM.paper) ? EXAM.paper : null;
+    // THE PAPER THIS CARD IS ACTUALLY IN, by identity, or none.
+    //
+    // This used to read EXAM.paper directly. EXAM.paper is never cleared when a
+    // student leaves Test mode, so it outlives the sitting: study a flashcard
+    // after quitting a paper and the paper was still there to be read. While the
+    // paper only supplied a display label that was untidy. As the academic
+    // authority it would be the cross-subject leak again, in a new place, so the
+    // question is asked precisely: is this card one of that paper's questions?
+    const paper = examOwns(card);
     // ---- WHICH PACKAGE IS MARKING THIS -------------------------------------
     //
     // Two different situations were sharing one fallback chain, and the shared
@@ -368,8 +393,41 @@
     // They are separated here. A card that DECLARES a subject must resolve to
     // that package or fail closed; a card that declares none is flashcard content
     // and window.CONTENT is its package by definition, not by fallback.
+    // A SAT PAPER RESOLVES BY KEY, THROUGH THE SUBSTRATE, OR NOT AT ALL.
+    //
+    // This branch used to fall through to the chain below, where a paper's
+    // `subject` - a free-text cover label - was matched against package labels by
+    // lowercasing and comparing, and anything that missed landed on C. Measured
+    // in the Gate 3 audit: a paper declaring subjectKey "business_studies" was
+    // marked with Economics criteria because nothing read paper.subjectKey, and a
+    // paper declaring nothing was marked with Economics too.
+    //
+    // The rule now: the paper owns the subject, the subject is a key, the key is
+    // resolved against the registered packages, and there is no fallback. The
+    // refusal it returns carries the reason in words, because the student is owed
+    // one and the old code had one and never showed it.
+    if (paper) {
+      const res = ASSESS.resolveAuthority({
+        curriculum: ASSESS.curriculumOf(paper),
+        question: card || null,
+        packages: esAllSubjects().subjects || {},
+      });
+      if (!res.ok) return { unresolved: true, code: res.code, subject: res.subjectKey || undefined, why: res.why };
+      const qc0 = (card && card.criteria) || null;
+      const sub0 = esSubjectContent(res.subjectKey);
+      const gen0 = (window.ESSAY && window.ESSAY.bandExpectations) || null;
+      return {
+        subject: res.label,
+        subjectKey: res.subjectKey,
+        criteria: res.criteria,
+        bands: (qc0 && qc0.bands) || (sub0 && sub0.bandExpectations && sub0.bandExpectations.bands) || (gen0 && gen0.bands) || undefined,
+        bandsSource: (qc0 && qc0.source) || (sub0 && sub0.bandExpectations && sub0.bandExpectations.source) || (gen0 && gen0.source) || undefined,
+        topic: (card && card.topic) || undefined,
+        requirements: markingRequirements(card),
+      };
+    }
     const declaredKey = (card && card.subjectKey) || null;
-    const declaredLabel = (card && card.subject) || (paper && paper.subject) || "";
+    const declaredLabel = (card && card.subject) || "";
     const declares = !!(declaredKey || declaredLabel);
     // By KEY first. The label match is a string comparison that has already been
     // seen to miss on authored whitespace; a key cannot.
@@ -389,7 +447,9 @@
     // somebody else's. The caller refuses rather than sending a request that would
     // come back looking authoritative.
     if (declares && !criteria) {
-      return { unresolved: true, subject: label || declaredKey || undefined,
+      return { unresolved: true,
+        code: sub ? "CRITERIA_ABSENT" : "SUBJECT_UNREGISTERED",
+        subject: label || declaredKey || undefined,
         why: sub ? "the " + (sub.label || declaredKey) + " package carries no marking criteria"
                  : "no subject package named " + JSON.stringify(declaredKey || label) + " is registered" };
     }
@@ -453,16 +513,24 @@
   }
   async function gradeWritten(card, answer, opts) {
     opts = opts || {};
+    // WHOSE CRITERIA MARK THIS, DECIDED FIRST AND REGARDLESS OF THE ENDPOINT.
+    //
+    // This check used to sit inside `if (state.endpoint)`, so a response whose
+    // subject could not be resolved still got a demo grade when marking was not
+    // connected. A grade is a grade: if the application cannot say which course
+    // is judging the writing, it does not put a number on it either.
+    //
+    // Refuse rather than send. A request that goes out with the wrong package's
+    // criteria comes back looking exactly like a right one, so the only safe move
+    // on an unresolved subject is not to ask.
+    const mc = markingContext(card);
+    if (mc.unresolved) {
+      return ASSESS.refuse(mc.code || "SUBJECT_UNRESOLVED",
+        "This response was not marked: " + mc.why + ". Marking it against another subject's criteria would not tell you anything true about it.",
+        { subject: mc.subject, max: Number(card && card.marks) || 0 });
+    }
     if (state.endpoint) {
       try {
-        const mc = markingContext(card);
-        // Refuse rather than send. A request that goes out with the wrong
-        // package's criteria comes back looking exactly like a right one, so the
-        // only safe move on an unresolved subject is not to ask.
-        if (mc.unresolved) {
-          return { error: "subject-unresolved", subject: mc.subject,
-            note: "This response was not marked: " + mc.why + ". Marking it against another subject's criteria would not tell you anything true about it." };
-        }
         const res = await esPostJSON(state.endpoint, {
             prompt: card.prompt, marks: card.marks, model_answer: card.model, vocab: card.vocab, answer,
             scaffold: card.scaffold, faults: card.faults,
@@ -484,7 +552,8 @@
         if (g && g.checks && g.checks.sentences && g.checks.grounded < 0.6) {
           console.warn("[marking] only", Math.round(g.checks.grounded * 100) + "% of the marked sentences match the student's text");
         }
-        return { score: Math.min(g.score ?? 0, card.marks), max: card.marks, kind: "llm", fb: g };
+        return MARKED({ score: Math.min(Number(g.score) || 0, Number(card.marks) || 0),
+          max: Number(card.marks) || 0, kind: "llm", fb: g });
       } catch (e) {
         return demoEssay(card, answer, "Couldn't reach your grading endpoint (" + e.message + ") — showing a demo grade instead.");
       }
@@ -512,7 +581,7 @@
       missing_vocabulary: need.filter(t => !hit.includes(t)),
       next_steps: ["This is a structural check only — it cannot judge your reasoning. Compare your answer with the guide below, then connect an endpoint for real marking."]
     };
-    return { score: Math.round(ratio * card.marks), max: card.marks, kind: "demo", fb };
+    return MARKED({ score: Math.round(ratio * card.marks), max: card.marks, kind: "demo", fb });
   }
 
   // ---------- scheduling ----------
@@ -1770,27 +1839,62 @@
   }
 
   function finishCard(card, g) {
-    applyResult(card, g.score, g.max);
+    // A REFUSAL IS NOT A ZERO.
+    //
+    // applyResult(card, undefined, undefined) computed ratio 0, which wrote
+    // lastScore 0 and r:0 into the log and demoted the card to box 1. The
+    // application had declined to judge the response and then scheduled it as a
+    // total failure. Reproduced in the Gate 3 audit; this line is the fix.
+    const ok = isMarked(g);
+    if (ok) applyResult(card, g.score, g.max);
     session.results.push({ card, g });
-    $("#sheet").innerHTML = sheetHTML(card, g);
+    $("#sheet").innerHTML = ok ? sheetHTML(card, g)
+      : unmarkedHTML(card, g, `<div class="actions"><button class="btn" id="continue">Continue</button></div>`);
+    if (!ok) {
+      // Nothing was spent, so the control that spends it comes back.
+      const c = $("#check");
+      if (c) { c.disabled = false; c.textContent = card.type === "essay" ? "Submit for marking" : "Check answer"; }
+    }
     const rb = $("#reviewbtn");
     if (rb) rb.onclick = () => openReview(g.fb, () => { session.idx++; renderCard(); });
     const ab = $("#askreview");
     if (ab) ab.onclick = async () => {
       ab.disabled = true; ab.textContent = "Marking…";
       const deep = await gradeWritten(card, session.lastAnswer || "", { responseType: "short" });
+      ab.disabled = false; ab.textContent = "Mark this properly →";
+      if (ASSESS.outcomeOf(deep) === "refused") { toast(deep.why || "This was not marked."); return; }
       if (deep.fb && Array.isArray(deep.fb.paragraphs) && deep.fb.paragraphs.length) {
         g.fb = deep.fb; openReview(deep.fb, () => { session.idx++; renderCard(); });
-      } else { ab.disabled = false; ab.textContent = "Mark this properly →"; toast("Marking could not be reached just now."); }
+      } else { toast("Marking could not be reached just now."); }
     };
     const cont = $("#continue");
-    cont.onclick = () => { session.idx++; renderCard(); };
-    cont.focus();
+    if (cont) { cont.onclick = () => { session.idx++; renderCard(); }; cont.focus(); }
     const sh = $("#sheet");
     if (sh.scrollIntoView) sh.scrollIntoView({ behavior: "smooth", block: "nearest" });
     wireGlossary();
   }
 
+  // THE STATE A REFUSAL LANDS IN, shared by every surface that can receive one.
+  //
+  // Before this it landed nowhere: sheetHTML divided g.score by g.max, both
+  // undefined, and rendered "undefined/undefined" under the heading "Not yet" -
+  // a verdict, on a response nothing had judged. The refusal has always carried
+  // the reason in plain words and no surface showed it.
+  //
+  // The designed version of this screen is a Gate 3 UI item and is not attempted
+  // here. What this has to do today is tell the truth.
+  function unmarkedHTML(card, g, actions) {
+    const failed = ASSESS.outcomeOf(g) === "failed";
+    const why = g && (g.why || g.note) ? String(g.why || g.note) : "No reason was recorded.";
+    return `<div class="sheet unmarked"><div class="head">
+        <div class="score nomark">Not marked</div>
+        <h3>${failed ? "Marking could not run" : "This was not marked"}</h3>
+      </div><div class="bd">
+        <p>${esc(why)}</p>
+        <p class="whynot">Your answer is still here, and nothing has been recorded against it${card && card.marks ? ", including the " + card.marks + " mark" + (card.marks === 1 ? "" : "s") + " this question is worth" : ""}.</p>
+        ${actions || ""}
+      </div></div>`;
+  }
   function sheetHTML(card, g) {
     const ratio = g.max ? g.score / g.max : 0;
     const mood = ratio >= 0.95 ? ["great", "Nailed it!"] : ratio >= 0.7 ? ["good", "Strong — nearly all of it"] : ratio >= 0.4 ? ["mid", "On the way — keep building"] : ["low", "Not yet — let's look at it"];
@@ -1826,8 +1930,16 @@
 
   function summary() {
     const { area, results } = session;
-    const got = results.reduce((n, r) => n + r.g.score, 0);
-    const max = results.reduce((n, r) => n + r.g.max, 0);
+    // THE SAME ARITHMETIC EXAMTOTALS WAS FIXED FOR, in the other results bag and
+    // missed the first time. finishCard pushes every result into session.results,
+    // refusals included, so one unmarked written answer in a run turned the
+    // session score into NaN/NaN - which is what the student is shown at the end
+    // of it. tally reads the outcome before the number, and a question nobody
+    // marked still costs its marks. A self-rated flashcard carries a finite score
+    // and a finite maximum, so it is a success by shape and nothing about those
+    // runs changes.
+    const t = ASSESS.tally(results.map(r => ({ marks: r.card && r.card.marks, result: r.g })));
+    const got = t.got, max = t.max;
     const s = areaStats(area);
     app.innerHTML = `
       <div class="summary">
@@ -1866,6 +1978,15 @@
   }
 
   function examList() { return state.exams || []; }
+  // What to call this paper's course on a list row. The curriculum block owns it;
+  // `subject` is cover text and is used only for papers stored before the block
+  // existed, where saying nothing would hide the fact that the paper has no
+  // identity anything can mark from.
+  function examCourse(p) {
+    const c = ASSESS.curriculumOf(p);
+    if (c && (c.course || c.subjectKey)) return c.course || c.subjectKey;
+    return p && p.subject ? p.subject + " (no subject key)" : "no subject declared";
+  }
   function examCounts(p) {
     // An either/or section contributes only the questions a student will actually
     // attempt, so the listed totals match the paper's real marks.
@@ -1896,7 +2017,7 @@
           const c = examCounts(p);
           return `<div class="exam-row">
             <div class="exam-rowmain"><span class="exam-rowname">📝 ${esc(p.name)}</span>
-              <span class="exam-rowmeta">${esc(p.subject || "")}${p.subject ? " · " : ""}${c.qs} question${c.qs === 1 ? "" : "s"} · ${c.mk} mark${c.mk === 1 ? "" : "s"}${p.time ? " · " + esc(p.time) : ""}</span></div>
+              <span class="exam-rowmeta">${esc(examCourse(p))} · ${c.qs} question${c.qs === 1 ? "" : "s"} · ${c.mk} mark${c.mk === 1 ? "" : "s"}${p.time ? " · " + esc(p.time) : ""}</span></div>
             <div class="exam-rowacts"><button class="btn sm" data-examsit="${esc(p.id)}">Sit this paper</button>
               <button class="btn sm ghost danger" data-examdel="${esc(p.id)}">Delete</button></div>
           </div>`;
@@ -1920,6 +2041,16 @@
     const e = [];
     if (!d || typeof d !== "object") return ["Not an exam object."];
     if (!Array.isArray(d.sections) || !d.sections.length) return ["The exam has no sections array."];
+    // WHO MARKS THIS PAPER, ASKED AT THE DOOR.
+    //
+    // The old check did not ask. `subject` was optional free text, so the common
+    // case was a paper that never said, and a paper that never said was marked
+    // against whichever flashcard package the picker was on. A paper now names
+    // its subject by key or it does not import. Warnings - a missing KLA, a
+    // missing jurisdiction - are not gates: only the authority is load-bearing.
+    ASSESS.curriculumFindings(d).concat(ASSESS.subjectOverrides(d))
+      .filter(f => f.severity === "error")
+      .forEach(f => e.push(f.path + ": " + f.message));
     let qn = 0;
     d.sections.forEach((s, si) => {
       if (!Array.isArray(s.questions) || !s.questions.length) { e.push("Section " + (si + 1) + " has no questions."); return; }
@@ -1943,7 +2074,12 @@
   function importExamFromBox(data, msg) {
     const errs = validateExam(data);
     if (errs.length) return msg.textContent = errs[0];
+    // The curriculum block travels with the paper. It was the five fields below
+    // and nothing else, so a subjectKey written beside them was discarded at the
+    // door and the paper reached the marker with no identity at all.
     const paper = { id: "exam-" + Date.now(), name: data.name || "Practice exam", subject: data.subject || "",
+      curriculum: Object.assign({}, data.curriculum || {}),
+      exam: data.exam ? Object.assign({}, data.exam) : undefined,
       time: data.time || "", instructions: data.instructions || "", sections: data.sections };
     state.exams.push(paper); save();
     msg.textContent = "Imported ✓ — open Test mode to sit it.";
@@ -2021,17 +2157,21 @@
       const c = EXAM.choice[x.si];
       return c === undefined ? x.qi < examChooseCount(sec) : c === x.qi;
     });
-    const total = qs.length;
-    const maxMarks = qs.reduce((n, x) => n + (x.q.marks || 0), 0);
-    const done = Object.keys(EXAM.results).length;
-    const got = Object.values(EXAM.results).reduce((n, g) => n + g.score, 0);
-    return { total, maxMarks, done, got };
+    // ONLY A MARK ADDS UP. This reduce read g.score off every stored result, and
+    // a refusal has no score, so one unresolved question turned the paper total
+    // into NaN and said so on screen. tally() reads the outcome first and a
+    // question nobody marked still costs its marks, because a student refused a
+    // mark on a twenty-mark question has not been set a shorter paper.
+    const t = ASSESS.tally(qs.map(x => ({ marks: x.q.marks, result: EXAM.results[x.si + "-" + x.qi] })));
+    return { total: qs.length, maxMarks: t.max, done: t.done, got: t.got,
+             refused: t.refused, failed: t.failed };
   }
   function examBar() {
     const t = examTotals();
     return `<div class="exam-bar"><button class="x" id="examquit" title="Leave this paper">←</button>
       <span class="lbl">${esc(EXAM.paper.name)}</span>
-      <span class="exam-progress">${t.done}/${t.total} answered · ${t.got}/${t.maxMarks} marks</span></div>`;
+      <span class="exam-progress">${t.done}/${t.total} answered · ${t.got}/${t.maxMarks} marks${
+        (t.refused + t.failed) ? " · " + (t.refused + t.failed) + " not marked" : ""}</span></div>`;
   }
   function examQuit() { if (confirm("Leave this paper? Your progress on this attempt is not saved.")) examHome(); }
   // Render a source/stimulus block (shared section source or per-question stimulus).
@@ -2137,11 +2277,16 @@
     if (ch) ch.onclick = async () => {
       const ans = ($("#ans") && $("#ans").value || "").trim();
       if (!ans) { toast("Write your answer first."); return; }
+      const wasLabel = ch.textContent;
       EXAM.answers[key] = ans; ch.disabled = true; ch.textContent = "Checking…";
       let g;
       if (q.type === "calc") g = gradeCalc(q, ans);
       else if (q.type === "essay") g = await gradeWritten(q, ans);
       else g = (Array.isArray(q.points) && q.points.length) ? gradePoints(q, ans) : gradeLocal(q, ans);
+      // The audit found this button still reading "Checking…" after a refusal,
+      // beside a score of undefined/undefined. Nothing was spent, so the control
+      // that spends it comes back and says what it does.
+      if (!isMarked(g)) { ch.disabled = false; ch.textContent = wasLabel; }
       EXAM.results[key] = g;
       examSheet(item, key, g);
     };
@@ -2157,9 +2302,13 @@
       return { text: pt.text, hit, hint: pt.hint || "", marks: pt.marks || 1 };
     });
     const raw = pts.filter(p => p.hit).reduce((n, p) => n + p.marks, 0);
-    return { score: Math.min(raw, q.marks), max: q.marks, kind: "points", points: pts, model: q.model || "" };
+    return MARKED({ score: Math.min(raw, q.marks), max: q.marks, kind: "points", points: pts, model: q.model || "" });
   }
   function examSheetHTML(q, g) {
+    // A response nothing judged gets no mood, no score and no ratio. Everything
+    // below this line assumes two finite numbers, which is exactly the assumption
+    // that produced "undefined/undefined" under the heading "Not yet".
+    if (!isMarked(g)) return unmarkedHTML(q, g);
     const ratio = g.max ? g.score / g.max : 0;
     const mood = ratio >= 0.95 ? ["great", "Full marks"] : ratio >= 0.6 ? ["good", "Most of it"] : ratio >= 0.3 ? ["mid", "Partly there"] : ["low", "Not yet"];
     let body = "";
@@ -2181,6 +2330,16 @@
     const askable = !hasReview && ["points", "local"].includes(g.kind) && !!state.endpoint;
     const reviewBtn = hasReview ? `<button class="btn" id="examreview">Work through the issues (${rvIssueCount(g.fb)}) →</button>`
       : askable ? `<button class="btn ghost" id="examreview">Mark this properly →</button>` : "";
+    // The bar is rendered once, at the top of the question screen, so it was a
+    // question behind all the way through a paper. That is tolerable for a score
+    // and not for "not marked", which is the one thing a student needs to see at
+    // the moment it becomes true.
+    const bar = document.querySelector(".exam-progress");
+    if (bar) {
+      const t2 = examTotals();
+      bar.textContent = t2.done + "/" + t2.total + " answered · " + t2.got + "/" + t2.maxMarks + " marks" +
+        ((t2.refused + t2.failed) ? " · " + (t2.refused + t2.failed) + " not marked" : "");
+    }
     $("#sheet").innerHTML = examSheetHTML(item.q, g) +
       `<div class="exam-acts"><button class="btn ghost" id="examretry">Try again</button>${reviewBtn}<button class="btn" id="examnext">${last ? "Finish paper" : "Continue"}</button></div>`;
     $("#examretry").onclick = () => examRender();
@@ -2194,11 +2353,15 @@
     const ans = EXAM.answers[key] || "";
     const btn = $("#examreview"); if (btn) { btn.disabled = true; btn.textContent = "Marking…"; }
     const g = await gradeWritten(item.q, ans, { responseType: item.q.type === "essay" ? "extended" : "short" });
+    if (btn) { btn.disabled = false; btn.textContent = "Mark this properly →"; }
+    // A refusal has a reason, and "could not be reached" is not it. Saying the
+    // wrong one sends a student looking for a connection problem that is not
+    // there.
+    if (ASSESS.outcomeOf(g) === "refused") { toast(g.why || "This was not marked."); return; }
     if (g.fb && Array.isArray(g.fb.paragraphs) && g.fb.paragraphs.length) {
       EXAM.results[key] = Object.assign({}, EXAM.results[key], { fb: g.fb });
       examOpenReview(item, key, g.fb);
     } else {
-      if (btn) { btn.disabled = false; btn.textContent = "Mark this properly →"; }
       toast("Marking could not be reached just now.");
     }
   }
@@ -2222,14 +2385,25 @@
     const sit = EXAM.sit || (EXAM.paper.sections || []).map((_, i) => i);
     const rows = (EXAM.paper.sections || []).map((sec, si) => {
       if (sit.indexOf(si) < 0) return "";               // not sat this time
-      let sg = 0, sm = 0;
-      const qs = (sec.questions || []).map((q, qi) => {
-        if (!examIsActive(si, qi)) return "";           // not chosen in an either/or section
-        const g = EXAM.results[si + "-" + qi]; const s = g ? g.score : 0; sg += s; sm += q.marks || 0;
-        return `<div class="exam-resq"><span>${esc(q.prompt.slice(0, 70))}${q.prompt.length > 70 ? "…" : ""}</span><span class="exam-resm">${s}/${q.marks || 0}</span></div>`;
+      // ONE PLACE DECIDES WHAT ADDS UP, and this was a second.
+      //
+      // `g ? g.score : 0` was true of a refusal too - the object exists, the
+      // score does not - so this row rendered "undefined/20" and the section
+      // total became NaN. Gating on isMarked fixed the arithmetic and left the
+      // shape of the fault: three bags of results, and each one summing itself.
+      // That is exactly how the session summary was missed. The section total
+      // comes from the same tally the paper total does, so a change to what
+      // counts as marked cannot reach one of them and not the others.
+      const active = (sec.questions || []).map((q, qi) => ({ q, qi })).filter(x => examIsActive(si, x.qi));
+      const t = ASSESS.tally(active.map(x => ({ marks: x.q.marks, result: EXAM.results[si + "-" + x.qi] })));
+      const qs = active.map(({ q, qi }) => {
+        // A question nobody marked is named as such and contributes nothing to
+        // the score while still costing its marks.
+        const g = EXAM.results[si + "-" + qi], m = isMarked(g);
+        return `<div class="exam-resq"><span>${esc(q.prompt.slice(0, 70))}${q.prompt.length > 70 ? "…" : ""}</span><span class="exam-resm${m ? "" : " nomark"}">${m ? g.score + "/" + (q.marks || 0) : "not marked"}</span></div>`;
       }).join("");
-      got += sg; max += sm;
-      return `<div class="exam-ressec"><div class="exam-ressech">${esc(sec.name || "Section")} <span class="exam-resm">${sg}/${sm}</span></div>${qs}</div>`;
+      got += t.got; max += t.max;
+      return `<div class="exam-ressec"><div class="exam-ressech">${esc(sec.name || "Section")} <span class="exam-resm">${t.got}/${t.max}</span></div>${qs}</div>`;
     }).join("");
     app.innerHTML = `${examBar()}<div class="exam-wrap"><div class="summary">
       <div class="bigscore">${got}<small>/${max}</small></div>
@@ -3295,6 +3469,32 @@
   // computes nothing of its own and cannot change anything.
   try {
     window.__esSubjects = () => esAllSubjects().subjects; window.__esImports = esImportReport;
+    // OWNERSHIP, MADE VISIBLE, because it rests on an invariant that is true by
+    // construction and could stop being true without anything saying so.
+    //
+    // examOwns asks whether a card IS one of the sat paper's questions, by object
+    // identity. That works because nothing between state.exams and the marker
+    // copies a question: examStart stores the reference sec.questions[qi] and
+    // every later step passes that same object along. It is a real constraint on
+    // the whole exam path and it was previously written down nowhere, so an
+    // importer that normalised, rehydrated or wrapped a question would have
+    // broken it silently and put the leak back.
+    //
+    // So the constraint is reported rather than assumed. tests/ui68.js walks every
+    // lifecycle Test mode supports and asserts `identical` at each step: if a
+    // clone ever appears in the path, that assertion names it instead of a student
+    // meeting a paper marked by the wrong subject.
+    window.__examOwnership = () => {
+      const p2 = EXAM.paper;
+      return {
+        paper: p2 ? (p2.id || null) : null,
+        subjectKey: p2 ? ((ASSESS.curriculumOf(p2) || {}).subjectKey || null) : null,
+        questions: (EXAM.seq || []).filter(x => x.kind === "q").map(x => {
+          const held = p2 && p2.sections && p2.sections[x.si] && (p2.sections[x.si].questions || [])[x.qi];
+          return { si: x.si, qi: x.qi, identical: held === x.q, owned: !!examOwns(x.q) };
+        }),
+      };
+    };
     // Reading only, like the two above. A sentence shape resolves for a paragraph
     // deep inside the writing flow and only where a question authors pathways,
     // which today is Business Studies alone - so the rule that an example belongs
@@ -11015,6 +11215,20 @@
     }
     box.innerHTML = `<div class="es-submitted"><div class="es-submittedh">Marking your response…</div><p class="es-help">The marker reads what you actually wrote, paragraph by paragraph. This takes a moment.</p></div>`;
     const g = await gradeWritten(esMarkCard(d), answer, { plan: esPlanFromDraft(d), responseType: "extended", blocks: esAllBlocks(d) });
+    // An unmarked attempt does not get a mark written into the draft. This wrote
+    // {score: undefined, max: undefined} straight to localStorage, where it
+    // would have outlived the session that produced it. Not reachable with the
+    // subjects that ship today, and one subject without criteria away from being
+    // reachable, which is not a distinction worth relying on.
+    if (!isMarked(g)) {
+      box.innerHTML = `<div class="es-submitted">
+        <div class="es-submittedh">This attempt was not marked</div>
+        <p class="es-help">${esc(g.why || "No reason was recorded.")} Your writing is saved and nothing has been recorded against it.</p>
+        <button class="es-linkbtn" id="esbacksetup">Back to setup</button>
+      </div>`;
+      const bb = $("#esbacksetup"); if (bb) bb.onclick = () => { ES.screen = "setup"; esRender(); };
+      return;
+    }
     d.mark = { score: g.score, max: g.max, at: new Date().toISOString() };
     esSaveDraft();
     esRenderMarked(g, answer);

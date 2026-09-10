@@ -52,44 +52,44 @@
     "vocabulary": {
       "bus.ext.vocab.performance-objective": {
         "term": "performance objective",
-        "subject": "business_studies",
-        "plain": "A goal a business sets for how its operations should run, such as producing to a set standard, producing faster, producing more cheaply, or being able to change what it produces.",
+        "subjectKey": "business_studies",
+        "subjectMeaning": "A goal a business sets for how its operations should run, such as producing to a set standard, producing faster, producing more cheaply, or being able to change what it produces.",
         "example": "A bakery that promises bread on the shelf by six every morning has set speed as a performance objective."
       },
       "bus.ext.vocab.operations-strategy": {
         "term": "operations strategy",
-        "subject": "business_studies",
-        "plain": "A deliberate change a business makes to how it produces, chosen because of what it wants its operations to achieve.",
+        "subjectKey": "business_studies",
+        "subjectMeaning": "A deliberate change a business makes to how it produces, chosen because of what it wants its operations to achieve.",
         "example": "Moving from ordering stock monthly to ordering it daily is an operations strategy."
       },
       "bus.ext.vocab.defect": {
         "term": "defect",
-        "subject": "business_studies",
-        "plain": "A unit of output that does not meet the standard the business set for it, so it has to be scrapped, remade or discounted.",
+        "subjectKey": "business_studies",
+        "subjectMeaning": "A unit of output that does not meet the standard the business set for it, so it has to be scrapped, remade or discounted.",
         "example": "A shirt that leaves the line with a seam sewn open is a defect."
       },
       "bus.ext.vocab.lead-time": {
         "term": "lead time",
-        "subject": "business_studies",
-        "plain": "The time between a business placing an order and the goods being available to use or sell.",
+        "subjectKey": "business_studies",
+        "subjectMeaning": "The time between a business placing an order and the goods being available to use or sell.",
         "example": "If a cafe orders beans on Monday and they arrive on Thursday, the lead time is three days."
       },
       "bus.ext.vocab.carrying-cost": {
         "term": "carrying cost",
-        "subject": "business_studies",
-        "plain": "What it costs a business to hold stock it is not using yet: the space, the handling, the insurance, and the money tied up in it.",
+        "subjectKey": "business_studies",
+        "subjectMeaning": "What it costs a business to hold stock it is not using yet: the space, the handling, the insurance, and the money tied up in it.",
         "example": "A warehouse rented to hold spare parts is a carrying cost even in a month when no part is used."
       },
       "bus.ext.vocab.non-core-process": {
         "term": "non-core process",
-        "subject": "business_studies",
-        "plain": "A process a business needs done but that is not the thing customers choose it for.",
+        "subjectKey": "business_studies",
+        "subjectMeaning": "A process a business needs done but that is not the thing customers choose it for.",
         "example": "Payroll is a non-core process for a furniture maker."
       },
       "bus.ext.vocab.changeover": {
         "term": "changeover",
-        "subject": "business_studies",
-        "plain": "The work of switching a production line from making one thing to making another.",
+        "subjectKey": "business_studies",
+        "subjectMeaning": "The work of switching a production line from making one thing to making another.",
         "example": "Resetting a bottling line from 600ml to 1.25 litre bottles is a changeover."
       }
     },

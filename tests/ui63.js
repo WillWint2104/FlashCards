@@ -172,6 +172,18 @@ const landed = (page, id) => page.evaluate(qid => {
     ok(r.where.some(x => String(x).indexOf(at) === 0),
       why + ": and the half that found it is " + at + ", not somewhere else: " + JSON.stringify(r.where));
   }
+  // AND THE OTHER SIDE OF THE SAME RULE, in the importer a teacher actually runs.
+  // The check above used to be satisfied by a value that merely LOOKED like a
+  // subject key, which meant a vocabulary record whose course meaning was the
+  // single word "training" was refused with the same code, severity and verdict
+  // as the genuine cross-wire on the line above it. Ownership is typed now, so
+  // both halves can be true at once: the cross-wire is caught and the prose is not.
+  const terse = await errorsFor(cases.terseMeaning.file);
+  console.log("    " + cases.terseMeaning.id + " -> " + terse.n + " errors " + JSON.stringify(terse.codes));
+  ok(terse.codes.indexOf("SUBJECT_CROSS_WIRED") < 0,
+    "a one-word course meaning is prose, not an ownership claim: " + JSON.stringify(terse.codes));
+  ok(terse.n === 0, "and the package carrying it publishes: " + JSON.stringify(terse));
+
   // The reference case again, on its own terms: ONE error and nothing else, so a
   // pass here cannot be coming from a second rule firing on the same file.
   const only = await errorsFor(cases.libRefOnly.file);

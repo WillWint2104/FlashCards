@@ -44,40 +44,67 @@ const SYL = "business.operations.operations-strategies.";
 // Original definitions. A term is only listed when this question's guidance
 // actually uses it, because a vocabulary panel padded with terms nobody needs
 // is a list to scroll past rather than a thing to read.
+//
+// TWO FIELDS WERE CARRYING THE WRONG THING, and neither was noticed because the
+// completeness check only asked whether a required field was non-empty.
+//
+// `subject` held "business_studies", which is the LIBRARY record convention for
+// the owning course. On a package's own record the contract defines `subject` as
+// the course MEANING, so an ownership key was standing in for a definition:
+// seven records with no definition in them read as complete and displayable, and
+// the vocabulary panel would have shown a student "business_studies" as what
+// "performance objective" means. Ownership is `subjectKey` and says so now.
+//
+// The actual course meanings were in `plain`, which the contract defines as what
+// the word means in ordinary English and names "the subject definition again in
+// different words" as the thing it must not be. They are course definitions, so
+// they are `subjectMeaning`.
+//
+// No definition was rewritten; both moved to the field that matches what they
+// are. These records now carry no ordinary-English gloss, so they are not
+// displayable: without `plain` a record still teaches on the Learn surface and
+// is not offered in the vocabulary panel.
+//
+// NOTHING SAYS SO, and that is a gap rather than a claim. A record a package
+// PROVIDES is short-circuited as complete at every ref site and its
+// displayability is never computed, so VOCAB_NOT_YET_DISPLAYABLE is only ever
+// raised for records resolved out of a library and validate() returns accepted
+// with no findings at all. Written up as docs/gate3-audit.md 3.4. Whoever writes
+// the seven plain-English glosses should expect no prompting from the validator.
 const vocabulary = {
   [V("performance-objective")]: {
-    term: "performance objective", subject: "business_studies",
-    plain: "A goal a business sets for how its operations should run, such as producing to a set standard, producing faster, producing more cheaply, or being able to change what it produces.",
+    term: "performance objective", subjectKey: "business_studies",
+    subjectMeaning: "A goal a business sets for how its operations should run, such as producing to a set standard, producing faster, producing more cheaply, or being able to change what it produces.",
     example: "A bakery that promises bread on the shelf by six every morning has set speed as a performance objective.",
   },
   [V("operations-strategy")]: {
-    term: "operations strategy", subject: "business_studies",
-    plain: "A deliberate change a business makes to how it produces, chosen because of what it wants its operations to achieve.",
+    term: "operations strategy", subjectKey: "business_studies",
+    subjectMeaning: "A deliberate change a business makes to how it produces, chosen because of what it wants its operations to achieve.",
     example: "Moving from ordering stock monthly to ordering it daily is an operations strategy.",
   },
   [V("defect")]: {
-    term: "defect", subject: "business_studies",
-    plain: "A unit of output that does not meet the standard the business set for it, so it has to be scrapped, remade or discounted.",
+    term: "defect", subjectKey: "business_studies",
+    subjectMeaning: "A unit of output that does not meet the standard the business set for it, so it has to be scrapped, remade or discounted.",
     example: "A shirt that leaves the line with a seam sewn open is a defect.",
   },
   [V("lead-time")]: {
-    term: "lead time", subject: "business_studies",
-    plain: "The time between a business placing an order and the goods being available to use or sell.",
+    term: "lead time", subjectKey: "business_studies",
+    subjectMeaning: "The time between a business placing an order and the goods being available to use or sell.",
     example: "If a cafe orders beans on Monday and they arrive on Thursday, the lead time is three days.",
   },
   [V("carrying-cost")]: {
-    term: "carrying cost", subject: "business_studies",
-    plain: "What it costs a business to hold stock it is not using yet: the space, the handling, the insurance, and the money tied up in it.",
+    term: "carrying cost", subjectKey: "business_studies",
+    subjectMeaning: "What it costs a business to hold stock it is not using yet: the space, the handling, the insurance, and the money tied up in it.",
     example: "A warehouse rented to hold spare parts is a carrying cost even in a month when no part is used.",
   },
   [V("non-core-process")]: {
-    term: "non-core process", subject: "business_studies",
-    plain: "A process a business needs done but that is not the thing customers choose it for.",
+    term: "non-core process", subjectKey: "business_studies",
+    subjectMeaning: "A process a business needs done but that is not the thing customers choose it for.",
     example: "Payroll is a non-core process for a furniture maker.",
   },
   [V("changeover")]: {
-    term: "changeover", subject: "business_studies",
-    plain: "The work of switching a production line from making one thing to making another.",
+    term: "changeover", subjectKey: "business_studies",
+    subjectMeaning: "The work of switching a production line from making one thing to making another.",
     example: "Resetting a bottling line from 600ml to 1.25 litre bottles is a changeover.",
   },
 };

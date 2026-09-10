@@ -12,6 +12,7 @@
 // and nothing here should be described as having passed.
 const { spawn, execFileSync } = require("child_process");
 const path = require("path");
+const fs = require("fs");
 const HERE = __dirname;
 
 // Named, not derived. A gate whose membership is computed from a directory
@@ -44,7 +45,7 @@ const TIERS = {
   // when a maintained test is outside both. It costs nothing and belongs in the
   // tier that runs most often, because the thing it catches is a test drifting
   // out of the harness, which is invisible by definition.
-  fast: { budget: 40, suites: ["t1", "t17", "t18", "t19", "t20", "t21", "t22", "t23", "t24", "t25", "t26", "t27", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49"] },
+  fast: { budget: 40, suites: ["t1", "t17", "t18", "t19", "t20", "t21", "t22", "t23", "t24", "t25", "t26", "t27", "t28", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49"] },
   // Adds the interaction surfaces that the shell rewrite touched, and the setup
   // and marking paths. This is the gate to pass before pushing, and its whole
   // value is that it is cheap enough to run out of habit.
@@ -145,7 +146,7 @@ const TIERS = {
   // over. It belongs in the tier that runs on the way past.
   checkpoint: {
     budget: 60,
-    suites: ["t1", "t2", "t17", "t18", "t19", "t20", "t21", "t22", "t23", "t24", "t25", "t26", "t27", "ui35", "ui38", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49", "ui58", "ui59"],
+    suites: ["t1", "t2", "t17", "t18", "t19", "t20", "t21", "t22", "t23", "t24", "t25", "t26", "t27", "t28", "ui35", "ui38", "ui39", "ui41", "ui42", "ui44", "ui45", "ui46", "ui47", "ui48", "ui49", "ui58", "ui59"],
   },
   // ui40 joined this tier when ui51 arrived. It walks EVERY question through the
   // shell, which is an exhaustive sweep and 6.2s of it, and the picker it swept
@@ -324,6 +325,25 @@ if (!TIERS[tier]) {
   process.exit(2);
 }
 const want = TIERS[tier].suites;
+// WHAT SHOULD HAVE REPORTED, which is not the same as what was requested.
+//
+// full passes no filter - that is what makes registration alone put a suite in a
+// gate - so `want` is empty for it and the "did not report" line below had
+// nothing to compare against. A full run where four suites died before printing
+// their count therefore said "failures none" and named none of them. The verdict
+// was still FAIL, because run.js exits non-zero, so nothing was certified that
+// should not have been; but a gate that says a run failed and cannot say what
+// failed sends the reader back to a log that has already scrolled past.
+//
+// So when the tier requests everything, everything is what it expects, read from
+// the runner's own registration lists rather than from a second copy kept here.
+const EXPECTED = want.length ? want : (() => {
+  const src = fs.readFileSync(path.join(HERE, "run.js"), "utf8");
+  return ["WORKER", "UI", "BOTS"].flatMap(name => {
+    const m = src.match(new RegExp("const " + name + " = \\[([^\\]]*)\\]"));
+    return m ? [...m[1].matchAll(/"([^"]+)"/g)].map(x => x[1]) : [];
+  });
+})();
 const label = tier.toUpperCase() + " GATE";
 
 const sha = (() => {
@@ -366,7 +386,7 @@ child.on("close", code => {
 
   // A requested suite that reported nothing did not pass, it was silent. Fail
   // closed on it, or the gate line starts certifying runs that never happened.
-  const missing = want.filter(w => !seen.has(w));
+  const missing = EXPECTED.filter(w => !seen.has(w));
 
   console.log("\n" + label + " detail");
   console.log("  commit          " + sha + (dirty ? " (working tree dirty)" : ""));
@@ -387,6 +407,8 @@ child.on("close", code => {
   // against the budget, and printing "PASS" over it is how a budget quietly
   // stops being one. The verdict now names which of the two held.
   const green = code === 0 && failed.length === 0 && missing.length === 0 && ran.length > 0;
+  if (missing.length) console.log("  ...which is " + missing.length + " suite" + (missing.length === 1 ? "" : "s") +
+    " that ran and never printed a count. Run each on its own: it threw, timed out, or exited early.");
   const verdict = !green ? " FAIL" : over ? " GREEN, OVER BUDGET" : " PASS";
   console.log("\n" + label + verdict + " — " + ran.length + " suites — " +
     assertions + " assertions — " + secs.toFixed(1) + "s" +

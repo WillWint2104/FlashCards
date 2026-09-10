@@ -66,11 +66,32 @@ function declaring(pkg, subject) {
 // The records the package brings with it, re-stamped as another subject's. This
 // is the second half of cross-wiring: not reaching into another subject's
 // library, but declaring one subject and shipping the other's records inside.
-function providing(pkg, subject) {
+//
+// IT USED TO WRITE THE PROSE FIELD. `subject` on a provided vocabulary record is
+// the course meaning, and this helper overwrote it with "economics" - so the
+// validator caught the fixture only because that word happens to look like a
+// key, which is the same accident that had it reject a record whose meaning was
+// the word "training". Ownership is `subjectKey` now, so the fixture claims
+// ownership the way a package actually would, and the meaning it already had is
+// left alone.
+function providing(pkg, subjectKey) {
   const v = clone(pkg);
   OWNED.forEach(kind => {
     const recs = (v.provides || {})[kind] || {};
-    Object.keys(recs).forEach(rid => { if (recs[rid] && recs[rid].subject) recs[rid].subject = subject; });
+    Object.keys(recs).forEach(rid => { if (recs[rid]) recs[rid].subjectKey = subjectKey; });
+  });
+  return v;
+}
+// The other side of the same rule, and the one the old shape-guessing check got
+// wrong: a record whose COURSE MEANING is a single word that looks exactly like a
+// subject key. It is prose, it is correct, and it must import.
+function meaning(pkg, word) {
+  const v = clone(pkg);
+  const recs = (v.provides || {}).vocabulary || {};
+  Object.keys(recs).forEach(rid => {
+    if (!recs[rid]) return;
+    delete recs[rid].subject;
+    recs[rid].subjectMeaning = word;
   });
   return v;
 }
@@ -114,9 +135,11 @@ function build() {
     busInEco: mk("xw-bus-in-eco", declaring(BUS, "economics")),
     busInAnc: mk("xw-bus-in-anc", declaring(BUS, "ancient_history")),
     ecoInBus: mk("xw-eco-in-bus", providing(BUS, "economics")),
+    // Not a negative. A one-word course meaning is prose and imports.
+    terseMeaning: mk("sub-terse-meaning", meaning(BUS, "training")),
     libRefOnly: mk("xw-libref-only", referencing(declaring(AH, "economics"), "business.operations")),
     noSubject: mk("xw-no-subject", declaring(BUS, null)),
   };
 }
 
-module.exports = { build, BUS_SRC, AH_SRC, OUT, named, declaring, providing, referencing, load, write };
+module.exports = { build, BUS_SRC, AH_SRC, OUT, named, declaring, providing, meaning, referencing, load, write };

@@ -574,9 +574,142 @@ module.exports = [
     id: "gate-drops-a-suite",
     file: "tests/run.js",
     // Follows the end of the list, which moves every time a suite is added.
-    find: '"ui66", "ui67"]',
-    replace: '"ui66"]',
+    find: '"ui67", "ui68"]',
+    replace: '"ui67"]',
     owner: "t23",
     why: "a maintained regression outside the runner is invisible, which is how twenty-eight suites rotted unnoticed",
+  },
+  // ---- Gate 3A: curriculum identity and evaluation safety -----------------
+  {
+    id: "gate3a-refusal-scores-again",
+    file: "tools/contract/assessment.js",
+    find: "  return !!g && g.outcome === SUCCESS && finite(g.score) && finite(g.max);",
+    replace: "  return !!g && g.outcome === SUCCESS;",
+    owner: "t28",
+    why: "a success is not a success because it says so; dropping the number check is how undefined got back into the totals",
+  },
+  {
+    id: "gate3a-tally-trusts-the-score",
+    file: "tools/contract/assessment.js",
+    find: "    if (o === SUCCESS) { got += clamp(g.score, 0, finite(g.max) ? g.max : m); done++; }",
+    replace: "    got += (g && g.score); if (o === SUCCESS) done++;",
+    owner: "t28",
+    why: "this is the exact reduce that made a whole paper total NaN when one question was refused",
+  },
+  {
+    id: "gate3a-authority-falls-back-to-a-label",
+    file: "tools/contract/assessment.js",
+    find: "  var pkg = packages[owner];\n  if (!pkg)",
+    replace: "  var pkg = packages[owner] || packages[Object.keys(packages)[0]];\n  if (!pkg)",
+    owner: "t28",
+    why: "any fallback at all is the fault: an unresolved paper was marked against whichever package happened to be first",
+  },
+  {
+    id: "gate3a-question-overrides-the-paper",
+    file: "tools/contract/assessment.js",
+    find: "  if (!blank(declared) && declared !== owner)",
+    replace: "  if (false && !blank(declared) && declared !== owner)",
+    owner: "t28",
+    why: "a question silently changing subject inside a paper is how an Economics question would be marked as Business Studies",
+  },
+  {
+    id: "gate3a-prose-is-identity-again",
+    file: "tools/contract/validate.js",
+    find: "      const owner = recs[rid] && recs[rid].subjectKey;",
+    replace: "      const owner = recs[rid] && (recs[rid].subjectKey || recs[rid].subject);",
+    owner: "t28",
+    why: "reading the prose field as ownership is the defect itself: a course meaning of \"training\" was reported as a cross-wire",
+  },
+  {
+    id: "gate3a-study-records-a-refusal",
+    file: "app.js",
+    find: "    if (ok) applyResult(card, g.score, g.max);",
+    replace: "    applyResult(card, g.score, g.max);",
+    owner: "ui68",
+    why: "this line recorded an unmarked response as a zero and demoted the card to box 1",
+  },
+  {
+    id: "gate3a-exam-sheet-scores-a-refusal",
+    file: "app.js",
+    find: "    if (!isMarked(g)) return unmarkedHTML(q, g);",
+    replace: "    if (false) return unmarkedHTML(q, g);",
+    owner: "ui68",
+    why: "without it the sheet rendered undefined/undefined under the heading \"Not yet\"",
+  },
+  {
+    id: "gate3a-stale-paper-marks-a-flashcard",
+    file: "app.js",
+    find: "    const paper = examOwns(card);",
+    replace: '    const paper = (typeof EXAM !== "undefined" && EXAM && EXAM.paper) ? EXAM.paper : null;',
+    owner: "ui68",
+    why: "EXAM.paper outlives the sitting, so reading it unconditionally marked a flashcard under the curriculum of a paper the student had already left",
+  },
+  {
+    // The third results bag. Two of them were on the shared tally and this one
+    // was still doing its own arithmetic - correct, but the same shape as the
+    // fault that had just escaped, so it is on the tally too and this holds it
+    // there.
+    id: "gate3a-section-total-sums-a-refusal",
+    file: "app.js",
+    find: "      got += t.got; max += t.max;",
+    replace: "      got += t.got; max += t.max;\n      t.got = active.reduce((n, x) => n + (EXAM.results[si + \"-\" + x.qi] || {}).score, 0);",
+    owner: "ui68",
+    why: "a section total that adds up refusals reads NaN beside a paper total that does not",
+  },
+  {
+    // Found in review, not by this catalogue, which is the reason it is in it.
+    // examTotals was fixed and session.results was not: finishCard pushes every
+    // result into it, refusals included, and the summary added their scores up.
+    id: "gate3a-session-summary-sums-a-refusal",
+    file: "app.js",
+    find: "    const t = ASSESS.tally(results.map(r => ({ marks: r.card && r.card.marks, result: r.g })));\n    const got = t.got, max = t.max;",
+    replace: "    const got = results.reduce((n, r) => n + r.g.score, 0);\n    const max = results.reduce((n, r) => n + r.g.max, 0);",
+    owner: "ui68",
+    why: "one unmarked answer ended a study run on \"NaN/NaN\" as the big score",
+  },
+  {
+    // The completeness half of the rename. Ownership was fixed first and this was
+    // still open: "business_studies" sat in the field the contract defines as the
+    // course meaning, satisfied a non-empty check, and made seven records with no
+    // definition in them read as complete AND displayable.
+    id: "gate3a-a-course-name-passes-for-a-definition",
+    file: "tools/contract/validate.js",
+    find: "  function legacyAmbiguous(rec) {\n    return !!(rec",
+    replace: "  function legacyAmbiguous(rec) {\n    if (rec) return false;\n    return !!(rec",
+    owner: "t28",
+    why: "a student would have been shown \"business_studies\" in the vocabulary panel as what \"performance objective\" means",
+  },
+  {
+    // And the half that keeps the fix from becoming the defect again. Ambiguity is
+    // collision with the real register of courses; the moment it is decided by what
+    // a value LOOKS like, "training" is a subject key once more.
+    id: "gate3a-ambiguity-guesses-from-shape",
+    file: "tools/contract/validate.js",
+    find: '  (((man || {}).enums || {}).subjectKeys || []).forEach(k => { KNOWN_SUBJECT_KEYS[k] = true; });',
+    replace: '  ["training", "marketing", "operations"].forEach(k => { KNOWN_SUBJECT_KEYS[k] = true; });',
+    owner: "t28",
+    why: "judging a value by its form rather than against the register is the original defect wearing a different name",
+  },
+  {
+    // The exact future this guard exists for: something on the exam path starts
+    // handing on a COPY of a question instead of the paper's own object. Nothing
+    // does today, which is why examOwns can compare by identity at all - and why
+    // the constraint has to be guarded rather than assumed, because an importer
+    // that normalised or rehydrated questions would break it in silence and put
+    // the cross-subject leak back.
+    id: "gate3a-exam-path-clones-a-question",
+    file: "app.js",
+    find: '      (sec.questions || []).forEach((q, qi) => seq.push({ kind: "q", si, qi, sec, q }));',
+    replace: '      (sec.questions || []).forEach((q, qi) => seq.push({ kind: "q", si, qi, sec, q: JSON.parse(JSON.stringify(q)) }));',
+    owner: "ui68",
+    why: "a cloned question is not the paper's question, so ownership by identity would silently stop resolving and every written answer in the paper would fall through to the flashcard package",
+  },
+  {
+    id: "gate3a-import-stops-asking-who-marks-it",
+    file: "app.js",
+    find: "    ASSESS.curriculumFindings(d).concat(ASSESS.subjectOverrides(d))",
+    replace: "    [].concat(ASSESS.subjectOverrides(d))",
+    owner: "ui68",
+    why: "a paper that never says which subject marks it was marked against whichever flashcard package the picker was on",
   },
 ];

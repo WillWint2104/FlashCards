@@ -119,7 +119,11 @@ function bundle(root) {
 // has nothing to decide about a package: it was validated and admitted before it
 // was ever written, and re-deciding here would be a second opinion that can
 // disagree with the first. It reads what is there.
-const STUDENT_MODULES = ["store.js", "runtime.js"];
+// assessment.js joins them for the same reason they are here: the rules about
+// which subject marks a response, and about what counts as a result at all, are
+// run by the student's page and must be the same file the harness tests. A
+// second copy in app.js is a second opinion waiting to disagree.
+const STUDENT_MODULES = ["store.js", "runtime.js", "assessment.js"];
 
 function studentBundle(root) {
   const dir = path.join(root, "tools", "contract");
@@ -148,6 +152,7 @@ function studentBundle(root) {
     "",
     "  var store = __require('./store.js');",
     "  var runtime = __require('./runtime.js');",
+    "  window.MarginalAssessment = __require('./assessment.js');",
     "  // Storage may be unavailable, and a student whose browser blocks it must",
     "  // still get the questions that shipped. It degrades to holding nothing,",
     "  // never to failing to load.",
