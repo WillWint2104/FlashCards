@@ -645,6 +645,29 @@ module.exports = [
     why: "EXAM.paper outlives the sitting, so reading it unconditionally marked a flashcard under the curriculum of a paper the student had already left",
   },
   {
+    // The completeness half of the rename. Ownership was fixed first and this was
+    // still open: "business_studies" sat in the field the contract defines as the
+    // course meaning, satisfied a non-empty check, and made seven records with no
+    // definition in them read as complete AND displayable.
+    id: "gate3a-a-course-name-passes-for-a-definition",
+    file: "tools/contract/validate.js",
+    find: "  function legacyAmbiguous(rec) {\n    return !!(rec",
+    replace: "  function legacyAmbiguous(rec) {\n    if (rec) return false;\n    return !!(rec",
+    owner: "t28",
+    why: "a student would have been shown \"business_studies\" in the vocabulary panel as what \"performance objective\" means",
+  },
+  {
+    // And the half that keeps the fix from becoming the defect again. Ambiguity is
+    // collision with the real register of courses; the moment it is decided by what
+    // a value LOOKS like, "training" is a subject key once more.
+    id: "gate3a-ambiguity-guesses-from-shape",
+    file: "tools/contract/validate.js",
+    find: '  (((man || {}).enums || {}).subjectKeys || []).forEach(k => { KNOWN_SUBJECT_KEYS[k] = true; });',
+    replace: '  ["training", "marketing", "operations"].forEach(k => { KNOWN_SUBJECT_KEYS[k] = true; });',
+    owner: "t28",
+    why: "judging a value by its form rather than against the register is the original defect wearing a different name",
+  },
+  {
     // The exact future this guard exists for: something on the exam path starts
     // handing on a COPY of a question instead of the paper's own object. Nothing
     // does today, which is why examOwns can compare by identity at all - and why

@@ -395,14 +395,50 @@ function validate(pkg, man, opts) {
   // against the old name still imports and its meaning is still read, and the
   // author is told exactly what to change. What the old field can never do again
   // is be read as a claim about ownership, whatever it contains.
+  //
+  // EXCEPT WHERE THE OLD VALUE IS ITSELF AN OWNERSHIP KEY, which is the case the
+  // fixture package is made of: seven records whose `subject` is the string
+  // "business_studies". Reading those as prose is safe for OWNERSHIP - nothing
+  // treats them as a claim about which course owns the record any more - and it
+  // was not safe for MEANING. They satisfied the completeness check, so seven
+  // records with no definition in them counted as complete and displayable, and a
+  // student opening the vocabulary panel would have been shown "business_studies"
+  // as what "performance objective" means.
+  //
+  // So a legacy value migrates as prose only while it is unambiguous. Ambiguity is
+  // decided by comparing the exact value against the subject keys this reader
+  // actually knows - the owners in the library manifest, plus the subject the
+  // package declares - and never by what the value looks like. The lexical guess
+  // is the defect that was removed and it is not coming back through here.
+  // The register of courses, which the manifest carries because a subject that
+  // owns no library records yet is otherwise invisible: economics owns none, and
+  // reading owners alone would have let "economics" pass as a definition.
+  const KNOWN_SUBJECT_KEYS = {};
+  (((man || {}).enums || {}).subjectKeys || []).forEach(k => { KNOWN_SUBJECT_KEYS[k] = true; });
+  Object.keys((man && man.records) || {}).forEach(kind =>
+    Object.keys(man.records[kind] || {}).forEach(id => {
+      const owner = man.records[kind][id] && man.records[kind][id].subject;
+      if (owner) KNOWN_SUBJECT_KEYS[owner] = true;
+    }));
+  if (q.subject) KNOWN_SUBJECT_KEYS[q.subject] = true;
   Object.keys((pkg.provides || {}).vocabulary || {}).forEach(rid => {
     const rec = pkg.provides.vocabulary[rid] || {};
     if (blank(rec.subject)) return;
-    add(SEV.warning, "VOCAB_SUBJECT_RENAMED", "provides.vocabulary." + rid + ".subject",
+    const at = "provides.vocabulary." + rid + ".subject";
+    if (legacyAmbiguous(rec)) {
+      add(SEV.error, "VOCAB_SUBJECT_AMBIGUOUS", at,
+        JSON.stringify(String(rec.subject).trim()) + " is a subject key, and `subject` on a vocabulary record now means the course MEANING. Read as a meaning it says this term is defined as the name of a course, which is not a definition; read as ownership it would be the guess this validator stopped making. Say which was meant: `subjectMeaning` for what the term means in this course, `subjectKey` if the record belongs to another one");
+      return;
+    }
+    add(SEV.warning, "VOCAB_SUBJECT_RENAMED", at,
       "`subject` on a vocabulary record is now `subjectMeaning`, because the old name also meant the owning course on library records. The value is read as the course meaning" +
       (blank(rec.subjectMeaning) ? "" : ", and `subjectMeaning` beside it wins") +
       ". Ownership, if it needs saying at all, is `subjectKey`");
   });
+  function legacyAmbiguous(rec) {
+    return !!(rec && blank(rec.subjectMeaning) && !blank(rec.subject) &&
+      KNOWN_SUBJECT_KEYS[String(rec.subject).trim()]);
+  }
   if ((pkg.marking || {}).bands && !String((pkg.marking || {}).bandSource || "").trim())
     add(SEV.error, "BANDS_WITHOUT_SOURCE", "marking.bands",
       "band descriptors are present with no source named. Marking language is quoted from somewhere or it is invented");
@@ -448,12 +484,17 @@ function validate(pkg, man, opts) {
       // VocabularyRecord.subject was renamed to subjectMeaning. A package written
       // against the old name is complete, and is told about the rename by the
       // warning above rather than by being called half written.
+      // A legacy value stands in for the renamed field only while it is
+      // unambiguous. "business_studies" in the meaning slot is not a meaning, and
+      // letting it satisfy this check is how seven records with no definition in
+      // them were counted complete AND displayable.
       const LEGACY = { "vocabulary.subjectMeaning": "subject" };
       const miss = own.map(f => f.path.split(".").slice(1).join(".")).filter(k => {
         const rec = provides[kind][rid] || {};
         if (!blank(rec[k])) return false;
         const was = LEGACY[kind + "." + k];
-        return was ? blank(rec[was]) : true;
+        if (!was) return true;
+        return blank(rec[was]) || legacyAmbiguous(rec);
       });
       if (miss.length) add(SEV.error, (CODES[kind] || {}).partial || "RECORD_PARTIAL", at, "half written: " + miss.join(", ") + " missing");
     });

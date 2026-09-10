@@ -55,7 +55,13 @@ const GROUPS = [
     // SUBJECT_CROSS_WIRED is here rather than in a group of its own: the package
     // names a subject in question.subject and then uses another subject's
     // records, which is two places in the file saying different things.
-    codes: ["REQUIRES_MISMATCH", "FIELD_CONFLICT", "PROVIDES_CONFLICT", "SUBJECT_CROSS_WIRED"] },
+    // VOCAB_SUBJECT_AMBIGUOUS is here for the same reason: `subject` on a
+    // vocabulary record now means the course meaning, and a value that names a
+    // course is the file saying one thing where it means another. It is grouped
+    // with the disagreements rather than with the missing content because the
+    // author has written something; it is just not the thing the field is for.
+    codes: ["REQUIRES_MISMATCH", "FIELD_CONFLICT", "PROVIDES_CONFLICT", "SUBJECT_CROSS_WIRED",
+      "VOCAB_SUBJECT_AMBIGUOUS"] },
 ];
 
 function groupOf(code) {

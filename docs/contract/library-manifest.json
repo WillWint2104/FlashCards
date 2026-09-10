@@ -120,6 +120,11 @@
     "shapeFamilies": [
       "causal"
     ],
+    "subjectKeys": [
+      "ancient_history",
+      "business_studies",
+      "economics"
+    ],
     "capability": [
       "importable",
       "writing-ready",

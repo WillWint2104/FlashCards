@@ -282,6 +282,16 @@ function manifest() {
     shapeCoverage: [...new Set(shapes.map(s => [s.family, s.role, s.stage].join(".")))].sort(),
     shapeFamilies: [...new Set(shapes.map(s => s.family))].sort(),
   };
+  // EVERY SUBJECT KEY THAT IS A COURSE, whether or not it owns a library record.
+  //
+  // The owner carried on each record above answers "whose is this record", and a
+  // subject that has no records yet is invisible to it - economics owns none, so
+  // nothing reading the manifest could tell that "economics" names a course at
+  // all. That matters because the validator has to decide whether a value in a
+  // vocabulary record's MEANING slot is a course name rather than a definition,
+  // and it must decide that by comparing against the real register of courses,
+  // never by what the value looks like. So the register travels too.
+  enums.subjectKeys = Object.keys(E.subjects || {}).sort();
   Object.keys(CONTRACT_ENUMS).forEach(k => { if (CONTRACT_ENUMS[k].values) enums[k] = CONTRACT_ENUMS[k].values.slice(); });
   return { schema: "marginal.library-manifest", version: 1, counts: counts, enums: enums,
            notes: notes, records: records };

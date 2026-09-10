@@ -266,22 +266,97 @@ console.log("7. identity is a typed field, never a shape a piece of prose happen
   // it used to decide by looking at the shape of the value. So it does not
   // decide. It reads the meaning, never the ownership, and says so out loud -
   // which is what makes preserving the old field deliberate rather than silent.
+  // It does not decide, and it does not let the value through either. Read as
+  // ownership it would be the guess that was removed; read as a meaning it says
+  // this term is defined as the name of a course. Both readings are refused, and
+  // the record is called half written, because it is.
   const legacyOwner = withVocab({ subject: "economics" });
   ok(crossWired(legacyOwner).length === 0,
     "the old field is not read as ownership even when it holds another subject's key: " +
     JSON.stringify(crossWired(legacyOwner).map(x => x.message)));
-  ok(legacyOwner.wouldImport, "the package still imports: " + legacyOwner.verdict);
-  const renamed = (legacyOwner.findings || []).filter(x => x.code === "VOCAB_SUBJECT_RENAMED");
-  ok(renamed.length === 1, "and is told about the rename rather than left to guess: " +
+  ok(!legacyOwner.wouldImport, "and the package does not import on the strength of it: " + legacyOwner.verdict);
+  const ambiguousOwner = (legacyOwner.findings || []).filter(x => x.code === "VOCAB_SUBJECT_AMBIGUOUS");
+  ok(ambiguousOwner.length === 1, "it is reported as ambiguous rather than accepted: " +
     JSON.stringify((legacyOwner.findings || []).map(x => x.code)));
-  ok(renamed[0].severity === "warning", "as a warning, so nothing that used to import stops");
-  ok(/subjectMeaning/.test(renamed[0].message) && /subjectKey/.test(renamed[0].message),
-    "naming both fields, so an author can say which they meant: " + JSON.stringify(renamed[0].message));
+  ok(ambiguousOwner[0].severity === "error", "as an error, because a course name is not a definition");
+  ok(/subjectMeaning/.test(ambiguousOwner[0].message) && /subjectKey/.test(ambiguousOwner[0].message),
+    "naming both fields, so an author can say which they meant: " + JSON.stringify(ambiguousOwner[0].message));
+  // A real meaning under the old name is the case that must keep working.
+  const legacyProse = withVocab({ subject: "learning the job by doing it under supervision" });
+  const renamed = (legacyProse.findings || []).filter(x => x.code === "VOCAB_SUBJECT_RENAMED");
+  ok(legacyProse.wouldImport && renamed.length === 1 && renamed[0].severity === "warning",
+    "a legacy record holding an actual meaning still imports, with a warning: " + legacyProse.verdict);
   // And the typed field still wins where both are present.
   const both = withVocab({ subject: "economics", subjectMeaning: "learning the job by doing it",
     subjectKey: "business_studies" });
   ok(crossWired(both).length === 0 && both.wouldImport,
     "a record that says plainly who owns it is judged on that: " + both.verdict);
+
+  // ---- the legacy field, and the three things it must never do ------------
+  //
+  // The old `subject` on a vocabulary record meant the course meaning. The same
+  // name on a library record means the owning course. Packages exist that put an
+  // ownership key in the meaning slot, so migrating the field has to be right in
+  // both directions at once: never read as ownership, and never allowed to pass
+  // for a meaning when it plainly is not one.
+  const legacy = rec => {
+    const pkg = JSON.parse(JSON.stringify(base));
+    pkg.provides = { vocabulary: { "business.vocab.legacy": Object.assign(
+      { id: "business.vocab.legacy", term: "on the job training",
+        plain: "learning the work by doing it beside someone who already can",
+        example: "A new starter spends the first fortnight beside a supervisor." }, rec) } };
+    return validate(pkg, man);
+  };
+  const has = (out, code) => (out.findings || []).some(f => f.code === code);
+
+  // 1. a real meaning under the old name still works, and is told to move.
+  const prose = legacy({ subject: "learning the job by doing it under supervision in the workplace" });
+  ok(prose.wouldImport, "a legacy record whose subject is a real meaning still imports: " + prose.verdict);
+  ok(has(prose, "VOCAB_SUBJECT_RENAMED"), "and is told about the rename");
+  ok(!has(prose, "VOCAB_RECORD_PARTIAL"), "and is not called half written for using the old name");
+  ok((prose.findings.find(f => f.code === "VOCAB_SUBJECT_RENAMED") || {}).severity === "warning",
+    "the rename is a warning, because nothing about that record is wrong");
+
+  // 2. a value that IS a subject key cannot pass for a meaning. This is the
+  //    fixture package's exact shape: seven records whose meaning slot holds
+  //    "business_studies". They counted as complete AND displayable, so the
+  //    vocabulary panel would have shown a course name as a definition.
+  const ambiguous = legacy({ subject: "business_studies" });
+  ok(has(ambiguous, "VOCAB_SUBJECT_AMBIGUOUS"),
+    "a subject key in the meaning slot is ambiguous: " + JSON.stringify(ambiguous.findings.map(f => f.code)));
+  ok(has(ambiguous, "VOCAB_RECORD_PARTIAL"),
+    "and the record is half written, because a course name is not a definition");
+  ok(!ambiguous.wouldImport, "so the package does not import: " + ambiguous.verdict);
+  ok(!has(ambiguous, "SUBJECT_CROSS_WIRED"),
+    "and it is still not read as an ownership claim, which is the other half of the fix");
+  const other = legacy({ subject: "economics" });
+  ok(has(other, "VOCAB_SUBJECT_AMBIGUOUS") && !has(other, "SUBJECT_CROSS_WIRED"),
+    "another course's key in the meaning slot is ambiguous too, not a cross-wire: " +
+    JSON.stringify(other.findings.map(f => f.code)));
+
+  // 3. AMBIGUITY IS COLLISION WITH A REGISTERED KEY, NOT A SHAPE. This is the
+  //    line that separates the fix from the defect it replaces: "training" has
+  //    the exact form of a subject key and is a perfectly good terse meaning, so
+  //    it must pass. Only a value that actually names a course this reader knows
+  //    is refused.
+  ["training", "marketing", "operations", "induction"].forEach(word => {
+    const out = legacy({ subject: word });
+    ok(A.isSubjectKey(word) && !has(out, "VOCAB_SUBJECT_AMBIGUOUS") && out.wouldImport,
+      "\"" + word + "\" has the shape of a key, names no course, and imports: " +
+      JSON.stringify(out.findings.map(f => f.code)));
+  });
+
+  // 4. the explicit fields always win, so the migration has somewhere to go.
+  const named = legacy({ subject: "business_studies", subjectMeaning: "learning the job by doing it" });
+  ok(named.wouldImport && !has(named, "VOCAB_SUBJECT_AMBIGUOUS"),
+    "a record that says both is unambiguous: " + JSON.stringify(named.findings.map(f => f.code)));
+  ok(has(named, "VOCAB_SUBJECT_RENAMED"), "and is still told the old field is going away");
+
+  // And the whole fixture, which is where this was found.
+  const ext = validate(JSON.parse(read("tests/fixtures/external-ops-package.json")), man);
+  const amb = (ext.findings || []).filter(f => f.code === "VOCAB_SUBJECT_AMBIGUOUS");
+  ok(amb.length === 7, "all seven records in the external fixture are refused: " + amb.length);
+  ok(!ext.wouldImport, "and the package fails closed rather than importing seven definitions that are not definitions: " + ext.verdict);
 
   // The regex-driven check is gone rather than tightened.
   const v = read("tools/contract/validate.js");

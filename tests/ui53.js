@@ -97,19 +97,38 @@ async function toChooser(page) {
   {
     ok(SOURCE_IDS.indexOf(ID) < 0, "its id is in no source subject: " + ID);
     const r = validate(PKG, MAN, {});
-    // Errors are the gate, not the verdict string. This package writes the old
-    // VocabularyRecord.subject on its seven vocabulary records, so it now draws
-    // seven warnings telling its author about the rename - which is the point of
-    // a warning: it imports unchanged and is told what to change.
-    ok(r.counts.error === 0 && r.wouldImport,
-      "it validates against the published contract: " + r.verdict + " " + JSON.stringify(r.counts));
-    ok(/^accepted/.test(r.verdict), "and is accepted: " + r.verdict);
-    const warned = [...new Set(r.findings.filter(f => f.severity === "warning").map(f => f.code))];
-    ok(warned.join() === "VOCAB_SUBJECT_RENAMED",
-      "and the only thing it is warned about is the rename: " + JSON.stringify(warned));
+    // THIS PACKAGE IS NOW REFUSED, AND THAT IS THE FINDING RATHER THAN A REGRESSION.
+    //
+    // Its seven vocabulary records put "business_studies" in the field the
+    // contract defines as the course MEANING. They read as complete because the
+    // completeness check only asked whether that field was non-empty, and an
+    // ownership key is non-empty. So seven records with no definition in them
+    // counted as complete AND displayable, and the vocabulary panel would have
+    // shown a student "business_studies" as what "performance objective" means.
+    //
+    // The happy path this block used to assert was resting on the same accident.
+    // Restoring it means authoring seven course meanings, which is content work
+    // and deliberately not done here: the package is kept exactly as it is, as
+    // migration coverage, and what is asserted is that the pipeline says clearly
+    // what is wrong instead of waving it through.
+    ok(!r.wouldImport, "it is refused rather than imported: " + r.verdict);
+    const ambiguous = r.findings.filter(f => f.code === "VOCAB_SUBJECT_AMBIGUOUS");
+    ok(ambiguous.length === 7, "all seven vocabulary records are named: " + ambiguous.length);
+    ok(ambiguous.every(f => /subjectMeaning/.test(f.message) && /subjectKey/.test(f.message)),
+      "each one says which field was meant, so the fix is a rename and not a guess");
+    ok(r.findings.filter(f => f.code === "VOCAB_RECORD_PARTIAL").length === 7,
+      "and each is called half written, because a course name is not a definition");
+    // Ambiguity is collision with the register of courses, never a shape. The
+    // register now travels on the manifest for exactly this comparison.
+    ok((MAN.enums.subjectKeys || []).indexOf("business_studies") >= 0,
+      "the manifest carries the register the collision is judged against: " +
+      JSON.stringify(MAN.enums.subjectKeys));
+    ok(r.findings.every(f => f.code !== "SUBJECT_CROSS_WIRED"),
+      "and the value is still never read as an ownership claim, which is the other half of the fix");
+    // The capability report follows the records rather than disagreeing with them.
     const dims = r.capability.dimensions;
-    ["importable", "writing-ready", "pathway-guided", "learning-complete", "assessment-complete"]
-      .forEach(k => ok(dims[k].status === "reached", "it reaches " + k + ": " + dims[k].status));
+    ok(dims.importable.status !== "reached",
+      "a package that cannot import does not report importable: " + dims.importable.status);
     // The state the whole design depends on being able to report honestly. This
     // package authors no evidence because it has no source it could cite, and
     // saying so is the point rather than a gap to be closed later.
