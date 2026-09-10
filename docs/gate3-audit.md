@@ -420,3 +420,55 @@ key.
 Two of the four need no browser and belong in `fast`. The two that do are
 single-question papers with no writing loop, so `checkpoint` is plausible and
 `full` is certain. No budget change was proposed.
+
+---
+
+# Part 3 — recorded during Gate 3A, deliberately not fixed in it
+
+Each of these was found while verifying Gate 3A, is real, and is out of that
+slice's scope. They are written down here so they are decisions rather than
+things somebody rediscovers.
+
+## 3.1 The exam fixture carries authentic examination wording
+
+`tests/fixtures/hsc-bus-2025.json` contains what reads as verbatim 2025 HSC
+Business Studies question wording, in a public repository with Pages enabled.
+Its own header says the model answers and marking points are original and are not
+NESA's marking guidelines, which covers the answers and not the questions.
+
+It predates Gate 3 and `ui5`, `ui7` and `ui8` depend on it, so Gate 3A only added
+the curriculum block to it.
+
+The intended shape, before the past-paper bank grows: public regression fixtures
+are **synthetic and structurally equivalent** — sections, marks, stimulus,
+subquestions, either/or, response formats — and authentic papers are imported
+externally for acceptance testing. Proving the exam architecture does not require
+committing the source wording of real papers. This is worth doing before more
+authentic packages accumulate, not after.
+
+## 3.2 Seven vocabulary records need course meanings written
+
+`tests/fixtures/external-ops-package.json` puts `business_studies` in the field
+the contract defines as the course meaning. Gate 3A makes that fail closed rather
+than pass for a definition (§1.8 is the same defect on the ownership side).
+
+The records already carry a term, a plain-English meaning and an example. What
+they lack is the course meaning, and writing seven of those is content authoring.
+Until it happens, `ui53` asserts the honest refusal rather than the happy path it
+used to assert — which was resting on the same accident.
+
+## 3.3 The import success message is destroyed as it is written
+
+`importSet` and `importExamFromBox` write to `#importmsg` and then call
+`builder()`, which rebuilds the screen that message is on. A refused import shows
+its reason; a successful one shows nothing. Test coverage asserts the stored
+paper instead. Worth folding into Gate 3C, which is where import outcomes are
+meant to be distinguished properly.
+
+## 3.4 A provided record is assumed complete at every ref site
+
+`validate.js` short-circuits `refCheck` for anything in `provides`, so a
+reference to a provided record reports complete without reading it. The
+`provides` block checks those records separately and now errors on the ambiguous
+ones, so nothing incomplete can import — the fail-closed holds. But the two
+answers are reached by different routes and could disagree if either moves.
