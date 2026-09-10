@@ -2385,19 +2385,25 @@
     const sit = EXAM.sit || (EXAM.paper.sections || []).map((_, i) => i);
     const rows = (EXAM.paper.sections || []).map((sec, si) => {
       if (sit.indexOf(si) < 0) return "";               // not sat this time
-      let sg = 0, sm = 0;
-      const qs = (sec.questions || []).map((q, qi) => {
-        if (!examIsActive(si, qi)) return "";           // not chosen in an either/or section
-        // `g ? g.score : 0` was true of a refusal too - the object exists, the
-        // score does not - so this row rendered "undefined/20" and the section
-        // total became NaN. A question nobody marked is named as such and
-        // contributes nothing to the score while still costing its marks.
-        const g = EXAM.results[si + "-" + qi]; const m = isMarked(g);
-        const s = m ? g.score : 0; sg += s; sm += q.marks || 0;
-        return `<div class="exam-resq"><span>${esc(q.prompt.slice(0, 70))}${q.prompt.length > 70 ? "…" : ""}</span><span class="exam-resm${m ? "" : " nomark"}">${m ? s + "/" + (q.marks || 0) : "not marked"}</span></div>`;
+      // ONE PLACE DECIDES WHAT ADDS UP, and this was a second.
+      //
+      // `g ? g.score : 0` was true of a refusal too - the object exists, the
+      // score does not - so this row rendered "undefined/20" and the section
+      // total became NaN. Gating on isMarked fixed the arithmetic and left the
+      // shape of the fault: three bags of results, and each one summing itself.
+      // That is exactly how the session summary was missed. The section total
+      // comes from the same tally the paper total does, so a change to what
+      // counts as marked cannot reach one of them and not the others.
+      const active = (sec.questions || []).map((q, qi) => ({ q, qi })).filter(x => examIsActive(si, x.qi));
+      const t = ASSESS.tally(active.map(x => ({ marks: x.q.marks, result: EXAM.results[si + "-" + x.qi] })));
+      const qs = active.map(({ q, qi }) => {
+        // A question nobody marked is named as such and contributes nothing to
+        // the score while still costing its marks.
+        const g = EXAM.results[si + "-" + qi], m = isMarked(g);
+        return `<div class="exam-resq"><span>${esc(q.prompt.slice(0, 70))}${q.prompt.length > 70 ? "…" : ""}</span><span class="exam-resm${m ? "" : " nomark"}">${m ? g.score + "/" + (q.marks || 0) : "not marked"}</span></div>`;
       }).join("");
-      got += sg; max += sm;
-      return `<div class="exam-ressec"><div class="exam-ressech">${esc(sec.name || "Section")} <span class="exam-resm">${sg}/${sm}</span></div>${qs}</div>`;
+      got += t.got; max += t.max;
+      return `<div class="exam-ressec"><div class="exam-ressech">${esc(sec.name || "Section")} <span class="exam-resm">${t.got}/${t.max}</span></div>${qs}</div>`;
     }).join("");
     app.innerHTML = `${examBar()}<div class="exam-wrap"><div class="summary">
       <div class="bigscore">${got}<small>/${max}</small></div>

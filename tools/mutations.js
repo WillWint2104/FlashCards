@@ -645,6 +645,18 @@ module.exports = [
     why: "EXAM.paper outlives the sitting, so reading it unconditionally marked a flashcard under the curriculum of a paper the student had already left",
   },
   {
+    // The third results bag. Two of them were on the shared tally and this one
+    // was still doing its own arithmetic - correct, but the same shape as the
+    // fault that had just escaped, so it is on the tally too and this holds it
+    // there.
+    id: "gate3a-section-total-sums-a-refusal",
+    file: "app.js",
+    find: "      got += t.got; max += t.max;",
+    replace: "      got += t.got; max += t.max;\n      t.got = active.reduce((n, x) => n + (EXAM.results[si + \"-\" + x.qi] || {}).score, 0);",
+    owner: "ui68",
+    why: "a section total that adds up refusals reads NaN beside a paper total that does not",
+  },
+  {
     // Found in review, not by this catalogue, which is the reason it is in it.
     // examTotals was fixed and session.results was not: finishCard pushes every
     // result into it, refusals included, and the summary added their scores up.
