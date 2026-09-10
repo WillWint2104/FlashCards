@@ -74,13 +74,19 @@ const chips = p => p.$$eval('[data-esdecode],[data-esdecopen]', es => es.length)
         ok(await hosts(p) <= 1, `${label} + tool: still one panel: ${await hosts(p)}`);
         const c = await chips(p);
         if (c) {
+          // A TERM opens its own card now and a question-level chip still opens the
+          // panel. What this asserts is what it always meant: the control is still
+          // bound under the tool overlay rather than dead.
           const bound = await p.evaluate(() => {
             const btn = document.querySelector('[data-esdecode],[data-esdecopen]');
             if (!btn) return 'none'; btn.click();
             const box = document.querySelector('[data-esdecbox]');
+            if (document.querySelector('.es-termcard')) return 'opens';
             return box && !box.hidden ? 'opens' : 'DEAD';
           });
-          ok(bound === 'opens', `${label} + tool: a highlighted question word still opens the panel: ${bound}`);
+          ok(bound === 'opens', `${label} + tool: a highlighted question word still explains itself: ${bound}`);
+          await p.evaluate(() => { const c = document.querySelector("#esmodalx"); if (c) c.click(); });
+          await settled(p);
         }
         await p.keyboard.press('Escape'); await settled(p);
       }

@@ -43,18 +43,35 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   ok(/what does explain mean/i.test(chips.join(' ')),'and the directive one names the actual verb');
 
   console.log('3. pressing a word explains that word');
+  // The word opens a small card OVER the page rather than a panel INSIDE it. The
+  // panel pushed everything below it down, which is what lost the student's place
+  // mid-paragraph. What the card says is still the authored question note.
+  const beforeH=await p.evaluate(()=>document.documentElement.scrollHeight);
   await p.$$eval('.es-dec',es=>{const t=es.find(x=>/^processes$/.test(x.textContent.trim()));t&&t.click();});
   await settled(p);
-  ok(!(await p.$eval('[data-esdecbox]',e=>e.hidden)),'the panel opens');
-  const shown=await p.$$eval('.es-decpanel',es=>es.filter(e=>!e.hidden).map(e=>e.innerText.replace(/\s+/g,' ')));
-  ok(shown.length===1,'exactly one panel at a time: '+shown.length);
-  ok(/must cover/i.test(shown[0]),'it is labelled in words written for this question: '+shown[0].slice(0,60));
-  ok(/ordering, service or collection/i.test(shown[0]),'and teaches that specific word');
+  const card=await p.$eval('.es-termcard',e=>e.innerText.replace(/\s+/g,' ')).catch(()=>'');
+  ok(!!card,'the term card opens');
+  ok((await p.$$eval('.es-termcard',es=>es.length))===1,'exactly one card at a time: '+card.slice(0,40));
+  ok(/In this question/i.test(card),'it is labelled in words written for this question: '+card.slice(0,60));
+  ok(/ordering, service or collection/i.test(card),'and teaches that specific word');
+  ok((await p.evaluate(()=>document.documentElement.scrollHeight))===beforeH,
+    'and nothing under it moved');
+  ok(await p.$eval('[data-esdecbox]',e=>e.hidden),'the old in-page panel stays shut');
 
   console.log('4. it closes back, and never touches the writing');
+  // ONE close affordance on the anchored card: the X in its corner. It carried an X
+  // and a full-width Close button, which is two answers to one question on a card
+  // three lines tall.
+  ok((await p.$$eval('.es-termcard button',es=>es.length))===1,'the card has one close control');
+  await p.$eval('#esmodalx',e=>e.click()); await settled(p);
+  ok(!(await p.$('.es-termcard')),'Close puts it away');
   await p.$$eval('.es-dec',es=>{const t=es.find(x=>/^processes$/.test(x.textContent.trim()));t&&t.click();});
   await settled(p);
-  ok(await p.$eval('[data-esdecbox]',e=>e.hidden),'pressing the same word closes it again');
+  await p.$eval('[data-esmodalscrim]',e=>{
+    const r=e.getBoundingClientRect();
+    e.dispatchEvent(new MouseEvent('mousedown',{bubbles:true,clientX:r.left+4,clientY:r.top+4}));
+  }); await settled(p);
+  ok(!(await p.$('.es-termcard')),'and pressing away from it closes it too');
 
   console.log('5. what must I cover is derived, not restated');
   await p.$eval('[data-esdecopen="cover"]',e=>e.click()); await settled(p);

@@ -26,7 +26,21 @@ const DIAG_TIMEOUT_MS = 20000;
 // COACHING (essay practice) runs on the cheaper, faster Haiku. Marking above is
 // left on its current model on purpose. Output is capped short (suggestions only).
 const COACH_MODEL = "claude-haiku-4-5-20251001"; // dated pin: the alias claude-haiku-4-5 is rejected on this account
-const COACH_MAX_TOKENS = 700;
+// 1600, from what the tool actually requires rather than from "coaching is short".
+// submit_coaching must return ONE slotFeedback entry per element, and a TEEEC body
+// has five while the schema allows eight; each carries a slot, a status, a blockId
+// and an issue of up to 34 words. On top of that the tool asks for a note, up to
+// four nudges, six chips, a check and five `lines`, each of those last carrying a
+// quote, a diagnosis and a frame. Counted honestly that is around 1150 tokens
+// before JSON overhead, against a cap of 700.
+//
+// The failure was not a short answer. slotFeedback is REQUIRED and is what the
+// whole review renders from, so a response cut off mid-tool-call arrives with no
+// usable tool_use block at all and the student is told the coach returned nothing,
+// on the longer paragraphs most likely to need checking. Haiku output is cheap;
+// paying for the ceiling is cheaper than a check that fails on the paragraphs that
+// matter.
+const COACH_MAX_TOKENS = 1600;
 const WINDOW_MS = 10 * 60 * 1000, MAX_PER_WINDOW = 20;
 const hits = new Map(); // in-memory per-isolate limiter (fine for a small trial)
 const SEVRANK = { critical: 0, should: 1, optional: 2 };
@@ -428,6 +442,35 @@ function sanitizeSlots(raw) {
   return out.length ? out : null;
 }
 
+// THE PARAGRAPH'S OWN SENTENCES, WITH THE IDS THE APP MINTED FOR THEM.
+//
+// The marking path has sent these for a long time and asks for one back in
+// targetBlockId, which groundFocus then verifies against the set it sent. The
+// coach did not, so a per-sentence diagnosis came back carrying a QUOTE and the
+// app matched it by prefix and fell back to position when that missed. Position
+// is a guess, and a guess attaches a diagnosis to the wrong sentence.
+//
+// Bounded like every other field: an id is short, a slot is a simple key, and a
+// sentence cannot be longer than the paragraph it came from.
+function sanitizeBlocks(raw) {
+  if (!Array.isArray(raw)) return null;
+  const out = [];
+  const seen = new Set();
+  for (const b of raw) {
+    const id = String((b && b.id) || "").trim().slice(0, 24);
+    if (!id || seen.has(id)) continue;
+    if (!/^[a-z0-9_-]+$/i.test(id)) continue;
+    const text = String((b && b.text) || "").trim().slice(0, 600);
+    if (!text) continue;
+    seen.add(id);
+    const slot = String((b && b.slot) || "").trim().slice(0, 40);
+    out.push({ id, slot: /^[a-z0-9_]+$/i.test(slot) ? slot : "", text });
+    if (out.length >= 40) break;
+  }
+  return out.length ? out : null;
+}
+const COACH_STATUS = ["ok", "needs_work", "missing"];
+
 const COACH_SYSTEM = `You are an HSC essay-writing coach working with one student on one paragraph at a time. You coach the craft of writing; you never write for the student.
 
 Absolute rules, in order of importance:
@@ -441,6 +484,14 @@ Absolute rules, in order of importance:
 The paragraph slot model. The elements this paragraph should contain are listed in the user message under EXPECTED ELEMENTS, each with a key, a label and its job. Different subjects and paragraph structures use different elements (for example a Business Studies TEEEC or TDECC body paragraph), so always work from the elements given for THIS paragraph, not a fixed list.
 
 Detect a GENUINELY ABSENT element, which is different from one that is present but weak. Report an absent element in "missing" using only its key from the EXPECTED ELEMENTS given for this paragraph. Do not list an element that is present but thin; for those, raise a question in "nudges" instead. Only report elements that belong to this paragraph.
+
+ONE RESULT FOR EVERY EXPECTED ELEMENT, in "slotFeedback". This is the authoritative part of your answer and the app renders the student's paragraph from it. Return exactly one entry per element listed in EXPECTED ELEMENTS, in that order, and nothing for an element that is not listed.
+- "slot" is the element's key, copied from EXPECTED ELEMENTS.
+- "status" is one of: ok when that element is present and doing its job; needs_work when it is present but weak; missing when it is genuinely absent from the paragraph.
+- "blockId" is the id of the ONE sentence in THE PARAGRAPH'S SENTENCES that carries this element. Copy an id from that list exactly. Where a sentence is already labelled with an element in that list, the label is what the student was writing towards, so do not move that element to a different sentence. Leave blockId empty only when the status is missing and no sentence attempts it.
+- "issue" is for needs_work and missing only, and is a DIRECT diagnosis of this element in THIS paragraph. Say what the student HAS done and then what is specifically absent or weak, in one sentence. Not "you need more explanation" but "you identify the change but do not explain why the characteristic causes it". Leave it empty when the status is ok: the app writes its own line for an element that is doing its job, from the authored job text, so anything you write there is discarded.
+- NEVER CALL SOMETHING ABSENT THAT IS ON THE PAGE. If you have put a sentence id in blockId, that sentence is an attempt at this element, and an issue beginning "nothing", "there is no" or "the paragraph never" contradicts the words you just pointed at. A student reading "nothing signposts the order this response will take" directly underneath their own sentence naming the order they will take stops believing the rest of the review. Wording like that is correct only when the status is missing and no sentence attempts the element at all. When a sentence attempts the element and does not succeed, say what it DOES do and then why that is not what this question asks: for example, that the student signposts an approach but the areas they name are not the areas this question requires. Present but wrong, present but too general, and present but about the wrong thing are three different diagnoses, and none of them is absence.
+- Do not supply a frame, a structure or a rewrite anywhere in slotFeedback. The app already holds an authored scaffold for every element in every subject and shows the student that one. You diagnose; the scaffold and every word of it belong to the app.
 
 LINE BY LINE guidance in "lines". Pick up to five of the student's own sentences that can be improved, weakest first. For each one:
 - "quote" is the first six to twelve words of THEIR sentence, copied exactly, so the app can find it in their paragraph. Never paraphrase it.
@@ -459,7 +510,7 @@ Keep everything short. Writable register, no em-dashes anywhere, sentence case. 
 
 // The tool schema, with the "missing" slot enum locked to THIS paragraph's keys so
 // the model can only report an absent element that actually belongs to the paragraph.
-function coachTool(slotKeys) {
+function coachTool(slotKeys, blockIds) {
   return {
   name: "submit_coaching",
   description: "Return short coaching for one paragraph: a note, the absent elements (by key only), categorised question-nudges, and word-level alternatives. Never a rewritten paragraph, sentence, frame, or any content.",
@@ -503,6 +554,22 @@ function coachTool(slotKeys) {
         },
       },
       check: { type: "string", description: "Optional. If a factual point looks shaky, tell the student to check it against their notes. Never assert the correct fact." },
+      slotFeedback: {
+        type: "array",
+        description: "ONE RESULT PER EXPECTED ELEMENT, in the order they were given. The app renders the paragraph review from this. Never omit an element and never invent one.",
+        items: {
+          type: "object",
+          properties: {
+            slot: { type: "string", enum: (Array.isArray(slotKeys) && slotKeys.length ? slotKeys : COACH_SLOT_KEYS), description: "The element's key, copied from EXPECTED ELEMENTS." },
+            status: { type: "string", enum: COACH_STATUS, description: "ok when the element is present and doing its job, needs_work when present but weak, missing when genuinely absent." },
+            blockId: (Array.isArray(blockIds) && blockIds.length
+              ? { type: "string", enum: blockIds.concat([""]), description: "The id of the ONE sentence carrying this element, copied from THE PARAGRAPH'S SENTENCES. Empty only when the element is missing." }
+              : { type: "string", description: "Leave empty: this request carried no sentence list." }),
+            issue: { type: "string", description: "For needs_work and missing only. A direct diagnosis of THIS element in THIS paragraph: what the student has done, then what is specifically absent or weak. One sentence, at most 34 words. Empty when the status is ok. Never a frame, a structure or a rewrite: the app supplies those." },
+          },
+          required: ["slot", "status", "blockId", "issue"],
+        },
+      },
       lines: {
         type: "array",
         description: "LINE BY LINE guidance. Up to five of the student's own sentences that can be improved, weakest first. Diagnose directly, then give a blank frame. NEVER write the improved sentence for them.",
@@ -518,7 +585,7 @@ function coachTool(slotKeys) {
         },
       },
     },
-    required: ["note", "nudges"],
+    required: ["note", "nudges", "slotFeedback"],
   },
   };
 }
@@ -547,7 +614,61 @@ function isFrame(fix) {
   const words = String(fix || "").replace(/_{2,}/g, " ").toLowerCase().replace(/[^a-z ]/g, " ").split(/\s+/).filter(Boolean);
   return words.every(w => FRAME_WORDS.has(w));
 }
-function normalizeCoaching(c, slotKeys) {
+function normalizeCoaching(c, slotKeys, blocks) {
+  // ---- slotFeedback: the authoritative result, and every way it can be wrong ----
+  //
+  // Nothing here trusts an id or a key it did not send. An entry naming a slot this
+  // paragraph does not have, a sentence that is not in this paragraph, or a slot
+  // that disagrees with what the sentence was WRITTEN as, is dropped rather than
+  // repaired: a diagnosis attached to the wrong sentence is worse than one absent,
+  // because the student acts on it.
+  //
+  // An element the model simply did not report is NOT filled in here and is NOT
+  // "ok". Silence is not evidence that a sentence is doing its job, and the app
+  // shows an unreported element as unassessed rather than green.
+  const sentBlocks = Array.isArray(blocks) ? blocks : [];
+  const byId = new Map(sentBlocks.map(b => [b.id, b]));
+  const slotSet = new Set(Array.isArray(slotKeys) && slotKeys.length ? slotKeys : COACH_SLOT_KEYS);
+  const sfSeen = new Set();
+  const slotFeedback = (Array.isArray(c.slotFeedback) ? c.slotFeedback : [])
+    .map(f => ({
+      slot: String((f && f.slot) || "").trim(),
+      status: String((f && f.status) || "").trim(),
+      blockId: String((f && f.blockId) || "").trim(),
+      issue: String((f && f.issue) || "").trim(),
+    }))
+    .filter(f => slotSet.has(f.slot) && COACH_STATUS.includes(f.status))
+    .filter(f => !sfSeen.has(f.slot) && sfSeen.add(f.slot))
+    .filter(f => {
+      if (!f.blockId) return f.status === "missing";      // only an absent element may point at nothing
+      const b = byId.get(f.blockId);
+      if (!b) return false;                                // an id we never sent
+      // A sentence written through the composer carries the element it was written
+      // for. If the model says otherwise it has mislabelled one of them, and there
+      // is no way to tell which, so the entry goes.
+      if (b.slot && b.slot !== f.slot) return false;
+      return true;
+    })
+    .map(f => {
+      // An element doing its job carries no model prose at all: the app writes that
+      // line from the authored job text, so there is nothing here to smuggle through.
+      if (f.status === "ok") return { slot: f.slot, status: "ok", blockId: f.blockId, issue: "" };
+      return f;
+    })
+    .filter(f => f.status === "ok" || (f.issue && shortPhrase(f.issue, 34)))
+    .slice(0, 8);
+  // `missing` is the SAME FACT as a slotFeedback entry with status missing, so when
+  // there is an authoritative result it is derived from it rather than parsed
+  // separately: two independent answers to one question is the drift this avoids.
+  // `lines` is a different field for a different consumer and is left as the model
+  // sent it, so nothing that reads it today changes behaviour.
+  const legacy = normalizeCoachingLegacy(c, slotKeys);
+  if (slotFeedback.length) {
+    legacy.missing = slotFeedback.filter(f => f.status === "missing").map(f => ({ slot: f.slot })).slice(0, 6);
+  }
+  return Object.assign(legacy, { slotFeedback: slotFeedback });
+}
+function normalizeCoachingLegacy(c, slotKeys) {
   // missing: keep only keys valid FOR THIS PARAGRAPH (by key alone, no model-written
   // text), deduped. Falls back to the default keys when none were provided.
   const valid = new Set(Array.isArray(slotKeys) && slotKeys.length ? slotKeys : COACH_SLOT_KEYS);
@@ -615,6 +736,15 @@ async function handleCoach(body, env, cors) {
   const paragraph_model = String((body && body.paragraph_model) || "").trim().slice(0, 40);
   const slots = sanitizeSlots(body && body.slots) || DEFAULT_SLOTS;
   const slotKeys = slots.map(s => s.key);
+  // The paragraph's own sentences with the ids the app minted, exactly as the
+  // marking path has always sent them. Every id the coach returns is checked back
+  // against this list.
+  const blocks = sanitizeBlocks(body && body.blocks) || [];
+  const blockIds = blocks.map(b => b.id);
+  const blockBlock = blocks.length
+    ? "THE PARAGRAPH'S SENTENCES, WITH IDS. Use these ids in slotFeedback.blockId. Where a sentence carries an element in brackets, that is the element the student was writing towards.\n" +
+      blocks.map(b => `${b.id}${b.slot ? " [" + b.slot + "]" : ""}: ${b.text}`).join("\n")
+    : "THE PARAGRAPH'S SENTENCES: (not supplied by this client, leave every blockId empty)";
   const slotBlock = "EXPECTED ELEMENTS FOR THIS PARAGRAPH (report any that are genuinely absent, by key):\n" +
     slots.map(s => `- ${s.key} (${s.label})${s.job ? ": " + s.job : ""}`).join("\n");
 
@@ -636,6 +766,8 @@ ${rubricBlock}
 THE STUDENT'S CURRENT PARAGRAPH:
 ${paragraph_text}
 
+${blockBlock}
+
 Coach this paragraph now. Remember: suggest, never substitute. Nudges are questions. Chips are word-level only.`;
 
   // Wrap the upstream call and parse so a transport or JSON failure still resolves
@@ -654,7 +786,7 @@ Coach this paragraph now. Remember: suggest, never substitute. Nudges are questi
         model: COACH_MODEL,
         max_tokens: COACH_MAX_TOKENS,
         system: [{ type: "text", text: COACH_SYSTEM, cache_control: { type: "ephemeral" } }],
-        tools: [coachTool(slotKeys)],
+        tools: [coachTool(slotKeys, blockIds)],
         tool_choice: { type: "tool", name: "submit_coaching" },
         messages: [{ role: "user", content: userMsg }],
       }),
@@ -665,8 +797,18 @@ Coach this paragraph now. Remember: suggest, never substitute. Nudges are questi
     return json({ error: "coach upstream failed" }, 502, cors);
   }
   const block = (data.content || []).find(b => b.type === "tool_use");
-  if (!block || !block.input) return json({ error: "coach returned nothing", stop_reason: data.stop_reason || null }, 502, cors);
-  return json(normalizeCoaching(block.input, slotKeys), 200, cors);
+  // TRUNCATION IS NOT AN EMPTY ANSWER, and the two were reported as the same thing.
+  // The marking path already tells them apart; this one said "coach returned
+  // nothing" whether the model declined, the call failed, or the answer was cut off
+  // mid-tool-call, which is the case a longer paragraph actually hits.
+  if (!block || !block.input) {
+    if (data.stop_reason === "max_tokens") {
+      return json({ error: "the coach's answer ran past its limit before it was complete, so nothing was written about this paragraph. Try again.",
+        stop_reason: "max_tokens" }, 502, cors);
+    }
+    return json({ error: "coach returned nothing", stop_reason: data.stop_reason || null }, 502, cors);
+  }
+  return json(normalizeCoaching(block.input, slotKeys, blocks), 200, cors);
 }
 
 export default {

@@ -122,7 +122,10 @@ async function toWriting(page) {
   const ask = await p.$("#esask");
   ok(!!ask, "the paragraph can be sent to the coach");
   if (ask) { await ask.click(); await p.waitForTimeout(1300); }
-  const hadFeedback = !!(await p.$(".es-margin .es-mblock"));
+  // Either surface counts: the paragraph review when the coach returned per-slot
+  // results, the older panel when it did not. What is being preserved is that
+  // something was on screen and is still attached afterwards.
+  const hadFeedback = !!(await p.$(".es-margin .es-review, .es-margin .es-mblock"));
   ok(hadFeedback, "feedback is on screen before leaving");
 
   await p.click("#esexit"); await p.waitForTimeout(500);
@@ -158,8 +161,10 @@ async function toWriting(page) {
   if (resume) { await resume.click(); await p.waitForTimeout(700); }
   const body = await p.evaluate(() => document.body.innerText);
   ok(/Convenience-oriented customers lead/.test(body), "Resume brings the paragraph back");
-  ok(!!(await p.$("#esline")), "and lands in the writing, not on a setup form");
-  const fbBack = await p.$(".es-margin .es-mblock");
+  // Either surface counts as the writing: resuming a paragraph that still has
+  // unresolved feedback lands in its review, which stands the composer down.
+  ok(!!(await p.$("#esline, .es-review, .es-rshut")), "and lands in the writing, not on a setup form");
+  const fbBack = await p.$(".es-margin .es-review, .es-margin .es-mblock");
   ok(!!fbBack, "the feedback they had is still attached to the paragraph");
 
   // ---- 6. no surface still calls itself a dialog --------------------------

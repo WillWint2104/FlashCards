@@ -138,8 +138,20 @@ console.log("--- 3. no flag, and a check after every mutant");
   // previous fixture: the suite passes and the fault is filed as one nothing
   // notices. The list is therefore checked against build.js's own reads rather
   // than against memory.
+  // build.js AND every fixture builder tests/run.js runs. The list was short by
+  // proxy/worker.js, which tests/mkshim.js pulls into tests/worker.mjs: a worker
+  // mutation with no re-shim tested the previous copy and came back SURVIVED from
+  // a suite that never saw it.
   const build = fs.readFileSync(path.join(ROOT, "build.js"), "utf8");
-  const readsAtTop = [...build.matchAll(/read\("([^"]+)"\)/g)].map(m => m[1]);
+  const shims = ["mkshim.js", "mkblockshim.js", "mkwashim.js", "mklearnshim.js", "mkevidenceshim.js"]
+    .filter(f => fs.existsSync(path.join(ROOT, "tests", f)))
+    .map(f => fs.readFileSync(path.join(ROOT, "tests", f), "utf8")).join("\n");
+  // A shim reads its source as path.join(ROOT, "proxy", "worker.js"), so the parts
+  // are rejoined rather than looked for as one string.
+  const shimReads = [...shims.matchAll(/path\.join\(ROOT,\s*([^)]+)\)/g)]
+    .map(m => [...m[1].matchAll(/"([^"]+)"/g)].map(x => x[1]).join("/"))
+    .filter(f => /\.(js|html)$/.test(f));
+  const readsAtTop = [...build.matchAll(/read\("([^"]+)"\)/g)].map(m => m[1]).concat(shimReads);
   const inlined = [...build.matchAll(/<script src="([^"]+)"><\/script>/g)].map(m => m[1]);
   // Only the ones that EXIST. contract-bundle.js and importer-data.js are script
   // tags build.js replaces with generated text; there is no such file to mutate.

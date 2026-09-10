@@ -221,12 +221,31 @@ function apply(m) {
 //
 //   index.html content.js essay-content.js business-content.js student-imports.js
 //   app.js, plus the contract modules the bundle carries and build.js itself.
-const NEEDS_BUILD = /^(app\.js|index\.html|content\.js|essay-content\.js|business-content\.js|student-imports\.js|importer\.html|importer\.js|tools\/contract\/.*\.js|build\.js)$/;
+// ...and every file a FIXTURE BUILDER reads, which is not the same list. This was
+// short by proxy/worker.js: tests/mkshim.js pulls the shipped worker into
+// tests/worker.mjs so the suites exercise the real code, and a worker mutation
+// with no re-shim tested the previous copy. Three mutations came back SURVIVED
+// from a suite that never saw them.
+const NEEDS_BUILD = /^(app\.js|index\.html|content\.js|essay-content\.js|business-content\.js|student-imports\.js|importer\.html|importer\.js|tools\/contract\/.*\.js|build\.js|proxy\/worker\.js)$/;
+// The same fixtures tests/run.js builds, for the same reason it builds them: a
+// suite must never run against a fixture that predates the change under test.
+const FIXTURES = [
+  ["node", ["build.js"]],
+  ["node", ["tests/mkshim.js"]],
+  ["node", ["tests/mkblockshim.js"]],
+  ["node", ["tests/mkwashim.js"]],
+  ["node", ["tests/mklearnshim.js"]],
+  ["node", ["tests/mkevidenceshim.js"]],
+  ["python3", ["tests/mkwalk.py"]],
+];
 function rebuild(ms) {
-  const b = runBounded("node", ["build.js"], ms);
-  if (b.code !== 0 || b.timedOut) return { ok: false, out: b.out, ms: b.ms };
-  const w = runBounded("python3", ["tests/mkwalk.py"], ms);
-  return { ok: w.code === 0 && !w.timedOut, out: w.out, ms: b.ms + w.ms };
+  let total = 0;
+  for (const [cmd, args] of FIXTURES) {
+    const r = runBounded(cmd, args, ms);
+    total += r.ms;
+    if (r.code !== 0 || r.timedOut) return { ok: false, out: r.out, ms: total };
+  }
+  return { ok: true, out: "", ms: total };
 }
 
 // ---- the owning regression ------------------------------------------------
