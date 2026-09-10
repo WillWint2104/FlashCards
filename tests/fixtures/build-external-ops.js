@@ -61,9 +61,16 @@ const SYL = "business.operations.operations-strategies.";
 // they are `subjectMeaning`.
 //
 // No definition was rewritten; both moved to the field that matches what they
-// are. These records now carry no ordinary-English gloss, which is a real
-// shortfall and is reported as one rather than hidden: without `plain` a record
-// still teaches on the Learn surface and is not offered in the vocabulary panel.
+// are. These records now carry no ordinary-English gloss, so they are not
+// displayable: without `plain` a record still teaches on the Learn surface and
+// is not offered in the vocabulary panel.
+//
+// NOTHING SAYS SO, and that is a gap rather than a claim. A record a package
+// PROVIDES is short-circuited as complete at every ref site and its
+// displayability is never computed, so VOCAB_NOT_YET_DISPLAYABLE is only ever
+// raised for records resolved out of a library and validate() returns accepted
+// with no findings at all. Written up as docs/gate3-audit.md 3.4. Whoever writes
+// the seven plain-English glosses should expect no prompting from the validator.
 const vocabulary = {
   [V("performance-objective")]: {
     term: "performance objective", subjectKey: "business_studies",

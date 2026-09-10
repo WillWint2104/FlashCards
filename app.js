@@ -1930,8 +1930,16 @@
 
   function summary() {
     const { area, results } = session;
-    const got = results.reduce((n, r) => n + r.g.score, 0);
-    const max = results.reduce((n, r) => n + r.g.max, 0);
+    // THE SAME ARITHMETIC EXAMTOTALS WAS FIXED FOR, in the other results bag and
+    // missed the first time. finishCard pushes every result into session.results,
+    // refusals included, so one unmarked written answer in a run turned the
+    // session score into NaN/NaN - which is what the student is shown at the end
+    // of it. tally reads the outcome before the number, and a question nobody
+    // marked still costs its marks. A self-rated flashcard carries a finite score
+    // and a finite maximum, so it is a success by shape and nothing about those
+    // runs changes.
+    const t = ASSESS.tally(results.map(r => ({ marks: r.card && r.card.marks, result: r.g })));
+    const got = t.got, max = t.max;
     const s = areaStats(area);
     app.innerHTML = `
       <div class="summary">

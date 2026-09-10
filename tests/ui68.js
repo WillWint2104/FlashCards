@@ -47,9 +47,14 @@ const seed = state => `localStorage.setItem("marginal.trial.v1", ${JSON.stringif
 // Open the app with this state already in place, capturing anything sent to the
 // marker. The endpoint is whatever the build configures, so the route matches the
 // host rather than a URL this file invents.
+// Errors are collected from EVERY page. The listener used to be attached in the
+// first scenario only, so the assertion at the foot of the file spoke for one of
+// seven and read as though it spoke for all of them.
+const errs = [];
 async function openWith(b, state) {
   const p = await b.newPage();
   const sent = [];
+  p.on('pageerror', e => errs.push(String(e.message)));
   await p.addInitScript(new Function(seed(state)));
   await p.route(/workers\.dev/, r => {
     try { sent.push(JSON.parse(r.request().postData() || 'null')); } catch (e) { sent.push('(unparseable)'); }
@@ -90,7 +95,6 @@ const answer = async (p, text) => { await p.fill('#ans', text); await p.click('#
 
 (async () => {
   const b = await chromium.launch();
-  const errs = [];
 
   // ==========================================================================
   console.log('1. a paper whose subject nothing registers refuses, and says so');
@@ -98,7 +102,6 @@ const answer = async (p, text) => { await p.fill('#ans', text); await p.click('#
   {
     const { p } = await openWith(b, withPaper(paper('unknown-subject',
       { jurisdiction: 'NSW', klaKey: 'hsie', subjectKey: 'underwater_basket_weaving' })));
-    p.on('pageerror', e => errs.push(String(e.message)));
     await sit(p, 'unknown-subject', 1);
 
     // The short answer first, so there is a real mark on the board before the
@@ -289,6 +292,22 @@ const answer = async (p, text) => { await p.fill('#ans', text); await p.click('#
     ok(after.log.length === 0,
       'and nothing was written to the log: ' + JSON.stringify(after.log));
     ok(!!(await p.$('#continue')), 'the student can still move on');
+
+    // AND THE SCREEN AT THE END OF THE RUN. finishCard pushes every result into
+    // session.results, refusals included, and summary() added their scores up.
+    // One unmarked answer therefore ended a study run on "NaN/NaN" as the big
+    // score - the same defect examTotals was fixed for, in the other results bag,
+    // and missed until review caught it.
+    await p.click('#continue'); await p.waitForTimeout(500);
+    const sum = await p.evaluate(() => ({
+      big: (document.querySelector('.bigscore') || {}).textContent || '(none)',
+      body: document.body.textContent.replace(/\s+/g, ' ').trim().slice(0, 200),
+    }));
+    ok(!/NaN|undefined/.test(sum.big),
+      'the session summary is arithmetic after a refusal: ' + JSON.stringify(sum.big));
+    ok(/0\s*\/\s*20/.test(sum.big.replace(/\s+/g, ' ')),
+      'no marks were awarded, out of the marks the question was worth: ' + JSON.stringify(sum.big));
+    ok(!/NaN/.test(sum.body), 'and NaN is nowhere on the screen: ' + JSON.stringify(sum.body.slice(0, 120)));
     await p.close();
   }
 
@@ -440,14 +459,24 @@ const answer = async (p, text) => { await p.fill('#ans', text); await p.click('#
       await p.close();
     }
 
-    // -- restored from a backup, then sat -------------------------------------
+    // -- restored from a backup file, then sat --------------------------------
+    // Through the boundary rather than around it: restoreAll parses the file,
+    // merges papers it does not already hold and saves. This case used to seed
+    // localStorage and call itself a restore, which proved nothing about the one
+    // path that builds a paper object out of text a person supplied.
     {
       const { p } = await openWith(b, { cards: {}, endpoint: '', code: '12Ec126', log: [],
-        customSets: [], lessons: {}, exams: [essayPaper('restored', CURRIC)] });
-      // The restore path pushes papers parsed out of a backup file, which is the
-      // other place a paper object is built from text rather than copied.
+        customSets: [], lessons: {}, exams: [] });
+      const backup = JSON.stringify({ format: 'marginal-backup@1', exported: new Date().toISOString(),
+        data: { cards: {}, lessons: {}, log: [], customSets: [], exams: [essayPaper('restored', CURRIC)] } });
+      await p.setInputFiles('#restoreFile', { name: 'backup.json', mimeType: 'application/json', buffer: Buffer.from(backup) });
+      await p.waitForFunction(() => (JSON.parse(localStorage.getItem('marginal.trial.v1') || '{}').exams || [])
+        .some(e => e.id === 'restored'), null, { timeout: 8000 });
+      const msg = await p.$eval('#restoreMsg', e => e.textContent.trim()).catch(() => '(none)');
+      ok(/restored/i.test(msg), 'the backup was restored through its own control: ' + JSON.stringify(msg));
+      await p.waitForTimeout(900);            // restoreAll re-renders after 700ms
       await sit(p, 'restored', 1);
-      holds(await own(p), 'restored from storage');
+      holds(await own(p), 'restored from a backup file');
       await p.close();
     }
   }

@@ -645,6 +645,17 @@ module.exports = [
     why: "EXAM.paper outlives the sitting, so reading it unconditionally marked a flashcard under the curriculum of a paper the student had already left",
   },
   {
+    // Found in review, not by this catalogue, which is the reason it is in it.
+    // examTotals was fixed and session.results was not: finishCard pushes every
+    // result into it, refusals included, and the summary added their scores up.
+    id: "gate3a-session-summary-sums-a-refusal",
+    file: "app.js",
+    find: "    const t = ASSESS.tally(results.map(r => ({ marks: r.card && r.card.marks, result: r.g })));\n    const got = t.got, max = t.max;",
+    replace: "    const got = results.reduce((n, r) => n + r.g.score, 0);\n    const max = results.reduce((n, r) => n + r.g.max, 0);",
+    owner: "ui68",
+    why: "one unmarked answer ended a study run on \"NaN/NaN\" as the big score",
+  },
+  {
     // The completeness half of the rename. Ownership was fixed first and this was
     // still open: "business_studies" sat in the field the contract defines as the
     // course meaning, satisfied a non-empty check, and made seven records with no
