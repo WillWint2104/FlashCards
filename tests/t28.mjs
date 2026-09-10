@@ -352,11 +352,21 @@ console.log("7. identity is a typed field, never a shape a piece of prose happen
     "a record that says both is unambiguous: " + JSON.stringify(named.findings.map(f => f.code)));
   ok(has(named, "VOCAB_SUBJECT_RENAMED"), "and is still told the old field is going away");
 
-  // And the whole fixture, which is where this was found.
+  // And the whole fixture, which is where this was found. It has since been
+  // relabelled - `subjectKey` for the course that owns each record,
+  // `subjectMeaning` for what the term means in it, no definition rewritten - so
+  // what it proves now is that a package saying plainly which field is which has
+  // nothing to answer for. The rule itself is held by the synthetic records
+  // above, which is where it belongs: a rule that only works on one fixture is
+  // not a rule.
   const ext = validate(JSON.parse(read("tests/fixtures/external-ops-package.json")), man);
-  const amb = (ext.findings || []).filter(f => f.code === "VOCAB_SUBJECT_AMBIGUOUS");
-  ok(amb.length === 7, "all seven records in the external fixture are refused: " + amb.length);
-  ok(!ext.wouldImport, "and the package fails closed rather than importing seven definitions that are not definitions: " + ext.verdict);
+  ok(ext.wouldImport && ext.findings.length === 0,
+    "the external fixture declares both fields and has nothing to answer for: " +
+    ext.verdict + " " + JSON.stringify(ext.findings.map(f => f.code)));
+  const recs = Object.values((JSON.parse(read("tests/fixtures/external-ops-package.json")).provides || {}).vocabulary || {});
+  ok(recs.length === 7 && recs.every(r2 => !("subject" in r2) && r2.subjectKey && r2.subjectMeaning),
+    "and not one of its seven records still writes the overloaded field: " +
+    JSON.stringify(recs.filter(r2 => "subject" in r2).map(r2 => r2.term)));
 
   // The regex-driven check is gone rather than tightened.
   const v = read("tools/contract/validate.js");

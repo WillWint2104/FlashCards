@@ -446,16 +446,26 @@ externally for acceptance testing. Proving the exam architecture does not requir
 committing the source wording of real papers. This is worth doing before more
 authentic packages accumulate, not after.
 
-## 3.2 Seven vocabulary records need course meanings written
+## 3.2 Seven vocabulary records carry no plain-English gloss
 
-`tests/fixtures/external-ops-package.json` puts `business_studies` in the field
-the contract defines as the course meaning. Gate 3A makes that fail closed rather
-than pass for a definition (§1.8 is the same defect on the ownership side).
+`tests/fixtures/external-ops-package.json` had two fields carrying the wrong
+thing, and neither was noticed because the completeness check only asked whether
+a required field was non-empty.
 
-The records already carry a term, a plain-English meaning and an example. What
-they lack is the course meaning, and writing seven of those is content authoring.
-Until it happens, `ui53` asserts the honest refusal rather than the happy path it
-used to assert — which was resting on the same accident.
+`subject` held `business_studies` — the library convention for the owning course
+— in the field the contract defines as the course meaning. So an ownership key
+stood in for a definition, seven records with no definition in them read as
+complete, and four suites' green rested on that. The actual course meanings were
+in `plain`, which the contract defines as ordinary English and whose `bad`
+example is "the subject definition again in different words".
+
+Both moved to the field that matches what they are: `subjectKey` and
+`subjectMeaning`. No definition was rewritten.
+
+What is now outstanding is the opposite of what it looked like: these records
+have no ordinary-English gloss at all, so they are not displayable and would not
+be offered in the vocabulary panel. Writing seven of those is content authoring
+and is not done here. `ui53` records the absence.
 
 ## 3.3 The import success message is destroyed as it is written
 
@@ -468,7 +478,17 @@ meant to be distinguished properly.
 ## 3.4 A provided record is assumed complete at every ref site
 
 `validate.js` short-circuits `refCheck` for anything in `provides`, so a
-reference to a provided record reports complete without reading it. The
-`provides` block checks those records separately and now errors on the ambiguous
-ones, so nothing incomplete can import — the fail-closed holds. But the two
-answers are reached by different routes and could disagree if either moves.
+reference to a provided record reports complete without reading it, and its
+displayability is never computed at all.
+
+This was written up as theoretical and §3.2 made it load-bearing. Those seven
+records now genuinely lack `plain`, which means they are complete but not
+displayable — and the validator reports nothing, because
+`VOCAB_NOT_YET_DISPLAYABLE` is only ever raised for records resolved out of a
+library. A package can therefore ship vocabulary that will never appear in the
+panel and be told it is fine.
+
+The fail-closed still holds for correctness — the `provides` block checks those
+records separately and errors on the ambiguous ones — but the two answers are
+reached by different routes, and one of them is now known to be silent about a
+real shortfall.
