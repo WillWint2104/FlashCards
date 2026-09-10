@@ -637,6 +637,14 @@ module.exports = [
     why: "without it the sheet rendered undefined/undefined under the heading \"Not yet\"",
   },
   {
+    id: "gate3a-stale-paper-marks-a-flashcard",
+    file: "app.js",
+    find: "    const paper = examOwns(card);",
+    replace: '    const paper = (typeof EXAM !== "undefined" && EXAM && EXAM.paper) ? EXAM.paper : null;',
+    owner: "ui68",
+    why: "EXAM.paper outlives the sitting, so reading it unconditionally marked a flashcard under the curriculum of a paper the student had already left",
+  },
+  {
     id: "gate3a-import-stops-asking-who-marks-it",
     file: "app.js",
     find: "    ASSESS.curriculumFindings(d).concat(ASSESS.subjectOverrides(d))",

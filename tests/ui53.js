@@ -97,8 +97,16 @@ async function toChooser(page) {
   {
     ok(SOURCE_IDS.indexOf(ID) < 0, "its id is in no source subject: " + ID);
     const r = validate(PKG, MAN, {});
-    ok(r.verdict === "accepted" && r.counts.error === 0,
+    // Errors are the gate, not the verdict string. This package writes the old
+    // VocabularyRecord.subject on its seven vocabulary records, so it now draws
+    // seven warnings telling its author about the rename - which is the point of
+    // a warning: it imports unchanged and is told what to change.
+    ok(r.counts.error === 0 && r.wouldImport,
       "it validates against the published contract: " + r.verdict + " " + JSON.stringify(r.counts));
+    ok(/^accepted/.test(r.verdict), "and is accepted: " + r.verdict);
+    const warned = [...new Set(r.findings.filter(f => f.severity === "warning").map(f => f.code))];
+    ok(warned.join() === "VOCAB_SUBJECT_RENAMED",
+      "and the only thing it is warned about is the rename: " + JSON.stringify(warned));
     const dims = r.capability.dimensions;
     ["importable", "writing-ready", "pathway-guided", "learning-complete", "assessment-complete"]
       .forEach(k => ok(dims[k].status === "reached", "it reaches " + k + ": " + dims[k].status));

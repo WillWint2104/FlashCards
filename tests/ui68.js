@@ -292,6 +292,44 @@ const answer = async (p, text) => { await p.fill('#ans', text); await p.click('#
     await p.close();
   }
 
+  // ==========================================================================
+  console.log('7. leaving a paper leaves its subject behind with it');
+  // ==========================================================================
+  {
+    // EXAM.paper is never cleared when a student quits Test mode, so it outlives
+    // the sitting. Reading it unconditionally meant a flashcard studied afterwards
+    // was marked under that paper's curriculum - the same cross-subject leak, in a
+    // new place, introduced by the fix for the old one. A card is marked by a
+    // paper only if it IS one of that paper's questions.
+    const set = { id: 'custom-after', name: 'After the paper', cards: [
+      { id: 'after-essay', type: 'essay', marks: 20,
+        prompt: 'Explain one effect of an interest rate rise.', model: 'm', vocab: [] }] };
+    const { p, sent } = await openWith(b, { cards: {}, endpoint: '', code: '12Ec126', log: [],
+      customSets: [set], lessons: {},
+      exams: [essayPaper('bus-paper', { subjectKey: 'business_studies', course: 'Business Studies' })] });
+
+    await sit(p, 'bus-paper', 1);
+    await p.evaluate(() => { const q = document.querySelector('#examquit'); if (q) { window.confirm = () => true; q.click(); } });
+    await settled(p);
+
+    await p.evaluate(() => { const x = Array.from(document.querySelectorAll('button,a')).find(e => /^study$/i.test(e.textContent.trim())); x && x.click(); });
+    await settled(p);
+    await p.evaluate(() => { const x = document.querySelector('[data-open="custom-after"]'); x && x.click(); });
+    await settled(p);
+    await p.evaluate(() => { const x = Array.from(document.querySelectorAll('button,[data-mode]')).find(e => /long|extended|essay/i.test(e.textContent)); x && x.click(); });
+    await p.waitForTimeout(400);
+    ok(!!(await p.$('#ans')), 'a flashcard is reachable after quitting the paper');
+
+    await answer(p, 'An interest rate rise raises the cost of borrowing. '.repeat(12));
+    ok(sent.length === 1, 'the flashcard was marked: ' + sent.length);
+    const req = sent[0] || {};
+    ok(req.subject !== 'Business Studies',
+      'and NOT under the subject of the paper the student just left: ' + JSON.stringify(req.subject));
+    ok(req.subject === 'Economics',
+      'it is marked as the flashcard content it is: ' + JSON.stringify(req.subject));
+    await p.close();
+  }
+
   ok(errs.length === 0, 'no page errors: ' + JSON.stringify(errs.slice(0, 3)));
   await b.close();
   console.log('\n' + pass + ' passed, ' + fail + ' failed');

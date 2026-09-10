@@ -363,10 +363,25 @@
   // expectations to judge against, and what this question requires. Marking used to
   // be hardcoded to Economics; the subject namespace is now the source of truth,
   // and a card or an imported paper can override.
+  // Object identity, not an id, because an exam question has no id: examRender
+  // hands markingContext the very object it read out of the paper. A flashcard,
+  // a custom-set card and an Essay Suite draft card are all built elsewhere and
+  // none of them can be in this list.
+  function examOwns(card) {
+    const p = (typeof EXAM !== "undefined" && EXAM) ? EXAM.paper : null;
+    if (!p || !card) return null;
+    return (p.sections || []).some(sec => (sec.questions || []).indexOf(card) >= 0) ? p : null;
+  }
   function markingContext(card) {
-    // Test mode (a whole imported paper) may carry its own subject/criteria; it is
-    // defined only when that mode is present, so reach for it defensively.
-    const paper = (typeof EXAM !== "undefined" && EXAM && EXAM.paper) ? EXAM.paper : null;
+    // THE PAPER THIS CARD IS ACTUALLY IN, by identity, or none.
+    //
+    // This used to read EXAM.paper directly. EXAM.paper is never cleared when a
+    // student leaves Test mode, so it outlives the sitting: study a flashcard
+    // after quitting a paper and the paper was still there to be read. While the
+    // paper only supplied a display label that was untidy. As the academic
+    // authority it would be the cross-subject leak again, in a new place, so the
+    // question is asked precisely: is this card one of that paper's questions?
+    const paper = examOwns(card);
     // ---- WHICH PACKAGE IS MARKING THIS -------------------------------------
     //
     // Two different situations were sharing one fallback chain, and the shared
