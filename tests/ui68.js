@@ -330,6 +330,128 @@ const answer = async (p, text) => { await p.fill('#ans', text); await p.click('#
     await p.close();
   }
 
+  // ==========================================================================
+  console.log('8. the ownership invariant holds across every lifecycle Test mode has');
+  // ==========================================================================
+  {
+    // examOwns asks whether a card IS one of the sat paper's questions, by object
+    // identity, and that is only sound while nothing on the path copies a question.
+    // Today nothing does: examStart stores sec.questions[qi] by reference and every
+    // later step passes the same object on. That is a constraint on the whole exam
+    // path, and the JSON importer is the obvious thing that could break it later,
+    // so it is walked rather than assumed. `identical` false anywhere below means a
+    // clone has entered the path and the boundary must move to stable ids.
+    const CURRIC = { jurisdiction: 'NSW', klaKey: 'hsie', subjectKey: 'business_studies', course: 'Business Studies' };
+    const own = pg => pg.evaluate(() => window.__examOwnership());
+    const holds = (o, where) => {
+      ok(o.questions.length > 0, where + ': there are sequenced questions to check: ' + o.questions.length);
+      ok(o.questions.every(q => q.identical), where + ': every sequenced question is still the paper\'s own object: ' +
+        JSON.stringify(o.questions.filter(q => !q.identical)));
+      ok(o.questions.every(q => q.owned), where + ': and every one of them resolves as owned: ' +
+        JSON.stringify(o.questions.filter(q => !q.owned)));
+      ok(o.subjectKey === 'business_studies', where + ': under the paper\'s own subject key: ' + JSON.stringify(o.subjectKey));
+    };
+
+    // -- imported this session, then sat straight away ------------------------
+    {
+      const { p, sent } = await openWith(b, { cards: {}, endpoint: '', code: '12Ec126', log: [],
+        customSets: [], lessons: {}, exams: [] });
+      await p.evaluate(() => { const x = Array.from(document.querySelectorAll('button,a')).find(e => /^create$/i.test(e.textContent.trim())); x && x.click(); });
+      await settled(p);
+      await p.fill('#importjson', JSON.stringify({ format: 'marginal-exam@1', name: 'Fresh import',
+        curriculum: CURRIC, sections: essayPaper('x', {}).sections }));
+      await p.click('#doimport'); await settled(p);
+      const id = await p.evaluate(() => (JSON.parse(localStorage.getItem('marginal.trial.v1') || '{}').exams || [])
+        .filter(e => e.name === 'Fresh import').map(e => e.id)[0]);
+      ok(!!id, 'the imported paper is there to sit: ' + JSON.stringify(id));
+      await sit(p, id, 1);
+      holds(await own(p), 'imported then sat');
+      await answer(p, 'A response about weaving strategies. '.repeat(20));
+      ok((sent[0] || {}).subject === 'Business Studies',
+        'and it marks under its own subject: ' + JSON.stringify((sent[0] || {}).subject));
+      await p.close();
+    }
+
+    // -- written to storage, page reloaded, then sat --------------------------
+    // The one step that genuinely rebuilds every object: JSON.stringify on save,
+    // JSON.parse on load. Identity survives because state.exams IS the parsed tree
+    // and examStart reads out of it, not out of anything older.
+    {
+      const { p, sent } = await openWith(b, withPaper(essayPaper('reloaded', CURRIC)));
+      await sit(p, 'reloaded', 1);
+      await p.reload(); await settled(p);
+      await sit(p, 'reloaded', 1);
+      holds(await own(p), 'after a full reload');
+      await answer(p, 'A response about weaving strategies. '.repeat(20));
+      ok((sent[0] || {}).subject === 'Business Studies',
+        'a paper rebuilt from storage still marks under its own subject: ' + JSON.stringify((sent[0] || {}).subject));
+      await p.close();
+    }
+
+    // -- answered, left, re-entered and sat again -----------------------------
+    {
+      const { p, sent } = await openWith(b, withPaper(paper('revisited', CURRIC)));
+      await sit(p, 'revisited', 1);
+      await answer(p, 'Reeds are flexible and hollow.');
+      await p.evaluate(() => { const x = document.querySelector('#examquit'); x && x.click(); });
+      await settled(p);
+      await sit(p, 'revisited', 1);
+      holds(await own(p), 'after leaving and coming back');
+      await p.click('#examnext'); await settled(p);
+      await answer(p, 'A response about weaving strategies. '.repeat(20));
+      ok(sent.length === 1 && sent[0].subject === 'Business Studies',
+        'and the second sitting marks under the same subject: ' + JSON.stringify(sent.map(x => x.subject)));
+      await p.close();
+    }
+
+    // -- retaken from the results screen --------------------------------------
+    {
+      const { p } = await openWith(b, withPaper(essayPaper('retaken', CURRIC)));
+      await sit(p, 'retaken', 1);
+      await answer(p, 'A response about weaving strategies. '.repeat(20));
+      await p.click('#examnext'); await settled(p);
+      const rt = await p.$('#examretake');
+      ok(!!rt, 'the results screen offers a retake');
+      if (rt) { await rt.click(); await settled(p); }
+      const bg = await p.$('#exambegin'); if (bg) { await bg.click(); await settled(p); }
+      holds(await own(p), 'after a retake');
+      await p.close();
+    }
+
+    // -- a subset of sections, chosen on the picker ---------------------------
+    {
+      const two = { id: 'subset', name: 'Paper subset', curriculum: CURRIC, sections: [
+        { name: 'Section I', questions: [SHORT_Q] },
+        { name: 'Section II', questions: [ESSAY_Q] }] };
+      const { p, sent } = await openWith(b, withPaper(two));
+      await p.evaluate(() => { const x = Array.from(document.querySelectorAll('button,a')).find(e => /test mode/i.test(e.textContent)); x && x.click(); });
+      await settled(p);
+      await p.evaluate(() => { const x = document.querySelector('[data-examsit="subset"]'); x && x.click(); });
+      await settled(p);
+      await p.$$eval('[data-exampick]', es => es.forEach((e, i) => { e.checked = i === 1; e.dispatchEvent(new Event('change')); }));
+      await p.click('#exampickgo'); await settled(p);
+      const bg = await p.$('#exambegin'); if (bg) { await bg.click(); await settled(p); }
+      const o = await own(p);
+      ok(o.questions.length === 1, 'only the chosen section is sequenced: ' + o.questions.length);
+      holds(o, 'sitting one section of two');
+      await answer(p, 'A response about weaving strategies. '.repeat(20));
+      ok((sent[0] || {}).subject === 'Business Studies',
+        'and it marks under the paper\'s subject: ' + JSON.stringify((sent[0] || {}).subject));
+      await p.close();
+    }
+
+    // -- restored from a backup, then sat -------------------------------------
+    {
+      const { p } = await openWith(b, { cards: {}, endpoint: '', code: '12Ec126', log: [],
+        customSets: [], lessons: {}, exams: [essayPaper('restored', CURRIC)] });
+      // The restore path pushes papers parsed out of a backup file, which is the
+      // other place a paper object is built from text rather than copied.
+      await sit(p, 'restored', 1);
+      holds(await own(p), 'restored from storage');
+      await p.close();
+    }
+  }
+
   ok(errs.length === 0, 'no page errors: ' + JSON.stringify(errs.slice(0, 3)));
   await b.close();
   console.log('\n' + pass + ' passed, ' + fail + ' failed');

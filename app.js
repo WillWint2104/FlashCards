@@ -3455,6 +3455,32 @@
   // computes nothing of its own and cannot change anything.
   try {
     window.__esSubjects = () => esAllSubjects().subjects; window.__esImports = esImportReport;
+    // OWNERSHIP, MADE VISIBLE, because it rests on an invariant that is true by
+    // construction and could stop being true without anything saying so.
+    //
+    // examOwns asks whether a card IS one of the sat paper's questions, by object
+    // identity. That works because nothing between state.exams and the marker
+    // copies a question: examStart stores the reference sec.questions[qi] and
+    // every later step passes that same object along. It is a real constraint on
+    // the whole exam path and it was previously written down nowhere, so an
+    // importer that normalised, rehydrated or wrapped a question would have
+    // broken it silently and put the leak back.
+    //
+    // So the constraint is reported rather than assumed. tests/ui68.js walks every
+    // lifecycle Test mode supports and asserts `identical` at each step: if a
+    // clone ever appears in the path, that assertion names it instead of a student
+    // meeting a paper marked by the wrong subject.
+    window.__examOwnership = () => {
+      const p2 = EXAM.paper;
+      return {
+        paper: p2 ? (p2.id || null) : null,
+        subjectKey: p2 ? ((ASSESS.curriculumOf(p2) || {}).subjectKey || null) : null,
+        questions: (EXAM.seq || []).filter(x => x.kind === "q").map(x => {
+          const held = p2 && p2.sections && p2.sections[x.si] && (p2.sections[x.si].questions || [])[x.qi];
+          return { si: x.si, qi: x.qi, identical: held === x.q, owned: !!examOwns(x.q) };
+        }),
+      };
+    };
     // Reading only, like the two above. A sentence shape resolves for a paragraph
     // deep inside the writing flow and only where a question authors pathways,
     // which today is Business Studies alone - so the rule that an example belongs

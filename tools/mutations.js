@@ -645,6 +645,20 @@ module.exports = [
     why: "EXAM.paper outlives the sitting, so reading it unconditionally marked a flashcard under the curriculum of a paper the student had already left",
   },
   {
+    // The exact future this guard exists for: something on the exam path starts
+    // handing on a COPY of a question instead of the paper's own object. Nothing
+    // does today, which is why examOwns can compare by identity at all - and why
+    // the constraint has to be guarded rather than assumed, because an importer
+    // that normalised or rehydrated questions would break it in silence and put
+    // the cross-subject leak back.
+    id: "gate3a-exam-path-clones-a-question",
+    file: "app.js",
+    find: '      (sec.questions || []).forEach((q, qi) => seq.push({ kind: "q", si, qi, sec, q }));',
+    replace: '      (sec.questions || []).forEach((q, qi) => seq.push({ kind: "q", si, qi, sec, q: JSON.parse(JSON.stringify(q)) }));',
+    owner: "ui68",
+    why: "a cloned question is not the paper's question, so ownership by identity would silently stop resolving and every written answer in the paper would fall through to the flashcard package",
+  },
+  {
     id: "gate3a-import-stops-asking-who-marks-it",
     file: "app.js",
     find: "    ASSESS.curriculumFindings(d).concat(ASSESS.subjectOverrides(d))",
