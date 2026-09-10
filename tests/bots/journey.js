@@ -184,8 +184,190 @@ async function openLadder(p) {
   return true;
 }
 
+// ---- THE PARAGRAPH REVIEW, AS A LEARNING CYCLE ----------------------------
+//
+// OPT-IN, and defaulted off. runJourney has three callers: bots/run.js, which
+// asserts `calls === 0` and must keep proving the ordinary bundled-bank journeys
+// need no model; ui53, which is in the JOURNEYS tier and must not inherit the
+// cost; and the new acceptance suite, which asks for it. Nothing below runs
+// unless o.review is true.
+//
+// FAIL CLOSED. Every step records itself in tr.m.review.steps, and a step that
+// cannot proceed calls tr.demand(...) and returns rather than skipping quietly.
+// A short steps list in the report is a failure the acceptance suite can see.
+//
+// The student model decides what happens, not this function: whether a diagnosis
+// is read (readsDiagnosis), whether it is acted on (actsOnDiagnosis), whether the
+// deeper guidance is needed first (needsHelpFirst), and what sentence is written
+// (revise). This function only turns those into presses.
+async function reviewCycle(p, tr, prof) {
+  const R = tr.m.review;
+  const step = n => { R.steps.push(n); return true; };
+  // Demands raised BY THE CYCLE, kept apart from the journey's own. The writing
+  // phase already reports things like "evidence is asked for and none of it has a
+  // checked source", which is a real content finding and nothing to do with
+  // whether the review worked. An acceptance suite that reads tr.m.unsupported
+  // cannot tell the two apart.
+  const demand = why => { R.demands.push(why); tr.demand(why); };
+
+  // 4. press Check. #esask carries a cooldown and #esdonecheck sits on the
+  // completion card, so this looks for whichever is ENABLED rather than for
+  // whichever exists.
+  let pressed = null;
+  for (const sel of ["#esrecheck", "#esask", "#esdonecheck"]) {
+    const b = await p.$(sel);
+    if (b && await b.isEnabled().catch(() => false)) { await b.click(); pressed = sel; break; }
+  }
+  if (!pressed) { demand("no enabled way to check this paragraph"); return; }
+  step("check");
+  tr.say("check", "asked the coach about this paragraph (" + pressed + ")");
+
+  // 5. receive feedback. Waiting for the panel, not for a clock.
+  const came = await p.waitForFunction(() => !!document.querySelector(".es-review .es-rtabs"), null, { timeout: 15000 })
+    .then(() => true).catch(() => false);
+  if (!came) { demand("the coach's answer never reached the page"); return; }
+  step("feedback");
+  R.opened++;
+
+  const rows = await p.$$eval(".es-rtab", es => es.map(e => ({
+    key: e.dataset.esrtab,
+    label: (e.querySelector("span") || {}).textContent || "",
+    needsWork: /needs_work|missing/.test(e.className),
+  })));
+  if (!rows.length) { demand("the review reported no structural parts at all"); return; }
+  R.slots = rows.map(r => r.key);
+  tr.say("review", "the coach reported on " + rows.length + " parts: " + R.slots.join(", "));
+
+  const flagged = rows.filter(r => r.needsWork);
+  if (!flagged.length) {
+    // Not a failure: a paragraph can come back clean. The cycle still has to end
+    // somewhere the student can carry on from.
+    step("nothing-outstanding");
+    R.settledSlots = [];
+    tr.say("review", "nothing was outstanding, so there was nothing to revise");
+    const cl0 = await p.$("#esrclose"); if (cl0) { await cl0.click(); R.closed++; step("continue"); }
+    return;
+  }
+
+  // 6. inspect the part that was flagged, and read what is actually wrong with it.
+  const target = flagged[0];
+  if (!prof.readsDiagnosis) { tr.say("review", "did not open the flagged part"); return; }
+  await p.evaluate(k => { const t = [...document.querySelectorAll(".es-rtab")].find(x => x.dataset.esrtab === k); t && t.click(); }, target.key);
+  await wait(p, 320);
+  const issue = await txt(p, ".es-rissue");
+  if (!issue) { demand("a part was flagged but no diagnosis was given for it"); return; }
+  step("inspect");
+  R.inspected++;
+  // WHICH SENTENCE THE APP ANCHORED IT TO. The rewrite box carries the block id
+  // the coach named, so this is the app's own answer to "which sentence is this
+  // diagnosis about" - captured here so the acceptance suite can hold it against
+  // the id the coach actually sent, across the worker contract, the render and
+  // the surface the student types into.
+  const anchor = await p.$eval("[data-esrbox]", e => ({ id: e.dataset.esrbox || "", text: String(e.value || "") })).catch(() => null);
+  if (!anchor || !anchor.id) { demand("the diagnosis was not anchored to any sentence the student can edit"); return; }
+  R.anchoredTo = anchor.id;
+  R.anchoredText = anchor.text;
+  tr.say("anchor", "the diagnosis is about " + anchor.id + ": " + JSON.stringify(anchor.text.slice(0, 46)));
+  R.diagnosed = flagged.map(f => ({ slot: f.key, label: f.label }));
+  tr.say("diagnosis", target.key + ": " + issue);
+
+  // A student who cannot act without the deeper guidance goes and reads it. This
+  // is a knowledge decision; ui66 owns what the window contains.
+  if (prof.needsHelpFirst) {
+    const hp = await p.$("#esrhelp");
+    if (!hp) { demand("needed the deeper guidance for " + target.key + " and it was not offered"); return; }
+    await hp.click(); await wait(p, 420);
+    const words = (await txt(p, ".es-modal")).split(/\s+/).filter(Boolean).length;
+    R.helpOpened++;
+    tr.m.surfacesOpened++;
+    tr.say("support", "read the deeper guidance for " + target.key + " (" + words + " words)");
+    await p.evaluate(() => { const x = document.querySelector("#esmodalx"); x && x.click(); });
+    await wait(p, 260);
+  }
+
+  if (!prof.actsOnDiagnosis || typeof prof.revise !== "function") {
+    tr.say("review", "read the diagnosis and left the sentence as it was");
+    const cl1 = await p.$("#esrclose"); if (cl1) { await cl1.click(); R.closed++; step("continue"); }
+    return;
+  }
+
+  // 7-8. revise the student's OWN sentence, and save it. The text comes from the
+  // profile, never from the panel: nothing the app suggested may be copied back in.
+  const saveOnce = async attempt => {
+    const box = await p.$("[data-esrbox]");
+    if (!box) { demand("no way to rewrite the sentence the coach named"); return false; }
+    const was = await p.$eval("[data-esrbox]", e => e.value).catch(() => "");
+    const mine = String(prof.revise({ slot: target.key, label: target.label, issue: issue }, was, attempt) || "").trim();
+    if (!mine) { demand("the student had nothing to write"); return false; }
+    await p.fill("[data-esrbox]", mine);
+    await p.$eval("[data-esrbox]", e => e.dispatchEvent(new Event("input", { bubbles: true })));
+    await wait(p, 220);
+    const sv = await p.$("#esrsave");
+    if (!sv) { demand("no way to save the revision"); return false; }
+    if (!(await sv.isEnabled().catch(() => false))) { demand("the revision could not be saved"); return false; }
+    await sv.click(); await wait(p, 520);
+    R.revised++; R.revisedText.push(mine);
+    tr.say("revise", "rewrote the " + (target.label || target.key) + " in its own words");
+    return true;
+  };
+  if (!(await saveOnce(1))) return;
+  step("revise"); step("save");
+
+  // 9. the previous judgement must now be visibly out of date.
+  const stale = await p.$(".es-rstale");
+  if (!stale) { demand("the paragraph changed and the old check was still presented as current"); return; }
+  R.staleSeen++;
+  step("stale");
+  tr.say("stale", "the panel said its check was of the previous version");
+
+  // A student who got it wrong the first time reads further and repairs it before
+  // asking again. That is the recovery, and it happens BEFORE the re-check so the
+  // fresh result is a judgement on the repaired sentence.
+  if (prof.revisesTwice) {
+    const hp2 = await p.$("#esrhelp");
+    if (hp2) {
+      await hp2.click(); await wait(p, 400);
+      R.helpOpened++; tr.m.surfacesOpened++;
+      tr.say("support", "its first rewrite did not hold up, so it read the guidance");
+      await p.evaluate(() => { const x = document.querySelector("#esmodalx"); x && x.click(); });
+      await wait(p, 240);
+    }
+    await p.evaluate(k => { const t = [...document.querySelectorAll(".es-rtab")].find(x => x.dataset.esrtab === k); t && t.click(); }, target.key);
+    await wait(p, 300);
+    if (!(await saveOnce(2))) return;
+    step("repair");
+  }
+
+  // 10-11. ask again, and prove the new answer replaced the old one.
+  const rc = await p.$("#esrecheck");
+  if (!rc || !(await rc.isEnabled().catch(() => false))) { demand("could not ask for a fresh check after revising"); return; }
+  await rc.click();
+  const fresh = await p.waitForFunction(
+    () => { const r = document.querySelector(".es-review"); return !!r && !r.querySelector(".es-rstale"); },
+    null, { timeout: 15000 }).then(() => true).catch(() => false);
+  R.rechecked++;
+  step("recheck");
+  if (!fresh) { demand("the re-check never produced a result about the paragraph as it now stands"); return; }
+  R.freshAfterRecheck++;
+  step("fresh");
+  const after = await p.$$eval(".es-rtab", es => es.map(e => ({ key: e.dataset.esrtab, needsWork: /needs_work|missing/.test(e.className), edited: /edited/.test(e.className) })));
+  if (after.some(x => x.edited)) { demand("a part was still marked edited after a fresh check"); return; }
+  R.settledSlots = after.filter(x => x.needsWork).map(x => x.key);
+  tr.say("fresh", "the new result replaced the old one; still needing work: " +
+    (R.settledSlots.length ? R.settledSlots.join(", ") : "none"));
+
+  // 12. carry on writing.
+  const cl = await p.$("#esrclose");
+  if (!cl) { demand("no way back to writing from the review"); return; }
+  await cl.click(); await wait(p, 320);
+  R.closed++;
+  step("continue");
+}
+
 async function runJourney(p, o) {
   const { T, subject, qre, q, subjectContent, prof, bodies } = o;
+  // o.review turns on the paragraph-review cycle. Default off on purpose: see
+  // reviewCycle above for why the other two callers must not inherit it.
   const vocab = vocabulary(q);
   const teach = teachable(q, subjectContent);
   const led = new Ledger(prof.knowsAll ? vocab : prof.knowsSome ? vocab.slice(0, Math.ceil(vocab.length / 2)) : []);
@@ -354,6 +536,10 @@ async function runJourney(p, o) {
       tr.m.dependencies.push({ role: tr._role, declared: null, given: [], missing: [] });
     }
     await writeParagraph(p, tr, led, vocab, prof, need, unexplained, cs);
+    // THE PARAGRAPH IS WRITTEN. A student who checks their work does it here,
+    // before moving to the next one - opt-in, so the seven bundled-bank journeys
+    // and ui53 are unchanged.
+    if (o.review) await reviewCycle(p, tr, prof);
     tr.m.rhythm.push({ learned: tr.m.lessonWords - learnedHere, wrote: tr.m.sentences - wroteHere });
     const wa = await txt(p, ".es-mapwatext");
     if (wa) {

@@ -522,13 +522,60 @@ module.exports = [
     why: "a term scrolled above the window opened its card above the window too, where it was present, measurable and invisible",
   },
 
+  // ---- Gate 2: the bots actually complete the review cycle ------------------
+  {
+    // THE COVERAGE GAP GATE 2 EXISTS TO CLOSE. Before it, no bot had ever pressed
+    // Check this paragraph: eight journeys wrote eighteen paragraphs and walked
+    // past the review every time. Turning the cycle off again must fail loudly.
+    id: "bots-skip-the-review",
+    file: "tests/bots/journey.js",
+    find: "    if (o.review) await reviewCycle(p, tr, prof);",
+    replace: "    void o.review;",
+    owner: "ui67",
+    why: "the simulated students went back to writing paragraphs and never checking one, which is the gap Gate 2 was built to close",
+  },
+  {
+    // The cycle must not be able to report success having stopped half way. Every
+    // step is recorded, and the acceptance suite names the ones it requires.
+    id: "bots-review-stops-after-saving",
+    file: "tests/bots/journey.js",
+    find: "  const rc = await p.$(\"#esrecheck\");",
+    replace: "  return;\n  const rc = await p.$(\"#esrecheck\");",
+    owner: "ui67",
+    why: "a student revised a sentence and never asked again, so a stale judgement was the last thing the run saw and the journey still passed",
+  },
+  {
+    // The stub is what makes the run evidence about the product. One that invents
+    // a blockId would let an app that mis-grounds its diagnoses pass.
+    // NOT the stub's fail-closed branch. That was the first version of this entry
+    // and it survived, correctly: the app always sends an id for every sentence,
+    // so the branch is unreachable and the assertion resting on it was vacuous.
+    // The reachable claim is the one that crosses components - the app anchored
+    // the diagnosis to the very sentence the coach named, and put that sentence
+    // in front of the student.
+    id: "bots-review-ignores-the-anchor",
+    file: "tests/bots/journey.js",
+    find: "  R.anchoredTo = anchor.id;",
+    replace: "  R.anchoredTo = \"b1\";",
+    owner: "ui67",
+    why: "the run stopped checking which sentence the diagnosis was tied to, so a diagnosis rendered against the wrong sentence would have passed",
+  },
+  {
+    id: "bots-students-stop-differing",
+    file: "tests/bots/journey.js",
+    find: "  if (prof.needsHelpFirst) {",
+    replace: "  if (false) {",
+    owner: "ui67",
+    why: "every student behaved identically in the review, so the harness stopped telling a learner who needs support apart from one who does not",
+  },
+
   // ---- the harness watching itself ----------------------------------------
   {
     id: "gate-drops-a-suite",
     file: "tests/run.js",
     // Follows the end of the list, which moves every time a suite is added.
-    find: '"ui65", "ui66"]',
-    replace: '"ui65"]',
+    find: '"ui66", "ui67"]',
+    replace: '"ui66"]',
     owner: "t23",
     why: "a maintained regression outside the runner is invisible, which is how twenty-eight suites rotted unnoticed",
   },

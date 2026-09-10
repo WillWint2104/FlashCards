@@ -1,10 +1,29 @@
-// Three students. They differ in what they know and in what they are willing to
+// FOUR STUDENTS. They differ in what they know and in what they are willing to
 // do about not knowing it, and in nothing else. No profile names a button.
+//
+// The paragraph-review knobs below obey the same rule. A student does not "press
+// Save"; a student either understands a diagnosis or does not, is willing to look
+// for help or is not, and rewrites a sentence in their own words or leaves it
+// alone. journey.js turns that into presses. Anything phrased as a control
+// belongs in journey.js, not here.
+//
+//   readsDiagnosis   will open a flagged part to find out what is wrong
+//   actsOnDiagnosis  will rewrite the sentence the coach named
+//   needsHelpFirst   cannot act until it has read the deeper authored guidance
+//   revise(...)      the sentence they write, in their own words, from what the
+//                    diagnosis told them - never the app's scaffold text
 const { termsOf } = require("./lib");
 
 const ZERO = {
   name: "zero knowledge",
   style: "plain",
+  // Reads everything, cannot act on a diagnosis until it has read the deeper
+  // guidance behind it, and then rewrites in plain words of its own.
+  readsDiagnosis: true, actsOnDiagnosis: true, needsHelpFirst: true,
+  revise(d, was) {
+    return "Because these customers behave that way, the business changes what it does, and that is what the " +
+      (d.label || d.slot) + " has to show.";
+  },
   knowsAll: false, knowsSome: false,
   canJudge: false,                 // cannot evaluate a question they do not understand
   readsMeanings: true,             // will read what an option means before choosing it
@@ -24,6 +43,13 @@ const ZERO = {
 const STRONG = {
   name: "strong independent",
   style: "strong",
+  // Understands the diagnosis immediately and fixes the sentence without opening
+  // anything optional. If this student ever opens More help, the acceptance suite
+  // should say so rather than pass quietly.
+  readsDiagnosis: true, actsOnDiagnosis: true, needsHelpFirst: false,
+  revise(d, was) {
+    return "Because that characteristic of the target market comes first, the business adopts the strategy in order to answer it.";
+  },
   knowsAll: true,
   canJudge: true, position: "Effective, but dependent",
   readsMeanings: false,            // needs no explanation of terms it already holds
@@ -68,6 +94,16 @@ const STRONG = {
 const WRONG = {
   name: "plausible wrong turn",
   style: "wrong",
+  // Acts on the diagnosis, and the first thing it writes is wrong in the same way
+  // its argument was wrong: it restates the effect as the cause. Reads the deeper
+  // guidance only after that fails, then repairs. Recovery, not a correct answer
+  // supplied from the outset.
+  readsDiagnosis: true, actsOnDiagnosis: true, needsHelpFirst: false, revisesTwice: true,
+  revise(d, was, attempt) {
+    return attempt === 1
+      ? "The result is what makes the business decide, so the outcome explains the choice here."
+      : "Because this characteristic of the market comes first, the business changes what it does in response to it.";
+  },
   knowsAll: false, knowsSome: true,
   canJudge: true, position: "Highly effective",
   newPosition: "Moderately effective",
@@ -102,6 +138,12 @@ const WRONG = {
 // lesson, does not stop for the check, and writes. The profile that matters most,
 // because it is the one a real student is likeliest to be.
 const PARTIAL = {
+  // Understands part of the diagnosis and uses limited support: it reads the
+  // flagged part, does not go looking for the deeper guidance, and rewrites once.
+  readsDiagnosis: true, actsOnDiagnosis: true, needsHelpFirst: false,
+  revise(d, was) {
+    return "This happens because the characteristic named in the question leads the business to change its approach.";
+  },
   name: "partial knowledge",
   style: "plain",
   knowsAll: false, knowsSome: true,

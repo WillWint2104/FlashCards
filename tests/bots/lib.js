@@ -87,7 +87,31 @@ class Trace {
     // where every concept the student used actually came from, so a paragraph
     // written with no lesson can be read as "the guided environment taught it"
     // rather than "the bot knew it already"
-    provenance: [], transfer: null, dependencies: [] };
+    provenance: [], transfer: null, dependencies: [],
+    // THE PARAGRAPH REVIEW, as a learning cycle rather than a panel. What matters
+    // for acceptance is not that the controls exist - ui65 owns that - but that
+    // four different students move through the cycle differently: how many parts
+    // came back needing work, whether the student acted on the diagnosis at all,
+    // whether the sentence they saved was their own, and whether the check they
+    // ended on was current.
+    review: {
+      opened: 0,            // times a result rendered a review panel
+      slots: [],            // the authored slot keys the panel showed, in order
+      diagnosed: [],        // {slot, issue} for every part reported needs_work or missing
+      inspected: 0,         // tabs the student actually opened to read a diagnosis
+      helpOpened: 0,        // More help, which a strong student should not need
+      revised: 0,           // revisions the student saved
+      revisedText: [],      // exactly what they saved, so it can be proved to be theirs
+      staleSeen: 0,         // times the panel said the check predated the paragraph
+      rechecked: 0,         // times they asked for a fresh judgement
+      freshAfterRecheck: 0, // times the stale state was gone afterwards
+      settledSlots: null,   // slots still needing work when the cycle ended
+      anchoredTo: null,     // the block id the app tied the diagnosis to
+      anchoredText: "",     // and the sentence it showed for it
+      demands: [],          // what the CYCLE found missing, apart from the journey's own
+      closed: 0,            // returns to writing
+      steps: [],            // the twelve-step ledger, so a skipped step is visible
+    } };
   }
   // the clock starts when the student reaches the question, not when a 1.6MB
   // test file finishes loading twice
@@ -120,7 +144,10 @@ class Trace {
       "  looked at the response map:  " + this.m.mapVisits,
       "  opened the pathway lesson:   " + this.m.lessonOpens +
         (this.m.lessonOpens ? " (" + this.m.lessonWords + " words of support read)" : ""),
-      "  words before the check:      " + (this.m.wordsBeforeTry == null ? "-" : this.m.wordsBeforeTry),
+      // NAMED FOR WHAT IT MEASURES. This counts words before the LESSON's try
+      // section, not before Check this paragraph, and read as the latter it is a
+      // straight misreading of the review metrics printed below it.
+      "  words before the lesson try: " + (this.m.wordsBeforeTry == null ? "-" : this.m.wordsBeforeTry),
       "  try: " + this.m.tryAttempts + " attempt(s), " + this.m.tryRepairs + " repaired, " + this.m.tryRight + " right",
       ...this.m.dependencies.map(x => "  " + x.role + " depends on " +
         (x.declared == null ? "(nothing declared)"
@@ -147,7 +174,33 @@ class Trace {
       "  taught:                      " + this.m.blocked,
       "  concepts it needed that the",
       "  app never explains anywhere: " + (this.m.unexplained.length ? this.m.unexplained.join(", ") : "none"),
+      ...this.reviewLines(),
     ].join("\n");
+  }
+  // Printed only when the student went through a review, so the seven bundled-bank
+  // journeys keep the report they have always had.
+  reviewLines() {
+    const r = this.m.review;
+    if (!r || !r.opened) return [];
+    const need = r.settledSlots;
+    return [
+      "  --- paragraph review ---",
+      "  reviews opened:              " + r.opened,
+      "  parts the model reported:    " + (r.slots.length ? r.slots.join(", ") : "-"),
+      "  parts needing work:          " + (r.diagnosed.length
+        ? r.diagnosed.map(d => d.slot).join(", ") : "none"),
+      "  diagnoses read:              " + r.inspected,
+      "  anchored to sentence:        " + (r.anchoredTo || "-"),
+      "  More help opened:            " + r.helpOpened,
+      "  revisions saved:             " + r.revised +
+        (r.revisedText.length ? " (" + r.revisedText.map(t => JSON.stringify(t.slice(0, 40))).join(", ") + ")" : ""),
+      "  saw its check go stale:      " + (r.staleSeen ? "yes" : "no"),
+      "  asked for a fresh check:     " + (r.rechecked ? "yes, " + r.rechecked : "no"),
+      "  fresh result afterwards:     " + (r.freshAfterRecheck ? "yes" : "no"),
+      "  parts still needing work:    " + (need == null ? "-" : need.length ? need.join(", ") : "none"),
+      "  cycle steps completed:       " + r.steps.join(" > "),
+      "  the cycle found missing:     " + (r.demands.length ? r.demands.join("; ") : "nothing"),
+    ];
   }
 }
 module.exports = { content, question, subjectOf, termsOf, vocabulary, teachable, Ledger, Trace };

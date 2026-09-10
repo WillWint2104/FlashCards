@@ -1,9 +1,14 @@
-// FOUR STUDENTS, ONE QUESTION NOBODY IN THIS REPOSITORY WROTE INTO THE APP.
+// ONE STUDENT, ONE QUESTION NOBODY IN THIS REPOSITORY WROTE INTO THE APP.
 //
 // The end-to-end proof for the importer, stated as a chain and tested as one:
 //
 //   external JSON -> import -> persistence -> question picker -> preview
 //                 -> workspace -> a completed response
+//
+// The student is the PARTIAL learner, and one is the point: this suite is about
+// whether an externally authored question can carry anybody at all, not about
+// telling four of them apart. tests/ui54.js is the four-profile matrix, and
+// tests/ui67.js is the four-profile paragraph-review acceptance.
 //
 // Everything before this suite tested a link. tests/ui50.js publishes a small
 // package and finds it in the list; the bots walk four simulated students

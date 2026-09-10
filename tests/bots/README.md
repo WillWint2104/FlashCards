@@ -1,6 +1,6 @@
 # Simulated students
 
-Three students walk the real app. They are not click scripts: each is a
+Four students walk the real app. They are not click scripts: each is a
 **knowledge state** plus a **policy**, and the journeys diverge because the
 students differ, not because the harness tells them to press different buttons.
 

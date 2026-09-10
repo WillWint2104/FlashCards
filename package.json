@@ -5,9 +5,11 @@
   "scripts": {
     "lint:css": "stylelint index.html",
     "test": "node build.js && node tests/run.js",
-    "gate:fast": "node build.js && node tests/run.js ui39",
-    "gate:checkpoint": "node build.js && node tests/run.js ui39 ui40 ui41 ui34 ui37",
-    "gate:full": "node tests/snapshot.js"
+    "gate:fast": "node tests/gate.js fast",
+    "gate:checkpoint": "node tests/gate.js checkpoint",
+    "gate:journeys": "node tests/gate.js journeys",
+    "gate:full": "node tests/gate.js full",
+    "gate:snapshot": "node tests/snapshot.js"
   },
   "devDependencies": {
     "postcss-html": "^1.7.0",
