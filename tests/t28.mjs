@@ -257,6 +257,32 @@ console.log("7. identity is a typed field, never a shape a piece of prose happen
   ok(crossWired(rightOwner).length === 0 && rightOwner.wouldImport,
     "and a record owned by the package's own subject is fine: " + rightOwner.verdict);
 
+  // THE LEGACY FIELD, AND WHY IT IS NOT A BACK DOOR.
+  //
+  // A package written before the rename carries `subject` on its vocabulary
+  // records, and the value may be anything: tests/fixtures/external-ops-package
+  // .json puts an ownership key there, and the contract says it is prose. The
+  // validator cannot tell which the author meant, and the whole defect was that
+  // it used to decide by looking at the shape of the value. So it does not
+  // decide. It reads the meaning, never the ownership, and says so out loud -
+  // which is what makes preserving the old field deliberate rather than silent.
+  const legacyOwner = withVocab({ subject: "economics" });
+  ok(crossWired(legacyOwner).length === 0,
+    "the old field is not read as ownership even when it holds another subject's key: " +
+    JSON.stringify(crossWired(legacyOwner).map(x => x.message)));
+  ok(legacyOwner.wouldImport, "the package still imports: " + legacyOwner.verdict);
+  const renamed = (legacyOwner.findings || []).filter(x => x.code === "VOCAB_SUBJECT_RENAMED");
+  ok(renamed.length === 1, "and is told about the rename rather than left to guess: " +
+    JSON.stringify((legacyOwner.findings || []).map(x => x.code)));
+  ok(renamed[0].severity === "warning", "as a warning, so nothing that used to import stops");
+  ok(/subjectMeaning/.test(renamed[0].message) && /subjectKey/.test(renamed[0].message),
+    "naming both fields, so an author can say which they meant: " + JSON.stringify(renamed[0].message));
+  // And the typed field still wins where both are present.
+  const both = withVocab({ subject: "economics", subjectMeaning: "learning the job by doing it",
+    subjectKey: "business_studies" });
+  ok(crossWired(both).length === 0 && both.wouldImport,
+    "a record that says plainly who owns it is judged on that: " + both.verdict);
+
   // The regex-driven check is gone rather than tightened.
   const v = read("tools/contract/validate.js");
   ok(v.indexOf("const SUBJECT_KEY = /^[a-z0-9]+(_[a-z0-9]+)*$/") < 0,
