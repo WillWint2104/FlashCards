@@ -114,7 +114,7 @@ const TIERS = {
   // ui59 gave back four by no longer sleeping through its own re-renders.
   //
   // ui65 and ui66 are full-only, and for the plainest reason: between them they
-  // stub the coach eleven times and walk a student through an introduction, a
+  // stub the coach ten times and walk a student through an introduction, a
   // conclusion and two body paragraphs. They are the paragraph review's own
   // regression, and the review is checked by driving it, not by sampling it.
   //
