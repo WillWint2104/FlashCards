@@ -307,6 +307,14 @@ const TIERS = {
   //
   // bots is 132.7s of this tier and ui54 is 79.4s. Both still want profiling from
   // this composition; neither was re-measured here.
+  //
+  // FROZEN. All four numbers below are now settled and none of them moves again
+  // without the repository owner agreeing to it first. That includes this one:
+  // 800 is a ceiling to stay under, not an allowance to spend, and the next
+  // change that pushes the tier past it is a conversation rather than an edit.
+  // Profile the two suites named above before adding significant new cost, and
+  // take the time out of waiting and repeated browser launches rather than out
+  // of coverage.
   full: { budget: 800, suites: [] },
 };
 
