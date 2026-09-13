@@ -552,13 +552,21 @@
         const res = await esPostJSON(state.endpoint, {
             prompt: card.prompt, marks: card.marks, model_answer: card.model, vocab: card.vocab, answer,
             scaffold: card.scaffold, faults: card.faults,
-            // The directive the normaliser resolved, which is never "report":
-            // that word names a FORMAT and was only ever in this field because
-            // there was nowhere else to put it. A card that authored no
-            // directive at all still has one read out of its own prompt, which
-            // is long-standing behaviour and not a format decision.
-            command: fx.directive ||
-              ((!card.command && !card.directive) ? commandOf(card.prompt) : undefined) || undefined,
+            // The directive, in the words the author wrote.
+            //
+            // fx.directive is the canonical lower-case form, which is what
+            // comparisons use. This field is not a comparison: it goes to the
+            // marker, so it keeps the authored casing. Normalising it here
+            // changed "Explain" to "explain" on the wire, which ui.js caught -
+            // a slice about formats has no business quietly restyling a field
+            // an external marker reads.
+            //
+            // What it does drop is "report", because that word names a FORMAT
+            // and was only ever in this field for want of anywhere else to put
+            // it. A card that authored no directive at all still has one read
+            // out of its own prompt, which is long-standing behaviour.
+            command: fx.directive ? (card.command || card.directive)
+              : ((card.command || card.directive) ? undefined : (commandOf(card.prompt) || undefined)),
             subject: mc.subject, criteria: mc.criteria,
             bands: mc.bands, bandsSource: mc.bandsSource, topic: mc.topic, requirements: mc.requirements,
             // BOTH, and they are different things. `format` is what kind of
