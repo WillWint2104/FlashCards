@@ -150,7 +150,59 @@ console.log("5. the written boundary is explicit rather than inferred");
     "and exactly two formats never reach written marking: " + JSON.stringify(A.FORMATS.filter(A.isObjective)));
 }
 
-console.log("6. normalisation is deterministic and idempotent");
+console.log("6. an explicit format outranks legacy inference only when they agree");
+{
+  // A package carrying both is making two claims about one question. Where they
+  // are the same claim, the explicit one is authoritative and the legacy fields
+  // are just the old spelling of it.
+  const agree = fmt({ type: "essay", format: "extended_response" });
+  ok(agree.ok && agree.format === "extended_response" && agree.source === "declared",
+    "an explicit format is authoritative where the legacy fields say the same thing: " + JSON.stringify(agree.source));
+  const report = fmt({ type: "essay", command: "Report", format: "business_report" });
+  ok(report.ok && report.format === "business_report",
+    "including the legacy report compound, once a package spells it out");
+  ok(fmt({ type: "essay", format: "extended_response", command: "Evaluate" }).directive === "evaluate",
+    "and the directive still comes through an agreeing pair");
+  const alone = fmt({ format: "short_answer" });
+  ok(alone.ok && alone.format === "short_answer", "a declared format with no legacy fields beside it is simply taken");
+
+  // WHERE THEY DISAGREE, NEITHER IS CHOSEN. One of the two is wrong, nothing
+  // here can tell which, and picking the newer one would be a guess dressed up
+  // as a rule. This is the case the brief named.
+  const conflict = fmt({ type: "essay", format: "short_answer" });
+  ok(!conflict.ok && conflict.code === "FORMAT_CONFLICT",
+    "a question claiming both essay and short_answer is refused: " + JSON.stringify(conflict.ok ? conflict.format : conflict.code));
+  ok(conflict.format === undefined,
+    "and carries no format at all, so neither claim survives to be acted on: " + JSON.stringify(conflict.format));
+  ok(conflict.declared === "short_answer" && conflict.implied === "extended_response" && conflict.legacyType === "essay",
+    "the refusal names both claims rather than one: " + JSON.stringify([conflict.declared, conflict.implied]));
+  ok(/no way to tell which/.test(conflict.why || ""),
+    "in words that say why it was not resolved: " + JSON.stringify(conflict.why));
+
+  // A legacy type this version cannot read is not a disagreement about which
+  // format it is; it is not knowing. The refusal says that rather than naming a
+  // format the question never claimed.
+  const unreadable = fmt({ format: "short_answer", type: "essay_v2" });
+  ok(unreadable.code === "FORMAT_CONFLICT" && unreadable.implied === null && /cannot read/.test(unreadable.why || ""),
+    "an unreadable legacy type is refused as unresolvable rather than described as some other format: " +
+    JSON.stringify(unreadable.why));
+
+  const cases = [
+    [{ type: "short", format: "extended_response" }, "the pairing the other way round"],
+    [{ type: "essay", command: "Report", format: "extended_response" }, "a report demoted to an ordinary extended response"],
+    [{ type: "essay", format: "business_report" }, "a report claimed without the legacy fields agreeing"],
+    [{ type: "calc", format: "short_answer" }, "a calculation declared as prose"],
+    [{ type: "mc", format: "calculation" }, "one objective format claimed as the other"],
+    [{ type: "essay_v2", format: "short_answer" }, "a legacy type this version cannot read, so agreement cannot be established"],
+  ];
+  cases.forEach(([q, what]) => {
+    const r = fmt(q);
+    ok(!r.ok && r.code === "FORMAT_CONFLICT" && r.format === undefined,
+      what + " is refused: " + JSON.stringify(r.ok ? r.format : r.code));
+  });
+}
+
+console.log("7. normalisation is deterministic and idempotent");
 {
   const inputs = [{ type: "mc" }, { type: "essay", command: "Report" }, { format: "business_report", directive: "recommend" }];
   inputs.forEach(q => {
@@ -162,11 +214,9 @@ console.log("6. normalisation is deterministic and idempotent");
     ok(again.ok && again.format === once.format && again.directive === once.directive,
       "and normalising the normalised form changes nothing: " + JSON.stringify([once.format, once.directive]));
   });
-  ok(fmt({ type: "essay", command: "Report", format: "extended_response" }).format === "extended_response",
-    "a declared format wins over what the legacy fields would have inferred");
 }
 
-console.log("7. everything the product actually ships maps");
+console.log("8. everything the product actually ships maps");
 {
   // Read the shipped content the way the app does and check that not one card a
   // student can be served falls outside the table. This is the assertion that
@@ -209,7 +259,7 @@ console.log("7. everything the product actually ships maps");
     JSON.stringify(t) + " is a chart kind inside a stimulus and is not in the format table"));
 }
 
-console.log("8. the exam importer and the app agree with the table");
+console.log("9. the exam importer and the app agree with the table");
 {
   const app = read("app.js");
   // The collapse is gone rather than moved.

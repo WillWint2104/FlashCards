@@ -538,7 +538,7 @@
     const mode = ASSESS.writtenModeOf(fx.format);
     if (!mode)
       return ASSESS.refuse("FORMAT_NOT_WRITTEN",
-        "This response was not marked: a " + fx.format.replace(/_/g, " ") +
+        "This response was not marked: " + ASSESS.formatWords(fx.format) +
         " is graded against its own answer rather than by the written marker.",
         { format: fx.format, max: Number(card && card.marks) || 0 });
     const mc = markingContext(card);

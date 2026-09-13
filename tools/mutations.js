@@ -720,6 +720,26 @@ module.exports = [
     why: "format and directive are independent, and normalising one must not discard the other",
   },
   {
+    // The conflict check removed, so a package claiming two different formats is
+    // silently resolved in favour of the newer field.
+    id: "gate3b-conflict-resolved-by-guessing",
+    file: "tools/contract/assessment.js",
+    find: "      if (implied !== q.format)",
+    replace: "      if (false && implied !== q.format)",
+    owner: "t29",
+    why: "when a question claims two formats one of them is wrong, and choosing the declared one is a guess made in silence",
+  },
+  {
+    // A legacy type nothing can read, reported as a disagreement with a format
+    // the question never named.
+    id: "gate3b-unreadable-legacy-named-as-a-format",
+    file: "tools/contract/assessment.js",
+    find: "      if (!implied)",
+    replace: "      if (false)",
+    owner: "t29",
+    why: "not being able to check two claims against each other is a different thing from knowing they differ, and the refusal has to say which",
+  },
+  {
     // The objective formats routed into written marking after all.
     id: "gate3b-calculation-marked-as-prose",
     file: "tools/contract/assessment.js",

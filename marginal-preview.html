@@ -9638,6 +9638,25 @@ function isObjective(format) { return isFormat(format) && !WRITTEN_MODE[format];
 // reason. `directive` is whatever intellectual operation the question asks for,
 // independent of the format, or null where none is authored - never invented to
 // fill the field.
+// What the legacy fields describe, or null if this version cannot say. The one
+// legacy compound lives here: a Business Report was authored as an extended
+// response whose command said "Report", and that is the only thing that ever
+// distinguished it. Recognised so the format becomes first class without the
+// source data being rewritten.
+// "an extended response", "a business report". Small, but these words are read
+// by a student who is being told why their work was not marked.
+function formatWords(format) {
+  var words = String(format).replace(/_/g, " ");
+  return (/^[aeiou]/.test(words) ? "an " : "a ") + words;
+}
+
+function legacyFormat(type, saysReport) {
+  var mapped = LEGACY_TYPE[type];
+  if (!mapped) return null;
+  if (mapped === "extended_response" && saysReport) return "business_report";
+  return mapped;
+}
+
 function normaliseFormat(q) {
   q = q || {};
   var raw = blank(q.directive) ? q.command : q.directive;
@@ -9647,6 +9666,7 @@ function normaliseFormat(q) {
   // it is not one: a report is a kind of response, not a kind of thinking.
   var saysReport = directive === "report";
   var carried = saysReport ? null : directive;
+  var type = blank(q.type) ? null : String(q.type).trim().toLowerCase();
 
   if (!blank(q.format)) {
     if (!isFormat(q.format))
@@ -9654,25 +9674,44 @@ function normaliseFormat(q) {
         "this question declares the response format " + JSON.stringify(String(q.format)) +
         ", which this version does not support. It is not marked as something else instead",
         { declared: String(q.format) });
+
+    // An explicit canonical format is authoritative for new data; the legacy
+    // fields exist only so old data can be migrated. A package that supplies
+    // both is making two claims, and they have to be the same claim. When they
+    // are not, one of them is wrong and nothing here can tell which, so neither
+    // is picked. Choosing the declared one would be a guess made in silence,
+    // and silence is what this whole slice exists to end.
+    if (type) {
+      var implied = legacyFormat(type, saysReport);
+      if (!implied)
+        return refuse("FORMAT_CONFLICT",
+          "this question declares the response format " + JSON.stringify(String(q.format)) +
+          " and also carries the legacy type " + JSON.stringify(type) +
+          ", which this version cannot read, so the two cannot be checked against each other",
+          { declared: String(q.format), implied: null, legacyType: type });
+      if (implied !== q.format)
+        return refuse("FORMAT_CONFLICT",
+          "this question declares the response format " + JSON.stringify(String(q.format)) +
+          " while its legacy fields describe " + formatWords(implied) +
+          ". One of the two is wrong and there is no way to tell which, so it is marked as neither",
+          { declared: String(q.format), implied: implied, legacyType: type });
+    }
     return { ok: true, format: q.format, directive: carried, source: "declared" };
   }
 
-  var type = blank(q.type) ? null : String(q.type).trim().toLowerCase();
   if (!type)
     return refuse("FORMAT_ABSENT",
       "this question says nothing about what kind of response it wants, so there is no way to know how to mark it");
-  var mapped = LEGACY_TYPE[type];
+  var mapped = legacyFormat(type, saysReport);
   if (!mapped)
     return refuse("FORMAT_UNSUPPORTED",
       "this question is of type " + JSON.stringify(type) +
       ", which is not a response format this version supports. It is not treated as a short answer instead",
       { declared: type });
 
-  // The one legacy compound. A Business Report was authored as an extended
-  // response whose command said "Report", and that is the only thing that ever
-  // distinguished it. Recognised here so the format becomes first class without
-  // the source data being rewritten.
-  if (mapped === "extended_response" && saysReport)
+  // business_report can only have come from the compound above, and "Report"
+  // was spent identifying the format rather than describing the thinking.
+  if (mapped === "business_report")
     return { ok: true, format: "business_report", directive: null, source: "legacy-report" };
 
   return { ok: true, format: mapped, directive: carried, source: "legacy" };
@@ -9691,6 +9730,7 @@ module.exports = {
   marked: marked, refuse: refuse, fail: fail,
   isMarked: isMarked, outcomeOf: outcomeOf, tally: tally,
   FORMATS: FORMATS, isFormat: isFormat, writtenModeOf: writtenModeOf, isObjective: isObjective,
+  formatWords: formatWords,
   LEGACY_TYPE: LEGACY_TYPE, normaliseFormat: normaliseFormat,
   isSubjectKey: isSubjectKey, curriculumOf: curriculumOf,
   curriculumFindings: curriculumFindings, subjectOverrides: subjectOverrides,
@@ -10262,7 +10302,7 @@ module.exports = {
     const mode = ASSESS.writtenModeOf(fx.format);
     if (!mode)
       return ASSESS.refuse("FORMAT_NOT_WRITTEN",
-        "This response was not marked: a " + fx.format.replace(/_/g, " ") +
+        "This response was not marked: " + ASSESS.formatWords(fx.format) +
         " is graded against its own answer rather than by the written marker.",
         { format: fx.format, max: Number(card && card.marks) || 0 });
     const mc = markingContext(card);
