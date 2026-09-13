@@ -667,6 +667,67 @@ module.exports = [
     owner: "ui68",
     why: "one unmarked answer ended a study run on \"NaN/NaN\" as the big score",
   },
+  // ---- Gate 3B: response-format normalisation -----------------------------
+  {
+    // The line this slice removed, put back. Everything that is not an essay
+    // becomes a short answer: a calculation goes to written marking, a Business
+    // Report is indistinguishable from an extended response, and a type nobody
+    // has heard of is graded as prose in silence.
+    id: "gate3b-unknown-becomes-short-again",
+    file: "tools/contract/assessment.js",
+    find: "  var mapped = LEGACY_TYPE[type];\n  if (!mapped)",
+    replace: "  var mapped = LEGACY_TYPE[type] || \"short_answer\";\n  if (!mapped)",
+    owner: "t29",
+    why: "an unknown response type is an unknown, and marking it as a short answer is the fault this slice exists to end",
+  },
+  {
+    // A declared format nobody implements, waved through instead of refused.
+    id: "gate3b-declared-format-unchecked",
+    file: "tools/contract/assessment.js",
+    find: "    if (!isFormat(q.format))\n      return refuse(\"FORMAT_UNSUPPORTED\",",
+    replace: "    if (false)\n      return refuse(\"FORMAT_UNSUPPORTED\",",
+    owner: "t29",
+    why: "a format this version cannot mark must be refused, not accepted and then guessed at downstream",
+  },
+  {
+    // Business Report collapsed back into an ordinary extended response, which
+    // is what it was before this slice and why nothing could tell them apart.
+    id: "gate3b-report-collapses-into-extended",
+    file: "tools/contract/assessment.js",
+    find: "  if (mapped === \"extended_response\" && saysReport)",
+    replace: "  if (false && mapped === \"extended_response\" && saysReport)",
+    owner: "t29",
+    why: "a Business Report that reads as an extended response is a report the architecture cannot see",
+  },
+  {
+    // "Report" carried on as a directive, which is the confusion this slice
+    // names: a report is a kind of response, not a kind of thinking.
+    id: "gate3b-report-becomes-a-directive",
+    file: "tools/contract/assessment.js",
+    find: "  var carried = saysReport ? null : directive;",
+    replace: "  var carried = directive;",
+    owner: "t29",
+    why: "report is a format wearing the directive field's name, and treating it as a directive is how it stayed invisible",
+  },
+  {
+    // The directive dropped while the format is normalised, so a report that
+    // asks the student to recommend forgets what it asked for.
+    id: "gate3b-directive-lost-in-normalisation",
+    file: "tools/contract/assessment.js",
+    find: "    return { ok: true, format: q.format, directive: carried, source: \"declared\" };",
+    replace: "    return { ok: true, format: q.format, directive: null, source: \"declared\" };",
+    owner: "t29",
+    why: "format and directive are independent, and normalising one must not discard the other",
+  },
+  {
+    // The objective formats routed into written marking after all.
+    id: "gate3b-calculation-marked-as-prose",
+    file: "tools/contract/assessment.js",
+    find: "var WRITTEN_MODE = {\n  short_answer: \"short\",",
+    replace: "var WRITTEN_MODE = {\n  calculation: \"short\",\n  short_answer: \"short\",",
+    owner: "t29",
+    why: "a calculation is graded against a number with a tolerance and has no business reaching the written marker",
+  },
   {
     // The completeness half of the rename. Ownership was fixed first and this was
     // still open: "business_studies" sat in the field the contract defines as the

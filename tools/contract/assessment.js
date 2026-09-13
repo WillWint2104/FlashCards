@@ -216,6 +216,110 @@ function resolveAuthority(opts) {
 }
 
 // ---------------------------------------------------------------------------
+// Response format
+// ---------------------------------------------------------------------------
+// RULE THREE: WHAT KIND OF RESPONSE IS THIS.
+//
+// responseTypeOf() answered that question with one line - essay is "extended",
+// everything else is "short" - and "everything else" is the fault. A calculation
+// went to written grading as a short answer. A Business Report went as an
+// ordinary extended response, because the only thing marking it out was the word
+// "Report" in a field meant for directives, which the directive registry does not
+// know. And a type nobody had heard of became a short answer in silence, which is
+// the worst of the three: an unknown is not a short answer, it is an unknown.
+//
+// So a format is declared or derived, never assumed, and the derivation table is
+// complete rather than defaulted. There is no "everything else" arm anywhere
+// below. A value this reader does not recognise is refused and says so.
+//
+// FORMAT AND DIRECTIVE ARE DIFFERENT QUESTIONS.
+//
+//   format     what kind of response is the student producing
+//   directive  what intellectual operation are they being asked to perform
+//
+// A Business Report can ask a student to recommend, and recommend is a directive
+// that already exists. So {format: "business_report", directive: "recommend"} is
+// the shape, and "report" never becomes a directive family to make the legacy
+// data fit - it was a format all along, wearing the wrong field's name.
+var FORMATS = ["multiple_choice", "calculation", "short_answer", "extended_response", "business_report"];
+
+// Which formats the written marker handles, and as what. Multiple choice and
+// calculation are objective: they are graded against an answer key and never
+// reach it at all, which is why they map to null rather than to "short".
+var WRITTEN_MODE = {
+  short_answer: "short",
+  extended_response: "extended",
+  business_report: "extended",
+};
+
+// Every legacy card and question type this application has ever served, and the
+// canonical format each one is. Complete on purpose: a type absent from this
+// table is refused, never defaulted.
+//
+// These five are the types a STUDY CARD or an imported exam question can carry.
+// `check` and `scenario` are lesson tasks, rendered by the lesson player and
+// never handed to a grader; `lorenz` and `incomeSource` are chart kinds inside a
+// question's stimulus. None of those four is a response format and none belongs
+// here, however much a flat search for `.type` makes them look alike.
+var LEGACY_TYPE = {
+  mc: "multiple_choice",
+  calc: "calculation",
+  define: "short_answer",
+  short: "short_answer",
+  essay: "extended_response",
+};
+
+function isFormat(v) { return typeof v === "string" && FORMATS.indexOf(v) >= 0; }
+function writtenModeOf(format) { return WRITTEN_MODE[format] || null; }
+function isObjective(format) { return isFormat(format) && !WRITTEN_MODE[format]; }
+
+// THE ONE PLACE A RESPONSE'S FORMAT IS DECIDED.
+//
+// Returns { ok: true, format, directive, source } or a refusal carrying the
+// reason. `directive` is whatever intellectual operation the question asks for,
+// independent of the format, or null where none is authored - never invented to
+// fill the field.
+function normaliseFormat(q) {
+  q = q || {};
+  var raw = blank(q.directive) ? q.command : q.directive;
+  var directive = blank(raw) ? null : String(raw).trim().toLowerCase();
+  // "report" in the directive field is a format wearing the wrong name. It is
+  // read as a format signal below and never carried on as a directive, because
+  // it is not one: a report is a kind of response, not a kind of thinking.
+  var saysReport = directive === "report";
+  var carried = saysReport ? null : directive;
+
+  if (!blank(q.format)) {
+    if (!isFormat(q.format))
+      return refuse("FORMAT_UNSUPPORTED",
+        "this question declares the response format " + JSON.stringify(String(q.format)) +
+        ", which this version does not support. It is not marked as something else instead",
+        { declared: String(q.format) });
+    return { ok: true, format: q.format, directive: carried, source: "declared" };
+  }
+
+  var type = blank(q.type) ? null : String(q.type).trim().toLowerCase();
+  if (!type)
+    return refuse("FORMAT_ABSENT",
+      "this question says nothing about what kind of response it wants, so there is no way to know how to mark it");
+  var mapped = LEGACY_TYPE[type];
+  if (!mapped)
+    return refuse("FORMAT_UNSUPPORTED",
+      "this question is of type " + JSON.stringify(type) +
+      ", which is not a response format this version supports. It is not treated as a short answer instead",
+      { declared: type });
+
+  // The one legacy compound. A Business Report was authored as an extended
+  // response whose command said "Report", and that is the only thing that ever
+  // distinguished it. Recognised here so the format becomes first class without
+  // the source data being rewritten.
+  if (mapped === "extended_response" && saysReport)
+    return { ok: true, format: "business_report", directive: null, source: "legacy-report" };
+
+  return { ok: true, format: mapped, directive: carried, source: "legacy" };
+}
+
+// ---------------------------------------------------------------------------
 function assign(a, b) { Object.keys(b).forEach(function (k) { a[k] = b[k]; }); return a; }
 function finite(n) { return typeof n === "number" && isFinite(n); }
 function num(n) { return finite(n) ? n : 0; }
@@ -227,6 +331,8 @@ module.exports = {
   SUCCESS: SUCCESS, REFUSED: REFUSED, FAILED: FAILED,
   marked: marked, refuse: refuse, fail: fail,
   isMarked: isMarked, outcomeOf: outcomeOf, tally: tally,
+  FORMATS: FORMATS, isFormat: isFormat, writtenModeOf: writtenModeOf, isObjective: isObjective,
+  LEGACY_TYPE: LEGACY_TYPE, normaliseFormat: normaliseFormat,
   isSubjectKey: isSubjectKey, curriculumOf: curriculumOf,
   curriculumFindings: curriculumFindings, subjectOverrides: subjectOverrides,
   resolveAuthority: resolveAuthority,
