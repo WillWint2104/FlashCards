@@ -127,6 +127,12 @@ async function toChooser(page) {
     // package PROVIDES is short-circuited as complete at every ref site and its
     // displayability is never computed. Written up as gate3-audit.md 3.4; the
     // relabelling made it load-bearing rather than theoretical.
+    // CHARACTERISATION, NOT CONTRACT. This records what the validator currently
+    // does, which is nothing: it is a description of a known limitation, not a
+    // property anybody wants. When refCheck stops short-circuiting provided
+    // records and displayability is computed for them, the right outcome is a
+    // VOCAB_NOT_YET_DISPLAYABLE shortfall here - and this line should be updated
+    // to expect it, not treated as a reason the fix broke a test.
     ok(vocab.every(v => !v.plain),
       "the records carry no ordinary-English gloss, which nothing above noticed");
     // The state the whole design depends on being able to report honestly. This

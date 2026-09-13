@@ -13,7 +13,19 @@ function declaredOf(q, id, store) {
   return (c.primary || []).map(cid => ({ id: cid, oneLine: (store[cid] || {}).oneLine || "" }));
 }
 
-const wait = (p, ms) => p.waitForTimeout(ms);
+// A DURATION IS A GUESS; A FRAME IS THE CONDITION.
+//
+// This app fetches nothing and renders synchronously - tests/env.js says so, and
+// blocks every external request to keep it true - so the effect of a click is
+// present on the next frame. These call sites were each guessing how long that
+// takes, 46 of them, most inside per-paragraph and per-sentence loops, and the
+// guesses were the bulk of this suite's runtime rather than the work.
+//
+// Two frames: the first lets the handler run, the second lets what it wrote be
+// laid out. The `ms` argument is kept so the call sites still say how long
+// somebody once thought this needed, and so the change is one function rather
+// than forty-six edits.
+const wait = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
 const has = async (p, sel) => !!(await p.$(sel));
 const txt = (p, sel) => p.$eval(sel, e => e.innerText.replace(/\s+/g, " ").trim()).catch(() => "");
 const allTxt = (p, sel) => p.$$eval(sel, es => es.map(e => e.innerText.replace(/\s+/g, " ").trim())).catch(() => []);

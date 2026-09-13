@@ -492,3 +492,10 @@ The fail-closed still holds for correctness — the `provides` block checks thos
 records separately and errors on the ambiguous ones — but the two answers are
 reached by different routes, and one of them is now known to be silent about a
 real shortfall.
+
+**The silence is not an invariant.** `ui53` asserts it, and that assertion is a
+characterisation of what the validator does today, not a property anyone wants.
+When this is fixed, the correct outcome is a `VOCAB_NOT_YET_DISPLAYABLE`
+shortfall on those records, and the `ui53` line should be updated to expect one.
+A test that reads "there must be no shortfall" must not become the reason the
+fix looks like a regression.
