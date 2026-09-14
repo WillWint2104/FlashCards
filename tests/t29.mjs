@@ -99,6 +99,24 @@ console.log("3. format and directive are different questions");
 
   // Nothing is invented to fill the field.
   ok(fmt({ type: "essay" }).directive === null, "a question with no directive authored reports none");
+
+  // THE MARKER READS THE AUTHOR'S WORDS, and it must be the same field the
+  // format was resolved from. `directive` is the canonical lower-cased form for
+  // this application; `directiveText` is what goes on the wire.
+  ok(fmt({ type: "essay", command: "Explain" }).directiveText === "Explain",
+    "the authored casing is preserved for the marker: " + JSON.stringify(fmt({ type: "essay", command: "Explain" }).directiveText));
+  ok(fmt({ type: "essay", command: "  Analyse  " }).directiveText === "Analyse", "trimmed, but not restyled");
+  const both = fmt({ type: "essay", directive: "evaluate", command: "Explain" });
+  ok(both.directive === "evaluate" && both.directiveText === "evaluate",
+    "a card carrying both fields resolves ONE of them and reports that one, rather than reading the format from " +
+    "`directive` and handing the marker `command`: " + JSON.stringify([both.directive, both.directiveText]));
+  const overridden = fmt({ type: "essay", directive: "evaluate", command: "Report" });
+  ok(overridden.format === "extended_response" && overridden.directiveText === "evaluate",
+    "and the field that lost does not reach the marker, which is how \"Report\" would have got there: " +
+    JSON.stringify(overridden.directiveText));
+  ok(fmt({ type: "essay", command: "Report" }).directiveText === null,
+    "a directive dropped as a format signal leaves no text behind either");
+  ok(fmt({ type: "essay" }).directiveText === null, "and none is invented");
 }
 
 console.log("4. an unknown is an unknown, and never a short answer");
@@ -221,11 +239,19 @@ console.log("8. everything the product actually ships maps");
   // Read the shipped content the way the app does and check that not one card a
   // student can be served falls outside the table. This is the assertion that
   // would catch somebody adding a sixth card type without a format for it.
+  // The load is ASSERTED rather than tried and forgiven. Swallowing it would let
+  // one bundle fail and leave this section checking a subset of the card bank
+  // while still reporting green, which is the shape of failure this whole gate
+  // exists to refuse. Both load cleanly in a bare context today; if one ever
+  // needs the DOM, this says so instead of quietly checking less.
   const ctx = { window: {} };
   vm.createContext(ctx);
+  const loadFailures = [];
   ["content.js", "business-content.js"].forEach(f => {
-    try { vm.runInContext(read(f), ctx); } catch (e) { /* a bundle that needs the DOM is not needed here */ }
+    try { vm.runInContext(read(f), ctx); } catch (e) { loadFailures.push(f + ": " + e.message); }
   });
+  ok(loadFailures.length === 0, "every shipped content bundle loaded, so nothing is checked in part: " +
+    JSON.stringify(loadFailures));
   const C = ctx.window.CONTENT || {};
   const areas = [];
   (C.topics || []).forEach(t => (t.areas || []).forEach(a => areas.push(a)));

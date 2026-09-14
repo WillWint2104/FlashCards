@@ -565,8 +565,8 @@
             // and was only ever in this field for want of anywhere else to put
             // it. A card that authored no directive at all still has one read
             // out of its own prompt, which is long-standing behaviour.
-            command: fx.directive ? (card.command || card.directive)
-              : ((card.command || card.directive) ? undefined : (commandOf(card.prompt) || undefined)),
+            command: fx.directiveText
+              || ((card.command || card.directive) ? undefined : (commandOf(card.prompt) || undefined)),
             subject: mc.subject, criteria: mc.criteria,
             bands: mc.bands, bandsSource: mc.bandsSource, topic: mc.topic, requirements: mc.requirements,
             // BOTH, and they are different things. `format` is what kind of

@@ -714,8 +714,8 @@ module.exports = [
     // asks the student to recommend forgets what it asked for.
     id: "gate3b-directive-lost-in-normalisation",
     file: "tools/contract/assessment.js",
-    find: "    return { ok: true, format: q.format, directive: carried, source: \"declared\" };",
-    replace: "    return { ok: true, format: q.format, directive: null, source: \"declared\" };",
+    find: "    return { ok: true, format: q.format, directive: carried, directiveText: carriedText, source: \"declared\" };",
+    replace: "    return { ok: true, format: q.format, directive: null, directiveText: null, source: \"declared\" };",
     owner: "t29",
     why: "format and directive are independent, and normalising one must not discard the other",
   },
@@ -738,6 +738,16 @@ module.exports = [
     replace: "      if (false)",
     owner: "t29",
     why: "not being able to check two claims against each other is a different thing from knowing they differ, and the refusal has to say which",
+  },
+  {
+    // The authored directive picked out of the other field, so the format is
+    // resolved from one and the marker is told the other.
+    id: "gate3b-directive-text-reads-the-wrong-field",
+    file: "tools/contract/assessment.js",
+    find: "  var carriedText = carried === null ? null : String(raw).trim();",
+    replace: "  var carriedText = carried === null ? null : String(q.command || q.directive).trim();",
+    owner: "t29",
+    why: "the words sent to the marker have to come from the field the format was read from, or a card carrying both says two things",
   },
   {
     // The objective formats routed into written marking after all.

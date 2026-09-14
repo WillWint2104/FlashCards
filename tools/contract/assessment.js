@@ -307,6 +307,13 @@ function normaliseFormat(q) {
   // it is not one: a report is a kind of response, not a kind of thinking.
   var saysReport = directive === "report";
   var carried = saysReport ? null : directive;
+  // The same directive in the words its author wrote, for the marker, which
+  // reads "Explain" and not "explain". It is derived HERE rather than beside
+  // the payload because there were two expressions picking a field out of the
+  // same pair and they did not agree: this one prefers `directive`, the other
+  // preferred `command`, so a card carrying both resolved its format from one
+  // and told the marker the other. One source, and the two cannot drift.
+  var carriedText = carried === null ? null : String(raw).trim();
   var type = blank(q.type) ? null : String(q.type).trim().toLowerCase();
 
   if (!blank(q.format)) {
@@ -337,7 +344,7 @@ function normaliseFormat(q) {
           ". One of the two is wrong and there is no way to tell which, so it is marked as neither",
           { declared: String(q.format), implied: implied, legacyType: type });
     }
-    return { ok: true, format: q.format, directive: carried, source: "declared" };
+    return { ok: true, format: q.format, directive: carried, directiveText: carriedText, source: "declared" };
   }
 
   if (!type)
@@ -353,9 +360,9 @@ function normaliseFormat(q) {
   // business_report can only have come from the compound above, and "Report"
   // was spent identifying the format rather than describing the thinking.
   if (mapped === "business_report")
-    return { ok: true, format: "business_report", directive: null, source: "legacy-report" };
+    return { ok: true, format: "business_report", directive: null, directiveText: null, source: "legacy-report" };
 
-  return { ok: true, format: mapped, directive: carried, source: "legacy" };
+  return { ok: true, format: mapped, directive: carried, directiveText: carriedText, source: "legacy" };
 }
 
 // ---------------------------------------------------------------------------
