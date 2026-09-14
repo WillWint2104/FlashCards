@@ -797,10 +797,10 @@ module.exports = [
   },
   {
     id: "gate3a-import-stops-asking-who-marks-it",
-    file: "app.js",
-    find: "    ASSESS.curriculumFindings(d).concat(ASSESS.subjectOverrides(d))",
-    replace: "    [].concat(ASSESS.subjectOverrides(d))",
-    owner: "ui68",
+    file: "tools/contract/exam.js",
+    find: "  return ASSESS.curriculumFindings(paper).concat(ASSESS.subjectOverrides(paper)).map(function (f) {",
+    replace: "  return [].concat(ASSESS.subjectOverrides(paper)).map(function (f) {",
+    owner: "t30",
     why: "a paper that never says which subject marks it was marked against whichever flashcard package the picker was on",
   },
 ];

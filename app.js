@@ -12,6 +12,7 @@
   // as a result at all. Keeping a second copy here is how the two would come to
   // disagree, so there is no second copy.
   const ASSESS = window.MarginalAssessment;
+  const PAPER = window.MarginalExam;
   const MARKED = r => ASSESS.marked(r);
   // The one gate in front of every piece of arithmetic, scheduling and progress
   // state in this file. A refusal and a failure both answer false.
@@ -2077,43 +2078,36 @@
     const gc = $("#examgocreate"); if (gc) gc.onclick = () => { view = "create"; builder(); };
   }
 
-  function validateExam(d) {
-    const e = [];
-    if (!d || typeof d !== "object") return ["Not an exam object."];
-    if (!Array.isArray(d.sections) || !d.sections.length) return ["The exam has no sections array."];
-    // WHO MARKS THIS PAPER, ASKED AT THE DOOR.
-    //
-    // The old check did not ask. `subject` was optional free text, so the common
-    // case was a paper that never said, and a paper that never said was marked
-    // against whichever flashcard package the picker was on. A paper now names
-    // its subject by key or it does not import. Warnings - a missing KLA, a
-    // missing jurisdiction - are not gates: only the authority is load-bearing.
-    ASSESS.curriculumFindings(d).concat(ASSESS.subjectOverrides(d))
-      .filter(f => f.severity === "error")
-      .forEach(f => e.push(f.path + ": " + f.message));
-    let qn = 0;
-    d.sections.forEach((s, si) => {
-      if (!Array.isArray(s.questions) || !s.questions.length) { e.push("Section " + (si + 1) + " has no questions."); return; }
-      s.questions.forEach((q, qi) => {
-        const at = "S" + (si + 1) + "Q" + (qi + 1) + ": "; qn++;
-        if (!q.prompt) e.push(at + "missing prompt.");
-        if (!q.marks || q.marks < 1) e.push(at + "missing marks.");
-        if (!["mc", "calc", "short", "define", "essay"].includes(q.type)) e.push(at + "unknown type '" + q.type + "'.");
-        if (q.type === "mc") {
-          if (!Array.isArray(q.choices) || q.choices.length < 2) e.push(at + "MC needs 2+ choices.");
-          else if (q.choices.filter(c => c.ok).length !== 1) e.push(at + "MC needs exactly one correct choice.");
-        }
-        if (q.type === "calc" && typeof q.expected !== "number") e.push(at + "calc needs a numeric 'expected'.");
-        if (["short", "define", "essay"].includes(q.type) && !q.model && !(Array.isArray(q.points) && q.points.length))
-          e.push(at + "needs a model answer or a points rubric.");
-      });
-    });
-    if (!qn) e.push("The exam has no questions.");
-    return e;
+  // WHAT IS WRONG WITH THIS PAPER, ALL OF IT, AND WHICH KIND OF WRONG.
+  //
+  // This function used to be forty lines of checks that returned strings, and the
+  // caller showed errs[0]. Two faults in that. A package with ten problems
+  // reported one, so fixing it was ten attempts at the box. And every kind of
+  // problem read the same, when "this is not a paper", "this wants a format this
+  // version cannot run", "this names a subject nothing can resolve" and "this is
+  // fine but carries no model answers" are four different situations and only
+  // three of them stop the student sitting it.
+  //
+  // The checks now live in tools/contract/exam.js, so Node runs them in t30 and
+  // the page runs the same file. In particular the response format is resolved
+  // through the Gate 3B substrate rather than a hardcoded list of legacy type
+  // strings, which is what had been refusing packages authored the documented
+  // modern way.
+  function examineExam(d) { return PAPER.examine(d); }
+  // What the import box says. A refusal names the worst thing first and says how
+  // many others there are, because the count is the difference between "fix this"
+  // and "this file needs work".
+  function examVerdictText(v) {
+    const worst = v.findings.filter(f => f.state === v.state);
+    const head = worst.length ? worst[0].message : "this paper cannot be imported";
+    const rest = v.findings.length - 1;
+    const where = worst.length && worst[0].path ? " (" + worst[0].path + ")" : "";
+    return head + where + (rest > 0 ? " — and " + rest + " other" + (rest === 1 ? "" : "s") + "." : ".");
   }
+
   function importExamFromBox(data, msg) {
-    const errs = validateExam(data);
-    if (errs.length) return msg.textContent = errs[0];
+    const v = examineExam(data);
+    if (!v.sittable) return msg.textContent = examVerdictText(v);
     // The curriculum block travels with the paper. It was the five fields below
     // and nothing else, so a subjectKey written beside them was discarded at the
     // door and the paper reached the marker with no identity at all.
@@ -2122,7 +2116,12 @@
       exam: data.exam ? Object.assign({}, data.exam) : undefined,
       time: data.time || "", instructions: data.instructions || "", sections: data.sections };
     state.exams.push(paper); save();
-    msg.textContent = "Imported ✓ — open Test mode to sit it.";
+    // A thin paper imports. Saying nothing about it would be the quiet kind of
+    // normalisation this architecture keeps refusing: the student can sit it, and
+    // whoever imported it should know what it does not carry.
+    const thin = v.findings.filter(f => f.state === PAPER.STATE.thin).length;
+    msg.textContent = "Imported ✓ — open Test mode to sit it." +
+      (thin ? " " + thin + " note" + (thin === 1 ? "" : "s") + " on what this paper does not carry." : "");
     builder();
   }
   function examStartById(id) { const p = examList().find(x => x.id === id); if (p) examPick(p); }

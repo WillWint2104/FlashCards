@@ -295,14 +295,18 @@ console.log("9. the exam importer and the app agree with the table");
     "and neither is the copy of it Test mode kept");
   ok(/ASSESS\.normaliseFormat/.test(app), "app.js resolves a format through the substrate");
 
-  // Every type the exam importer admits must be a type the table knows, or a
-  // paper could import a question nothing can mark.
-  const m = app.match(/if \(!\[([^\]]*)\]\.includes\(q\.type\)\)/);
-  ok(!!m, "the exam importer's admitted list was found");
-  const admitted = m ? [...m[1].matchAll(/"([^"]+)"/g)].map(x => x[1]) : [];
-  ok(admitted.length > 0 && admitted.every(t => !!A.LEGACY_TYPE[t]),
-    "and every type it admits has a canonical format: " +
-    JSON.stringify(admitted.filter(t => !A.LEGACY_TYPE[t])));
+  // THE EXAM IMPORTER USED TO KEEP ITS OWN LIST.
+  //
+  // It gated on a hardcoded array of the five legacy type strings, which had two
+  // consequences: a package authored the way this contract documents was refused
+  // at the door, and the list was a second answer to a question this table already
+  // answers. Gate 3C deleted it and the importer resolves through the substrate.
+  // Asserted as an absence so it cannot quietly come back; t30 owns the positive
+  // half, that every canonical format is admitted.
+  ok(!/\[("(?:mc|calc|short|define|essay)",?\s*){2,}\]\.includes\(q\.type\)/.test(app),
+    "the exam importer keeps no list of its own to disagree with this table");
+  ok(!/function validateExam\(/.test(app),
+    "and the function that held it is gone rather than wrapped");
 }
 
 console.log("\n" + pass + " passed, " + fail + " failed");
