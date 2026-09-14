@@ -507,10 +507,12 @@
 
   // pathways. Both are sent, and the worker routes them to the DIAGNOSIS pass only:
   // they are context for reading the response, never a checklist that awards marks.
-  function responseTypeOf(card, opts) {
-    if (opts && opts.responseType) return opts.responseType;
-    return (card && card.type === "essay") ? "extended" : "short";
-  }
+  // WHAT KIND OF RESPONSE THIS IS was decided here, in one line, by asking
+  // whether the type happened to be "essay". Everything else became a short
+  // answer: a calculation, a Business Report, and any type nobody had heard of.
+  // The rule now lives in tools/contract/assessment.js, is complete rather than
+  // defaulted, and refuses what it does not recognise. Nothing in this file
+  // decides a format any more.
   async function gradeWritten(card, answer, opts) {
     opts = opts || {};
     // WHOSE CRITERIA MARK THIS, DECIDED FIRST AND REGARDLESS OF THE ENDPOINT.
@@ -523,6 +525,22 @@
     // Refuse rather than send. A request that goes out with the wrong package's
     // criteria comes back looking exactly like a right one, so the only safe move
     // on an unresolved subject is not to ask.
+    // WHAT KIND OF RESPONSE THIS IS, asked before whose criteria mark it, and by
+    // the same rule everywhere. A format this version does not recognise is
+    // refused rather than marked as a short answer, and a format the written
+    // marker does not handle at all - a calculation, a multiple choice - is
+    // refused here rather than sent to it, because those are graded against an
+    // answer key and arriving here means a caller took a wrong turn.
+    const fx = ASSESS.normaliseFormat(card);
+    if (!fx.ok)
+      return ASSESS.refuse(fx.code, "This response was not marked: " + fx.why + ".",
+        { max: Number(card && card.marks) || 0 });
+    const mode = ASSESS.writtenModeOf(fx.format);
+    if (!mode)
+      return ASSESS.refuse("FORMAT_NOT_WRITTEN",
+        "This response was not marked: " + ASSESS.formatWords(fx.format) +
+        " is graded against its own answer rather than by the written marker.",
+        { format: fx.format, max: Number(card && card.marks) || 0 });
     const mc = markingContext(card);
     if (mc.unresolved) {
       return ASSESS.refuse(mc.code || "SUBJECT_UNRESOLVED",
@@ -534,10 +552,32 @@
         const res = await esPostJSON(state.endpoint, {
             prompt: card.prompt, marks: card.marks, model_answer: card.model, vocab: card.vocab, answer,
             scaffold: card.scaffold, faults: card.faults,
-            command: card.command || commandOf(card.prompt) || undefined,
+            // The directive, in the words the author wrote.
+            //
+            // fx.directive is the canonical lower-case form, which is what
+            // comparisons use. This field is not a comparison: it goes to the
+            // marker, so it keeps the authored casing. Normalising it here
+            // changed "Explain" to "explain" on the wire, which ui.js caught -
+            // a slice about formats has no business quietly restyling a field
+            // an external marker reads.
+            //
+            // What it does drop is "report", because that word names a FORMAT
+            // and was only ever in this field for want of anywhere else to put
+            // it. A card that authored no directive at all still has one read
+            // out of its own prompt, which is long-standing behaviour.
+            command: fx.directiveText
+              || ((card.command || card.directive) ? undefined : (commandOf(card.prompt) || undefined)),
             subject: mc.subject, criteria: mc.criteria,
             bands: mc.bands, bandsSource: mc.bandsSource, topic: mc.topic, requirements: mc.requirements,
-            responseType: responseTypeOf(card, opts), stimulus: !!card.stimulus,
+            // BOTH, and they are different things. `format` is what kind of
+            // response this is; `responseType` is which of the written marker's
+            // two behaviours it wants. business_report shares extended's
+            // plumbing and says separately that it is a report, which is what
+            // lets report-specific marking context arrive later without a second
+            // engine. Nothing is fabricated for it here: no report structure or
+            // guidance is authored yet, so none is sent.
+            format: fx.format,
+            responseType: mode, stimulus: !!card.stimulus,
             rubric: card.rubric || undefined,
             plan: opts.plan, validContent: opts.validContent, blocks: opts.blocks,
             code: state.code || undefined
@@ -1860,7 +1900,7 @@
     const ab = $("#askreview");
     if (ab) ab.onclick = async () => {
       ab.disabled = true; ab.textContent = "Marking…";
-      const deep = await gradeWritten(card, session.lastAnswer || "", { responseType: "short" });
+      const deep = await gradeWritten(card, session.lastAnswer || "");
       ab.disabled = false; ab.textContent = "Mark this properly →";
       if (ASSESS.outcomeOf(deep) === "refused") { toast(deep.why || "This was not marked."); return; }
       if (deep.fb && Array.isArray(deep.fb.paragraphs) && deep.fb.paragraphs.length) {
@@ -2352,7 +2392,7 @@
   async function examDeepReview(item, key) {
     const ans = EXAM.answers[key] || "";
     const btn = $("#examreview"); if (btn) { btn.disabled = true; btn.textContent = "Marking…"; }
-    const g = await gradeWritten(item.q, ans, { responseType: item.q.type === "essay" ? "extended" : "short" });
+    const g = await gradeWritten(item.q, ans);
     if (btn) { btn.disabled = false; btn.textContent = "Mark this properly →"; }
     // A refusal has a reason, and "could not be reached" is not it. Saying the
     // wrong one sends a student looking for a connection problem that is not
@@ -11214,7 +11254,7 @@
       return;
     }
     box.innerHTML = `<div class="es-submitted"><div class="es-submittedh">Marking your response…</div><p class="es-help">The marker reads what you actually wrote, paragraph by paragraph. This takes a moment.</p></div>`;
-    const g = await gradeWritten(esMarkCard(d), answer, { plan: esPlanFromDraft(d), responseType: "extended", blocks: esAllBlocks(d) });
+    const g = await gradeWritten(esMarkCard(d), answer, { plan: esPlanFromDraft(d), blocks: esAllBlocks(d) });
     // An unmarked attempt does not get a mark written into the draft. This wrote
     // {score: undefined, max: undefined} straight to localStorage, where it
     // would have outlived the session that produced it. Not reachable with the
