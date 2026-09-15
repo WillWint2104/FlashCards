@@ -422,21 +422,71 @@ console.log("12. Question 21 is a real object, and its parts are what get answer
     "choosing the second option sequences its parts: " + E.answerables(choice, { 0: 1 }).map(a => a.q.id).join());
 }
 
-console.log("13. the paper the product actually ships still imports");
+console.log("13. the paper the product actually ships, which is now synthetic");
 {
-  const paper = JSON.parse(read("tests/fixtures/hsc-bus-2025.json"));
-  const v = E.examine(paper);
-  ok(v.state === "publishable", "the shipped fixture is publishable: " + v.state + " " + JSON.stringify(codes(v).slice(0, 4)));
-  ok(v.sittable, "and can be sat");
+  // THE FIXTURE THAT WAS HERE CARRIED AUTHENTIC EXAMINATION WORDING in a public
+  // repository. Proving the exam architecture never required committing the
+  // source wording of a real paper, only a structurally equivalent one, and this
+  // is that paper: original questions about invented businesses, exercising the
+  // structures a real paper uses. Authentic papers can be imported externally for
+  // acceptance without becoming permanent public fixtures.
+  ok(!fs.existsSync(path.join(ROOT, "tests/fixtures/hsc-bus-2025.json")),
+    "the authentic-wording fixture is gone from the repository");
 
-  // Every question in it resolves to a canonical format. This is the assertion
-  // that says the paper contract and the response contract agree on a real paper.
-  const all = paper.sections.flatMap(s => s.questions || []);
+  const paper = JSON.parse(read("tests/fixtures/bus-practice-paper.json"));
+  const v = E.examine(paper);
+  ok(v.state === "publishable", "the synthetic paper is publishable: " + v.state + " " + JSON.stringify(codes(v)));
+  ok(v.counts.malformed === 0 && v.counts.unsupported === 0 && v.counts.blocked === 0 && v.counts.thin === 0,
+    "with nothing outstanding at all: " + JSON.stringify(v.counts));
+
+  // It has to exercise the whole contract or it is not a regression fixture.
+  const walk = E.answerables(paper);
   const seen = {};
-  all.forEach(q => { const r = A.normaliseFormat(q); seen[r.ok ? r.format : r.code] = (seen[r.ok ? r.format : r.code] || 0) + 1; });
+  walk.forEach(a => { const r = A.normaliseFormat(a.q); seen[r.ok ? r.format : r.code] = (seen[r.ok ? r.format : r.code] || 0) + 1; });
   console.log("    resolved:", JSON.stringify(seen));
-  ok(Object.keys(seen).every(k => A.isFormat(k)), "every question resolves to a format, none to a refusal");
-  ok(seen.business_report === 1, "including the one business report, via the legacy compound: " + seen.business_report);
+  A.FORMATS.forEach(f => ok(seen[f] > 0, "  it exercises " + f + ": " + (seen[f] || 0)));
+  ok(Object.keys(seen).every(k => A.isFormat(k)), "and every question resolves to a format, none to a refusal");
+
+  ok(paper.sections.length === 4, "four sections: " + paper.sections.length);
+  ok(v.totals.parents === 2, "two questions with parts: " + v.totals.parents);
+  ok(walk.some(a => a.display === "11(a)"), "numbered the way a paper numbers: " + walk.slice(0, 12).map(a => a.display).join(","));
+  ok(paper.sections.some(s => Number(s.choose) === 1), "an either/or section");
+  ok(v.totals.marks === 90 && paper.marks === 90,
+    "a declared total that agrees with the questions: " + paper.marks + " / " + v.totals.marks);
+  const raw = paper.sections.flatMap(s => s.questions).reduce((m, q) => m + E.marksOf(q), 0);
+  ok(raw === 110 && v.totals.marks === 90,
+    "and the either/or is why the paper is worth 90 where its questions sum to " + raw);
+  ok(walk.some(a => E.resourcesFor(a).some(r => r.img)), "at least one resource is an image, so the enlargement path stays covered");
+  ok(walk.some(a => E.resourcesFor(a).length > 1), "and at least one question works from more than one resource");
+  ok(paper.curriculum.subjectKey === "business_studies" && paper.curriculum.klaKey === "hsie",
+    "explicit curriculum identity");
+
+  // PUBLISHABLE-BUT-THIN VERSUS BLOCKED, proved on this paper rather than asserted
+  // in the abstract. Neither of these is what the fixture ships as.
+  const thin = JSON.parse(JSON.stringify(paper));
+  delete thin.sections[3].questions[0].model;
+  delete thin.sections[3].questions[0].points;
+  const tv = E.examine(thin);
+  ok(tv.state === "thin" && tv.sittable,
+    "strip a model answer and it is still sittable, because the subject's criteria mark it: " + tv.state);
+
+  const blocked = JSON.parse(JSON.stringify(paper));
+  delete blocked.curriculum;
+  const bv = E.examine(blocked);
+  ok(bv.state === "blocked" && !bv.sittable,
+    "strip the curriculum and it cannot be marked at all: " + bv.state);
+  ok(bv.state !== tv.state, "and the two are genuinely different answers, not one red light");
+
+  // NOTHING ESSAY PRACTICE AUTHORS IS REQUIRED TO PUBLISH AN EXAM. A paper needs
+  // its own questions and its subject; lessons, vocabulary glosses, sourced
+  // evidence and bespoke scaffolds belong to the study side of the product.
+  const bare = JSON.parse(JSON.stringify(paper));
+  bare.sections.forEach(s => s.questions.forEach(function strip(q) {
+    ["vocab", "scaffold", "readMore", "evidence", "lessons"].forEach(k => delete q[k]);
+    (q.parts || []).forEach(strip);
+  }));
+  ok(E.examine(bare).state === "publishable",
+    "a paper carrying no Essay Practice enrichment at all still publishes: " + E.examine(bare).state);
 }
 
 console.log("14. the app asks the contract rather than keeping its own copy");

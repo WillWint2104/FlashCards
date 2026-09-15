@@ -1816,8 +1816,20 @@
     const shapes = (window.ESSAY && window.ESSAY.answerShapes) || null;
     if (!shapes) return null;
     const marks = Math.max(1, Math.round(Number(card.marks) || 1));
-    const extended = card.type === "essay";
-    const verb = String(card.command || commandOf(card.prompt) || "").toLowerCase();
+    // THE THIRD COPY OF THE COLLAPSE GATE 3B DELETED.
+    //
+    // This read `card.type === "essay"`, so a question authored the modern way -
+    // {"format": "extended_response"} - was handed the SHORT answer shape, and a
+    // business report was too. The other two copies went in Gate 3B; this one
+    // survived because it is about what to draw rather than how to mark, and a
+    // flat search for the grader never reached it.
+    //
+    // The directive comes from the substrate for the same reason: it resolves
+    // `directive` and `command` in one place and hands back the author's own
+    // words, so this cannot disagree with what the marker was told.
+    const fx = ASSESS.normaliseFormat(card);
+    const extended = fx.ok && ASSESS.writtenModeOf(fx.format) === "extended";
+    const verb = String((fx.ok && fx.directiveText) || commandOf(card.prompt) || "").toLowerCase();
     let rows = extended ? shapes.extended : ((shapes.commands || {})[verb] || shapes.fallback || []);
     if (!rows.length) return null;
     if (!extended && card.stimulus && shapes.stimulus) rows = [shapes.stimulus].concat(rows);
@@ -2138,9 +2150,8 @@
     // normalisation this architecture keeps refusing: the student can sit it, and
     // whoever imported it should know what it does not carry.
     const thin = v.findings.filter(f => f.state === PAPER.STATE.thin).length;
-    msg.textContent = "Imported ✓ — open Test mode to sit it." +
-      (thin ? " " + thin + " note" + (thin === 1 ? "" : "s") + " on what this paper does not carry." : "");
-    builder();
+    builder("Imported ✓ — open Test mode to sit it." +
+      (thin ? " " + thin + " note" + (thin === 1 ? "" : "s") + " on what this paper does not carry." : ""));
   }
   function examStartById(id) { const p = examList().find(x => x.id === id); if (p) examPick(p); }
   // Sit the whole paper, or just the sections chosen on the picker. `picks` is an
@@ -2338,7 +2349,7 @@
         ${examSourcesHTML(q, "Source")}
         <div class="exam-prompt">${linkGlossary(q.prompt)}</div>
         <div id="answerzone">${answerInput(q)}</div>
-        ${answerShapeBlock(q)}
+        ${answerShapeBlock(item.parent && !q.stimulus ? Object.assign({}, q, { stimulus: item.parent.stimulus }) : q)}
         ${submitRow(q)}
         <div id="sheet"></div>
       </div></div>`;
@@ -2515,8 +2526,17 @@
   // ===================== CREATE (set builder + JSON import/export) =====================
   let draft = null; // { name, cards: [] }
 
-  function builder() {
+  // A NOTE THAT SURVIVES THE RE-RENDER.
+  //
+  // A successful import set the message and then called builder(), which rebuilt
+  // the Create tab and replaced the element the message had just been written
+  // into. So the confirmation was never seen, and neither would the Gate 3C note
+  // saying what an imported paper does not carry - which is the whole reason for
+  // writing one. The note is carried through the re-render instead.
+  let builderNote = "";
+  function builder(note) {
     if (gated()) return authScreen();
+    builderNote = note || "";
     view = "create";
     if (!draft) draft = { name: "", cards: [] };
     app.innerHTML = `
@@ -2573,7 +2593,7 @@
         <h3 class="bh">Import a set or a practice exam</h3>
         <p class="bhint">Paste a set's JSON to load it as a studyable area, or a whole practice exam (<code>marginal-exam@1</code>) to sit as a guided past paper on your Study map.</p>
         <textarea id="importjson" class="binput mono" rows="4" placeholder='{"format":"${SET_FORMAT}","name":"…","cards":[…]}'></textarea>
-        <div class="row"><button class="btn sm" id="doimport">Import set</button><span class="hint" id="importmsg"></span></div>
+        <div class="row"><button class="btn sm" id="doimport">Import set</button><span class="hint" id="importmsg">${esc(builderNote)}</span></div>
         ${state.customSets.length ? `<div class="setlist">${state.customSets.map(s =>
           `<div class="setrow"><span>🧩 <b>${esc(s.name)}</b> · ${s.cards.length} cards</span>
            <span><button class="btn sm ghost" data-edit="${s.id}">Load into editor</button>

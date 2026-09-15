@@ -25,7 +25,7 @@ print("plain build:", os.path.join(OUT, "test.html"), len(plain), "bytes")
 src = plain.replace("essayMarking: false,", "essayMarking: true,", 1)
 
 # A preloaded paper, if one is available. Without it Test mode simply starts empty.
-paper_path = os.environ.get("WALK_PAPER", os.path.join(HERE, "fixtures", "hsc-bus-2025.json"))
+paper_path = os.environ.get("WALK_PAPER", os.path.join(HERE, "fixtures", "bus-practice-paper.json"))
 exams = []
 if os.path.exists(paper_path):
     paper = json.load(open(paper_path, encoding="utf-8"))
