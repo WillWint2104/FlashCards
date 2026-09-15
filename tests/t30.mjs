@@ -590,6 +590,16 @@ console.log("14. the app asks the contract rather than keeping its own copy");
     "the section intro no longer adds up a parent's own marks field");
   ok(/const t = PAPER\.totals\(\{ sections: \[sec\] \}\);/.test(app),
     "it asks the contract what the section holds");
+
+  // UX-TEST-02. An exact version match at the door meant the exam validator
+  // never saw a package it could have refused correctly.
+  // Matched on the ROUTING LINE, not the phrase: the comment above it quotes the
+  // old expression to explain what went wrong, and an assertion that cannot tell
+  // code from the comment describing it is not an assertion about behaviour.
+  ok(!/if \(data && data\.format === EXAM_FORMAT\) return importExamFromBox/.test(app),
+    "the import door no longer routes on an exact version match");
+  ok(/EXAM_FAMILY = \/\^marginal-exam/.test(app) && /looksLikeExam\(data\)/.test(app),
+    "it recognises the schema family and lets the exam validator rule on the version");
 }
 
 console.log("\n" + pass + " passed, " + fail + " failed");

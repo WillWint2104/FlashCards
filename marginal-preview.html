@@ -12447,6 +12447,23 @@ module.exports = {
   // (which of the mark-worthy points were addressed), plus an optional deeper AI
   // sentence review when marking is connected.
   const EXAM_FORMAT = "marginal-exam@1";
+  // WHICH DOOR A PASTED FILE GOES THROUGH, decided by the schema FAMILY and not
+  // by an exact version match.
+  //
+  // The routing was `data.format === EXAM_FORMAT`, so a package declaring
+  // marginal-exam@2 failed that equality, fell through to the flashcard-set
+  // validator, and the person holding an exam file was told "The set has no
+  // cards array." The exam contract has a correct answer for that package -
+  // PACKAGE_VERSION_UNSUPPORTED, naming the version it does run - and it was
+  // unreachable, because nothing ever handed it the file.
+  //
+  // Recognising the family is not accepting the version. It only means the exam
+  // validator gets to be the one that refuses it, and to refuse it for the real
+  // reason.
+  const EXAM_FAMILY = /^marginal-exam(@|$)/i;
+  function looksLikeExam(d) {
+    return !!(d && typeof d.format === "string" && EXAM_FAMILY.test(d.format.trim()));
+  }
   const EXAM = { paper: null, sit: null, seq: [], pos: 0, results: {}, answers: {}, choice: {} };
   // A section with `choose: 1` is an either/or (e.g. HSC Section IV: attempt
   // Question 26 OR Question 27). The student picks at the section intro; only the
@@ -13238,7 +13255,9 @@ module.exports = {
     let data;
     try { data = JSON.parse($("#importjson").value); }
     catch { return msg.textContent = "That isn't valid JSON."; }
-    if (data && data.format === EXAM_FORMAT) return importExamFromBox(data, msg); // a whole paper, not a flat set
+    // A whole paper, not a flat set. Any version of the family comes here; the
+    // exam contract decides whether this release can run it.
+    if (looksLikeExam(data)) return importExamFromBox(data, msg);
     data = normalizeImport(data);
     const errs = validateSet(data);
     if (errs.length) return msg.textContent = errs[0];

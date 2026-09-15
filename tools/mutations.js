@@ -1011,4 +1011,14 @@ module.exports = [
     owner: "t30",
     why: "examOwns resolves which paper marks a response by object identity, so a part whose parent is a copy is a part nothing owns",
   },
+  {
+    // The import door matching an exact version again, so an exam package this
+    // release cannot run is handed to the flashcard validator.
+    id: "uxtest02-import-routes-on-exact-version",
+    file: "app.js",
+    find: "    if (looksLikeExam(data)) return importExamFromBox(data, msg);",
+    replace: "    if (data && data.format === EXAM_FORMAT) return importExamFromBox(data, msg);",
+    owner: "ui68",
+    why: "a person holding an exam file this release cannot run was told the set has no cards array, and the exam contract's correct refusal was unreachable",
+  },
 ];

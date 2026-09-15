@@ -695,6 +695,53 @@ const answer = async (p, text) => { await p.fill('#ans', text); await p.click('#
     } finally { await ctx.close(); }
   }
 
+  // ---------------------------------------------------------------- UX-TEST-02
+  // WHICH DOOR A PASTED FILE GOES THROUGH.
+  //
+  // The routing was an exact version match, so a package declaring
+  // marginal-exam@2 failed it, fell through to the flashcard-set validator, and
+  // the person holding an exam file was told "The set has no cards array." The
+  // exam contract has had the right answer all along - it names the version this
+  // release runs - and nothing ever handed it the file. Recognising the family is
+  // not accepting the version: it only decides who gets to refuse it.
+  {
+    console.log('--- UX-TEST-02: an unsupported exam version is refused BY THE EXAM VALIDATOR ---');
+    const ctx = await b.newContext();
+    try {
+      const p = await ctx.newPage();
+      p.on('pageerror', e => errs.push(String(e.message)));
+      await p.addInitScript(new Function(seed({ cards: {}, endpoint: '', code: '12Ec126', log: [],
+        customSets: [], lessons: {}, exams: [] })));
+      await p.route(/workers\.dev/, r => r.abort());
+      await p.goto(T); await settled(p);
+      const paste = async doc => {
+        await p.evaluate(() => { const t = Array.from(document.querySelectorAll('button,a')).find(e => /^create$/i.test(e.textContent.trim())); t && t.click(); });
+        await settled(p);
+        await p.fill('#importjson', JSON.stringify(doc));
+        await p.click('#doimport'); await settled(p);
+        return p.$eval('#importmsg', e => e.textContent.trim()).catch(() => '');
+      };
+      const body = paper('ver', { subjectKey: 'business_studies' });
+
+      const v2 = await paste(Object.assign({}, body, { format: 'marginal-exam@2' }));
+      ok(/not a package version this release can run/i.test(v2),
+        'marginal-exam@2 is refused as an unsupported VERSION: ' + JSON.stringify(v2));
+      ok(/marginal-exam@1/.test(v2), 'and the refusal names the version this release does run');
+      ok(!/cards array/i.test(v2),
+        'NOT as a flashcard set with no cards array, which is what it used to say');
+
+      const v1 = await paste(Object.assign({}, body, { format: 'marginal-exam@1', name: 'Good version' }));
+      ok(/imported/i.test(v1), 'the supported version still imports: ' + JSON.stringify(v1));
+
+      // Recognising the family must not swallow genuine flashcard sets.
+      const set = await paste({ name: 'A real set', cards: [{ front: 'a', back: 'b' }] });
+      ok(!/package version/i.test(set), 'a real flashcard set still goes to the flashcard importer: ' + JSON.stringify(set));
+      const junk = await paste({ format: 'something-else' });
+      ok(/cards array/i.test(junk), 'and something that is not an exam at all is not routed to the exam validator');
+      await p.close();
+    } finally { await ctx.close(); }
+  }
+
   ok(errs.length === 0, 'no page errors: ' + JSON.stringify(errs.slice(0, 3)));
   await b.close();
   console.log('\n' + pass + ' passed, ' + fail + ' failed');
