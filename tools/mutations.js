@@ -790,8 +790,8 @@ module.exports = [
     // the cross-subject leak back.
     id: "gate3a-exam-path-clones-a-question",
     file: "app.js",
-    find: '      (sec.questions || []).forEach((q, qi) => seq.push({ kind: "q", si, qi, sec, q }));',
-    replace: '      (sec.questions || []).forEach((q, qi) => seq.push({ kind: "q", si, qi, sec, q: JSON.parse(JSON.stringify(q)) }));',
+    find: '          seq.push({ kind: "q", si, qi, pi: null, sec, q, parent: null, display: PAPER.numberOf(q) });',
+    replace: '          seq.push({ kind: "q", si, qi, pi: null, sec, q: JSON.parse(JSON.stringify(q)), parent: null, display: PAPER.numberOf(q) });',
     owner: "ui68",
     why: "a cloned question is not the paper's question, so ownership by identity would silently stop resolving and every written answer in the paper would fall through to the flashcard package",
   },
@@ -834,8 +834,8 @@ module.exports = [
     // Two questions allowed to carry the same number.
     id: "gate3c-duplicate-numbering-allowed",
     file: "tools/contract/exam.js",
-    find: "        if (numbers[n]) out.push(finding(STATE.malformed, \"QUESTION_NUMBER_DUPLICATE\", at + \".number\",",
-    replace: "        if (false) out.push(finding(STATE.malformed, \"QUESTION_NUMBER_DUPLICATE\", at + \".number\",",
+    find: "    if (bag[k]) out.push(finding(STATE.malformed, code, at, message(k, bag[k])));",
+    replace: "    if (false) out.push(finding(STATE.malformed, code, at, message(k, bag[k])));",
     owner: "t30",
     why: "two questions numbered 21 leave a student unable to say which one they answered",
   },
@@ -886,5 +886,79 @@ module.exports = [
     replace: "      if (!out.length) out = out.concat(questionFindings(q, at + \".questions[\" + qi + \"]\"));",
     owner: "t30",
     why: "a package with ten problems that reports one is ten attempts at the box",
+  },
+  {
+    // Parts flattened back into separate questions, losing the parent entirely.
+    id: "gate3c-parts-flattened-away",
+    file: "tools/contract/exam.js",
+    find: "function isParent(q) { return !!(q && Array.isArray(q.parts) && q.parts.length); }",
+    replace: "function isParent(q) { return false; }",
+    owner: "t30",
+    why: "Question 21 is a real exam object worth eleven marks, and a contract that cannot say so makes it worth nothing",
+  },
+  {
+    // The authored part label replaced by position, which silently reorders a
+    // paper that authors its parts out of sequence.
+    id: "gate3c-part-label-comes-from-position",
+    file: "tools/contract/exam.js",
+    find: "  if (part && !blank(part.label)) return String(part.label).trim();",
+    replace: "  if (false) return String(part.label).trim();",
+    owner: "t30",
+    why: "what the paper calls this part and where it sits in an array are different facts, and only one of them is academic",
+  },
+  {
+    // A parent worth nothing, so its parts drop out of every total.
+    id: "gate3c-child-marks-omitted-from-parent",
+    file: "tools/contract/exam.js",
+    find: "  if (isParent(q)) return partsOf(q).reduce(function (m, p) {",
+    replace: "  if (isParent(q)) return 0 * partsOf(q).reduce(function (m, p) {",
+    owner: "t30",
+    why: "a paper whose sections add to less than its questions are worth tells a student they scored out of the wrong number",
+  },
+  {
+    // The shared stimulus dropped, so a part is answered without the case study
+    // it was written about.
+    id: "gate3c-shared-stimulus-dropped",
+    file: "tools/contract/exam.js",
+    find: "  var shared = entry && entry.parent ? resourcesOf(entry.parent) : [];",
+    replace: "  var shared = [];",
+    owner: "t30",
+    why: "a part asked about a case study it cannot see is a question the student cannot answer",
+  },
+  {
+    // A parent aggregate that disagrees, silently accepted.
+    id: "gate3c-parent-total-mismatch-accepted",
+    file: "tools/contract/exam.js",
+    find: "    else if (q.marks !== calculated)",
+    replace: "    else if (false)",
+    owner: "t30",
+    why: "either the authored aggregate or the parts are wrong and nothing can tell which, so accepting one hides the mistake",
+  },
+  {
+    // A parent that is also answered, which makes the paper mean two things.
+    id: "gate3c-parent-answered-as-well",
+    file: "tools/contract/exam.js",
+    find: "  if (!blank(q.format) || !blank(q.type))\n    add(STATE.malformed, \"PARENT_IS_NOT_ANSWERED\",",
+    replace: "  if (false)\n    add(STATE.malformed, \"PARENT_IS_NOT_ANSWERED\",",
+    owner: "t30",
+    why: "nobody writes an answer to \"Question 21\", and a parent claiming a response format says both that it is answered and that its parts are",
+  },
+  {
+    // Deeper nesting walked instead of refused, inventing an academic convention.
+    id: "gate3c-deep-nesting-walked",
+    file: "tools/contract/exam.js",
+    find: "    if (Array.isArray(part.parts) && part.parts.length)",
+    replace: "    if (false)",
+    owner: "t30",
+    why: "what 21(a)(i) is worth and how it is numbered is a convention this contract does not have, and guessing one is worse than refusing",
+  },
+  {
+    // Two parts allowed to share a label.
+    id: "gate3c-duplicate-part-labels-allowed",
+    file: "tools/contract/exam.js",
+    find: "    else if (labels[label])",
+    replace: "    else if (false)",
+    owner: "t30",
+    why: "two parts both labelled (a) leave a student unable to say which one they answered",
   },
 ];

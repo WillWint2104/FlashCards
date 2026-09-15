@@ -316,7 +316,113 @@ console.log("11. a question may point outside the paper, and pointing is checked
     "and no finding claims to have resolved a reference this version cannot follow");
 }
 
-console.log("12. the paper the product actually ships still imports");
+console.log("12. Question 21 is a real object, and its parts are what get answered");
+{
+  const parent = (over = {}) => good({ sections: [{ name: "Section II", questions: [Object.assign({
+    id: "q21", number: "21", instructions: "Use the case study.",
+    stimulus: { caption: "Case study", text: "A cafe." },
+    parts: [
+      { id: "q21a", label: "a", marks: 2, format: "short_answer", directive: "outline", prompt: "Outline one.", model: "m" },
+      { id: "q21b", label: "b", marks: 2, format: "short_answer", directive: "outline", prompt: "Outline two.", model: "m" },
+      { id: "q21c", label: "c", marks: 3, format: "short_answer", directive: "explain", prompt: "Explain three.", model: "m" },
+      { id: "q21d", label: "d", marks: 4, format: "extended_response", directive: "justify", prompt: "Justify four.", model: "m" },
+    ],
+  }, over)] }] });
+
+  const v = E.examine(parent());
+  ok(v.state === "publishable", "a parent with four parts imports: " + v.state + " " + JSON.stringify(codes(v)));
+  ok(E.isParent(parent().sections[0].questions[0]), "and is recognised as a parent");
+  ok(E.partsOf(parent().sections[0].questions[0]).length === 4, "holding four parts");
+
+  // NOT FLATTENED. The relationship is in the object, not in the prompt prose.
+  const walk = E.answerables(parent());
+  ok(walk.length === 4, "four answerables, not one and not five: " + walk.length);
+  ok(walk.every(a => a.parent && a.parent.id === "q21"), "each one knows the question it belongs to");
+  ok(walk.map(a => a.display).join() === "21(a),21(b),21(c),21(d)",
+    "and carries the name the paper gives it: " + walk.map(a => a.display).join());
+  ok(walk.map(a => a.label).join() === "a,b,c,d", "built from the authored label, not the array index");
+
+  // Authored labels survive out of order, which an index would silently correct.
+  const odd = E.answerables(parent({ parts: [
+    { id: "x", label: "b", marks: 1, format: "short_answer", prompt: "p", model: "m" },
+    { id: "y", label: "a", marks: 1, format: "short_answer", prompt: "p2", model: "m" },
+  ] }));
+  ok(odd.map(a => a.display).join() === "21(b),21(a)",
+    "an authored label is never replaced by position: " + odd.map(a => a.display).join());
+
+  // MARKS. The parent is worth its parts.
+  ok(E.marksOf(parent().sections[0].questions[0]) === 11, "Question 21 is worth 11: " + E.marksOf(parent().sections[0].questions[0]));
+  ok(E.examine(parent()).totals.marks === 11, "and the paper total says so: " + E.examine(parent()).totals.marks);
+  ok(E.examine(parent()).totals.questions === 4, "while the question count is what a student answers: " + E.examine(parent()).totals.questions);
+  ok(E.examine(parent()).totals.parents === 1, "with the parent counted separately");
+  ok(E.examine(parent({ marks: 11 })).state === "publishable", "an authored aggregate that agrees is accepted");
+
+  const disagree = E.examine(parent({ marks: 12 }));
+  ok(disagree.state === "malformed" && codes(disagree).includes("PARENT_TOTAL_DISAGREES"),
+    "one that disagrees is refused: " + disagree.state);
+  const dmsg = disagree.findings.find(f => f.code === "PARENT_TOTAL_DISAGREES").message;
+  ok(/12/.test(dmsg) && /11/.test(dmsg), "naming both numbers and using neither: " + JSON.stringify(dmsg));
+
+  // A PARENT IS NOT ANSWERED.
+  const answered = E.examine(parent({ format: "extended_response" }));
+  ok(answered.state === "malformed" && codes(answered).includes("PARENT_IS_NOT_ANSWERED"),
+    "a parent claiming a response format is a contradiction: " + answered.state);
+
+  // SHARED STIMULUS IS READ, NOT COPIED.
+  const seen = E.answerables(parent()).map(a => E.resourcesFor(a));
+  ok(seen.every(r => r.length === 1 && r[0].caption === "Case study"),
+    "every part sees the case study its parent holds");
+  ok(parent().sections[0].questions[0].parts.every(p => p.stimulus === undefined),
+    "and no part carries a copy of it, so four copies cannot drift apart");
+  const own = E.answerables(parent({ parts: [{ id: "z", label: "a", marks: 2, format: "short_answer", prompt: "p", model: "m",
+    stimulus: { caption: "Table 2", text: "rows" } }] }));
+  ok(E.resourcesFor(own[0]).map(r => r.caption).join() === "Case study,Table 2",
+    "a part may add its own beneath the shared one: " + E.resourcesFor(own[0]).map(r => r.caption).join());
+
+  // EXACTLY TWO LEVELS, refused rather than walked.
+  const deep = E.examine(parent({ parts: [{ id: "d1", label: "a", marks: 1, prompt: "p", model: "m",
+    parts: [{ id: "d2", label: "i", marks: 1, format: "short_answer", prompt: "q", model: "m" }] }] }));
+  ok(deep.state === "unsupported" && codes(deep).includes("PART_NESTING_TOO_DEEP"),
+    "21(a)(i) is unsupported rather than flattened: " + deep.state + " " + JSON.stringify(codes(deep)));
+  ok(/academic convention this version does not have/.test(
+    deep.findings.find(f => f.code === "PART_NESTING_TOO_DEEP").message),
+    "and says why it is refused rather than guessed at");
+
+  // Labels and numbers stay unambiguous.
+  const dup = E.examine(parent({ parts: [
+    { id: "p1", label: "a", marks: 2, format: "short_answer", prompt: "p", model: "m" },
+    { id: "p2", label: "a", marks: 2, format: "short_answer", prompt: "q", model: "m" },
+  ] }));
+  ok(dup.state === "malformed" && codes(dup).includes("PART_LABEL_DUPLICATE"), "two parts labelled (a) is refused");
+  ok(E.displayNumber("21", "a") === "21(a)", "the display identity is deterministic: " + E.displayNumber("21", "a"));
+  ok(E.displayNumber("21", null) === "21" && E.displayNumber(null, "a") === "a",
+    "and degrades rather than inventing half of itself");
+
+  // (a) under 21 and (a) under 22 is ordinary; two 21(a)s is not.
+  const twoParents = good({ sections: [{ name: "II", questions: [
+    { id: "p21", number: "21", parts: [{ id: "a1", label: "a", marks: 1, format: "short_answer", prompt: "p", model: "m" }] },
+    { id: "p22", number: "22", parts: [{ id: "a2", label: "a", marks: 1, format: "short_answer", prompt: "q", model: "m" }] },
+  ] }] });
+  ok(E.examine(twoParents).state === "publishable",
+    "(a) appearing under two different questions is ordinary: " + E.examine(twoParents).state);
+
+  // A parent inside an either/or brings all of its parts, and neither option is
+  // counted twice.
+  const choice = good({ sections: [{ name: "IV", choose: 1, questions: [
+    { id: "o26", number: "26", parts: [
+      { id: "o26a", label: "a", marks: 8, format: "extended_response", prompt: "p", model: "m" },
+      { id: "o26b", label: "b", marks: 12, format: "extended_response", prompt: "q", model: "m" }] },
+    { id: "o27", number: "27", parts: [
+      { id: "o27a", label: "a", marks: 8, format: "extended_response", prompt: "r", model: "m" },
+      { id: "o27b", label: "b", marks: 12, format: "extended_response", prompt: "s", model: "m" }] },
+  ] }] });
+  ok(E.totals(choice).marks === 20, "two twenty-mark options with parts are worth twenty, not forty: " + E.totals(choice).marks);
+  ok(E.totals(choice).questions === 2, "and two answerables, not four: " + E.totals(choice).questions);
+  ok(E.answerables(choice, { 0: 1 }).map(a => a.q.id).join() === "o27a,o27b",
+    "choosing the second option sequences its parts: " + E.answerables(choice, { 0: 1 }).map(a => a.q.id).join());
+}
+
+console.log("13. the paper the product actually ships still imports");
 {
   const paper = JSON.parse(read("tests/fixtures/hsc-bus-2025.json"));
   const v = E.examine(paper);
@@ -333,7 +439,7 @@ console.log("12. the paper the product actually ships still imports");
   ok(seen.business_report === 1, "including the one business report, via the legacy compound: " + seen.business_report);
 }
 
-console.log("13. the app asks the contract rather than keeping its own copy");
+console.log("14. the app asks the contract rather than keeping its own copy");
 {
   const app = read("app.js");
   ok(!/function validateExam\(/.test(app), "validateExam is gone from app.js rather than wrapped");
@@ -362,6 +468,15 @@ console.log("13. the app asks the contract rather than keeping its own copy");
   // single object cannot diverge between the page and this suite.
   ok(/PAPER\.resourcesOf/.test(app), "the page reads resources through the contract");
   ok(!/q\.stimulus \? examSourceHTML/.test(app), "and no call site still assumes exactly one");
+
+  // Two levels reach the runtime, not just the contract.
+  ok(/PAPER\.partsOf\(q\)\.forEach\(\(part, pi\)/.test(app), "sequencing expands a parent into its parts");
+  ok(/function examKey\(it\)/.test(app) && !/si \+ "-" \+ qi/.test(app),
+    "one key names one answerable, and no caller builds its own");
+  ok(/PAPER\.answerables\(EXAM\.paper, EXAM\.choice\)/.test(app),
+    "and the totals, the results and the picker read the same walk");
+  ok(/PAPER\.partsOf\(q\)\.indexOf\(card\) >= 0/.test(app),
+    "a part belongs to its paper for marking, which is Gate 3A one level down");
 }
 
 console.log("\n" + pass + " passed, " + fail + " failed");

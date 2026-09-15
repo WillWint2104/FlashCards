@@ -371,7 +371,11 @@
   function examOwns(card) {
     const p = (typeof EXAM !== "undefined" && EXAM) ? EXAM.paper : null;
     if (!p || !card) return null;
-    return (p.sections || []).some(sec => (sec.questions || []).indexOf(card) >= 0) ? p : null;
+    // A part is in the paper as much as a whole question is, and a part reaching
+    // the marker without its paper would be marked against whatever subject the
+    // picker was on - the Gate 3A fault, arriving one level down.
+    return (p.sections || []).some(sec => (sec.questions || []).some(q =>
+      q === card || PAPER.partsOf(q).indexOf(card) >= 0)) ? p : null;
   }
   function markingContext(card) {
     // THE PAPER THIS CARD IS ACTUALLY IN, by identity, or none.
@@ -2010,6 +2014,15 @@
   // A section with `choose: 1` is an either/or (e.g. HSC Section IV: attempt
   // Question 26 OR Question 27). The student picks at the section intro; only the
   // chosen question is sequenced, counted in the totals and shown in the results.
+  // ONE ANSWERABLE, ONE KEY. A part needs its own slot for its answer and its
+  // result, and a paper with no parts must keep the keys it already had, so the
+  // part index is appended only where there is one. 21(a) is "1-0-0"; a plain
+  // question 22 is still "1-1".
+  function examKey(it) { return it.si + "-" + it.qi + (it.pi == null ? "" : "-" + it.pi); }
+  // Everything a student answers in this sitting, with the choices they have made
+  // so far applied. One walk, asked by the totals, the results and the picker, so
+  // none of them can believe the paper holds a different set of questions.
+  function answerablesNow() { return PAPER.answerables(EXAM.paper, EXAM.choice); }
   function examChooseCount(sec) { const n = Number(sec && sec.choose) || 0; return n > 0 ? n : 0; }
   function examIsActive(si, qi) {
     const sec = EXAM.paper.sections[si];
@@ -2028,18 +2041,12 @@
     if (c && (c.course || c.subjectKey)) return c.course || c.subjectKey;
     return p && p.subject ? p.subject + " (no subject key)" : "no subject declared";
   }
+  // What a row on the Test mode list says this paper is. The contract counts it:
+  // an either/or contributes only what will be attempted, and a question with
+  // parts contributes its parts rather than itself.
   function examCounts(p) {
-    // An either/or section contributes only the questions a student will actually
-    // attempt, so the listed totals match the paper's real marks.
-    let qs = 0, mk = 0;
-    (p.sections || []).forEach(s => {
-      const list = s.questions || [];
-      const pick = Number(s.choose) || 0;
-      const counted = pick > 0 ? list.slice(0, pick) : list;
-      qs += counted.length;
-      mk += counted.reduce((m, q) => m + (q.marks || 0), 0);
-    });
-    return { qs, mk };
+    const t = PAPER.totals(p);
+    return { qs: t.questions, mk: t.marks };
   }
   // Test mode: the front-page entry to practice exams. Lists every imported paper
   // and is where a paper is sat. Empty until a paper is imported, with a clear
@@ -2145,7 +2152,19 @@
     (paper.sections || []).forEach((sec, si) => {
       if (sit.indexOf(si) < 0) return;                 // not sitting this section
       seq.push({ kind: "section", si, sec });
-      (sec.questions || []).forEach((q, qi) => seq.push({ kind: "q", si, qi, sec, q }));
+      // A parent is not sequenced: nobody answers "Question 21". Its parts are,
+      // in order, each carrying the parent it belongs to so the shared stimulus
+      // and instructions can be read rather than copied into it.
+      (sec.questions || []).forEach((q, qi) => {
+        if (!PAPER.isParent(q)) {
+          seq.push({ kind: "q", si, qi, pi: null, sec, q, parent: null, display: PAPER.numberOf(q) });
+          return;
+        }
+        PAPER.partsOf(q).forEach((part, pi) => seq.push({
+          kind: "q", si, qi, pi, sec, q: part, parent: q,
+          display: PAPER.displayNumber(PAPER.numberOf(q), PAPER.labelOf(part, pi)),
+        }));
+      });
     });
     seq.push({ kind: "end" });
     EXAM.paper = paper; EXAM.sit = sit; EXAM.seq = seq; EXAM.pos = 0; EXAM.results = {}; EXAM.answers = {}; EXAM.choice = {};
@@ -2155,10 +2174,9 @@
   // can drill just multiple choice, just short answer, or just the extended response.
   function examPick(paper) {
     const secs = paper.sections || [];
-    const counts = secs.map(sec => {
-      const pick = examChooseCount(sec), list = sec.questions || [];
-      const counted = pick > 0 ? list.slice(0, pick) : list;
-      return { qs: counted.length, mk: counted.reduce((n, q) => n + (q.marks || 0), 0) };
+    const counts = secs.map((sec, i) => {
+      const t = PAPER.totals({ sections: [sec] });
+      return { qs: t.questions, mk: t.marks };
     });
     const tot = counts.reduce((a, c) => ({ qs: a.qs + c.qs, mk: a.mk + c.mk }), { qs: 0, mk: 0 });
     app.innerHTML = `
@@ -2212,7 +2230,7 @@
     // into NaN and said so on screen. tally() reads the outcome first and a
     // question nobody marked still costs its marks, because a student refused a
     // mark on a twenty-mark question has not been set a shorter paper.
-    const t = ASSESS.tally(qs.map(x => ({ marks: x.q.marks, result: EXAM.results[x.si + "-" + x.qi] })));
+    const t = ASSESS.tally(qs.map(x => ({ marks: x.q.marks, result: EXAM.results[examKey(x)] })));
     return { total: qs.length, maxMarks: t.max, done: t.done, got: t.got,
              refused: t.refused, failed: t.failed };
   }
@@ -2298,7 +2316,7 @@
   }
   function examRenderQuestion(item) {
     const { q, sec, si, qi } = item;
-    const key = si + "-" + qi;
+    const key = examKey(item);
     const t = examTotals();
     // WHAT THE PAPER CALLS THIS QUESTION, IF IT SAYS.
     //
@@ -2307,13 +2325,15 @@
     // because of it: its business report is the 34th question a student reaches
     // and the prompt calls it Question 25. An authored number is the paper's own
     // answer and wins; position is what is left when nothing is authored.
-    const authored = PAPER.numberOf(q);
+    const authored = item.display;
     const pos = EXAM.seq.slice(0, EXAM.pos + 1).filter(x => x.kind === "q").length;
     const num = authored || pos;
     app.innerHTML = `${examBar()}
       <div class="exam-wrap"><div class="exam-q">
         <div class="exam-sec small">${esc(sec.name || "")}</div>
         ${examSourcesHTML({ stimulus: sec.source }, "Source material")}
+        ${item.parent && item.parent.instructions ? `<p class="exam-instr">${esc(item.parent.instructions)}</p>` : ""}
+        ${examSourcesHTML(item.parent, "Source")}
         <div class="exam-qhead">Question ${esc(String(num))}${authored ? "" : " of " + t.total} · ${q.marks} mark${q.marks === 1 ? "" : "s"}</div>
         ${examSourcesHTML(q, "Source")}
         <div class="exam-prompt">${linkGlossary(q.prompt)}</div>
@@ -2326,7 +2346,8 @@
     if (prev && $("#ans")) $("#ans").value = prev;
     $("#examquit").onclick = examQuit;
     examWireAnswer(item, key);
-    examWireSources({ stimulus: sec.source }); examWireSources(q); wireGlossary(); examWireLightbox();
+    examWireSources({ stimulus: sec.source }); examWireSources(item.parent); examWireSources(q);
+    wireGlossary(); examWireLightbox();
   }
   function examWireAnswer(item, key) {
     const q = item.q;
@@ -2461,13 +2482,20 @@
       // That is exactly how the session summary was missed. The section total
       // comes from the same tally the paper total does, so a change to what
       // counts as marked cannot reach one of them and not the others.
-      const active = (sec.questions || []).map((q, qi) => ({ q, qi })).filter(x => examIsActive(si, x.qi));
-      const t = ASSESS.tally(active.map(x => ({ marks: x.q.marks, result: EXAM.results[si + "-" + x.qi] })));
-      const qs = active.map(({ q, qi }) => {
+      // The same walk the paper was sequenced from, so a results page cannot
+      // contain a different set of questions from the one the student sat. It is
+      // also what makes parts appear here at all: this used to map over the
+      // section's top-level questions, so 21(a) to (d) would have shown as one
+      // row for a question nobody answered.
+      const active = answerablesNow().filter(a => a.si === si);
+      const t = ASSESS.tally(active.map(a => ({ marks: a.q.marks, result: EXAM.results[examKey(a)] })));
+      const qs = active.map(a => {
         // A question nobody marked is named as such and contributes nothing to
         // the score while still costing its marks.
-        const g = EXAM.results[si + "-" + qi], m = isMarked(g);
-        return `<div class="exam-resq"><span>${esc(q.prompt.slice(0, 70))}${q.prompt.length > 70 ? "…" : ""}</span><span class="exam-resm${m ? "" : " nomark"}">${m ? g.score + "/" + (q.marks || 0) : "not marked"}</span></div>`;
+        const g = EXAM.results[examKey(a)], m = isMarked(g);
+        const q = a.q;
+        const named = a.display ? esc(String(a.display)) + ". " : "";
+        return `<div class="exam-resq"><span>${named}${esc(q.prompt.slice(0, 70))}${q.prompt.length > 70 ? "…" : ""}</span><span class="exam-resm${m ? "" : " nomark"}">${m ? g.score + "/" + (q.marks || 0) : "not marked"}</span></div>`;
       }).join("");
       got += t.got; max += t.max;
       return `<div class="exam-ressec"><div class="exam-ressech">${esc(sec.name || "Section")} <span class="exam-resm">${t.got}/${t.max}</span></div>${qs}</div>`;

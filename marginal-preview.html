@@ -9846,6 +9846,159 @@ var FORMAT_STATE = {
   FORMAT_CONFLICT: STATE.unsupported,
 };
 
+// ---------------------------------------------------------------------------
+// Parents and parts
+// ---------------------------------------------------------------------------
+// QUESTION 21 IS A REAL OBJECT.
+//
+// A paper asks "Question 21" and then asks (a), (b), (c), (d) underneath it, off
+// one case study. The contract could not say that, so the parts were flattened
+// into four separate questions and the relationship survived only as prose inside
+// each prompt - "Question 21 (a) Outline..." - which made question 21 worth
+// nothing, because question 21 did not exist.
+//
+// A parent is an exam object with its own identity, its own number, the
+// instructions and the stimulus its parts share, and an ordered list of parts. It
+// is NOT answered: it has no response format, because nobody writes an answer to
+// "Question 21". Its parts are answered.
+//
+// EXACTLY TWO LEVELS. A part holding parts of its own is refused rather than
+// walked, because this contract has no rule for what 21(a)(i) is worth or how it
+// is numbered, and inventing one here would be inventing an academic convention.
+function isParent(q) { return !!(q && Array.isArray(q.parts) && q.parts.length); }
+function partsOf(q) { return isParent(q) ? q.parts : []; }
+
+// The part's own label, as the paper wrote it: "a", not an index. Position is the
+// fallback for a paper that labels nothing, never the source of truth.
+function labelOf(part, i) {
+  if (part && !blank(part.label)) return String(part.label).trim();
+  if (part && !blank(part.part)) return String(part.part).trim();
+  return i == null ? null : String.fromCharCode(97 + i);
+}
+
+// HOW A QUESTION IS NAMED ON SCREEN, DERIVED AND DETERMINISTIC.
+//
+// "21(a)" is built from the parent's authored number and the part's authored
+// label. It is a display identity and is never the academic source of truth:
+// both halves come from what the paper authored, and neither is an array index
+// unless the paper authored nothing to use instead.
+function displayNumber(parentNumber, label) {
+  if (blank(parentNumber)) return blank(label) ? null : String(label);
+  return blank(label) ? String(parentNumber) : String(parentNumber) + "(" + String(label) + ")";
+}
+
+// WHAT A QUESTION IS WORTH. A parent is worth what its parts are worth; a leaf is
+// worth what it says. Nothing here reads a parent's AUTHORED aggregate - that is
+// the number this one is checked against, and reading it would make the check
+// circular.
+function marksOf(q) {
+  if (isParent(q)) return partsOf(q).reduce(function (m, p) {
+    return m + (p && typeof p.marks === "number" && isFinite(p.marks) ? p.marks : 0);
+  }, 0);
+  return (q && typeof q.marks === "number" && isFinite(q.marks)) ? q.marks : 0;
+}
+
+// EVERY QUESTION A STUDENT ACTUALLY ANSWERS, in the order they meet them, with
+// the parent they belong to and the name the paper gives them. This is the one
+// walk: sequencing, totals, persistence and results all read it, so none of them
+// can disagree about what the paper contains.
+//
+// An either/or section contributes only what will be attempted. Choosing a parent
+// brings all of its parts, which is why the choice is applied to the top level
+// and not inside it.
+function answerables(paper, choices) {
+  var out = [];
+  ((paper && paper.sections) || []).forEach(function (sec, si) {
+    var list = (sec && sec.questions) || [];
+    var pick = Number(sec && sec.choose) || 0;
+    list.forEach(function (q, qi) {
+      if (pick > 0) {
+        var chosen = choices && choices[si] !== undefined ? choices[si] : null;
+        if (chosen === null ? qi >= pick : qi !== chosen) return;
+      }
+      var number = numberOf(q);
+      if (!isParent(q)) {
+        out.push({ si: si, qi: qi, pi: null, q: q, parent: null, sec: sec,
+                   number: number, label: null, display: number });
+        return;
+      }
+      partsOf(q).forEach(function (part, pi) {
+        var label = labelOf(part, pi);
+        out.push({ si: si, qi: qi, pi: pi, q: part, parent: q, sec: sec,
+                   number: number, label: label, display: displayNumber(number, label) });
+      });
+    });
+  });
+  return out;
+}
+
+// A part inherits what its parent shares. Kept as a READ rather than a copy: the
+// contract must not duplicate a case study into four parts so a renderer has an
+// easier time, because then four copies can drift and the paper stops saying
+// which stimulus the four parts share.
+function resourcesFor(entry) {
+  var own = resourcesOf(entry && entry.q);
+  var shared = entry && entry.parent ? resourcesOf(entry.parent) : [];
+  return shared.concat(own);
+}
+
+function parentFindings(q, path) {
+  var out = [];
+  var add = function (state, code, message, at) { out.push(finding(state, code, at || path, message)); };
+
+  // A parent is not answered, so a parent claiming a response format is a
+  // contradiction rather than a detail: it says both "I am answered" and "my
+  // parts are answered", and nothing here can tell which was meant.
+  if (!blank(q.format) || !blank(q.type))
+    add(STATE.malformed, "PARENT_IS_NOT_ANSWERED",
+      "this question has parts, so it is not answered itself, but it also declares a response format. " +
+      "One of the two is wrong and nothing here can tell which");
+
+  if (blank(numberOf(q)))
+    add(STATE.thin, "PARENT_NUMBER_ABSENT",
+      "a question with parts is referred to by number, and this one has none, so its parts are named by position");
+
+  // The authored aggregate, checked and never substituted.
+  var calculated = marksOf(q);
+  if (!blank(q.marks)) {
+    if (typeof q.marks !== "number" || !isFinite(q.marks))
+      add(STATE.malformed, "PARENT_TOTAL_NOT_A_NUMBER", JSON.stringify(q.marks) + " is not a number of marks", path + ".marks");
+    else if (q.marks !== calculated)
+      add(STATE.malformed, "PARENT_TOTAL_DISAGREES",
+        "this question says it is worth " + q.marks + " and its parts add to " + calculated +
+        ". One of the two is wrong and nothing here can tell which, so neither is used", path + ".marks");
+  }
+
+  out = out.concat(resourceFindings(q, path)).concat(referenceFindings(q, path));
+
+  var labels = {};
+  partsOf(q).forEach(function (part, pi) {
+    var at = path + ".parts[" + pi + "]";
+    if (!part || typeof part !== "object") {
+      out.push(finding(STATE.malformed, "PART_NOT_AN_OBJECT", at, "a part is an object and this is not one"));
+      return;
+    }
+    // Two levels, and the refusal says why rather than silently walking one.
+    if (Array.isArray(part.parts) && part.parts.length)
+      out.push(finding(STATE.unsupported, "PART_NESTING_TOO_DEEP", at + ".parts",
+        "a part with parts of its own is deeper than this contract describes. It is refused rather than flattened, " +
+        "because what 21(a)(i) is worth and how it is numbered is an academic convention this version does not have"));
+
+    var label = labelOf(part, pi);
+    if (blank(part.label) && blank(part.part))
+      out.push(finding(STATE.thin, "PART_LABEL_ABSENT", at + ".label",
+        "this part has no label, so it is called " + JSON.stringify(label) + " by position"));
+    else if (labels[label])
+      out.push(finding(STATE.malformed, "PART_LABEL_DUPLICATE", at + ".label",
+        "two parts of this question are both labelled " + JSON.stringify(label) +
+        ", so a student cannot say which one they answered"));
+    labels[label] = at;
+
+    out = out.concat(questionFindings(part, at));
+  });
+  return out;
+}
+
 function questionFindings(q, path) {
   var out = [];
   var add = function (state, code, message) { out.push(finding(state, code, path, message)); };
@@ -9854,6 +10007,9 @@ function questionFindings(q, path) {
     add(STATE.malformed, "QUESTION_NOT_AN_OBJECT", "a question is an object and this is not one");
     return out;
   }
+  // A question with parts is a different kind of object and is checked as one.
+  if (isParent(q)) return parentFindings(q, path);
+
   if (blank(q.prompt))
     add(STATE.malformed, "PROMPT_MISSING", "a question with no prompt asks nothing, so there is nothing to answer");
 
@@ -10009,9 +10165,10 @@ function sectionMarks(sec) {
   var list = (sec && sec.questions) || [];
   var pick = Number(sec && sec.choose) || 0;
   var counted = pick > 0 ? list.slice(0, pick) : list;
-  return counted.reduce(function (m, q) {
-    return m + (q && typeof q.marks === "number" && isFinite(q.marks) ? q.marks : 0);
-  }, 0);
+  // marksOf, not q.marks: a question with parts is worth what its parts are
+  // worth, and reading its authored aggregate here would make that check
+  // circular as well as double-counting a paper that authors both.
+  return counted.reduce(function (m, q) { return m + marksOf(q); }, 0);
 }
 
 // The arithmetic of a whole paper, calculated from its questions. Nothing here
@@ -10020,15 +10177,17 @@ function sectionMarks(sec) {
 function totals(paper) {
   var sections = (paper && paper.sections) || [];
   var per = sections.map(sectionMarks);
-  var questions = sections.reduce(function (n, sec) {
-    var list = (sec && sec.questions) || [];
-    var pick = Number(sec && sec.choose) || 0;
-    return n + (pick > 0 ? Math.min(pick, list.length) : list.length);
-  }, 0);
+  // Counted from the one walk, so this cannot disagree with what is sequenced.
+  // A parent is not one of them: nobody answers "Question 21", they answer its
+  // four parts, and a progress count that says otherwise is wrong on screen.
+  var answered = answerables(paper);
   return {
     sections: per,
     marks: per.reduce(function (a, b) { return a + b; }, 0),
-    questions: questions,
+    questions: answered.length,
+    parents: sections.reduce(function (n, sec) {
+      return n + ((sec && sec.questions) || []).filter(isParent).length;
+    }, 0),
   };
 }
 
@@ -10073,22 +10232,38 @@ function totalFindings(paper) {
 // a section, because that is the scope a reader assumes.
 function duplicateFindings(paper) {
   var out = [], ids = {}, numbers = {};
+  var claim = function (bag, key, at, code, message) {
+    if (blank(key)) return;
+    var k = String(key).trim();
+    if (bag[k]) out.push(finding(STATE.malformed, code, at, message(k, bag[k])));
+    else bag[k] = at;
+  };
   ((paper && paper.sections) || []).forEach(function (sec, si) {
     ((sec && sec.questions) || []).forEach(function (q, qi) {
       var at = "sections[" + si + "].questions[" + qi + "]";
-      if (q && !blank(q.id)) {
-        var id = String(q.id).trim();
-        if (ids[id]) out.push(finding(STATE.malformed, "QUESTION_ID_DUPLICATE", at + ".id",
-          JSON.stringify(id) + " is already the id of " + ids[id] + ". An id names one question"));
-        else ids[id] = at;
-      }
-      var n = numberOf(q);
-      if (n) {
-        if (numbers[n]) out.push(finding(STATE.malformed, "QUESTION_NUMBER_DUPLICATE", at + ".number",
-          "two questions are both numbered " + JSON.stringify(n) + " (also " + numbers[n] +
-          "), so a student cannot tell which one is meant"));
-        else numbers[n] = at;
-      }
+      claim(ids, q && q.id, at + ".id", "QUESTION_ID_DUPLICATE", function (k, prev) {
+        return JSON.stringify(k) + " is already the id of " + prev + ". An id names one question";
+      });
+      // A parent's number and a leaf's number occupy the same space: both are
+      // what a student is told to answer.
+      claim(numbers, numberOf(q), at + ".number", "QUESTION_NUMBER_DUPLICATE", function (k, prev) {
+        return "two questions are both numbered " + JSON.stringify(k) + " (also " + prev +
+          "), so a student cannot tell which one is meant";
+      });
+      partsOf(q).forEach(function (part, pi) {
+        var pat = at + ".parts[" + pi + "]";
+        claim(ids, part && part.id, pat + ".id", "QUESTION_ID_DUPLICATE", function (k, prev) {
+          return JSON.stringify(k) + " is already the id of " + prev + ". An id names one question";
+        });
+        // Parts are compared by the name a student reads - "21(a)" - rather than
+        // by the bare label, because (a) appearing under 21 and under 22 is
+        // ordinary and two 21(a)s are not.
+        claim(numbers, displayNumber(numberOf(q), labelOf(part, pi)), pat + ".label",
+          "QUESTION_NUMBER_DUPLICATE", function (k, prev) {
+            return "two questions are both numbered " + JSON.stringify(k) + " (also " + prev +
+              "), so a student cannot tell which one is meant";
+          });
+      });
     });
   });
   return out;
@@ -10180,7 +10355,9 @@ module.exports = {
   FORMAT: FORMAT, STATE: STATE, ORDER: ORDER,
   isSittable: isSittable, examine: examine,
   numberOf: numberOf, sectionMarks: sectionMarks, totals: totals,
-  resourcesOf: resourcesOf, REFERENCE_KEYS: REFERENCE_KEYS,
+  resourcesOf: resourcesOf, resourcesFor: resourcesFor, REFERENCE_KEYS: REFERENCE_KEYS,
+  isParent: isParent, partsOf: partsOf, labelOf: labelOf, displayNumber: displayNumber,
+  marksOf: marksOf, answerables: answerables,
   totalFindings: totalFindings, duplicateFindings: duplicateFindings,
   questionFindings: questionFindings, curriculumFindings: curriculumFindings,
 };
@@ -10586,7 +10763,11 @@ module.exports = {
   function examOwns(card) {
     const p = (typeof EXAM !== "undefined" && EXAM) ? EXAM.paper : null;
     if (!p || !card) return null;
-    return (p.sections || []).some(sec => (sec.questions || []).indexOf(card) >= 0) ? p : null;
+    // A part is in the paper as much as a whole question is, and a part reaching
+    // the marker without its paper would be marked against whatever subject the
+    // picker was on - the Gate 3A fault, arriving one level down.
+    return (p.sections || []).some(sec => (sec.questions || []).some(q =>
+      q === card || PAPER.partsOf(q).indexOf(card) >= 0)) ? p : null;
   }
   function markingContext(card) {
     // THE PAPER THIS CARD IS ACTUALLY IN, by identity, or none.
@@ -12225,6 +12406,15 @@ module.exports = {
   // A section with `choose: 1` is an either/or (e.g. HSC Section IV: attempt
   // Question 26 OR Question 27). The student picks at the section intro; only the
   // chosen question is sequenced, counted in the totals and shown in the results.
+  // ONE ANSWERABLE, ONE KEY. A part needs its own slot for its answer and its
+  // result, and a paper with no parts must keep the keys it already had, so the
+  // part index is appended only where there is one. 21(a) is "1-0-0"; a plain
+  // question 22 is still "1-1".
+  function examKey(it) { return it.si + "-" + it.qi + (it.pi == null ? "" : "-" + it.pi); }
+  // Everything a student answers in this sitting, with the choices they have made
+  // so far applied. One walk, asked by the totals, the results and the picker, so
+  // none of them can believe the paper holds a different set of questions.
+  function answerablesNow() { return PAPER.answerables(EXAM.paper, EXAM.choice); }
   function examChooseCount(sec) { const n = Number(sec && sec.choose) || 0; return n > 0 ? n : 0; }
   function examIsActive(si, qi) {
     const sec = EXAM.paper.sections[si];
@@ -12243,18 +12433,12 @@ module.exports = {
     if (c && (c.course || c.subjectKey)) return c.course || c.subjectKey;
     return p && p.subject ? p.subject + " (no subject key)" : "no subject declared";
   }
+  // What a row on the Test mode list says this paper is. The contract counts it:
+  // an either/or contributes only what will be attempted, and a question with
+  // parts contributes its parts rather than itself.
   function examCounts(p) {
-    // An either/or section contributes only the questions a student will actually
-    // attempt, so the listed totals match the paper's real marks.
-    let qs = 0, mk = 0;
-    (p.sections || []).forEach(s => {
-      const list = s.questions || [];
-      const pick = Number(s.choose) || 0;
-      const counted = pick > 0 ? list.slice(0, pick) : list;
-      qs += counted.length;
-      mk += counted.reduce((m, q) => m + (q.marks || 0), 0);
-    });
-    return { qs, mk };
+    const t = PAPER.totals(p);
+    return { qs: t.questions, mk: t.marks };
   }
   // Test mode: the front-page entry to practice exams. Lists every imported paper
   // and is where a paper is sat. Empty until a paper is imported, with a clear
@@ -12360,7 +12544,19 @@ module.exports = {
     (paper.sections || []).forEach((sec, si) => {
       if (sit.indexOf(si) < 0) return;                 // not sitting this section
       seq.push({ kind: "section", si, sec });
-      (sec.questions || []).forEach((q, qi) => seq.push({ kind: "q", si, qi, sec, q }));
+      // A parent is not sequenced: nobody answers "Question 21". Its parts are,
+      // in order, each carrying the parent it belongs to so the shared stimulus
+      // and instructions can be read rather than copied into it.
+      (sec.questions || []).forEach((q, qi) => {
+        if (!PAPER.isParent(q)) {
+          seq.push({ kind: "q", si, qi, pi: null, sec, q, parent: null, display: PAPER.numberOf(q) });
+          return;
+        }
+        PAPER.partsOf(q).forEach((part, pi) => seq.push({
+          kind: "q", si, qi, pi, sec, q: part, parent: q,
+          display: PAPER.displayNumber(PAPER.numberOf(q), PAPER.labelOf(part, pi)),
+        }));
+      });
     });
     seq.push({ kind: "end" });
     EXAM.paper = paper; EXAM.sit = sit; EXAM.seq = seq; EXAM.pos = 0; EXAM.results = {}; EXAM.answers = {}; EXAM.choice = {};
@@ -12370,10 +12566,9 @@ module.exports = {
   // can drill just multiple choice, just short answer, or just the extended response.
   function examPick(paper) {
     const secs = paper.sections || [];
-    const counts = secs.map(sec => {
-      const pick = examChooseCount(sec), list = sec.questions || [];
-      const counted = pick > 0 ? list.slice(0, pick) : list;
-      return { qs: counted.length, mk: counted.reduce((n, q) => n + (q.marks || 0), 0) };
+    const counts = secs.map((sec, i) => {
+      const t = PAPER.totals({ sections: [sec] });
+      return { qs: t.questions, mk: t.marks };
     });
     const tot = counts.reduce((a, c) => ({ qs: a.qs + c.qs, mk: a.mk + c.mk }), { qs: 0, mk: 0 });
     app.innerHTML = `
@@ -12427,7 +12622,7 @@ module.exports = {
     // into NaN and said so on screen. tally() reads the outcome first and a
     // question nobody marked still costs its marks, because a student refused a
     // mark on a twenty-mark question has not been set a shorter paper.
-    const t = ASSESS.tally(qs.map(x => ({ marks: x.q.marks, result: EXAM.results[x.si + "-" + x.qi] })));
+    const t = ASSESS.tally(qs.map(x => ({ marks: x.q.marks, result: EXAM.results[examKey(x)] })));
     return { total: qs.length, maxMarks: t.max, done: t.done, got: t.got,
              refused: t.refused, failed: t.failed };
   }
@@ -12513,7 +12708,7 @@ module.exports = {
   }
   function examRenderQuestion(item) {
     const { q, sec, si, qi } = item;
-    const key = si + "-" + qi;
+    const key = examKey(item);
     const t = examTotals();
     // WHAT THE PAPER CALLS THIS QUESTION, IF IT SAYS.
     //
@@ -12522,13 +12717,15 @@ module.exports = {
     // because of it: its business report is the 34th question a student reaches
     // and the prompt calls it Question 25. An authored number is the paper's own
     // answer and wins; position is what is left when nothing is authored.
-    const authored = PAPER.numberOf(q);
+    const authored = item.display;
     const pos = EXAM.seq.slice(0, EXAM.pos + 1).filter(x => x.kind === "q").length;
     const num = authored || pos;
     app.innerHTML = `${examBar()}
       <div class="exam-wrap"><div class="exam-q">
         <div class="exam-sec small">${esc(sec.name || "")}</div>
         ${examSourcesHTML({ stimulus: sec.source }, "Source material")}
+        ${item.parent && item.parent.instructions ? `<p class="exam-instr">${esc(item.parent.instructions)}</p>` : ""}
+        ${examSourcesHTML(item.parent, "Source")}
         <div class="exam-qhead">Question ${esc(String(num))}${authored ? "" : " of " + t.total} · ${q.marks} mark${q.marks === 1 ? "" : "s"}</div>
         ${examSourcesHTML(q, "Source")}
         <div class="exam-prompt">${linkGlossary(q.prompt)}</div>
@@ -12541,7 +12738,8 @@ module.exports = {
     if (prev && $("#ans")) $("#ans").value = prev;
     $("#examquit").onclick = examQuit;
     examWireAnswer(item, key);
-    examWireSources({ stimulus: sec.source }); examWireSources(q); wireGlossary(); examWireLightbox();
+    examWireSources({ stimulus: sec.source }); examWireSources(item.parent); examWireSources(q);
+    wireGlossary(); examWireLightbox();
   }
   function examWireAnswer(item, key) {
     const q = item.q;
@@ -12676,13 +12874,20 @@ module.exports = {
       // That is exactly how the session summary was missed. The section total
       // comes from the same tally the paper total does, so a change to what
       // counts as marked cannot reach one of them and not the others.
-      const active = (sec.questions || []).map((q, qi) => ({ q, qi })).filter(x => examIsActive(si, x.qi));
-      const t = ASSESS.tally(active.map(x => ({ marks: x.q.marks, result: EXAM.results[si + "-" + x.qi] })));
-      const qs = active.map(({ q, qi }) => {
+      // The same walk the paper was sequenced from, so a results page cannot
+      // contain a different set of questions from the one the student sat. It is
+      // also what makes parts appear here at all: this used to map over the
+      // section's top-level questions, so 21(a) to (d) would have shown as one
+      // row for a question nobody answered.
+      const active = answerablesNow().filter(a => a.si === si);
+      const t = ASSESS.tally(active.map(a => ({ marks: a.q.marks, result: EXAM.results[examKey(a)] })));
+      const qs = active.map(a => {
         // A question nobody marked is named as such and contributes nothing to
         // the score while still costing its marks.
-        const g = EXAM.results[si + "-" + qi], m = isMarked(g);
-        return `<div class="exam-resq"><span>${esc(q.prompt.slice(0, 70))}${q.prompt.length > 70 ? "…" : ""}</span><span class="exam-resm${m ? "" : " nomark"}">${m ? g.score + "/" + (q.marks || 0) : "not marked"}</span></div>`;
+        const g = EXAM.results[examKey(a)], m = isMarked(g);
+        const q = a.q;
+        const named = a.display ? esc(String(a.display)) + ". " : "";
+        return `<div class="exam-resq"><span>${named}${esc(q.prompt.slice(0, 70))}${q.prompt.length > 70 ? "…" : ""}</span><span class="exam-resm${m ? "" : " nomark"}">${m ? g.score + "/" + (q.marks || 0) : "not marked"}</span></div>`;
       }).join("");
       got += t.got; max += t.max;
       return `<div class="exam-ressec"><div class="exam-ressech">${esc(sec.name || "Section")} <span class="exam-resm">${t.got}/${t.max}</span></div>${qs}</div>`;
