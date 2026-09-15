@@ -123,7 +123,7 @@ function bundle(root) {
 // which subject marks a response, and about what counts as a result at all, are
 // run by the student's page and must be the same file the harness tests. A
 // second copy in app.js is a second opinion waiting to disagree.
-const STUDENT_MODULES = ["store.js", "runtime.js", "assessment.js"];
+const STUDENT_MODULES = ["store.js", "runtime.js", "assessment.js", "exam.js"];
 
 function studentBundle(root) {
   const dir = path.join(root, "tools", "contract");
@@ -153,6 +153,9 @@ function studentBundle(root) {
     "  var store = __require('./store.js');",
     "  var runtime = __require('./runtime.js');",
     "  window.MarginalAssessment = __require('./assessment.js');",
+    "  // The paper contract. Same seam and the same reason: the rule the importer",
+    "  // applies to a whole exam is the rule tests/t30.mjs runs, not a copy of it.",
+    "  window.MarginalExam = __require('./exam.js');",
     "  // Storage may be unavailable, and a student whose browser blocks it must",
     "  // still get the questions that shipped. It degrades to holding nothing,",
     "  // never to failing to load.",

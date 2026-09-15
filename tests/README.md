@@ -162,9 +162,16 @@ the support layers. Output lands in `tests/out/`.
 
 ## Fixtures
 
-`fixtures/hsc-bus-2025.json` is the paper preloaded into the walkthrough build so
-Test mode is not an empty list. Point `WALK_PAPER` at another file to use a
-different one; with no fixture the build still works and Test mode starts empty.
+`fixtures/bus-practice-paper.json` is the paper preloaded into the walkthrough build so
+Test mode has something to sit. It is SYNTHETIC: original questions about invented
+businesses, written to be structurally representative of an HSC-style paper rather
+than to reproduce one. It carries all five canonical response formats, two questions
+with nested parts, an either/or section, image and multi-resource stimulus, authored
+numbering and a declared total that agrees with its questions. The fixture it replaced
+carried authentic examination wording in a public repository; proving the exam
+architecture never required that, only a structurally equivalent paper. Authentic past
+papers can be supplied externally through the import path for acceptance testing
+without becoming permanent public fixtures.
 
 Suites that select evidence set a source on every bank item first, as an explicit
 test fixture. Unsourced evidence is withheld from students by design (see

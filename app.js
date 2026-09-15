@@ -12,6 +12,7 @@
   // as a result at all. Keeping a second copy here is how the two would come to
   // disagree, so there is no second copy.
   const ASSESS = window.MarginalAssessment;
+  const PAPER = window.MarginalExam;
   const MARKED = r => ASSESS.marked(r);
   // The one gate in front of every piece of arithmetic, scheduling and progress
   // state in this file. A refusal and a failure both answer false.
@@ -370,7 +371,11 @@
   function examOwns(card) {
     const p = (typeof EXAM !== "undefined" && EXAM) ? EXAM.paper : null;
     if (!p || !card) return null;
-    return (p.sections || []).some(sec => (sec.questions || []).indexOf(card) >= 0) ? p : null;
+    // A part is in the paper as much as a whole question is, and a part reaching
+    // the marker without its paper would be marked against whatever subject the
+    // picker was on - the Gate 3A fault, arriving one level down.
+    return (p.sections || []).some(sec => (sec.questions || []).some(q =>
+      q === card || PAPER.partsOf(q).indexOf(card) >= 0)) ? p : null;
   }
   function markingContext(card) {
     // THE PAPER THIS CARD IS ACTUALLY IN, by identity, or none.
@@ -1790,13 +1795,34 @@
     else go();
   }
 
+  // WHAT KIND OF RESPONSE THIS WANTS, ASKED ONCE, FOR DRAWING IT.
+  //
+  // Gate 3B put this question behind the substrate for MARKING. The three
+  // functions below still asked `card.type` for RENDERING, which meant a package
+  // authored the documented modern way -
+  //
+  //     { "format": "multiple_choice", "choices": [...] }
+  //
+  // - imported cleanly and then showed the student a textarea, because nothing on
+  // the drawing side had heard of `format`. It could not be answered, let alone
+  // marked. A paper that imports and cannot be sat is the same fault as one that
+  // will not import.
+  //
+  // Lesson tasks and chart kinds are deliberately NOT routed through here. They
+  // carry a `type` too and they are not response formats; t29 holds that they
+  // stay out of the table.
+  function drawFormat(card) {
+    const fx = ASSESS.normaliseFormat(card);
+    return fx.ok ? fx.format : null;
+  }
   // The answer input only (no submit). The submit lives in its own full-width row.
   function answerInput(card) {
-    if (card.type === "mc")
+    const f = drawFormat(card);
+    if (f === "multiple_choice")
       return `<div class="choices">${card.choices.map((c, i) => `<button class="choice" data-i="${i}"><kbd class="ckbd">${i + 1}</kbd>${esc(c.t)}</button>`).join("")}</div>`;
-    if (card.type === "calc")
+    if (f === "calculation")
       return `<input class="calcin" id="ans" inputmode="decimal" placeholder="Your answer (number)" autocomplete="off">`;
-    const big = card.type === "essay";
+    const big = ASSESS.writtenModeOf(f) === "extended";
     return `<textarea id="ans" class="answerbox" rows="${big ? 14 : 5}" placeholder="${big ? "Write your full response here, using blank lines between paragraphs." : "Type your answer in full sentences."}"></textarea>`;
   }
   // The submit row, full width below both columns. Multiple choice grades on click.
@@ -1811,8 +1837,20 @@
     const shapes = (window.ESSAY && window.ESSAY.answerShapes) || null;
     if (!shapes) return null;
     const marks = Math.max(1, Math.round(Number(card.marks) || 1));
-    const extended = card.type === "essay";
-    const verb = String(card.command || commandOf(card.prompt) || "").toLowerCase();
+    // THE THIRD COPY OF THE COLLAPSE GATE 3B DELETED.
+    //
+    // This read `card.type === "essay"`, so a question authored the modern way -
+    // {"format": "extended_response"} - was handed the SHORT answer shape, and a
+    // business report was too. The other two copies went in Gate 3B; this one
+    // survived because it is about what to draw rather than how to mark, and a
+    // flat search for the grader never reached it.
+    //
+    // The directive comes from the substrate for the same reason: it resolves
+    // `directive` and `command` in one place and hands back the author's own
+    // words, so this cannot disagree with what the marker was told.
+    const fx = ASSESS.normaliseFormat(card);
+    const extended = fx.ok && ASSESS.writtenModeOf(fx.format) === "extended";
+    const verb = String((fx.ok && fx.directiveText) || commandOf(card.prompt) || "").toLowerCase();
     let rows = extended ? shapes.extended : ((shapes.commands || {})[verb] || shapes.fallback || []);
     if (!rows.length) return null;
     if (!extended && card.stimulus && shapes.stimulus) rows = [shapes.stimulus].concat(rows);
@@ -1833,10 +1871,11 @@
   }
 
   function submitRow(card) {
-    if (card.type === "mc") return "";
-    if (card.type === "calc")
+    const f = drawFormat(card);
+    if (f === "multiple_choice") return "";
+    if (f === "calculation")
       return `<div class="submitrow"><button class="btn" id="check">Check answer</button><span class="hint">Numeric answer, checked with a small tolerance.</span></div>`;
-    const big = card.type === "essay";
+    const big = ASSESS.writtenModeOf(f) === "extended";
     return `<div class="submitrow"><button class="btn" id="check">${big ? "Submit for marking" : "Check answer"}</button><span class="hint">${big ? "Marked against the criteria. It takes a few seconds." : "Graded on key terms and content, so write it properly."}</span></div>`;
   }
 
@@ -2009,6 +2048,15 @@
   // A section with `choose: 1` is an either/or (e.g. HSC Section IV: attempt
   // Question 26 OR Question 27). The student picks at the section intro; only the
   // chosen question is sequenced, counted in the totals and shown in the results.
+  // ONE ANSWERABLE, ONE KEY. A part needs its own slot for its answer and its
+  // result, and a paper with no parts must keep the keys it already had, so the
+  // part index is appended only where there is one. 21(a) is "1-0-0"; a plain
+  // question 22 is still "1-1".
+  function examKey(it) { return it.si + "-" + it.qi + (it.pi == null ? "" : "-" + it.pi); }
+  // Everything a student answers in this sitting, with the choices they have made
+  // so far applied. One walk, asked by the totals, the results and the picker, so
+  // none of them can believe the paper holds a different set of questions.
+  function answerablesNow() { return PAPER.answerables(EXAM.paper, EXAM.choice); }
   function examChooseCount(sec) { const n = Number(sec && sec.choose) || 0; return n > 0 ? n : 0; }
   function examIsActive(si, qi) {
     const sec = EXAM.paper.sections[si];
@@ -2027,18 +2075,12 @@
     if (c && (c.course || c.subjectKey)) return c.course || c.subjectKey;
     return p && p.subject ? p.subject + " (no subject key)" : "no subject declared";
   }
+  // What a row on the Test mode list says this paper is. The contract counts it:
+  // an either/or contributes only what will be attempted, and a question with
+  // parts contributes its parts rather than itself.
   function examCounts(p) {
-    // An either/or section contributes only the questions a student will actually
-    // attempt, so the listed totals match the paper's real marks.
-    let qs = 0, mk = 0;
-    (p.sections || []).forEach(s => {
-      const list = s.questions || [];
-      const pick = Number(s.choose) || 0;
-      const counted = pick > 0 ? list.slice(0, pick) : list;
-      qs += counted.length;
-      mk += counted.reduce((m, q) => m + (q.marks || 0), 0);
-    });
-    return { qs, mk };
+    const t = PAPER.totals(p);
+    return { qs: t.questions, mk: t.marks };
   }
   // Test mode: the front-page entry to practice exams. Lists every imported paper
   // and is where a paper is sat. Empty until a paper is imported, with a clear
@@ -2077,53 +2119,61 @@
     const gc = $("#examgocreate"); if (gc) gc.onclick = () => { view = "create"; builder(); };
   }
 
-  function validateExam(d) {
-    const e = [];
-    if (!d || typeof d !== "object") return ["Not an exam object."];
-    if (!Array.isArray(d.sections) || !d.sections.length) return ["The exam has no sections array."];
-    // WHO MARKS THIS PAPER, ASKED AT THE DOOR.
-    //
-    // The old check did not ask. `subject` was optional free text, so the common
-    // case was a paper that never said, and a paper that never said was marked
-    // against whichever flashcard package the picker was on. A paper now names
-    // its subject by key or it does not import. Warnings - a missing KLA, a
-    // missing jurisdiction - are not gates: only the authority is load-bearing.
-    ASSESS.curriculumFindings(d).concat(ASSESS.subjectOverrides(d))
-      .filter(f => f.severity === "error")
-      .forEach(f => e.push(f.path + ": " + f.message));
-    let qn = 0;
-    d.sections.forEach((s, si) => {
-      if (!Array.isArray(s.questions) || !s.questions.length) { e.push("Section " + (si + 1) + " has no questions."); return; }
-      s.questions.forEach((q, qi) => {
-        const at = "S" + (si + 1) + "Q" + (qi + 1) + ": "; qn++;
-        if (!q.prompt) e.push(at + "missing prompt.");
-        if (!q.marks || q.marks < 1) e.push(at + "missing marks.");
-        if (!["mc", "calc", "short", "define", "essay"].includes(q.type)) e.push(at + "unknown type '" + q.type + "'.");
-        if (q.type === "mc") {
-          if (!Array.isArray(q.choices) || q.choices.length < 2) e.push(at + "MC needs 2+ choices.");
-          else if (q.choices.filter(c => c.ok).length !== 1) e.push(at + "MC needs exactly one correct choice.");
-        }
-        if (q.type === "calc" && typeof q.expected !== "number") e.push(at + "calc needs a numeric 'expected'.");
-        if (["short", "define", "essay"].includes(q.type) && !q.model && !(Array.isArray(q.points) && q.points.length))
-          e.push(at + "needs a model answer or a points rubric.");
-      });
-    });
-    if (!qn) e.push("The exam has no questions.");
-    return e;
+  // WHAT IS WRONG WITH THIS PAPER, ALL OF IT, AND WHICH KIND OF WRONG.
+  //
+  // This function used to be forty lines of checks that returned strings, and the
+  // caller showed errs[0]. Two faults in that. A package with ten problems
+  // reported one, so fixing it was ten attempts at the box. And every kind of
+  // problem read the same, when "this is not a paper", "this wants a format this
+  // version cannot run", "this names a subject nothing can resolve" and "this is
+  // fine but carries no model answers" are four different situations and only
+  // three of them stop the student sitting it.
+  //
+  // The checks now live in tools/contract/exam.js, so Node runs them in t30 and
+  // the page runs the same file. In particular the response format is resolved
+  // through the Gate 3B substrate rather than a hardcoded list of legacy type
+  // strings, which is what had been refusing packages authored the documented
+  // modern way.
+  function examineExam(d) { return PAPER.examine(d); }
+  // What the import box says. A refusal names the worst thing first and says how
+  // many others there are, because the count is the difference between "fix this"
+  // and "this file needs work".
+  function examVerdictText(v) {
+    const worst = v.findings.filter(f => f.state === v.state);
+    const head = worst.length ? worst[0].message : "this paper cannot be imported";
+    const rest = v.findings.length - 1;
+    const where = worst.length && worst[0].path ? " (" + worst[0].path + ")" : "";
+    return head + where + (rest > 0 ? " — and " + rest + " other" + (rest === 1 ? "" : "s") + "." : ".");
   }
+
   function importExamFromBox(data, msg) {
-    const errs = validateExam(data);
-    if (errs.length) return msg.textContent = errs[0];
+    const v = examineExam(data);
+    if (!v.sittable) return msg.textContent = examVerdictText(v);
     // The curriculum block travels with the paper. It was the five fields below
     // and nothing else, so a subjectKey written beside them was discarded at the
     // door and the paper reached the marker with no identity at all.
-    const paper = { id: "exam-" + Date.now(), name: data.name || "Practice exam", subject: data.subject || "",
+    // EVERYTHING THE PACKAGE SAID, NOT THE EIGHT FIELDS THIS FUNCTION KNEW.
+    //
+    // This rebuilt the paper from a fixed whitelist, so anything the contract
+    // gained afterwards was discarded at the door: a declared total, a source, a
+    // package version, a syllabus reference. Nothing authored them yet, which is
+    // the only reason it had not cost anything. The paper is carried whole and
+    // the runtime's own id is put on top of it, so a field added to the contract
+    // survives the round trip without this line being edited again.
+    const paper = Object.assign({}, data, {
+      id: "exam-" + Date.now(),
+      name: data.name || "Practice exam",
+      subject: data.subject || "",
       curriculum: Object.assign({}, data.curriculum || {}),
-      exam: data.exam ? Object.assign({}, data.exam) : undefined,
-      time: data.time || "", instructions: data.instructions || "", sections: data.sections };
+      time: data.time || "", instructions: data.instructions || "",
+    });
     state.exams.push(paper); save();
-    msg.textContent = "Imported ✓ — open Test mode to sit it.";
-    builder();
+    // A thin paper imports. Saying nothing about it would be the quiet kind of
+    // normalisation this architecture keeps refusing: the student can sit it, and
+    // whoever imported it should know what it does not carry.
+    const thin = v.findings.filter(f => f.state === PAPER.STATE.thin).length;
+    builder("Imported ✓ — open Test mode to sit it." +
+      (thin ? " " + thin + " note" + (thin === 1 ? "" : "s") + " on what this paper does not carry." : ""));
   }
   function examStartById(id) { const p = examList().find(x => x.id === id); if (p) examPick(p); }
   // Sit the whole paper, or just the sections chosen on the picker. `picks` is an
@@ -2135,7 +2185,19 @@
     (paper.sections || []).forEach((sec, si) => {
       if (sit.indexOf(si) < 0) return;                 // not sitting this section
       seq.push({ kind: "section", si, sec });
-      (sec.questions || []).forEach((q, qi) => seq.push({ kind: "q", si, qi, sec, q }));
+      // A parent is not sequenced: nobody answers "Question 21". Its parts are,
+      // in order, each carrying the parent it belongs to so the shared stimulus
+      // and instructions can be read rather than copied into it.
+      (sec.questions || []).forEach((q, qi) => {
+        if (!PAPER.isParent(q)) {
+          seq.push({ kind: "q", si, qi, pi: null, sec, q, parent: null, display: PAPER.numberOf(q) });
+          return;
+        }
+        PAPER.partsOf(q).forEach((part, pi) => seq.push({
+          kind: "q", si, qi, pi, sec, q: part, parent: q,
+          display: PAPER.displayNumber(PAPER.numberOf(q), PAPER.labelOf(part, pi)),
+        }));
+      });
     });
     seq.push({ kind: "end" });
     EXAM.paper = paper; EXAM.sit = sit; EXAM.seq = seq; EXAM.pos = 0; EXAM.results = {}; EXAM.answers = {}; EXAM.choice = {};
@@ -2145,10 +2207,9 @@
   // can drill just multiple choice, just short answer, or just the extended response.
   function examPick(paper) {
     const secs = paper.sections || [];
-    const counts = secs.map(sec => {
-      const pick = examChooseCount(sec), list = sec.questions || [];
-      const counted = pick > 0 ? list.slice(0, pick) : list;
-      return { qs: counted.length, mk: counted.reduce((n, q) => n + (q.marks || 0), 0) };
+    const counts = secs.map((sec, i) => {
+      const t = PAPER.totals({ sections: [sec] });
+      return { qs: t.questions, mk: t.marks };
     });
     const tot = counts.reduce((a, c) => ({ qs: a.qs + c.qs, mk: a.mk + c.mk }), { qs: 0, mk: 0 });
     app.innerHTML = `
@@ -2202,7 +2263,7 @@
     // into NaN and said so on screen. tally() reads the outcome first and a
     // question nobody marked still costs its marks, because a student refused a
     // mark on a twenty-mark question has not been set a shorter paper.
-    const t = ASSESS.tally(qs.map(x => ({ marks: x.q.marks, result: EXAM.results[x.si + "-" + x.qi] })));
+    const t = ASSESS.tally(qs.map(x => ({ marks: x.q.marks, result: EXAM.results[examKey(x)] })));
     return { total: qs.length, maxMarks: t.max, done: t.done, got: t.got,
              refused: t.refused, failed: t.failed };
   }
@@ -2216,6 +2277,14 @@
   function examQuit() { if (confirm("Leave this paper? Your progress on this attempt is not saved.")) examHome(); }
   // Render a source/stimulus block (shared section source or per-question stimulus).
   // Accepts a plain string, or an object with caption/text/img/charts.
+  // A question can hang more than one thing above itself. The contract accepts a
+  // list or a single object; this draws either without the callers caring which,
+  // and numbers them only when there is more than one to tell apart.
+  function examSourcesHTML(holder, label) {
+    const list = PAPER.resourcesOf(holder);
+    return list.map((r, i) => examSourceHTML(r, list.length > 1 ? label + " " + (i + 1) : label)).join("");
+  }
+  function examWireSources(holder) { PAPER.resourcesOf(holder).forEach(r => wireStimulus(r)); }
   function examSourceHTML(src, label) {
     if (!src) return "";
     let inner = "";
@@ -2254,16 +2323,24 @@
     const sec = item.sec;
     const pick = examChooseCount(sec);
     const qs = sec.questions || [];
-    const qn = qs.length;
-    const mk = pick ? (qs[0] ? qs[0].marks || 0 : 0) : qs.reduce((n, q) => n + (q.marks || 0), 0);
+    // THE CONTRACT COUNTS THIS, because the section intro is a promise about what
+    // the student is walking into. Counting the array told them "3 questions"
+    // before a section they answer eight times, and reading a parent's own `marks`
+    // read a field a parent does not have to carry, so a question with four
+    // five-mark parts and no authored aggregate announced itself as worth nothing.
+    // `qn` stays the number of top-level options where the section is an either/or,
+    // because that IS what they are choosing between.
+    const t = PAPER.totals({ sections: [sec] });
+    const qn = pick ? qs.length : t.questions;
+    const mk = t.marks;
     // Either/or: the student picks which question to attempt before starting.
     const body = pick
       ? `<p class="exam-meta">${mk} mark${mk === 1 ? "" : "s"} · choose ${pick} of ${qn}</p>
-         ${sec.source ? examSourceHTML(sec.source, "Source material") : ""}
+         ${examSourcesHTML({ stimulus: sec.source }, "Source material")}
          <div class="exam-choices">${qs.map((q, qi) =>
            `<button class="exam-choice" data-examchoose="${qi}"><span class="exam-choicelbl">${esc(q.label || ("Question " + (qi + 1)))}</span><span class="exam-choicetext">${esc(q.prompt)}</span></button>`).join("")}</div>`
       : `<p class="exam-meta">${qn} question${qn === 1 ? "" : "s"} · ${mk} mark${mk === 1 ? "" : "s"}</p>
-         ${sec.source ? examSourceHTML(sec.source, "Source material") : ""}
+         ${examSourcesHTML({ stimulus: sec.source }, "Source material")}
          <button class="btn" id="exambegin">Begin ${esc(sec.name || "section")}</button>`;
     app.innerHTML = `${examBar()}
       <div class="exam-wrap"><div class="exam-sectionintro">
@@ -2276,22 +2353,33 @@
     app.querySelectorAll("[data-examchoose]").forEach(b => b.onclick = () => {
       EXAM.choice[item.si] = Number(b.dataset.examchoose); EXAM.pos++; examRender();
     });
-    wireStimulus(sec.source); wireGlossary(); examWireLightbox();
+    examWireSources({ stimulus: sec.source }); wireGlossary(); examWireLightbox();
   }
   function examRenderQuestion(item) {
     const { q, sec, si, qi } = item;
-    const key = si + "-" + qi;
+    const key = examKey(item);
     const t = examTotals();
-    const num = EXAM.seq.slice(0, EXAM.pos + 1).filter(x => x.kind === "q").length;
+    // WHAT THE PAPER CALLS THIS QUESTION, IF IT SAYS.
+    //
+    // This counted the student's position and called it the question number,
+    // which is a different fact. The shipped paper already disagrees with itself
+    // because of it: its business report is the 34th question a student reaches
+    // and the prompt calls it Question 25. An authored number is the paper's own
+    // answer and wins; position is what is left when nothing is authored.
+    const authored = item.display;
+    const pos = EXAM.seq.slice(0, EXAM.pos + 1).filter(x => x.kind === "q").length;
+    const num = authored || pos;
     app.innerHTML = `${examBar()}
       <div class="exam-wrap"><div class="exam-q">
         <div class="exam-sec small">${esc(sec.name || "")}</div>
-        ${sec.source ? examSourceHTML(sec.source, "Source material") : ""}
-        <div class="exam-qhead">Question ${num} of ${t.total} · ${q.marks} mark${q.marks === 1 ? "" : "s"}</div>
-        ${q.stimulus ? examSourceHTML(q.stimulus, "Source") : ""}
+        ${examSourcesHTML({ stimulus: sec.source }, "Source material")}
+        ${item.parent && item.parent.instructions ? `<p class="exam-instr">${esc(item.parent.instructions)}</p>` : ""}
+        ${examSourcesHTML(item.parent, "Source")}
+        <div class="exam-qhead">Question ${esc(String(num))}${authored ? "" : " of " + t.total} · ${q.marks} mark${q.marks === 1 ? "" : "s"}</div>
+        ${examSourcesHTML(q, "Source")}
         <div class="exam-prompt">${linkGlossary(q.prompt)}</div>
         <div id="answerzone">${answerInput(q)}</div>
-        ${answerShapeBlock(q)}
+        ${answerShapeBlock(item.parent && !q.stimulus ? Object.assign({}, q, { stimulus: item.parent.stimulus }) : q)}
         ${submitRow(q)}
         <div id="sheet"></div>
       </div></div>`;
@@ -2299,11 +2387,13 @@
     if (prev && $("#ans")) $("#ans").value = prev;
     $("#examquit").onclick = examQuit;
     examWireAnswer(item, key);
-    wireStimulus(sec.source); wireStimulus(q.stimulus); wireGlossary(); examWireLightbox();
+    examWireSources({ stimulus: sec.source }); examWireSources(item.parent); examWireSources(q);
+    wireGlossary(); examWireLightbox();
   }
   function examWireAnswer(item, key) {
     const q = item.q;
-    if (q.type === "mc") {
+    const f = drawFormat(q);
+    if (f === "multiple_choice") {
       app.querySelectorAll(".choice").forEach(b => b.onclick = () => {
         app.querySelectorAll(".choice").forEach(x => x.onclick = null);
         const g = gradeMC(q, +b.dataset.i);
@@ -2320,8 +2410,8 @@
       const wasLabel = ch.textContent;
       EXAM.answers[key] = ans; ch.disabled = true; ch.textContent = "Checking…";
       let g;
-      if (q.type === "calc") g = gradeCalc(q, ans);
-      else if (q.type === "essay") g = await gradeWritten(q, ans);
+      if (f === "calculation") g = gradeCalc(q, ans);
+      else if (ASSESS.writtenModeOf(f) === "extended") g = await gradeWritten(q, ans);
       else g = (Array.isArray(q.points) && q.points.length) ? gradePoints(q, ans) : gradeLocal(q, ans);
       // The audit found this button still reading "Checking…" after a refusal,
       // beside a score of undefined/undefined. Nothing was spent, so the control
@@ -2434,13 +2524,20 @@
       // That is exactly how the session summary was missed. The section total
       // comes from the same tally the paper total does, so a change to what
       // counts as marked cannot reach one of them and not the others.
-      const active = (sec.questions || []).map((q, qi) => ({ q, qi })).filter(x => examIsActive(si, x.qi));
-      const t = ASSESS.tally(active.map(x => ({ marks: x.q.marks, result: EXAM.results[si + "-" + x.qi] })));
-      const qs = active.map(({ q, qi }) => {
+      // The same walk the paper was sequenced from, so a results page cannot
+      // contain a different set of questions from the one the student sat. It is
+      // also what makes parts appear here at all: this used to map over the
+      // section's top-level questions, so 21(a) to (d) would have shown as one
+      // row for a question nobody answered.
+      const active = answerablesNow().filter(a => a.si === si);
+      const t = ASSESS.tally(active.map(a => ({ marks: a.q.marks, result: EXAM.results[examKey(a)] })));
+      const qs = active.map(a => {
         // A question nobody marked is named as such and contributes nothing to
         // the score while still costing its marks.
-        const g = EXAM.results[si + "-" + qi], m = isMarked(g);
-        return `<div class="exam-resq"><span>${esc(q.prompt.slice(0, 70))}${q.prompt.length > 70 ? "…" : ""}</span><span class="exam-resm${m ? "" : " nomark"}">${m ? g.score + "/" + (q.marks || 0) : "not marked"}</span></div>`;
+        const g = EXAM.results[examKey(a)], m = isMarked(g);
+        const q = a.q;
+        const named = a.display ? esc(String(a.display)) + ". " : "";
+        return `<div class="exam-resq"><span>${named}${esc(q.prompt.slice(0, 70))}${q.prompt.length > 70 ? "…" : ""}</span><span class="exam-resm${m ? "" : " nomark"}">${m ? g.score + "/" + (q.marks || 0) : "not marked"}</span></div>`;
       }).join("");
       got += t.got; max += t.max;
       return `<div class="exam-ressec"><div class="exam-ressech">${esc(sec.name || "Section")} <span class="exam-resm">${t.got}/${t.max}</span></div>${qs}</div>`;
@@ -2460,8 +2557,17 @@
   // ===================== CREATE (set builder + JSON import/export) =====================
   let draft = null; // { name, cards: [] }
 
-  function builder() {
+  // A NOTE THAT SURVIVES THE RE-RENDER.
+  //
+  // A successful import set the message and then called builder(), which rebuilt
+  // the Create tab and replaced the element the message had just been written
+  // into. So the confirmation was never seen, and neither would the Gate 3C note
+  // saying what an imported paper does not carry - which is the whole reason for
+  // writing one. The note is carried through the re-render instead.
+  let builderNote = "";
+  function builder(note) {
     if (gated()) return authScreen();
+    builderNote = note || "";
     view = "create";
     if (!draft) draft = { name: "", cards: [] };
     app.innerHTML = `
@@ -2518,7 +2624,7 @@
         <h3 class="bh">Import a set or a practice exam</h3>
         <p class="bhint">Paste a set's JSON to load it as a studyable area, or a whole practice exam (<code>marginal-exam@1</code>) to sit as a guided past paper on your Study map.</p>
         <textarea id="importjson" class="binput mono" rows="4" placeholder='{"format":"${SET_FORMAT}","name":"…","cards":[…]}'></textarea>
-        <div class="row"><button class="btn sm" id="doimport">Import set</button><span class="hint" id="importmsg"></span></div>
+        <div class="row"><button class="btn sm" id="doimport">Import set</button><span class="hint" id="importmsg">${esc(builderNote)}</span></div>
         ${state.customSets.length ? `<div class="setlist">${state.customSets.map(s =>
           `<div class="setrow"><span>🧩 <b>${esc(s.name)}</b> · ${s.cards.length} cards</span>
            <span><button class="btn sm ghost" data-edit="${s.id}">Load into editor</button>

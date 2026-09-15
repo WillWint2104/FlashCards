@@ -481,6 +481,220 @@ const answer = async (p, text) => { await p.fill('#ans', text); await p.click('#
     }
   }
 
+  // ------------------------------------------------------------------ Gate 3C
+  // THE SEMANTIC ROUND TRIP, which is the only part of the paper contract that
+  // genuinely needs a browser: JSON -> parse -> validate -> resolve -> normalise
+  // -> import -> persist -> reload -> start. Everything else about the contract
+  // is pure functions and lives in t30, where it costs milliseconds.
+  //
+  // What is asserted is not that the bytes survive. Normalising legacy spelling
+  // is allowed; what may not change is what the paper MEANS. A reload that
+  // renumbered a question, lost a parent, dropped a directive or quietly counted
+  // both halves of an either/or would still round-trip perfectly as JSON.
+  {
+    console.log('--- Gate 3C: import, persist, reload, start, with the meaning intact ---');
+    // A REAL RELOAD, not a re-seed. openWith installs an init script that runs on
+    // every navigation, so reloading that page would put the original state back
+    // and the assertion would be testing the harness. One context, two pages: the
+    // first imports, the second opens cold and reads what was actually persisted.
+    const ctx = await b.newContext();
+    // Closed in a finally. A context left open by a throw part way through keeps
+    // the browser alive, so b.close() at the foot of the file hangs and the suite
+    // exits without printing its count - which reads to the gate as "ran and
+    // never reported" rather than as the assertion that actually failed.
+    try {
+    const p = await ctx.newPage();
+    p.on('pageerror', e => errs.push(String(e.message)));
+    await p.addInitScript(new Function(seed({ cards: {}, endpoint: '', code: '12Ec126', log: [],
+      customSets: [], lessons: {}, exams: [] })));
+    await p.route(/workers\.dev/, r => r.abort());
+    await p.goto(T); await settled(p);
+    const NESTED = {
+      format: 'marginal-exam@1',
+      name: 'Round trip paper',
+      exam: { id: 'rt-1', title: 'Round trip paper', year: 2026, source: 'synthetic' },
+      curriculum: { jurisdiction: 'NSW', klaKey: 'hsie', subjectKey: 'business_studies', course: 'Business Studies', stage: 'Stage 6' },
+      marks: 26,
+      sections: [
+        { name: 'Section A - Short answer', instructions: 'Attempt all.', marks: 6, questions: [
+          { id: 'p1', number: '1', instructions: 'Use the source.',
+            stimulus: { caption: 'Source 1', text: 'A small importer.' },
+            marks: 6, parts: [
+              { id: 'p1a', label: 'a', marks: 2, format: 'short_answer', directive: 'outline', prompt: 'Outline one thing.', model: 'm' },
+              { id: 'p1b', label: 'b', marks: 4, format: 'short_answer', directive: 'explain', prompt: 'Explain another.', model: 'm' },
+            ] },
+        ] },
+        { name: 'Section B - Extended response', instructions: 'Attempt EITHER.', marks: 20, choose: 1, questions: [
+          { id: 'o1', number: '2', label: 'Question 2', marks: 20, format: 'business_report', directive: 'recommend', prompt: 'Recommend a course of action.', model: 'm' },
+          { id: 'o2', number: '3', label: 'Question 3', marks: 20, format: 'extended_response', directive: 'evaluate', prompt: 'Evaluate the strategies.', model: 'm' },
+        ] },
+      ],
+    };
+
+    const paste = async json => {
+      await p.evaluate(() => { const b2 = Array.from(document.querySelectorAll('button,a')).find(e => /^create$/i.test(e.textContent.trim())); b2 && b2.click(); });
+      await settled(p);
+      await p.fill('#importjson', JSON.stringify(json));
+      await p.click('#doimport'); await settled(p);
+      return p.$eval('#importmsg', e => e.textContent.trim()).catch(() => '(no message)');
+    };
+    const msg = await paste(NESTED);
+    ok(/imported/i.test(msg), 'the nested paper imports: ' + JSON.stringify(msg));
+
+    // RELOAD. A cold page in the same context, reading the paper out of storage.
+    const p2 = await ctx.newPage();
+    p2.on('pageerror', e => errs.push(String(e.message)));
+    await p2.route(/workers\.dev/, r => r.abort());
+    await p2.goto(T); await settled(p2);
+    const after = await p2.evaluate(() => {
+      const P = window.MarginalExam;
+      const st = JSON.parse(localStorage.getItem('marginal.trial.v1') || '{}');
+      const paper = (st.exams || []).filter(e => e.name === 'Round trip paper').pop();
+      if (!paper) return { missing: true };
+      const v = P.examine(paper);
+      return {
+        examId: paper.exam && paper.exam.id,
+        subjectKey: paper.curriculum && paper.curriculum.subjectKey,
+        klaKey: paper.curriculum && paper.curriculum.klaKey,
+        sections: (paper.sections || []).map(s => s.name),
+        choose: (paper.sections || []).map(s => s.choose === undefined ? null : s.choose),
+        state: v.state,
+        marks: v.totals.marks,
+        declared: paper.marks,
+        questions: v.totals.questions,
+        parents: v.totals.parents,
+        walk: P.answerables(paper).map(a => ({
+          display: a.display, marks: a.q.marks, parent: a.parent ? a.parent.id : null,
+          format: window.MarginalAssessment.normaliseFormat(a.q).format,
+          directive: window.MarginalAssessment.normaliseFormat(a.q).directive,
+          sources: P.resourcesFor(a).map(r => r.caption || '(text)'),
+        })),
+      };
+    });
+
+    ok(!after.missing, 'the paper is still there after a reload');
+    ok(after.examId === 'rt-1', 'exam identity survives: ' + after.examId);
+    ok(after.subjectKey === 'business_studies' && after.klaKey === 'hsie',
+      'curriculum ownership survives: ' + after.subjectKey + ' / ' + after.klaKey);
+    ok(after.sections.join('|') === 'Section A - Short answer|Section B - Extended response',
+      'sections survive in order: ' + after.sections.join(' | '));
+    ok(after.state === 'publishable', 'and it is still publishable on the way out: ' + after.state);
+
+    // AUTHORED NUMBERING AND THE PARENT/PART RELATIONSHIP.
+    ok(after.parents === 1, 'the parent is still a parent: ' + after.parents);
+    ok(after.walk.map(a => a.display).join() === '1(a),1(b),2',
+      'authored numbering survives, including the parts: ' + after.walk.map(a => a.display).join());
+    ok(after.walk[0].parent === 'p1' && after.walk[1].parent === 'p1',
+      'both parts still belong to question 1: ' + JSON.stringify([after.walk[0].parent, after.walk[1].parent]));
+
+    // MARKS AND THE EITHER/OR.
+    ok(after.walk.map(a => a.marks).join() === '2,4,20', 'marks survive: ' + after.walk.map(a => a.marks).join());
+    ok(after.marks === 26 && after.declared === 26,
+      'the paper is still worth 26 with the either/or counted once: ' + after.marks);
+    ok(after.questions === 3, 'three answerables, not four: ' + after.questions);
+    ok(JSON.stringify(after.choose) === '[null,1]',
+      'the either/or structure survives, on the section that had one and not on the one that did not: ' +
+      JSON.stringify(after.choose));
+
+    // CANONICAL FORMAT AND DIRECTIVE, which are the Gate 3B halves.
+    ok(after.walk.map(a => a.format).join() === 'short_answer,short_answer,business_report',
+      'canonical formats survive, business report included: ' + after.walk.map(a => a.format).join());
+    ok(after.walk.map(a => a.directive).join() === 'outline,explain,recommend',
+      'and the directives survive beside them: ' + after.walk.map(a => a.directive).join());
+
+    // SHARED STIMULUS, still shared rather than copied or lost.
+    ok(after.walk[0].sources.join() === 'Source 1' && after.walk[1].sources.join() === 'Source 1',
+      'both parts still see the source their parent holds: ' + JSON.stringify(after.walk.map(a => a.sources)));
+
+    // START IT. The paper is not only readable, it is sittable, and the screen
+    // shows the number the paper authored rather than a position.
+    await p2.evaluate(() => { const t = Array.from(document.querySelectorAll('.navtab')).find(x => /test mode/i.test(x.textContent)); t && t.click(); });
+    await settled(p2);
+    await p2.evaluate(() => {
+      const rows = Array.from(document.querySelectorAll('.exam-row'));
+      const row = rows.find(r => /Round trip paper/.test(r.textContent));
+      const btn = row && row.querySelector('[data-examsit]'); btn && btn.click();
+    });
+    await settled(p2);
+      const go = await p2.$('#exampickgo'); if (go) { await go.click(); await settled(p2); }
+
+    // The section intro is a promise about what the student is walking into, read
+    // BEFORE they walk in. It counted the array, so a section of one parent with
+    // two parts announced "1 question" ahead of being answered twice.
+    const intro = await p2.$eval('.exam-wrap', e => e.textContent).catch(() => '');
+    const counted = (intro.match(/\d+ questions? · \d+ marks?/) || ['(no count found)'])[0];
+    ok(/^2 questions · 6 marks$/.test(counted),
+      'the section intro counts the parts a student answers, not the parents: ' + JSON.stringify(counted));
+
+    const begin = await p2.$('#exambegin'); if (begin) { await begin.click(); await settled(p2); }
+    const head = await p2.$eval('.exam-qhead', e => e.textContent.trim()).catch(() => '(none)');
+    ok(/Question 1\(a\)/.test(head), 'the paper starts at the question it calls 1(a): ' + JSON.stringify(head));
+    const shown = await p2.$eval('#app', e => e.textContent);
+    ok(/Source 1/.test(shown), 'with the shared source on screen above it');
+    await p.close(); await p2.close();
+    } finally { await ctx.close(); }
+  }
+
+  // ------------------------------------------------------------------ Gate 3C
+  // A PACKAGE THAT USES ONLY THE MODERN CONTRACT CAN BE SAT, not merely imported.
+  //
+  // Gate 3C opened the import door to `format`. The drawing side had not heard of
+  // it, so this package imported cleanly and then showed a textarea where its
+  // choices should be: answerInput, submitRow and examWireAnswer all still asked
+  // `card.type`. A paper that imports and cannot be answered is the same fault as
+  // one that will not import, so the proof has to go past the door.
+  {
+    console.log('--- Gate 3C: a package with no legacy type anywhere can be sat ---');
+    const ctx = await b.newContext();
+    try {
+      const p = await ctx.newPage();
+      p.on('pageerror', e => errs.push(String(e.message)));
+      await p.addInitScript(new Function(seed({ cards: {}, endpoint: '', code: '12Ec126', log: [],
+        customSets: [], lessons: {}, exams: [] })));
+      await p.route(/workers\.dev/, r => r.abort());
+      await p.goto(T); await settled(p);
+
+      const MODERN = {
+        format: 'marginal-exam@1', name: 'Modern only',
+        curriculum: { jurisdiction: 'NSW', klaKey: 'hsie', subjectKey: 'business_studies' },
+        sections: [{ name: 'Section A', questions: [
+          { id: 'm1', number: '1', marks: 1, format: 'multiple_choice', prompt: 'Which one?',
+            choices: [{ t: 'Alpha', ok: true, why: 'Alpha is the one.' }, { t: 'Beta', why: 'Beta is not.' }] },
+          { id: 'm2', number: '2', marks: 3, format: 'calculation', expected: 1.5, prompt: 'Calculate it.', model: 'x' },
+        ] }],
+      };
+      ok(!JSON.stringify(MODERN).includes('"type"'), 'the package carries no legacy type field at all');
+
+      await p.evaluate(() => { const t = Array.from(document.querySelectorAll('button,a')).find(e => /^create$/i.test(e.textContent.trim())); t && t.click(); });
+      await settled(p);
+      await p.fill('#importjson', JSON.stringify(MODERN));
+      await p.click('#doimport'); await settled(p);
+      ok(/imported/i.test(await p.$eval('#importmsg', e => e.textContent.trim())), 'it imports');
+
+      await p.evaluate(() => { const t = Array.from(document.querySelectorAll('.navtab')).find(x => /test mode/i.test(x.textContent)); t && t.click(); });
+      await settled(p);
+      await p.evaluate(() => {
+        const r = Array.from(document.querySelectorAll('.exam-row')).find(x => /Modern only/.test(x.textContent));
+        const btn = r && r.querySelector('[data-examsit]'); btn && btn.click();
+      });
+      await settled(p);
+      const go = await p.$('#exampickgo'); if (go) { await go.click(); await settled(p); }
+      const bg = await p.$('#exambegin'); if (bg) { await bg.click(); await settled(p); }
+
+      const choices = await p.$$eval('.choice', es => es.map(e => e.textContent.trim()));
+      ok(choices.length === 2, 'a declared multiple choice draws its choices rather than a textarea: ' + JSON.stringify(choices));
+      ok(!(await p.$('#ans')), 'and there is no answer box on that screen at all');
+      await p.click('.choice'); await settled(p);
+      const sheet = await p.$eval('#sheet', e => e.textContent.trim()).catch(() => '');
+      ok(/1\/1/.test(sheet), 'clicking the right choice marks it against the key: ' + JSON.stringify(sheet.slice(0, 40)));
+
+      await p.click('#examnext'); await settled(p);
+      ok(!!(await p.$('.calcin')), 'a declared calculation gets a numeric input');
+      ok(!(await p.$('.choices')), 'and not a set of choices');
+      await p.close();
+    } finally { await ctx.close(); }
+  }
+
   ok(errs.length === 0, 'no page errors: ' + JSON.stringify(errs.slice(0, 3)));
   await b.close();
   console.log('\n' + pass + ' passed, ' + fail + ' failed');

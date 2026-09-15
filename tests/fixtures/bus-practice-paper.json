@@ -1,0 +1,530 @@
+{
+  "format": "marginal-exam@1",
+  "name": "Business Studies practice paper",
+  "subject": "Business Studies",
+  "exam": {
+    "id": "marginal-synthetic-bus-practice-1",
+    "title": "Business Studies practice paper",
+    "kind": "practice",
+    "source": "Marginal (original material written for regression coverage)",
+    "version": "1"
+  },
+  "curriculum": {
+    "jurisdiction": "NSW",
+    "klaKey": "hsie",
+    "subjectKey": "business_studies",
+    "course": "Business Studies",
+    "stage": "Stage 6"
+  },
+  "time": "3 hours (plus 5 minutes reading time)",
+  "instructions": "Attempt all questions. This paper is original material written to exercise the exam contract. It is not a past examination and its questions are not drawn from one.",
+  "marks": 90,
+  "sections": [
+    {
+      "name": "Section I - Multiple choice",
+      "instructions": "10 marks. Attempt Questions 1 to 10. Allow about 15 minutes for this section.",
+      "marks": 10,
+      "questions": [
+        {
+          "id": "mc1",
+          "number": "1",
+          "type": "mc",
+          "marks": 1,
+          "prompt": "A bakery reduces the flour it throws away each week. Which operations performance objective is it pursuing?",
+          "choices": [
+            {
+              "t": "Cost",
+              "ok": true,
+              "why": "Reducing waste lowers the cost of inputs per unit produced, which is the cost objective."
+            },
+            {
+              "t": "Speed",
+              "ok": false,
+              "why": "Speed concerns how quickly an order moves through the process, not how much input is wasted."
+            },
+            {
+              "t": "Quality",
+              "ok": false,
+              "why": "Quality concerns whether the output meets its specification."
+            },
+            {
+              "t": "Flexibility",
+              "ok": false,
+              "why": "Flexibility concerns how readily the process changes what or how much it makes."
+            }
+          ]
+        },
+        {
+          "id": "mc2",
+          "number": "2",
+          "type": "mc",
+          "marks": 1,
+          "prompt": "A courier firm lets customers choose a delivery window. Which objective is this most directly serving?",
+          "choices": [
+            {
+              "t": "Flexibility",
+              "ok": true,
+              "why": "Offering a choice of windows means the process adapts to the customer, which is the flexibility objective."
+            },
+            {
+              "t": "Cost",
+              "ok": false,
+              "why": "Offering more choice usually raises cost rather than lowering it."
+            },
+            {
+              "t": "Quality",
+              "ok": false,
+              "why": "Quality is conformity to specification, not breadth of choice."
+            },
+            {
+              "t": "Dependability",
+              "ok": false,
+              "why": "Dependability is keeping the promise once made, not offering the choice."
+            }
+          ]
+        },
+        {
+          "id": "mc3",
+          "number": "3",
+          "type": "mc",
+          "marks": 1,
+          "prompt": "Which of these appears on a balance sheet rather than a revenue statement?",
+          "choices": [
+            {
+              "t": "Accounts receivable",
+              "ok": true,
+              "why": "Accounts receivable is an asset held at a point in time, so it sits on the balance sheet."
+            },
+            {
+              "t": "Cost of goods sold",
+              "ok": false,
+              "why": "Cost of goods sold measures activity over a period, so it belongs to the revenue statement."
+            },
+            {
+              "t": "Gross profit",
+              "ok": false,
+              "why": "Gross profit is a period result."
+            },
+            {
+              "t": "Sales revenue",
+              "ok": false,
+              "why": "Sales revenue is a period flow."
+            }
+          ]
+        },
+        {
+          "id": "mc4",
+          "number": "4",
+          "type": "mc",
+          "marks": 1,
+          "prompt": "A business funds a new oven using retained profits. This is an example of:",
+          "choices": [
+            {
+              "t": "Internal equity finance",
+              "ok": true,
+              "why": "Retained profits are generated inside the business and are not repaid to a lender, so they are internal equity."
+            },
+            {
+              "t": "External debt finance",
+              "ok": false,
+              "why": "Debt finance is borrowed and repaid with interest."
+            },
+            {
+              "t": "External equity finance",
+              "ok": false,
+              "why": "External equity comes from new owners outside the business."
+            },
+            {
+              "t": "A financial institution",
+              "ok": false,
+              "why": "A financial institution is a source, not a type of finance."
+            }
+          ]
+        },
+        {
+          "id": "mc5",
+          "number": "5",
+          "type": "mc",
+          "marks": 1,
+          "prompt": "Which is a leading indicator of a firm's likely future labour needs?",
+          "choices": [
+            {
+              "t": "Planned store openings",
+              "ok": true,
+              "why": "Planned openings tell a business what staffing it will need before the need arrives."
+            },
+            {
+              "t": "Last year's turnover rate",
+              "ok": false,
+              "why": "A past turnover rate describes what already happened."
+            },
+            {
+              "t": "Current absenteeism",
+              "ok": false,
+              "why": "Absenteeism describes the present position."
+            },
+            {
+              "t": "Historical wage costs",
+              "ok": false,
+              "why": "Historical costs describe the past."
+            }
+          ]
+        },
+        {
+          "id": "mc6",
+          "number": "6",
+          "type": "mc",
+          "marks": 1,
+          "prompt": "A firm's current ratio falls from 2.1 to 0.9 in one year. This most directly suggests a problem with:",
+          "choices": [
+            {
+              "t": "Liquidity",
+              "ok": true,
+              "why": "The current ratio compares current assets to current liabilities, which is the liquidity question."
+            },
+            {
+              "t": "Profitability",
+              "ok": false,
+              "why": "Profitability is measured by return and margin ratios."
+            },
+            {
+              "t": "Efficiency",
+              "ok": false,
+              "why": "Efficiency is measured by turnover and expense ratios."
+            },
+            {
+              "t": "Solvency",
+              "ok": false,
+              "why": "Solvency concerns long-term obligations rather than short-term ones."
+            }
+          ]
+        },
+        {
+          "id": "mc7",
+          "number": "7",
+          "type": "mc",
+          "marks": 1,
+          "prompt": "Which pricing method sets price by adding a percentage to unit cost?",
+          "choices": [
+            {
+              "t": "Cost-plus pricing",
+              "ok": true,
+              "why": "Cost-plus adds a fixed margin to the cost of producing each unit."
+            },
+            {
+              "t": "Market pricing",
+              "ok": false,
+              "why": "Market pricing sets price by what buyers and competitors will bear."
+            },
+            {
+              "t": "Competition-based pricing",
+              "ok": false,
+              "why": "Competition-based pricing references rivals' prices."
+            },
+            {
+              "t": "Loss leader pricing",
+              "ok": false,
+              "why": "A loss leader is priced below cost deliberately."
+            }
+          ]
+        },
+        {
+          "id": "mc8",
+          "number": "8",
+          "type": "mc",
+          "marks": 1,
+          "prompt": "A manufacturer moves production to a supplier overseas. This is:",
+          "choices": [
+            {
+              "t": "Global outsourcing",
+              "ok": true,
+              "why": "Contracting a process to an external provider in another country is global outsourcing."
+            },
+            {
+              "t": "A joint venture",
+              "ok": false,
+              "why": "A joint venture is a shared enterprise with another firm."
+            },
+            {
+              "t": "Franchising",
+              "ok": false,
+              "why": "Franchising licenses a business format to an operator."
+            },
+            {
+              "t": "Vertical integration",
+              "ok": false,
+              "why": "Vertical integration brings a stage of supply inside the firm rather than contracting it out."
+            }
+          ]
+        },
+        {
+          "id": "mc9",
+          "number": "9",
+          "type": "mc",
+          "marks": 1,
+          "prompt": "Which is a non-financial reward?",
+          "choices": [
+            {
+              "t": "Flexible working hours",
+              "ok": true,
+              "why": "Flexible hours have value to an employee without being a payment."
+            },
+            {
+              "t": "A performance bonus",
+              "ok": false,
+              "why": "A bonus is a payment."
+            },
+            {
+              "t": "Share options",
+              "ok": false,
+              "why": "Share options are financial."
+            },
+            {
+              "t": "A salary increase",
+              "ok": false,
+              "why": "A salary increase is a payment."
+            }
+          ]
+        },
+        {
+          "id": "mc10",
+          "number": "10",
+          "type": "mc",
+          "marks": 1,
+          "prompt": "The main purpose of a cash flow statement is to show:",
+          "choices": [
+            {
+              "t": "Movements of cash in and out over a period",
+              "ok": true,
+              "why": "It reports cash received and cash paid across the period."
+            },
+            {
+              "t": "What the business owns and owes at a date",
+              "ok": false,
+              "why": "That is the balance sheet."
+            },
+            {
+              "t": "Profit earned over a period",
+              "ok": false,
+              "why": "That is the revenue statement, and profit is not the same as cash."
+            },
+            {
+              "t": "The market value of the business",
+              "ok": false,
+              "why": "No standard statement reports market value."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Section II - Short answer",
+      "instructions": "40 marks. Attempt Questions 11 to 13. Allow about 70 minutes for this section.",
+      "marks": 40,
+      "questions": [
+        {
+          "id": "q11",
+          "number": "11",
+          "marks": 14,
+          "instructions": "Use the case study below when answering this question.",
+          "stimulus": {
+            "caption": "Case study: Kerbside Coffee",
+            "text": "Kerbside Coffee roasts and sells coffee from one site and four vans. Demand at the vans peaks between 7am and 9am, and the owners have had complaints about waiting times. Last year the business bought a second roaster using a three-year loan. Staff turnover among van operators is high, and most operators are employed casually."
+          },
+          "parts": [
+            {
+              "id": "q11a",
+              "label": "a",
+              "marks": 2,
+              "format": "short_answer",
+              "directive": "outline",
+              "prompt": "Outline ONE operations performance objective Kerbside Coffee is failing to meet at its vans.",
+              "points": [
+                "Names speed, or dependability, as the objective",
+                "Links it to the morning waiting times described in the case study"
+              ]
+            },
+            {
+              "id": "q11b",
+              "label": "b",
+              "marks": 3,
+              "format": "short_answer",
+              "directive": "explain",
+              "prompt": "Explain how the business's casual employment of van operators could be contributing to its turnover.",
+              "points": [
+                "Explains that casual work carries no guaranteed hours or leave entitlements",
+                "Links that insecurity to an operator's decision to leave",
+                "Connects turnover to the cost of recruiting and training replacements"
+              ]
+            },
+            {
+              "id": "q11c",
+              "label": "c",
+              "marks": 4,
+              "format": "calculation",
+              "expected": 1.5,
+              "tolerance": 0.05,
+              "prompt": "Kerbside Coffee holds current assets of $60 000 and current liabilities of $40 000. Calculate its current ratio, correct to one decimal place.",
+              "model": "Current ratio = current assets divided by current liabilities = 60 000 / 40 000 = 1.5 to 1."
+            },
+            {
+              "id": "q11d",
+              "label": "d",
+              "marks": 5,
+              "format": "extended_response",
+              "directive": "justify",
+              "prompt": "Justify ONE staffing strategy Kerbside Coffee could use to reduce waiting times at its vans during the morning peak.",
+              "points": [
+                "Names a specific strategy, such as staggered shifts or a second operator on peak vans",
+                "Explains how the strategy shortens the queue at the times the case study identifies",
+                "Weighs the strategy against its wage cost",
+                "Reaches a supported judgement rather than listing options"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "q12",
+          "number": "12",
+          "marks": 14,
+          "instructions": "Use the data below when answering this question.",
+          "stimulus": [
+            {
+              "caption": "Table 1: Selected financial data, Harbourline Cycles",
+              "text": "2024: sales $820 000, gross profit $328 000, expenses $250 000. 2025: sales $910 000, gross profit $337 000, expenses $301 000."
+            },
+            {
+              "caption": "Note",
+              "text": "Harbourline Cycles imports its frames and assembles them locally. It has not changed its selling prices since 2024."
+            }
+          ],
+          "parts": [
+            {
+              "id": "q12a",
+              "label": "a",
+              "marks": 3,
+              "format": "short_answer",
+              "directive": "describe",
+              "prompt": "Describe what has happened to Harbourline Cycles' gross profit ratio between 2024 and 2025.",
+              "points": [
+                "Identifies that the ratio has fallen",
+                "Refers to gross profit relative to sales rather than the dollar figure alone",
+                "Uses the data in Table 1 to support the statement"
+              ]
+            },
+            {
+              "id": "q12b",
+              "label": "b",
+              "marks": 5,
+              "format": "short_answer",
+              "directive": "analyse",
+              "prompt": "Analyse TWO factors that could explain the change in the expense ratio shown in Table 1.",
+              "points": [
+                "Identifies that expenses have risen faster than sales",
+                "Offers a first plausible cause and connects it to the figures",
+                "Offers a second plausible cause that is genuinely distinct from the first",
+                "Draws the two together rather than listing them"
+              ]
+            },
+            {
+              "id": "q12c",
+              "label": "c",
+              "marks": 6,
+              "format": "extended_response",
+              "directive": "evaluate",
+              "prompt": "Evaluate the usefulness of comparative ratio analysis for a business in Harbourline Cycles' position.",
+              "points": [
+                "Explains what comparing ratios over time or against similar firms reveals",
+                "Identifies at least one genuine limitation, such as differences in accounting treatment",
+                "Applies the discussion to the importer's position described in the note",
+                "Reaches a judgement about usefulness rather than describing the technique"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "q13",
+          "number": "13",
+          "marks": 12,
+          "format": "extended_response",
+          "directive": "explain",
+          "prompt": "Explain how TWO global factors can influence the operations of an Australian manufacturer.",
+          "points": [
+            "Names a first global factor and explains its operational effect",
+            "Names a second, genuinely distinct global factor and explains its effect",
+            "Refers to operations processes rather than to the business in general",
+            "Uses an Australian manufacturing context"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Section III - Business report",
+      "instructions": "20 marks. Attempt Question 14. Allow about 35 minutes for this section. Present your answer in the form of a business report.",
+      "marks": 20,
+      "questions": [
+        {
+          "id": "q14",
+          "number": "14",
+          "marks": 20,
+          "format": "business_report",
+          "directive": "recommend",
+          "instructions": "Use the case study below. Present your answer as a business report with a clear structure.",
+          "stimulus": {
+            "caption": "Case study: Tidewater Outfitters",
+            "img": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MjAiIGhlaWdodD0iMjQwIiB2aWV3Qm94PSIwIDAgNDIwIDI0MCI+CjxyZWN0IHdpZHRoPSI0MjAiIGhlaWdodD0iMjQwIiBmaWxsPSIjZmZmZmZmIi8+Cjx0ZXh0IHg9IjEyIiB5PSIyMiIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEzIiBmaWxsPSIjMTExIj5PbmxpbmUgb3JkZXJzIHBlciB3ZWVrLCBUaWRld2F0ZXIgT3V0Zml0dGVyczwvdGV4dD4KPGxpbmUgeDE9IjQ4IiB5MT0iMjAwIiB4Mj0iNDA0IiB5Mj0iMjAwIiBzdHJva2U9IiMxMTEiIHN0cm9rZS13aWR0aD0iMSIvPgo8bGluZSB4MT0iNDgiIHkxPSI0MCIgeDI9IjQ4IiB5Mj0iMjAwIiBzdHJva2U9IiMxMTEiIHN0cm9rZS13aWR0aD0iMSIvPgo8cmVjdCB4PSI3MiIgeT0iMTUwIiB3aWR0aD0iNDYiIGhlaWdodD0iNTAiIGZpbGw9IiMyZTdkNWIiLz4KPHJlY3QgeD0iMTUwIiB5PSIxMjIiIHdpZHRoPSI0NiIgaGVpZ2h0PSI3OCIgZmlsbD0iIzJlN2Q1YiIvPgo8cmVjdCB4PSIyMjgiIHk9Ijg4IiB3aWR0aD0iNDYiIGhlaWdodD0iMTEyIiBmaWxsPSIjMmU3ZDViIi8+CjxyZWN0IHg9IjMwNiIgeT0iNjAiIHdpZHRoPSI0NiIgaGVpZ2h0PSIxNDAiIGZpbGw9IiMyZTdkNWIiLz4KPHRleHQgeD0iODQiIHk9IjIxNiIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjExIiBmaWxsPSIjMTExIj4yMDIyPC90ZXh0Pgo8dGV4dCB4PSIxNjIiIHk9IjIxNiIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjExIiBmaWxsPSIjMTExIj4yMDIzPC90ZXh0Pgo8dGV4dCB4PSIyNDAiIHk9IjIxNiIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjExIiBmaWxsPSIjMTExIj4yMDI0PC90ZXh0Pgo8dGV4dCB4PSIzMTgiIHk9IjIxNiIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjExIiBmaWxsPSIjMTExIj4yMDI1PC90ZXh0Pgo8dGV4dCB4PSIyMCIgeT0iNDYiIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWksc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzExMSI+ODAwPC90ZXh0Pgo8dGV4dCB4PSIyMCIgeT0iMjA0IiBmb250LWZhbWlseT0ic3lzdGVtLXVpLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTEiIGZpbGw9IiMxMTEiPjA8L3RleHQ+Cjwvc3ZnPg==",
+            "text": "Tidewater Outfitters sells camping equipment through six stores and a website. Online sales have grown for three years while store sales have fallen. The business leases all six stores on agreements expiring within two years. Its warehouse was built for store replenishment and is now picking individual online orders, and delivery times have slipped. The owners want to keep all six stores."
+          },
+          "prompt": "You have been engaged as a consultant to Tidewater Outfitters. Recommend strategies the business could use to respond to the shift in where its customers are buying.",
+          "points": [
+            "Uses a report structure with headings rather than continuous prose",
+            "Identifies the operations problem created by a warehouse designed for a different job",
+            "Recommends at least two specific strategies rather than describing the situation",
+            "Addresses the owners' stated intention to keep all six stores",
+            "Justifies the recommendations against the evidence in the case study"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Section IV - Extended response",
+      "instructions": "20 marks. Attempt EITHER Question 15 OR Question 16. Allow about 35 minutes for this section.",
+      "marks": 20,
+      "choose": 1,
+      "questions": [
+        {
+          "id": "q15",
+          "number": "15",
+          "label": "Question 15",
+          "marks": 20,
+          "format": "extended_response",
+          "directive": "evaluate",
+          "prompt": "Evaluate the effectiveness of marketing strategies in achieving the marketing objectives of a business you have studied.",
+          "model": "A strong response defines the marketing objectives it is judging against, selects strategies that genuinely serve those objectives, and reaches a sustained judgement supported by evidence from the business rather than a list of strategies in sequence.",
+          "points": [
+            "States the marketing objectives being judged against",
+            "Selects strategies that serve those objectives rather than describing the marketing mix",
+            "Supports the judgement with evidence from a real business",
+            "Sustains one argument across the response rather than restarting each paragraph"
+          ]
+        },
+        {
+          "id": "q16",
+          "number": "16",
+          "label": "Question 16",
+          "marks": 20,
+          "format": "extended_response",
+          "directive": "evaluate",
+          "prompt": "Evaluate the effectiveness of financial management strategies in achieving the financial objectives of a business you have studied.",
+          "model": "A strong response defines the financial objectives it is judging against, selects strategies that genuinely serve those objectives, and reaches a sustained judgement supported by evidence from the business rather than a list of strategies in sequence.",
+          "points": [
+            "States the financial objectives being judged against",
+            "Selects strategies that serve those objectives rather than listing them",
+            "Supports the judgement with evidence from a real business",
+            "Sustains one argument across the response rather than restarting each paragraph"
+          ]
+        }
+      ]
+    }
+  ]
+}

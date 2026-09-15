@@ -790,17 +790,225 @@ module.exports = [
     // the cross-subject leak back.
     id: "gate3a-exam-path-clones-a-question",
     file: "app.js",
-    find: '      (sec.questions || []).forEach((q, qi) => seq.push({ kind: "q", si, qi, sec, q }));',
-    replace: '      (sec.questions || []).forEach((q, qi) => seq.push({ kind: "q", si, qi, sec, q: JSON.parse(JSON.stringify(q)) }));',
+    find: '          seq.push({ kind: "q", si, qi, pi: null, sec, q, parent: null, display: PAPER.numberOf(q) });',
+    replace: '          seq.push({ kind: "q", si, qi, pi: null, sec, q: JSON.parse(JSON.stringify(q)), parent: null, display: PAPER.numberOf(q) });',
     owner: "ui68",
     why: "a cloned question is not the paper's question, so ownership by identity would silently stop resolving and every written answer in the paper would fall through to the flashcard package",
   },
   {
     id: "gate3a-import-stops-asking-who-marks-it",
-    file: "app.js",
-    find: "    ASSESS.curriculumFindings(d).concat(ASSESS.subjectOverrides(d))",
-    replace: "    [].concat(ASSESS.subjectOverrides(d))",
-    owner: "ui68",
+    file: "tools/contract/exam.js",
+    find: "  return ASSESS.curriculumFindings(paper).concat(ASSESS.subjectOverrides(paper)).map(function (f) {",
+    replace: "  return [].concat(ASSESS.subjectOverrides(paper)).map(function (f) {",
+    owner: "t30",
     why: "a paper that never says which subject marks it was marked against whichever flashcard package the picker was on",
+  },
+  {
+    // The either/or counted twice, so a paper reports a total no student can score.
+    id: "gate3c-either-or-double-counted",
+    file: "tools/contract/exam.js",
+    find: "  var counted = pick > 0 ? list.slice(0, pick) : list;",
+    replace: "  var counted = list;",
+    owner: "t30",
+    why: "two twenty-mark options a student chooses between are worth twenty, and forty is a mark total nobody can reach",
+  },
+  {
+    // A declared total that disagrees, silently accepted.
+    id: "gate3c-declared-total-silently-wins",
+    file: "tools/contract/exam.js",
+    find: "    else if (declared !== t.marks)",
+    replace: "    else if (false)",
+    owner: "t30",
+    why: "either the declared total or the questions are wrong and nothing can tell which, so hiding the disagreement hides an authoring mistake behind a paper that looks right",
+  },
+  {
+    // The section half of the same check.
+    id: "gate3c-section-total-disagreement-ignored",
+    file: "tools/contract/exam.js",
+    find: "    if (sec.marks !== t.sections[si])",
+    replace: "    if (false)",
+    owner: "t30",
+    why: "a section that says it is worth more than its questions add to misleads a student about what is left",
+  },
+  {
+    // Two questions allowed to carry the same number.
+    id: "gate3c-duplicate-numbering-allowed",
+    file: "tools/contract/exam.js",
+    find: "    if (bag[k]) out.push(finding(STATE.malformed, code, at, message(k, bag[k])));",
+    replace: "    if (false) out.push(finding(STATE.malformed, code, at, message(k, bag[k])));",
+    owner: "t30",
+    why: "two questions numbered 21 leave a student unable to say which one they answered",
+  },
+  {
+    // The authored number ignored, so position is called a question number again.
+    id: "gate3c-position-is-called-the-number",
+    file: "tools/contract/exam.js",
+    find: "function numberOf(q) { return (q && !blank(q.number)) ? String(q.number).trim() : null; }",
+    replace: "function numberOf(q) { return null; }",
+    owner: "t30",
+    why: "how far through the paper a student is and what the paper calls this question are different facts, and the shipped paper already disagrees with itself where they are confused",
+  },
+  {
+    // A thin paper refused, which is the Gate 3A regression wearing new clothes:
+    // a written question is marked from the subject's criteria and does not need
+    // its own model answer to be sittable.
+    id: "gate3c-thin-paper-refused-again",
+    file: "tools/contract/exam.js",
+    find: "    add(STATE.thin, \"MARKING_SUPPORT_ABSENT\",",
+    replace: "    add(STATE.malformed, \"MARKING_SUPPORT_ABSENT\",",
+    owner: "t30",
+    why: "a paper whose questions are marked from the subject's own criteria is sittable, and refusing it is the whole distinction this taxonomy exists to make",
+  },
+  {
+    // The taxonomy collapsed: everything that stops a paper reads the same.
+    id: "gate3c-unsupported-reads-as-malformed",
+    file: "tools/contract/exam.js",
+    find: "  FORMAT_ABSENT: STATE.malformed,\n  FORMAT_UNSUPPORTED: STATE.unsupported,",
+    replace: "  FORMAT_ABSENT: STATE.malformed,\n  FORMAT_UNSUPPORTED: STATE.malformed,",
+    owner: "t30",
+    why: "a question missing a field and a question asking for a version this release cannot run are different problems for whoever has to fix the file",
+  },
+  {
+    // A fatal state quietly declared sittable.
+    id: "gate3c-blocked-paper-is-publishable",
+    file: "tools/contract/exam.js",
+    find: "var FATAL = { malformed: true, unsupported: true, blocked: true };",
+    replace: "var FATAL = { malformed: true, unsupported: true };",
+    owner: "t30",
+    why: "a paper whose declared subject resolves to nothing cannot be marked, and letting it be sat is the Gate 3A fault returning by another route",
+  },
+  {
+    // Only the first problem reported, which is what made a bad package ten
+    // attempts at the import box.
+    id: "gate3c-only-the-first-problem-reported",
+    file: "tools/contract/exam.js",
+    find: "      out = out.concat(questionFindings(q, at + \".questions[\" + qi + \"]\"));",
+    replace: "      if (!out.length) out = out.concat(questionFindings(q, at + \".questions[\" + qi + \"]\"));",
+    owner: "t30",
+    why: "a package with ten problems that reports one is ten attempts at the box",
+  },
+  {
+    // Parts flattened back into separate questions, losing the parent entirely.
+    id: "gate3c-parts-flattened-away",
+    file: "tools/contract/exam.js",
+    find: "function isParent(q) { return !!(q && Array.isArray(q.parts) && q.parts.length); }",
+    replace: "function isParent(q) { return false; }",
+    owner: "t30",
+    why: "Question 21 is a real exam object worth eleven marks, and a contract that cannot say so makes it worth nothing",
+  },
+  {
+    // The authored part label replaced by position, which silently reorders a
+    // paper that authors its parts out of sequence.
+    id: "gate3c-part-label-comes-from-position",
+    file: "tools/contract/exam.js",
+    find: "  if (part && !blank(part.label)) return String(part.label).trim();",
+    replace: "  if (false) return String(part.label).trim();",
+    owner: "t30",
+    why: "what the paper calls this part and where it sits in an array are different facts, and only one of them is academic",
+  },
+  {
+    // A parent worth nothing, so its parts drop out of every total.
+    id: "gate3c-child-marks-omitted-from-parent",
+    file: "tools/contract/exam.js",
+    find: "  if (isParent(q)) return partsOf(q).reduce(function (m, p) {",
+    replace: "  if (isParent(q)) return 0 * partsOf(q).reduce(function (m, p) {",
+    owner: "t30",
+    why: "a paper whose sections add to less than its questions are worth tells a student they scored out of the wrong number",
+  },
+  {
+    // The shared stimulus dropped, so a part is answered without the case study
+    // it was written about.
+    id: "gate3c-shared-stimulus-dropped",
+    file: "tools/contract/exam.js",
+    find: "  var shared = entry && entry.parent ? resourcesOf(entry.parent) : [];",
+    replace: "  var shared = [];",
+    owner: "t30",
+    why: "a part asked about a case study it cannot see is a question the student cannot answer",
+  },
+  {
+    // A parent aggregate that disagrees, silently accepted.
+    id: "gate3c-parent-total-mismatch-accepted",
+    file: "tools/contract/exam.js",
+    find: "    else if (q.marks !== calculated)",
+    replace: "    else if (false)",
+    owner: "t30",
+    why: "either the authored aggregate or the parts are wrong and nothing can tell which, so accepting one hides the mistake",
+  },
+  {
+    // A parent that is also answered, which makes the paper mean two things.
+    id: "gate3c-parent-answered-as-well",
+    file: "tools/contract/exam.js",
+    find: "  if (!blank(q.format) || !blank(q.type))\n    add(STATE.malformed, \"PARENT_IS_NOT_ANSWERED\",",
+    replace: "  if (false)\n    add(STATE.malformed, \"PARENT_IS_NOT_ANSWERED\",",
+    owner: "t30",
+    why: "nobody writes an answer to \"Question 21\", and a parent claiming a response format says both that it is answered and that its parts are",
+  },
+  {
+    // Deeper nesting walked instead of refused, inventing an academic convention.
+    id: "gate3c-deep-nesting-walked",
+    file: "tools/contract/exam.js",
+    find: "    if (Array.isArray(part.parts) && part.parts.length)",
+    replace: "    if (false)",
+    owner: "t30",
+    why: "what 21(a)(i) is worth and how it is numbered is a convention this contract does not have, and guessing one is worse than refusing",
+  },
+  {
+    // Two parts allowed to share a label.
+    id: "gate3c-duplicate-part-labels-allowed",
+    file: "tools/contract/exam.js",
+    find: "    else if (labels[label])",
+    replace: "    else if (false)",
+    owner: "t30",
+    why: "two parts both labelled (a) leave a student unable to say which one they answered",
+  },
+  {
+    // The drawing side asking the legacy field again, so a declared multiple
+    // choice is shown as a textarea and cannot be answered at all.
+    id: "gate3c-modern-format-cannot-be-drawn",
+    file: "app.js",
+    find: "  function drawFormat(card) {\n    const fx = ASSESS.normaliseFormat(card);\n    return fx.ok ? fx.format : null;",
+    replace: "  function drawFormat(card) {\n    const fx = ASSESS.normaliseFormat(card);\n    return card.type ? (fx.ok ? fx.format : null) : null;",
+    owner: "ui68",
+    why: "a paper that imports and then shows a textarea where its choices belong cannot be sat, which is the same fault as one that will not import",
+  },
+  {
+    // The import note thrown away by the re-render that follows it.
+    id: "gate3c-import-note-never-seen",
+    file: "app.js",
+    find: '<span class="hint" id="importmsg">${esc(builderNote)}</span>',
+    replace: '<span class="hint" id="importmsg"></span>',
+    owner: "ui68",
+    why: "the note saying what an imported paper does not carry is the whole reason for writing one, and a message wiped by the next render was never read",
+  },
+  {
+    // A name nobody authored treated as a claim, so a paper is refused for a
+    // collision this contract invented from array position.
+    id: "gate3c-invented-name-counts-as-a-duplicate",
+    file: "tools/contract/exam.js",
+    find: "        var authored = !blank(numberOf(q)) && (!blank(part && part.label) || !blank(part && part.part));",
+    replace: "        var authored = true;",
+    owner: "t30",
+    why: "a duplicate is a paper claiming two questions are called the same thing, and a claim has to be made before it can be wrong",
+  },
+  {
+    // The section intro counting the array again: parents counted as one, and a
+    // parent's absent aggregate read as its worth.
+    id: "gate3c-section-intro-counts-the-array",
+    file: "app.js",
+    find: "    const qn = pick ? qs.length : t.questions;\n    const mk = t.marks;",
+    replace: "    const qn = qs.length;\n    const mk = pick ? (qs[0] ? qs[0].marks || 0 : 0) : qs.reduce((n, q) => n + (q.marks || 0), 0);",
+    owner: "ui68",
+    why: "the section intro promises what the student is walking into, and counting parents told them three questions before a section they answer eight times",
+  },
+  {
+    // The traversal handing out a copy of the parent. Everything reads the same
+    // and nothing is owned, so marking falls through to whatever package the
+    // picker was on - the Gate 3A fault, one level down and one indirection along.
+    id: "gate3c-traversal-clones-the-parent",
+    file: "tools/contract/exam.js",
+    find: "        out.push({ si: si, qi: qi, pi: pi, q: part, parent: q, sec: sec,",
+    replace: "        out.push({ si: si, qi: qi, pi: pi, q: part, parent: JSON.parse(JSON.stringify(q)), sec: sec,",
+    owner: "t30",
+    why: "examOwns resolves which paper marks a response by object identity, so a part whose parent is a copy is a part nothing owns",
   },
 ];
