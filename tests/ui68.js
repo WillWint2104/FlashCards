@@ -498,6 +498,11 @@ const answer = async (p, text) => { await p.fill('#ans', text); await p.click('#
     // and the assertion would be testing the harness. One context, two pages: the
     // first imports, the second opens cold and reads what was actually persisted.
     const ctx = await b.newContext();
+    // Closed in a finally. A context left open by a throw part way through keeps
+    // the browser alive, so b.close() at the foot of the file hangs and the suite
+    // exits without printing its count - which reads to the gate as "ran and
+    // never reported" rather than as the assertion that actually failed.
+    try {
     const p = await ctx.newPage();
     p.on('pageerror', e => errs.push(String(e.message)));
     await p.addInitScript(new Function(seed({ cards: {}, endpoint: '', code: '12Ec126', log: [],
@@ -617,7 +622,8 @@ const answer = async (p, text) => { await p.fill('#ans', text); await p.click('#
     ok(/Question 1\(a\)/.test(head), 'the paper starts at the question it calls 1(a): ' + JSON.stringify(head));
     const shown = await p2.$eval('#app', e => e.textContent);
     ok(/Source 1/.test(shown), 'with the shared source on screen above it');
-    await p.close(); await p2.close(); await ctx.close();
+    await p.close(); await p2.close();
+    } finally { await ctx.close(); }
   }
 
   ok(errs.length === 0, 'no page errors: ' + JSON.stringify(errs.slice(0, 3)));
