@@ -1795,13 +1795,34 @@
     else go();
   }
 
+  // WHAT KIND OF RESPONSE THIS WANTS, ASKED ONCE, FOR DRAWING IT.
+  //
+  // Gate 3B put this question behind the substrate for MARKING. The three
+  // functions below still asked `card.type` for RENDERING, which meant a package
+  // authored the documented modern way -
+  //
+  //     { "format": "multiple_choice", "choices": [...] }
+  //
+  // - imported cleanly and then showed the student a textarea, because nothing on
+  // the drawing side had heard of `format`. It could not be answered, let alone
+  // marked. A paper that imports and cannot be sat is the same fault as one that
+  // will not import.
+  //
+  // Lesson tasks and chart kinds are deliberately NOT routed through here. They
+  // carry a `type` too and they are not response formats; t29 holds that they
+  // stay out of the table.
+  function drawFormat(card) {
+    const fx = ASSESS.normaliseFormat(card);
+    return fx.ok ? fx.format : null;
+  }
   // The answer input only (no submit). The submit lives in its own full-width row.
   function answerInput(card) {
-    if (card.type === "mc")
+    const f = drawFormat(card);
+    if (f === "multiple_choice")
       return `<div class="choices">${card.choices.map((c, i) => `<button class="choice" data-i="${i}"><kbd class="ckbd">${i + 1}</kbd>${esc(c.t)}</button>`).join("")}</div>`;
-    if (card.type === "calc")
+    if (f === "calculation")
       return `<input class="calcin" id="ans" inputmode="decimal" placeholder="Your answer (number)" autocomplete="off">`;
-    const big = card.type === "essay";
+    const big = ASSESS.writtenModeOf(f) === "extended";
     return `<textarea id="ans" class="answerbox" rows="${big ? 14 : 5}" placeholder="${big ? "Write your full response here, using blank lines between paragraphs." : "Type your answer in full sentences."}"></textarea>`;
   }
   // The submit row, full width below both columns. Multiple choice grades on click.
@@ -1850,10 +1871,11 @@
   }
 
   function submitRow(card) {
-    if (card.type === "mc") return "";
-    if (card.type === "calc")
+    const f = drawFormat(card);
+    if (f === "multiple_choice") return "";
+    if (f === "calculation")
       return `<div class="submitrow"><button class="btn" id="check">Check answer</button><span class="hint">Numeric answer, checked with a small tolerance.</span></div>`;
-    const big = card.type === "essay";
+    const big = ASSESS.writtenModeOf(f) === "extended";
     return `<div class="submitrow"><button class="btn" id="check">${big ? "Submit for marking" : "Check answer"}</button><span class="hint">${big ? "Marked against the criteria. It takes a few seconds." : "Graded on key terms and content, so write it properly."}</span></div>`;
   }
 
@@ -2362,7 +2384,8 @@
   }
   function examWireAnswer(item, key) {
     const q = item.q;
-    if (q.type === "mc") {
+    const f = drawFormat(q);
+    if (f === "multiple_choice") {
       app.querySelectorAll(".choice").forEach(b => b.onclick = () => {
         app.querySelectorAll(".choice").forEach(x => x.onclick = null);
         const g = gradeMC(q, +b.dataset.i);
@@ -2379,8 +2402,8 @@
       const wasLabel = ch.textContent;
       EXAM.answers[key] = ans; ch.disabled = true; ch.textContent = "Checking…";
       let g;
-      if (q.type === "calc") g = gradeCalc(q, ans);
-      else if (q.type === "essay") g = await gradeWritten(q, ans);
+      if (f === "calculation") g = gradeCalc(q, ans);
+      else if (ASSESS.writtenModeOf(f) === "extended") g = await gradeWritten(q, ans);
       else g = (Array.isArray(q.points) && q.points.length) ? gradePoints(q, ans) : gradeLocal(q, ans);
       // The audit found this button still reading "Checking…" after a refusal,
       // beside a score of undefined/undefined. Nothing was spent, so the control

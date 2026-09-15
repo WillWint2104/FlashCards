@@ -961,4 +961,23 @@ module.exports = [
     owner: "t30",
     why: "two parts both labelled (a) leave a student unable to say which one they answered",
   },
+  {
+    // The drawing side asking the legacy field again, so a declared multiple
+    // choice is shown as a textarea and cannot be answered at all.
+    id: "gate3c-modern-format-cannot-be-drawn",
+    file: "app.js",
+    find: "  function drawFormat(card) {\n    const fx = ASSESS.normaliseFormat(card);\n    return fx.ok ? fx.format : null;",
+    replace: "  function drawFormat(card) {\n    const fx = ASSESS.normaliseFormat(card);\n    return card.type ? (fx.ok ? fx.format : null) : null;",
+    owner: "ui68",
+    why: "a paper that imports and then shows a textarea where its choices belong cannot be sat, which is the same fault as one that will not import",
+  },
+  {
+    // The import note thrown away by the re-render that follows it.
+    id: "gate3c-import-note-never-seen",
+    file: "app.js",
+    find: '<span class="hint" id="importmsg">${esc(builderNote)}</span>',
+    replace: '<span class="hint" id="importmsg"></span>',
+    owner: "ui68",
+    why: "the note saying what an imported paper does not carry is the whole reason for writing one, and a message wiped by the next render was never read",
+  },
 ];

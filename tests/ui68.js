@@ -626,6 +626,66 @@ const answer = async (p, text) => { await p.fill('#ans', text); await p.click('#
     } finally { await ctx.close(); }
   }
 
+  // ------------------------------------------------------------------ Gate 3C
+  // A PACKAGE THAT USES ONLY THE MODERN CONTRACT CAN BE SAT, not merely imported.
+  //
+  // Gate 3C opened the import door to `format`. The drawing side had not heard of
+  // it, so this package imported cleanly and then showed a textarea where its
+  // choices should be: answerInput, submitRow and examWireAnswer all still asked
+  // `card.type`. A paper that imports and cannot be answered is the same fault as
+  // one that will not import, so the proof has to go past the door.
+  {
+    console.log('--- Gate 3C: a package with no legacy type anywhere can be sat ---');
+    const ctx = await b.newContext();
+    try {
+      const p = await ctx.newPage();
+      p.on('pageerror', e => errs.push(String(e.message)));
+      await p.addInitScript(new Function(seed({ cards: {}, endpoint: '', code: '12Ec126', log: [],
+        customSets: [], lessons: {}, exams: [] })));
+      await p.route(/workers\.dev/, r => r.abort());
+      await p.goto(T); await settled(p);
+
+      const MODERN = {
+        format: 'marginal-exam@1', name: 'Modern only',
+        curriculum: { jurisdiction: 'NSW', klaKey: 'hsie', subjectKey: 'business_studies' },
+        sections: [{ name: 'Section A', questions: [
+          { id: 'm1', number: '1', marks: 1, format: 'multiple_choice', prompt: 'Which one?',
+            choices: [{ t: 'Alpha', ok: true, why: 'Alpha is the one.' }, { t: 'Beta', why: 'Beta is not.' }] },
+          { id: 'm2', number: '2', marks: 3, format: 'calculation', expected: 1.5, prompt: 'Calculate it.', model: 'x' },
+        ] }],
+      };
+      ok(!JSON.stringify(MODERN).includes('"type"'), 'the package carries no legacy type field at all');
+
+      await p.evaluate(() => { const t = Array.from(document.querySelectorAll('button,a')).find(e => /^create$/i.test(e.textContent.trim())); t && t.click(); });
+      await settled(p);
+      await p.fill('#importjson', JSON.stringify(MODERN));
+      await p.click('#doimport'); await settled(p);
+      ok(/imported/i.test(await p.$eval('#importmsg', e => e.textContent.trim())), 'it imports');
+
+      await p.evaluate(() => { const t = Array.from(document.querySelectorAll('.navtab')).find(x => /test mode/i.test(x.textContent)); t && t.click(); });
+      await settled(p);
+      await p.evaluate(() => {
+        const r = Array.from(document.querySelectorAll('.exam-row')).find(x => /Modern only/.test(x.textContent));
+        const btn = r && r.querySelector('[data-examsit]'); btn && btn.click();
+      });
+      await settled(p);
+      const go = await p.$('#exampickgo'); if (go) { await go.click(); await settled(p); }
+      const bg = await p.$('#exambegin'); if (bg) { await bg.click(); await settled(p); }
+
+      const choices = await p.$$eval('.choice', es => es.map(e => e.textContent.trim()));
+      ok(choices.length === 2, 'a declared multiple choice draws its choices rather than a textarea: ' + JSON.stringify(choices));
+      ok(!(await p.$('#ans')), 'and there is no answer box on that screen at all');
+      await p.click('.choice'); await settled(p);
+      const sheet = await p.$eval('#sheet', e => e.textContent.trim()).catch(() => '');
+      ok(/1\/1/.test(sheet), 'clicking the right choice marks it against the key: ' + JSON.stringify(sheet.slice(0, 40)));
+
+      await p.click('#examnext'); await settled(p);
+      ok(!!(await p.$('.calcin')), 'a declared calculation gets a numeric input');
+      ok(!(await p.$('.choices')), 'and not a set of choices');
+      await p.close();
+    } finally { await ctx.close(); }
+  }
+
   ok(errs.length === 0, 'no page errors: ' + JSON.stringify(errs.slice(0, 3)));
   await b.close();
   console.log('\n' + pass + ' passed, ' + fail + ' failed');
