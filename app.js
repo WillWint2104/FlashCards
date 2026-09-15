@@ -2111,10 +2111,21 @@
     // The curriculum block travels with the paper. It was the five fields below
     // and nothing else, so a subjectKey written beside them was discarded at the
     // door and the paper reached the marker with no identity at all.
-    const paper = { id: "exam-" + Date.now(), name: data.name || "Practice exam", subject: data.subject || "",
+    // EVERYTHING THE PACKAGE SAID, NOT THE EIGHT FIELDS THIS FUNCTION KNEW.
+    //
+    // This rebuilt the paper from a fixed whitelist, so anything the contract
+    // gained afterwards was discarded at the door: a declared total, a source, a
+    // package version, a syllabus reference. Nothing authored them yet, which is
+    // the only reason it had not cost anything. The paper is carried whole and
+    // the runtime's own id is put on top of it, so a field added to the contract
+    // survives the round trip without this line being edited again.
+    const paper = Object.assign({}, data, {
+      id: "exam-" + Date.now(),
+      name: data.name || "Practice exam",
+      subject: data.subject || "",
       curriculum: Object.assign({}, data.curriculum || {}),
-      exam: data.exam ? Object.assign({}, data.exam) : undefined,
-      time: data.time || "", instructions: data.instructions || "", sections: data.sections };
+      time: data.time || "", instructions: data.instructions || "",
+    });
     state.exams.push(paper); save();
     // A thin paper imports. Saying nothing about it would be the quiet kind of
     // normalisation this architecture keeps refusing: the student can sit it, and
@@ -2281,12 +2292,21 @@
     const { q, sec, si, qi } = item;
     const key = si + "-" + qi;
     const t = examTotals();
-    const num = EXAM.seq.slice(0, EXAM.pos + 1).filter(x => x.kind === "q").length;
+    // WHAT THE PAPER CALLS THIS QUESTION, IF IT SAYS.
+    //
+    // This counted the student's position and called it the question number,
+    // which is a different fact. The shipped paper already disagrees with itself
+    // because of it: its business report is the 34th question a student reaches
+    // and the prompt calls it Question 25. An authored number is the paper's own
+    // answer and wins; position is what is left when nothing is authored.
+    const authored = PAPER.numberOf(q);
+    const pos = EXAM.seq.slice(0, EXAM.pos + 1).filter(x => x.kind === "q").length;
+    const num = authored || pos;
     app.innerHTML = `${examBar()}
       <div class="exam-wrap"><div class="exam-q">
         <div class="exam-sec small">${esc(sec.name || "")}</div>
         ${sec.source ? examSourceHTML(sec.source, "Source material") : ""}
-        <div class="exam-qhead">Question ${num} of ${t.total} · ${q.marks} mark${q.marks === 1 ? "" : "s"}</div>
+        <div class="exam-qhead">Question ${esc(String(num))}${authored ? "" : " of " + t.total} · ${q.marks} mark${q.marks === 1 ? "" : "s"}</div>
         ${q.stimulus ? examSourceHTML(q.stimulus, "Source") : ""}
         <div class="exam-prompt">${linkGlossary(q.prompt)}</div>
         <div id="answerzone">${answerInput(q)}</div>

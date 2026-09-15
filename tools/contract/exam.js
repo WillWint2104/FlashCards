@@ -167,6 +167,113 @@ function questionFindings(q, path) {
 }
 
 // ---------------------------------------------------------------------------
+// Numbering and arithmetic
+// ---------------------------------------------------------------------------
+// WHAT THE PAPER CALLS THIS QUESTION.
+//
+// Until now nothing did. Numbering lived inside the prompt string as prose -
+// "Question 25. You have been hired..." - and the screen counted the student's
+// position in the sequence instead, so the shipped paper already shows
+// "Question 34" above a prompt that says 25. A number is a fact about the paper,
+// not about how far through it somebody is, so it is authored.
+//
+// Position remains the fallback, because a paper that numbers nothing is still a
+// paper. It is a fallback and not the answer.
+function numberOf(q) { return (q && !blank(q.number)) ? String(q.number).trim() : null; }
+
+// What a section is worth. An either/or contributes only the questions a student
+// will actually attempt, which is why this is not a plain sum: a `choose: 1`
+// section holding two twenty-mark options is worth twenty.
+function sectionMarks(sec) {
+  var list = (sec && sec.questions) || [];
+  var pick = Number(sec && sec.choose) || 0;
+  var counted = pick > 0 ? list.slice(0, pick) : list;
+  return counted.reduce(function (m, q) {
+    return m + (q && typeof q.marks === "number" && isFinite(q.marks) ? q.marks : 0);
+  }, 0);
+}
+
+// The arithmetic of a whole paper, calculated from its questions. Nothing here
+// reads an authored total: this is the number an authored total is checked
+// against, and if it read one the check would be circular.
+function totals(paper) {
+  var sections = (paper && paper.sections) || [];
+  var per = sections.map(sectionMarks);
+  var questions = sections.reduce(function (n, sec) {
+    var list = (sec && sec.questions) || [];
+    var pick = Number(sec && sec.choose) || 0;
+    return n + (pick > 0 ? Math.min(pick, list.length) : list.length);
+  }, 0);
+  return {
+    sections: per,
+    marks: per.reduce(function (a, b) { return a + b; }, 0),
+    questions: questions,
+  };
+}
+
+// AN AUTHORED TOTAL THAT DISAGREES IS NOT QUIETLY CORRECTED.
+//
+// Either the declared number is wrong or the questions are, and nothing here can
+// tell which - the same shape as the Gate 3B format conflict, and the same
+// answer. Rewriting the declared total would hide an authoring mistake behind a
+// paper that looks right; rewriting the questions is not on the table. So the
+// disagreement is reported and the package is fixed by the person who wrote it.
+function totalFindings(paper) {
+  var out = [], t = totals(paper);
+  var sections = (paper && paper.sections) || [];
+  sections.forEach(function (sec, si) {
+    if (!sec || blank(sec.marks)) return;
+    if (typeof sec.marks !== "number" || !isFinite(sec.marks)) {
+      out.push(finding(STATE.malformed, "SECTION_TOTAL_NOT_A_NUMBER", "sections[" + si + "].marks",
+        JSON.stringify(sec.marks) + " is not a number of marks"));
+      return;
+    }
+    if (sec.marks !== t.sections[si])
+      out.push(finding(STATE.malformed, "SECTION_TOTAL_DISAGREES", "sections[" + si + "].marks",
+        "this section says it is worth " + sec.marks + " and its questions add to " + t.sections[si] +
+        ". One of the two is wrong and nothing here can tell which, so neither is used"));
+  });
+  var declared = paper && paper.marks;
+  if (!blank(declared)) {
+    if (typeof declared !== "number" || !isFinite(declared))
+      out.push(finding(STATE.malformed, "PAPER_TOTAL_NOT_A_NUMBER", "marks",
+        JSON.stringify(declared) + " is not a number of marks"));
+    else if (declared !== t.marks)
+      out.push(finding(STATE.malformed, "PAPER_TOTAL_DISAGREES", "marks",
+        "this paper says it is worth " + declared + " and its sections add to " + t.marks +
+        ". One of the two is wrong and nothing here can tell which, so neither is used"));
+  }
+  return out;
+}
+
+// Two questions cannot share an id, and two cannot share an authored number: the
+// first makes a result ambiguous, the second makes the paper ambiguous to the
+// student reading it. Both are checked across the WHOLE paper rather than within
+// a section, because that is the scope a reader assumes.
+function duplicateFindings(paper) {
+  var out = [], ids = {}, numbers = {};
+  ((paper && paper.sections) || []).forEach(function (sec, si) {
+    ((sec && sec.questions) || []).forEach(function (q, qi) {
+      var at = "sections[" + si + "].questions[" + qi + "]";
+      if (q && !blank(q.id)) {
+        var id = String(q.id).trim();
+        if (ids[id]) out.push(finding(STATE.malformed, "QUESTION_ID_DUPLICATE", at + ".id",
+          JSON.stringify(id) + " is already the id of " + ids[id] + ". An id names one question"));
+        else ids[id] = at;
+      }
+      var n = numberOf(q);
+      if (n) {
+        if (numbers[n]) out.push(finding(STATE.malformed, "QUESTION_NUMBER_DUPLICATE", at + ".number",
+          "two questions are both numbered " + JSON.stringify(n) + " (also " + numbers[n] +
+          "), so a student cannot tell which one is meant"));
+        else numbers[n] = at;
+      }
+    });
+  });
+  return out;
+}
+
+// ---------------------------------------------------------------------------
 // The paper
 // ---------------------------------------------------------------------------
 function examine(paper) {
@@ -188,6 +295,8 @@ function examine(paper) {
       "a paper is a list of sections and this one has none"));
 
   out = out.concat(curriculumFindings(paper));
+  out = out.concat(totalFindings(paper));
+  out = out.concat(duplicateFindings(paper));
 
   var questions = 0;
   (Array.isArray(paper.sections) ? paper.sections : []).forEach(function (sec, si) {
@@ -231,6 +340,7 @@ function verdict(findings, paper) {
       acc[s] = findings.filter(function (f) { return f.state === s; }).length;
       return acc;
     }, {}),
+    totals: totals(paper),
     paper: paper || null,
   };
 }
@@ -245,5 +355,7 @@ function capitalise(s) {
 module.exports = {
   FORMAT: FORMAT, STATE: STATE, ORDER: ORDER,
   isSittable: isSittable, examine: examine,
+  numberOf: numberOf, sectionMarks: sectionMarks, totals: totals,
+  totalFindings: totalFindings, duplicateFindings: duplicateFindings,
   questionFindings: questionFindings, curriculumFindings: curriculumFindings,
 };

@@ -803,4 +803,88 @@ module.exports = [
     owner: "t30",
     why: "a paper that never says which subject marks it was marked against whichever flashcard package the picker was on",
   },
+  {
+    // The either/or counted twice, so a paper reports a total no student can score.
+    id: "gate3c-either-or-double-counted",
+    file: "tools/contract/exam.js",
+    find: "  var counted = pick > 0 ? list.slice(0, pick) : list;",
+    replace: "  var counted = list;",
+    owner: "t30",
+    why: "two twenty-mark options a student chooses between are worth twenty, and forty is a mark total nobody can reach",
+  },
+  {
+    // A declared total that disagrees, silently accepted.
+    id: "gate3c-declared-total-silently-wins",
+    file: "tools/contract/exam.js",
+    find: "    else if (declared !== t.marks)",
+    replace: "    else if (false)",
+    owner: "t30",
+    why: "either the declared total or the questions are wrong and nothing can tell which, so hiding the disagreement hides an authoring mistake behind a paper that looks right",
+  },
+  {
+    // The section half of the same check.
+    id: "gate3c-section-total-disagreement-ignored",
+    file: "tools/contract/exam.js",
+    find: "    if (sec.marks !== t.sections[si])",
+    replace: "    if (false)",
+    owner: "t30",
+    why: "a section that says it is worth more than its questions add to misleads a student about what is left",
+  },
+  {
+    // Two questions allowed to carry the same number.
+    id: "gate3c-duplicate-numbering-allowed",
+    file: "tools/contract/exam.js",
+    find: "        if (numbers[n]) out.push(finding(STATE.malformed, \"QUESTION_NUMBER_DUPLICATE\", at + \".number\",",
+    replace: "        if (false) out.push(finding(STATE.malformed, \"QUESTION_NUMBER_DUPLICATE\", at + \".number\",",
+    owner: "t30",
+    why: "two questions numbered 21 leave a student unable to say which one they answered",
+  },
+  {
+    // The authored number ignored, so position is called a question number again.
+    id: "gate3c-position-is-called-the-number",
+    file: "tools/contract/exam.js",
+    find: "function numberOf(q) { return (q && !blank(q.number)) ? String(q.number).trim() : null; }",
+    replace: "function numberOf(q) { return null; }",
+    owner: "t30",
+    why: "how far through the paper a student is and what the paper calls this question are different facts, and the shipped paper already disagrees with itself where they are confused",
+  },
+  {
+    // A thin paper refused, which is the Gate 3A regression wearing new clothes:
+    // a written question is marked from the subject's criteria and does not need
+    // its own model answer to be sittable.
+    id: "gate3c-thin-paper-refused-again",
+    file: "tools/contract/exam.js",
+    find: "    add(STATE.thin, \"MARKING_SUPPORT_ABSENT\",",
+    replace: "    add(STATE.malformed, \"MARKING_SUPPORT_ABSENT\",",
+    owner: "t30",
+    why: "a paper whose questions are marked from the subject's own criteria is sittable, and refusing it is the whole distinction this taxonomy exists to make",
+  },
+  {
+    // The taxonomy collapsed: everything that stops a paper reads the same.
+    id: "gate3c-unsupported-reads-as-malformed",
+    file: "tools/contract/exam.js",
+    find: "  FORMAT_ABSENT: STATE.malformed,\n  FORMAT_UNSUPPORTED: STATE.unsupported,",
+    replace: "  FORMAT_ABSENT: STATE.malformed,\n  FORMAT_UNSUPPORTED: STATE.malformed,",
+    owner: "t30",
+    why: "a question missing a field and a question asking for a version this release cannot run are different problems for whoever has to fix the file",
+  },
+  {
+    // A fatal state quietly declared sittable.
+    id: "gate3c-blocked-paper-is-publishable",
+    file: "tools/contract/exam.js",
+    find: "var FATAL = { malformed: true, unsupported: true, blocked: true };",
+    replace: "var FATAL = { malformed: true, unsupported: true };",
+    owner: "t30",
+    why: "a paper whose declared subject resolves to nothing cannot be marked, and letting it be sat is the Gate 3A fault returning by another route",
+  },
+  {
+    // Only the first problem reported, which is what made a bad package ten
+    // attempts at the import box.
+    id: "gate3c-only-the-first-problem-reported",
+    file: "tools/contract/exam.js",
+    find: "      out = out.concat(questionFindings(q, at + \".questions[\" + qi + \"]\"));",
+    replace: "      if (!out.length) out = out.concat(questionFindings(q, at + \".questions[\" + qi + \"]\"));",
+    owner: "t30",
+    why: "a package with ten problems that reports one is ten attempts at the box",
+  },
 ];

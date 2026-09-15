@@ -200,7 +200,74 @@ console.log("7. curriculum stays Gate 3A's answer, translated rather than re-dec
     "and an error is exactly a state that stops the paper being sat");
 }
 
-console.log("8. the paper the product actually ships still imports");
+console.log("8. the arithmetic of a paper, with an either/or counted once");
+{
+  const twoOptions = good({ sections: [
+    { name: "I", questions: [{ type: "essay", marks: 10, prompt: "p", model: "m" }] },
+    { name: "IV", choose: 1, questions: [
+      { type: "essay", marks: 20, prompt: "a", model: "m", label: "Question 26" },
+      { type: "essay", marks: 20, prompt: "b", model: "m", label: "Question 27" },
+    ] },
+  ] });
+  const t = E.totals(twoOptions);
+  ok(t.marks === 30, "two twenty-mark options a student chooses between are worth twenty, not forty: " + t.marks);
+  ok(t.sections.join() === "10,20", "and the section totals say so: " + JSON.stringify(t.sections));
+  ok(t.questions === 2, "the question count is what will be attempted: " + t.questions);
+
+  // A declared total that disagrees is REPORTED, not corrected. Either the number
+  // is wrong or the questions are, and nothing here can tell which.
+  const wrong = E.examine(good({ marks: 40, sections: twoOptions.sections }));
+  ok(wrong.state === "malformed" && codes(wrong).includes("PAPER_TOTAL_DISAGREES"),
+    "a paper claiming 40 when its sections add to 30 is refused: " + wrong.state);
+  const msg = wrong.findings.find(f => f.code === "PAPER_TOTAL_DISAGREES").message;
+  ok(/40/.test(msg) && /30/.test(msg), "and the refusal names BOTH numbers rather than picking one: " + JSON.stringify(msg));
+  ok(E.examine(good({ marks: 30, sections: twoOptions.sections })).state === "publishable",
+    "a declared total that agrees is simply accepted");
+  ok(E.examine(good({ sections: twoOptions.sections })).state === "publishable",
+    "and declaring no total at all is fine, because the total is optional");
+
+  // The same at section level.
+  const secWrong = E.examine(good({ sections: [{ name: "I", marks: 99,
+    questions: [{ type: "essay", marks: 10, prompt: "p", model: "m" }] }] }));
+  ok(codes(secWrong).includes("SECTION_TOTAL_DISAGREES"), "a section total is checked the same way");
+  ok(codes(E.examine(good({ marks: "lots" }))).includes("PAPER_TOTAL_NOT_A_NUMBER"),
+    "and a total that is prose is not arithmetic");
+}
+
+console.log("9. a question can be numbered, and two cannot share a number");
+{
+  ok(E.numberOf({ number: "21(a)" }) === "21(a)", "an authored number is read as authored");
+  ok(E.numberOf({ number: "  25 " }) === "25", "trimmed");
+  ok(E.numberOf({}) === null, "and a question that authors none reports none rather than guessing a position");
+
+  const dupNum = E.examine(good({ sections: [{ name: "I", questions: [
+    { type: "essay", marks: 5, prompt: "a", model: "m", number: "21" },
+    { type: "essay", marks: 5, prompt: "b", model: "m", number: "21" },
+  ] }] }));
+  ok(dupNum.state === "malformed" && codes(dupNum).includes("QUESTION_NUMBER_DUPLICATE"),
+    "two questions numbered 21 is malformed: a student cannot tell which is meant");
+
+  const dupId = E.examine(good({ sections: [{ name: "I", questions: [
+    { type: "essay", marks: 5, prompt: "a", model: "m", id: "q1" },
+    { type: "essay", marks: 5, prompt: "b", model: "m", id: "q1" },
+  ] }] }));
+  ok(dupId.state === "malformed" && codes(dupId).includes("QUESTION_ID_DUPLICATE"),
+    "and so is a repeated id, which would make a result ambiguous");
+
+  // Checked across the WHOLE paper, not within a section, because that is the
+  // scope a reader assumes when they see "Question 21".
+  const across = E.examine(good({ sections: [
+    { name: "I", questions: [{ type: "essay", marks: 5, prompt: "a", model: "m", number: "3" }] },
+    { name: "II", questions: [{ type: "essay", marks: 5, prompt: "b", model: "m", number: "3" }] },
+  ] }));
+  ok(codes(across).includes("QUESTION_NUMBER_DUPLICATE"), "across sections too");
+  ok(E.examine(good({ sections: [
+    { name: "I", questions: [{ type: "essay", marks: 5, prompt: "a", model: "m", number: "1", id: "x" }] },
+    { name: "II", questions: [{ type: "essay", marks: 5, prompt: "b", model: "m", number: "2", id: "y" }] },
+  ] })).state === "publishable", "while distinct numbers and ids are simply accepted");
+}
+
+console.log("10. the paper the product actually ships still imports");
 {
   const paper = JSON.parse(read("tests/fixtures/hsc-bus-2025.json"));
   const v = E.examine(paper);
@@ -217,7 +284,7 @@ console.log("8. the paper the product actually ships still imports");
   ok(seen.business_report === 1, "including the one business report, via the legacy compound: " + seen.business_report);
 }
 
-console.log("9. the app asks the contract rather than keeping its own copy");
+console.log("11. the app asks the contract rather than keeping its own copy");
 {
   const app = read("app.js");
   ok(!/function validateExam\(/.test(app), "validateExam is gone from app.js rather than wrapped");
@@ -230,6 +297,17 @@ console.log("9. the app asks the contract rather than keeping its own copy");
   ok(/STUDENT_MODULES = \[[^\]]*"exam\.js"/.test(bundle), "exam.js is in the student bundle");
   const built = read("marginal-preview.html");
   ok(/window\.MarginalExam =/.test(built), "and the built page carries it: the student runs this file, not a copy");
+
+  // The display number is the paper's, where the paper says.
+  ok(/PAPER\.numberOf\(q\)/.test(app), "the question header asks the paper what this question is called");
+  ok(!/const num = EXAM\.seq\.slice\(0, EXAM\.pos \+ 1\)\.filter\(x => x\.kind === "q"\)\.length;/.test(app),
+    "and no longer calls the student's position a question number");
+
+  // The round trip stops discarding what it does not recognise.
+  ok(/Object\.assign\(\{\}, data, \{/.test(app),
+    "the importer carries the package whole rather than rebuilding it from a whitelist");
+  ok(!/const paper = \{ id: "exam-" \+ Date\.now\(\), name: data\.name/.test(app),
+    "the eight-field whitelist is gone");
 }
 
 console.log("\n" + pass + " passed, " + fail + " failed");
