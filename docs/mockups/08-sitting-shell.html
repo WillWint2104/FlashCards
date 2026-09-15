@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Marginal — Sitting shell (state 8)</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* Marginal's own tokens, lifted unchanged from index.html. Nothing here
+     invents a palette: the point of this mockup is that the exam surface is
+     still the same product. */
+  :root{
+    --bg:#EEF3F5; --card:#FFFFFF;
+    --ink:#3C4A4A; --ink-2:#7A8A88; --ink-3:#AEBAB8;
+    --green:#1CC47D; --green-dk:#14A368; --green-soft:#E4F9EF;
+    --blue:#1CA0F2; --blue-dk:#1487D6; --blue-soft:#E2F3FE;
+    --gold:#FFB323; --gold-dk:#E89400; --gold-soft:#FFF3D8;
+    --coral:#FF7C6B; --coral-dk:#EE5946; --coral-soft:#FFE8E4;
+    --line:#E7EDED;
+    --disp:'Fredoka',system-ui,sans-serif; --body:'Nunito',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--body);background:var(--bg);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased}
+  button{font:inherit;cursor:pointer}
+  h1,h2,h3,.disp{font-family:var(--disp);letter-spacing:-.01em}
+
+  /* ---------- annotation chrome, mockup only ---------------------------- */
+  .note{max-width:1180px;margin:0 auto;padding:18px clamp(16px,4vw,40px) 0;font-size:13px;color:var(--ink-2);font-weight:700}
+  .note b{color:var(--ink)}
+  .legend{max-width:1180px;margin:0 auto;padding:26px clamp(16px,4vw,40px) 44px}
+  .legend h3{font-family:var(--disp);font-weight:600;font-size:15px;margin-bottom:10px}
+  .legend ol{list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:9px}
+  .legend li{display:flex;gap:10px;background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;font-size:12.5px;font-weight:700;color:var(--ink-2)}
+  .legend .n{font-family:var(--disp);font-weight:700;font-size:12px;color:var(--blue-dk);background:var(--blue-soft);
+             border-radius:7px;width:22px;height:22px;flex:none;display:grid;place-items:center}
+  .legend b{color:var(--ink)}
+
+  /* ---------- 4. chrome comes from the ACTIVE EXAM ---------------------- */
+  header{display:flex;align-items:center;gap:12px;padding:16px clamp(16px,4vw,32px);background:var(--card);
+         border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--disp);font-weight:600;font-size:20px}
+  .mk{width:28px;height:28px;border-radius:9px;background:var(--green);position:relative;flex:none;box-shadow:0 3px 0 var(--green-dk)}
+  .mk::after{content:"";position:absolute;left:7px;right:7px;bottom:6px;height:3px;border-radius:2px;background:#fff}
+  .mk::before{content:"";position:absolute;left:7px;bottom:6px;width:3px;height:14px;border-radius:2px;background:rgba(255,255,255,.9)}
+  .unit{font-size:13px;color:var(--ink-2);font-weight:700;margin-left:auto;text-align:right}
+  .unit b{display:block;color:var(--ink);font-size:13.5px}
+
+  main{max-width:1180px;margin:0 auto;padding:20px clamp(16px,4vw,40px) 26px;position:relative}
+
+  /* ---------- the paper bar: context + progress + policy ---------------- */
+  .exam-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 16px;background:var(--card);
+            border:1.5px solid var(--line);border-radius:16px;margin-bottom:14px}
+  .exam-bar .x{background:none;border:none;font-size:19px;color:var(--ink-2);line-height:1;padding:0 2px}
+  .paper{min-width:0}
+  .paper .nm{font-family:var(--disp);font-weight:600;font-size:15px;line-height:1.25}
+  .paper .sec{font-size:12px;color:var(--ink-2);font-weight:700}
+  .spacer{flex:1}
+  .policy{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;color:var(--green-dk);
+          background:var(--green-soft);border:1px solid #BFEFD9;border-radius:99px;padding:4px 11px}
+  .policy .dot{width:6px;height:6px;border-radius:99px;background:var(--green)}
+  .prog{text-align:right;font-size:12px;color:var(--ink-2);font-weight:800;white-space:nowrap}
+  .prog b{color:var(--ink);font-size:13px}
+  .pbar{height:7px;width:190px;border-radius:99px;background:#EDF2F2;overflow:hidden;margin-top:5px}
+  .pbar i{display:block;height:100%;width:56%;background:var(--green);border-radius:99px}
+  .navbtn{font-family:var(--disp);font-weight:700;font-size:13px;color:var(--ink);background:var(--card);
+          border:1.5px solid var(--line);border-radius:12px;padding:8px 13px;display:flex;align-items:center;gap:7px}
+  .navbtn:hover{border-color:var(--green)}
+  .navbtn .grid{display:grid;grid-template-columns:repeat(3,4px);gap:2px}
+  .navbtn .grid i{width:4px;height:4px;border-radius:1px;background:var(--ink-3)}
+  .navbtn .grid i.on{background:var(--green)}
+
+  /* ---------- 6. two columns: source lives BESIDE, not above ------------ */
+  .work{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
+
+  .qcard{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:20px 22px}
+  .parent{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding-bottom:12px;margin-bottom:14px;border-bottom:1px dashed var(--line)}
+  .pnum{font-family:var(--disp);font-weight:600;font-size:15px;color:var(--ink)}
+  .pmeta{font-size:12px;color:var(--ink-2);font-weight:700}
+  .parts{display:flex;gap:5px;margin-left:auto}
+  .pt{width:27px;height:27px;border-radius:9px;display:grid;place-items:center;font-family:var(--disp);
+      font-weight:700;font-size:12px;border:1.5px solid var(--line);background:#fff;color:var(--ink-3)}
+  .pt.done{background:var(--green-soft);border-color:#BFEFD9;color:var(--green-dk)}
+  .pt.here{background:var(--ink);border-color:var(--ink);color:#fff}
+  .pt.flag{border-color:var(--gold);color:var(--gold-dk);background:var(--gold-soft)}
+
+  .exam-qhead{font-family:var(--disp);font-weight:700;font-size:12.5px;color:var(--ink-3);margin-bottom:8px;
+              display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .marks{color:var(--ink-2)}
+  .fmt{background:var(--blue-soft);color:var(--blue-dk);border-radius:6px;padding:1px 7px;font-size:10.5px;letter-spacing:.02em}
+  .exam-prompt{font-size:17px;font-weight:600;color:var(--ink);line-height:1.5;margin-bottom:8px}
+  .srcref{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:var(--blue-dk);
+          background:var(--blue-soft);border:1px solid #BEE3FB;border-radius:99px;padding:3px 10px;margin-bottom:14px}
+
+  .answerbox{width:100%;font:inherit;font-weight:600;font-size:15.5px;line-height:1.65;color:var(--ink);
+             background:var(--card);border:2px solid var(--line);border-radius:16px;padding:14px 16px;resize:vertical}
+  .answerbox:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
+  .saved{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-3);font-weight:800;margin-top:7px}
+  .saved .tick{color:var(--green-dk)}
+
+  /* ---------- 5. help is a region, collapsed, format-aware -------------- */
+  .help{margin-top:14px;border:1.5px solid var(--line);border-radius:14px;background:#FAFCFC;overflow:hidden}
+  .help summary{list-style:none;cursor:pointer;padding:11px 14px;display:flex;align-items:center;gap:9px;
+                font-family:var(--disp);font-weight:600;font-size:13.5px;color:var(--ink)}
+  .help summary::-webkit-details-marker{display:none}
+  .help summary .chev{margin-left:auto;color:var(--ink-3);font-size:12px}
+  .help .body{padding:0 14px 13px;font-size:13px;color:var(--ink-2);font-weight:700}
+  .help .row{display:flex;gap:9px;padding:7px 0;border-top:1px solid var(--line)}
+  .help .row .k{font-family:var(--disp);font-weight:600;color:var(--ink);flex:none;width:96px;font-size:12.5px}
+
+  .submitrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:18px}
+  .btn{font-family:var(--disp);font-weight:600;font-size:15px;color:#fff;background:var(--green);border:none;
+       border-radius:14px;padding:12px 24px;box-shadow:0 4px 0 var(--green-dk)}
+  .btn:active{transform:translateY(2px);box-shadow:0 2px 0 var(--green-dk)}
+  .btn.ghost{background:var(--card);color:var(--ink);box-shadow:0 0 0 2px var(--line) inset}
+  .btn.sm{padding:9px 17px;font-size:14px;border-radius:12px;box-shadow:0 3px 0 var(--green-dk)}
+  .btn.sm.ghost{box-shadow:0 0 0 2px var(--line) inset}
+  .hint{font-size:12.5px;color:var(--ink-3);font-weight:700}
+
+  /* ---------- the source panel ----------------------------------------- */
+  .srcpanel{background:var(--card);border:1.5px solid var(--line);border-radius:18px;overflow:hidden;position:sticky;top:86px}
+  .srchead{display:flex;align-items:center;gap:9px;padding:12px 14px;border-bottom:1px solid var(--line);background:#FAFCFC}
+  .srchead .ic{font-size:15px}
+  .srchead .t{font-family:var(--disp);font-weight:600;font-size:13.5px;line-height:1.2}
+  .srchead .t small{display:block;color:var(--ink-2);font-size:11px;font-weight:700}
+  .srchead .fold{margin-left:auto;background:none;border:none;color:var(--ink-3);font-size:13px}
+  .srcbody{padding:13px 14px;font-size:13.5px;font-weight:600;color:var(--ink);line-height:1.6}
+  .srcbody p+p{margin-top:9px}
+  .shared{display:flex;align-items:center;gap:6px;margin:11px 14px 13px;font-size:11px;font-weight:800;
+          color:var(--green-dk);background:var(--green-soft);border-radius:8px;padding:6px 9px}
+
+  /* ---------- 2. previous / next, always present ----------------------- */
+  .footer{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--line);z-index:9;
+          box-shadow:0 -6px 18px rgba(60,74,74,.05)}
+  .footin{max-width:1180px;margin:0 auto;padding:11px clamp(16px,4vw,40px);display:flex;align-items:center;gap:12px}
+  .flag{display:flex;align-items:center;gap:7px;font-family:var(--disp);font-weight:700;font-size:13px;color:var(--ink-2);
+        background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:8px 13px}
+  .flag:hover{border-color:var(--gold);color:var(--gold-dk)}
+  .where{font-size:12px;color:var(--ink-3);font-weight:800;text-align:center;flex:1}
+
+  @media(max-width:900px){
+    .work{grid-template-columns:1fr}
+    .srcpanel{position:static}
+  }
+</style>
+</head>
+<body>
+
+<div class="note">
+  <b>State 8 — Sitting shell.</b> Desktop, Practice policy, showing question 11(b) of the
+  synthetic Business Studies paper. The screen is the mockup; the numbered cards below it
+  are the reading key. Parent/part <i>treatment</i> is state 14; this establishes the frame
+  that hosts it.
+</div>
+
+<!-- 4. chrome derived from the active paper. No Economics, no Study topic. -->
+<header>
+  <div class="brand"><span class="mk"></span>Marginal</div>
+  <div class="unit"><b>Business Studies</b>Test mode</div>
+</header>
+
+<main>
+
+  <div class="exam-bar">
+    <button class="x" title="Leave">←</button>
+    <div class="paper">
+      <div class="nm">Business Studies practice paper</div>
+      <div class="sec">Section II — Short answer · Q11–13 · 40 marks</div>
+    </div>
+    <div class="spacer"></div>
+    <span class="policy"><span class="dot"></span>Practice · marked as you go</span>
+    <button class="navbtn">
+      <span class="grid"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i></span>
+      Questions
+    </button>
+    <div class="prog">
+      <b>11</b> of 20 answered · <b>19</b>/90 marks
+      <div class="pbar"><i></i></div>
+    </div>
+  </div>
+
+  <div class="work">
+    <div>
+      <div class="qcard">
+        <!-- parent identity, and the part rail: answered / here / flagged -->
+        <div class="parent">
+          <span class="pnum">Question 11</span>
+          <span class="pmeta">Kerbside Coffee · 14 marks</span>
+          <div class="parts">
+            <span class="pt done" title="answered">a</span>
+            <span class="pt here" title="you are here">b</span>
+            <span class="pt flag" title="flagged for revisit">c</span>
+            <span class="pt" title="not answered">d</span>
+          </div>
+        </div>
+
+        <div class="exam-qhead">
+          <span>Question 11(b)</span><span class="marks">· 3 marks</span>
+          <span class="fmt">short answer · explain</span>
+        </div>
+        <p class="exam-prompt">Explain how the business's casual employment of van operators could be contributing to its turnover.</p>
+        <span class="srcref">📄 Uses the Kerbside Coffee case study</span>
+
+        <textarea class="answerbox" rows="7" placeholder="Type your answer in full sentences."></textarea>
+        <div class="saved"><span class="tick">✓</span> Saved. You can leave and come back to this paper.</div>
+
+        <!-- 5. optional, format-aware, collapsed. Absent entirely for MC. -->
+        <details class="help">
+          <summary>📝 What this question expects <span class="chev">▾</span></summary>
+          <div class="body">
+            <div class="row"><span class="k">says explain</span><span>say how it works or why it happens, as cause and effect, not as a description</span></div>
+            <div class="row"><span class="k">use the source</span><span>draw on the case study rather than answering from general knowledge</span></div>
+            <div class="row"><span class="k">3 marks</span><span>about three distinct creditworthy points</span></div>
+          </div>
+        </details>
+
+        <div class="submitrow">
+          <button class="btn">Submit for marking</button>
+          <span class="hint">Marked against Business Studies criteria. In exam conditions this would read <b>Save answer</b>.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. the shared stimulus, beside the question and sticky, not above it -->
+    <aside class="srcpanel">
+      <div class="srchead">
+        <span class="ic">📄</span>
+        <span class="t">Kerbside Coffee<small>Case study · Question 11</small></span>
+        <button class="fold" title="Collapse">▾</button>
+      </div>
+      <div class="srcbody">
+        <p>Kerbside Coffee roasts and sells coffee from one site and four vans. Demand at the vans peaks between 7am and 9am, and the owners have had complaints about waiting times.</p>
+        <p>Last year the business bought a second roaster using a three-year loan. Staff turnover among van operators is high, and most operators are employed casually.</p>
+      </div>
+      <div class="shared">↳ Stays here for 11(a) to 11(d)</div>
+    </aside>
+  </div>
+</main>
+
+<div class="footer">
+  <div class="footin">
+    <button class="btn sm ghost">← Previous · 11(a)</button>
+    <button class="flag">⚑ Flag for revisit</button>
+    <span class="where">Question 12 of 20 · Section II</span>
+    <button class="btn sm">Next · 11(c) →</button>
+  </div>
+</div>
+
+<div class="legend">
+  <h3>Where each decision shows up</h3>
+  <ol>
+    <li><span class="n">1</span><span><b>Attempts persist.</b> "Saved. You can leave and come back to this paper." under the answer box, and Resume lives on the library row.</span></li>
+    <li><span class="n">2</span><span><b>Free navigation.</b> Previous / Next always present, a Questions button opening the navigator, the a·b·c·d rail showing answered / here / flagged, and a Flag control.</span></li>
+    <li><span class="n">3</span><span><b>Sitting policy, not two apps.</b> The "Practice · marked as you go" pill is the switch; under Exam conditions the same button reads Save answer and no sheet opens.</span></li>
+    <li><span class="n">4</span><span><b>Chrome from the active exam.</b> The header reads Business Studies / Test mode. No Economics, no Study topic.</span></li>
+    <li><span class="n">5</span><span><b>Format-aware help.</b> Collapsed by default, keyed to <i>explain</i> and 3 marks. Absent entirely on multiple choice, and withheld wherever nothing is authored.</span></li>
+    <li><span class="n">6</span><span><b>Shared stimulus beside, once.</b> Sticky panel that persists across 11(a)–(d) instead of being re-rendered above each part.</span></li>
+    <li><span class="n">7</span><span><b>Parent identity.</b> "Question 11 · Kerbside Coffee · 14 marks" above the part, so the parent total the contract knows is finally visible.</span></li>
+  </ol>
+</div>
+
+</body>
+</html>
