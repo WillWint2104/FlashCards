@@ -2226,6 +2226,14 @@
   function examQuit() { if (confirm("Leave this paper? Your progress on this attempt is not saved.")) examHome(); }
   // Render a source/stimulus block (shared section source or per-question stimulus).
   // Accepts a plain string, or an object with caption/text/img/charts.
+  // A question can hang more than one thing above itself. The contract accepts a
+  // list or a single object; this draws either without the callers caring which,
+  // and numbers them only when there is more than one to tell apart.
+  function examSourcesHTML(holder, label) {
+    const list = PAPER.resourcesOf(holder);
+    return list.map((r, i) => examSourceHTML(r, list.length > 1 ? label + " " + (i + 1) : label)).join("");
+  }
+  function examWireSources(holder) { PAPER.resourcesOf(holder).forEach(r => wireStimulus(r)); }
   function examSourceHTML(src, label) {
     if (!src) return "";
     let inner = "";
@@ -2269,11 +2277,11 @@
     // Either/or: the student picks which question to attempt before starting.
     const body = pick
       ? `<p class="exam-meta">${mk} mark${mk === 1 ? "" : "s"} · choose ${pick} of ${qn}</p>
-         ${sec.source ? examSourceHTML(sec.source, "Source material") : ""}
+         ${examSourcesHTML({ stimulus: sec.source }, "Source material")}
          <div class="exam-choices">${qs.map((q, qi) =>
            `<button class="exam-choice" data-examchoose="${qi}"><span class="exam-choicelbl">${esc(q.label || ("Question " + (qi + 1)))}</span><span class="exam-choicetext">${esc(q.prompt)}</span></button>`).join("")}</div>`
       : `<p class="exam-meta">${qn} question${qn === 1 ? "" : "s"} · ${mk} mark${mk === 1 ? "" : "s"}</p>
-         ${sec.source ? examSourceHTML(sec.source, "Source material") : ""}
+         ${examSourcesHTML({ stimulus: sec.source }, "Source material")}
          <button class="btn" id="exambegin">Begin ${esc(sec.name || "section")}</button>`;
     app.innerHTML = `${examBar()}
       <div class="exam-wrap"><div class="exam-sectionintro">
@@ -2286,7 +2294,7 @@
     app.querySelectorAll("[data-examchoose]").forEach(b => b.onclick = () => {
       EXAM.choice[item.si] = Number(b.dataset.examchoose); EXAM.pos++; examRender();
     });
-    wireStimulus(sec.source); wireGlossary(); examWireLightbox();
+    examWireSources({ stimulus: sec.source }); wireGlossary(); examWireLightbox();
   }
   function examRenderQuestion(item) {
     const { q, sec, si, qi } = item;
@@ -2305,9 +2313,9 @@
     app.innerHTML = `${examBar()}
       <div class="exam-wrap"><div class="exam-q">
         <div class="exam-sec small">${esc(sec.name || "")}</div>
-        ${sec.source ? examSourceHTML(sec.source, "Source material") : ""}
+        ${examSourcesHTML({ stimulus: sec.source }, "Source material")}
         <div class="exam-qhead">Question ${esc(String(num))}${authored ? "" : " of " + t.total} · ${q.marks} mark${q.marks === 1 ? "" : "s"}</div>
-        ${q.stimulus ? examSourceHTML(q.stimulus, "Source") : ""}
+        ${examSourcesHTML(q, "Source")}
         <div class="exam-prompt">${linkGlossary(q.prompt)}</div>
         <div id="answerzone">${answerInput(q)}</div>
         ${answerShapeBlock(q)}
@@ -2318,7 +2326,7 @@
     if (prev && $("#ans")) $("#ans").value = prev;
     $("#examquit").onclick = examQuit;
     examWireAnswer(item, key);
-    wireStimulus(sec.source); wireStimulus(q.stimulus); wireGlossary(); examWireLightbox();
+    examWireSources({ stimulus: sec.source }); examWireSources(q); wireGlossary(); examWireLightbox();
   }
   function examWireAnswer(item, key) {
     const q = item.q;

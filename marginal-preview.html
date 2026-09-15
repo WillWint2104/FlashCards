@@ -9906,11 +9906,84 @@ function questionFindings(q, path) {
   // answer and a points rubric make the marking better and neither is what makes
   // it possible. So the paper imports, and the fact that it will be marked from
   // course context alone is reported rather than hidden.
+  out = out.concat(resourceFindings(q, path)).concat(referenceFindings(q, path));
+
   if (ASSESS.writtenModeOf(fx.format) && blank(q.model) && !(Array.isArray(q.points) && q.points.length))
     add(STATE.thin, "MARKING_SUPPORT_ABSENT",
       "no model answer and no marking points. This question is marked from the subject's criteria alone, which is " +
       "allowed and is less specific than a paper that carries them");
 
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Resources and references
+// ---------------------------------------------------------------------------
+// A QUESTION CAN HANG MORE THAN ONE THING ABOVE ITSELF.
+//
+// `stimulus` was one object, so a question built on a table AND a graph had to
+// choose, or the author had to paste both into one image. A list is accepted now
+// and a single object still is, because every paper written against the old
+// shape must keep working.
+//
+// A RESOURCE KIND IS NOT A RESPONSE FORMAT. `lorenz` and `incomeSource` are
+// chart kinds that live inside a stimulus; they describe what the student is
+// looking at, never how they answer. t29 holds that they are absent from the
+// format table and this file never consults one.
+function resourcesOf(holder) {
+  var s = holder && holder.stimulus;
+  if (s == null) return [];
+  return Array.isArray(s) ? s.filter(function (x) { return x != null; }) : [s];
+}
+
+function resourceFindings(holder, path) {
+  var out = [];
+  resourcesOf(holder).forEach(function (r, i) {
+    var at = path + ".stimulus" + (Array.isArray(holder.stimulus) ? "[" + i + "]" : "");
+    if (typeof r === "string") return;
+    if (typeof r !== "object") {
+      out.push(finding(STATE.malformed, "RESOURCE_MALFORMED", at,
+        "a stimulus is text or an object describing what the student is looking at, and this is neither"));
+      return;
+    }
+    // Something has to be shown. An object with a caption and nothing under it is
+    // a label for a resource that was never attached.
+    if (blank(r.text) && blank(r.img) && !(Array.isArray(r.charts) && r.charts.length) && !r.table)
+      out.push(finding(STATE.malformed, "RESOURCE_EMPTY", at,
+        "this stimulus carries no text, image, table or chart, so there is nothing for the student to read"));
+    else if (blank(r.caption))
+      out.push(finding(STATE.thin, "RESOURCE_UNLABELLED", at,
+        "this stimulus has no caption, so a question referring to \"Source 1\" has nothing to point at"));
+  });
+  return out;
+}
+
+// WHAT A QUESTION MAY POINT AT, AND WHAT POINTING MEANS.
+//
+// A reference names something that lives outside the paper - a syllabus outcome,
+// a topic, a marking guidance document. The contract carries the reference; it
+// does not carry the thing, and it must not invent one. So these are optional
+// and only their SHAPE is checked: a reference that is present must be a string
+// somebody could resolve, because an empty one is worse than none.
+var REFERENCE_KEYS = ["syllabus", "topic", "criteria", "guidance"];
+
+function referenceFindings(q, path) {
+  var out = [], refs = q && q.references;
+  if (refs == null) return out;
+  if (typeof refs !== "object" || Array.isArray(refs)) {
+    out.push(finding(STATE.malformed, "REFERENCES_MALFORMED", path + ".references",
+      "references are a block of named pointers and this is not one"));
+    return out;
+  }
+  Object.keys(refs).forEach(function (k) {
+    var at = path + ".references." + k;
+    if (REFERENCE_KEYS.indexOf(k) < 0)
+      out.push(finding(STATE.thin, "REFERENCE_UNKNOWN", at,
+        JSON.stringify(k) + " is not a reference this version resolves. It is carried and ignored rather than guessed at"));
+    else if (blank(refs[k]))
+      out.push(finding(STATE.malformed, "REFERENCE_EMPTY", at,
+        "an empty reference points at nothing, which is worse than not pointing"));
+  });
   return out;
 }
 
@@ -10061,6 +10134,9 @@ function examine(paper) {
     if (blank(sec.name))
       out.push(finding(STATE.thin, "SECTION_NAME_ABSENT", at + ".name",
         "this section has no name, so it is shown to the student as a number"));
+    if (sec.source) out = out.concat(resourceFindings({ stimulus: sec.source }, at).map(function (f) {
+      return finding(f.state, f.code, f.path.replace(".stimulus", ".source"), f.message);
+    }));
     sec.questions.forEach(function (q, qi) {
       questions++;
       out = out.concat(questionFindings(q, at + ".questions[" + qi + "]"));
@@ -10104,6 +10180,7 @@ module.exports = {
   FORMAT: FORMAT, STATE: STATE, ORDER: ORDER,
   isSittable: isSittable, examine: examine,
   numberOf: numberOf, sectionMarks: sectionMarks, totals: totals,
+  resourcesOf: resourcesOf, REFERENCE_KEYS: REFERENCE_KEYS,
   totalFindings: totalFindings, duplicateFindings: duplicateFindings,
   questionFindings: questionFindings, curriculumFindings: curriculumFindings,
 };
@@ -12364,6 +12441,14 @@ module.exports = {
   function examQuit() { if (confirm("Leave this paper? Your progress on this attempt is not saved.")) examHome(); }
   // Render a source/stimulus block (shared section source or per-question stimulus).
   // Accepts a plain string, or an object with caption/text/img/charts.
+  // A question can hang more than one thing above itself. The contract accepts a
+  // list or a single object; this draws either without the callers caring which,
+  // and numbers them only when there is more than one to tell apart.
+  function examSourcesHTML(holder, label) {
+    const list = PAPER.resourcesOf(holder);
+    return list.map((r, i) => examSourceHTML(r, list.length > 1 ? label + " " + (i + 1) : label)).join("");
+  }
+  function examWireSources(holder) { PAPER.resourcesOf(holder).forEach(r => wireStimulus(r)); }
   function examSourceHTML(src, label) {
     if (!src) return "";
     let inner = "";
@@ -12407,11 +12492,11 @@ module.exports = {
     // Either/or: the student picks which question to attempt before starting.
     const body = pick
       ? `<p class="exam-meta">${mk} mark${mk === 1 ? "" : "s"} · choose ${pick} of ${qn}</p>
-         ${sec.source ? examSourceHTML(sec.source, "Source material") : ""}
+         ${examSourcesHTML({ stimulus: sec.source }, "Source material")}
          <div class="exam-choices">${qs.map((q, qi) =>
            `<button class="exam-choice" data-examchoose="${qi}"><span class="exam-choicelbl">${esc(q.label || ("Question " + (qi + 1)))}</span><span class="exam-choicetext">${esc(q.prompt)}</span></button>`).join("")}</div>`
       : `<p class="exam-meta">${qn} question${qn === 1 ? "" : "s"} · ${mk} mark${mk === 1 ? "" : "s"}</p>
-         ${sec.source ? examSourceHTML(sec.source, "Source material") : ""}
+         ${examSourcesHTML({ stimulus: sec.source }, "Source material")}
          <button class="btn" id="exambegin">Begin ${esc(sec.name || "section")}</button>`;
     app.innerHTML = `${examBar()}
       <div class="exam-wrap"><div class="exam-sectionintro">
@@ -12424,7 +12509,7 @@ module.exports = {
     app.querySelectorAll("[data-examchoose]").forEach(b => b.onclick = () => {
       EXAM.choice[item.si] = Number(b.dataset.examchoose); EXAM.pos++; examRender();
     });
-    wireStimulus(sec.source); wireGlossary(); examWireLightbox();
+    examWireSources({ stimulus: sec.source }); wireGlossary(); examWireLightbox();
   }
   function examRenderQuestion(item) {
     const { q, sec, si, qi } = item;
@@ -12443,9 +12528,9 @@ module.exports = {
     app.innerHTML = `${examBar()}
       <div class="exam-wrap"><div class="exam-q">
         <div class="exam-sec small">${esc(sec.name || "")}</div>
-        ${sec.source ? examSourceHTML(sec.source, "Source material") : ""}
+        ${examSourcesHTML({ stimulus: sec.source }, "Source material")}
         <div class="exam-qhead">Question ${esc(String(num))}${authored ? "" : " of " + t.total} · ${q.marks} mark${q.marks === 1 ? "" : "s"}</div>
-        ${q.stimulus ? examSourceHTML(q.stimulus, "Source") : ""}
+        ${examSourcesHTML(q, "Source")}
         <div class="exam-prompt">${linkGlossary(q.prompt)}</div>
         <div id="answerzone">${answerInput(q)}</div>
         ${answerShapeBlock(q)}
@@ -12456,7 +12541,7 @@ module.exports = {
     if (prev && $("#ans")) $("#ans").value = prev;
     $("#examquit").onclick = examQuit;
     examWireAnswer(item, key);
-    wireStimulus(sec.source); wireStimulus(q.stimulus); wireGlossary(); examWireLightbox();
+    examWireSources({ stimulus: sec.source }); examWireSources(q); wireGlossary(); examWireLightbox();
   }
   function examWireAnswer(item, key) {
     const q = item.q;

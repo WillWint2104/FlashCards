@@ -267,7 +267,56 @@ console.log("9. a question can be numbered, and two cannot share a number");
   ] })).state === "publishable", "while distinct numbers and ids are simply accepted");
 }
 
-console.log("10. the paper the product actually ships still imports");
+console.log("10. a question can hang more than one thing above itself");
+{
+  ok(E.resourcesOf({ stimulus: "a paragraph" }).length === 1, "a plain string is one resource");
+  ok(E.resourcesOf({ stimulus: { text: "x" } }).length === 1, "so is a single object, which is the shape every existing paper uses");
+  ok(E.resourcesOf({ stimulus: [{ text: "x" }, { img: "data:," }] }).length === 2, "and a list is as many as it holds");
+  ok(E.resourcesOf({}).length === 0 && E.resourcesOf(null).length === 0, "nothing is none rather than a crash");
+
+  const two = good({}, { stimulus: [{ caption: "Table 1", text: "rows" }, { caption: "Figure 1", img: "data:image/png;base64,iVBOR" }] });
+  ok(E.examine(two).state === "publishable", "a question built on a table AND a figure no longer has to choose: " + E.examine(two).state);
+
+  // A caption with nothing under it is a label for a resource never attached.
+  const empty = E.examine(good({}, { stimulus: { caption: "Source 1" } }));
+  ok(empty.state === "malformed" && codes(empty).includes("RESOURCE_EMPTY"),
+    "a stimulus carrying nothing to read is malformed: " + empty.state);
+  const unlabelled = E.examine(good({}, { stimulus: { text: "rows" } }));
+  ok(unlabelled.state === "thin" && codes(unlabelled).includes("RESOURCE_UNLABELLED"),
+    "and one with no caption is thin, because a question saying \"Source 1\" has nothing to point at");
+  ok(codes(E.examine(good({}, { stimulus: 7 }))).includes("RESOURCE_MALFORMED"), "a number is not a stimulus");
+
+  // A resource KIND is not a response format, and this file never consults one.
+  ok(!A.LEGACY_TYPE.lorenz && !A.LEGACY_TYPE.incomeSource,
+    "chart kinds stay out of the format table");
+  const charted = E.examine(good({}, { stimulus: { caption: "Fig", charts: [{ kind: "lorenz" }] } }));
+  ok(charted.state === "publishable", "and a question whose stimulus holds one is unremarkable: " + charted.state);
+}
+
+console.log("11. a question may point outside the paper, and pointing is checked for shape only");
+{
+  const refs = good({}, { references: { syllabus: "H3.1", topic: "operations", criteria: "bus/extended", guidance: "doc#4" } });
+  ok(E.examine(refs).state === "publishable", "all four reference kinds are accepted: " + E.examine(refs).state);
+  ok(E.REFERENCE_KEYS.join() === "syllabus,topic,criteria,guidance",
+    "and the set is explicit rather than anything-goes: " + E.REFERENCE_KEYS.join());
+  ok(E.examine(good({}, {})).state === "publishable", "a question referencing nothing is complete, because these are optional");
+
+  const emptyRef = E.examine(good({}, { references: { syllabus: "  " } }));
+  ok(emptyRef.state === "malformed" && codes(emptyRef).includes("REFERENCE_EMPTY"),
+    "an empty reference points at nothing, which is worse than not pointing: " + emptyRef.state);
+  const unknownRef = E.examine(good({}, { references: { horoscope: "leo" } }));
+  ok(unknownRef.state === "thin" && codes(unknownRef).includes("REFERENCE_UNKNOWN"),
+    "a reference kind this version cannot resolve is carried and ignored rather than guessed at: " + unknownRef.state);
+  ok(codes(E.examine(good({}, { references: ["a"] }))).includes("REFERENCES_MALFORMED"), "a list is not a reference block");
+
+  // NOTHING IS INVENTED TO FILL THESE. The contract carries a pointer; it does
+  // not carry the thing pointed at, and does not fabricate one to look complete.
+  const v = E.examine(refs);
+  ok(!v.findings.some(f => /GUIDANCE_|CRITERIA_/.test(f.code)),
+    "and no finding claims to have resolved a reference this version cannot follow");
+}
+
+console.log("12. the paper the product actually ships still imports");
 {
   const paper = JSON.parse(read("tests/fixtures/hsc-bus-2025.json"));
   const v = E.examine(paper);
@@ -284,7 +333,7 @@ console.log("10. the paper the product actually ships still imports");
   ok(seen.business_report === 1, "including the one business report, via the legacy compound: " + seen.business_report);
 }
 
-console.log("11. the app asks the contract rather than keeping its own copy");
+console.log("13. the app asks the contract rather than keeping its own copy");
 {
   const app = read("app.js");
   ok(!/function validateExam\(/.test(app), "validateExam is gone from app.js rather than wrapped");
@@ -308,6 +357,11 @@ console.log("11. the app asks the contract rather than keeping its own copy");
     "the importer carries the package whole rather than rebuilding it from a whitelist");
   ok(!/const paper = \{ id: "exam-" \+ Date\.now\(\), name: data\.name/.test(app),
     "the eight-field whitelist is gone");
+
+  // Every stimulus is drawn through the contract's own reader, so a list and a
+  // single object cannot diverge between the page and this suite.
+  ok(/PAPER\.resourcesOf/.test(app), "the page reads resources through the contract");
+  ok(!/q\.stimulus \? examSourceHTML/.test(app), "and no call site still assumes exactly one");
 }
 
 console.log("\n" + pass + " passed, " + fail + " failed");
