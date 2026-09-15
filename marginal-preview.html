@@ -10258,7 +10258,18 @@ function duplicateFindings(paper) {
         // Parts are compared by the name a student reads - "21(a)" - rather than
         // by the bare label, because (a) appearing under 21 and under 22 is
         // ordinary and two 21(a)s are not.
-        claim(numbers, displayNumber(numberOf(q), labelOf(part, pi)), pat + ".label",
+        //
+        // ONLY AN AUTHORED NAME CAN BE A DUPLICATE. A duplicate is a paper
+        // CLAIMING two questions are called the same thing, and a claim has to be
+        // made to be wrong. Where the parent authored no number and the part
+        // authored no label, this function was inventing both halves from array
+        // position and then refusing the paper for the collision it had just
+        // created: two unnumbered parent questions each derived "a" and "b", and a
+        // legitimate practice paper was rejected as malformed. Nothing is lost by
+        // skipping it - PARENT_NUMBER_ABSENT and PART_LABEL_ABSENT already report
+        // that nothing was authored, as thin, which is what it is.
+        var authored = !blank(numberOf(q)) && (!blank(part && part.label) || !blank(part && part.part));
+        claim(numbers, authored ? displayNumber(numberOf(q), labelOf(part, pi)) : null, pat + ".label",
           "QUESTION_NUMBER_DUPLICATE", function (k, prev) {
             return "two questions are both numbered " + JSON.stringify(k) + " (also " + prev +
               "), so a student cannot tell which one is meant";
@@ -12715,8 +12726,16 @@ module.exports = {
     const sec = item.sec;
     const pick = examChooseCount(sec);
     const qs = sec.questions || [];
-    const qn = qs.length;
-    const mk = pick ? (qs[0] ? qs[0].marks || 0 : 0) : qs.reduce((n, q) => n + (q.marks || 0), 0);
+    // THE CONTRACT COUNTS THIS, because the section intro is a promise about what
+    // the student is walking into. Counting the array told them "3 questions"
+    // before a section they answer eight times, and reading a parent's own `marks`
+    // read a field a parent does not have to carry, so a question with four
+    // five-mark parts and no authored aggregate announced itself as worth nothing.
+    // `qn` stays the number of top-level options where the section is an either/or,
+    // because that IS what they are choosing between.
+    const t = PAPER.totals({ sections: [sec] });
+    const qn = pick ? qs.length : t.questions;
+    const mk = t.marks;
     // Either/or: the student picks which question to attempt before starting.
     const body = pick
       ? `<p class="exam-meta">${mk} mark${mk === 1 ? "" : "s"} · choose ${pick} of ${qn}</p>

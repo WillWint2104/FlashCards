@@ -980,4 +980,24 @@ module.exports = [
     owner: "ui68",
     why: "the note saying what an imported paper does not carry is the whole reason for writing one, and a message wiped by the next render was never read",
   },
+  {
+    // A name nobody authored treated as a claim, so a paper is refused for a
+    // collision this contract invented from array position.
+    id: "gate3c-invented-name-counts-as-a-duplicate",
+    file: "tools/contract/exam.js",
+    find: "        var authored = !blank(numberOf(q)) && (!blank(part && part.label) || !blank(part && part.part));",
+    replace: "        var authored = true;",
+    owner: "t30",
+    why: "a duplicate is a paper claiming two questions are called the same thing, and a claim has to be made before it can be wrong",
+  },
+  {
+    // The section intro counting the array again: parents counted as one, and a
+    // parent's absent aggregate read as its worth.
+    id: "gate3c-section-intro-counts-the-array",
+    file: "app.js",
+    find: "    const qn = pick ? qs.length : t.questions;\n    const mk = t.marks;",
+    replace: "    const qn = qs.length;\n    const mk = pick ? (qs[0] ? qs[0].marks || 0 : 0) : qs.reduce((n, q) => n + (q.marks || 0), 0);",
+    owner: "ui68",
+    why: "the section intro promises what the student is walking into, and counting parents told them three questions before a section they answer eight times",
+  },
 ];

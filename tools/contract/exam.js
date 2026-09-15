@@ -510,7 +510,18 @@ function duplicateFindings(paper) {
         // Parts are compared by the name a student reads - "21(a)" - rather than
         // by the bare label, because (a) appearing under 21 and under 22 is
         // ordinary and two 21(a)s are not.
-        claim(numbers, displayNumber(numberOf(q), labelOf(part, pi)), pat + ".label",
+        //
+        // ONLY AN AUTHORED NAME CAN BE A DUPLICATE. A duplicate is a paper
+        // CLAIMING two questions are called the same thing, and a claim has to be
+        // made to be wrong. Where the parent authored no number and the part
+        // authored no label, this function was inventing both halves from array
+        // position and then refusing the paper for the collision it had just
+        // created: two unnumbered parent questions each derived "a" and "b", and a
+        // legitimate practice paper was rejected as malformed. Nothing is lost by
+        // skipping it - PARENT_NUMBER_ABSENT and PART_LABEL_ABSENT already report
+        // that nothing was authored, as thin, which is what it is.
+        var authored = !blank(numberOf(q)) && (!blank(part && part.label) || !blank(part && part.part));
+        claim(numbers, authored ? displayNumber(numberOf(q), labelOf(part, pi)) : null, pat + ".label",
           "QUESTION_NUMBER_DUPLICATE", function (k, prev) {
             return "two questions are both numbered " + JSON.stringify(k) + " (also " + prev +
               "), so a student cannot tell which one is meant";

@@ -616,7 +616,16 @@ const answer = async (p, text) => { await p.fill('#ans', text); await p.click('#
       const btn = row && row.querySelector('[data-examsit]'); btn && btn.click();
     });
     await settled(p2);
-    const go = await p2.$('#exampickgo'); if (go) { await go.click(); await settled(p2); }
+      const go = await p2.$('#exampickgo'); if (go) { await go.click(); await settled(p2); }
+
+    // The section intro is a promise about what the student is walking into, read
+    // BEFORE they walk in. It counted the array, so a section of one parent with
+    // two parts announced "1 question" ahead of being answered twice.
+    const intro = await p2.$eval('.exam-wrap', e => e.textContent).catch(() => '');
+    const counted = (intro.match(/\d+ questions? · \d+ marks?/) || ['(no count found)'])[0];
+    ok(/^2 questions · 6 marks$/.test(counted),
+      'the section intro counts the parts a student answers, not the parents: ' + JSON.stringify(counted));
+
     const begin = await p2.$('#exambegin'); if (begin) { await begin.click(); await settled(p2); }
     const head = await p2.$eval('.exam-qhead', e => e.textContent.trim()).catch(() => '(none)');
     ok(/Question 1\(a\)/.test(head), 'the paper starts at the question it calls 1(a): ' + JSON.stringify(head));

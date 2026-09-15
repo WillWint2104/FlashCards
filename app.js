@@ -2323,8 +2323,16 @@
     const sec = item.sec;
     const pick = examChooseCount(sec);
     const qs = sec.questions || [];
-    const qn = qs.length;
-    const mk = pick ? (qs[0] ? qs[0].marks || 0 : 0) : qs.reduce((n, q) => n + (q.marks || 0), 0);
+    // THE CONTRACT COUNTS THIS, because the section intro is a promise about what
+    // the student is walking into. Counting the array told them "3 questions"
+    // before a section they answer eight times, and reading a parent's own `marks`
+    // read a field a parent does not have to carry, so a question with four
+    // five-mark parts and no authored aggregate announced itself as worth nothing.
+    // `qn` stays the number of top-level options where the section is an either/or,
+    // because that IS what they are choosing between.
+    const t = PAPER.totals({ sections: [sec] });
+    const qn = pick ? qs.length : t.questions;
+    const mk = t.marks;
     // Either/or: the student picks which question to attempt before starting.
     const body = pick
       ? `<p class="exam-meta">${mk} mark${mk === 1 ? "" : "s"} · choose ${pick} of ${qn}</p>

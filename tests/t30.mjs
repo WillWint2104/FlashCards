@@ -193,11 +193,18 @@ console.log("7. curriculum stays Gate 3A's answer, translated rather than re-dec
     "a cross-subject override is still refused: " + override.state);
 
   // The severities assessment.js assigns are not second-guessed here.
-  const raw = A.curriculumFindings(good({ curriculum: { subjectKey: "business_studies" } }));
-  const mine = E.curriculumFindings(good({ curriculum: { subjectKey: "business_studies" } }));
+  // BOTH SIDES OF THE INVARIANT. Asserted against a warnings-only paper alone,
+  // every comparison below was false === false: the error branch was never
+  // evaluated and the assertion proved half of what it claimed.
+  const papers = [good({ curriculum: { subjectKey: "business_studies" } }), good({ curriculum: undefined })];
+  const raw = papers.flatMap(p => A.curriculumFindings(p).concat(A.subjectOverrides(p)));
+  const mine = papers.flatMap(p => E.curriculumFindings(p));
   ok(raw.length === mine.length, "every curriculum finding survives translation: " + raw.length + " -> " + mine.length);
+  ok(mine.some(f => f.severity === "error") && mine.some(f => f.severity === "warning"),
+    "and both severities are actually present, so the next line is not vacuous: " +
+    JSON.stringify(mine.map(f => f.severity)));
   ok(mine.every(f => (f.severity === "error") === !E.isSittable(f.state)),
-    "and an error is exactly a state that stops the paper being sat");
+    "an error is exactly a state that stops the paper being sat");
 }
 
 console.log("8. the arithmetic of a paper, with an either/or counted once");
@@ -369,10 +376,15 @@ console.log("12. Question 21 is a real object, and its parts are what get answer
     "a parent claiming a response format is a contradiction: " + answered.state);
 
   // SHARED STIMULUS IS READ, NOT COPIED.
-  const seen = E.answerables(parent()).map(a => E.resourcesFor(a));
+  // The SAME document is walked and then inspected. parent() builds a fresh object
+  // each call, so reading a second one would have let a regression that copied the
+  // stimulus onto the walked parts pass unnoticed.
+  const walked = parent();
+  const q21 = walked.sections[0].questions[0];
+  const seen = E.answerables(walked).map(a => E.resourcesFor(a));
   ok(seen.every(r => r.length === 1 && r[0].caption === "Case study"),
     "every part sees the case study its parent holds");
-  ok(parent().sections[0].questions[0].parts.every(p => p.stimulus === undefined),
+  ok(q21.parts.every(p => p.stimulus === undefined),
     "and no part carries a copy of it, so four copies cannot drift apart");
   const own = E.answerables(parent({ parts: [{ id: "z", label: "a", marks: 2, format: "short_answer", prompt: "p", model: "m",
     stimulus: { caption: "Table 2", text: "rows" } }] }));
@@ -397,6 +409,34 @@ console.log("12. Question 21 is a real object, and its parts are what get answer
   ok(E.displayNumber("21", "a") === "21(a)", "the display identity is deterministic: " + E.displayNumber("21", "a"));
   ok(E.displayNumber("21", null) === "21" && E.displayNumber(null, "a") === "a",
     "and degrades rather than inventing half of itself");
+
+  // ONLY AN AUTHORED NAME CAN BE A DUPLICATE. Two parents that number nothing
+  // and label nothing both derived "a" and "b" from position, and the paper was
+  // refused for a collision this contract had invented. A claim has to be made
+  // before it can be wrong.
+  const unnamed = good({ sections: [{ name: "II", questions: [
+    { parts: [{ marks: 2, format: "short_answer", prompt: "a1", model: "m" },
+              { marks: 2, format: "short_answer", prompt: "a2", model: "m" }] },
+    { parts: [{ marks: 2, format: "short_answer", prompt: "b1", model: "m" },
+              { marks: 2, format: "short_answer", prompt: "b2", model: "m" }] },
+  ] }] });
+  const un = E.examine(unnamed);
+  ok(un.state === "thin" && un.sittable,
+    "two unnumbered, unlabelled parent questions are thin and sittable: " + un.state + " " + JSON.stringify(codes(un)));
+  ok(!codes(un).includes("QUESTION_NUMBER_DUPLICATE"),
+    "nothing is reported as a duplicate of a name no one authored");
+  ok(codes(un).includes("PARENT_NUMBER_ABSENT") && codes(un).includes("PART_LABEL_ABSENT"),
+    "what IS reported is that nothing was authored: " + JSON.stringify([...new Set(codes(un))]));
+  ok(E.answerables(unnamed).map(a => a.display).join() === "a,b,a,b",
+    "the derived display identity still exists for the screen: " + E.answerables(unnamed).map(a => a.display).join());
+
+  // And a paper that genuinely authors the same name twice is still refused.
+  const realDup = good({ sections: [{ name: "II", questions: [
+    { number: "21", parts: [{ label: "a", marks: 2, format: "short_answer", prompt: "x", model: "m" }] },
+    { number: "21", parts: [{ label: "a", marks: 2, format: "short_answer", prompt: "y", model: "m" }] },
+  ] }] });
+  ok(E.examine(realDup).state === "malformed" && codes(E.examine(realDup)).includes("QUESTION_NUMBER_DUPLICATE"),
+    "an authored 21(a) appearing twice is still malformed: " + E.examine(realDup).state);
 
   // (a) under 21 and (a) under 22 is ordinary; two 21(a)s is not.
   const twoParents = good({ sections: [{ name: "II", questions: [
@@ -527,6 +567,14 @@ console.log("14. the app asks the contract rather than keeping its own copy");
     "and the totals, the results and the picker read the same walk");
   ok(/PAPER\.partsOf\(q\)\.indexOf\(card\) >= 0/.test(app),
     "a part belongs to its paper for marking, which is Gate 3A one level down");
+
+  // The section intro is a promise about what the student is walking into, and it
+  // was counting the array: "3 questions" before a section answered eight times,
+  // and a parent with no authored aggregate announced as worth nothing.
+  ok(!/const mk = pick \? \(qs\[0\] \? qs\[0\]\.marks \|\| 0 : 0\)/.test(app),
+    "the section intro no longer adds up a parent's own marks field");
+  ok(/const t = PAPER\.totals\(\{ sections: \[sec\] \}\);/.test(app),
+    "it asks the contract what the section holds");
 }
 
 console.log("\n" + pass + " passed, " + fail + " failed");

@@ -1,5 +1,11 @@
 # Gate 3C audit — what `marginal-exam@1` can already carry
 
+> **This is the pre-implementation baseline, not the outcome.** Every claim below
+> was measured against commit `0f6e100`, before any of Gate 3C was built, and a
+> capability recorded here as absent may well have been added since. What the gate
+> actually delivered is in its pull request and in `tests/t30.mjs`. This file is
+> kept as the record of what was there and why each decision was taken.
+
 Read-only. Nothing in this pass changed behaviour. Every claim below was run
 against the tree at `0f6e100`, not inferred from reading.
 
