@@ -344,7 +344,20 @@ console.log("12. Question 21 is a real object, and its parts are what get answer
   // NOT FLATTENED. The relationship is in the object, not in the prompt prose.
   const walk = E.answerables(parent());
   ok(walk.length === 4, "four answerables, not one and not five: " + walk.length);
+  // IDENTITY, NOT EQUIVALENCE. Checking `a.parent.id === "q21"` passes for a clone
+  // that happens to carry the same id, and a clone here is not cosmetic: examOwns
+  // resolves which paper marks a response BY OBJECT IDENTITY, so a walk handing
+  // out copies would send every written answer to whichever flashcard package the
+  // picker was on. That is the Gate 3A fault, arriving through the traversal.
+  const q21obj = parent().sections[0].questions[0];
   ok(walk.every(a => a.parent && a.parent.id === "q21"), "each one knows the question it belongs to");
+  const sameDoc = parent();
+  const sameQ21 = sameDoc.sections[0].questions[0];
+  ok(E.answerables(sameDoc).every(a => a.parent === sameQ21),
+    "and it is the SAME object, not a copy that looks like it");
+  ok(E.answerables(sameDoc).every((a, i) => a.q === sameQ21.parts[i]),
+    "the part handed out is the paper's own part too");
+  ok(q21obj !== sameQ21, "(the two documents really are distinct, so the line above means something)");
   ok(walk.map(a => a.display).join() === "21(a),21(b),21(c),21(d)",
     "and carries the name the paper gives it: " + walk.map(a => a.display).join());
   ok(walk.map(a => a.label).join() === "a,b,c,d", "built from the authored label, not the array index");
@@ -384,6 +397,8 @@ console.log("12. Question 21 is a real object, and its parts are what get answer
   const seen = E.answerables(walked).map(a => E.resourcesFor(a));
   ok(seen.every(r => r.length === 1 && r[0].caption === "Case study"),
     "every part sees the case study its parent holds");
+  ok(E.answerables(walked).every(a => E.resourcesFor(a)[0] === q21.stimulus),
+    "and it is the parent's own stimulus object, not a copy of it: one case study, read by four parts");
   ok(q21.parts.every(p => p.stimulus === undefined),
     "and no part carries a copy of it, so four copies cannot drift apart");
   const own = E.answerables(parent({ parts: [{ id: "z", label: "a", marks: 2, format: "short_answer", prompt: "p", model: "m",

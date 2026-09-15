@@ -1000,4 +1000,15 @@ module.exports = [
     owner: "ui68",
     why: "the section intro promises what the student is walking into, and counting parents told them three questions before a section they answer eight times",
   },
+  {
+    // The traversal handing out a copy of the parent. Everything reads the same
+    // and nothing is owned, so marking falls through to whatever package the
+    // picker was on - the Gate 3A fault, one level down and one indirection along.
+    id: "gate3c-traversal-clones-the-parent",
+    file: "tools/contract/exam.js",
+    find: "        out.push({ si: si, qi: qi, pi: pi, q: part, parent: q, sec: sec,",
+    replace: "        out.push({ si: si, qi: qi, pi: pi, q: part, parent: JSON.parse(JSON.stringify(q)), sec: sec,",
+    owner: "t30",
+    why: "examOwns resolves which paper marks a response by object identity, so a part whose parent is a copy is a part nothing owns",
+  },
 ];
