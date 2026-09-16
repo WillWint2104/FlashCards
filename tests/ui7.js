@@ -58,7 +58,10 @@ const SHORT = ans => ({
   const kind = await p.$eval('#sheet',e=>e.textContent);
   ok(/✓|✗/.test(kind) || /\d+\s*\/\s*\d+/.test(kind),'a mark is shown');
   const btn = await p.$eval('#examreview',e=>e.textContent.trim()).catch(()=>'none');
-  ok(/mark this properly/i.test(btn),'the same review is offered on a short answer: '+btn);
+  // Renamed. "Mark this properly" implied the checklist had marked it improperly,
+  // which is the opposite of what a deterministic points mark is. The door is the
+  // same door: what the authored points cannot say, the marker can.
+  ok(/what would make this stronger/i.test(btn),'the same review is offered on a short answer: '+btn);
   await p.screenshot({path:OUT+'shot-short-sheet.png'});
 
   console.log('--- ask for it: marked AS a short answer ---');

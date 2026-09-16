@@ -27,7 +27,18 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  FAIL:', 
 const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
 
 // One question, twenty marks, and whatever curriculum the case is about.
+// Its points carry their own marks, and that is the whole reason this question
+// can be marked at all without a subject authority: the PAPER says what each
+// point is worth, so nothing has to be inferred from the coincidence that it
+// happens to have as many points as marks.
 const SHORT_Q = { type: 'short', prompt: 'State one feature of a reed.', marks: 2,
+  points: [{ text: 'reeds are flexible', need: ['flexible'], marks: 1 },
+           { text: 'reeds are hollow', need: ['hollow'], marks: 1 }] };
+// The same question with the weighting taken away. Its points are then
+// considerations rather than an allocation, so nothing local can put a number on
+// it, and with no subject to mark it against it is NOT MARKED rather than marked
+// generously. Scenario 9.
+const UNWEIGHTED_Q = { type: 'short', prompt: 'State one feature of a reed.', marks: 2,
   points: [{ text: 'reeds are flexible', need: ['flexible'] },
            { text: 'reeds are hollow', need: ['hollow'] }] };
 const ESSAY_Q = { type: 'essay', prompt: 'Evaluate the effectiveness of two strategies.', marks: 20, model: 'a model answer' };
@@ -740,6 +751,31 @@ const answer = async (p, text) => { await p.fill('#ans', text); await p.click('#
       ok(/cards array/i.test(junk), 'and something that is not an exam at all is not routed to the exam validator');
       await p.close();
     } finally { await ctx.close(); }
+  }
+
+  // ==========================================================================
+  console.log('9. unweighted marking points do not manufacture a mark');
+  // ==========================================================================
+  // The counterpart to scenario 1. There the paper authored what each point was
+  // worth, so the short answer was marked locally and the unresolvable subject
+  // never came into it. Here the same question authors points with no weighting.
+  // They are considerations, the mark can only come from the subject's criteria,
+  // and the subject does not resolve - so the honest outcome is not a mark.
+  {
+    const { p } = await openWith(b, withPaper({
+      id: 'unweighted-points', name: 'Paper unweighted-points',
+      curriculum: { jurisdiction: 'NSW', klaKey: 'hsie', subjectKey: 'underwater_basket_weaving' },
+      sections: [{ name: 'Section I', questions: [UNWEIGHTED_Q] }],
+    }));
+    await sit(p, 'unweighted-points', 1);
+    await answer(p, 'Reeds are flexible and hollow.');
+    const sh = await sheet(p);
+    ok(sh.unmarked, 'an unweighted short answer with no resolvable subject is NOT marked: ' + JSON.stringify(sh.score));
+    ok(!/2\s*\/\s*2/.test(sh.score),
+      'and above all it is not full marks, which is what the old grader gave it: ' + JSON.stringify(sh.score));
+    const bar = await p.$eval('.exam-progress', e => e.textContent.trim()).catch(() => '(none)');
+    ok(/not marked/i.test(bar), 'the bar counts it as not marked rather than as answered: ' + JSON.stringify(bar));
+    await p.close();
   }
 
   ok(errs.length === 0, 'no page errors: ' + JSON.stringify(errs.slice(0, 3)));
