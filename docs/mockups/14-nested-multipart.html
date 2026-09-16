@@ -210,20 +210,26 @@
      backdrop, no focus trap, no close control, nothing obscured, and on a
      narrow screen it simply stacks. The same component is reused after
      submission in exam conditions. */
-  .soln{margin-top:14px;border:1.5px solid var(--line);border-radius:16px;background:var(--card);padding:4px 20px 20px}
-  /* Provenance lives in the header. It is attempt state, not a step of the
-     mathematics, and it was reading as one at the foot of the working. */
+  /* The worked solution is a SECTION OF THE QUESTION CARD, not another card
+     inside it. A rule and some space open it; there is no second white
+     surface, no second border and no second radius. Marginal is explaining
+     the question, not opening a widget on top of it. */
+  .soln{margin-top:24px;padding-top:17px;border-top:1px solid var(--line)}
   .solnhead{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-family:var(--disp);font-weight:600;
-            font-size:14.5px;color:var(--ink);padding:14px 0 13px;border-bottom:1px solid var(--line)}
-  .solnhead .viewed{margin-left:auto}
+            font-size:14.5px;color:var(--ink);margin-bottom:13px}
+  /* Provenance, not a warning. Muted, at the far right, out of the way of the
+     heading and the mathematics. */
+  .solnhead .viewed{margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-size:11.5px;
+                    font-weight:700;color:var(--ink-2);background:#FCFAF5;border:1px solid #F1EAD9;
+                    border-radius:8px;padding:3px 10px}
+  .solnhead .viewed .tk{color:var(--gold-dk);font-size:10.5px}
 
-  /* THE WORKING SURFACE. One inset panel holding the whole calculation chain,
-     tinted just off the card so the mathematics reads as its own material
-     rather than as more interface. Not one box per step: that was draft 2 and
-     it read as a settings table. The hierarchy is
-     question card > solution component > working surface > answer. */
-  .working{list-style:none;position:relative;margin-top:16px;background:#F4F9F8;
-           border:1px solid var(--line);border-radius:14px;padding:4px 22px 22px}
+  /* THE WORKING SURFACE. One inset panel carrying the whole calculation,
+     tinted just off the card so the mathematics reads as its own material.
+     A smaller radius than the cards around it, because this is working paper
+     embedded in the response rather than another card in the stack. */
+  .working{list-style:none;position:relative;overflow:hidden;background:#F4F9F8;
+           border:1px solid var(--line);border-radius:9px;padding:4px 20px 20px}
 
   /* A stepper, so the steps read as one process. The markers carry the
      sequence and a hairline guide joins them; whitespace and the marker
@@ -239,9 +245,9 @@
   .step .lbl{font-family:var(--disp);font-weight:600;font-size:13.5px;color:var(--ink-2);margin-bottom:8px}
   /* 19.5px is the largest size at which the longest authored line here,
      "Current ratio = current assets / current liabilities", still sets on one
-     line in the 490px working column. Measured in the fallback face, which is
-     wider than Nunito, so it holds with the real font too. Longer formulas
-     will wrap, and that is what `.math.rows` below is for. */
+     line in the working column. Measured in the fallback face, which is wider
+     than Nunito, so it holds with the real font too. Longer formulas will
+     wrap, and that is what `.math.rows` below is for. */
   .math{font-family:var(--disp);font-weight:500;font-size:19.5px;line-height:1.55;color:var(--ink);
         font-variant-numeric:tabular-nums}
 
@@ -264,20 +270,20 @@
   .frac .num{padding:0 .4em .1em}
   .frac .den{padding:.12em .4em 0;border-top:1.5px solid currentColor}
 
-  /* The answer sits OUTSIDE the working surface, detached from the chain, so
-     the flow reads working -> answer. A result band, not a control: the mint
-     is behind the whole final row, label included, with nothing to press. */
-  .step.final{margin-top:18px;padding-top:0}
+  /* The answer is the LAST ROW OF THE SAME SURFACE, on the same stepper
+     geometry, so it reads as the conclusion of the process rather than as a
+     fourth card. It bleeds to the surface's edges, and the rule above it is
+     the break between working and result. Mint says resolved; it is not a
+     control, so there is no shadow and nothing to press. Only this row is
+     tinted: green across the intermediate working would claim each step on
+     the way was a success state. */
+  .step.final{margin:22px -20px -20px;padding:18px 20px 20px;background:var(--green-soft);
+              border-top:1px solid #9FE3C4}
   .step.final::before{display:none}
-  .step.final .no{background:var(--green-soft);border-color:#9FE3C4;color:var(--green-dk);margin-top:14px}
-  .step.final .t{background:var(--green-soft);border:1px solid #9FE3C4;border-radius:14px;padding:13px 18px 15px}
+  .step.final .no{background:#fff;border-color:#9FE3C4;color:var(--green-dk);margin-top:1px}
   .step.final .lbl{color:var(--green-dk)}
   .step.final .math{font-weight:600;font-size:21px}
 
-  /* Opening the solution is recorded. The student is told so plainly rather
-     than the attempt being quietly reclassified behind them. */
-  .viewed{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;color:var(--gold-dk);
-          background:var(--gold-soft);border:1px solid #FFE0A6;border-radius:99px;padding:4px 12px}
 
   @media(max-width:900px){
     .work{grid-template-columns:1fr}

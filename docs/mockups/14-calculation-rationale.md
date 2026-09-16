@@ -141,41 +141,53 @@ Four drafts got here, and recording them saves the next component the same walk:
 | 2 | fixed label column beside a boxed expression | 339px, but read as a settings table |
 | 3 | title line, unboxed working beneath, rule between steps | four separate rows rather than one process |
 | 4 | numbered stepper, joined markers, one rule | a process, but the mathematics sat on the same white as the interface |
-| 5 | stepper on a dedicated working surface | **on screen now** |
+| 5 | stepper on a dedicated working surface, in its own card | right material, but four nested surfaces deep |
+| 6 | a section of the question card, one working surface | **on screen now** |
 
 What the stepper does that draft 3 did not: the numbers carry the sequence, a
 hairline guide runs between the markers so the steps read as consecutive, and
 the marker column plus whitespace do the separating that four full-width rules
 were doing badly. **One rule survives on the whole card**, under the header.
 
-### The working surface
+### One surface, not a stack of cards
 
-Draft 4's remaining fault was material, not layout. The working was dark text on
-the same white as every control around it, so two levels of the hierarchy
-collapsed into one. Steps 1 to 3 now sit together on **one inset panel**,
-`#F4F9F8` — the page background's family, lifted and warmed — with a 1px border,
-a 14px radius, no shadow and generous padding.
+Draft 4's fault was material: the working was dark text on the same white as
+every control around it. Draft 5 fixed that with an inset panel and introduced a
+worse one — four nested surfaces between the question and the mathematics:
 
 ```
-question card            white
-└ worked solution        white, one rule under its header
-  ├ working surface      #F4F9F8   steps 1-3, the calculation chain
-  └ answer               mint      detached below the surface
+draft 5                              now
+question card       white            question card       white
+└ solution card     white            └ solution SECTION  a rule and space
+  ├ working card    #F4F9F8            └ working surface #F4F9F8
+  └ answer card     mint                 └ answer row    mint, its last row
 ```
 
-Not one box per step. That was draft 2, and it is why the panel holds the whole
-chain instead.
+The solution is no longer a card. It is a **section of the question card**:
+24px of space, a hairline rule, the heading, and then the working. No second
+white surface, no second border, no second radius. Marginal is explaining the
+question rather than opening a widget on top of it.
 
-**The answer stays outside the surface.** Tinting the intermediate working green
-would claim every expression on the way was a success state; the neutral surface
-is where the thinking happens and the mint is where it resolves. The guide line
-ends at step 3, so step 4 detaches from the chain and the flow reads *working →
-answer*.
+**One inset surface carries the whole calculation.** `#F4F9F8` — the page
+background's family, lifted and warmed — with a 1px border, **9px radius**
+rather than the 14–18px of the cards around it, because this is working paper
+embedded in the response and not another card in the stack. No shadow. Not one
+box per step: that was draft 2.
 
-**The answer is a result band, not a control.** The mint sits behind the whole
-final row, its label included, with no shadow, no radius borrowed from the
-button scale and nothing to press. Draft 4's compact rounded shape sat close
-enough to `.btn` to read as one.
+**The answer is the last row of the same surface.** Same stepper geometry, same
+marker column, bleeding to the surface's edges and clipped by its radius, with
+the rule above it as the break between working and result. It reads as the
+conclusion of one process rather than as a fourth container. Mint says resolved;
+there is no shadow and nothing to press.
+
+Only that row is tinted. Green across the intermediate working would claim every
+expression on the way was a success state, so the guide line ends at step 3 and
+the flow reads *working → answer*.
+
+**Provenance is muted.** `✓ Solution viewed` is neutral text with a gold tick on
+a very faint ground, at the far right of the heading. The gold capsule it
+replaces competed with the heading for a fact that is metadata, not a warning.
+The eye should go: worked solution → the mathematics → the answer.
 
 ### A general working surface, not a treatment for this question
 
