@@ -17,6 +17,76 @@
 // silently skipped, because a catalogue that quietly stops testing things is the
 // same failure as a suite that quietly stops running.
 module.exports = [
+  // ---- marking points: guidance, not marks --------------------------------
+  //
+  // Both halves of the short-answer fault, kept one line from happening. The
+  // first was a shape mismatch that made an EMPTY ANSWER score full marks; the
+  // rest are the semantics, which is the half worth guarding hardest: a point
+  // is not a mark unless a paper says so.
+  {
+    id: "points-string-read-as-object",
+    file: "tools/contract/assessment.js",
+    find: "    if (typeof pt === \"string\") {\n      text = pt;",
+    replace: "    if (typeof pt === \"string\") {\n      text = pt.text;",
+    owner: "t31",
+    why: "reading an authored string point as an object made its text undefined, which normalised to \"\" and matched every answer",
+  },
+  {
+    id: "points-blank-phrasing-matches-all",
+    file: "tools/contract/assessment.js",
+    find: "var n = normText(al); return n !== \"\" && a.indexOf(n) !== -1;",
+    replace: "var n = normText(al); return a.indexOf(n) !== -1;",
+    owner: "t31",
+    why: "the empty string is a substring of every answer, which is exactly how an unanswered question scored full marks",
+  },
+  {
+    id: "points-count-implies-one-mark",
+    file: "tools/contract/assessment.js",
+    find: "  var weighted = allWeighted && qMarks != null && sum === qMarks;",
+    replace: "  var weighted = (allWeighted && qMarks != null && sum === qMarks) || out.length === qMarks;",
+    owner: "t31",
+    why: "three points on a three-mark question is a coincidence, not a declaration that one point is one mark",
+  },
+  {
+    id: "points-unweighted-manufactures-score",
+    file: "tools/contract/assessment.js",
+    find: "  var score = null;\n  if (mp.weighted) {",
+    replace: "  var score = hits;\n  if (mp.weighted) {",
+    owner: "t31",
+    why: "unweighted points are considerations; turning the hit count into a mark invents an allocation nobody authored",
+  },
+  {
+    id: "points-blank-text-accepted",
+    file: "tools/contract/assessment.js",
+    find: "    if (blank(text))\n      return refuse(\"POINTS_MALFORMED\", where + \" has no text, so nothing can be marked against it\");",
+    replace: "    if (false)\n      return refuse(\"POINTS_MALFORMED\", where + \" has no text, so nothing can be marked against it\");",
+    owner: "t31",
+    why: "a point with no text marks nothing, and accepting it awards the rest of the marks against something invisible",
+  },
+  {
+    id: "points-nontext-entry-accepted",
+    file: "tools/contract/assessment.js",
+    find: "      return refuse(\"POINTS_MALFORMED\",\n        where + \" is neither text nor a marking point object\");",
+    replace: "      text = String(pt);",
+    owner: "t31",
+    why: "coercing a malformed entry to a string is the silent normalisation this contract exists to refuse",
+  },
+  {
+    id: "points-drops-authored-weight",
+    file: "tools/contract/assessment.js",
+    find: "        marks = pt.marks;",
+    replace: "        marks = null;",
+    owner: "t31",
+    why: "dropping an authored per-point weight demotes a genuinely weighted question to guidance and loses its mark",
+  },
+  {
+    id: "short-answer-scores-unweighted-points",
+    file: "app.js",
+    find: "    if (sp.weighted)\n      return MARKED({ score: sp.score, max: sp.max, kind: \"points\",",
+    replace: "    if (sp.count)\n      return MARKED({ score: sp.score, max: sp.max, kind: \"points\",",
+    owner: "t31",
+    why: "the app must render the contract's decision about weighting rather than scoring any question that happens to carry points",
+  },
   // ---- the contract: fidelity through packagize ---------------------------
   {
     id: "packagize-fabricates-marks",
