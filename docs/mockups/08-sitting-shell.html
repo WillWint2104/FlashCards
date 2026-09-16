@@ -17,6 +17,9 @@
     --coral:#FF7C6B; --coral-dk:#EE5946; --coral-soft:#FFE8E4;
     --line:#E7EDED;
     --disp:'Fredoka',system-ui,sans-serif; --body:'Nunito',system-ui,sans-serif;
+    /* The sticky bar overlays the end of the page, so the content region
+       reserves its height plus the normal page gap underneath. */
+    --footh:68px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   /* The page is a column so the sticky footer has somewhere to sit when the
@@ -36,7 +39,8 @@
   .unit{font-size:13px;color:var(--ink-2);font-weight:700;margin-left:auto;text-align:right}
   .unit b{display:block;color:var(--ink);font-size:13.5px}
 
-  main{max-width:1180px;width:100%;margin:0 auto;padding:20px clamp(16px,4vw,40px) 26px;flex:1 0 auto}
+  main{max-width:1180px;width:100%;margin:0 auto;
+       padding:20px clamp(16px,4vw,40px) calc(26px + var(--footh));flex:1 0 auto}
 
   /* The paper bar: where you are, how you are sitting, how far in you are. */
   .exam-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 16px;background:var(--card);
@@ -64,7 +68,10 @@
   .pbar i{display:block;height:100%;width:56%;background:var(--green);border-radius:99px}
 
   /* Two columns. The source sits BESIDE the response, not above it. */
-  .work{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
+  /* Roughly 62/38. A calculation and its working do not need 70% of a
+     desktop, and a case study read four words at a time is not a source.
+     Proportional, with a floor so the source never collapses. */
+  .work{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(300px,1fr);gap:18px;align-items:start}
 
   .qcard{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:20px 22px}
   .parent{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding-bottom:12px;margin-bottom:14px;border-bottom:1px dashed var(--line)}
@@ -120,9 +127,15 @@
   .srchead .ic{font-size:15px}
   .srchead .t{font-family:var(--disp);font-weight:600;font-size:13.5px;line-height:1.2}
   .srchead .t small{display:block;color:var(--ink-2);font-size:11px;font-weight:700}
-  .srchead .fold{margin-left:auto;background:none;border:none;color:var(--ink-3);font-size:13px}
-  .srcbody{padding:13px 14px 16px;font-size:13.5px;font-weight:600;color:var(--ink);line-height:1.6}
-  .srcbody p+p{margin-top:9px}
+  /* Expand, not collapse. The default pane is now comfortable for an
+     ordinary stimulus; what a long case study, a table or a graph needs is
+     more room, and on a narrow layout this same control opens the sheet. */
+  .srchead .expand{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-family:var(--disp);
+                   font-weight:700;font-size:12px;color:var(--ink-2);background:#fff;
+                   border:1.5px solid var(--line);border-radius:10px;padding:5px 10px}
+  .srchead .expand:hover{border-color:var(--green);color:var(--green-dk)}
+  .srcbody{padding:16px 18px 20px;font-size:14.5px;font-weight:600;color:var(--ink);line-height:1.75}
+  .srcbody p+p{margin-top:12px}
 
   /* Navigation is always available, so a question may be left and returned to. */
   .footer{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--line);z-index:9;
@@ -208,7 +221,7 @@
       <div class="srchead">
         <span class="ic">📄</span>
         <span class="t">Kerbside Coffee<small>Shared source · Question 11</small></span>
-        <button class="fold" title="Collapse">▾</button>
+        <button class="expand" title="Open the source in a larger reading view">⤡ Expand</button>
       </div>
       <div class="srcbody">
         <p>Kerbside Coffee roasts and sells coffee from one site and four vans. Demand at the vans peaks between 7am and 9am, and the owners have had complaints about waiting times.</p>

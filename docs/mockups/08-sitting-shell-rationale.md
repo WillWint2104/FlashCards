@@ -73,3 +73,20 @@ the reasoning is not lost:
 - **The mobile treatment of the source panel** — a sticky control opening a
   bottom sheet is the direction, not yet a design.
 - **Exam-conditions wording** throughout, which belongs to that variant.
+
+## Shell changes made after this state was frozen
+
+State 8 remains the canonical sitting shell, but three later states exposed
+faults in it that were fixed here rather than forked. Each is recorded where it
+was settled:
+
+| change | settled in |
+| --- | --- |
+| footer reads `Item 12 of 20`, not `12 of 20` | `15-navigator-rationale.md` |
+| sticky footer pinned when the page does not overflow | `15-navigator-rationale.md` |
+| content reserves the footer's height so nothing is overlaid | `14-calculation-rationale.md` |
+| workspace rebalanced to 62/38, source given a reading measure | `14-calculation-rationale.md` |
+| source header offers `⤢ Expand` instead of collapse | `14-calculation-rationale.md` |
+
+Nothing in the list changes a token, a component's shape or the policy table
+above. The layout of this screen is otherwise as approved.

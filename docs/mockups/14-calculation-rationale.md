@@ -131,14 +131,26 @@ Where it authors less, steps are withheld exactly as the help region is: this is
 a renderer, not a generator. An authored interpretation would sit below step 4;
 11(c) has none, so there is none.
 
-### Its shape reuses the help region
+### It is set as mathematics, not as form controls
 
-Each step is a fixed-width label beside its working, which is `.help .row` from
-state 8 — a `.k` key and its text. Stacking the label above the working instead
-made the disclosure 460px tall and pushed all four steps below the fold on a
-900px viewport; beside, it is 339px and the first three steps are visible
-without scrolling. Each line of working is `display:inline-block`, so `= 1.5`
-is sized to itself rather than becoming a slab the width of the writing column.
+Three drafts got here. The first stacked a label above a boxed expression and
+ran to 460px, pushing every step below the fold. The second put the label in a
+fixed column beside its boxed expression: 339px, but the student scanned across
+rows of small grey labels and equations in rounded input-shaped boxes. It looked
+like a settings table.
+
+What is on screen now:
+
+- the step number and its title on one line, `1 · Use the formula`, at label
+  size;
+- the working beneath it at **19px**, in the display face, with **no box around
+  it** — it is a line of mathematics, not a value in a field;
+- a hairline between steps for rhythm, and nothing else;
+- the **final answer alone** in mint, because it is the answer.
+
+Removing four boxes cost nothing and removed the form-field reading entirely.
+The disclosure uses the full width of the left column, which is what that column
+is for.
 
 ### Opening it is recorded, and the student is told
 
@@ -167,6 +179,66 @@ Prose cannot be judged by comparison against a model, so the marker stays, and a
 `View model response` support action after marking is a separate question for
 state 16. This pattern applies only where the contract authors an `expected`
 value — that is, only to `calculation`.
+
+## Shared shell changes in this pass
+
+Three changes below the calculation itself. All are shell-level and now
+identical across states 8, 14 and 15.
+
+**1. The workspace rebalances to 62/38.** `minmax(0,1.6fr) minmax(300px,1fr)`
+in place of `minmax(0,1fr) 340px`. Measured at 1280: the question column is
+666px and the source 416px, against 760/340 before. A calculation, a 22rem
+answer field and a worked solution do not need 70% of a desktop, and a case
+study read four words at a time is not a source. The floor stops the panel
+collapsing before the layout stacks at 900px.
+
+**2. The source gets a reading measure.** 14.5px from 13.5px, line-height 1.75
+from 1.6, padding 16/18/20 from 13/14/16, paragraph spacing 12px from 9px. Its
+height is still its content's; nothing is stretched to match the left column,
+and the two columns are not expected to end level.
+
+**3. Expand replaces collapse in the source header.** `⤢ Expand` opens the
+source in a larger reading view for the stimuli the panel cannot serve well — a
+long case study, a financial table, a graph, several documents at once. It is a
+reading view: the student's answer is untouched by opening it. It does not open
+by default, because the 62/38 pane now handles ordinary sources, and on a narrow
+layout this same control becomes the bottom sheet decision 6 already sketched.
+The chevron it replaces collapsed the source, which was the less useful of the
+two and hid the question's own stimulus.
+
+## The sticky footer no longer overlays the end of the page
+
+`position:sticky; bottom:0` puts the bar over whatever is beneath it, so the
+last thing on the page could not be scrolled clear. The content region now
+reserves its height: a `--footh:68px` token, and `main` padding-bottom of
+`calc(26px + var(--footh))`. The footer stays sticky; it is the content that
+makes room.
+
+Verified with the solution expanded and the page scrolled to the end:
+
+```
+1280x700   whole solution above the footer, 134px clear
+1280x900   whole solution above the footer, 134px clear
+1512x982   whole solution above the footer, 134px clear
+ 390x844   whole solution above the footer, 512px clear
+```
+
+## The parent strip becomes two rows
+
+At 666px the strip no longer fit on one line — measured 27px over. Rather than
+shorten *"3 of 4 parts answered"* to make the layout work, the strip now reads:
+
+```
+Question 11   Kerbside Coffee · 14 marks
+3 of 4 parts answered                        [✓a] [✓⚑b] [✓c] [d]
+```
+
+Row one is identity, row two is progress. The completion count and the part rail
+describe the same thing, so they belong on the same line, and this is a better
+structure than the run-on line it replaces rather than a concession to width. It
+also scales: a question with eight parts wraps within row two instead of pushing
+the identity around. State 8 carries no completion count, so its strip is still
+one row and is unchanged.
 
 ## The rail gains its second composition
 

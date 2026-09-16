@@ -17,6 +17,9 @@
     --coral:#FF7C6B; --coral-dk:#EE5946; --coral-soft:#FFE8E4;
     --line:#E7EDED;
     --disp:'Fredoka',system-ui,sans-serif; --body:'Nunito',system-ui,sans-serif;
+    /* The sticky bar overlays the end of the page, so the content region
+       reserves its height plus the normal page gap underneath. */
+    --footh:68px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   /* The page is a column so the sticky footer has somewhere to sit when the
@@ -36,7 +39,8 @@
   .unit{font-size:13px;color:var(--ink-2);font-weight:700;margin-left:auto;text-align:right}
   .unit b{display:block;color:var(--ink);font-size:13.5px}
 
-  main{max-width:1180px;width:100%;margin:0 auto;padding:20px clamp(16px,4vw,40px) 26px;flex:1 0 auto}
+  main{max-width:1180px;width:100%;margin:0 auto;
+       padding:20px clamp(16px,4vw,40px) calc(26px + var(--footh));flex:1 0 auto}
 
   /* The paper bar: where you are, how you are sitting, how far in you are. */
   .exam-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 16px;background:var(--card);
@@ -64,7 +68,10 @@
   .pbar i{display:block;height:100%;width:65%;background:var(--green);border-radius:99px}
 
   /* Two columns. The source sits BESIDE the response, not above it. */
-  .work{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
+  /* Roughly 62/38. A calculation and its working do not need 70% of a
+     desktop, and a case study read four words at a time is not a source.
+     Proportional, with a floor so the source never collapses. */
+  .work{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(300px,1fr);gap:18px;align-items:start}
 
   .qcard{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:20px 22px}
 
@@ -73,8 +80,12 @@
   .parent{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding-bottom:12px;margin-bottom:14px;border-bottom:1px dashed var(--line)}
   .pnum{font-family:var(--disp);font-weight:600;font-size:15px;color:var(--ink)}
   .pmeta{font-size:12px;color:var(--ink-2);font-weight:700}
-  /* Partial completion of the parent, in words, in the line that already
-     exists. No second progress system. */
+  /* Row one is IDENTITY, row two is PROGRESS. The completion count and the
+     part rail describe the same thing, so they share a line: the count at the
+     left, the rail flush right. Still one strip and still no second progress
+     system; the parent simply stopped being a single run-on line once the
+     source took its proper share of the desktop. */
+  .pprog{flex-basis:100%;display:flex;align-items:center;gap:12px;margin-top:1px}
   .pdone{font-size:12px;color:var(--ink-3);font-weight:800}
 
   /* The part rail. Every state reads without colour: a tick, a filled ring, a
@@ -140,9 +151,15 @@
   .srchead .ic{font-size:15px}
   .srchead .t{font-family:var(--disp);font-weight:600;font-size:13.5px;line-height:1.2}
   .srchead .t small{display:block;color:var(--ink-2);font-size:11px;font-weight:700}
-  .srchead .fold{margin-left:auto;background:none;border:none;color:var(--ink-3);font-size:13px}
-  .srcbody{padding:13px 14px 16px;font-size:13.5px;font-weight:600;color:var(--ink);line-height:1.6}
-  .srcbody p+p{margin-top:9px}
+  /* Expand, not collapse. The default pane is now comfortable for an
+     ordinary stimulus; what a long case study, a table or a graph needs is
+     more room, and on a narrow layout this same control opens the sheet. */
+  .srchead .expand{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-family:var(--disp);
+                   font-weight:700;font-size:12px;color:var(--ink-2);background:#fff;
+                   border:1.5px solid var(--line);border-radius:10px;padding:5px 10px}
+  .srchead .expand:hover{border-color:var(--green);color:var(--green-dk)}
+  .srcbody{padding:16px 18px 20px;font-size:14.5px;font-weight:600;color:var(--ink);line-height:1.75}
+  .srcbody p+p{margin-top:12px}
 
   /* Navigation is always available, so a question may be left and returned to.
      This rail follows the whole paper, not the parent. */
@@ -190,25 +207,19 @@
      backdrop, no focus trap, no close control, nothing obscured, and on a
      narrow screen it simply stacks. The same component is reused after
      submission in exam conditions. */
-  .soln{margin-top:14px;border:1.5px solid var(--line);border-radius:14px;background:#FAFCFC;padding:3px 16px 14px}
-  .solnhead{font-family:var(--disp);font-weight:600;font-size:13.5px;color:var(--ink);padding:11px 0 4px}
-  /* Label beside the working, the same shape the help region already uses:
-     `.help .row` is a fixed-width key and its text. It halves the height of
-     the disclosure and wraps to stacked when the column narrows. */
-  .step{display:flex;gap:12px;padding:9px 0;border-top:1px solid var(--line);align-items:flex-start}
-  .step .no{width:24px;height:24px;flex:none;border-radius:99px;background:#fff;border:1.5px solid var(--line);
-            display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-weight:700;
-            font-size:12px;color:var(--ink-2);margin-top:4px}
-  .step .t{min-width:0;flex:1;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-  .step .lbl{font-family:var(--disp);font-weight:600;font-size:13px;color:var(--ink-2);width:168px;flex:none}
-  /* Each line of working is sized by its own content, so "= 1.5" does not
-     become a slab the width of the writing column. */
-  .math{display:inline-block;max-width:100%;font-family:var(--disp);font-weight:500;font-size:16px;color:var(--ink);
-        background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 13px;
-        font-variant-numeric:tabular-nums;line-height:1.45}
-  .step.final .no{background:var(--green-soft);border-color:#9FE3C4;color:var(--green-dk)}
-  .step.final .math{background:var(--green-soft);border-color:#9FE3C4;font-weight:600}
-  .solnfoot{padding-top:13px;border-top:1px solid var(--line)}
+  .soln{margin-top:14px;border:1.5px solid var(--line);border-radius:16px;background:#FAFCFC;padding:4px 22px 18px}
+  .solnhead{font-family:var(--disp);font-weight:600;font-size:14.5px;color:var(--ink);padding:13px 0 5px}
+  /* Worked mathematics, not four form fields. The step number and its title sit
+     on one line; the working runs beneath at reading size, with no box around
+     it. Only the final answer is boxed, in mint, because it is the answer. */
+  .step{padding:13px 0;border-top:1px solid var(--line)}
+  .step .lbl{font-family:var(--disp);font-weight:600;font-size:13.5px;color:var(--ink-2);margin-bottom:8px}
+  .step .lbl .no{color:var(--ink-3);font-weight:700}
+  .math{font-family:var(--disp);font-weight:500;font-size:19px;line-height:1.5;color:var(--ink);
+        font-variant-numeric:tabular-nums}
+  .step.final .math{display:inline-block;max-width:100%;font-weight:600;background:var(--green-soft);
+                    border:1px solid #9FE3C4;border-radius:12px;padding:9px 15px}
+  .solnfoot{padding-top:15px;border-top:1px solid var(--line)}
 
   /* Opening the solution is recorded. The student is told so plainly rather
      than the attempt being quietly reclassified behind them. */
@@ -252,12 +263,14 @@
       <div class="parent">
         <span class="pnum">Question 11</span>
         <span class="pmeta">Kerbside Coffee · 14 marks</span>
-        <span class="pdone">3 of 4 parts answered</span>
-        <div class="parts" role="group" aria-label="Parts of Question 11">
-          <button class="pt done" title="11(a) · 2 marks · answered"><span class="g">✓</span>a</button>
-          <button class="pt done flag" title="11(b) · 3 marks · answered · flagged for revisit"><span class="g">✓</span><span class="g fg">⚑</span>b</button>
-          <button class="pt here done" title="11(c) · 4 marks · answered · you are here" aria-current="true"><span class="g">✓</span>c</button>
-          <button class="pt todo" title="11(d) · 5 marks · not answered yet">d</button>
+        <div class="pprog">
+          <span class="pdone">3 of 4 parts answered</span>
+          <div class="parts" role="group" aria-label="Parts of Question 11">
+            <button class="pt done" title="11(a) · 2 marks · answered"><span class="g">✓</span>a</button>
+            <button class="pt done flag" title="11(b) · 3 marks · answered · flagged for revisit"><span class="g">✓</span><span class="g fg">⚑</span>b</button>
+            <button class="pt here done" title="11(c) · 4 marks · answered · you are here" aria-current="true"><span class="g">✓</span>c</button>
+            <button class="pt todo" title="11(d) · 5 marks · not answered yet">d</button>
+          </div>
         </div>
       </div>
 
@@ -281,32 +294,20 @@
       <div class="soln">
         <div class="solnhead">Worked solution</div>
         <div class="step">
-          <span class="no">1</span>
-          <div class="t">
-            <div class="lbl">Use the formula</div>
-            <div class="math">Current ratio = current assets ÷ current liabilities</div>
-          </div>
+          <div class="lbl"><span class="no">1</span> · Use the formula</div>
+          <div class="math">Current ratio = current assets ÷ current liabilities</div>
         </div>
         <div class="step">
-          <span class="no">2</span>
-          <div class="t">
-            <div class="lbl">Substitute the values</div>
-            <div class="math">= $60 000 ÷ $40 000</div>
-          </div>
+          <div class="lbl"><span class="no">2</span> · Substitute the values</div>
+          <div class="math">= $60 000 ÷ $40 000</div>
         </div>
         <div class="step">
-          <span class="no">3</span>
-          <div class="t">
-            <div class="lbl">Calculate</div>
-            <div class="math">= 1.5</div>
-          </div>
+          <div class="lbl"><span class="no">3</span> · Calculate</div>
+          <div class="math">= 1.5</div>
         </div>
         <div class="step final">
-          <span class="no">4</span>
-          <div class="t">
-            <div class="lbl">Answer</div>
-            <div class="math">Current ratio = 1.5 : 1</div>
-          </div>
+          <div class="lbl"><span class="no">4</span> · Answer</div>
+          <div class="math">Current ratio = 1.5 : 1</div>
         </div>
         <div class="solnfoot"><span class="viewed">Solution viewed</span></div>
       </div>
@@ -316,7 +317,7 @@
       <div class="srchead">
         <span class="ic">📄</span>
         <span class="t">Kerbside Coffee<small>Shared source · Question 11</small></span>
-        <button class="fold" title="Collapse">▾</button>
+        <button class="expand" title="Open the source in a larger reading view">⤡ Expand</button>
       </div>
       <div class="srcbody">
         <p>Kerbside Coffee roasts and sells coffee from one site and four vans. Demand at the vans peaks between 7am and 9am, and the owners have had complaints about waiting times.</p>
