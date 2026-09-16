@@ -139,23 +139,70 @@ Four drafts got here, and recording them saves the next component the same walk:
 | --- | --- | --- |
 | 1 | label stacked above a boxed expression | 460px tall; every step below the fold |
 | 2 | fixed label column beside a boxed expression | 339px, but read as a settings table |
-| 3 | title line, unboxed working beneath, rule between steps | readable, but four separate rows rather than one process |
-| 4 | numbered stepper, joined markers, one rule | **on screen now** |
+| 3 | title line, unboxed working beneath, rule between steps | four separate rows rather than one process |
+| 4 | numbered stepper, joined markers, one rule | a process, but the mathematics sat on the same white as the interface |
+| 5 | stepper on a dedicated working surface | **on screen now** |
 
 What the stepper does that draft 3 did not: the numbers carry the sequence, a
-hairline guide runs between the markers so the four steps read as consecutive,
-and the marker column plus whitespace do the separating that four full-width
-rules were doing badly. **One rule survives on the whole card**, under the
-header.
+hairline guide runs between the markers so the steps read as consecutive, and
+the marker column plus whitespace do the separating that four full-width rules
+were doing badly. **One rule survives on the whole card**, under the header.
 
-The working is 19px in the display face with no box around it — a line of
-mathematics, not a value in a field. It uses the full width of the left column,
-which is what that column is for.
+### The working surface
+
+Draft 4's remaining fault was material, not layout. The working was dark text on
+the same white as every control around it, so two levels of the hierarchy
+collapsed into one. Steps 1 to 3 now sit together on **one inset panel**,
+`#F4F9F8` — the page background's family, lifted and warmed — with a 1px border,
+a 14px radius, no shadow and generous padding.
+
+```
+question card            white
+└ worked solution        white, one rule under its header
+  ├ working surface      #F4F9F8   steps 1-3, the calculation chain
+  └ answer               mint      detached below the surface
+```
+
+Not one box per step. That was draft 2, and it is why the panel holds the whole
+chain instead.
+
+**The answer stays outside the surface.** Tinting the intermediate working green
+would claim every expression on the way was a success state; the neutral surface
+is where the thinking happens and the mint is where it resolves. The guide line
+ends at step 3, so step 4 detaches from the chain and the flow reads *working →
+answer*.
 
 **The answer is a result band, not a control.** The mint sits behind the whole
 final row, its label included, with no shadow, no radius borrowed from the
-button scale and nothing to press. The previous compact rounded shape sat close
+button scale and nothing to press. Draft 4's compact rounded shape sat close
 enough to `.btn` to read as one.
+
+### A general working surface, not a treatment for this question
+
+The type is 19.5px, measured: that is the largest size at which this question's
+longest authored line still sets on one line in the 490px working column, taken
+in the fallback face, which is wider than Nunito, so it holds with the real font
+too. Longer formulas will wrap, and two mechanisms are built for what comes
+next:
+
+**Multi-line working aligns on the operator**, with no magic indents, by setting
+the left-hand side and the rest as two columns:
+
+```html
+<div class="math rows">
+  <span class="lhs">Revenue</span><span class="rhs">= price × quantity</span>
+  <span class="lhs"></span>       <span class="rhs">= $25 × 2 000</span>
+  <span class="lhs"></span>       <span class="rhs">= $50 000</span>
+</div>
+```
+
+**A fraction is a real fraction**, `.frac` with a `.num` over a rule over a
+`.den`, for the day a paper authors one.
+
+Both are defined and neither is used here, because 11(c) authors `÷` and
+substituting a fraction bar would be a fourth notation change on top of the
+three already recorded. They exist so the next calculation does not need a sixth
+draft of this component.
 
 ### Provenance is not part of the mathematics
 

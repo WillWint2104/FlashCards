@@ -210,17 +210,24 @@
      backdrop, no focus trap, no close control, nothing obscured, and on a
      narrow screen it simply stacks. The same component is reused after
      submission in exam conditions. */
-  .soln{margin-top:14px;border:1.5px solid var(--line);border-radius:16px;background:#FAFCFC;padding:4px 22px 20px}
+  .soln{margin-top:14px;border:1.5px solid var(--line);border-radius:16px;background:var(--card);padding:4px 20px 20px}
   /* Provenance lives in the header. It is attempt state, not a step of the
      mathematics, and it was reading as one at the foot of the working. */
   .solnhead{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-family:var(--disp);font-weight:600;
             font-size:14.5px;color:var(--ink);padding:14px 0 13px;border-bottom:1px solid var(--line)}
   .solnhead .viewed{margin-left:auto}
 
-  /* A stepper, so four steps read as one process rather than four table rows.
-     The markers carry the sequence and a hairline guide joins them; whitespace
-     and the marker column do the separating, so the only rule on the card is
-     the one under the header. */
+  /* THE WORKING SURFACE. One inset panel holding the whole calculation chain,
+     tinted just off the card so the mathematics reads as its own material
+     rather than as more interface. Not one box per step: that was draft 2 and
+     it read as a settings table. The hierarchy is
+     question card > solution component > working surface > answer. */
+  .working{list-style:none;position:relative;margin-top:16px;background:#F4F9F8;
+           border:1px solid var(--line);border-radius:14px;padding:4px 22px 22px}
+
+  /* A stepper, so the steps read as one process. The markers carry the
+     sequence and a hairline guide joins them; whitespace and the marker
+     column do the separating. */
   .steps{list-style:none;position:relative}
   .step{position:relative;display:flex;gap:16px;padding-top:19px}
   .step:not(:last-child)::before{content:"";position:absolute;left:13px;top:46px;bottom:-19px;
@@ -229,17 +236,43 @@
             border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;
             font-family:var(--disp);font-weight:700;font-size:12.5px;color:var(--ink-2);margin-top:1px}
   .step .t{min-width:0;flex:1}
-  .step .lbl{font-family:var(--disp);font-weight:600;font-size:13.5px;color:var(--ink-2);margin-bottom:7px}
-  .math{font-family:var(--disp);font-weight:500;font-size:19px;line-height:1.5;color:var(--ink);
+  .step .lbl{font-family:var(--disp);font-weight:600;font-size:13.5px;color:var(--ink-2);margin-bottom:8px}
+  /* 19.5px is the largest size at which the longest authored line here,
+     "Current ratio = current assets / current liabilities", still sets on one
+     line in the 490px working column. Measured in the fallback face, which is
+     wider than Nunito, so it holds with the real font too. Longer formulas
+     will wrap, and that is what `.math.rows` below is for. */
+  .math{font-family:var(--disp);font-weight:500;font-size:19.5px;line-height:1.55;color:var(--ink);
         font-variant-numeric:tabular-nums}
 
-  /* The answer is a result band, not a control: the tint sits behind the whole
-     final row, label included, with no shadow and nothing to press. */
-  .step.final{padding-top:22px}
-  .step.final .no{background:var(--green-soft);border-color:#9FE3C4;color:var(--green-dk)}
-  .step.final .t{background:var(--green-soft);border:1px solid #9FE3C4;border-radius:14px;padding:12px 18px 14px}
+  /* General mathematical working, not a treatment for one current-ratio
+     question. Multi-line working aligns on the operator with no magic
+     numbers, by putting the left-hand side and the rest in two columns:
+       <div class="math rows">
+         <span class="lhs">Revenue</span><span class="rhs">= price × quantity</span>
+         <span class="lhs"></span>       <span class="rhs">= $25 × 2 000</span>
+         <span class="lhs"></span>       <span class="rhs">= $50 000</span>
+       </div>
+     and a fraction is a real fraction when a paper authors one:
+       <span class="frac"><span class="num">current assets</span>
+                          <span class="den">current liabilities</span></span>   */
+  .math.rows{display:grid;grid-template-columns:auto auto;justify-content:start;
+             column-gap:.45em;row-gap:.3em}
+  .math.rows .lhs{text-align:right}
+  .frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;
+        line-height:1.25;margin:0 .2em;font-size:.86em}
+  .frac .num{padding:0 .4em .1em}
+  .frac .den{padding:.12em .4em 0;border-top:1.5px solid currentColor}
+
+  /* The answer sits OUTSIDE the working surface, detached from the chain, so
+     the flow reads working -> answer. A result band, not a control: the mint
+     is behind the whole final row, label included, with nothing to press. */
+  .step.final{margin-top:18px;padding-top:0}
+  .step.final::before{display:none}
+  .step.final .no{background:var(--green-soft);border-color:#9FE3C4;color:var(--green-dk);margin-top:14px}
+  .step.final .t{background:var(--green-soft);border:1px solid #9FE3C4;border-radius:14px;padding:13px 18px 15px}
   .step.final .lbl{color:var(--green-dk)}
-  .step.final .math{font-weight:600;font-size:20px}
+  .step.final .math{font-weight:600;font-size:21px}
 
   /* Opening the solution is recorded. The student is told so plainly rather
      than the attempt being quietly reclassified behind them. */
