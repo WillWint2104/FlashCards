@@ -340,8 +340,14 @@
               "directive": "outline",
               "prompt": "Outline ONE operations performance objective Kerbside Coffee is failing to meet at its vans.",
               "points": [
-                "Names speed, or dependability, as the objective",
-                "Links it to the morning waiting times described in the case study"
+                {
+                  "text": "Names speed, or dependability, as the objective",
+                  "marks": 1
+                },
+                {
+                  "text": "Links it to the morning waiting times described in the case study",
+                  "marks": 1
+                }
               ]
             },
             {
@@ -352,9 +358,18 @@
               "directive": "explain",
               "prompt": "Explain how the business's casual employment of van operators could be contributing to its turnover.",
               "points": [
-                "Explains that casual work carries no guaranteed hours or leave entitlements",
-                "Links that insecurity to an operator's decision to leave",
-                "Connects turnover to the cost of recruiting and training replacements"
+                {
+                  "text": "Explains that casual work carries no guaranteed hours or leave entitlements",
+                  "marks": 1
+                },
+                {
+                  "text": "Links that insecurity to an operator's decision to leave",
+                  "marks": 1
+                },
+                {
+                  "text": "Connects turnover to the cost of recruiting and training replacements",
+                  "marks": 1
+                }
               ]
             },
             {
@@ -407,9 +422,18 @@
               "directive": "describe",
               "prompt": "Describe what has happened to Harbourline Cycles' gross profit ratio between 2024 and 2025.",
               "points": [
-                "Identifies that the ratio has fallen",
-                "Refers to gross profit relative to sales rather than the dollar figure alone",
-                "Uses the data in Table 1 to support the statement"
+                {
+                  "text": "Identifies that the ratio has fallen",
+                  "marks": 1
+                },
+                {
+                  "text": "Refers to gross profit relative to sales rather than the dollar figure alone",
+                  "marks": 1
+                },
+                {
+                  "text": "Uses the data in Table 1 to support the statement",
+                  "marks": 1
+                }
               ]
             },
             {

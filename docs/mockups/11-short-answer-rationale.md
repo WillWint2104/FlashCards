@@ -1,67 +1,100 @@
 # State 11 — Short answer: reading key
 
-Companion to `11-short-answer.html`, which is the canonical reference. Nothing in
-this file appears on the student's screen.
+Companion to two canonical screens. Nothing in this file appears on the
+student's screen.
 
-Shown: desktop, **Practice**, question **11(b)** of the synthetic Business
-Studies paper — a 3-mark short answer with the directive *explain*, three
-authored marking points and **no model answer**, marked **2 of 3**. The
-unanswered and answering states are already approved as state 8; this state is
-the marked one.
+| screen | file |
+| --- | --- |
+| weighted points — 11(b), marked 2 of 3 | `11-short-answer.html` |
+| key points only — 12(b), marked 3 of 5 | `11-short-answer-keypoints.html` |
+
+Both are desktop, **Practice**, inside the frozen shell. The unanswered and
+answering states are already approved as state 8; this state is the marked one.
 
 ## What the runtime actually does, checked before anything was drawn
 
 | | |
 | --- | --- |
-| route | `app.js:2432` — a short answer is **not** sent to the marking worker |
-| grader | `gradePoints`, local and immediate, one authored point per mark |
-| worker | reached only on request, and only when an endpoint is connected |
-| 11(b) data | 3 marks, directive `explain`, 3 points, **no `model`**, no `vocab` |
-| source | parent-owned Kerbside Coffee, identical to 11(c) |
-| retry | `examretry` re-opens the question with the answer restored |
+| route | `app.js` — a short answer is **not** sent to the marking worker by default |
+| grader | local and immediate, against the marking points the paper authors |
+| worker | reached where the points cannot account for the marks, or on request |
+| source | parent-owned; 11 has one, **12 has two** — a table and a note |
+| retry | re-opens the question with the answer restored |
 | navigation | the multipart rail and the paper footer, unchanged |
 
-So a short answer is **closer to the calculation than to an essay**: the default
-judgement is deterministic and offline. That single fact drove this design more
-than anything visual.
+A short answer is therefore **closer to the calculation than to an essay**: the
+default judgement is deterministic and offline. That single fact drove this
+design more than anything visual.
 
-**The points are not a supplement to the mark. They are the mark.** One point,
-one mark, so *2 of 3* can be explained exactly, with nothing invented and no
-rubric fabricated. This is what makes the design objective reachable:
+## Marking points are guidance; marks are only sometimes theirs
 
-| the student's question | what answers it |
-| --- | --- |
-| what did my answer establish? | the two ticked points |
-| what is missing? | the third point, marked *not addressed* |
-| what would make it stronger? | the third point is the answer in most cases; where it is not, one secondary action asks the marker |
+The first draft of this screen said *"One mark for each point addressed"* under
+every checklist. That was wrong. **12(b) authors four points against five
+marks**, and every extended response in the paper authors four against twelve or
+twenty. `points[]` is a list of the things a marker looks for. It is not an
+allocation, and nothing in the contract had ever said it was.
 
-## Two defects found while checking, both proven by running
+The contract now says so explicitly rather than by inference:
 
-Recorded in full in `testmode-ux-audit.md` as **UX-TEST-03** and **UX-TEST-04**,
-and **not fixed**, per the standing rule about patching ahead of approved design.
+> A mark is derived from marking points **only** where a paper authors per-point
+> marks that sum to the question's marks.
 
-1. `gradePoints` reads each point as an object (`pt.text`, `pt.need`); the
-   contract's own fixture authors them as strings. `norm(undefined)` is `""`, so
-   every point "hits". **An empty answer scores 3 of 3**, and the checklist
-   renders three ticks against the word `undefined`.
-2. 12(b) is worth 5 marks and authors 4 points, so no answer can reach 5 of 5
-   while points grading is in force.
+`weighted` is that declaration and **nothing implies it**. A question whose point
+count happens to equal its mark count has still not said one point is one mark;
+inferring it from the coincidence is the substitution Gate 3B removed from
+formats. `t31` asserts the coincidence is refused.
 
-This screen is drawn as the fixed behaviour would render: the answer shown
-addresses two of the three points and earns two marks. Defect 1 is a data-shape
-mismatch and does not change the design; defect 2 does, and is handled below.
+**So the screen has two shapes, and both are drawn.**
+
+| | 11(b) — weighted | 12(b) — key points |
+| --- | --- | --- |
+| authored | 3 points, each `marks: 1`, summing to 3 | 4 points, no weighting, 5 marks |
+| result | **Marks 2 of 3** | **Marks 3 of 5**, from the marker |
+| checklist count | 2 of 3 key points addressed | 2 of 4 key points addressed |
+| the line beneath | *One mark for each point addressed. 3 points, 3 marks.* | *These are the key points considered in marking. They are not one mark each.* |
+| where the mark came from | the checklist | the marker, said so on screen |
+
+The count is always **key points**, never marks, so the two are never silently
+equated. On 12(b) they are deliberately different numbers — 3 of 5 marks beside
+2 of 4 points — because the screen has to survive a reader checking whether they
+match.
+
+Where the mark did not come from the checklist, the screen says where it did: a
+short attributed comment under the result, headed *Marked against Business
+Studies criteria*. That slot is **absent on 11(b)**, where the points produced
+the mark themselves and a comment would be furniture.
+
+## The two defects are fixed, not deferred
+
+Written up in full in `testmode-ux-audit.md`.
+
+**UX-TEST-03 — an empty answer scored full marks.** The grader read every point
+as an object while papers author strings; `norm(undefined)` is `""`, every
+answer contains `""`, so every point "hit". Reading and matching are now one
+contract function each — `ASSESS.markingPoints` and `ASSESS.scorePoints` — which
+accept both authored shapes and refuse anything else with `POINTS_MALFORMED`. A
+point that cannot be read is not a point that was addressed. Measured after the
+fix: empty scores 0 of 3, unrelated scores 0 of 3, one authored point scores 1,
+two score 2, and the rendered text is the authored text.
+
+**UX-TEST-04 — 12(b) cannot reach five marks from four points.** Resolved by the
+model above. **12(b) was not changed to fit**; it is now the fixture's canonical
+unweighted case. The three short answers that were already one-to-one had that
+made explicit with `marks: 1`, which changes no mark value and states what was
+previously only a coincidence.
+
+`tests/t31.mjs` — 41 assertions, in `fast` and `checkpoint`. Gates after the
+change: fast **30.1s** of 40, checkpoint **52.2s** of 60, both green.
 
 ## Information hierarchy
-
-Top to bottom, and deliberately in this order:
 
 ```
 1  parent + question identity        frozen shell
 2  the prompt
 3  YOUR ANSWER                       what you wrote, still in the field
-4  THE RESULT                        Most of it · Marks 2 of 3
-5  actions                           Try again · What would make this stronger
-6  HOW THIS WAS MARKED               a section, then one surface of points
+4  THE RESULT                        the mark, and where it came from
+5  actions                           Try again, and one optional door to the marker
+6  HOW THIS WAS MARKED               a section, then one surface of key points
 ```
 
 **The result comes before the explanation.** A student wants the mark first;
@@ -69,18 +102,18 @@ withholding it above a wall of commentary is a worse experience, not a more
 educational one.
 
 **The actions come before the marking detail, not after it.** `Try again` is the
-recovery action and it should not be at the bottom of a list the student has to
+recovery action and should not sit at the bottom of a list the student must
 scroll past. The marking section is reference material for the retry, so it sits
 under the thing it informs.
 
-**The answer stays in its field.** Same move the calculation makes with `1.3`:
-the field keeps the text with a tinted border rather than becoming a second
-read-only quotation of the same words, and `Try again` puts the cursor back in
-it. One representation, not two.
+**The answer stays in its field.** The same move the calculation makes with
+`1.3`: the field keeps the text with a tinted border rather than becoming a
+second read-only quotation of the same words, and `Try again` puts the cursor
+back in it. One representation, not two.
 
 ## The marking section
 
-The same containment language the worked solution settled on, carrying different
+The containment language the worked solution settled on, carrying different
 content:
 
 ```
@@ -89,73 +122,71 @@ question card         white
   └ points surface    #F4F9F8, r9px, one inset panel
 ```
 
-No nested cards. The marker rings reuse the part rail's vocabulary — a tick in a
-filled ring, or an **empty dashed ring** — so state reads without colour, and the
-missed point additionally carries the words *not addressed*. Every point is
-shown, earned or not: a student cannot tell what a mark was for by seeing only
-what they lost.
+No nested cards. The markers reuse the part rail's vocabulary — a tick in a
+filled ring, or an **empty dashed ring** — so state reads without colour, and an
+unaddressed point additionally carries the words *not addressed*. It is a ring
+rather than a cross because it is a point the answer did not reach, not an error
+the student made; the shipped `.exam-pt.miss` marker was changed to match.
 
-Under the list, one line states the arithmetic: **"One mark for each point
-addressed. Three points, three marks."** That is the whole rubric for this
-question, said plainly, and it is what makes *2 of 3* informative rather than a
-verdict.
+Every point is shown, addressed or not. A student cannot tell what a mark was
+for by seeing only what they lost.
 
-**Where the points cannot account for the marks** (UX-TEST-04, 12(b): four
-points, five marks) that line is the release valve. It reads *"One mark for each
-point addressed. Four points account for four of the five marks."* The interface
-stops claiming the points are the whole rubric instead of implying a fifth mark
-the data cannot explain.
+## `What would make this stronger →`
 
-## What this deliberately is not
+Present on 11(b), absent on 12(b), and the difference is the rule:
 
-It is **not Essay Practice**. No TEEEC tabs, no rewrite box, no More Help, no
-sentence shapes, no Paragraph Review, no coaching loop. In the current build
-`examDeepReview` opens Paragraph Review whenever the worker returns
-`paragraphs[]`; **in Test Mode a short answer must not open it.** This is
-retrospective assessment feedback about a response that has been submitted, not
-guided composition of one that has not.
+- where **unaddressed points remain**, they are the answer, and the action
+  opens the marker only to say what the points cannot;
+- where the mark already came from the marker — 12(b) — the comment is on
+  screen and the action would be asking the same question twice;
+- it appears only when an endpoint is connected, because without one the code
+  substitutes a demo grade, and a demo grade presented as marking is the fault
+  Gate 3B exists to prevent;
+- **it never opens Paragraph Review.** In the current build `examDeepReview`
+  does, whenever the worker returns `paragraphs[]`. In Test Mode a short answer
+  must not: this is retrospective assessment feedback about a submitted
+  response, not guided composition of one.
 
-`What would make this stronger →` is the one door to the marking worker. It
-returns an overall summary, criteria judgements and next steps, and those render
-**into this same section** as more of the same material — not into a review
-workspace. It appears only when an endpoint is connected, because without one
-the current code substitutes a demo grade, and a demo grade presented as marking
-is the fault Gate 3B exists to prevent.
+None of Essay Practice comes across — no TEEEC tabs, no rewrite box, no More
+Help, no sentence shapes, no coaching loop.
 
-## The four authoring cases
+## The authoring cases
 
-The design has to hold whatever a paper authors. None of these makes the page
-look broken, because each optional element is a section that is either present
-or absent, never an empty frame:
+Each optional element is a section that is either present or absent, never an
+empty frame:
 
 | case | what renders |
 | --- | --- |
-| **points, no model** — 11(b), and every short answer in this paper | the result, the points surface, the arithmetic line |
-| **points and a model** | the same, plus a collapsed *Model answer* disclosure below the surface |
-| **model or vocabulary but no points** | the result, the matched and missing terms, the model; the arithmetic line is withheld because there is no per-point mark to state |
-| **worker feedback only** | the result, then the summary, criteria and next steps in the marking section; no points surface |
-| **thin but assessable** | the result alone, and the marking section does not render at all |
+| **weighted points, no model** — 11(b) | result, points surface, the weighting stated |
+| **key points only** — 12(b) | result and where it came from, points surface, points described rather than weighted |
+| **points and a model** | either of the above, plus a collapsed *Model answer* below the surface |
+| **model or vocabulary but no points** | result, matched and missing terms, the model; no count line, because there is no per-point mark to state |
+| **worker feedback only** | result, then the comment; the points surface does not render |
+| **thin but assessable** | the result alone; the marking section does not render at all |
 
-11(b) is the third-hardest of these and the one the fixture actually has, which
-is why it was drawn first. A model answer is **not** assumed: none is authored
-here, so none is shown, and the absence leaves no gap.
+Two are drawn, because they are the two the fixture genuinely has. **A model
+answer is not assumed:** none is authored for either question, so none is shown,
+and the absence leaves no gap on either screen.
 
 ## Verified
 
-- grid guard on this screen as on the others: two children, side by side,
-  666/416, the source not nested in the question card
+- grid guard on both screens: two children, side by side, 666/416, the source
+  not nested in the question card
 - surface chain from a marking point outward: `pts r9px` → `mark r0px` →
   `qcard r18px` — two surfaces, not four
-- the whole marking section clears the sticky footer by 115px at 1280x900
+- the whole marking section clears the sticky footer by 115px at 1280x900, on
+  both
+- 12(b)'s two authored sources both render, each keeping its authored caption
 - no page errors, no horizontal overflow
-- no *Model answer* string anywhere in the rendered page
+- no *Model answer* string anywhere in either rendered page
 
 ## Not decided here
 
 - **Extended response and business report** (states 12 and 13), which do go to
-  the worker by default and will need the criteria and next-steps treatment this
-  screen only gestures at.
-- **The feedback sheet** as a separate surface (state 16). On this evidence it
-  may not need to exist: marking renders in place for both calculation and short
-  answer, and a sheet would reintroduce the overlay both have now removed.
-- **Fixing UX-TEST-03 and UX-TEST-04.**
+  the worker by default and will need the criteria and next-steps treatment
+  these screens only gesture at.
+- **State 16.** Marking renders in place for calculation and short answer alike,
+  so a universal feedback sheet looks unnecessary. Kept as an open question
+  rather than deleted: extended response and business report may still want a
+  dedicated full-response review, and that is decidable only once they are
+  designed.

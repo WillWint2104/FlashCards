@@ -2301,11 +2301,22 @@
   .exam-pickrow{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px}
   .exam-pickbtns{display:flex;gap:8px;flex-wrap:wrap}
   .exam-acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  /* How many key points the answer reached. Deliberately a COUNT OF POINTS and
+     never a count of marks: only a paper that authors per-point marks has said
+     the two are the same thing. */
+  .exam-pointhead{font-size:12.5px;font-weight:800;color:var(--ink-2);margin:2px 0 8px}
+  /* What the points are, in the words the paper earns. Where a weighting is
+     authored this states it; where none is, it says so. */
+  .exam-pointrule{font-size:12.5px;color:var(--ink-3);font-weight:700;margin:2px 0 10px}
   .exam-points{display:flex;flex-direction:column;gap:8px;margin:4px 0 10px}
   .exam-pt{display:flex;gap:9px;align-items:flex-start;font-size:14px;line-height:1.5}
   .exam-pt .exam-ptmark{font-weight:800;flex:none;width:18px;text-align:center}
   .exam-pt.hit .exam-ptmark{color:var(--green)}
-  .exam-pt.miss .exam-ptmark{color:var(--coral,#d1495b)}
+  /* An unaddressed point carries an empty dashed ring rather than a cross: it
+     is a point the answer did not reach, not an error the student made. */
+  .exam-pt.miss .exam-ptmark{color:transparent;position:relative}
+  .exam-pt.miss .exam-ptmark::before{content:"";position:absolute;left:2px;top:4px;width:12px;height:12px;
+    border-radius:99px;border:1.5px dashed var(--ink-3)}
   .exam-pt.hit .exam-ptbody{color:var(--ink-2)}
   .exam-pt.miss .exam-ptbody{color:var(--ink);font-weight:600}
   .exam-pthint{display:block;font-size:12.5px;color:var(--ink-3);font-weight:500;margin-top:2px}
@@ -9725,6 +9736,113 @@ function normaliseFormat(q) {
 }
 
 // ---------------------------------------------------------------------------
+// Marking points
+// ---------------------------------------------------------------------------
+// THE ONE PLACE MARKING POINTS ARE READ, AND THE ONE PLACE THEIR RELATIONSHIP
+// TO MARKS IS DECIDED.
+//
+// Two faults made this necessary, and the second is the important one.
+//
+// The grader read every entry as an object - `pt.text`, `pt.need` - while the
+// contract's own fixture authors plain strings. `pt.text` was undefined, the
+// normaliser turned undefined into "", every answer contains "", so every point
+// registered as addressed and an EMPTY ANSWER SCORED FULL MARKS. That is a
+// shape mismatch and it is fixed by reading both shapes here, once.
+//
+// The second fault is that nothing anywhere said a point was worth a mark. The
+// papers prove it is not generally true: the extended responses author four
+// points against twelve and twenty marks. `points[]` is a list of the things a
+// marker looks for - key marking points - and it is guidance, not an
+// allocation.
+//
+// So a mark is derived from points ONLY where the paper authors per-point marks
+// that sum to the question's own marks. `weighted` is that declaration and
+// nothing implies it: a question whose point COUNT happens to equal its mark
+// count has still not said that one point is one mark, and inferring it from
+// the coincidence is the same substitution Gate 3B removed from formats.
+//
+// Malformed points are refused rather than skipped. A point this reader cannot
+// read is not a point that was addressed, and the alternative is awarding marks
+// against something nobody can see.
+function markingPoints(q) {
+  var raw = q && q.points;
+  if (!Array.isArray(raw) || !raw.length)
+    return { ok: true, points: [], count: 0, weighted: false, total: 0 };
+
+  var out = [], sum = 0, allWeighted = true;
+  for (var i = 0; i < raw.length; i++) {
+    var pt = raw[i], where = "marking point " + (i + 1);
+    var text, need = null, hint = "", marks = null;
+
+    if (typeof pt === "string") {
+      text = pt;
+    } else if (pt && typeof pt === "object" && !Array.isArray(pt)) {
+      text = pt.text;
+      need = some(pt.need);
+      hint = blank(pt.hint) ? "" : String(pt.hint);
+      if (pt.marks != null) {
+        if (!finite(pt.marks) || pt.marks < 0)
+          return refuse("POINTS_MALFORMED",
+            where + " carries a mark value that is not a number of marks");
+        marks = pt.marks;
+      }
+    } else {
+      return refuse("POINTS_MALFORMED",
+        where + " is neither text nor a marking point object");
+    }
+
+    if (blank(text))
+      return refuse("POINTS_MALFORMED", where + " has no text, so nothing can be marked against it");
+
+    if (marks == null) allWeighted = false; else sum += marks;
+    out.push({ text: String(text).trim(), need: need, hint: hint, marks: marks });
+  }
+
+  // The declaration is per-point marks that add up to the question. Marks that
+  // do not add up are not a weighting: they are an authoring error that would
+  // otherwise cap or inflate the question silently.
+  var qMarks = finite(q && q.marks) ? q.marks : null;
+  var weighted = allWeighted && qMarks != null && sum === qMarks;
+  return { ok: true, points: out, count: out.length, weighted: weighted, total: allWeighted ? sum : 0 };
+}
+
+// WHICH POINTS AN ANSWER REACHED, AND WHETHER THAT IS A MARK.
+//
+// The matching rule lives here rather than in the app for the same reason the
+// reading rule does: it is the thing that was wrong, and a rule that decides
+// marks should be testable without a browser. `score` is a number ONLY for a
+// question whose paper authored a weighting; otherwise it is null and the
+// caller must get the mark from somewhere that can justify it.
+function scorePoints(q, answer) {
+  var mp = markingPoints(q);
+  if (mp.ok !== true) return mp;
+  var a = normText(answer);
+  var pts = mp.points.map(function (pt) {
+    var need = (pt.need && pt.need.length) ? pt.need : [pt.text];
+    // A phrasing that normalises to nothing matches nothing. Without this the
+    // empty string is a substring of every answer, which is precisely how an
+    // unanswered question came to score full marks.
+    var hit = need.some(function (al) { var n = normText(al); return n !== "" && a.indexOf(n) !== -1; });
+    return { text: pt.text, hit: hit, hint: pt.hint, marks: pt.marks };
+  });
+  var hits = pts.filter(function (p) { return p.hit; }).length;
+  var score = null;
+  if (mp.weighted) {
+    var raw = pts.reduce(function (n, p) { return p.hit ? n + p.marks : n; }, 0);
+    score = Math.min(raw, q.marks);
+  }
+  return { ok: true, points: pts, hits: hits, count: pts.length,
+           weighted: mp.weighted, score: score, max: finite(q && q.marks) ? q.marks : 0 };
+}
+
+// The app's own normaliser, here so the matching rule does not depend on the
+// caller passing an equivalent one.
+function normText(s) {
+  return String(s == null ? "" : s).toLowerCase()
+    .replace(/[^a-z0-9.\-% ]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+// ---------------------------------------------------------------------------
 function assign(a, b) { Object.keys(b).forEach(function (k) { a[k] = b[k]; }); return a; }
 function finite(n) { return typeof n === "number" && isFinite(n); }
 function num(n) { return finite(n) ? n : 0; }
@@ -9742,6 +9860,7 @@ module.exports = {
   isSubjectKey: isSubjectKey, curriculumOf: curriculumOf,
   curriculumFindings: curriculumFindings, subjectOverrides: subjectOverrides,
   resolveAuthority: resolveAuthority,
+  markingPoints: markingPoints, scorePoints: scorePoints, normText: normText,
 };
 
 };
@@ -12832,7 +12951,7 @@ module.exports = {
       let g;
       if (f === "calculation") g = gradeCalc(q, ans);
       else if (ASSESS.writtenModeOf(f) === "extended") g = await gradeWritten(q, ans);
-      else g = (Array.isArray(q.points) && q.points.length) ? gradePoints(q, ans) : gradeLocal(q, ans);
+      else g = await gradeShort(q, ans);
       // The audit found this button still reading "Checking…" after a refusal,
       // beside a score of undefined/undefined. Nothing was spent, so the control
       // that spends it comes back and says what it does.
@@ -12841,18 +12960,64 @@ module.exports = {
       examSheet(item, key, g);
     };
   }
-  // Marking-POINTS grading for short answers: one mark per point addressed. A point
-  // is "hit" when the answer contains any of its accepted phrasings (need[]), else
-  // the point's own text. Deterministic, offline, and shows exactly what was missed.
-  function gradePoints(q, answer) {
-    const a = norm(answer);
-    const pts = (q.points || []).map(pt => {
-      const need = (Array.isArray(pt.need) && pt.need.length) ? pt.need : [pt.text];
-      const hit = need.some(al => a.includes(norm(al)));
-      return { text: pt.text, hit, hint: pt.hint || "", marks: pt.marks || 1 };
-    });
-    const raw = pts.filter(p => p.hit).reduce((n, p) => n + p.marks, 0);
-    return MARKED({ score: Math.min(raw, q.marks), max: q.marks, kind: "points", points: pts, model: q.model || "" });
+  // Marking-POINTS grading, and the decision about when it may put a number on a
+  // response at all.
+  //
+  // A point is "hit" when the answer contains any of its accepted phrasings
+  // (need[]), else the point's own text. That much is unchanged. What changed is
+  // everything around it, because two faults met here:
+  //
+  //   the reader took every entry as an object while papers author strings, so
+  //   `pt.text` was undefined, norm(undefined) was "", every answer contains ""
+  //   and an EMPTY ANSWER SCORED FULL MARKS against three ticks reading
+  //   "undefined";
+  //
+  //   and nothing anywhere said a point was worth a mark. It generally is not:
+  //   the extended responses author four points against twelve and twenty.
+  //
+  // Both are now settled in ASSESS.markingPoints. Here that leaves three routes,
+  // and the middle one is the point of the exercise: a question whose points
+  // carry no authored weighting is NOT scored from them. Its points are shown as
+  // what they are - the key points a marker looks for - and the mark comes from
+  // the marker, which is the only thing that can say what the remaining marks
+  // were for.
+  async function gradeShort(q, answer) {
+    const sp = ASSESS.scorePoints(q, answer);
+    // A point nobody can read is not a point that was addressed. Refuse rather
+    // than skip it: skipping awards the remaining marks against something that
+    // is not there.
+    if (ASSESS.outcomeOf(sp) === "refused")
+      return ASSESS.refuse(sp.code || "POINTS_MALFORMED",
+        "This response was not marked: " + (sp.why || "its marking points could not be read") + ".",
+        { max: Number(q && q.marks) || 0 });
+    if (sp.weighted)
+      return MARKED({ score: sp.score, max: sp.max, kind: "points",
+               points: sp.points, weighted: true, model: q.model || "" });
+    if (sp.count) {
+      // Unweighted points are diagnosis, not arithmetic. The marker awards the
+      // mark; the checklist still says which key points the answer reached, and
+      // carries `weighted: false` so no screen can imply a mark-per-point rule
+      // the paper never authored.
+      const g = await gradeWritten(q, answer);
+      return isMarked(g) ? Object.assign({}, g, { points: sp.points, weighted: false }) : g;
+    }
+    return gradeLocal(q, answer);
+  }
+  // The checklist, for a weighted question and an unweighted one. The only
+  // difference is the sentence underneath: where the paper authored a weighting
+  // it can be stated, and where it did not, the points are described as what
+  // they are rather than made to imply an arithmetic nobody wrote.
+  function pointsHTML(g, ratio) {
+    const pts = g.points || [];
+    const hits = pts.filter(p => p.hit).length;
+    const rule = g.weighted
+      ? "One mark for each point addressed. " + pts.length + " points, " + g.max + " marks."
+      : "These are the key points considered in marking. They are not one mark each.";
+    return `<div class="exam-pointhead">${hits} of ${pts.length} key points addressed</div>` +
+      `<div class="exam-points">${pts.map(pt =>
+        `<div class="exam-pt ${pt.hit ? "hit" : "miss"}"><span class="exam-ptmark">${pt.hit ? "✓" : ""}</span><span class="exam-ptbody">${esc(pt.text)}${(!pt.hit && pt.hint) ? `<span class="exam-pthint">${esc(pt.hint)}</span>` : ""}</span></div>`).join("")}</div>` +
+      `<div class="exam-pointrule">${esc(rule)}</div>` +
+      (g.model ? `<details ${ratio < 0.7 ? "open" : ""}><summary>Model answer</summary><p>${linkGlossary(g.model)}</p></details>` : "");
   }
   function examSheetHTML(q, g) {
     // A response nothing judged gets no mood, no score and no ratio. Everything
@@ -12864,10 +13029,9 @@ module.exports = {
     let body = "";
     if (g.kind === "mc") body = `<p><b>${g.correct ? "Correct." : "Not this one."}</b> ${esc(g.why)}</p>${g.correct ? "" : `<p>Answer: <b>${esc(g.answerText)}</b></p>`}`;
     else if (g.kind === "calc") body = `<p>${g.correct ? "Correct." : "Expected <b>" + esc(g.model) + "</b>."}</p>${g.working ? `<p class="working"><b>Working:</b> ${esc(g.working)}</p>` : ""}`;
-    else if (g.kind === "points") body = `<div class="exam-points">${g.points.map(pt =>
-        `<div class="exam-pt ${pt.hit ? "hit" : "miss"}"><span class="exam-ptmark">${pt.hit ? "✓" : "✗"}</span><span class="exam-ptbody">${esc(pt.text)}${(!pt.hit && pt.hint) ? `<span class="exam-pthint">${esc(pt.hint)}</span>` : ""}</span></div>`).join("")}</div>${g.model ? `<details ${ratio < 0.7 ? "open" : ""}><summary>Model answer</summary><p>${linkGlossary(g.model)}</p></details>` : ""}`;
+    else if (g.kind === "points") body = pointsHTML(g, ratio);
     else if (g.kind === "local") body = `${(g.matched.length || g.missing.length) ? `<div class="chips">${g.matched.map(t => `<span class="chip">${esc(t)} ✓</span>`).join("")}${g.missing.map(t => `<span class="chip todo" data-term="${esc(t)}">${esc(t)}</span>`).join("")}</div>` : ""}<details ${ratio < 0.7 ? "open" : ""}><summary>Model answer</summary><p>${linkGlossary(g.model)}</p></details>`;
-    else { const fb = g.fb || {}; body = `${fb.overall ? `<p>${esc(fb.overall.summary || "")}</p>` : ""}${(fb.criteria || []).map(c => `<div class="crit ${c.status}"><span class="dot"></span><b>${esc(c.name)}:</b> ${esc(c.comment || c.status)}</div>`).join("")}${(fb.missing_vocabulary || []).length ? `<div class="chips">${fb.missing_vocabulary.map(t => `<span class="chip todo">${esc(t)}</span>`).join("")}</div>` : ""}${q.model ? `<details><summary>What a top answer covers</summary><p>${linkGlossary(q.model)}</p></details>` : ""}`; }
+    else { const fb = g.fb || {}; body = (Array.isArray(g.points) && g.points.length ? pointsHTML(g, ratio) : "") + `${fb.overall ? `<p>${esc(fb.overall.summary || "")}</p>` : ""}${(fb.criteria || []).map(c => `<div class="crit ${c.status}"><span class="dot"></span><b>${esc(c.name)}:</b> ${esc(c.comment || c.status)}</div>`).join("")}${(fb.missing_vocabulary || []).length ? `<div class="chips">${fb.missing_vocabulary.map(t => `<span class="chip todo">${esc(t)}</span>`).join("")}</div>` : ""}${q.model ? `<details><summary>What a top answer covers</summary><p>${linkGlossary(q.model)}</p></details>` : ""}`; }
     return `<div class="sheet ${mood[0]}"><div class="head"><div class="score">${g.score}<small>/${g.max}</small></div><h3>${mood[1]}</h3></div><div class="bd">${body}</div></div>`;
   }
   function examSheet(item, key, g) {
@@ -12879,7 +13043,7 @@ module.exports = {
     // review an extended response gets is offered here too, on request.
     const askable = !hasReview && ["points", "local"].includes(g.kind) && !!state.endpoint;
     const reviewBtn = hasReview ? `<button class="btn" id="examreview">Work through the issues (${rvIssueCount(g.fb)}) →</button>`
-      : askable ? `<button class="btn ghost" id="examreview">Mark this properly →</button>` : "";
+      : askable ? `<button class="btn ghost" id="examreview">What would make this stronger →</button>` : "";
     // The bar is rendered once, at the top of the question screen, so it was a
     // question behind all the way through a paper. That is tolerable for a score
     // and not for "not marked", which is the one thing a student needs to see at
@@ -12903,7 +13067,7 @@ module.exports = {
     const ans = EXAM.answers[key] || "";
     const btn = $("#examreview"); if (btn) { btn.disabled = true; btn.textContent = "Marking…"; }
     const g = await gradeWritten(item.q, ans);
-    if (btn) { btn.disabled = false; btn.textContent = "Mark this properly →"; }
+    if (btn) { btn.disabled = false; btn.textContent = "What would make this stronger →"; }
     // A refusal has a reason, and "could not be reached" is not it. Saying the
     // wrong one sends a student looking for a connection problem that is not
     // there.

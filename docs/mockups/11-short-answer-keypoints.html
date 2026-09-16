@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Marginal — Short answer marked</title>
+<title>Marginal — Short answer, key points</title>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   /* Marginal's own tokens, lifted unchanged from index.html. Nothing here
@@ -65,7 +65,7 @@
      drops this span and keeps the answered count on its own. */
   .prog .score{}
   .pbar{height:7px;width:190px;border-radius:99px;background:#EDF2F2;overflow:hidden;margin-top:5px}
-  .pbar i{display:block;height:100%;width:60%;background:var(--green);border-radius:99px}
+  .pbar i{display:block;height:100%;width:80%;background:var(--green);border-radius:99px}
 
   /* Two columns. The source sits BESIDE the response, not above it. */
   /* Roughly 62/38. A calculation and its working do not need 70% of a
@@ -163,6 +163,10 @@
      Medium. Width and size are unchanged. */
   .srcbody{padding:16px 18px 20px;font-size:14.5px;font-weight:500;color:var(--ink);line-height:1.75}
   .srcbody p+p{margin-top:12px}
+  /* A parent may own more than one source. Each keeps its authored caption. */
+  .srcbody .cap{font-family:var(--disp);font-weight:600;font-size:12px;color:var(--ink-2);margin-top:14px}
+  .srcbody .cap:first-child{margin-top:0}
+  .srcbody .cap+p{margin-top:4px}
 
   /* Navigation is always available, so a question may be left and returned to.
      This rail follows the whole paper, not the parent. */
@@ -248,11 +252,11 @@
     <div class="spacer"></div>
     <span class="policy"><span class="dot"></span>Practice · marked as you go</span>
     <button class="navbtn">
-      <span class="grid"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></span>
+      <span class="grid"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span>
       Questions
     </button>
     <div class="prog">
-      <b>12</b> of 20 answered<span class="score"> · <b>21</b>/90 marks</span>
+      <b>16</b> of 20 answered<span class="score"> · <b>34</b>/90 marks</span>
       <div class="pbar"><i></i></div>
     </div>
   </div>
@@ -260,68 +264,74 @@
   <div class="work">
     <div class="qcard">
       <div class="parent">
-        <span class="pnum">Question 11</span>
-        <span class="pmeta">Kerbside Coffee · 14 marks</span>
+        <span class="pnum">Question 12</span>
+        <span class="pmeta">Harbourline Cycles · 14 marks</span>
         <div class="pprog">
-          <span class="pdone">2 of 4 parts answered</span>
-          <div class="parts" role="group" aria-label="Parts of Question 11">
-            <button class="pt done" title="11(a) · 2 marks · answered"><span class="g">✓</span>a</button>
-            <button class="pt here done" title="11(b) · 3 marks · answered · you are here" aria-current="true"><span class="g">✓</span>b</button>
-            <button class="pt todo" title="11(c) · 4 marks · not answered yet">c</button>
-            <button class="pt todo" title="11(d) · 5 marks · not answered yet">d</button>
+          <span class="pdone">2 of 3 parts answered</span>
+          <div class="parts" role="group" aria-label="Parts of Question 12">
+            <button class="pt done" title="12(a) · 3 marks · answered"><span class="g">✓</span>a</button>
+            <button class="pt here done" title="12(b) · 5 marks · answered · you are here" aria-current="true"><span class="g">✓</span>b</button>
+            <button class="pt todo" title="12(c) · 6 marks · not answered yet">c</button>
           </div>
         </div>
       </div>
 
       <div class="exam-qhead">
-        <span>Question 11(b)</span><span class="marks">· 3 marks</span>
-        <span class="fmt">short answer · explain</span>
+        <span>Question 12(b)</span><span class="marks">· 5 marks</span>
+        <span class="fmt">short answer · analyse</span>
       </div>
-      <p class="exam-prompt">Explain how the business's casual employment of van operators could be contributing to its turnover.</p>
+      <p class="exam-prompt">Analyse TWO factors that could explain the change in the expense ratio shown in Table 1.</p>
 
-      <textarea class="answerbox part" rows="4">Casual van operators are not guaranteed hours or paid leave, so their income changes from week to week. That insecurity makes it easy for them to take a steadier job somewhere else, which is why so many of them leave.</textarea>
+      <textarea class="answerbox part" rows="3">Expenses went up by more than sales did between 2024 and 2025, so the expense ratio rose. One reason could be higher freight costs on the imported frames the note describes.</textarea>
       <div class="saved"><span class="tick">✓</span> Saved. Moving to another part keeps this answer.</div>
 
-      <div class="result part">
-        <span class="badge">Most of it</span>
-        <span class="pair"><span class="k">Marks</span><span class="v">2 of 3</span></span>
+      <div class="result some">
+        <span class="badge">Partly there</span>
+        <span class="pair"><span class="k">Marks</span><span class="v">3 of 5</span></span>
       </div>
+      <p class="mnote"><span class="who">Marked against Business Studies criteria</span>You establish that expenses outgrew sales and give one cause that the figures support. A second, genuinely different cause, and a sentence drawing the two together, would carry the rest.</p>
 
       <div class="submitrow">
         <button class="btn">Try again</button>
-        <button class="btn sm ghost">What would make this stronger →</button>
       </div>
 
       <div class="mark">
-        <div class="markhead">How this was marked<span class="count">2 of 3 key points addressed</span></div>
+        <div class="markhead">How this was marked<span class="count">2 of 4 key points addressed</span></div>
         <ol class="pts">
           <li class="prow hit">
             <span class="mk2">✓</span>
-            <span class="txt">Explains that casual work carries no guaranteed hours or leave entitlements</span>
+            <span class="txt">Identifies that expenses have risen faster than sales</span>
           </li>
           <li class="prow hit">
             <span class="mk2">✓</span>
-            <span class="txt">Links that insecurity to an operator's decision to leave</span>
+            <span class="txt">Offers a first plausible cause and connects it to the figures</span>
           </li>
           <li class="prow miss">
             <span class="mk2"></span>
-            <span class="txt">Connects turnover to the cost of recruiting and training replacements</span>
+            <span class="txt">Offers a second plausible cause that is genuinely distinct from the first</span>
+            <span class="tag">not addressed</span>
+          </li>
+          <li class="prow miss">
+            <span class="mk2"></span>
+            <span class="txt">Draws the two together rather than listing them</span>
             <span class="tag">not addressed</span>
           </li>
         </ol>
-        <div class="markrule">One mark for each point addressed. 3 points, 3 marks.</div>
+        <div class="markrule">These are the key points considered in marking. They are not one mark each.</div>
       </div>
     </div>
 
     <aside class="srcpanel">
       <div class="srchead">
         <span class="ic">📄</span>
-        <span class="t">Kerbside Coffee<small>Shared source · Question 11</small></span>
+        <span class="t">Harbourline Cycles<small>Shared source · Question 12</small></span>
         <button class="expand" title="Open the source in a larger reading view">⤡ Expand</button>
       </div>
       <div class="srcbody">
-        <p>Kerbside Coffee roasts and sells coffee from one site and four vans. Demand at the vans peaks between 7am and 9am, and the owners have had complaints about waiting times.</p>
-        <p>Last year the business bought a second roaster using a three-year loan. Staff turnover among van operators is high, and most operators are employed casually.</p>
+        <p class="cap">Table 1: Selected financial data, Harbourline Cycles</p>
+        <p>2024: sales $820 000, gross profit $328 000, expenses $250 000. 2025: sales $910 000, gross profit $337 000, expenses $301 000.</p>
+        <p class="cap">Note</p>
+        <p>Harbourline Cycles imports its frames and assembles them locally. It has not changed its selling prices since 2024.</p>
       </div>
     </aside>
   </div>
@@ -329,10 +339,10 @@
 
 <div class="footer">
   <div class="footin">
-    <button class="btn sm ghost">← Previous · 11(a)</button>
+    <button class="btn sm ghost">← Previous · 12(a)</button>
     <button class="flag">⚑ Flag for revisit</button>
-    <span class="where">Item 12 of 20 · Section II</span>
-    <button class="btn sm ghost">Next · 11(c) →</button>
+    <span class="where">Item 16 of 20 · Section II</span>
+    <button class="btn sm ghost">Next · 12(c) →</button>
   </div>
 </div>
 

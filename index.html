@@ -2301,11 +2301,22 @@
   .exam-pickrow{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px}
   .exam-pickbtns{display:flex;gap:8px;flex-wrap:wrap}
   .exam-acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  /* How many key points the answer reached. Deliberately a COUNT OF POINTS and
+     never a count of marks: only a paper that authors per-point marks has said
+     the two are the same thing. */
+  .exam-pointhead{font-size:12.5px;font-weight:800;color:var(--ink-2);margin:2px 0 8px}
+  /* What the points are, in the words the paper earns. Where a weighting is
+     authored this states it; where none is, it says so. */
+  .exam-pointrule{font-size:12.5px;color:var(--ink-3);font-weight:700;margin:2px 0 10px}
   .exam-points{display:flex;flex-direction:column;gap:8px;margin:4px 0 10px}
   .exam-pt{display:flex;gap:9px;align-items:flex-start;font-size:14px;line-height:1.5}
   .exam-pt .exam-ptmark{font-weight:800;flex:none;width:18px;text-align:center}
   .exam-pt.hit .exam-ptmark{color:var(--green)}
-  .exam-pt.miss .exam-ptmark{color:var(--coral,#d1495b)}
+  /* An unaddressed point carries an empty dashed ring rather than a cross: it
+     is a point the answer did not reach, not an error the student made. */
+  .exam-pt.miss .exam-ptmark{color:transparent;position:relative}
+  .exam-pt.miss .exam-ptmark::before{content:"";position:absolute;left:2px;top:4px;width:12px;height:12px;
+    border-radius:99px;border:1.5px dashed var(--ink-3)}
   .exam-pt.hit .exam-ptbody{color:var(--ink-2)}
   .exam-pt.miss .exam-ptbody{color:var(--ink);font-weight:600}
   .exam-pthint{display:block;font-size:12.5px;color:var(--ink-3);font-weight:500;margin-top:2px}

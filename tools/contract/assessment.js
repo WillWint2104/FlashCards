@@ -366,6 +366,113 @@ function normaliseFormat(q) {
 }
 
 // ---------------------------------------------------------------------------
+// Marking points
+// ---------------------------------------------------------------------------
+// THE ONE PLACE MARKING POINTS ARE READ, AND THE ONE PLACE THEIR RELATIONSHIP
+// TO MARKS IS DECIDED.
+//
+// Two faults made this necessary, and the second is the important one.
+//
+// The grader read every entry as an object - `pt.text`, `pt.need` - while the
+// contract's own fixture authors plain strings. `pt.text` was undefined, the
+// normaliser turned undefined into "", every answer contains "", so every point
+// registered as addressed and an EMPTY ANSWER SCORED FULL MARKS. That is a
+// shape mismatch and it is fixed by reading both shapes here, once.
+//
+// The second fault is that nothing anywhere said a point was worth a mark. The
+// papers prove it is not generally true: the extended responses author four
+// points against twelve and twenty marks. `points[]` is a list of the things a
+// marker looks for - key marking points - and it is guidance, not an
+// allocation.
+//
+// So a mark is derived from points ONLY where the paper authors per-point marks
+// that sum to the question's own marks. `weighted` is that declaration and
+// nothing implies it: a question whose point COUNT happens to equal its mark
+// count has still not said that one point is one mark, and inferring it from
+// the coincidence is the same substitution Gate 3B removed from formats.
+//
+// Malformed points are refused rather than skipped. A point this reader cannot
+// read is not a point that was addressed, and the alternative is awarding marks
+// against something nobody can see.
+function markingPoints(q) {
+  var raw = q && q.points;
+  if (!Array.isArray(raw) || !raw.length)
+    return { ok: true, points: [], count: 0, weighted: false, total: 0 };
+
+  var out = [], sum = 0, allWeighted = true;
+  for (var i = 0; i < raw.length; i++) {
+    var pt = raw[i], where = "marking point " + (i + 1);
+    var text, need = null, hint = "", marks = null;
+
+    if (typeof pt === "string") {
+      text = pt;
+    } else if (pt && typeof pt === "object" && !Array.isArray(pt)) {
+      text = pt.text;
+      need = some(pt.need);
+      hint = blank(pt.hint) ? "" : String(pt.hint);
+      if (pt.marks != null) {
+        if (!finite(pt.marks) || pt.marks < 0)
+          return refuse("POINTS_MALFORMED",
+            where + " carries a mark value that is not a number of marks");
+        marks = pt.marks;
+      }
+    } else {
+      return refuse("POINTS_MALFORMED",
+        where + " is neither text nor a marking point object");
+    }
+
+    if (blank(text))
+      return refuse("POINTS_MALFORMED", where + " has no text, so nothing can be marked against it");
+
+    if (marks == null) allWeighted = false; else sum += marks;
+    out.push({ text: String(text).trim(), need: need, hint: hint, marks: marks });
+  }
+
+  // The declaration is per-point marks that add up to the question. Marks that
+  // do not add up are not a weighting: they are an authoring error that would
+  // otherwise cap or inflate the question silently.
+  var qMarks = finite(q && q.marks) ? q.marks : null;
+  var weighted = allWeighted && qMarks != null && sum === qMarks;
+  return { ok: true, points: out, count: out.length, weighted: weighted, total: allWeighted ? sum : 0 };
+}
+
+// WHICH POINTS AN ANSWER REACHED, AND WHETHER THAT IS A MARK.
+//
+// The matching rule lives here rather than in the app for the same reason the
+// reading rule does: it is the thing that was wrong, and a rule that decides
+// marks should be testable without a browser. `score` is a number ONLY for a
+// question whose paper authored a weighting; otherwise it is null and the
+// caller must get the mark from somewhere that can justify it.
+function scorePoints(q, answer) {
+  var mp = markingPoints(q);
+  if (mp.ok !== true) return mp;
+  var a = normText(answer);
+  var pts = mp.points.map(function (pt) {
+    var need = (pt.need && pt.need.length) ? pt.need : [pt.text];
+    // A phrasing that normalises to nothing matches nothing. Without this the
+    // empty string is a substring of every answer, which is precisely how an
+    // unanswered question came to score full marks.
+    var hit = need.some(function (al) { var n = normText(al); return n !== "" && a.indexOf(n) !== -1; });
+    return { text: pt.text, hit: hit, hint: pt.hint, marks: pt.marks };
+  });
+  var hits = pts.filter(function (p) { return p.hit; }).length;
+  var score = null;
+  if (mp.weighted) {
+    var raw = pts.reduce(function (n, p) { return p.hit ? n + p.marks : n; }, 0);
+    score = Math.min(raw, q.marks);
+  }
+  return { ok: true, points: pts, hits: hits, count: pts.length,
+           weighted: mp.weighted, score: score, max: finite(q && q.marks) ? q.marks : 0 };
+}
+
+// The app's own normaliser, here so the matching rule does not depend on the
+// caller passing an equivalent one.
+function normText(s) {
+  return String(s == null ? "" : s).toLowerCase()
+    .replace(/[^a-z0-9.\-% ]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+// ---------------------------------------------------------------------------
 function assign(a, b) { Object.keys(b).forEach(function (k) { a[k] = b[k]; }); return a; }
 function finite(n) { return typeof n === "number" && isFinite(n); }
 function num(n) { return finite(n) ? n : 0; }
@@ -383,4 +490,5 @@ module.exports = {
   isSubjectKey: isSubjectKey, curriculumOf: curriculumOf,
   curriculumFindings: curriculumFindings, subjectOverrides: subjectOverrides,
   resolveAuthority: resolveAuthority,
+  markingPoints: markingPoints, scorePoints: scorePoints, normText: normText,
 };

@@ -421,7 +421,7 @@ One product defect is recorded and not fixed: the unsupported-version routing in
 
 Both were proven by running against the real fixture, not by reading.
 
-### UX-TEST-03 — every short answer scores full marks, including an empty one
+### UX-TEST-03 — every short answer scores full marks, including an empty one — **FIXED**
 
 In Test Mode a short answer is not sent to the marking worker. `app.js:2432`
 routes it to `gradePoints`, which grades it locally against the paper's authored
@@ -450,20 +450,60 @@ Every short answer in the paper is affected: 11(a) 2/2, 11(b) 3/3, 12(a) 3/3,
 12(b) 4/5. The checklist that is supposed to show what was missed shows three
 ticks against the word `undefined`.
 
-This is a data-shape mismatch between the grader and the contract's own fixture,
-not a marking-quality problem. Either the grader accepts a string entry, or
-`points[]` is normalised at import to `{ text }`. It should fail closed rather
-than award marks it cannot justify: a point it cannot read is not a point that
-was addressed.
+**Fixed.** Reading marking points is now a single contract function,
+`ASSESS.markingPoints`, which accepts both authored shapes — a string, or
+`{ text, need?, hint?, marks? }` — and **refuses** anything else with
+`POINTS_MALFORMED`: a non-string non-object, blank text, a negative or
+non-numeric mark. A point that cannot be read is not a point that was addressed,
+so the response is not marked rather than marked generously.
 
-### UX-TEST-04 — a question whose points cannot reach its marks
+The matching rule moved with it, into `ASSESS.scorePoints`, where it can be
+tested without a browser. The specific mechanism of the fault is now a named
+case: **a phrasing that normalises to nothing matches nothing.** Measured after
+the fix, on the same question:
+
+```
+answer ""                                    -> 0/3   hits 0/3
+answer "banana bread"                        -> 0/3   hits 0/3
+answer <one authored point, verbatim>        -> 1/3   hits 1/3
+answer <two authored points>                 -> 2/3   hits 2/3
+rendered point text                          -> the authored text
+```
+
+`tests/t31.mjs`, 41 assertions, in `fast` and `checkpoint`.
+
+### UX-TEST-04 — a question whose points cannot reach its marks — **RESOLVED**
 
 12(b) is worth **5 marks** and authors **4 points**, each worth 1 under
 `pt.marks || 1`. `score = Math.min(raw, q.marks)` caps at 4, so **no answer can
 score 5/5** while points grading is in force. 11(d), 12(c), 13, 14, 15 and 16
 have the same shape but are extended responses, which go to the worker instead.
 
-Two honest resolutions: the paper authors per-point marks that sum to the
-question's marks, or the interface stops claiming the points are the whole
-rubric and says how many of the marks they account for. State 11's design does
-the second, because it works whatever a given paper authors.
+**Resolved, and it turned out to be the deeper of the two.**
+
+The audit answered the question 12(b) raises. `points[]` is authored across this
+paper as **key marking points** — the things a marker looks for — and not as an
+allocation. The extended responses settle it: they author **four points against
+twelve and twenty marks**. Nobody wrote those as four marks. Three of the four
+short answers happen to have as many points as marks; one does not; and nothing
+anywhere in the contract said the two were related at all.
+
+So the permanent model is:
+
+> **Marking points are guidance. A mark is derived from them only where a paper
+> authors per-point marks that sum to the question's marks.**
+
+`weighted` is that declaration, and **nothing implies it**. A question whose
+point count happens to equal its mark count has still not said one point is one
+mark, and inferring it from the coincidence is the same substitution Gate 3B
+removed from formats. `markingPoints({marks:3, points:["a","b","c"]}).weighted`
+is `false`, and t31 asserts it.
+
+Where no weighting is authored, the points do not produce a score at all
+(`scorePoints(...).score === null`) and the mark comes from the marker, which is
+the only thing that can say what the remaining marks were for.
+
+**12(b) was not changed to fit.** Its five marks and four points stay exactly as
+authored, and it is now the fixture's canonical unweighted case. The three short
+answers that were already one-to-one had that made explicit — `{ text, marks: 1 }`
+— which changes no mark value and states what was previously only a coincidence.
