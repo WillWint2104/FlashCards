@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Marginal — Nested multipart question</title>
+<title>Marginal — Calculation checked — correct</title>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
   /* Marginal's own tokens, lifted unchanged from index.html. Nothing here
@@ -61,7 +61,7 @@
      drops this span and keeps the answered count on its own. */
   .prog .score{}
   .pbar{height:7px;width:190px;border-radius:99px;background:#EDF2F2;overflow:hidden;margin-top:5px}
-  .pbar i{display:block;height:100%;width:60%;background:var(--green);border-radius:99px}
+  .pbar i{display:block;height:100%;width:65%;background:var(--green);border-radius:99px}
 
   /* Two columns. The source sits BESIDE the response, not above it. */
   .work{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
@@ -235,11 +235,11 @@
     <div class="spacer"></div>
     <span class="policy"><span class="dot"></span>Practice · marked as you go</span>
     <button class="navbtn">
-      <span class="grid"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></span>
+      <span class="grid"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span>
       Questions
     </button>
     <div class="prog">
-      <b>12</b> of 20 answered<span class="score"> · <b>21</b>/90 marks</span>
+      <b>13</b> of 20 answered<span class="score"> · <b>25</b>/90 marks</span>
       <div class="pbar"><i></i></div>
     </div>
   </div>
@@ -249,11 +249,11 @@
       <div class="parent">
         <span class="pnum">Question 11</span>
         <span class="pmeta">Kerbside Coffee · 14 marks</span>
-        <span class="pdone">2 of 4 parts answered</span>
+        <span class="pdone">3 of 4 parts answered</span>
         <div class="parts" role="group" aria-label="Parts of Question 11">
           <button class="pt done" title="11(a) · 2 marks · answered"><span class="g">✓</span>a</button>
           <button class="pt done flag" title="11(b) · 3 marks · answered · flagged for revisit"><span class="g">✓</span><span class="g fg">⚑</span>b</button>
-          <button class="pt here" title="11(c) · 4 marks · you are here" aria-current="true">c</button>
+          <button class="pt here done" title="11(c) · 4 marks · answered · you are here" aria-current="true"><span class="g">✓</span>c</button>
           <button class="pt todo" title="11(d) · 5 marks · not answered yet">d</button>
         </div>
       </div>
@@ -264,11 +264,15 @@
       </div>
       <p class="exam-prompt">Kerbside Coffee holds current assets of $60 000 and current liabilities of $40 000. Calculate its current ratio, correct to one decimal place.</p>
 
-      <input type="text" class="answerbox short" placeholder="Enter your answer.">
+      <input type="text" class="answerbox short ok" value="1.5">
       <div class="saved"><span class="tick">✓</span> Saved. Moving to another part keeps this answer.</div>
+      <div class="result ok">
+        <span class="badge"><span>✓</span>Correct</span>
+        <span class="pair"><span class="k">Your answer</span><span class="v">1.5</span></span>
+        <span class="pair"><span class="k">Expected</span><span class="v">1.5</span></span>
+      </div>
 
       <div class="submitrow">
-        <button class="btn">Check answer</button>
         <button class="btn sm ghost">View worked solution</button>
         <span class="hint">Checked against the expected answer.</span>
       </div>
