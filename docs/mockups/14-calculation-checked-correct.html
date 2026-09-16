@@ -108,9 +108,8 @@
              background:var(--card);border:2px solid var(--line);border-radius:16px;padding:14px 16px;resize:vertical}
   .answerbox:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
   /* The response field is sized by the format. The container around it is not.
-     A calculation's short field proves the parent shell is format-independent;
-     the full calculation treatment is state 10. */
-  .answerbox.short{max-width:260px}
+     A calculation's short field proves the parent shell is format-independent.
+     Its width is set with the calculation rules below. */
   .saved{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-3);font-weight:800;margin-top:7px}
   .saved .tick{color:var(--green-dk)}
 
@@ -157,10 +156,16 @@
      because the question on screen is Question 11(c), not question 13. */
   .where{font-size:12px;color:var(--ink-3);font-weight:800;text-align:center;flex:1}
 
-  /* ── calculation: deterministic checking ──────────────────────────────────
+  /* ── calculation: deterministic checking ────────────────────────
      A canonical `calculation` authors an expected value and a tolerance, so
      the check is immediate and local. Nothing is sent to a marker to find out
      whether 1.3 is 1.5. There is no pending state to design. */
+
+  /* Compact on desktop, fluid when the column narrows. A numeric answer is
+     short, but the control still has to read as a response, not a form field,
+     so the height and weight of `.answerbox` are untouched. It does NOT
+     resize around what is typed. */
+  .answerbox.short{width:min(100%,22rem)}
   .answerbox.ok{border-color:#9FE3C4;background:var(--green-soft)}
   .answerbox.no{border-color:#FFC7BE;background:var(--coral-soft)}
 
@@ -177,40 +182,38 @@
   .pair .k{font-size:11px;font-weight:800;color:var(--ink-3)}
   .pair .v{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--ink);font-variant-numeric:tabular-nums}
 
-  /* Opening the solution is recorded. The student is told so plainly rather
-     than the attempt being quietly reclassified behind them. */
-  .viewedrow{margin-top:10px}
-  .viewed{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;color:var(--gold-dk);
-          background:var(--gold-soft);border:1px solid #FFE0A6;border-radius:99px;padding:4px 12px}
-
-  /* ── the worked solution ──────────────────────────────────────────────────
-     A side sheet, not a centred modal: this belongs to the question in view,
-     and the student keeps their own working visible beside it. The navigator
-     is centred because it belongs to the whole paper. */
-  .scrim{position:fixed;inset:0;background:rgba(60,74,74,.44);z-index:20}
-  .sheet{position:fixed;z-index:21;top:0;right:0;bottom:0;width:min(460px,calc(100vw - 32px));
-         background:var(--card);border-left:1px solid var(--line);box-shadow:-22px 0 54px rgba(60,74,74,.22);
-         display:flex;flex-direction:column}
-  .sheethead{display:flex;align-items:flex-start;gap:12px;padding:18px 20px 14px;border-bottom:1px solid var(--line)}
-  .sheethead h2{font-size:18px;font-weight:600;line-height:1.2}
-  .sheethead .sub{font-size:12px;color:var(--ink-2);font-weight:700}
-  .sheethead .close{margin-left:auto;background:none;border:none;font-size:21px;line-height:1;color:var(--ink-3);padding:0 2px}
-  .sheethead .close:hover{color:var(--ink)}
-  .sheetbody{overflow:auto;padding:14px 20px 18px}
-  .step{display:flex;gap:12px;padding:13px 0;border-top:1px solid var(--line)}
-  .step:first-child{border-top:none;padding-top:2px}
-  .step .no{width:24px;height:24px;flex:none;border-radius:99px;background:#F4F8F8;border:1.5px solid var(--line);
+  /* ── the worked solution ─────────────────────────────────
+     It expands INSIDE the question card, directly under the result and the
+     actions, because the task is local: my answer, the check, the explanation,
+     perhaps a retry. The student reads "I wrote 1.3" and "$60 000 ÷ $40 000
+     = 1.5" without carrying anything between two surfaces. No overlay, no
+     backdrop, no focus trap, no close control, nothing obscured, and on a
+     narrow screen it simply stacks. The same component is reused after
+     submission in exam conditions. */
+  .soln{margin-top:14px;border:1.5px solid var(--line);border-radius:14px;background:#FAFCFC;padding:3px 16px 14px}
+  .solnhead{font-family:var(--disp);font-weight:600;font-size:13.5px;color:var(--ink);padding:11px 0 4px}
+  /* Label beside the working, the same shape the help region already uses:
+     `.help .row` is a fixed-width key and its text. It halves the height of
+     the disclosure and wraps to stacked when the column narrows. */
+  .step{display:flex;gap:12px;padding:9px 0;border-top:1px solid var(--line);align-items:flex-start}
+  .step .no{width:24px;height:24px;flex:none;border-radius:99px;background:#fff;border:1.5px solid var(--line);
             display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-weight:700;
-            font-size:12px;color:var(--ink-2)}
-  .step .t{min-width:0;flex:1}
-  .step .lbl{font-family:var(--disp);font-weight:600;font-size:13.5px;color:var(--ink);margin-bottom:6px}
-  .math{font-family:var(--disp);font-weight:500;font-size:16px;color:var(--ink);background:#FAFCFC;
-        border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-variant-numeric:tabular-nums;line-height:1.45}
+            font-size:12px;color:var(--ink-2);margin-top:4px}
+  .step .t{min-width:0;flex:1;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .step .lbl{font-family:var(--disp);font-weight:600;font-size:13px;color:var(--ink-2);width:168px;flex:none}
+  /* Each line of working is sized by its own content, so "= 1.5" does not
+     become a slab the width of the writing column. */
+  .math{display:inline-block;max-width:100%;font-family:var(--disp);font-weight:500;font-size:16px;color:var(--ink);
+        background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 13px;
+        font-variant-numeric:tabular-nums;line-height:1.45}
   .step.final .no{background:var(--green-soft);border-color:#9FE3C4;color:var(--green-dk)}
   .step.final .math{background:var(--green-soft);border-color:#9FE3C4;font-weight:600}
-  .sheetfoot{margin-top:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 20px;
-             border-top:1px solid var(--line);background:#FAFCFC}
-  .sheetfoot .note{font-size:11.5px;color:var(--ink-2);font-weight:700;flex:1;min-width:150px}
+  .solnfoot{padding-top:13px;border-top:1px solid var(--line)}
+
+  /* Opening the solution is recorded. The student is told so plainly rather
+     than the attempt being quietly reclassified behind them. */
+  .viewed{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;color:var(--gold-dk);
+          background:var(--gold-soft);border:1px solid #FFE0A6;border-radius:99px;padding:4px 12px}
 
   @media(max-width:900px){
     .work{grid-template-columns:1fr}
@@ -274,7 +277,6 @@
 
       <div class="submitrow">
         <button class="btn sm ghost">View worked solution</button>
-        <span class="hint">Checked against the expected answer.</span>
       </div>
     </div>
 
