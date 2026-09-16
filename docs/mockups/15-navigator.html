@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Marginal — Nested multipart question</title>
+<title>Marginal — Navigator</title>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
   /* Marginal's own tokens, lifted unchanged from index.html. Nothing here
@@ -52,6 +52,8 @@
   .navbtn{font-family:var(--disp);font-weight:700;font-size:13px;color:var(--ink);background:var(--card);
           border:1.5px solid var(--line);border-radius:12px;padding:8px 13px;display:flex;align-items:center;gap:7px}
   .navbtn:hover{border-color:var(--green)}
+  /* This is the control the navigator opens from, so it reads as held open. */
+  .navbtn.open{border-color:var(--green);background:var(--green-soft);color:var(--green-dk)}
   .navbtn .grid{display:grid;grid-template-columns:repeat(3,4px);gap:2px}
   .navbtn .grid i{width:4px;height:4px;border-radius:1px;background:var(--ink-3)}
   .navbtn .grid i.on{background:var(--green)}
@@ -67,19 +69,14 @@
   .work{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
 
   .qcard{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:20px 22px}
-
-  /* The parent strip. It stays put while the student moves through a/b/c/d,
-     so no child ever has to be traced back to its parent by inference. */
   .parent{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding-bottom:12px;margin-bottom:14px;border-bottom:1px dashed var(--line)}
   .pnum{font-family:var(--disp);font-weight:600;font-size:15px;color:var(--ink)}
   .pmeta{font-size:12px;color:var(--ink-2);font-weight:700}
-  /* Partial completion of the parent, in words, in the line that already
-     exists. No second progress system. */
   .pdone{font-size:12px;color:var(--ink-3);font-weight:800}
 
-  /* The part rail. Every state reads without colour: a tick, a filled ring, a
-     flag, and a dashed outline for "not answered yet". Chips are buttons: any
-     part of the parent may be opened directly, in any order. */
+  /* The chip vocabulary is ONE vocabulary. The part rail in the question card
+     and every chip in the navigator are the same component in the same states:
+     a tick, a filled ring, a flag, a dashed outline. Nothing is colour-only. */
   .parts{display:flex;gap:5px;flex-wrap:wrap;margin-left:auto}
   .pt{min-width:32px;height:28px;padding:0 7px;border-radius:9px;display:inline-flex;align-items:center;
       justify-content:center;gap:3px;font-family:var(--disp);font-weight:700;font-size:12.5px;
@@ -89,8 +86,6 @@
   .pt.here{background:var(--ink);border-color:var(--ink);color:#fff;box-shadow:0 0 0 3px rgba(60,74,74,.14)}
   .pt.flag{background:var(--gold-soft);border-color:var(--gold);color:var(--gold-dk)}
   .pt.todo{border-style:dashed;border-color:var(--ink-3)}
-  /* Answered AND flagged is a real combination, so it carries BOTH glyphs
-     rather than one colour standing in for two facts. */
   .pt.done.flag{background:var(--green-soft);border-color:var(--gold);color:var(--green-dk)}
   .pt.done.flag .fg{color:var(--gold-dk)}
   .pt:not(.here):hover{border-color:var(--green)}
@@ -104,23 +99,9 @@
   .answerbox{width:100%;font:inherit;font-weight:600;font-size:15.5px;line-height:1.65;color:var(--ink);
              background:var(--card);border:2px solid var(--line);border-radius:16px;padding:14px 16px;resize:vertical}
   .answerbox:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
-  /* The response field is sized by the format. The container around it is not.
-     A calculation's short field proves the parent shell is format-independent;
-     the full calculation treatment is state 10. */
   .answerbox.short{max-width:260px}
   .saved{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-3);font-weight:800;margin-top:7px}
   .saved .tick{color:var(--green-dk)}
-
-  /* Optional, format-aware, collapsed. Not rendered at all where nothing
-     appropriate is authored — which is the case for this part. */
-  .help{margin-top:14px;border:1.5px solid var(--line);border-radius:14px;background:#FAFCFC;overflow:hidden}
-  .help summary{list-style:none;cursor:pointer;padding:11px 14px;display:flex;align-items:center;gap:9px;
-                font-family:var(--disp);font-weight:600;font-size:13.5px;color:var(--ink)}
-  .help summary::-webkit-details-marker{display:none}
-  .help summary .chev{margin-left:auto;color:var(--ink-3);font-size:12px}
-  .help .body{padding:0 14px 13px;font-size:13px;color:var(--ink-2);font-weight:700}
-  .help .row{display:flex;gap:9px;padding:7px 0;border-top:1px solid var(--line)}
-  .help .row .k{font-family:var(--disp);font-weight:600;color:var(--ink);flex:none;width:96px;font-size:12.5px}
 
   .submitrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:18px}
   .btn{font-family:var(--disp);font-weight:600;font-size:15px;color:#fff;background:var(--green);border:none;
@@ -131,8 +112,6 @@
   .btn.sm.ghost{box-shadow:0 0 0 2px var(--line) inset}
   .hint{font-size:12.5px;color:var(--ink-3);font-weight:700}
 
-  /* One source, owned by the parent, rendered once. It does not move or
-     reload as the student steps through a/b/c/d. */
   .srcpanel{background:var(--card);border:1.5px solid var(--line);border-radius:18px;overflow:hidden;position:sticky;top:86px}
   .srchead{display:flex;align-items:center;gap:9px;padding:12px 14px;border-bottom:1px solid var(--line);background:#FAFCFC}
   .srchead .ic{font-size:15px}
@@ -142,8 +121,6 @@
   .srcbody{padding:13px 14px 16px;font-size:13.5px;font-weight:600;color:var(--ink);line-height:1.6}
   .srcbody p+p{margin-top:9px}
 
-  /* Navigation is always available, so a question may be left and returned to.
-     This rail follows the whole paper, not the parent. */
   .footer{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--line);z-index:9;
           box-shadow:0 -6px 18px rgba(60,74,74,.05)}
   .footin{max-width:1180px;margin:0 auto;padding:11px clamp(16px,4vw,40px);display:flex;align-items:center;gap:12px}
@@ -153,6 +130,66 @@
   /* "Item" is SEQUENCE POSITION. It is deliberately not the word "question",
      because the question on screen is Question 11(c), not question 13. */
   .where{font-size:12px;color:var(--ink-3);font-weight:800;text-align:center;flex:1}
+
+  /* ─────────────── the navigator ─────────────── */
+
+  .scrim{position:fixed;inset:0;background:rgba(60,74,74,.44);z-index:20}
+  .nav{position:fixed;z-index:21;left:50%;top:50%;transform:translate(-50%,-50%);
+       width:min(940px,calc(100vw - 48px));max-height:88vh;display:flex;flex-direction:column;
+       background:var(--card);border-radius:22px;box-shadow:0 26px 64px rgba(60,74,74,.3);overflow:hidden}
+
+  .navhead{display:flex;align-items:flex-start;gap:14px;padding:18px 22px 0}
+  .navhead h2{font-size:20px;font-weight:600;line-height:1.2}
+  .navhead .sub{font-size:12.5px;color:var(--ink-2);font-weight:700}
+  .navhead .close{margin-left:auto;background:none;border:none;font-size:22px;line-height:1;color:var(--ink-3);padding:0 2px}
+  .navhead .close:hover{color:var(--ink)}
+
+  /* Three different facts, each named in words, sitting side by side so they
+     cannot be mistaken for one another. */
+  .stats{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:13px 22px 0}
+  .stat{font-size:12px;font-weight:800;color:var(--ink-2);background:#F4F8F8;border:1px solid var(--line);
+        border-radius:99px;padding:5px 12px}
+  .stat b{color:var(--ink);font-size:13px}
+  .stat.fl{background:var(--gold-soft);border-color:#FFE0A6;color:var(--gold-dk)}
+  .stat.fl b{color:var(--gold-dk)}
+  .youare{font-size:12px;font-weight:800;color:#fff;background:var(--ink);border-radius:99px;padding:5px 13px}
+  .youare b{font-weight:800}
+  .youare .q{opacity:.72}
+
+  .navbody{overflow:auto;padding:6px 22px 4px;margin-top:10px}
+
+  .sect{padding:14px 0;border-top:1px solid var(--line)}
+  .sect:first-child{border-top:none}
+  .secthead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .secthead .n{font-family:var(--disp);font-weight:600;font-size:14.5px}
+  .secthead .m{font-size:11.5px;color:var(--ink-3);font-weight:800;margin-left:auto}
+  .secthead .note{font-size:11.5px;color:var(--ink-2);font-weight:700;flex-basis:100%}
+
+  /* Leaf questions are chips carrying their AUTHORED number, prefixed Q so a
+     chip can never be read as a sequence position. Question 13 is item 18. */
+  .row{display:flex;gap:5px;flex-wrap:wrap}
+
+  /* A parent is a block, not a chip: its own identity, its own completion,
+     its own rail. Completion counts ANSWERED CHILDREN and is not inferred
+     from where the student happens to be standing. */
+  .par{background:#FAFCFC;border:1px solid var(--line);border-left:3px solid var(--ink-3);
+       border-radius:12px;padding:10px 13px;margin-bottom:7px}
+  .par.active{border-left-color:var(--ink)}
+  .parhead{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:8px}
+  .parhead .n{font-family:var(--disp);font-weight:600;font-size:13.5px}
+  .parhead .m{font-size:11.5px;color:var(--ink-2);font-weight:700}
+  .parhead .c{font-size:11.5px;color:var(--ink-3);font-weight:800;margin-left:auto}
+
+  /* Either/or. One item of the paper, two questions competing for it. */
+  .orwrap{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .orwrap .or{font-family:var(--disp);font-weight:600;font-size:11.5px;color:var(--ink-3)}
+  .orwrap .unchosen{font-size:11.5px;color:var(--ink-3);font-weight:800}
+
+  .navfoot{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 22px;
+           border-top:1px solid var(--line);background:#FAFCFC}
+  .legend{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--ink-2);font-weight:800}
+  .legend span.k{display:flex;align-items:center;gap:6px}
+  .legend .pt{pointer-events:none}
 
   @media(max-width:900px){
     .work{grid-template-columns:1fr}
@@ -176,7 +213,7 @@
     </div>
     <div class="spacer"></div>
     <span class="policy"><span class="dot"></span>Practice · marked as you go</span>
-    <button class="navbtn">
+    <button class="navbtn open">
       <span class="grid"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></span>
       Questions
     </button>
@@ -235,6 +272,121 @@
     <button class="flag">⚑ Flag for revisit</button>
     <span class="where">Item 13 of 20 · Section II</span>
     <button class="btn sm ghost">Next · 11(d) →</button>
+  </div>
+</div>
+
+<div class="scrim"></div>
+
+<div class="nav" role="dialog" aria-modal="true" aria-label="Questions">
+  <div class="navhead">
+    <div>
+      <h2>Questions</h2>
+      <div class="sub">Business Studies practice paper · 20 items · 90 marks</div>
+    </div>
+    <button class="close" title="Close">×</button>
+  </div>
+
+  <div class="stats">
+    <span class="stat"><b>12</b> of 20 answered</span>
+    <span class="stat"><b>8</b> not answered</span>
+    <span class="stat fl"><b>2</b> flagged</span>
+    <span class="youare">You are on <b>item 13 of 20</b><span class="q"> · Question 11(c) · Section II</span></span>
+  </div>
+
+  <div class="navbody">
+
+    <div class="sect">
+      <div class="secthead">
+        <span class="n">Section I — Multiple choice</span>
+        <span class="m">10 of 10 answered · 10 marks</span>
+      </div>
+      <div class="row">
+        <button class="pt done" title="Question 1 · 1 mark · answered"><span class="g">✓</span>Q1</button>
+        <button class="pt done" title="Question 2 · 1 mark · answered"><span class="g">✓</span>Q2</button>
+        <button class="pt done" title="Question 3 · 1 mark · answered"><span class="g">✓</span>Q3</button>
+        <button class="pt done" title="Question 4 · 1 mark · answered"><span class="g">✓</span>Q4</button>
+        <button class="pt done" title="Question 5 · 1 mark · answered"><span class="g">✓</span>Q5</button>
+        <button class="pt done" title="Question 6 · 1 mark · answered"><span class="g">✓</span>Q6</button>
+        <button class="pt done flag" title="Question 7 · 1 mark · answered · flagged for revisit"><span class="g">✓</span><span class="g fg">⚑</span>Q7</button>
+        <button class="pt done" title="Question 8 · 1 mark · answered"><span class="g">✓</span>Q8</button>
+        <button class="pt done" title="Question 9 · 1 mark · answered"><span class="g">✓</span>Q9</button>
+        <button class="pt done" title="Question 10 · 1 mark · answered"><span class="g">✓</span>Q10</button>
+      </div>
+    </div>
+
+    <div class="sect">
+      <div class="secthead">
+        <span class="n">Section II — Short answer</span>
+        <span class="m">2 of 8 answered · 40 marks</span>
+      </div>
+
+      <div class="par active">
+        <div class="parhead">
+          <span class="n">Question 11</span>
+          <span class="m">Kerbside Coffee · 14 marks</span>
+          <span class="c">2 of 4 parts answered</span>
+        </div>
+        <div class="row">
+          <button class="pt done" title="11(a) · 2 marks · answered"><span class="g">✓</span>a</button>
+          <button class="pt done flag" title="11(b) · 3 marks · answered · flagged for revisit"><span class="g">✓</span><span class="g fg">⚑</span>b</button>
+          <button class="pt here" title="11(c) · 4 marks · you are here · item 13 of 20" aria-current="true">c</button>
+          <button class="pt todo" title="11(d) · 5 marks · not answered yet">d</button>
+        </div>
+      </div>
+
+      <div class="par">
+        <div class="parhead">
+          <span class="n">Question 12</span>
+          <span class="m">Harbourline Cycles · 14 marks</span>
+          <span class="c">0 of 3 parts answered</span>
+        </div>
+        <div class="row">
+          <button class="pt todo" title="12(a) · 3 marks · not answered yet">a</button>
+          <button class="pt todo" title="12(b) · 5 marks · not answered yet">b</button>
+          <button class="pt todo" title="12(c) · 6 marks · not answered yet">c</button>
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="pt todo" title="Question 13 · 12 marks · extended response · not answered yet">Q13</button>
+      </div>
+    </div>
+
+    <div class="sect">
+      <div class="secthead">
+        <span class="n">Section III — Business report</span>
+        <span class="m">0 of 1 answered · 20 marks</span>
+      </div>
+      <div class="row">
+        <button class="pt todo" title="Question 14 · 20 marks · business report · Tidewater Outfitters · not answered yet">Q14</button>
+      </div>
+    </div>
+
+    <div class="sect">
+      <div class="secthead">
+        <span class="n">Section IV — Extended response</span>
+        <span class="m">0 of 1 answered · 20 marks</span>
+        <span class="note">Attempt either Question 15 or Question 16. One counts towards the paper.</span>
+      </div>
+      <div class="orwrap">
+        <button class="pt todo" title="Question 15 · 20 marks · extended response · not answered yet">Q15</button>
+        <span class="or">or</span>
+        <button class="pt todo" title="Question 16 · 20 marks · extended response · not answered yet">Q16</button>
+        <span class="unchosen">Not chosen yet</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="navfoot">
+    <div class="legend">
+      <span class="k"><span class="pt done"><span class="g">✓</span>Q1</span> answered</span>
+      <span class="k"><span class="pt done flag"><span class="g">✓</span><span class="g fg">⚑</span>Q7</span> flagged</span>
+      <span class="k"><span class="pt here">c</span> you are here</span>
+      <span class="k"><span class="pt todo">d</span> not answered</span>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn sm ghost">Close</button>
   </div>
 </div>
 
