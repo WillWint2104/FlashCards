@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Marginal — Nested multipart question</title>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   /* Marginal's own tokens, lifted unchanged from index.html. Nothing here
      invents a palette: this is the same product with more in it. */
@@ -158,7 +158,10 @@
                    font-weight:700;font-size:12px;color:var(--ink-2);background:#fff;
                    border:1.5px solid var(--line);border-radius:10px;padding:5px 10px}
   .srchead .expand:hover{border-color:var(--green);color:var(--green-dk)}
-  .srcbody{padding:16px 18px 20px;font-size:14.5px;font-weight:600;color:var(--ink);line-height:1.75}
+  /* Reading weight. 600 is Nunito SemiBold, which is the weight this design
+     uses for headings and labels; a source read for several minutes needs
+     Medium. Width and size are unchanged. */
+  .srcbody{padding:16px 18px 20px;font-size:14.5px;font-weight:500;color:var(--ink);line-height:1.75}
   .srcbody p+p{margin-top:12px}
 
   /* Navigation is always available, so a question may be left and returned to.
@@ -207,19 +210,36 @@
      backdrop, no focus trap, no close control, nothing obscured, and on a
      narrow screen it simply stacks. The same component is reused after
      submission in exam conditions. */
-  .soln{margin-top:14px;border:1.5px solid var(--line);border-radius:16px;background:#FAFCFC;padding:4px 22px 18px}
-  .solnhead{font-family:var(--disp);font-weight:600;font-size:14.5px;color:var(--ink);padding:13px 0 5px}
-  /* Worked mathematics, not four form fields. The step number and its title sit
-     on one line; the working runs beneath at reading size, with no box around
-     it. Only the final answer is boxed, in mint, because it is the answer. */
-  .step{padding:13px 0;border-top:1px solid var(--line)}
-  .step .lbl{font-family:var(--disp);font-weight:600;font-size:13.5px;color:var(--ink-2);margin-bottom:8px}
-  .step .lbl .no{color:var(--ink-3);font-weight:700}
+  .soln{margin-top:14px;border:1.5px solid var(--line);border-radius:16px;background:#FAFCFC;padding:4px 22px 20px}
+  /* Provenance lives in the header. It is attempt state, not a step of the
+     mathematics, and it was reading as one at the foot of the working. */
+  .solnhead{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-family:var(--disp);font-weight:600;
+            font-size:14.5px;color:var(--ink);padding:14px 0 13px;border-bottom:1px solid var(--line)}
+  .solnhead .viewed{margin-left:auto}
+
+  /* A stepper, so four steps read as one process rather than four table rows.
+     The markers carry the sequence and a hairline guide joins them; whitespace
+     and the marker column do the separating, so the only rule on the card is
+     the one under the header. */
+  .steps{list-style:none;position:relative}
+  .step{position:relative;display:flex;gap:16px;padding-top:19px}
+  .step:not(:last-child)::before{content:"";position:absolute;left:13px;top:46px;bottom:-19px;
+                                 width:1.5px;background:var(--line)}
+  .step .no{position:relative;z-index:1;width:26px;height:26px;flex:none;border-radius:99px;background:#fff;
+            border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;
+            font-family:var(--disp);font-weight:700;font-size:12.5px;color:var(--ink-2);margin-top:1px}
+  .step .t{min-width:0;flex:1}
+  .step .lbl{font-family:var(--disp);font-weight:600;font-size:13.5px;color:var(--ink-2);margin-bottom:7px}
   .math{font-family:var(--disp);font-weight:500;font-size:19px;line-height:1.5;color:var(--ink);
         font-variant-numeric:tabular-nums}
-  .step.final .math{display:inline-block;max-width:100%;font-weight:600;background:var(--green-soft);
-                    border:1px solid #9FE3C4;border-radius:12px;padding:9px 15px}
-  .solnfoot{padding-top:15px;border-top:1px solid var(--line)}
+
+  /* The answer is a result band, not a control: the tint sits behind the whole
+     final row, label included, with no shadow and nothing to press. */
+  .step.final{padding-top:22px}
+  .step.final .no{background:var(--green-soft);border-color:#9FE3C4;color:var(--green-dk)}
+  .step.final .t{background:var(--green-soft);border:1px solid #9FE3C4;border-radius:14px;padding:12px 18px 14px}
+  .step.final .lbl{color:var(--green-dk)}
+  .step.final .math{font-weight:600;font-size:20px}
 
   /* Opening the solution is recorded. The student is told so plainly rather
      than the attempt being quietly reclassified behind them. */

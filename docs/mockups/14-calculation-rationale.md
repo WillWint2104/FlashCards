@@ -131,26 +131,38 @@ Where it authors less, steps are withheld exactly as the help region is: this is
 a renderer, not a generator. An authored interpretation would sit below step 4;
 11(c) has none, so there is none.
 
-### It is set as mathematics, not as form controls
+### It is set as a mathematical process
 
-Three drafts got here. The first stacked a label above a boxed expression and
-ran to 460px, pushing every step below the fold. The second put the label in a
-fixed column beside its boxed expression: 339px, but the student scanned across
-rows of small grey labels and equations in rounded input-shaped boxes. It looked
-like a settings table.
+Four drafts got here, and recording them saves the next component the same walk:
 
-What is on screen now:
+| draft | what it was | why it failed |
+| --- | --- | --- |
+| 1 | label stacked above a boxed expression | 460px tall; every step below the fold |
+| 2 | fixed label column beside a boxed expression | 339px, but read as a settings table |
+| 3 | title line, unboxed working beneath, rule between steps | readable, but four separate rows rather than one process |
+| 4 | numbered stepper, joined markers, one rule | **on screen now** |
 
-- the step number and its title on one line, `1 · Use the formula`, at label
-  size;
-- the working beneath it at **19px**, in the display face, with **no box around
-  it** — it is a line of mathematics, not a value in a field;
-- a hairline between steps for rhythm, and nothing else;
-- the **final answer alone** in mint, because it is the answer.
+What the stepper does that draft 3 did not: the numbers carry the sequence, a
+hairline guide runs between the markers so the four steps read as consecutive,
+and the marker column plus whitespace do the separating that four full-width
+rules were doing badly. **One rule survives on the whole card**, under the
+header.
 
-Removing four boxes cost nothing and removed the form-field reading entirely.
-The disclosure uses the full width of the left column, which is what that column
-is for.
+The working is 19px in the display face with no box around it — a line of
+mathematics, not a value in a field. It uses the full width of the left column,
+which is what that column is for.
+
+**The answer is a result band, not a control.** The mint sits behind the whole
+final row, its label included, with no shadow, no radius borrowed from the
+button scale and nothing to press. The previous compact rounded shape sat close
+enough to `.btn` to read as one.
+
+### Provenance is not part of the mathematics
+
+**Solution viewed** moved to the top right of the `Worked solution` header. At
+the foot of step 4 it looked like a conclusion of the working, which it is not:
+it is attempt state. The explanation is now unmixed, and the chip is on the
+header that owns it.
 
 ### Opening it is recorded, and the student is told
 
@@ -193,9 +205,16 @@ study read four words at a time is not a source. The floor stops the panel
 collapsing before the layout stacks at 900px.
 
 **2. The source gets a reading measure.** 14.5px from 13.5px, line-height 1.75
-from 1.6, padding 16/18/20 from 13/14/16, paragraph spacing 12px from 9px. Its
-height is still its content's; nothing is stretched to match the left column,
-and the two columns are not expected to end level.
+from 1.6, padding 16/18/20 from 13/14/16, paragraph spacing 12px from 9px, and
+**weight 500 from 600**. Nunito 600 is SemiBold, the weight this design uses for
+headings and labels; a passage read for several minutes wants Medium, and 400
+and 500 were added to the font request to make it available. The source title
+stays at 600, so the panel still has a hierarchy. Width and size unchanged.
+
+Rendered weight could not be confirmed visually here — this container's proxy
+blocks Google Fonts, so every screenshot uses a fallback face. What was verified
+is that the request now includes the weights and that the computed weight is 500
+on the prose and 600 on the title.
 
 **3. Expand replaces collapse in the source header.** `⤢ Expand` opens the
 source in a larger reading view for the stimuli the panel cannot serve well — a
