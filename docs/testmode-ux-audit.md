@@ -507,3 +507,13 @@ the only thing that can say what the remaining marks were for.
 authored, and it is now the fixture's canonical unweighted case. The three short
 answers that were already one-to-one had that made explicit — `{ text, marks: 1 }`
 — which changes no mark value and states what was previously only a coincidence.
+
+### UX-TEST-05 — `missing_vocabulary` is dead UI
+
+The marking worker sets `r.missing_vocabulary = []` unconditionally in
+`finalize`. `app.js` renders chips for it in two places, the study sheet and the
+exam sheet. Nothing has ever been in it on this path.
+
+Either it is connected to something real or the two renderers go. Logged while
+auditing state 12; not fixed there, because it does not affect any visible state
+the extended-response design has to decide.

@@ -116,3 +116,149 @@ Three consequences, stated before drawing so they can be argued with:
 - **Whether `checks.grounded` belongs on screen**, and in whose words.
 - **Business report** (state 13) shares this plumbing and adds a structural
   expectation that nothing currently authors.
+
+---
+
+# Part 2 — the band trace, and every field classified
+
+## The band trace, end to end
+
+```
+markingContext (app.js)
+  bands      = question.criteria.bands
+            || subjectPackage.bandExpectations.bands
+            || ESSAY.bandExpectations.bands
+  bandsSource= the matching .source of whichever won
+        │
+        ▼  sent in the marking request
+worker pass2Message
+  "BAND EXPECTATIONS (<bandsSource>):  <range>: <text>  ..."   ← prompt guidance only
+        │
+        ▼  model returns rubric[].bands, up to 3 per criterion
+reconcileRubric
+  bands = model's own, sliced to 3, exactly one `here`
+        │
+        ▼  what the student would see
+```
+
+**On this Business Studies paper, every fallback above fires.** Measured in the
+running build:
+
+| link | value |
+| --- | --- |
+| any question authoring `criteria.bands` | **no** — no question in the fixture has a `criteria` key |
+| `business_studies.bandExpectations` | **absent** |
+| `economics`, `ancient_history` | **absent** — no registered subject authors bands |
+| what is used | `ESSAY.bandExpectations` |
+| `bandsSource` | **`"general HSC band expectations"`** |
+| how many | 6, Band 6 down to Band 1 |
+| what they say | *"…holds one judgement from the first paragraph to the last… Subject terms carry the reasoning instead of decorating it…"* |
+
+### The five questions, answered
+
+1. **Where do the descriptors originate?** Two different places, and they are not
+   the same descriptors. The six that go **in** are Marginal's own general set.
+   The ones that come **back** — the ones a student would read — are **written by
+   the model at request time**, per criterion, up to three, one marked `here`.
+   The generic six are never echoed back.
+2. **Are they authored Business Studies criteria?** **No.** They are
+   subject-agnostic and say so: they talk about "subject terms" and "a line of
+   argument", never about business. Nothing anywhere authors band descriptors for
+   Business Studies.
+3. **What is `bandsSource` on this paper?** The literal string
+   `"general HSC band expectations"`.
+4. **Do they determine the mark?** No. The chain is the other way around, and it
+   is worth stating exactly:
+
+   ```
+   model returns a score and max PER PARAGRAPH
+     → reconcileParagraphs: maxes shared out to sum to the question's marks,
+       scores rescaled by ratio, and r.total = THE SUM OF THE PARAGRAPH SCORES
+     → reconcileRubric: criterion maxes shared out to the same marks,
+       criterion scores fitted to hit that same total
+   ```
+
+   So the mark **originates at the paragraph level**. The criterion scores are a
+   *second, independent apportionment of a total that was already decided
+   elsewhere* — doubly derived. Bands are explanatory output generated alongside,
+   not an input to any arithmetic.
+5. **Can the student-facing use be called Business Studies-specific?** **No.**
+
+**Conclusion: no band labels or descriptors in state 12.** A "Band 5" chip beside
+a Business Studies criterion would be model prose against a generic scale,
+wearing the authority of a syllabus. That is the criterion-score problem again,
+one level up.
+
+## Every returned field, classified
+
+**A — overall judgement** (valid at whole-response level)
+
+| field | note |
+| --- | --- |
+| `score` / `total` | real, and the one number to show. Sum of the model's paragraph scores, capped to the question's marks |
+| `overall.summary` (`summary`) | prose about the whole response. Embedded quotes already verified or de-quoted by `groundProse` |
+
+**B — criterion judgement** (valid for one authored Business Studies criterion)
+
+| field | note |
+| --- | --- |
+| `rubric[].name` | **the strongest grounding in the payload.** The subject package's own four criteria, sent to the marker and required back verbatim, in order |
+| `rubric[].descriptor` | one line on what the criterion rewards. Model prose at criterion level — legitimate as narrative, not as measurement |
+| `criteria[].status` | `met` / `partial` / `missing`, derived **from the apportioned score**. Inherits the apportionment; it is a restatement of a share, not a judgement |
+
+**C — sentence-grounded evidence** (valid only when verified against exact text)
+
+| field | verified by | note |
+| --- | --- | --- |
+| `paragraphs[].sentences[].text` | `snapSentences` | replaced with the student's **exact** words on a hit; `sn.unplaced = true` on a miss |
+| `sentences[].issues[].head` / `.why` | `groundProse` | quotes inside verify or lose their quotation marks |
+| `focus.quote` / `.why` | `checks.focusQuoted` | the single place to go back to |
+| `credited[].quote` | second pass, `checks.diagnosis` | an argument the student made that the materials did not anticipate |
+
+**D — apportionment, not measurement** (present, and must not be shown as marks)
+
+| field | why |
+| --- | --- |
+| `rubric[].score` / `.max` | `shareOut` + `fitScores` force them to sum; doubly derived |
+| `paragraphs[].score` / `.max` | `reconcileParagraphs` reshapes them whenever they do not sum |
+| `rubric[].bands[]` | model-written, generic scale, one marked `here` |
+
+**E — internal, diagnostic, or dead** (keep out of the student UI entirely)
+
+| field | why |
+| --- | --- |
+| `checks.*` | the renderer's gate, never a number on screen |
+| `diagnosis` | pass-1 reader output; already folded into everything above |
+| `issues[].ladder` | **three model-written replacement sentences — "Clear, Better, Band 6".** Mandatory in the schema, so it always arrives. This is Essay Practice's revision material and is exactly the generated replacement prose Test Mode must not show. **The renderer drops it.** |
+| `paragraphs[].reasons[]`, `.note` | per-paragraph coaching commentary against the bands |
+| `missing_vocabulary` | **UX-TEST-05** — unconditionally `[]` from the worker, rendered as chips in two places in `app.js`. Dead UI |
+| `next_steps[]` | derived from `issues[].head`; usable, but it arrives **stripped of its sentence**, so it must be treated as class A unless re-paired with a verified sentence |
+
+## The grounding gate, as a rule the renderer follows
+
+No percentage on screen. The distinction the worker already computed becomes a
+presentation decision:
+
+| what the worker proved | what the screen may say |
+| --- | --- |
+| the sentence located verbatim | **In your response** — "…the student's exact words…" |
+| `sn.unplaced === true` | **Across your response** — the judgement without a sentence attached |
+| a quote inside prose that verified | render it quoted |
+| a quote that did not verify | it has already lost its quotation marks; render it as the marker's own words |
+| `focusQuoted` false | no focus anchor at all |
+
+Low grounding therefore **reduces the specificity of the claim** rather than
+producing a confidence meter. The student never learns there is a number; they
+learn that the feedback is either pointed at their sentence or it is not.
+
+## What this leaves for the design
+
+```
+overall mark  →  overall judgement  →  the four criteria, narratively  →  grounded evidence  →  retry
+```
+
+and specifically **not** Short Answer's `mark → marking points`, because no
+discrete authored unit exists at this level.
+
+Open: whether a 20-mark response's four criteria plus their evidence still fit
+in place, or whether that is finally the case for state 16.
