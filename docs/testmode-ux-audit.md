@@ -414,3 +414,56 @@ any screen in the inventory above.
 
 One product defect is recorded and not fixed: the unsupported-version routing in
 `importSet`.
+
+---
+
+## Found while designing state 11 (short answer)
+
+Both were proven by running against the real fixture, not by reading.
+
+### UX-TEST-03 — every short answer scores full marks, including an empty one
+
+In Test Mode a short answer is not sent to the marking worker. `app.js:2432`
+routes it to `gradePoints`, which grades it locally against the paper's authored
+marking points, one point per mark.
+
+`gradePoints` (`app.js:2444`) reads each entry as an **object**:
+
+```js
+const need = (Array.isArray(pt.need) && pt.need.length) ? pt.need : [pt.text];
+const hit  = need.some(al => a.includes(norm(al)));
+```
+
+The contract's own fixture, `tests/fixtures/bus-practice-paper.json`, authors
+them as **strings**. So `pt.text` is `undefined`, `norm(undefined)` is `""`, and
+`"any answer".includes("")` is `true` for every point. Measured on 11(b), a
+3-mark question with three authored points:
+
+```
+answer ""                                    -> 3/3   hits 3/3
+answer "banana"                              -> 3/3   hits 3/3
+answer <a genuine two-point response>        -> 3/3   hits 3/3
+rendered point text                          -> "undefined"
+```
+
+Every short answer in the paper is affected: 11(a) 2/2, 11(b) 3/3, 12(a) 3/3,
+12(b) 4/5. The checklist that is supposed to show what was missed shows three
+ticks against the word `undefined`.
+
+This is a data-shape mismatch between the grader and the contract's own fixture,
+not a marking-quality problem. Either the grader accepts a string entry, or
+`points[]` is normalised at import to `{ text }`. It should fail closed rather
+than award marks it cannot justify: a point it cannot read is not a point that
+was addressed.
+
+### UX-TEST-04 — a question whose points cannot reach its marks
+
+12(b) is worth **5 marks** and authors **4 points**, each worth 1 under
+`pt.marks || 1`. `score = Math.min(raw, q.marks)` caps at 4, so **no answer can
+score 5/5** while points grading is in force. 11(d), 12(c), 13, 14, 15 and 16
+have the same shape but are extended responses, which go to the worker instead.
+
+Two honest resolutions: the paper authors per-point marks that sum to the
+question's marks, or the interface stops claiming the points are the whole
+rubric and says how many of the marks they account for. State 11's design does
+the second, because it works whatever a given paper authors.

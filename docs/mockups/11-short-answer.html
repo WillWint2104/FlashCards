@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Marginal — Short answer marked</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* Marginal's own tokens, lifted unchanged from index.html. Nothing here
+     invents a palette: this is the same product with more in it. */
+  :root{
+    --bg:#EEF3F5; --card:#FFFFFF;
+    --ink:#3C4A4A; --ink-2:#7A8A88; --ink-3:#AEBAB8;
+    --green:#1CC47D; --green-dk:#14A368; --green-soft:#E4F9EF;
+    --blue:#1CA0F2; --blue-dk:#1487D6; --blue-soft:#E2F3FE;
+    --gold:#FFB323; --gold-dk:#E89400; --gold-soft:#FFF3D8;
+    --coral:#FF7C6B; --coral-dk:#EE5946; --coral-soft:#FFE8E4;
+    --line:#E7EDED;
+    --disp:'Fredoka',system-ui,sans-serif; --body:'Nunito',system-ui,sans-serif;
+    /* The sticky bar overlays the end of the page, so the content region
+       reserves its height plus the normal page gap underneath. */
+    --footh:68px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  /* The page is a column so the sticky footer has somewhere to sit when the
+     content is shorter than the viewport. */
+  body{font-family:var(--body);background:var(--bg);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased;
+       min-height:100vh;display:flex;flex-direction:column}
+  button{font:inherit;cursor:pointer}
+  h1,h2,h3,.disp{font-family:var(--disp);letter-spacing:-.01em}
+
+  /* Chrome belongs to the ACTIVE EXAM, not to whatever Study was last on. */
+  header{display:flex;align-items:center;gap:12px;padding:16px clamp(16px,4vw,32px);background:var(--card);
+         border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--disp);font-weight:600;font-size:20px}
+  .mk{width:28px;height:28px;border-radius:9px;background:var(--green);position:relative;flex:none;box-shadow:0 3px 0 var(--green-dk)}
+  .mk::after{content:"";position:absolute;left:7px;right:7px;bottom:6px;height:3px;border-radius:2px;background:#fff}
+  .mk::before{content:"";position:absolute;left:7px;bottom:6px;width:3px;height:14px;border-radius:2px;background:rgba(255,255,255,.9)}
+  .unit{font-size:13px;color:var(--ink-2);font-weight:700;margin-left:auto;text-align:right}
+  .unit b{display:block;color:var(--ink);font-size:13.5px}
+
+  main{max-width:1180px;width:100%;margin:0 auto;
+       padding:20px clamp(16px,4vw,40px) calc(26px + var(--footh));flex:1 0 auto}
+
+  /* The paper bar: where you are, how you are sitting, how far in you are. */
+  .exam-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 16px;background:var(--card);
+            border:1.5px solid var(--line);border-radius:16px;margin-bottom:14px}
+  .exam-bar .x{background:none;border:none;font-size:19px;color:var(--ink-2);line-height:1;padding:0 2px}
+  .paper{min-width:0}
+  .paper .nm{font-family:var(--disp);font-weight:600;font-size:15px;line-height:1.25}
+  .paper .sec{font-size:12px;color:var(--ink-2);font-weight:700}
+  .spacer{flex:1}
+  .policy{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;color:var(--green-dk);
+          background:var(--green-soft);border:1px solid #BFEFD9;border-radius:99px;padding:4px 11px}
+  .policy .dot{width:6px;height:6px;border-radius:99px;background:var(--green)}
+  .navbtn{font-family:var(--disp);font-weight:700;font-size:13px;color:var(--ink);background:var(--card);
+          border:1.5px solid var(--line);border-radius:12px;padding:8px 13px;display:flex;align-items:center;gap:7px}
+  .navbtn:hover{border-color:var(--green)}
+  .navbtn .grid{display:grid;grid-template-columns:repeat(3,4px);gap:2px}
+  .navbtn .grid i{width:4px;height:4px;border-radius:1px;background:var(--ink-3)}
+  .navbtn .grid i.on{background:var(--green)}
+  .prog{text-align:right;font-size:12px;color:var(--ink-2);font-weight:800;white-space:nowrap}
+  .prog b{color:var(--ink);font-size:13px}
+  /* `.score` is a POLICY SLOT. Practice shows a live score; exam conditions
+     drops this span and keeps the answered count on its own. */
+  .prog .score{}
+  .pbar{height:7px;width:190px;border-radius:99px;background:#EDF2F2;overflow:hidden;margin-top:5px}
+  .pbar i{display:block;height:100%;width:60%;background:var(--green);border-radius:99px}
+
+  /* Two columns. The source sits BESIDE the response, not above it. */
+  /* Roughly 62/38. A calculation and its working do not need 70% of a
+     desktop, and a case study read four words at a time is not a source.
+     Proportional, with a floor so the source never collapses. */
+  .work{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(300px,1fr);gap:18px;align-items:start}
+
+  .qcard{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:20px 22px}
+
+  /* The parent strip. It stays put while the student moves through a/b/c/d,
+     so no child ever has to be traced back to its parent by inference. */
+  .parent{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding-bottom:12px;margin-bottom:14px;border-bottom:1px dashed var(--line)}
+  .pnum{font-family:var(--disp);font-weight:600;font-size:15px;color:var(--ink)}
+  .pmeta{font-size:12px;color:var(--ink-2);font-weight:700}
+  /* Row one is IDENTITY, row two is PROGRESS. The completion count and the
+     part rail describe the same thing, so they share a line: the count at the
+     left, the rail flush right. Still one strip and still no second progress
+     system; the parent simply stopped being a single run-on line once the
+     source took its proper share of the desktop. */
+  .pprog{flex-basis:100%;display:flex;align-items:center;gap:12px;margin-top:1px}
+  .pdone{font-size:12px;color:var(--ink-3);font-weight:800}
+
+  /* The part rail. Every state reads without colour: a tick, a filled ring, a
+     flag, and a dashed outline for "not answered yet". Chips are buttons: any
+     part of the parent may be opened directly, in any order. */
+  .parts{display:flex;gap:5px;flex-wrap:wrap;margin-left:auto}
+  .pt{min-width:32px;height:28px;padding:0 7px;border-radius:9px;display:inline-flex;align-items:center;
+      justify-content:center;gap:3px;font-family:var(--disp);font-weight:700;font-size:12.5px;
+      border:1.5px solid var(--line);background:#fff;color:var(--ink-3)}
+  .pt .g{font-size:10.5px;line-height:1}
+  .pt.done{background:var(--green-soft);border-color:#9FE3C4;color:var(--green-dk)}
+  .pt.here{background:var(--ink);border-color:var(--ink);color:#fff;box-shadow:0 0 0 3px rgba(60,74,74,.14)}
+  .pt.flag{background:var(--gold-soft);border-color:var(--gold);color:var(--gold-dk)}
+  .pt.todo{border-style:dashed;border-color:var(--ink-3)}
+  /* Answered AND flagged is a real combination, so it carries BOTH glyphs
+     rather than one colour standing in for two facts. */
+  .pt.done.flag{background:var(--green-soft);border-color:var(--gold);color:var(--green-dk)}
+  .pt.done.flag .fg{color:var(--gold-dk)}
+  /* Current AND answered is likewise two facts, so the current chip keeps its
+     tick. Same rule as done+flag: a composition, never a replacement. */
+  .pt.here.done{background:var(--ink);border-color:var(--ink);color:#fff}
+  .pt:not(.here):hover{border-color:var(--green)}
+
+  .exam-qhead{font-family:var(--disp);font-weight:700;font-size:12.5px;color:var(--ink-3);margin-bottom:8px;
+              display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .marks{color:var(--ink-2)}
+  .fmt{background:var(--blue-soft);color:var(--blue-dk);border-radius:6px;padding:1px 7px;font-size:10.5px;letter-spacing:.02em}
+  .exam-prompt{font-size:17px;font-weight:600;color:var(--ink);line-height:1.5;margin-bottom:16px}
+
+  .answerbox{width:100%;font:inherit;font-weight:600;font-size:15.5px;line-height:1.65;color:var(--ink);
+             background:var(--card);border:2px solid var(--line);border-radius:16px;padding:14px 16px;resize:vertical}
+  .answerbox:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
+  /* The response field is sized by the format. The container around it is not.
+     A calculation's short field proves the parent shell is format-independent.
+     Its width is set with the calculation rules below. */
+  .saved{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-3);font-weight:800;margin-top:7px}
+  .saved .tick{color:var(--green-dk)}
+
+  /* Optional, format-aware, collapsed. Not rendered at all where nothing
+     appropriate is authored — which is the case for this part. */
+  .help{margin-top:14px;border:1.5px solid var(--line);border-radius:14px;background:#FAFCFC;overflow:hidden}
+  .help summary{list-style:none;cursor:pointer;padding:11px 14px;display:flex;align-items:center;gap:9px;
+                font-family:var(--disp);font-weight:600;font-size:13.5px;color:var(--ink)}
+  .help summary::-webkit-details-marker{display:none}
+  .help summary .chev{margin-left:auto;color:var(--ink-3);font-size:12px}
+  .help .body{padding:0 14px 13px;font-size:13px;color:var(--ink-2);font-weight:700}
+  .help .row{display:flex;gap:9px;padding:7px 0;border-top:1px solid var(--line)}
+  .help .row .k{font-family:var(--disp);font-weight:600;color:var(--ink);flex:none;width:96px;font-size:12.5px}
+
+  .submitrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:18px}
+  .btn{font-family:var(--disp);font-weight:600;font-size:15px;color:#fff;background:var(--green);border:none;
+       border-radius:14px;padding:12px 24px;box-shadow:0 4px 0 var(--green-dk)}
+  .btn:active{transform:translateY(2px);box-shadow:0 2px 0 var(--green-dk)}
+  .btn.ghost{background:var(--card);color:var(--ink);box-shadow:0 0 0 2px var(--line) inset}
+  .btn.sm{padding:9px 17px;font-size:14px;border-radius:12px;box-shadow:0 3px 0 var(--green-dk)}
+  .btn.sm.ghost{box-shadow:0 0 0 2px var(--line) inset}
+  .hint{font-size:12.5px;color:var(--ink-3);font-weight:700}
+
+  /* One source, owned by the parent, rendered once. It does not move or
+     reload as the student steps through a/b/c/d. */
+  .srcpanel{background:var(--card);border:1.5px solid var(--line);border-radius:18px;overflow:hidden;position:sticky;top:86px}
+  .srchead{display:flex;align-items:center;gap:9px;padding:12px 14px;border-bottom:1px solid var(--line);background:#FAFCFC}
+  .srchead .ic{font-size:15px}
+  .srchead .t{font-family:var(--disp);font-weight:600;font-size:13.5px;line-height:1.2}
+  .srchead .t small{display:block;color:var(--ink-2);font-size:11px;font-weight:700}
+  /* Expand, not collapse. The default pane is now comfortable for an
+     ordinary stimulus; what a long case study, a table or a graph needs is
+     more room, and on a narrow layout this same control opens the sheet. */
+  .srchead .expand{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-family:var(--disp);
+                   font-weight:700;font-size:12px;color:var(--ink-2);background:#fff;
+                   border:1.5px solid var(--line);border-radius:10px;padding:5px 10px}
+  .srchead .expand:hover{border-color:var(--green);color:var(--green-dk)}
+  /* Reading weight. 600 is Nunito SemiBold, which is the weight this design
+     uses for headings and labels; a source read for several minutes needs
+     Medium. Width and size are unchanged. */
+  .srcbody{padding:16px 18px 20px;font-size:14.5px;font-weight:500;color:var(--ink);line-height:1.75}
+  .srcbody p+p{margin-top:12px}
+
+  /* Navigation is always available, so a question may be left and returned to.
+     This rail follows the whole paper, not the parent. */
+  .footer{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--line);z-index:9;
+          box-shadow:0 -6px 18px rgba(60,74,74,.05)}
+  .footin{max-width:1180px;margin:0 auto;padding:11px clamp(16px,4vw,40px);display:flex;align-items:center;gap:12px}
+  .flag{display:flex;align-items:center;gap:7px;font-family:var(--disp);font-weight:700;font-size:13px;color:var(--ink-2);
+        background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:8px 13px}
+  .flag:hover{border-color:var(--gold);color:var(--gold-dk)}
+  /* "Item" is SEQUENCE POSITION. It is deliberately not the word "question",
+     because the question on screen is Question 11(c), not question 13. */
+  .where{font-size:12px;color:var(--ink-3);font-weight:800;text-align:center;flex:1}
+
+  /* ── short answer: marked against authored points ──────────────────
+     In Test Mode a short answer is graded LOCALLY against the marking points
+     the paper authors: one point, one mark. No worker call, no pending state.
+     The points are therefore not a supplement to the mark — they ARE the mark,
+     which is why they can explain 2 of 3 without any rubric being invented. */
+  .answerbox.part{border-color:#FFE0A6;background:#FFFCF4}
+
+  /* Hugs its content: a result is a statement, not a banner. */
+  .result{display:inline-flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:12px;padding:11px 15px;
+          border:1.5px solid var(--line);border-radius:14px;background:#FAFCFC}
+  .result .badge{display:inline-flex;align-items:center;gap:7px;font-family:var(--disp);font-weight:600;
+                 font-size:14.5px;border-radius:99px;padding:5px 14px;background:#fff}
+  .result.part{background:var(--gold-soft);border-color:#FFE0A6}
+  .result.part .badge{color:var(--gold-dk);box-shadow:0 0 0 1.5px #FFE0A6 inset}
+  .pair{display:flex;flex-direction:column;gap:0}
+  .pair .k{font-size:11px;font-weight:800;color:var(--ink-3)}
+  .pair .v{font-family:var(--disp);font-weight:600;font-size:16px;color:var(--ink);font-variant-numeric:tabular-nums}
+
+  /* THE MARKING SECTION. Same containment language the worked solution settled
+     on — a section of the question card, then one inset surface — carrying
+     different content. Calculation has a natural worked solution; a short
+     answer has a natural marking explanation, and neither borrows the other's
+     shape beyond the container. */
+  .mark{margin-top:24px;padding-top:17px;border-top:1px solid var(--line)}
+  .markhead{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-family:var(--disp);font-weight:600;
+            font-size:14.5px;color:var(--ink);margin-bottom:13px}
+  .markhead .count{margin-left:auto;font-size:11.5px;font-weight:700;color:var(--ink-2);
+                   background:#F4F8F8;border:1px solid var(--line);border-radius:8px;padding:3px 10px}
+  .pts{list-style:none;background:#F4F9F8;border:1px solid var(--line);border-radius:9px;padding:2px 20px 4px}
+  .prow{display:flex;gap:16px;align-items:flex-start;padding:14px 0;border-top:1px solid var(--line)}
+  .prow:first-child{border-top:none}
+  /* State reads without colour: a tick inside a filled ring, or an empty
+     dashed ring — the same vocabulary the part rail uses. */
+  .prow .mk2{width:26px;height:26px;flex:none;border-radius:99px;background:#fff;border:1.5px solid var(--line);
+             display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--ink-3);margin-top:1px}
+  .prow.hit .mk2{background:var(--green-soft);border-color:#9FE3C4;color:var(--green-dk)}
+  .prow.miss .mk2{border-style:dashed;border-color:var(--ink-3)}
+  .prow .txt{flex:1;min-width:0;font-size:15px;font-weight:600;line-height:1.55;color:var(--ink)}
+  .prow .tag{flex:none;font-size:11px;font-weight:800;color:var(--ink-3);margin-top:6px}
+  /* How the mark was arrived at, in one line. Where a paper's points do not
+     sum to the question's marks, this line says so instead. */
+  .markrule{font-size:12.5px;color:var(--ink-3);font-weight:700;margin-top:11px}
+
+  @media(max-width:900px){
+    .work{grid-template-columns:1fr}
+    .srcpanel{position:static}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand"><span class="mk"></span>Marginal</div>
+  <div class="unit"><b>Business Studies</b>Test mode</div>
+</header>
+
+<main>
+  <div class="exam-bar">
+    <button class="x" title="Leave">←</button>
+    <div class="paper">
+      <div class="nm">Business Studies practice paper</div>
+      <div class="sec">Section II — Short answer · Q11–13 · 40 marks</div>
+    </div>
+    <div class="spacer"></div>
+    <span class="policy"><span class="dot"></span>Practice · marked as you go</span>
+    <button class="navbtn">
+      <span class="grid"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></span>
+      Questions
+    </button>
+    <div class="prog">
+      <b>12</b> of 20 answered<span class="score"> · <b>21</b>/90 marks</span>
+      <div class="pbar"><i></i></div>
+    </div>
+  </div>
+
+  <div class="work">
+    <div class="qcard">
+      <div class="parent">
+        <span class="pnum">Question 11</span>
+        <span class="pmeta">Kerbside Coffee · 14 marks</span>
+        <div class="pprog">
+          <span class="pdone">2 of 4 parts answered</span>
+          <div class="parts" role="group" aria-label="Parts of Question 11">
+            <button class="pt done" title="11(a) · 2 marks · answered"><span class="g">✓</span>a</button>
+            <button class="pt here done" title="11(b) · 3 marks · answered · you are here" aria-current="true"><span class="g">✓</span>b</button>
+            <button class="pt todo" title="11(c) · 4 marks · not answered yet">c</button>
+            <button class="pt todo" title="11(d) · 5 marks · not answered yet">d</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="exam-qhead">
+        <span>Question 11(b)</span><span class="marks">· 3 marks</span>
+        <span class="fmt">short answer · explain</span>
+      </div>
+      <p class="exam-prompt">Explain how the business's casual employment of van operators could be contributing to its turnover.</p>
+
+      <textarea class="answerbox part" rows="4">Casual van operators are not guaranteed hours or paid leave, so their income changes from week to week. That insecurity makes it easy for them to take a steadier job somewhere else, which is why so many of them leave.</textarea>
+      <div class="saved"><span class="tick">✓</span> Saved. Moving to another part keeps this answer.</div>
+
+      <div class="result part">
+        <span class="badge">Most of it</span>
+        <span class="pair"><span class="k">Marks</span><span class="v">2 of 3</span></span>
+      </div>
+
+      <div class="submitrow">
+        <button class="btn">Try again</button>
+        <button class="btn sm ghost">What would make this stronger →</button>
+      </div>
+
+      <div class="mark">
+        <div class="markhead">How this was marked<span class="count">2 of 3 points addressed</span></div>
+        <ol class="pts">
+          <li class="prow hit">
+            <span class="mk2">✓</span>
+            <span class="txt">Explains that casual work carries no guaranteed hours or leave entitlements</span>
+          </li>
+          <li class="prow hit">
+            <span class="mk2">✓</span>
+            <span class="txt">Links that insecurity to an operator's decision to leave</span>
+          </li>
+          <li class="prow miss">
+            <span class="mk2"></span>
+            <span class="txt">Connects turnover to the cost of recruiting and training replacements</span>
+            <span class="tag">not addressed</span>
+          </li>
+        </ol>
+        <div class="markrule">One mark for each point addressed. Three points, three marks.</div>
+      </div>
+    </div>
+
+    <aside class="srcpanel">
+      <div class="srchead">
+        <span class="ic">📄</span>
+        <span class="t">Kerbside Coffee<small>Shared source · Question 11</small></span>
+        <button class="expand" title="Open the source in a larger reading view">⤡ Expand</button>
+      </div>
+      <div class="srcbody">
+        <p>Kerbside Coffee roasts and sells coffee from one site and four vans. Demand at the vans peaks between 7am and 9am, and the owners have had complaints about waiting times.</p>
+        <p>Last year the business bought a second roaster using a three-year loan. Staff turnover among van operators is high, and most operators are employed casually.</p>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<div class="footer">
+  <div class="footin">
+    <button class="btn sm ghost">← Previous · 11(a)</button>
+    <button class="flag">⚑ Flag for revisit</button>
+    <span class="where">Item 12 of 20 · Section II</span>
+    <button class="btn sm ghost">Next · 11(c) →</button>
+  </div>
+</div>
+
+</body>
+</html>
