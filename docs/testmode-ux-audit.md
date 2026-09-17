@@ -548,3 +548,90 @@ compared an element's bottom with `window.innerHeight`, which is not the fold on
 a screen with a sticky footer. `tests/ui69.js` now measures against the footer's
 top, and the mobile half of it asserts this finding as a finding, so fixing the
 shell turns the suite red and brings someone back to this entry.
+
+### UX-TEST-06 — FIXED. The compact footer row, and what it did and did not buy
+
+The shared footer is one row below 640px: `← Previous`, `⚑ Flag`, `Finish →`,
+with the item counter hidden and the trailing half of each label dropped through
+one `.foot-lbl` class. Measured across ten pages:
+
+```
+              before            after
+320-360px     131px, 4 rows     63px, 1 row   (and 320px no longer overflows on 9 of 10)
+390-600px     119px, wrapped    63px, 1 row
+660px+         63px             63px          unchanged, to the pixel
+touch target   37px / 35px      44px          for the first time at any width
+```
+
+Desktop and tablet are untouched, and that is measured rather than asserted:
+every structural box on all ten pages sits at the same coordinates, the rendered
+text of every page is identical, and every document height matches.
+
+**What it bought.** At 430x932, 768x1024 and 1280x800 the mark on every one of
+the six marked pages is now clear of the footer on arrival. At 390x844 state 12
+is clear, which is the collapsed response and the shorter footer together.
+
+**What it did not buy, and this is the open half.** At 390x844 the mark is still
+behind the footer on arrival on four pages:
+
+```
+  14-calculation-checked-correct     mark text 790-828, footer starts 781
+  14-calculation-checked-notquite    mark text 790-828, footer starts 781
+  14-worked-solution                 mark text 790-828, footer starts 781
+  11-short-answer-keypoints          mark text 820-857, footer starts 781
+  11-short-answer                    mark text 876-913  - below the fold, not behind the bar
+```
+
+This is no longer the footer's doing. The footer is 63px, the same as desktop;
+the mark simply lands at the bottom of the first screen because of what those
+states put above it. Scrolling clears it at every width, which `tests/ui69.js`
+asserts. Closing it would mean reordering content in two frozen states, which is
+a design decision and not a shell one.
+
+### UX-TEST-07 — `11-short-answer` overflows horizontally at 320px
+
+Found by the same sweep. Nine of the ten mockups have no horizontal overflow at
+any width from 320 to 1280. `11-short-answer.html` has `scrollWidth` 342 against
+a 320px viewport, and the overflow is the `.qcard` / `.srcpanel` grid, not the
+footer: both render 326px wide inside a 320px page. 320px is narrower than any
+device in the target list, and the fix is in the source-panel layout rather than
+in the shell, so it is logged rather than taken with the footer.
+
+### UX-TEST-08 — the shared tokens fix contrast and flatten the grey hierarchy
+
+Applying the approved tokens to Calculation and Short Answer took both from
+29-39 AA failures to zero, with **zero layout change**: every text node in all
+five files is at the same coordinate and every document height is identical.
+
+But the two greys that carried the secondary and tertiary tiers have collapsed
+into each other. Measured as relative luminance on the rendered page:
+
+```
+                 before              after
+  --ink          0.064  (9.1:1)      0.064  unchanged
+  --ink-2        0.241  (3.61:1)     0.130  (5.84:1)
+  --ink-3        0.476  (2.00:1)     0.148  (5.31:1)
+  ink-2 vs ink-3  1.81:1              1.10:1
+```
+
+`--ink-3` was nearly twice the luminance of `--ink-2`, which is what made
+metadata recede. They are now within 1.10:1 of each other, and `--ink-3` has
+landed between `--green-dk` (0.146) and `--gold-dk` (0.152), so the tertiary grey
+now reads at the same weight as the accent text. Everything that is not `--ink`
+sits in a band from 0.088 to 0.152 where it used to span 0.223 to 0.476.
+
+Some compression is unavoidable: a tier at 2.00:1 was unreadable, and "recedes"
+and "passes AA" cannot both be satisfied by a 2:1 grey. The distribution can
+still be fixed, because the space between `--ink` at 9.1:1 and the AA floor is
+being used unevenly. `--ink-3` is already at the floor (5.31 on white, 4.75 on
+its worst surface) and cannot move. `--ink-2` can:
+
+```
+  --ink-2 now      #596866   white 5.84   worst 5.22   vs ink-3  1.10
+  candidate        #4C5B58   white 7.13   worst 6.38   vs ink-3  1.34
+  candidate        #485755   white 7.58   worst 6.78   vs ink-3  1.43
+```
+
+That would make the three steps 9.1 → 7.1 → 5.3 rather than 9.1 → 5.8 → 5.3.
+**Not applied.** The tokens were approved as a baseline in the previous round and
+changing one of them is a change to that baseline, not an implementation detail.

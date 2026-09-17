@@ -218,7 +218,21 @@ ${TOK}
   .footer{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--line);z-index:9;
           box-shadow:0 -6px 18px rgba(60,74,74,.05)}
   .footin{max-width:1180px;margin:0 auto;padding:11px clamp(16px,4vw,40px);display:flex;align-items:center;gap:12px}
-  .flag{display:flex;align-items:center;gap:7px;font-family:var(--disp);font-weight:700;font-size:13px;color:var(--ink-2);
+  /* gap:0, and the space before "for revisit" is a non-breaking one, for a
+     reason worth writing down.
+
+     This rule said gap:7px and never applied it: the label was a single text
+     node, a flex gap needs two items, and the space between the flag and its
+     word was just the space in the text. Splitting the label so a narrow screen
+     can drop its tail gave the rule a second item, the 7px woke up, and the
+     button silently grew from 152.22px to 155px. A flex container also STRIPS
+     whitespace at the edges of its items, so moving the ordinary space to
+     either side of the span does not help: that measures 148px. gap:4px gets to
+     151.70, which is half a pixel short and pins a layout to one font's space
+     width. A non-breaking space is not whitespace to collapse, so it survives
+     inside the item and renders the run the button always rendered: 152.23px
+     wide, and 76px when the tail is dropped. */
+  .flag{display:flex;align-items:center;gap:0;font-family:var(--disp);font-weight:700;font-size:13px;color:var(--ink-2);
         background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:8px 13px}
   .flag:hover{border-color:var(--gold);color:var(--gold-dk)}
   /* "Item" is SEQUENCE POSITION. It is deliberately not the word "question",
@@ -330,7 +344,7 @@ ${across.map(o => `          <li class="ob">
 <div class="footer">
   <div class="footin">
     <button class="btn sm ghost">← Previous<span class="foot-lbl"> · 14</span></button>
-    <button class="flag">⚑ Flag<span class="foot-lbl"> for revisit</span></button>
+    <button class="flag">⚑ Flag<span class="foot-lbl">&nbsp;for revisit</span></button>
     <span class="where">Item 20 of 20 · Section IV</span>
     <button class="btn sm ghost">Finish<span class="foot-lbl"> paper</span> →</button>
   </div>

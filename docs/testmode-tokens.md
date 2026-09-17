@@ -69,8 +69,32 @@ first candidate for `--ink-3` failed exactly that way at 4.05.
 
 ## Status
 
-**Proposed, and applied in `12-extended-response.html` only**, so Draft 2 can be
-judged honestly rather than evaluated through failing contrast. Every other
-mockup still carries the old values. The shared pass across all nine states
-belongs before the visual system is considered final, and should change these
-values once rather than being absorbed into individual state designs.
+**Approved as the Test Mode accessibility baseline, and applied to seven of the
+ten rendered pages.**
+
+```
+  applied   12-extended-response, 12-extended-response-answering   0 AA failures
+  applied   11-short-answer, 11-short-answer-keypoints             0 AA failures  (was 31, 34)
+  applied   14-calculation-checked-correct, -notquite,
+            14-worked-solution                                     0 AA failures  (was 29, 29, 39)
+  pending   08-sitting-shell                                      26 AA failures
+  pending   14-nested-multipart                                   27 AA failures
+  pending   15-navigator                                          89 AA failures
+```
+
+The three pending pages were left because the instruction that authorised the
+re-render named Calculation and Short Answer. They carry the same token block and
+the same swap applies unchanged.
+
+The swap is two edits per file: the `:root` values, and the button, which is the
+one component whose ROLE changes - `--green` stops being a surface under white
+text and goes back to being the accent, `--green-dk` becomes the surface, and the
+new `--green-edge` is the bottom edge it used to be. Measured on the five files
+re-rendered: **zero layout change**, every text node at the same coordinate and
+every document height identical.
+
+**One finding against this baseline, logged as UX-TEST-08:** it fixes contrast
+and flattens the grey hierarchy. `--ink-2` and `--ink-3` were 1.81:1 apart and
+are now 1.10:1 apart, so metadata no longer recedes behind secondary prose. The
+correction is to spread `--ink-2` rather than to revert anything, and it is a
+change to an approved baseline, so it is proposed rather than taken.

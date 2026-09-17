@@ -156,6 +156,38 @@ recoloured independently.
 
 ---
 
+## 12. State 12 is frozen, and the collapsed response is the pattern
+
+Extended response is frozen on the generated pages, with the submitted response
+collapsed behind a native disclosure once the paper is marked. The order is
+unchanged: the response still comes first, compressed rather than moved. What
+the student sees is the mark, the marker's judgement, the four authored criteria
+described honestly, and observations at response level with their own words
+quoted only where the pipeline located them verbatim. No rubric mini-scores, no
+bands, no generated replacement sentences, no route into the rewrite workspace.
+
+Verification accepted: 99 suites, 4453 assertions, 477.2s of an 800s budget, on
+a clean tree, plus `tests/t32.mjs` and eight mutations retained, `tests/t33.mjs`
+on the generated pages, and `tests/ui69.js` as the rendered-state regression.
+
+## 13. A shared-shell defect outranks a freeze
+
+The sitting shell was frozen at decision 8. It was reopened for one thing:
+UX-TEST-06, a sticky footer that at 390x844 grew to 119px and sat on top of the
+marked result. A freeze protects a design from churn; it does not protect a
+defect that reaches every marked format at a common phone width, and the cost of
+leaving it was a student finishing a paper and not being able to see the mark.
+
+What was reopened is the narrow-mobile footer only. Below 640px - measured, that
+is where the row stopped wrapping - the footer is one compact row of Previous,
+Flag and Finish, without the item counter and without the trailing half of each
+label. Above 640px nothing changed: every structural box on all ten pages is in
+the same place to the pixel, the rendered text is identical, and the document
+heights match.
+
+The rule that follows from this: **a frozen state is reopened for a measured
+defect, not for a preference, and the reopening is scoped to the defect.**
+
 ## Mockup order — dependency, not numerical
 
 ```
