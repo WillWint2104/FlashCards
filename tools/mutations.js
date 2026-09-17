@@ -17,6 +17,75 @@
 // silently skipped, because a catalogue that quietly stops testing things is the
 // same failure as a suite that quietly stops running.
 module.exports = [
+  // ---- marking: what is shown as the student's words has passed the check ---
+  //
+  // Five of these let the product show a student something it could not prove,
+  // and four of them reported themselves clean while they were wrong. The last
+  // is the door out of a marked paper into the rewrite workspace.
+  {
+    id: "snap-sentence-located-unscoped",
+    file: "proxy/worker.js",
+    find: "    const scope = scopeFor(idx, pi + 1);\n    const at = quoteSpan(scope, sn.text, 250);",
+    replace: "    const scope = idx;\n    const at = quoteSpan(scope, sn.text, 250);",
+    owner: "t32",
+    why: "locating a sentence against the whole response let a model weld two paragraphs into one \"sentence\" and have it verify",
+  },
+  {
+    id: "snap-sentence-welds-paragraphs",
+    file: "proxy/worker.js",
+    find: "    if (!exact || /\\n\\s*\\n/.test(exact)) { unplaced++; sn.unplaced = true; return; }",
+    replace: "    if (!exact) { unplaced++; sn.unplaced = true; return; }",
+    owner: "t32",
+    why: "a located run containing a blank line spans two paragraphs and is not a sentence the student wrote",
+  },
+  {
+    id: "ground-prose-fails-open-on-length",
+    file: "proxy/worker.js",
+    find: "{3,2000})[\"\u201d]/g",
+    replace: "{3,240})[\"\u201d]/g",
+    owner: "t32",
+    why: "a quoted run over 240 characters was not matched at all, so it kept its quotation marks and was never counted",
+  },
+  {
+    id: "ground-prose-skips-criterion-narrative",
+    file: "proxy/worker.js",
+    find: "  (r.rubric || []).forEach(c => {\n    c.descriptor = fix(c.descriptor);",
+    replace: "  (r.rubric || []).slice(0, 0).forEach(c => {\n    c.descriptor = fix(c.descriptor);",
+    owner: "t32",
+    why: "the criterion descriptor is the largest block of marker prose on a marked response and escaped grounding entirely",
+  },
+  {
+    id: "legacy-fields-taken-before-grounding",
+    file: "proxy/worker.js",
+    find: "  r.focus = groundFocus(r, idx, blocks);\n  const prose = groundProse(r, idx);\n\n  // ---- legacy fields (derived, not asked of the model) ----\n  r.score = r.total;\n  r.overall = { summary: r.summary || \"\" };",
+    replace: "  r.focus = groundFocus(r, idx, blocks);\n\n  // ---- legacy fields (derived, not asked of the model) ----\n  r.score = r.total;\n  r.overall = { summary: r.summary || \"\" };\n  const prose = groundProse(r, idx);",
+    owner: "t32",
+    why: "overall.summary was a copy taken before grounding, and it is the only copy the app reads",
+  },
+  {
+    id: "focus-quoted-is-non-empty-test",
+    file: "proxy/worker.js",
+    find: "    focusQuoted: !!(r.focus && r.focus.quote && verifyQuote(idx, r.focus.quote)),",
+    replace: "    focusQuoted: !!(r.focus && r.focus.quote),",
+    owner: "t32",
+    why: "non-empty is not verification, and this is the flag a renderer trusts before saying \"In your response\"",
+  },
+  {
+    id: "focus-fallback-unverified",
+    file: "proxy/worker.js",
+    find: "      if (!quote && typeof best.text === \"string\" && !best.unplaced) {\n        const bAt = quoteSpan(words, best.text, 250);\n        if (bAt) quote = spanText(words, bAt);\n      }",
+    replace: "      if (!quote && typeof best.text === \"string\") quote = best.text;",
+    owner: "t32",
+    why: "the focus fallback handed back the model's own wording for a sentence that had already failed to locate",
+  },
+  {
+    id: "testmode-reaches-rewrite-workspace",
+    file: "app.js",
+    find: "    if (rb) rb.onclick = () => examDeepReview(item, key);",
+    replace: "    if (rb) rb.onclick = () => openReview(g.fb, () => examRender());",
+    owner: "t32",
+    why: "a marked paper was one click from the Clear/Better/Band 6 rungs, a rewrite box and criterion score pills",
+  },
   // ---- marking points: guidance, not marks --------------------------------
   //
   // Both halves of the short-answer fault, kept one line from happening. The

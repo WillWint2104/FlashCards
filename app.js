@@ -2514,14 +2514,22 @@
   }
   function examSheet(item, key, g) {
     const last = !EXAM.seq.slice(EXAM.pos + 1).some(x => x.kind === "q");
-    const hasReview = g.fb && Array.isArray(g.fb.paragraphs) && g.fb.paragraphs.length > 0;
-    // The marking-points checklist keeps the mark, because one point is one mark and
-    // that is how the paper is actually marked. What the checklist cannot do is say
-    // WHY a point was missed or hand the student back to the sentence, so the same
-    // review an extended response gets is offered here too, on request.
-    const askable = !hasReview && ["points", "local"].includes(g.kind) && !!state.endpoint;
-    const reviewBtn = hasReview ? `<button class="btn" id="examreview">Work through the issues (${rvIssueCount(g.fb)}) →</button>`
-      : askable ? `<button class="btn ghost" id="examreview">What would make this stronger →</button>` : "";
+    // TEST MODE IS READ-ONLY REVIEW, AND THIS IS WHERE IT STOPPED BEING ONE.
+    //
+    // A marked written response returns `paragraphs[]`, and that put `Work
+    // through the issues` in this action row, one click from `Try again`. It
+    // opens the Essay Practice workspace: the Clear / Better / Band 6 rungs as
+    // pickable model sentences, a rewrite box, per-criterion score pills and
+    // band descriptors marked "you are here". Every one of those is on the list
+    // of things a marked paper must not show - criterion mini-marks, band
+    // descriptors, generated replacement prose - and they were reachable from
+    // every marked paper in the product.
+    //
+    // The workspace is not deleted. It is Essay Practice's, it is good, and it
+    // is where revision is taught. What closes is the door out of an exam into
+    // it: Test Mode explains the assessment, Essay Practice teaches the rewrite.
+    const askable = ["points", "local"].includes(g.kind) && !!state.endpoint;
+    const reviewBtn = askable ? `<button class="btn ghost" id="examreview">What would make this stronger →</button>` : "";
     // The bar is rendered once, at the top of the question screen, so it was a
     // question behind all the way through a paper. That is tolerable for a score
     // and not for "not marked", which is the one thing a student needs to see at
@@ -2537,7 +2545,7 @@
     $("#examretry").onclick = () => examRender();
     $("#examnext").onclick = () => { EXAM.pos++; examRender(); };
     const rb = $("#examreview");
-    if (rb) rb.onclick = () => { if (hasReview) examOpenReview(item, key, g.fb); else examDeepReview(item, key); };
+    if (rb) rb.onclick = () => examDeepReview(item, key);
     const sh = $("#sheet"); if (sh && sh.scrollIntoView) sh.scrollIntoView({ behavior: "smooth", block: "nearest" });
     wireGlossary();
   }
@@ -2550,28 +2558,26 @@
     // wrong one sends a student looking for a connection problem that is not
     // there.
     if (ASSESS.outcomeOf(g) === "refused") { toast(g.why || "This was not marked."); return; }
-    if (g.fb && Array.isArray(g.fb.paragraphs) && g.fb.paragraphs.length) {
-      EXAM.results[key] = Object.assign({}, EXAM.results[key], { fb: g.fb });
-      examOpenReview(item, key, g.fb);
+    // The marker's own words come back INTO THIS SHEET rather than opening the
+    // revision workspace. What the authored points could not say - why a point
+    // was missed, and what the response did overall - is the summary and the
+    // criteria, and those render here. `paragraphs[]` arrives with the payload
+    // and is deliberately not rendered: it is the sentence-by-sentence material
+    // Essay Practice is built on.
+    if (isMarked(g)) {
+      EXAM.results[key] = g;
+      examSheet(item, key, g);
     } else {
       toast("Marking could not be reached just now.");
     }
   }
-  // Inside a paper the answer box is one Try again away, so the revise action can
-  // actually close the loop: it reopens the question with the answer restored and
-  // the marker's line selected, ready to be rewritten.
-  function examOpenReview(item, key, fb) {
-    openReview(fb, () => examRender(), { onRevise: (idx, quote) => examRevise(quote) });
-  }
-  function examRevise(quote) {
-    examRender();
-    const ta = document.getElementById("ans"); if (!ta) return;
-    ta.focus();
-    const at = esLocateQuote(ta.value, quote);
-    if (at) { try { ta.setSelectionRange(at.start, at.end); } catch (e) { /* older browsers */ } }
-    if (ta.scrollIntoView) ta.scrollIntoView({ behavior: "smooth", block: "center" });
-    toast("Rewrite this part, then submit it again.");
-  }
+  // WHAT USED TO BE HERE: examOpenReview, which handed a marked paper to
+  // openReview - the Essay Practice workspace - with a revise callback that
+  // reopened the question "ready to be rewritten". Nothing calls it now. Test
+  // Mode reviews a completed attempt and does not rewrite it, so the function
+  // that crossed that line is gone rather than left dark for something to find.
+  // examRevise went with it. Its last line was "Rewrite this part, then submit
+  // it again", which is the sentence that gives away what the door was for.
   function examResults() {
     let got = 0, max = 0;
     const sit = EXAM.sit || (EXAM.paper.sections || []).map((_, i) => i);

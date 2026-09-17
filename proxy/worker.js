@@ -1342,16 +1342,31 @@ function offPathwayCount(d, pathwaysSupplied) {
 // to a student as their own line.
 function snapSentences(r, idx) {
   let total = 0, snapped = 0, unplaced = 0;
-  (r.paragraphs || []).forEach(p => (p.sentences || []).forEach(sn => {
+  (r.paragraphs || []).forEach((p, pi) => (p.sentences || []).forEach(sn => {
     if (typeof sn.text !== "string" || !sn.text.trim()) return;   // a missing-sentence slot
     total++;
+    // LOCATE THE SENTENCE INSIDE ITS OWN PARAGRAPH.
+    //
+    // Against the whole response, a model "sentence" welding the end of one
+    // paragraph to the start of the next VERIFIES, and the student is handed a
+    // run of their own characters that they never wrote as one sentence -
+    // counted as grounded and quotable back at them. answerIndex has built a
+    // per-paragraph index since it was written, for exactly this reason, and
+    // normalizeDiagnosis already uses it. This did not.
+    //
     // A sentence is not a pointer, it is the student's own line, and a run-on can
     // be long. The 60-word cap that keeps a "quote" useful would drop those, so
     // locating a sentence gets a wider limit.
-    const at = quoteSpan(idx, sn.text, 250);
+    const scope = scopeFor(idx, pi + 1);
+    const at = quoteSpan(scope, sn.text, 250);
     if (!at) { unplaced++; sn.unplaced = true; return; }
-    const exact = spanText(idx, at);
-    if (exact && exact !== sn.text) { sn.text = exact; snapped++; } else snapped++;
+    const exact = spanText(scope, at);
+    // Fail closed where the model returned more paragraphs than the response has
+    // and scopeFor fell back to the whole index: a located run containing a blank
+    // line spans two paragraphs and is not a sentence.
+    if (!exact || /\n\s*\n/.test(exact)) { unplaced++; sn.unplaced = true; return; }
+    if (exact !== sn.text) sn.text = exact;
+    snapped++;
   }));
   return { total, snapped, unplaced };
 }
@@ -1451,13 +1466,33 @@ function groundProse(r, idx) {
   let quoted = 0, unquoted = 0;
   const fix = t => {
     if (typeof t !== "string" || t.indexOf('"') < 0 && t.indexOf("“") < 0) return t;
-    return t.replace(/["“]([^"“”]{3,240})["”]/g, (m, inner) => {
+    // THE UPPER BOUND USED TO BE 240 CHARACTERS, AND IT FAILED OPEN.
+    //
+    // A quoted run longer than that was not matched at all, so it kept its
+    // quotation marks and was never counted: a fabricated 263-character
+    // "quotation" shipped with its marks on while checks.prose reported the
+    // review clean. The bound is now generous and the DECISION belongs to
+    // verifyQuote - anything it cannot confirm loses its quotation semantics,
+    // however long it is. Fail closed.
+    return t.replace(/["“]([^"“”]{3,2000})["”]/g, (m, inner) => {
       if (verifyQuote(idx, inner)) { quoted++; return '"' + inner + '"'; }
       unquoted++; return inner;
     });
   };
   r.summary = fix(r.summary);
-  if (r.focus) r.focus.why = fix(r.focus.why);
+  if (r.focus) { r.focus.why = fix(r.focus.why); r.focus.area = fix(r.focus.area); }
+  // THE CRITERION NARRATIVE IS STUDENT-FACING MARKER PROSE AND WAS NOT COVERED.
+  //
+  // `descriptor` is the largest block of marker writing a marked extended
+  // response shows, and it escaped this path entirely, so an invented quotation
+  // inside it rendered with its marks on and unrecorded by checks.prose. Same
+  // for the band text. Neither is sentence-grounded - that is stated where they
+  // are classified - but neither may quote a student on something they did not
+  // write.
+  (r.rubric || []).forEach(c => {
+    c.descriptor = fix(c.descriptor);
+    (c.bands || []).forEach(b => { b.text = fix(b.text); });
+  });
   (r.paragraphs || []).forEach(p => {
     (p.reasons || []).forEach(rs => { rs.text = fix(rs.text); });
     (p.sentences || []).forEach(sn => (sn.issues || []).forEach(iss => { iss.why = fix(iss.why); iss.head = fix(iss.head); }));
@@ -1487,13 +1522,21 @@ function groundFocus(r, answer, blocks) {
     let best = null;
     paras.forEach((p, pi) => (p.sentences || []).forEach((sn, si) => (sn.issues || []).forEach(iss => {
       const rank = SEVRANK[iss.severity] != null ? SEVRANK[iss.severity] : 1;
-      if (!best || rank < best.rank) best = { rank, pi, si, iss, text: sn.text };
+      if (!best || rank < best.rank) best = { rank, pi, si, iss, text: sn.text, unplaced: !!sn.unplaced };
     })));
     if (best) {
       if (idx < 0) idx = best.pi;
       if (!area) area = best.iss.head || "Where to start";
       if (!why) why = best.iss.why || "";
-      if (!quote && typeof best.text === "string") quote = best.text;
+      // The fallback used to assign best.text straight through, unverified.
+      // snapSentences has already run, so a sentence that failed to locate still
+      // holds the MODEL's wording with sn.unplaced set - and that wording became
+      // focus.quote while checks.focusQuoted reported true. Verify it, and never
+      // fall back to a sentence that failed to locate.
+      if (!quote && typeof best.text === "string" && !best.unplaced) {
+        const bAt = quoteSpan(words, best.text, 250);
+        if (bAt) quote = spanText(words, bAt);
+      }
     }
   }
   if (idx < 0) idx = 0;
@@ -1645,6 +1688,22 @@ function finalize(r, marks, answer, diagnosis, criteria, creditable, responseTyp
   if (responseType === "short") r.rubric = [];
   else reconcileRubric(r, marks, criteria);
 
+  // ---- grounding: where the student goes back to write, and how we know ----
+  //
+  // THIS RUNS BEFORE THE LEGACY FIELDS ARE DERIVED, AND THE ORDER IS THE POINT.
+  //
+  // It used to run after. `overall.summary` and `next_steps` were string copies
+  // taken from `r.summary` and `issues[].head` BEFORE groundProse had touched
+  // them, and those copies are the only ones the app reads: app.js reads
+  // fb.overall.summary and never fb.summary. So an invented quoted run kept its
+  // quotation marks on the one paragraph a student reads first, while
+  // checks.prose reported the review as cleaned. Deriving afterwards is what
+  // makes the guarantee true rather than merely stated.
+  const idx = answerIndex(answer);
+  const snap = snapSentences(r, idx);
+  r.focus = groundFocus(r, idx, blocks);
+  const prose = groundProse(r, idx);
+
   // ---- legacy fields (derived, not asked of the model) ----
   r.score = r.total;
   r.overall = { summary: r.summary || "" };
@@ -1661,11 +1720,6 @@ function finalize(r, marks, answer, diagnosis, criteria, creditable, responseTyp
     .map(i => i.head);
   r.missing_vocabulary = [];
 
-  // ---- grounding: where the student goes back to write, and how we know ----
-  const idx = answerIndex(answer);
-  const snap = snapSentences(r, idx);
-  r.focus = groundFocus(r, idx, blocks);
-  const prose = groundProse(r, idx);
   if (diagnosis) {
     r.diagnosis = diagnosis;
     // A valid argument that was not one of our pathways is CREDITED, not penalised,
@@ -1684,7 +1738,10 @@ function finalize(r, marks, answer, diagnosis, criteria, creditable, responseTyp
     sentencesVerified: snap.snapped,
     sentencesUnplaced: snap.unplaced,
     grounded: snap.total ? Math.round(100 * snap.snapped / snap.total) / 100 : 1,
-    focusQuoted: !!(r.focus && r.focus.quote),
+    // Non-empty was not verification. A focus quote that never located still
+    // reported true, and this is the one flag a renderer is entitled to trust
+    // when deciding whether it may say "In your response".
+    focusQuoted: !!(r.focus && r.focus.quote && verifyQuote(idx, r.focus.quote)),
     focusBlock: !!(r.focus && r.focus.targetBlockId),
     prose: prose,
     diagnosis: diagnosis ? diagnosis.verified : null,
