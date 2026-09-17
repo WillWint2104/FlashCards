@@ -1,12 +1,48 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Marginal — Extended response marked</title>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style>
-  /* PROPOSED SHARED TEST MODE TOKENS - see docs/testmode-tokens.md.
+// STATE 12 IS GENERATED, NOT WRITTEN.
+//
+// Draft 1 was hand-authored and its marker copy asserted "Figures appear once"
+// about a response containing no digit. Worse, it filed verified quotations
+// under named criteria on an association the payload does not carry. Both are
+// impossible here: the fixture is fed to the SHIPPED finalize(), and the page is
+// rendered from what comes back. A quotation appears only where snapSentences
+// located the sentence; an observation appears under "Across your response" only
+// where it did not; and no criterion owns either, because nothing in the payload
+// says which criterion an issue belongs to.
+//
+//   node docs/mockups/12-extended-response.build.mjs
+import { createRequire } from "node:module";
+import { finalize } from "../../tests/worker.mjs";
+const require = createRequire(import.meta.url);
+const fs = require("node:fs"), path = require("node:path");
+const HERE = path.dirname(new URL(import.meta.url).pathname);
+
+const fx = JSON.parse(fs.readFileSync(path.join(HERE, "12-extended-response.fixture.json"), "utf8"));
+const r = finalize(JSON.parse(JSON.stringify(fx.review)), fx.question.marks, fx.answer,
+                   null, fx.criteria, false, "extended", null);
+
+// ---- what the payload supports, and only that ------------------------------
+const esc = s => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const anchored = [], across = [];
+(r.paragraphs || []).forEach(p => (p.sentences || []).forEach(sn => (sn.issues || []).forEach(iss => {
+  // The ONLY thing that decides which list an observation lands in.
+  (sn.unplaced ? across : anchored).push({ quote: sn.text, head: iss.head, why: iss.why, unplaced: !!sn.unplaced });
+})));
+// A sentence the marker could not locate is the model's wording, not the
+// student's, so it is never shown - only the observation made about it.
+across.forEach(o => { delete o.quote; });
+
+const ratio = r.max ? r.score / r.max : 0;
+const mood = ratio >= 0.95 ? "Full marks" : ratio >= 0.6 ? "Most of it" : ratio >= 0.3 ? "Partly there" : "Not yet";
+
+const report = {
+  mark: r.score + " of " + r.max, mood,
+  criteria: r.rubric.map(c => c.name),
+  anchoredCount: anchored.length, acrossCount: across.length,
+  everyQuoteVerbatim: anchored.every(o => fx.answer.includes(o.quote)),
+  grounded: r.checks.grounded, prose: r.checks.prose,
+};
+
+const TOK = `  /* PROPOSED SHARED TEST MODE TOKENS - see docs/testmode-tokens.md.
      Nine of nine mockups fail WCAG AA on the current values, worst offenders in
      the frozen shell. Seven values move here so this draft can be judged without
      reading it through failing contrast. NOT a State 12 decision, and not
@@ -23,7 +59,17 @@
     --line:#E7EDED;
     --disp:'Fredoka',system-ui,sans-serif; --body:'Nunito',system-ui,sans-serif;
     --footh:68px;
-  }
+  }`;
+
+const html = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Marginal — Extended response marked</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+${TOK}
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:var(--body);font-size:16px;background:var(--bg);color:var(--ink);line-height:1.6;
        -webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
@@ -124,7 +170,7 @@
   .ev{margin:2px 0 9px;background:#F4F9F8;border:1px solid var(--line);border-radius:9px;padding:11px 15px;max-width:62ch}
   .ev .lbl{font-family:var(--disp);font-weight:600;font-size:11.5px;color:var(--ink-2);margin-bottom:5px}
   .ev q{display:block;font-size:15px;font-weight:400;line-height:1.65;color:var(--ink);
-        border-left:2px solid #9FE3C4;padding-left:12px;quotes:'\201C' '\201D'}
+        border-left:2px solid #9FE3C4;padding-left:12px;quotes:'\\201C' '\\201D'}
   /* No surface, because there is nothing of the student's to show. */
   .acrossl{font-family:var(--disp);font-weight:600;font-size:11.5px;color:var(--ink-2);margin-bottom:6px}
 
@@ -153,31 +199,28 @@
     </div>
     <div class="spacer"></div>
     <span class="policy"><span class="dot"></span>Practice · marked as you go</span>
-    <button class="navbtn"><span class="grid"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>Questions</button>
+    <button class="navbtn"><span class="grid">${'<i class="on"></i>'.repeat(9)}</span>Questions</button>
     <div class="prog"><b>20</b> of 20 answered<span class="score"> · <b>62</b>/90 marks</span><div class="pbar"><i></i></div></div>
   </div>
 
   <div class="work">
     <div class="qcard">
       <div class="exam-qhead">
-        <span>Question 15</span><span class="marks">· 20 marks</span>
-        <span class="fmt">extended response · evaluate</span>
+        <span>Question ${esc(fx.question.number)}</span><span class="marks">· ${fx.question.marks} marks</span>
+        <span class="fmt">extended response · ${esc(fx.question.directive)}</span>
       </div>
-      <h1 class="exam-prompt">Evaluate the effectiveness of marketing strategies in achieving the marketing objectives of a business you have studied.</h1>
+      <h1 class="exam-prompt">${esc(fx.question.prompt)}</h1>
 
       <div class="response" aria-label="Your submitted response">
-        <p>Northline Sportswear set a marketing objective of increasing its share of the teenage market, and most of its strategies were chosen to serve that objective. The business moved from print advertising to short video content on social platforms, which reached the age group it was targeting at a lower cost per view than its previous campaigns.</p>
-        <p>Its second strategy was a loyalty app that gave members early access to new releases. This was effective because it turned occasional buyers into repeat customers, and repeat customers are cheaper to keep than new ones are to find.</p>
-        <p>However, the business also cut its prices across the range at the same time, which worked against the premium position its advertising was building. A customer who sees the brand as aspirational and then finds it discounted every month will stop believing the first message.</p>
-        <p>Overall the marketing strategies were effective in achieving the objective they were set, because the business gained share in the group it targeted, but the pricing decision limited how much of that gain it could hold.</p>
+${fx.answer.split(/\n\s*\n/).map(p => "        <p>" + esc(p) + "</p>").join("\n")}
       </div>
       <div class="saved"><span class="tick">✓</span> Submitted. You can leave and come back to this paper.</div>
 
       <div class="result">
-        <span class="badge">Most of it</span>
-        <span class="pair"><span class="k">Marks</span><span class="v">14 of 20</span></span>
+        <span class="badge">${esc(mood)}</span>
+        <span class="pair"><span class="k">Marks</span><span class="v">${r.score} of ${r.max}</span></span>
       </div>
-      <p class="mnote"><span class="who">Marked against Business Studies criteria</span>You answer the question that was asked and you reach a judgement about effectiveness rather than listing what the business did. What holds the response back is evidence. No figure is given anywhere for the share, the cost per view or the sales growth, so each strategy is asserted to have worked rather than shown to have worked, and the judgement itself only arrives in the final paragraph.</p>
+      <p class="mnote"><span class="who">Marked against Business Studies criteria</span>${esc(r.overall.summary)}</p>
 
       <div class="submitrow"><button class="btn">Try again</button></div>
 
@@ -185,22 +228,10 @@
         <h2 class="secth">How this was marked</h2>
         <p class="lede">The four criteria your response was judged against, in the order the Business Studies course sets them.</p>
         <ol class="crits">
-          <li class="crit">
-            <h3 class="critn">knowledge and understanding of course content</h3>
-            <p>Rewards accurate course content, used to answer the question rather than to display it.</p>
-          </li>
-          <li class="crit">
-            <h3 class="critn">application of business case studies and contemporary business issues</h3>
-            <p>Rewards a business used as evidence for the argument, not described alongside it.</p>
-          </li>
-          <li class="crit">
-            <h3 class="critn">business terminology and concepts</h3>
-            <p>Rewards terminology that carries the reasoning rather than decorating it.</p>
-          </li>
-          <li class="crit">
-            <h3 class="critn">sustained, logical and cohesive response</h3>
-            <p>Rewards one judgement held from the first paragraph to the last.</p>
-          </li>
+${r.rubric.map(c => `          <li class="crit">
+            <h3 class="critn">${esc(c.name)}</h3>
+            <p>${esc(c.descriptor)}</p>
+          </li>`).join("\n")}
         </ol>
       </section>
 
@@ -208,31 +239,16 @@
         <h2 class="secth">What the marker noticed</h2>
         <p class="lede">Where the marker could point at the sentence it meant, your own words are shown. Where it could not, the observation is about the response as a whole.</p>
         <ol class="obs">
-          <li class="ob">
-            <h4 class="obh">The comparison is stated but never quantified</h4>
-            <div class="ev"><div class="lbl">In your response</div><q>The business moved from print advertising to short video content on social platforms, which reached the age group it was targeting at a lower cost per view than its previous campaigns</q></div>
-            <p>You say the cost per view was lower than the previous campaigns. Lower by how much, and over what period? A figure here would turn the claim into evidence.</p>
-          </li>
-          <li class="ob">
-            <h4 class="obh">Effectiveness is asserted, and the reason given is general rather than about this business</h4>
-            <div class="ev"><div class="lbl">In your response</div><q>This was effective because it turned occasional buyers into repeat customers, and repeat customers are cheaper to keep than new ones are to find</q></div>
-            <p>Retention being cheaper than acquisition is true of businesses generally. What would make it evidence is what happened at Northline after the app launched.</p>
-          </li>
-          <li class="ob">
-            <h4 class="obh">The strongest paragraph, and the one closest to an evaluation</h4>
-            <div class="ev"><div class="lbl">In your response</div><q>However, the business also cut its prices across the range at the same time, which worked against the premium position its advertising was building</q></div>
-            <p>You set two strategies against each other and say why they conflict. This is the reasoning the rest of the response needs more of.</p>
-          </li>
-          <li class="ob">
-            <h4 class="obh">The judgement arrives only at the end</h4>
+${anchored.map(o => `          <li class="ob">
+            <h4 class="obh">${esc(o.head)}</h4>
+            <div class="ev"><div class="lbl">In your response</div><q>${esc(o.quote)}</q></div>
+            <p>${esc(o.why)}</p>
+          </li>`).join("\n")}
+${across.map(o => `          <li class="ob">
+            <h4 class="obh">${esc(o.head)}</h4>
             <div class="acrossl">Across your response</div>
-            <p>Each paragraph reaches its own small verdict and the position that ties them together appears in the last three lines. Stating it first would make the response read as one argument rather than four.</p>
-          </li>
-          <li class="ob">
-            <h4 class="obh">The objective is set but never measured</h4>
-            <div class="acrossl">Across your response</div>
-            <p>The response is judged against achieving a marketing objective, so the one number that would settle it is the change in share.</p>
-          </li>
+            <p>${esc(o.why)}</p>
+          </li>`).join("\n")}
         </ol>
       </section>
     </div>
@@ -250,3 +266,6 @@
 
 </body>
 </html>
+`;
+fs.writeFileSync(path.join(HERE, "12-extended-response.html"), html);
+console.log(JSON.stringify(report, null, 1));

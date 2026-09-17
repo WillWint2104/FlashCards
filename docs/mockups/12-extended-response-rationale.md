@@ -1,143 +1,158 @@
-# State 12 — Extended response: reading key
+# State 12 — Extended response, draft 2: reading key
 
 Companion to `12-extended-response.html`. Nothing here appears on the student's
-screen.
+screen. Draft 1 was rejected as a freeze candidate; this is the corrective pass.
 
-Shown: desktop, **Practice**, **Question 15** of the synthetic Business Studies
-paper — the paper's only 20-mark extended response, directive *evaluate*, marked
-**14 of 20**. The response, the marker's words and the criterion feedback are
-original material written for this mockup; the four criterion names are not.
+## The page is generated, not written
 
-## What is on screen, and what each thing is allowed to claim
+```
+12-extended-response.fixture.json   the answer, the criteria, one model review
+        ↓  fed to the SHIPPED finalize() in proxy/worker.js
+12-extended-response.build.mjs      renders the page from what comes back
+        ↓
+12-extended-response.html
+```
 
-| on screen | where it comes from | what it may claim |
+Draft 1 was hand-authored and its marker copy asserted *"Figures appear once"*
+about a response containing **no digit**. That class of drift is now impossible:
+the marker's words, the student's response and the evidence on screen all come
+out of one run of the real pipeline. Re-run `node
+docs/mockups/12-extended-response.build.mjs` and it reports what it produced:
+
+```
+mark 14 of 20    3 anchored observations    2 across    everyQuoteVerbatim true
+grounded 0.6     criteria exactly as authored, in order
+```
+
+**14 of 20 was not chosen.** It is `reconcileParagraphs` summing the paragraph
+scores 4+3+4+3. **Which observations are quotable was not chosen either.** Three
+sentences located verbatim and two did not, and that is the only thing deciding
+which list each lands in.
+
+## The correction: two independent layers
+
+Draft 1's blocker was that it organised evidence under criteria. Nothing in the
+payload associates an issue, a sentence or a paragraph with an authored
+criterion — a rubric item is `{name, score, max, descriptor, bands}`, an issue is
+`{kind, severity, head, why, ladder}` under a sentence, and no field anywhere
+links them. Filing a true quotation under a criterion made it a **false academic
+attribution**, and the per-criterion count was a count of paragraphs the author
+had written.
+
+So the page now has two layers that do not touch:
+
+| layer | what it may claim | what it may not |
 | --- | --- | --- |
-| **14 of 20** | `score`, the runtime's real question-level result | the mark |
-| *Marked against Business Studies criteria* + the paragraph under it | `overall.summary` | a judgement about the whole response |
-| the four criterion **names** | the subject package, sent to the marker and required back verbatim in order | the strongest grounding in the payload |
-| the narrative under each name | `rubric[].descriptor` and the sentence-level issues, rewritten as prose | what that criterion rewards and where this response sat |
-| *In your response* + a quotation | a sentence the worker located **verbatim** | that these are the student's exact words |
-| *Across your response* | an issue with no verified anchor | a claim about the response, with no sentence attached |
-| *n observations* | how many remarks the marker made under that criterion | a count of remarks, and deliberately nothing else |
+| **How this was marked** | the four authored criterion names, in order, and the line the marker returned for each | evidence, counts, verdicts, marks, bands |
+| **What the marker noticed** | observations at response level, each with the student's own sentence where one was located | any criterion attribution |
 
-## What is not on screen, and why
+Verified in the rendered page: `.crit .ev`, `.crit .obs`, `.crit q` and
+`.crithead .obs` all count **zero**.
 
-Every exclusion traces to the audit, not to taste:
+## A finding the fixture exposed, and it changes what layer one can say
 
-| kept out | because |
-| --- | --- |
-| band labels and descriptors | the ones a student would read are **written by the model at request time** against Marginal's generic set, whose `bandsSource` is literally *"general HSC band expectations"*. No subject package authors bands. Not Business Studies, and not a scale |
-| criterion marks | `shareOut` and `fitScores` force them to sum to a total that was **already decided at paragraph level**. A criterion mark is an apportionment of someone else's arithmetic |
-| `met` / `partial` / `missing` | derived from those same apportioned scores. A restatement of a share, wearing the clothes of an independent judgement |
-| the `ladder` | three model-written replacement sentences, *Clear / Better / Band 6*, mandatory on every issue in the schema so it always arrives. This is Essay Practice's revision material and writing the answer is not what Test Mode is for |
-| `checks.grounded` | the renderer's gate. A student does not need a confidence meter on their own marking |
-| `missing_vocabulary` | unconditionally `[]` (UX-TEST-05) |
-| `next_steps` as sentence-specific advice | it arrives **stripped of its sentence**, so it can only be a response-level claim |
+`rubric[].descriptor` is documented in the worker's own schema as **"One line on
+what the criterion rewards."** That is a statement about the *criterion*, not
+about this response. Checked against every other field: the only response-specific
+per-criterion signals in the payload are `score`, `max` and `bands[].here` — and
+all three are excluded, correctly, as apportionment.
 
-Verified in the rendered page: the strings *band*, *Band*, *ladder*, *Clear*,
-*Better*, *met*, *partial*, *missing*, *grounded* and `%` appear **zero** times.
+**So there is no response-specific per-criterion commentary in the payload at
+all.** Layer one therefore says what each criterion rewards and stops. That is
+course information rather than feedback, it is honest, and it tells a student
+what they were judged against — but it is less than "qualitative criterion
+feedback" implies, and the difference is the contract's, not the design's.
 
-## The one thing this screen does that the others cannot
+If per-criterion commentary about the response is wanted, the prompt has to ask
+for it and the schema has to carry it. That is a contract change, not a layout
+decision, and it is not made here.
 
-**It quotes the student back to themselves, and only where that can be proved.**
+## Everything the audit disqualified, still absent
 
-The worker locates each sentence of its review verbatim in the answer and
-replaces it with the student's own text, or marks it `unplaced`. That distinction
-becomes the difference between two pieces of wording:
+No bands, criterion marks, `met`/`partial`/`missing`, `checks.grounded` as a
+number, the ladder, `missing_vocabulary`, or an unverified quote as the student's
+words. `next_steps` is not rendered at all: it arrives stripped of its sentence,
+so it cannot be a sentence-level claim, and everything in it is already in the
+observations with its sentence attached.
 
-```
-In your response          the sentence was found; these are their exact words
-Across your response      it was not; the claim is about the response
-```
+## What changed underneath, so the page can claim what it claims
 
-Both quotations on this screen were checked against the submitted text at render
-time and are verbatim. That check is the honesty guarantee of the whole state: a
-quotation mark here is a promise, and the promise is machine-checkable.
+Five runtime faults, all fixed and all proven by executing the shipped functions
+(`tests/t32.mjs`, 44 assertions; eight mutations, all killed):
 
-Two criteria are anchored and two are not, deliberately, because that is the
-realistic mixture and the screen has to read well in both cases. An unanchored
-criterion does not get an empty evidence box; it gets a label and no surface.
+| | was | now |
+| --- | --- | --- |
+| ordering | `overall.summary` and `next_steps` were copies taken **before** `groundProse`, and are the only copies the app reads | grounding runs first; the legacy fields derive from the grounded object |
+| coverage | `groundProse` never touched `rubric[].descriptor`, the band text or `focus.area` | all three covered, before `criteria[].comment` copies the descriptor |
+| length | quoted runs over 240 characters were not matched, so they kept their marks uncounted | bound raised; `verifyQuote` decides; fail closed |
+| focus | `checks.focusQuoted` was a non-empty test, and the fallback used unverified text | both verify, and never fall back to a sentence that failed to locate |
+| scope | `snapSentences` located against the whole response, so a "sentence" could weld two paragraphs and count as grounded | located inside its own paragraph; a run containing a blank line is refused |
 
-## Containment
+And the product rule: **a marked paper in Test Mode could reach the Essay
+Practice workspace in one click** — the Clear / Better / Band 6 rungs as pickable
+sentences, a rewrite box, criterion score pills, band descriptors. Both routes are
+closed, `examOpenReview` and `examRevise` are gone, and the marker's words now
+come back into the sheet instead.
 
-```
-question card       white
-└ marking SECTION   a rule, a heading, and the criteria source at its right
-  ├ criterion       a rule, a name, a count, narrative
-  └ evidence        #F4F9F8, r9px  ← the only inset surface
-```
+## Accessibility
 
-One inset surface, and it is the student's own words — the only material in the
-section that is not the marker talking. Measured from an evidence quote outward:
-`ev r9px` → `crit r0px` → `mark r0px` → `qcard r18px`. **No criterion cards.**
+The page uses the **proposed shared tokens** in `docs/testmode-tokens.md`, not
+State-12-specific colours. Measured in the rendered page: **zero WCAG AA
+failures**, against 18 in draft 1 and 17 to 28 in every other mockup. Seven token
+values move; `--green` is unchanged and remains the brand accent on surfaces that
+carry no text.
 
-The criterion name is set as a heading with nothing appended that the payload
-cannot support: no tick, no band, no share of the marks. *n observations* is a
-count of remarks and is not a verdict, which is why it is set in the muted chip
-style rather than beside a colour.
+Also structural, and new: **twelve real headings** where draft 1 had none (`h1`
+prompt, `h2` per section, `h3` per criterion, `h4` per observation); the criteria
+and the observations are ordered lists; and **there are zero editable fields** —
+the submitted response is read-only prose, not a live textarea with nowhere to
+save.
 
-## Two shell consequences this state exposed
-
-1. **A question that owns no source has no second column.** Question 15 authors
-   no stimulus — "a business you have studied" is the student's own. So `.work`
-   becomes a single column and the card keeps a **780px** reading measure rather
-   than running to 1100. That keeps the response as readable as it is beside a
-   source panel, and it means the length of this review was judged at roughly the
-   width it will really have. A sourced extended response — 11(d), 12(c) — keeps
-   the 62/38 shell unchanged.
-2. **At the last item of the paper, Next has nowhere to go.** Question 15 is item
-   20 of 20, so the footer reads **Finish paper →**. One label, using the button
-   that is already there. What that action opens is state 19.
-
-## Does it fit in place? Yes — with one finding
-
-Measured at 1280x900:
+## Does it still fit inline? Measured
 
 ```
-document height        2054px = 2.28 screens
-first screen carries   the question, the response, 14 of 20, and the whole
-                       overall judgement — nothing important is below the fold
-second screen carries  all four criteria and both pieces of evidence
+            card   doc    screens   mark visible   judgement visible
+1512x982    780   2955     3.01        yes             no
+1280x900    780   2955     3.28        no              no
+1280x800    780   2955     3.69        no              no
+1280x700    780   2955     4.22        no              no
+1024x768    780   3002     3.91        no              no
+ 834x1112   767   3007     2.70        yes             no
+ 430x932    396   4334     4.65        no              no
+ 390x844    358   4607     5.46        no              no
 ```
 
-**That is not an endless document.** A 20-mark essay review in two and a bit
-screens, where the mark and the reason for it are both visible before any
-scrolling, is a good outcome. On this evidence **state 16 does not need to
-exist** for extended response: a dedicated review surface would add a navigation
-concept in order to save one scroll, and would reintroduce the overlay that
-calculation and short answer both removed.
+No horizontal overflow at any width. No page errors.
 
-**The finding.** `Try again` sits at y=840 in the initial view, which is
-**underneath the sticky footer**. It is reachable after one scroll, and the
-footer safe-space only protects the end of the document, not content that lands
-mid-page. Two honest options, and it is a product call rather than a layout one:
+**The honest finding: the mark is below the fold at every size except a tall
+desktop and a tablet held upright.** That is not length for its own sake — it is
+the locked hierarchy meeting a real 20-mark response. Draft 1 put the mark on the
+first screen only because its textarea hid half the answer; rendering the whole
+submitted response, which is the more honest thing, costs about 340px and the
+mark goes under.
 
-- move `Try again` **after** the marking section for extended responses, on the
-  grounds that it is the action you take once you have read why — the locked
-  hierarchy puts it before, which works at short-answer length and strands it
-  above 1100px of content here;
-- or scroll the marking section into view when marking completes, which the
-  build already does elsewhere (`sheet.scrollIntoView`), so the initial position
-  is never 0.
+**This is not an argument for state 16.** A dedicated review screen would face
+the same content and the same order. Three ways to fix it, none of which needs a
+new state, and the choice is a product one:
 
-I have left the hierarchy exactly as locked and am reporting the measurement
-rather than choosing.
+1. **Put the mark above the response.** The cheapest, and it inverts the locked
+   order. A student who has just submitted wants the mark before they re-read
+   what they wrote.
+2. **Collapse the response behind a disclosure**, open by default on short
+   answers and closed on long ones. Keeps the order, costs a click.
+3. **Scroll the result into view when marking completes**, which the build
+   already does elsewhere (`sheet.scrollIntoView`).
 
-## Still read-only
+I have left the hierarchy exactly as locked and am reporting the measurement.
 
-No rewrite box, no Paragraph Review, no sentence shapes, no More Help, no Save
-revision, no generated replacement prose. `Try again` reopens the response for
-another attempt; the review itself is a review.
-
-The obvious next interaction — selecting a criterion and having its quoted
-sentence highlight inside the response above — is **not** built here. It is the
-right idea and it is free of the coaching problem, but it is an interaction
-proposal and this is a static proof of the hierarchy.
+**Inline review is otherwise coherent at every size.** Nothing wraps badly, the
+two layers stay distinct, the evidence surfaces keep their measure, and the
+footer behaves. The problem is one of order, not of containment, and a separate
+screen would not solve it.
 
 ## Not decided here
 
-- **Business report** (state 13), which shares this plumbing and adds a
-  structural expectation nothing currently authors.
-- **Whether `Try again` moves**, per the finding above.
-- **State 16**, which this screen argues against for extended response but which
-  business report has not yet been asked about.
+- **Whether the mark moves above the response**, per the finding above.
+- **Business report** (state 13), which shares this plumbing.
+- **Whether the contract should carry response-specific criterion commentary.**
+- **The shared accessibility pass** across the other eight mockups.
