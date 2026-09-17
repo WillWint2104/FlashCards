@@ -140,6 +140,26 @@ const quoted = (s, q) => String(s).includes('"' + q + '"');
      "every returned sentence is verbatim from the answer");
 }
 {
+  // THE FALLBACK PATH, which the scoped lookup alone does not cover.
+  //
+  // When the model returns more paragraphs than the response has, scopeFor has
+  // no paragraph to scope to and hands back the whole-response index. A weld
+  // then verifies again - so the blank-line refusal is what fails it closed,
+  // and only this case exercises it. Found by a mutation that survived: removing
+  // the refusal broke nothing, because every other test located inside a real
+  // paragraph where a weld cannot match in the first place.
+  const weld = "The business moved from print advertising to short video content on social platforms. Its second strategy was a loyalty app that gave members early access to new releases.";
+  const r = mark({ paragraphs: [
+    { name: "P1", score: 3, max: 4, reasons: [], sentences: [{ text: REAL + ".", issues: [] }] },
+    { name: "P2", score: 3, max: 3, reasons: [], sentences: [
+      { text: "Sales to members grew faster than sales overall in the year after launch.", issues: [] }] },
+    { name: "P3", score: 0, max: 3, reasons: [], sentences: [{ text: weld, issues: [] }] }] });
+  const third = r.paragraphs[2].sentences[0];
+  ok(third.unplaced === true, "a weld in a paragraph the response does not have is refused, not located");
+  ok(!/\n\s*\n/.test(third.text), "and no sentence comes back containing a paragraph break");
+  ok(r.checks.grounded < 1, "the weld does not count as grounded: " + r.checks.grounded);
+}
+{
   // the same sentence reported under the WRONG paragraph does not verify
   const r = mark({ paragraphs: [
     { name: "P1", score: 5, max: 10, reasons: [], sentences: [
@@ -166,6 +186,23 @@ const quoted = (s, q) => String(s).includes('"' + q + '"');
   const r = mark();
   ok(r.criteria.every(c => !("issues" in c) && !("sentences" in c) && !("observations" in c)),
      "and finalize does not build one");
+}
+
+// --- focusQuoted is computed as a verification, and stays that way ----------
+//
+// Asserted against the SOURCE, and the reason is worth writing down. With
+// groundFocus fixed, every path to focus.quote now runs through quoteSpan, so
+// the quote is either the student's characters or empty - which makes a
+// non-empty test and a verification test agree on every input this suite can
+// construct. The guard is defence in depth behind groundFocus, and it becomes
+// load-bearing again the moment groundFocus regresses. A behavioural assertion
+// would be vacuous here; this one at least fails if the guard is removed.
+{
+  const w = fs.readFileSync(path.join(ROOT, "proxy", "worker.js"), "utf8");
+  ok(/focusQuoted: !!\(r\.focus && r\.focus\.quote && verifyQuote\(idx, r\.focus\.quote\)\)/.test(w),
+     "checks.focusQuoted verifies the quote rather than testing it for emptiness");
+  const gf = w.slice(w.indexOf("function groundFocus"), w.indexOf("function groundFocus") + 2200);
+  ok(!/quote = best\.text/.test(gf), "and groundFocus never assigns an unverified sentence to focus.quote");
 }
 
 // --- TEST MODE DOES NOT REACH THE REWRITE WORKSPACE -------------------------
