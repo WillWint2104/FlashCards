@@ -61,7 +61,22 @@ const TOK = `  /* PROPOSED SHARED TEST MODE TOKENS - see docs/testmode-tokens.md
     --footh:68px;
   }`;
 
-const html = `<!doctype html>
+const WORDS = fx.answer.trim().split(/\s+/).length;
+const PARAS = fx.answer.split(/\n\s*\n/);
+
+// The one thing that differs between the two states, in one place.
+const responseBlock = marked => marked
+  ? `<details class="submitted">
+        <summary><span class="nm">Your submitted response</span><span>\u00b7 ${WORDS} words</span><span class="act"></span></summary>
+        <div class="response">
+${PARAS.map(p => "          <p>" + esc(p) + "</p>").join("\n")}
+        </div>
+      </details>
+      <div class="saved"><span class="tick">\u2713</span> Submitted. You can leave and come back to this paper.</div>`
+  : `<textarea class="answerbox" aria-label="Your response">${esc(fx.answer)}</textarea>
+      <div class="saved"><span class="tick">\u2713</span> Saved. You can leave and come back to this paper.</div>`;
+
+const page = marked => `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -119,12 +134,32 @@ ${TOK}
   .fmt{background:var(--blue-soft);color:var(--blue-dk);border-radius:6px;padding:1px 7px;font-size:10.5px;letter-spacing:.02em}
   h1.exam-prompt{font-size:17px;font-weight:600;color:var(--ink);line-height:1.5;margin-bottom:16px}
 
-  /* THE SUBMITTED RESPONSE, READ-ONLY. It is under review, not being written,
-     so it is not an editable field with nowhere to save to. It keeps a prose
-     measure like everything else on the page. */
-  .response{max-width:62ch;background:#FCFDFD;border:1.5px solid var(--line);border-radius:14px;
-            padding:16px 20px;font-size:15px;line-height:1.75;font-weight:400;color:var(--ink)}
+  /* THE SUBMITTED RESPONSE HAS TWO PRESENTATION STATES, AND THE ORDER NEVER
+     CHANGES. While answering it is the editable field. Once marked it is a
+     compact line the student can open, because by then they have read it and
+     what they want is the mark: rendering 190 words in full pushed 14 of 20
+     below the fold at every size except a tall desktop. The response still
+     comes first; it is compressed, not moved.
+
+     A native <details>, so it is keyboard-reachable and needs no script. */
+  .submitted{max-width:62ch;background:#FCFDFD;border:1.5px solid var(--line);border-radius:14px}
+  .submitted>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;
+                     padding:13px 18px;font-size:13.5px;font-weight:700;color:var(--ink-2)}
+  .submitted>summary::-webkit-details-marker{display:none}
+  .submitted>summary:focus-visible{outline:2px solid var(--green-dk);outline-offset:2px;border-radius:14px}
+  .submitted .nm{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--ink)}
+  .submitted .act{margin-left:auto;font-family:var(--disp);font-weight:700;font-size:12.5px;color:var(--green-dk)}
+  .submitted .act::after{content:"View response"}
+  .submitted[open] .act::after{content:"Hide response"}
+  /* Read-only prose, not a field. Nothing here can be typed into. */
+  .response{border-top:1px solid var(--line);padding:14px 18px 17px;
+            font-size:15px;line-height:1.75;font-weight:400;color:var(--ink)}
   .response p+p{margin-top:12px}
+  /* While answering, the same slot is the field it has to be. */
+  .answerbox{width:100%;max-width:62ch;font:inherit;font-size:15px;font-weight:400;line-height:1.75;color:var(--ink);
+             background:var(--card);border:2px solid var(--line);border-radius:14px;padding:14px 18px;
+             min-height:260px;resize:vertical}
+  .answerbox:focus{outline:none;border-color:var(--green-dk);box-shadow:0 0 0 3px var(--green-soft)}
   .saved{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-3);font-weight:700;margin-top:8px}
   .saved .tick{color:var(--green-dk)}
 
@@ -211,11 +246,8 @@ ${TOK}
       </div>
       <h1 class="exam-prompt">${esc(fx.question.prompt)}</h1>
 
-      <div class="response" aria-label="Your submitted response">
-${fx.answer.split(/\n\s*\n/).map(p => "        <p>" + esc(p) + "</p>").join("\n")}
-      </div>
-      <div class="saved"><span class="tick">✓</span> Submitted. You can leave and come back to this paper.</div>
-
+      ${responseBlock(marked)}
+${marked ? `
       <div class="result">
         <span class="badge">${esc(mood)}</span>
         <span class="pair"><span class="k">Marks</span><span class="v">${r.score} of ${r.max}</span></span>
@@ -250,7 +282,8 @@ ${across.map(o => `          <li class="ob">
             <p>${esc(o.why)}</p>
           </li>`).join("\n")}
         </ol>
-      </section>
+      </section>` : `
+      <div class="submitrow"><button class="btn">Submit for marking</button></div>`}
     </div>
   </div>
 </main>
@@ -267,5 +300,7 @@ ${across.map(o => `          <li class="ob">
 </body>
 </html>
 `;
-fs.writeFileSync(path.join(HERE, "12-extended-response.html"), html);
+fs.writeFileSync(path.join(HERE, "12-extended-response.html"), page(true));
+fs.writeFileSync(path.join(HERE, "12-extended-response-answering.html"), page(false));
+report.words = WORDS;
 console.log(JSON.stringify(report, null, 1));

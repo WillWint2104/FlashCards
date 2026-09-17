@@ -117,14 +117,52 @@ The version-routing fix is in. The remaining findings stay design inputs:
 format-inappropriate guidance, repeated stimulus, flat multipart results, absent
 persistence, absent navigator, absent skip.
 
+
+## 10. There is no generic Feedback Sheet. Feedback is inline.
+
+State 16 is **retired**, not deferred. Three formats have now been designed and
+all three review in place:
+
+| format | what marking looks like | where it renders |
+| --- | --- | --- |
+| calculation | deterministic check against an authored expected value | in the question card |
+| short answer | authored marking points, weighted or as guidance | in the question card |
+| extended response | overall mark, four authored criteria, response-level observations | in the question card |
+
+The argument for a dedicated sheet was that a 20-mark review is long. It is, but
+a separate screen would hold the same content in the same order and still be
+long, so the length was never the problem. The problem was that a full submitted
+essay sat at the top of the page, and that is solved where it occurs: once
+marked, the response collapses to `Your submitted response · 176 words` with the
+mark and the judgement immediately under it.
+
+If the business report later shows a genuinely different interaction need, that
+need gets designed. An abstract feedback screen is not kept alive on the state
+list in case something wants it.
+
+## 11. Test Mode has one accessibility baseline, in shared tokens
+
+A contrast audit found **9 of 9 mockups failing WCAG AA**, 17 to 28 selectors
+each, with the worst offenders in the frozen State 8 shell: the authored question
+identity at 2.00:1 and the primary green button at 2.27:1. Seven shared token
+values are corrected in `docs/testmode-tokens.md` and that is the baseline. The
+measured result on the state that uses them is **zero AA failures**.
+
+`--green` is unchanged. It remains the brand accent on surfaces that carry no
+text, and stops being a background for white text.
+
+These are **shared Test Mode tokens, not per-state colours.** Nine files are not
+recoloured independently.
+
 ---
 
 ## Mockup order — dependency, not numerical
 
 ```
+(16 Feedback is retired — see decision 10)
 8 Sitting shell → 14 Nested multipart → 15 Navigator
   → 11 Short answer → 9 MC → 10 Calculation → 12 Extended → 13 Business report
-  → 16 Feedback → 17 Results → 18 Question review → 19 Submit confirmation
+  → 17 Results → 18 Question review → 19 Submit confirmation
   → 6 Overview → 7 Section intro → 1 Library → 3 Import → 4 Validation
   → 5 Blocked → 2 Empty
 ```
