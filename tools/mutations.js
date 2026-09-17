@@ -712,9 +712,11 @@ module.exports = [
   {
     id: "gate-drops-a-suite",
     file: "tests/run.js",
-    // Follows the end of the list, which moves every time a suite is added.
-    find: '"ui67", "ui68"]',
-    replace: '"ui67"]',
+    // Follows the end of the list, which moves every time a suite is added, and
+    // t26 is what turns that into a caught failure rather than a mutation that
+    // quietly stops mutating anything. ui69 moved it; this is the fix.
+    find: '"ui68", "ui69"]',
+    replace: '"ui68"]',
     owner: "t23",
     why: "a maintained regression outside the runner is invisible, which is how twenty-eight suites rotted unnoticed",
   },
