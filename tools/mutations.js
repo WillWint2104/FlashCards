@@ -720,6 +720,35 @@ module.exports = [
     owner: "t23",
     why: "a maintained regression outside the runner is invisible, which is how twenty-eight suites rotted unnoticed",
   },
+  // ---- the shared sitting-shell footer (UX-TEST-06) -----------------------
+  //
+  // The fault was not that the footer was ugly. It was 119px of an 844px screen
+  // and it sat on the mark, on every marked format, because the block is copied
+  // into eleven sources and nothing read them together.
+  {
+    id: "footer-drifts-in-one-page",
+    file: "docs/mockups/15-navigator.html",
+    find: "  .footin .where{display:none}",
+    replace: "  .footin .where{display:block}",
+    owner: "t34",
+    why: "one page keeping its own copy of the shell is exactly how the state 12 pages lost the hover state and the note",
+  },
+  {
+    id: "footer-loses-its-touch-target",
+    file: "docs/mockups/08-sitting-shell.html",
+    find: "    .footin .btn.sm,.footin .flag{min-height:44px;",
+    replace: "    .footin .btn.sm,.footin .flag{",
+    owner: "t34",
+    why: "the row was 37px and the flag 35px at every width, and a compact row that is not tappable has moved the problem rather than fixed it",
+  },
+  {
+    id: "footer-keeps-the-item-counter-on-a-phone",
+    file: "docs/mockups/12-extended-response.build.mjs",
+    find: "    .foot-lbl{display:none}",
+    replace: "    .foot-lbl{display:inline}",
+    owner: "t34",
+    why: "the trailing halves of the labels are what wrapped the row onto four lines at 390px",
+  },
   // ---- Gate 3A: curriculum identity and evaluation safety -----------------
   {
     id: "gate3a-refusal-scores-again",

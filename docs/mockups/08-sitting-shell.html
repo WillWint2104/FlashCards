@@ -140,7 +140,12 @@
   .srcbody{padding:16px 18px 20px;font-size:14.5px;font-weight:500;color:var(--ink);line-height:1.75}
   .srcbody p+p{margin-top:12px}
 
-  /* Navigation is always available, so a question may be left and returned to. */
+  /* THE SHARED SITTING-SHELL FOOTER. Navigation is always available, so a
+     question may be left and returned to.
+
+     This block is byte-identical in every Test Mode mockup and in the state 12
+     generator, and tests/t34.mjs holds it that way. It had already drifted: the
+     state 12 pages were missing the hover state and the note below it. */
   .footer{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--line);z-index:9;
           box-shadow:0 -6px 18px rgba(60,74,74,.05)}
   .footin{max-width:1180px;margin:0 auto;padding:11px clamp(16px,4vw,40px);display:flex;align-items:center;gap:12px}
@@ -148,8 +153,38 @@
         background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:8px 13px}
   .flag:hover{border-color:var(--gold);color:var(--gold-dk)}
   /* "Item" is SEQUENCE POSITION. It is deliberately not the word "question",
-     because the question on screen is Question 11(b), not question 12. */
+     because the question on screen may be a part - 11(c) - while the item it
+     occupies in the paper is 13. */
   .where{font-size:12px;color:var(--ink-3);font-weight:800;text-align:center;flex:1}
+
+  /* NARROW MOBILE: ONE COMPACT ROW (UX-TEST-06).
+
+     Measured rather than guessed. The four-column footer wraps at every width
+     below 660px and stands 119px tall at 390px against 63px at desktop, which is
+     14% of an 844px screen. At 390x844 that covered the marked result: the mark
+     sat at 718 to 786 with the footer starting at 725, so a student reached the
+     end of a paper and could not see what they had scored without scrolling a
+     page they had already finished. It is a shared-shell fault and it affected
+     every marked format, not only extended responses. The breakpoint is 640
+     because that is where the wrapping stops, not because it looks like a phone.
+
+     WHAT GOES. The item counter, and the trailing half of each label. Neither
+     leaves the page: the paper bar above carries the section and the completion
+     count, and the Questions navigator carries the sequence position on the
+     current item, with aria-current and "you are here - item 13 of 20" on it.
+     The counter is hidden at this width, not deleted, so the vocabularies stay
+     distinct - completion in the bar, sequence position in the navigator.
+
+     WHAT STAYS. All three actions, and for the first time at any width they are
+     44px tall: the row was 37px and the flag 35px, both under the touch target
+     everywhere. */
+  @media(max-width:640px){
+    .footin{gap:8px;padding:9px 12px;justify-content:space-between}
+    .footin .where{display:none}
+    .foot-lbl{display:none}
+    .footin .btn.sm,.footin .flag{min-height:44px;padding-left:14px;padding-right:14px;
+                                  display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
+  }
 
   @media(max-width:900px){
     .work{grid-template-columns:1fr}
@@ -236,10 +271,10 @@
 
 <div class="footer">
   <div class="footin">
-    <button class="btn sm ghost">← Previous · 11(a)</button>
-    <button class="flag">⚑ Flag for revisit</button>
+    <button class="btn sm ghost">← Previous<span class="foot-lbl"> · 11(a)</span></button>
+    <button class="flag">⚑ Flag<span class="foot-lbl"> for revisit</span></button>
     <span class="where">Item 12 of 20 · Section II</span>
-    <button class="btn sm ghost">Next · 11(c) →</button>
+    <button class="btn sm ghost">Next<span class="foot-lbl"> · 11(c)</span> →</button>
   </div>
 </div>
 
