@@ -69,23 +69,27 @@ const SHORT = ans => ({
   ok(sent && sent.responseType==='short','the request says it is a short answer: '+(sent&&sent.responseType));
   ok(sent && sent.marks>0 && sent.marks<=10,'with its own mark value: '+(sent&&sent.marks));
   ok(sent && typeof sent.command==='string','the directive verb travels: '+JSON.stringify(sent&&sent.command));
-  ok(!!(await p.$('.rv-scrim')),'the review opens');
-  ok(!(await p.$('#rvtab-rubric')),'no band rubric tab on a short answer');
-  ok(!(await p.$('.rv-scorehint')),'and no tap-the-score hint pointing at one');
-  const tab = await p.$eval('#rvtab-paragraphs',e=>e.textContent.trim());
-  ok(/your answer/i.test(tab),'the tab reads as one answer, not paragraphs: '+tab);
-  ok(!!(await p.$('.rv-focus')),'the start-here strip is there');
-  const go = await p.$eval('#rvfocusgo',e=>e.textContent.trim());
-  ok(/revise/i.test(go),'and it offers to revise, because the box is reachable: '+go);
-  await p.screenshot({path:OUT+'shot-short-review.png'});
-
-  console.log('--- revise returns to the answer box with the line selected ---');
-  await p.click('#rvfocusgo'); await settled(p);
-  ok(!(await p.$('.rv-scrim')),'the review closes');
-  ok(!!(await p.$('#ans')),'the question is back');
-  const box = await p.$eval('#ans',e=>({v:e.value,s:e.selectionStart,e:e.selectionEnd}));
-  ok(box.v==='McDonalds uses mobile ordering.','the answer is restored: '+JSON.stringify(box.v));
-  ok(box.e>box.s,'and the marker\'s line is selected: '+JSON.stringify([box.s,box.e]));
+  // TEST MODE DOES NOT OPEN THE REWRITE WORKSPACE, AND THIS IS WHERE IT USED TO.
+  //
+  // What this half of the suite asserted until now: clicking through from a
+  // marked short answer opened `.rv-scrim` - the Essay Practice review - with a
+  // "revise" action that reopened the answer box with the marker's line
+  // selected, "ready to be rewritten". That workspace renders the Clear /
+  // Better / Band 6 rungs as pickable model sentences, a rewrite box, and, on an
+  // extended response, criterion score pills and band descriptors. Every one of
+  // those is on the list of things a marked paper must not show.
+  //
+  // The workspace is not gone. It is Essay Practice's and it is where revision
+  // is taught. What is gone is the door out of an exam into it. The marker's
+  // words now come back into the sheet the student is already looking at.
+  ok(!(await p.$('.rv-scrim')),'NO review workspace opens from a marked paper');
+  ok(!(await p.$('#rvtab-paragraphs')) && !(await p.$('#rvtab-rubric')),'no review tabs');
+  ok(!(await p.$('.rv-focus')),'no start-here strip, and so no revise action');
+  const sheet2 = await p.$eval('#sheet',e=>e.textContent);
+  ok(/do not say what it does for the objective/.test(sheet2),
+     "the marker's own summary renders into the sheet instead");
+  ok(/try again/i.test(sheet2),'and Try again is still the way back to the answer');
+  await p.screenshot({path:OUT+'shot-short-sheet-marked.png'});
 
   console.log('pageerrors:', errs.join(' | ')||'none');
   ok(errs.length===0,'no page errors');

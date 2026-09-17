@@ -2497,6 +2497,17 @@
       `<div class="exam-pointrule">${esc(rule)}</div>` +
       (g.model ? `<details ${ratio < 0.7 ? "open" : ""}><summary>Model answer</summary><p>${linkGlossary(g.model)}</p></details>` : "");
   }
+  // THE MARKER'S OWN SUMMARY, PREFERRED OVER THE DERIVED COPY OF IT.
+  //
+  // `overall` is a legacy field finalize derives from `summary`, and for a long
+  // time it was derived BEFORE the grounding pass that strips unverifiable
+  // quotations - so the copy the app read still carried quotation marks the
+  // grounded original had lost. That ordering is fixed in the worker. This reads
+  // the source first anyway, so no future copy can be preferred to the thing it
+  // was copied from, and a payload that carries only `summary` still renders.
+  function fbSummary(fb) {
+    return (fb && (fb.summary || (fb.overall && fb.overall.summary))) || "";
+  }
   function examSheetHTML(q, g) {
     // A response nothing judged gets no mood, no score and no ratio. Everything
     // below this line assumes two finite numbers, which is exactly the assumption
@@ -2509,7 +2520,7 @@
     else if (g.kind === "calc") body = `<p>${g.correct ? "Correct." : "Expected <b>" + esc(g.model) + "</b>."}</p>${g.working ? `<p class="working"><b>Working:</b> ${esc(g.working)}</p>` : ""}`;
     else if (g.kind === "points") body = pointsHTML(g, ratio);
     else if (g.kind === "local") body = `${(g.matched.length || g.missing.length) ? `<div class="chips">${g.matched.map(t => `<span class="chip">${esc(t)} ✓</span>`).join("")}${g.missing.map(t => `<span class="chip todo" data-term="${esc(t)}">${esc(t)}</span>`).join("")}</div>` : ""}<details ${ratio < 0.7 ? "open" : ""}><summary>Model answer</summary><p>${linkGlossary(g.model)}</p></details>`;
-    else { const fb = g.fb || {}; body = (Array.isArray(g.points) && g.points.length ? pointsHTML(g, ratio) : "") + `${fb.overall ? `<p>${esc(fb.overall.summary || "")}</p>` : ""}${(fb.criteria || []).map(c => `<div class="crit ${c.status}"><span class="dot"></span><b>${esc(c.name)}:</b> ${esc(c.comment || c.status)}</div>`).join("")}${(fb.missing_vocabulary || []).length ? `<div class="chips">${fb.missing_vocabulary.map(t => `<span class="chip todo">${esc(t)}</span>`).join("")}</div>` : ""}${q.model ? `<details><summary>What a top answer covers</summary><p>${linkGlossary(q.model)}</p></details>` : ""}`; }
+    else { const fb = g.fb || {}; body = (Array.isArray(g.points) && g.points.length ? pointsHTML(g, ratio) : "") + `${fbSummary(fb) ? `<p>${esc(fbSummary(fb))}</p>` : ""}${(fb.criteria || []).map(c => `<div class="crit ${c.status}"><span class="dot"></span><b>${esc(c.name)}:</b> ${esc(c.comment || c.status)}</div>`).join("")}${(fb.missing_vocabulary || []).length ? `<div class="chips">${fb.missing_vocabulary.map(t => `<span class="chip todo">${esc(t)}</span>`).join("")}</div>` : ""}${q.model ? `<details><summary>What a top answer covers</summary><p>${linkGlossary(q.model)}</p></details>` : ""}`; }
     return `<div class="sheet ${mood[0]}"><div class="head"><div class="score">${g.score}<small>/${g.max}</small></div><h3>${mood[1]}</h3></div><div class="bd">${body}</div></div>`;
   }
   function examSheet(item, key, g) {
