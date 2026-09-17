@@ -8,10 +8,17 @@ screen. Draft 1 was rejected as a freeze candidate; this is the corrective pass.
 ```
 12-extended-response.fixture.json   the answer, the criteria, one model review
         ↓  fed to the SHIPPED finalize() in proxy/worker.js
-12-extended-response.build.mjs      renders the page from what comes back
+12-extended-response.build.mjs      renders BOTH presentation states from it
         ↓
-12-extended-response.html
+12-extended-response.html             marked
+12-extended-response-answering.html   answering
 ```
+
+One question has two presentation states and one fixture. **Answering:** the
+response is the editable field and there is no mark. **Marked:** the response is
+a compact line the student can open, read-only, and the mark is above it. Both
+come out of the same run, so the two screens cannot drift apart in the way a
+pair of hand-drawn ones would.
 
 Draft 1 was hand-authored and its marker copy asserted *"Figures appear once"*
 about a response containing **no digit**. That class of drift is now impossible:
@@ -96,11 +103,18 @@ come back into the sheet instead.
 
 ## Accessibility
 
-The page uses the **proposed shared tokens** in `docs/testmode-tokens.md`, not
-State-12-specific colours. Measured in the rendered page: **zero WCAG AA
-failures**, against 18 in draft 1 and 17 to 28 in every other mockup. Seven token
-values move; `--green` is unchanged and remains the brand accent on surfaces that
-carry no text.
+The page uses the **shared tokens** in `docs/testmode-tokens.md`, which are now
+the approved Test Mode accessibility baseline rather than State-12-specific
+colours. Measured in both rendered pages, with the disclosure forced open so its
+prose is included: **zero WCAG AA failures across 65 text nodes in the marked
+state and 25 in the answering state**, against 18 failures in draft 1 and 17 to
+28 in every other mockup. Seven token values move; `--green` is unchanged and
+remains the brand accent on surfaces that carry no text.
+
+The disclosure's label is CSS generated content, so a text-node sweep cannot see
+it and it is measured by hand: `--green-dk` #0E7A4E on the panel's #FCFDFD is
+**5.27:1** at 12.5px bold, and the summary's own line is **5.73:1**. Both clear
+AA for normal text.
 
 Also structural, and new: **twelve real headings** where draft 1 had none (`h1`
 prompt, `h2` per section, `h3` per criterion, `h4` per observation); the criteria
@@ -108,51 +122,108 @@ and the observations are ordered lists; and **there are zero editable fields** �
 the submitted response is read-only prose, not a live textarea with nowhere to
 save.
 
-## Does it still fit inline? Measured
+## The one UX change since draft 2: the response collapses once marked
+
+Draft 2 rendered the whole 176-word response above the mark, and measured that
+this put **14 of 20 below the fold at every size except a tall desktop and a
+tablet held upright** - and that measurement was itself too kind, for the reason
+set out two sections down. Of the three fixes offered, option 2 was
+taken: the response collapses behind a disclosure once the paper is marked. The
+locked order is unchanged - the response still comes first - it is compressed,
+not moved.
+
+It is a native `<details>`, so it is keyboard-reachable, needs no script, and
+cannot fall out of sync with a state variable. The summary carries the word count
+and reads **View response** / **Hide response**. Closed, Chromium skips its
+contents entirely: `checkVisibility()` is false and the prose is not in
+`document.body.innerText`.
+
+**What it must never become is a field again.** A submitted response reopened as
+a textarea has nowhere for an edit to go, which is worse than either state on its
+own. Opened, the page still contains zero `textarea`, zero `input` and zero
+`contenteditable`.
+
+## Does it still fit inline? Measured again, collapsed
+
+**And measured against the right fold this time.** Draft 2's table compared each
+element's bottom with `window.innerHeight`. This shell has a sticky header and a
+sticky footer painted over the page, so the last usable row of content is where
+the footer starts, not where the viewport ends. Checked the old way, the mark
+cleared the fold at every size; checked against the footer, it does not.
 
 ```
-            card   doc    screens   mark visible   judgement visible
-1512x982    780   2955     3.01        yes             no
-1280x900    780   2955     3.28        no              no
-1280x800    780   2955     3.69        no              no
-1280x700    780   2955     4.22        no              no
-1024x768    780   3002     3.91        no              no
- 834x1112   767   3007     2.70        yes             no
- 430x932    396   4334     4.65        no              no
- 390x844    358   4607     5.46        no              no
+            card   doc    header  footer   mark 14 of 20       judgement
+                          ends    starts
+1512x982    780   2489      75      919    clear               clear
+1280x900    780   2489      75      837    clear               clear
+1280x800    780   2489      75      737    clear               clear
+1280x700    780   2489      75      637    clear               clear
+1024x768    780   2536      75      705    clear               clear
+ 834x1112   767   2541      75     1049    clear               clear
+ 430x932    396   3523      75      813    clear               begins, 40px
+ 390x844    358   3691      75      725    BEHIND THE FOOTER   off-screen
 ```
 
 No horizontal overflow at any width. No page errors.
 
-**The honest finding: the mark is below the fold at every size except a tall
-desktop and a tablet held upright.** That is not length for its own sake — it is
-the locked hierarchy meeting a real 20-mark response. Draft 1 put the mark on the
-first screen only because its textarea hid half the answer; rendering the whole
-submitted response, which is the more honest thing, costs about 340px and the
-mark goes under.
+**What the collapse bought.** The mark is clear of both bars at seven of eight
+sizes, against two of eight in draft 2, and the document is about 470px shorter
+at desktop. On a desktop the mark and the whole judgement are on the first screen
+with the criteria section beginning under them.
 
-**This is not an argument for state 16.** A dedicated review screen would face
-the same content and the same order. Three ways to fix it, none of which needs a
-new state, and the choice is a product one:
+**What it did not buy, and this is a new finding.** At 390x844 the footer starts
+at y=725 and the mark spans 718 to 786: **the mark is behind the sticky footer**,
+and the judgement never appears on the first screen at all. The cause is not the
+response, which is now 50px. It is the footer, which at 390px wraps its three
+controls and the item counter onto four lines and takes **119px of an 844px
+screen**. The same page at 430x932 clears the mark with room to spare.
 
-1. **Put the mark above the response.** The cheapest, and it inverts the locked
-   order. A student who has just submitted wants the mark before they re-read
-   what they wrote.
-2. **Collapse the response behind a disclosure**, open by default on short
-   answers and closed on long ones. Keeps the order, costs a click.
-3. **Scroll the result into view when marking completes**, which the build
-   already does elsewhere (`sheet.scrollIntoView`).
+That is a finding against the **frozen sitting shell (state 08)**, not against
+this state, so it is reported rather than fixed here. It needs a decision, and
+the obvious candidates are shortening the footer's middle label at narrow widths
+or letting it collapse to two rows.
 
-I have left the hierarchy exactly as locked and am reporting the measurement.
+**This is still not an argument for state 16**, which is now retired by decision:
+a dedicated review screen would face the same content in the same order behind
+the same footer.
 
-**Inline review is otherwise coherent at every size.** Nothing wraps badly, the
-two layers stay distinct, the evidence surfaces keep their measure, and the
-footer behaves. The problem is one of order, not of containment, and a separate
-screen would not solve it.
+## The regression that holds it
+
+`tests/t33.mjs` reads both generated pages as text: the marked state wraps the
+response in `<details class="submitted">` with no `open`, the answering state does
+not, and the collapsed prose is byte-exact to the fixture. What text cannot see is
+whether that markup *renders* as a collapsed response, or whether the mark it
+exists to lift actually clears the fold.
+
+`tests/ui69.js` opens both pages in a browser at 1280x800 and 390x844 and
+measures: closed on arrival, 50px tall rather than a response with a lid on it,
+prose absent from the rendered text, the click and the keyboard both opening and
+closing it, the card growing by the response, and zero editable fields once open.
+**30 assertions.** Proven non-vacuous by injecting the faults: adding `open` to
+the disclosure fails 22 of them; making the response `contenteditable` fails the
+field check; making the summary unclickable fails the suite outright.
+
+Its fold assertions are split, because the two sizes are not in the same state.
+On desktop it asserts the mark and the judgement are clear of both sticky bars.
+On mobile it asserts the finding above **as a finding** - the mark is not clear
+of the footer at 390px - so that fixing the shell turns the suite red and makes
+someone come back to this line rather than leaving a stale claim in it. The guard
+that still holds at mobile is that the mark stays near the top of the page: a
+regression putting the response back above it moves the mark from y=718 to past
+1100.
+
+It is in the **full** tier only. It launches a browser to look at two static
+mockups, which is not what a 40-second gate is for, and the source-level half is
+already in fast.
 
 ## Not decided here
 
-- **Whether the mark moves above the response**, per the finding above.
+- **The sitting shell's footer at 390px**, per the measurement above. It takes
+  119px of an 844px screen and puts the mark behind itself. State 08 is frozen,
+  so this is reported and not touched.
 - **Business report** (state 13), which shares this plumbing.
 - **Whether the contract should carry response-specific criterion commentary.**
-- **The shared accessibility pass** across the other eight mockups.
+- **The shared accessibility pass** across the frozen states. The tokens in
+  `docs/testmode-tokens.md` are now the Test Mode baseline; Calculation and Short
+  Answer are re-checked against them after this state freezes, and are not
+  redesigned unless the change exposes a real hierarchy problem.

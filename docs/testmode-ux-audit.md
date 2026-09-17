@@ -517,3 +517,34 @@ exam sheet. Nothing has ever been in it on this path.
 Either it is connected to something real or the two renderers go. Logged while
 auditing state 12; not fixed there, because it does not affect any visible state
 the extended-response design has to decide.
+
+### UX-TEST-06 — the sitting shell's footer takes 119px of a 390px phone, and the mark sits behind it
+
+Found while recapturing state 12 with the response collapsed. Measured on the
+generated page at eight sizes, against the footer's top rather than
+`window.innerHeight`, because both bars are sticky and painted over the page:
+
+```
+ 430x932   footer starts 813 of 932   mark 693-760   clear
+ 390x844   footer starts 725 of 844   mark 718-786   behind the footer
+```
+
+At 390px the footer wraps its three controls and the item counter onto four
+lines. It is 63px tall at desktop and **119px at 390px**, which is 14% of the
+screen, and it lands exactly where the mark is. The judgement under the mark does
+not appear on the first screen at all.
+
+This is not state 12's: the collapsed response is 50px, and the same page at
+430x932 clears the mark comfortably. It is the **frozen state 08 shell**, and it
+affects every marked question at that width, not only extended responses.
+
+The candidates are shortening the middle label at narrow widths (`Item 20 of 20 ·
+Section IV` is what forces the wrap) or letting the footer fall to two rows with
+the counter on its own line. Not fixed here, because state 08 is frozen and the
+fix is a change to a frozen state rather than to the one under review.
+
+**How it was missed until now:** every earlier fold measurement in this project
+compared an element's bottom with `window.innerHeight`, which is not the fold on
+a screen with a sticky footer. `tests/ui69.js` now measures against the footer's
+top, and the mobile half of it asserts this finding as a finding, so fixing the
+shell turns the suite red and brings someone back to this entry.
