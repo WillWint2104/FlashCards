@@ -635,3 +635,49 @@ its worst surface) and cannot move. `--ink-2` can:
 That would make the three steps 9.1 → 7.1 → 5.3 rather than 9.1 → 5.8 → 5.3.
 **Not applied.** The tokens were approved as a baseline in the previous round and
 changing one of them is a change to that baseline, not an implementation detail.
+
+### UX-TEST-09 — the app shows a business report writer an essay skeleton, contradicting the question's own marking point
+
+Found by the state 13 audit, and it is a defect today rather than a design gap.
+
+`answerShapeFor` branches on written mode (`app.js:1852`), and `business_report`
+maps to `"extended"` (`assessment.js:252`), so a report writer is given
+`ESSAY.answerShapes.extended` — introduction, each body paragraph, conclusion —
+under the note "the marker is reading for a sustained argument, **not a list of
+points**" (`app.js:1858`).
+
+The question's own first marking point says the opposite:
+
+> "Uses a report structure with headings rather than continuous prose"
+> `tests/fixtures/bus-practice-paper.json:504`
+
+The comment above that code says the shape comes from the same words the marker
+was told, "so this cannot disagree with what the marker was told". It does not
+disagree with the marker. It disagrees with the author, and the student is the
+one who acts on it.
+
+Two smaller faults sit beside it. The stimulus row is added only when
+`!extended` (`app.js:1855`), so a report built on a case study never gets the row
+about using its source. And the answering surface is otherwise the essay's,
+including the placeholder "using blank lines between paragraphs"
+(`app.js:1826`).
+
+Not fixed here: it belongs with state 13, where what a report writer should be
+shown instead is the question being designed. Logged so it is not mistaken for a
+design gap when it is a live contradiction.
+
+### UX-TEST-10 — a leaf question's `instructions` renders nowhere
+
+`app.js:2393` draws question-level instructions only for a **parent** question,
+above its parts. The one authored business report is a leaf — `PAPER.isParent`
+returns false for it, executed — so its instructions sentence, "Use the case
+study below. Present your answer as a business report with a clear structure."
+(`bus-practice-paper.json:496`), is never rendered to anybody. It is not sent to
+the marker either, so the only question-attached statement that this response is
+a report is invisible in both directions.
+
+The word reaches the student exactly once, from the section intro
+(`app.js:2365`), on a screen they leave by pressing the only button on it.
+
+One expression fixes the rendering half. Logged rather than taken, because what a
+report question shows above the answer box is state 13's to decide.
