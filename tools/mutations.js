@@ -838,8 +838,11 @@ module.exports = [
   {
     id: "report-instructions-stringified",
     file: "tools/contract/assessment.js",
+    // Reproduces the original fault exactly - stringify and carry on - so an
+    // assertion catches it. Dropping the guard alone makes .trim() throw on an
+    // object, and a crash is not the fault this entry names.
     find: "  if (q.instructions != null && typeof q.instructions !== \"string\")\n    return refuse(\"INSTRUCTIONS_MALFORMED\",",
-    replace: "  if (false)\n    return refuse(\"INSTRUCTIONS_MALFORMED\",",
+    replace: "  if (q.instructions != null && typeof q.instructions !== \"string\") q = Object.assign({}, q, { instructions: String(q.instructions) });\n  if (false)\n    return refuse(\"INSTRUCTIONS_MALFORMED\",",
     owner: "t35",
     why: "object instructions reached the student and the marker as \"[object Object]\"",
   },
@@ -898,10 +901,18 @@ module.exports = [
     why: "the marker returns no verdict per point, so a tick is a judgement nobody made",
   },
   {
+    id: "report-page-ticks-by-css",
+    file: "docs/mockups/13-business-report.html",
+    find: "  .told li::marker{",
+    replace: "  .told li::marker{content:\"\\2713 \";",
+    owner: "t36",
+    why: "a tick drawn by a ::marker rule never appears in the markup, so a markup-only check passes a ticked list",
+  },
+  {
     id: "report-marker-cites-the-case-study",
-    file: "docs/mockups/13-business-report.fixture.json",
-    find: "to show why it is the right size of response.",
-    replace: "to show why it is the right size of response for 800 orders a week.",
+    file: "docs/mockups/13-business-report.html",
+    find: "to show why it is the right size of response.</p>",
+    replace: "to show why it is the right size of response for 800 orders a week.</p>",
     owner: "t36",
     why: "the marker is never sent the case study, so a figure only the case study carries is one it could not know",
   },
