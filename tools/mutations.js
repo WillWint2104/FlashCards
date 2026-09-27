@@ -818,6 +818,43 @@ module.exports = [
     owner: "ui70",
     why: "only a parent's instructions rendered, so a leaf question's reached nobody, student or marker",
   },
+  // ---- state 13's generated pages ------------------------------------------
+  //
+  // These target what t36 reads - the generated page and the fixture - because the
+  // runner does not re-run a mockup generator, and a mutation in one would be
+  // tested against the page it produced last time.
+  {
+    id: "report-page-case-open-once-marked",
+    file: "docs/mockups/13-business-report.html",
+    find: "<details class=\"case\">",
+    replace: "<details class=\"case\" open>",
+    owner: "t36",
+    why: "with the case study open above the response, the mark sat below the fold at 1280x900",
+  },
+  {
+    id: "report-page-told-list-drops-instruction",
+    file: "docs/mockups/13-business-report.html",
+    find: "          <li>Use the case study below. Present your answer as a business report with a clear structure.</li>\n",
+    replace: "",
+    owner: "t36",
+    why: "a list headed 'what your marker was told' that is not what the marker was sent is a false account of the marking",
+  },
+  {
+    id: "report-page-ticks-the-points",
+    file: "docs/mockups/13-business-report.html",
+    find: "          <li>Uses a report structure with headings rather than continuous prose</li>",
+    replace: "          <li>\u2713 Uses a report structure with headings rather than continuous prose</li>",
+    owner: "t36",
+    why: "the marker returns no verdict per point, so a tick is a judgement nobody made",
+  },
+  {
+    id: "report-marker-cites-the-case-study",
+    file: "docs/mockups/13-business-report.fixture.json",
+    find: "to show why it is the right size of response.",
+    replace: "to show why it is the right size of response for 800 orders a week.",
+    owner: "t36",
+    why: "the marker is never sent the case study, so a figure only the case study carries is one it could not know",
+  },
   // ---- Gate 3A: curriculum identity and evaluation safety -----------------
   {
     id: "gate3a-refusal-scores-again",

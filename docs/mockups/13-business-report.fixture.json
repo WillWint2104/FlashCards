@@ -1,0 +1,142 @@
+{
+ "_why": "State 13 is generated the way state 12 is, and for the same reason: a hand-written marked page drifts from the thing it describes. The question is NOT copied here. The generator reads q14 out of tests/fixtures/bus-practice-paper.json, so the prompt, the instructions, the case study and the marking points on the page are the authored ones. This file carries only what a sitting adds: the student's report and one model review. The review is fed to the shipped finalize(). Its observations are tied to the question's own marking points, which now reach the marker, and to what the student wrote. It never cites the case study, because the marker is never sent the case study, and tests/t36.mjs fails the page if marker prose carries a figure the student did not write.",
+ "criteria": [
+  "knowledge and understanding of course content",
+  "application of business case studies and contemporary business issues",
+  "business terminology and concepts",
+  "sustained, logical and cohesive response"
+ ],
+ "answer": "Executive summary\nOnline orders at Tidewater Outfitters have grown every year since 2022 while its store sales have fallen. This report recommends redesigning the warehouse for single online orders, turning two stores into click-and-collect points, and renegotiating the store leases on shorter terms as they expire.\n\nFindings\nOnline orders per week rose from about 250 in 2022 to about 700 in 2025. The warehouse was designed to send bulk stock to six stores, so it is slow at picking single online orders, and delivery times have slipped. All six store leases expire within the next two years.\n\nRecommendations\nTidewater should redesign its warehouse layout for single-order picking. This would shorten delivery times for the customers who are now buying online.\nThe business should also keep its six stores but convert two of them into click-and-collect points. This keeps the owners' stores open while making them part of the online sale.\nFinally, the business should renegotiate its leases for shorter terms as each one expires.\n\nConclusion\nBy changing how the warehouse works and giving the stores a role in online sales, Tidewater can respond to where its customers are buying without closing a store.",
+ "review": {
+  "summary": "This reads as a business report. It has headings, it separates what was found from what is recommended, and it keeps the owners' six stores in view. The findings are specific, and the warehouse recommendation follows directly from them. The other two recommendations are stated rather than reasoned, and none of the three goes back to the growth in online orders to show why it is the right size of response.",
+  "rubric": [
+   {
+    "name": "knowledge and understanding of course content",
+    "score": 4,
+    "max": 5,
+    "descriptor": "Rewards accurate course content, used to answer the question rather than to display it.",
+    "bands": []
+   },
+   {
+    "name": "application of business case studies and contemporary business issues",
+    "score": 4,
+    "max": 5,
+    "descriptor": "Rewards a business used as evidence for the argument, not described alongside it.",
+    "bands": []
+   },
+   {
+    "name": "business terminology and concepts",
+    "score": 4,
+    "max": 5,
+    "descriptor": "Rewards terminology that carries the reasoning rather than decorating it.",
+    "bands": []
+   },
+   {
+    "name": "sustained, logical and cohesive response",
+    "score": 3,
+    "max": 5,
+    "descriptor": "Rewards one judgement held from the first paragraph to the last.",
+    "bands": []
+   }
+  ],
+  "focus": {
+   "paragraph": 3,
+   "area": "",
+   "why": "",
+   "quote": ""
+  },
+  "paragraphs": [
+   {
+    "name": "Executive summary",
+    "score": 4,
+    "max": 5,
+    "reasons": [],
+    "sentences": [
+     {
+      "text": "The response is organised under report headings.",
+      "issues": [
+       {
+        "kind": "term",
+        "severity": "should",
+        "head": "It reads as a report",
+        "why": "Headings separate what you found from what you recommend, and the executive summary gives the whole answer in two sentences. A reader could act on this without reading every line.",
+        "ladder": []
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Findings",
+    "score": 4,
+    "max": 5,
+    "reasons": [],
+    "sentences": [
+     {
+      "text": "The warehouse was designed to send bulk stock to six stores, so it is slow at picking single online orders, and delivery times have slipped.",
+      "issues": [
+       {
+        "kind": "term",
+        "severity": "should",
+        "head": "The operations problem is identified precisely",
+        "why": "You say why the warehouse struggles, not just that it does: it was built for bulk store replenishment and is now picking single orders. That is the cause the rest of the report can build on.",
+        "ladder": []
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Recommendations",
+    "score": 3,
+    "max": 5,
+    "reasons": [],
+    "sentences": [
+     {
+      "text": "Finally, the business should renegotiate its leases for shorter terms as each one expires.",
+      "issues": [
+       {
+        "kind": "fix",
+        "severity": "critical",
+        "head": "This recommendation is stated but not justified",
+        "why": "You recommend shorter leases but do not say how they help the business respond to online buying. Say what shorter terms would let the owners do, and use your own finding that every lease ends within two years to show why now is the time.",
+        "ladder": []
+       }
+      ]
+     },
+     {
+      "text": "This keeps the owners' stores open while making them part of the online sale.",
+      "issues": [
+       {
+        "kind": "fix",
+        "severity": "should",
+        "head": "The owners' wish is kept, but only two stores are given a role",
+        "why": "Converting two stores keeps all six open, which is what the owners want. The report never says what the other four are for while store sales keep falling, and that is the question the owners will ask first.",
+        "ladder": []
+       }
+      ]
+     },
+     {
+      "text": "None of the recommendations draws on the order figures.",
+      "issues": [
+       {
+        "kind": "fix",
+        "severity": "should",
+        "head": "The recommendations do not return to your own figures",
+        "why": "Your findings give online orders rising from about 250 to about 700 a week, and no recommendation uses that growth to show why it is the right response or how large it needs to be.",
+        "ladder": []
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Conclusion",
+    "score": 4,
+    "max": 5,
+    "reasons": [],
+    "sentences": []
+   }
+  ]
+ }
+}

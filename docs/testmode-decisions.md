@@ -188,12 +188,46 @@ heights match.
 The rule that follows from this: **a frozen state is reopened for a measured
 defect, not for a preference, and the reopening is scoped to the defect.**
 
+## 14. A business report's own words reach its marker, through a door it already reads
+
+The state 13 audit found that nothing saying "report" reached the marker: the
+worker never reads `format`, and a report's instructions and marking points were
+sent nowhere. Of three routes - design against the pipeline as it is, route the
+genre through an existing channel, or a full contract change - the second was
+chosen.
+
+`ASSESS.reportGuidance` sends a business report's instructions, then its points,
+then whatever it sent before, through `requirements.accomplish`, which both
+marking passes print as "what a strong response accomplishes". Nothing is written
+for it. Guidance the worker would silently truncate is refused whole, and the
+paper validator blocks what the runtime would refuse.
+
+Scoped to business_report. The extended response's request is byte-identical,
+measured on the wire against the previous build, so state 12 stays frozen. What
+is deliberately NOT done: the response-type line still says "extended response"
+and the case study still does not reach the marker, both of which need a worker
+change.
+
+## 15. State 13 answers minimally now; the report doctrine is state 13b
+
+State 13's answering surface is the extended response's, with the contradiction
+removed: no essay skeleton for a report, the question's own instructions
+rendered, a placeholder that says sections. That shipped in the app, not only in
+a mockup, because the skeleton was a live contradiction of the question's own
+marking point (UX-TEST-09).
+
+The doctrine in `GUIDED-MODE-PLAN.md` - report sections generated from the task's
+own bullets, an executive summary written last, no title page, a report toolbelt
+- is **state 13b**. It is recorded here so it is neither lost nor silently
+overruled. It belongs with guided writing, and whether it ever reaches a timed
+Test Mode paper is its own decision.
+
 ## Mockup order — dependency, not numerical
 
 ```
 (16 Feedback is retired — see decision 10)
 8 Sitting shell → 14 Nested multipart → 15 Navigator
-  → 11 Short answer → 9 MC → 10 Calculation → 12 Extended → 13 Business report
+  → 11 Short answer → 9 MC → 10 Calculation → 12 Extended → 13 Business report (13b later)
   → 17 Results → 18 Question review → 19 Submit confirmation
   → 6 Overview → 7 Section intro → 1 Library → 3 Import → 4 Validation
   → 5 Blocked → 2 Empty

@@ -681,3 +681,67 @@ The word reaches the student exactly once, from the section intro
 
 One expression fixes the rendering half. Logged rather than taken, because what a
 report question shows above the answer box is state 13's to decide.
+
+### UX-TEST-09 and UX-TEST-10 — FIXED in the app, with state 13
+
+A report writer is no longer handed the essay skeleton: `answerShapeFor` returns
+no shape for a business report, because nothing per question describes a
+report's shape except its own instructions, and those now render. The
+placeholder says "blank lines between sections". A leaf question's own
+`instructions` render under its heading and above its case study. Measured on the
+wire against the previous build, the extended response's answering surface and
+request are unchanged. Held by `tests/ui70.js` and three mutations.
+
+### UX-TEST-11 — the marker is now told to use a case study it is never sent
+
+A consequence of decision 14, and the first thing to fix before this marking can
+judge the report's last point. Routing the report's own words means the marker
+now reads "Use the case study below" and "Justifies the recommendations against
+the evidence in the case study". The case study itself still travels as
+`stimulus: true` (`app.js`), the extended prompt never reads even that, and its
+text never leaves the page. So the marker is asked to judge use of evidence it
+cannot see.
+
+Before decision 14 the marker was not told the case study mattered. Now it is
+told, and still cannot look. That is more honest about the task and no more able
+to mark it. Sending the case study's text is a worker change: there is no
+existing channel whose meaning fits it. The state 13 fixture is written so the
+marker cites nothing the student did not write, and `tests/t36.mjs` fails the
+page if it does, but that is a constraint on the mockup, not on a real marker.
+
+### UX-TEST-12 — an extended response's marking points reach nothing, and the validator counts them as support
+
+`business_report` now routes its points to the marker. `extended_response` does
+not: it is state 12's frozen format, and decision 14 was scoped so its request
+stays byte-identical. So q15 and q16 each author four marking points that nothing
+at runtime reads - not the marker, and not `scorePoints`, which only short-mode
+formats reach.
+
+The paper validator does not know this. `MARKING_SUPPORT_ABSENT` treats "no model
+answer and no marking points" as thin, so an extended response with points and no
+model answer is reported as supported, when its points go nowhere. Routing them is
+the same one-line change to `reportGuidance`'s scope, and a change to what state
+12's marker is told, so it is its own decision.
+
+### UX-TEST-13 — every earlier mockup puts an em dash in front of the student
+
+Measured in rendered text across all twelve mockups. The ten before state 13
+render the section name with an em dash - "Section II — Short answer" - in the
+paper bar, and `15-navigator` does it five times. All ten page titles carry
+one too. The authored data they depict uses a hyphen ("Section II - Short
+answer"), and the app renders the data, so the mockups are also unfaithful to it.
+State 13 renders the authored name and carries none; `tests/t36.mjs` enforces
+that for its pages. The ten are frozen, so this is logged rather than swept.
+
+Separately, `12-extended-response-answering.html` is titled "Extended response
+marked": the state 12 generator writes one title for both pages.
+
+### UX-TEST-14 — on a 390px phone the report's mark is below the first screen
+
+Measured on the generated page: the mark text at 903-941 against a footer
+starting at 781. It is not behind the footer. The question itself - its
+instruction, the collapsed case-study line and a five-line prompt - fills the
+screen before the response starts, and state 12's collapse cannot help because
+nothing left above the mark is anything but the question. At 430x932 and every
+wider size the mark is clear. The option, if it matters, is collapsing the
+question's own text once marked, which would be a new pattern for every format.

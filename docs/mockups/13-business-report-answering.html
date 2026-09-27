@@ -3,16 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Marginal — Extended response marked</title>
+<title>Marginal · Business report, answering</title>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  /* PROPOSED SHARED TEST MODE TOKENS - see docs/testmode-tokens.md.
-     Nine of nine mockups fail WCAG AA on the current values, worst offenders in
-     the frozen shell. Seven values move here so this draft can be judged without
-     reading it through failing contrast. NOT a State 12 decision, and not
-     applied to the other eight files. --green is unchanged: it stays the brand
-     accent on surfaces that carry no text, and stops being a background for
-     white text. */
+  /* THE SHARED TEST MODE TOKENS - the approved accessibility baseline in
+     docs/testmode-tokens.md. Not state 13's colours. */
   :root{
     --bg:#EEF3F5; --card:#FFFFFF;
     --ink:#3C4A4A; --ink-2:#596866; --ink-3:#616E6C;
@@ -59,10 +54,12 @@
   .prog{text-align:right;font-size:12px;color:var(--ink-2);font-weight:800;white-space:nowrap}
   .prog b{color:var(--ink);font-size:13px}
   .pbar{height:7px;width:190px;border-radius:99px;background:#DDE6E6;overflow:hidden;margin-top:5px}
-  .pbar i{display:block;height:100%;width:100%;background:var(--green);border-radius:99px}
+  .pbar i{display:block;height:100%;background:var(--green);border-radius:99px}
 
-  /* Question 15 authors no stimulus, so there is no second column. The card
-     keeps a reading measure rather than running to 1100px. */
+  /* One column. The case study belongs to this question alone, and its own
+     instructions say "use the case study below", so it sits below them, inline,
+     the way the app renders it. A side panel would make that sentence false on
+     every screen wide enough to show one. */
   .work{display:block}
   .qcard{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:20px 24px;
          max-width:780px;margin:0 auto}
@@ -71,16 +68,29 @@
               display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .marks{color:var(--ink-2)}
   .fmt{background:var(--blue-soft);color:var(--blue-dk);border-radius:6px;padding:1px 7px;font-size:10.5px;letter-spacing:.02em}
+  /* The question's own instructions, authored and verbatim. Before state 13 they
+     rendered nowhere (UX-TEST-10). */
+  .instr{font-size:14.5px;font-weight:600;color:var(--ink-2);line-height:1.6;max-width:62ch;margin-bottom:12px}
+
+  /* The case study, in the family's source surface. */
+  .case{background:var(--card);border:1.5px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:16px}
+  .case figcaption{padding:11px 16px;border-bottom:1px solid var(--line);background:#FAFCFC;
+                   font-family:var(--disp);font-weight:600;font-size:13.5px}
+  .case .body{padding:14px 16px 16px;font-size:14.5px;font-weight:500;line-height:1.75;color:var(--ink)}
+  .case img{display:block;width:100%;max-width:420px;height:auto;margin-top:12px;border:1px solid var(--line);border-radius:8px}
+  /* Collapsed once marked. A native <details>, like the response below it. */
+  details.case>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;
+                       padding:11px 16px;background:#FAFCFC;font-family:var(--disp);font-weight:600;font-size:13.5px}
+  details.case>summary::-webkit-details-marker{display:none}
+  details.case>summary:focus-visible{outline:2px solid var(--green-dk);outline-offset:2px;border-radius:14px}
+  details.case .act{margin-left:auto;font-weight:700;font-size:12.5px;color:var(--green-dk)}
+  details.case .act::after{content:"View case study"}
+  details.case[open] .act::after{content:"Hide case study"}
+  details.case[open]>summary{border-bottom:1px solid var(--line)}
   h1.exam-prompt{font-size:17px;font-weight:600;color:var(--ink);line-height:1.5;margin-bottom:16px}
 
-  /* THE SUBMITTED RESPONSE HAS TWO PRESENTATION STATES, AND THE ORDER NEVER
-     CHANGES. While answering it is the editable field. Once marked it is a
-     compact line the student can open, because by then they have read it and
-     what they want is the mark: rendering 190 words in full pushed 14 of 20
-     below the fold at every size except a tall desktop. The response still
-     comes first; it is compressed, not moved.
-
-     A native <details>, so it is keyboard-reachable and needs no script. */
+  /* THE SUBMITTED RESPONSE HAS TWO PRESENTATION STATES, as in state 12: the
+     field while answering, a compact line the student can open once marked. */
   .submitted{max-width:62ch;background:#FCFDFD;border:1.5px solid var(--line);border-radius:14px}
   .submitted>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;
                      padding:13px 18px;font-size:13.5px;font-weight:700;color:var(--ink-2)}
@@ -90,14 +100,17 @@
   .submitted .act{margin-left:auto;font-family:var(--disp);font-weight:700;font-size:12.5px;color:var(--green-dk)}
   .submitted .act::after{content:"View response"}
   .submitted[open] .act::after{content:"Hide response"}
-  /* Read-only prose, not a field. Nothing here can be typed into. */
+  /* A report's structure is its line breaks, and they are kept exactly as typed.
+     Nothing is promoted to a heading: a short line is not a heading because it
+     looks like one, and inferring structure the student did not mark up would be
+     the page writing their report for them. */
   .response{border-top:1px solid var(--line);padding:14px 18px 17px;
             font-size:15px;line-height:1.75;font-weight:400;color:var(--ink)}
+  .response p{white-space:pre-line}
   .response p+p{margin-top:12px}
-  /* While answering, the same slot is the field it has to be. */
   .answerbox{width:100%;max-width:62ch;font:inherit;font-size:15px;font-weight:400;line-height:1.75;color:var(--ink);
              background:var(--card);border:2px solid var(--line);border-radius:14px;padding:14px 18px;
-             min-height:260px;resize:vertical}
+             min-height:320px;resize:vertical}
   .answerbox:focus{outline:none;border-color:var(--green-dk);box-shadow:0 0 0 3px var(--green-soft)}
   .saved{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-3);font-weight:700;margin-top:8px}
   .saved .tick{color:var(--green-dk)}
@@ -119,12 +132,11 @@
   .btn.sm.ghost{background:var(--card);color:var(--ink);box-shadow:0 0 0 2px var(--line) inset;
                 padding:9px 17px;font-size:14px;border-radius:12px}
 
-  /* TWO INDEPENDENT REVIEW LAYERS, and their separation is the whole correction.
-     A criterion owns its NAME and the line the marker returned for it. It does
-     not own evidence, a count, or a verdict, because the payload carries no
-     association between an authored criterion and a sentence, an issue or a
-     paragraph. Filing a true quotation under a criterion would have made it a
-     false academic attribution. */
+  /* Three independent layers. A criterion owns its name and the line the marker
+     returned for it. The question's marking points are what the marker was told
+     to look for, and carry no verdict, because the marker returns none. An
+     observation owns the student's own sentence where one was located. None of
+     the three is filed under another, because the payload links none of them. */
   .sect{margin-top:26px;padding-top:17px;border-top:1px solid var(--line)}
   h2.secth{font-size:14.5px;color:var(--ink);margin-bottom:3px}
   .sect .lede{font-size:12.5px;color:var(--ink-3);font-weight:600;margin-bottom:12px;max-width:62ch}
@@ -133,19 +145,21 @@
   .crit:first-child{border-top:none;padding-top:4px}
   h3.critn{font-size:14px;color:var(--ink);margin-bottom:5px}
   .crit p{font-size:14.5px;font-weight:400;line-height:1.65;color:var(--ink-2);max-width:62ch}
+  /* An ordered list with its own numbers, because the order is the author's and
+     the marker was given them in it. */
+  .told{padding-left:22px;max-width:62ch}
+  .told li{font-size:14.5px;font-weight:400;line-height:1.65;color:var(--ink);padding:5px 0 5px 4px}
+  .told li::marker{font-family:var(--disp);font-weight:600;color:var(--ink-2)}
 
   .obs{list-style:none}
   .ob{padding:15px 0;border-top:1px solid var(--line)}
   .ob:first-child{border-top:none;padding-top:4px}
   h4.obh{font-size:14px;color:var(--ink);margin-bottom:6px}
   .ob p{font-size:14.5px;font-weight:400;line-height:1.7;color:var(--ink);max-width:62ch}
-  /* The one inset surface on the page, and it holds the STUDENT'S OWN WORDS -
-     rendered only where snapSentences located the sentence verbatim. */
   .ev{margin:2px 0 9px;background:#F4F9F8;border:1px solid var(--line);border-radius:9px;padding:11px 15px;max-width:62ch}
   .ev .lbl{font-family:var(--disp);font-weight:600;font-size:11.5px;color:var(--ink-2);margin-bottom:5px}
   .ev q{display:block;font-size:15px;font-weight:400;line-height:1.65;color:var(--ink);
         border-left:2px solid #9FE3C4;padding-left:12px;quotes:'\201C' '\201D'}
-  /* No surface, because there is nothing of the student's to show. */
   .acrossl{font-family:var(--disp);font-weight:600;font-size:11.5px;color:var(--ink-2);margin-bottom:6px}
 
   /* THE SHARED SITTING-SHELL FOOTER. Navigation is always available, so a
@@ -222,29 +236,43 @@
     <button class="x" title="Leave">←</button>
     <div class="paper">
       <div class="nm">Business Studies practice paper</div>
-      <div class="sec">Section IV — Extended response · Q15 or Q16 · 20 marks</div>
+      <div class="sec">Section III - Business report · Q14 · 20 marks</div>
     </div>
     <div class="spacer"></div>
     <span class="policy"><span class="dot"></span>Practice · marked as you go</span>
     <button class="navbtn"><span class="grid"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>Questions</button>
-    <div class="prog"><b>20</b> of 20 answered<span class="score"> · <b>62</b>/90 marks</span><div class="pbar"><i></i></div></div>
+    <div class="prog"><b>18</b> of 20 answered<span class="score"> · <b>47</b>/90 marks</span><div class="pbar"><i style="width:90%"></i></div></div>
   </div>
 
   <div class="work">
     <div class="qcard">
       <div class="exam-qhead">
-        <span>Question 15</span><span class="marks">· 20 marks</span>
-        <span class="fmt">extended response · evaluate</span>
+        <span>Question 14</span><span class="marks">· 20 marks</span>
+        <span class="fmt">business report · recommend</span>
       </div>
-      <h1 class="exam-prompt">Evaluate the effectiveness of marketing strategies in achieving the marketing objectives of a business you have studied.</h1>
+      <p class="instr">Use the case study below. Present your answer as a business report with a clear structure.</p>
+      <figure class="case">
+        <figcaption>Case study: Tidewater Outfitters</figcaption>
+        <div class="body">
+          <p>Tidewater Outfitters sells camping equipment through six stores and a website. Online sales have grown for three years while store sales have fallen. The business leases all six stores on agreements expiring within two years. Its warehouse was built for store replenishment and is now picking individual online orders, and delivery times have slipped. The owners want to keep all six stores.</p>
+          <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MjAiIGhlaWdodD0iMjQwIiB2aWV3Qm94PSIwIDAgNDIwIDI0MCI+CjxyZWN0IHdpZHRoPSI0MjAiIGhlaWdodD0iMjQwIiBmaWxsPSIjZmZmZmZmIi8+Cjx0ZXh0IHg9IjEyIiB5PSIyMiIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEzIiBmaWxsPSIjMTExIj5PbmxpbmUgb3JkZXJzIHBlciB3ZWVrLCBUaWRld2F0ZXIgT3V0Zml0dGVyczwvdGV4dD4KPGxpbmUgeDE9IjQ4IiB5MT0iMjAwIiB4Mj0iNDA0IiB5Mj0iMjAwIiBzdHJva2U9IiMxMTEiIHN0cm9rZS13aWR0aD0iMSIvPgo8bGluZSB4MT0iNDgiIHkxPSI0MCIgeDI9IjQ4IiB5Mj0iMjAwIiBzdHJva2U9IiMxMTEiIHN0cm9rZS13aWR0aD0iMSIvPgo8cmVjdCB4PSI3MiIgeT0iMTUwIiB3aWR0aD0iNDYiIGhlaWdodD0iNTAiIGZpbGw9IiMyZTdkNWIiLz4KPHJlY3QgeD0iMTUwIiB5PSIxMjIiIHdpZHRoPSI0NiIgaGVpZ2h0PSI3OCIgZmlsbD0iIzJlN2Q1YiIvPgo8cmVjdCB4PSIyMjgiIHk9Ijg4IiB3aWR0aD0iNDYiIGhlaWdodD0iMTEyIiBmaWxsPSIjMmU3ZDViIi8+CjxyZWN0IHg9IjMwNiIgeT0iNjAiIHdpZHRoPSI0NiIgaGVpZ2h0PSIxNDAiIGZpbGw9IiMyZTdkNWIiLz4KPHRleHQgeD0iODQiIHk9IjIxNiIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjExIiBmaWxsPSIjMTExIj4yMDIyPC90ZXh0Pgo8dGV4dCB4PSIxNjIiIHk9IjIxNiIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjExIiBmaWxsPSIjMTExIj4yMDIzPC90ZXh0Pgo8dGV4dCB4PSIyNDAiIHk9IjIxNiIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjExIiBmaWxsPSIjMTExIj4yMDI0PC90ZXh0Pgo8dGV4dCB4PSIzMTgiIHk9IjIxNiIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjExIiBmaWxsPSIjMTExIj4yMDI1PC90ZXh0Pgo8dGV4dCB4PSIyMCIgeT0iNDYiIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWksc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzExMSI+ODAwPC90ZXh0Pgo8dGV4dCB4PSIyMCIgeT0iMjA0IiBmb250LWZhbWlseT0ic3lzdGVtLXVpLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTEiIGZpbGw9IiMxMTEiPjA8L3RleHQ+Cjwvc3ZnPg==" alt="Bar chart: Online orders per week, Tidewater Outfitters, one bar for each year from 2022 to 2025, on a scale from 0 to 800. Each bar is taller than the one before.">
+        </div>
+      </figure>
+      <h1 class="exam-prompt">You have been engaged as a consultant to Tidewater Outfitters. Recommend strategies the business could use to respond to the shift in where its customers are buying.</h1>
 
-      <textarea class="answerbox" aria-label="Your response">Northline Sportswear set a marketing objective of increasing its share of the teenage market, and most of its strategies were chosen to serve that objective. The business moved from print advertising to short video content on social platforms, which reached the age group it was targeting at a lower cost per view than its previous campaigns.
+      <textarea class="answerbox" aria-label="Your response" placeholder="Write your full response here, using blank lines between sections.">Executive summary
+Online orders at Tidewater Outfitters have grown every year since 2022 while its store sales have fallen. This report recommends redesigning the warehouse for single online orders, turning two stores into click-and-collect points, and renegotiating the store leases on shorter terms as they expire.
 
-Its second strategy was a loyalty app that gave members early access to new releases. This was effective because it turned occasional buyers into repeat customers, and repeat customers are cheaper to keep than new ones are to find.
+Findings
+Online orders per week rose from about 250 in 2022 to about 700 in 2025. The warehouse was designed to send bulk stock to six stores, so it is slow at picking single online orders, and delivery times have slipped. All six store leases expire within the next two years.
 
-However, the business also cut its prices across the range at the same time, which worked against the premium position its advertising was building. A customer who sees the brand as aspirational and then finds it discounted every month will stop believing the first message.
+Recommendations
+Tidewater should redesign its warehouse layout for single-order picking. This would shorten delivery times for the customers who are now buying online.
+The business should also keep its six stores but convert two of them into click-and-collect points. This keeps the owners' stores open while making them part of the online sale.
+Finally, the business should renegotiate its leases for shorter terms as each one expires.
 
-Overall the marketing strategies were effective in achieving the objective they were set, because the business gained share in the group it targeted, but the pricing decision limited how much of that gain it could hold.</textarea>
+Conclusion
+By changing how the warehouse works and giving the stores a role in online sales, Tidewater can respond to where its customers are buying without closing a store.</textarea>
       <div class="saved"><span class="tick">✓</span> Saved. You can leave and come back to this paper.</div>
 
       <div class="submitrow"><button class="btn">Submit for marking</button></div>
@@ -254,10 +282,10 @@ Overall the marketing strategies were effective in achieving the objective they 
 
 <div class="footer">
   <div class="footin">
-    <button class="btn sm ghost">← Previous<span class="foot-lbl"> · 14</span></button>
+    <button class="btn sm ghost">← Previous<span class="foot-lbl"> · 13</span></button>
     <button class="flag">⚑ Flag<span class="foot-lbl">&nbsp;for revisit</span></button>
-    <span class="where">Item 20 of 20 · Section IV</span>
-    <button class="btn sm ghost">Finish<span class="foot-lbl"> paper</span> →</button>
+    <span class="where">Item 19 of 20 · Section III</span>
+    <button class="btn sm ghost">Next<span class="foot-lbl"> · Section IV</span> →</button>
   </div>
 </div>
 

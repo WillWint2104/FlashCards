@@ -212,9 +212,9 @@ ${TOK}
   /* THE SHARED SITTING-SHELL FOOTER. Navigation is always available, so a
      question may be left and returned to.
 
-     This block is byte-identical in every Test Mode mockup and in the state 12
-     generator, and tests/t34.mjs holds it that way. It had already drifted: the
-     state 12 pages were missing the hover state and the note below it. */
+     This block is byte-identical in every Test Mode mockup and in every generator
+     that emits one, and tests/t34.mjs holds it that way. It had already drifted:
+     the state 12 pages were missing the hover state and the note below it. */
   .footer{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--line);z-index:9;
           box-shadow:0 -6px 18px rgba(60,74,74,.05)}
   .footin{max-width:1180px;margin:0 auto;padding:11px clamp(16px,4vw,40px);display:flex;align-items:center;gap:12px}

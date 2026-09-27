@@ -38,6 +38,8 @@ const SHELL = [
   { f: 'docs/mockups/11-short-answer-keypoints.html', result: '.result' },
   { f: 'docs/mockups/12-extended-response.html', result: '.result' },
   { f: 'docs/mockups/12-extended-response-answering.html' },
+  { f: 'docs/mockups/13-business-report.html', result: '.result' },
+  { f: 'docs/mockups/13-business-report-answering.html' },
   { f: 'docs/mockups/14-calculation-checked-correct.html', result: '.result' },
   { f: 'docs/mockups/14-calculation-checked-notquite.html', result: '.result' },
   { f: 'docs/mockups/14-nested-multipart.html' },
@@ -296,6 +298,39 @@ const readFooter = (p, resultSel) => p.evaluate(sel => {
        `${name}: and the keyboard closes it again, because the summary holds focus`);
 
     await p.screenshot({ path: OUT + `shot-12-marked-${name}.png`, fullPage: true });
+    await p.close();
+  }
+
+  // ---- 3. state 13: the case study collapses too, once marked -------------
+  //
+  // tests/t36.mjs reads the markup. This reads the screen: closed on arrival
+  // means the case study's text is not in the rendered page, and the first click
+  // puts it back. At 1280x900 the mark then clears the footer, which it did not
+  // with the case study open above it.
+  const CASE = 'Tidewater Outfitters sells camping equipment';
+  for (const [name, w, h] of [['desktop', 1280, 900], ['mobile', 390, 844]]) {
+    console.log(`--- state 13 case study, ${name} ${w}x${h} ---`);
+    const p = await (await b.newContext({ viewport: { width: w, height: h } })).newPage();
+    p.on('pageerror', e => errs.push('13 ' + name + ': ' + String(e).slice(0, 180)));
+    await p.goto(url('docs/mockups/13-business-report.html')); await settled(p);
+    ok(!(await p.$eval('details.case', e => e.open)), `13 ${name}: the case study is collapsed on arrival`);
+    ok(!(await textHas(p, CASE)), `13 ${name}: and its text is not on the screen`);
+    ok(!(await textHas(p, 'Northline')) && !(await p.$eval('details.submitted', e => e.open)),
+       `13 ${name}: nor is the response, which is collapsed below it`);
+    if (name === 'desktop') {
+      const clear = await p.evaluate(() => {
+        const el = document.querySelector('.result'), f = document.querySelector('div.footer').getBoundingClientRect();
+        const w2 = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); let lo = 0;
+        for (let n; (n = w2.nextNode());) if (n.nodeValue.trim()) { const rg = document.createRange(); rg.selectNodeContents(n); lo = Math.max(lo, rg.getBoundingClientRect().bottom); }
+        return lo <= f.top;
+      });
+      ok(clear, '13 desktop: the mark is on the first screen, clear of the footer');
+    }
+    await p.click('details.case > summary'); await settled(p);
+    ok(await p.$eval('details.case', e => e.open) && await textHas(p, CASE),
+       `13 ${name}: one click puts the case study back, in full`);
+    ok(await p.evaluate(() => document.querySelectorAll('textarea,input,[contenteditable]:not([contenteditable="false"])').length === 0),
+       `13 ${name}: and opening it hands back no field`);
     await p.close();
   }
 

@@ -1,9 +1,9 @@
 // THE SITTING-SHELL FOOTER IS ONE BLOCK, COPIED. THIS IS WHAT KEEPS IT ONE BLOCK.
 //
-// Ten mockups and one generator carry the same sticky footer. Nothing shares it
-// at build time - they are standalone pages, deliberately, so a mockup can be
-// opened from a file:// URL with no toolchain - so the only thing that can keep
-// eleven copies honest is a test that reads them.
+// Twelve mockups and the two generators that emit four of them carry the same
+// sticky footer. Nothing shares it at build time - they are standalone pages,
+// deliberately, so a mockup can be opened from a file:// URL with no toolchain -
+// so the only thing that can keep fourteen copies honest is a test that reads them.
 //
 // It had already drifted, and the drift is what this suite was written after.
 // The state 12 pages were missing `.flag:hover` and the note explaining that
@@ -31,12 +31,13 @@ const files = fs.readdirSync(MOCK)
   .filter(([, s]) => s.includes('class="footer"'));
 
 console.log("--- 1. every page that renders the shell is accounted for");
-// Ten rendered pages and the generator that emits two of them. A new state that
-// copies the shell without appearing here has not been noticed by anything.
-ok(files.length === 11, `eleven sources carry the shell (${files.length}): ` +
+// Twelve rendered pages and the two generators that emit four of them. A new
+// state that copies the shell without appearing here has not been noticed by
+// anything, which is why the count is exact rather than "at least".
+ok(files.length === 14, `fourteen sources carry the shell (${files.length}): ` +
    files.map(([f]) => f).join(" "));
-ok(files.some(([f]) => f.endsWith(".build.mjs")),
-   "and one of them is the generator, not only its output");
+ok(files.filter(([f]) => f.endsWith(".build.mjs")).length === 2,
+   "and two of them are generators, not only their output");
 
 console.log("--- 2. the block is byte-identical in all of them");
 const START = "  /* THE SHARED SITTING-SHELL FOOTER";
