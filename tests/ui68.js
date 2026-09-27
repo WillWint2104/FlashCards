@@ -589,7 +589,21 @@ const answer = async (p, text) => { await p.fill('#ans', text); await p.click('#
       'curriculum ownership survives: ' + after.subjectKey + ' / ' + after.klaKey);
     ok(after.sections.join('|') === 'Section A - Short answer|Section B - Extended response',
       'sections survive in order: ' + after.sections.join(' | '));
-    ok(after.state === 'publishable', 'and it is still publishable on the way out: ' + after.state);
+    // THE VERDICT SURVIVES THE ROUND TRIP, which is what this line is for.
+    //
+    // It asserted 'publishable', and that was the value rather than the point. Since
+    // state 13 a business report with no instructions, no marking points and no
+    // requirements carries one thin note, REPORT_GUIDANCE_ABSENT, because it sends
+    // its marker nothing that says it is a report - and o1 is exactly that report.
+    // So the verdict is compared with what the same validator says of the paper as
+    // pasted, and the one note is named, so a different change to the verdict is
+    // still caught rather than absorbed.
+    const pasted = require('../tools/contract/exam.js').examine(NESTED);
+    ok(after.state === pasted.state, 'and its verdict on the way out is the verdict it went in with: ' +
+      pasted.state + ' -> ' + after.state);
+    ok(pasted.state === 'thin' && JSON.stringify(pasted.findings.map(f => f.code)) === '["REPORT_GUIDANCE_ABSENT"]',
+      'which is thin for exactly one reason, its bare business report: ' +
+      JSON.stringify(pasted.findings.map(f => f.code)));
 
     // AUTHORED NUMBERING AND THE PARENT/PART RELATIONSHIP.
     ok(after.parents === 1, 'the parent is still a parent: ' + after.parents);

@@ -354,7 +354,7 @@
     const out = {
       concepts: (r && r.concepts) || (card && card.vocab) || [],
       relationships: (r && r.relationships) || [],
-      accomplish: (r && r.accomplish) || (card && card.scaffold) || [],
+      accomplish: ASSESS.accomplishOf(card),
       syllabus: (r && r.syllabus) || "",
     };
     const any = out.concepts.length || out.relationships.length || out.accomplish.length || out.syllabus;
@@ -561,7 +561,7 @@
     // which both marking passes print as "what a strong response accomplishes".
     // For every other format this is a no-op and the request is byte-identical to
     // what it was, which is what keeps the frozen extended response frozen.
-    const rg = ASSESS.reportGuidance(card, mc.requirements && mc.requirements.accomplish);
+    const rg = ASSESS.reportGuidance(card, ASSESS.accomplishOf(card));
     if (rg.ok !== true)
       return ASSESS.refuse(rg.code, "This response was not marked: " + rg.why + ".",
         { max: Number(card && card.marks) || 0 });
@@ -593,10 +593,10 @@
             // BOTH, and they are different things. `format` is what kind of
             // response this is; `responseType` is which of the written marker's
             // two behaviours it wants. business_report shares extended's
-            // plumbing and says separately that it is a report, which is what
-            // lets report-specific marking context arrive later without a second
-            // engine. Nothing is fabricated for it here: no report structure or
-            // guidance is authored yet, so none is sent.
+            // plumbing and says separately that it is a report. The worker does
+            // not read `format` at all; what a report's marker learns about the
+            // genre arrives as its own authored words in requirements, above.
+            // Nothing is written for it: a report that authors none sends none.
             format: fx.format,
             responseType: mode, stimulus: !!card.stimulus,
             rubric: card.rubric || undefined,
@@ -1684,7 +1684,7 @@
     app.innerHTML = `
       <div class="sessionbar"><button class="x" id="quit" title="Back to areas">←</button><span class="lbl">${esc(area.name)} · ${idx + 1} of ${queue.length}</span><span class="sbar"><i style="width:${Math.round(100 * idx / queue.length)}%"></i></span></div>
       <div class="qmeta">${esc(area.custom ? "Custom set" : C.unit)} · ${tag} · ${card.marks} mark${card.marks > 1 ? "s" : ""}</div>
-      <div class="qcard"><div class="qprompt">${linkGlossary(card.prompt)}</div></div>
+      <div class="qcard">${reportInstrHTML(card)}<div class="qprompt">${linkGlossary(card.prompt)}</div></div>
       <div class="qtoggles">
         ${card.stimulus ? `<button class="qtoggle" id="viewsource"><span class="ti">▦</span> Show source</button>` : ""}
         ${hasHelp ? `<button class="qtoggle" id="needhelp"><span class="ti">?</span> Need help?</button>` : ""}
@@ -1856,6 +1856,19 @@
   // attached, because a two-mark Identify and a fifteen-mark Evaluate are not the
   // same task. It states each job and never performs it, and nothing here is ever
   // written into the student's answer.
+  // A BUSINESS REPORT'S OWN INSTRUCTIONS, shown wherever the report is answered.
+  //
+  // Scoped to the report, and to text. Rendered for every format it changed the
+  // frozen extended response's surface on any paper whose extended response
+  // authors instructions, and showed the student a line that format's marker is
+  // never sent. For a report, the same words go to the marker too, so the student
+  // and the marker read the same sentence.
+  function reportInstrHTML(card) {
+    const fx = ASSESS.normaliseFormat(card);
+    if (!(fx.ok && fx.format === "business_report")) return "";
+    if (typeof card.instructions !== "string" || !card.instructions.trim()) return "";
+    return `<p class="exam-instr">${esc(card.instructions.trim())}</p>`;
+  }
   function answerShapeFor(card) {
     const shapes = (window.ESSAY && window.ESSAY.answerShapes) || null;
     if (!shapes) return null;
@@ -1882,7 +1895,8 @@
     // It disagreed with the author, and the student is the one who acts on it.
     //
     // Nothing per question describes a report's shape except the sentence in its
-    // own instructions, and that now renders above the answer. A report scaffold
+    // own instructions, and that now renders above the answer, in a paper and on
+    // a study card alike (reportInstrHTML). A report scaffold
     // is state 13b, from the doctrine in GUIDED-MODE-PLAN.md, and until then the
     // honest shape is none.
     if (fx.ok && fx.format === "business_report") return null;
@@ -2427,8 +2441,8 @@
     // above its parts, so a leaf question's instructions reached nobody: not the
     // student, and not the marker either. They sit above the question's own
     // source, because the one authored example says "use the case study below"
-    // and it should be below.
-    const ownInstr = q.instructions ? `<p class="exam-instr">${esc(q.instructions)}</p>` : "";
+    // and it should be below. A report's only: see reportInstrHTML.
+    const ownInstr = reportInstrHTML(q);
     app.innerHTML = `${examBar()}
       <div class="exam-wrap"><div class="exam-q">
         <div class="exam-sec small">${esc(sec.name || "")}</div>

@@ -79,7 +79,7 @@
         "kind": "term",
         "severity": "should",
         "head": "The operations problem is identified precisely",
-        "why": "You say why the warehouse struggles, not just that it does: it was built for bulk store replenishment and is now picking single orders. That is the cause the rest of the report can build on.",
+        "why": "You say why the warehouse struggles, not just that it does: it was designed to send bulk stock to stores, and picking single online orders is a different job. That is the cause the rest of the report can build on.",
         "ladder": []
        }
       ]

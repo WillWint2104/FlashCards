@@ -588,6 +588,34 @@ states put above it. Scrolling clears it at every width, which `tests/ui69.js`
 asserts. Closing it would mean reordering content in two frozen states, which is
 a design decision and not a shell one.
 
+### UX-TEST-06 — the record, corrected with the real fonts
+
+Every fold number above was measured with the web fonts blocked, which the test
+harness does for speed, and the entries did not say so. The adversarial review of
+state 13 caught it. Re-measured with Fredoka and Nunito proven loaded:
+
+```
+                                  old footer (119px @725)     new footer (63px @781)
+  12 extended response   mark     599-638  clear              599-638  clear
+                         judgement 668-909 BEHIND             668-909  below the fold
+  14 calculation (x3)    mark     670-708  clear              637-675  clear
+  11 short answer        mark     -                           697-735  clear
+  11 keypoints           mark     -                           671-710  clear
+```
+
+Two corrections follow. First, what the old footer covered on the extended
+response was the **marker's judgement**, the paragraph directly under the mark -
+not the mark, as this entry and the decision to reopen the shell said. The defect
+was real: a 119px, four-line footer over content on every marked page. The
+evidence cited for it was half an artefact. Second, the claim above that "at
+390x844 the mark is still behind the footer on arrival on four pages" is
+**withdrawn**: with real fonts every calculation and short-answer mark clears the
+new footer at 390x844. The one page where the mark is behind the footer is state
+13's business report (UX-TEST-14).
+
+The footer claims themselves hold with real fonts: 119px wrapped to four lines
+before, 63px at every width after, 44px actions at the narrow breakpoint.
+
 ### UX-TEST-07 — `11-short-answer` overflows horizontally at 320px
 
 Found by the same sweep. Nine of the ten mockups have no horizontal overflow at
@@ -736,12 +764,32 @@ that for its pages. The ten are frozen, so this is logged rather than swept.
 Separately, `12-extended-response-answering.html` is titled "Extended response
 marked": the state 12 generator writes one title for both pages.
 
-### UX-TEST-14 — on a 390px phone the report's mark is below the first screen
+### UX-TEST-14 — on a 390px phone the report's mark sits behind the footer
 
-Measured on the generated page: the mark text at 903-941 against a footer
-starting at 781. It is not behind the footer. The question itself - its
-instruction, the collapsed case-study line and a five-line prompt - fills the
-screen before the response starts, and state 12's collapse cannot help because
-nothing left above the mark is anything but the question. At 430x932 and every
-wider size the mark is clear. The option, if it matters, is collapsing the
-question's own text once marked, which would be a new pattern for every format.
+**Corrected.** This entry first said the mark was "below the first screen, not
+behind the footer", from a measurement taken with the web fonts blocked. With
+Fredoka and Nunito loaded, as a student's browser loads them, the mark's text spans
+756 to 795 against a footer starting at 781: it is behind the footer, the
+UX-TEST-06 fault class, on the one marked page the shell fix does not reach. At
+430x932 and every wider size it clears.
+
+What sits above it is the question itself - its instruction, the collapsed
+case-study line and a five-line prompt - so state 12's principle of collapsing what
+the student has already read has nothing left to collapse. Every fix reopens
+something locked: moving the result above the response inverts the order state 12
+fixed; collapsing the question's own text once marked is a new pattern that would
+have to apply to every format; tightening spacing only moves the line for this
+prompt's length. It needs a decision.
+
+### UX-TEST-15 — the demo-grade path still coaches paragraphs, under em dashes
+
+Found by the state 13 review, and older than it. When the marking endpoint cannot
+be reached, `demoEssay` grades every written response - a business report
+included - on "Development (length & paragraphs)" and tells the student to "aim for
+roughly 700+ words across 4–5 paragraphs". Its summary opens "Couldn't reach your
+grading endpoint (...) — showing a demo grade instead", and two more student-facing
+strings on the same path carry em dashes ("Demo grade — connect a grading
+endpoint..." and the next step "This is a structural check only — ..."). State 13
+removed the paragraph default from a report's placeholder and shape; this path still
+has it. Logged rather than fixed with state 13, because it is every format's fallback
+and not the report's.

@@ -173,8 +173,12 @@ on the generated pages, and `tests/ui69.js` as the rendered-state regression.
 ## 13. A shared-shell defect outranks a freeze
 
 The sitting shell was frozen at decision 8. It was reopened for one thing:
-UX-TEST-06, a sticky footer that at 390x844 grew to 119px and sat on top of the
-marked result. A freeze protects a design from churn; it does not protect a
+UX-TEST-06, a sticky footer that at 390x844 grew to 119px and sat on top of
+marked content. (It was first reported as covering the mark itself; re-measured
+with the page's own fonts, what it covered on the extended response was the
+marker's judgement directly under the mark. The defect and the fix stand; the
+first evidence was partly a fallback-font artefact. See UX-TEST-06 in
+testmode-ux-audit.md.) A freeze protects a design from churn; it does not protect a
 defect that reaches every marked format at a common phone width, and the cost of
 leaving it was a student finishing a paper and not being able to see the mark.
 

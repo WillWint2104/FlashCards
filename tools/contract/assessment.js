@@ -493,13 +493,30 @@ function scorePoints(q, answer) {
 var GUIDANCE_MAX_ITEMS = 10;
 var GUIDANCE_MAX_CHARS = 300;
 
+// WHAT A QUESTION SENDS AS requirements.accomplish, decided in one place.
+//
+// markingRequirements in app.js and the paper validator in exam.js each derived
+// this with their own copy of the same expression, and tests/t35.mjs checked the
+// validator against a THIRD copy, so "the validator and the runtime agree" was a
+// test of a string against itself. All three now call this.
+function accomplishOf(q) {
+  return (q && q.requirements && q.requirements.accomplish) || (q && q.scaffold) || [];
+}
+
 function reportGuidance(q, accomplish) {
   var fx = normaliseFormat(q);
   if (!fx.ok || fx.format !== "business_report")
     return { ok: true, applies: false, items: [], own: 0 };
 
+  // Instructions are text or absent. An object or a list was stringified into
+  // "[object Object]" or a comma-joined line and sent to the marker as the first
+  // thing a strong response accomplishes, while the student saw the same - the
+  // silent normalisation this contract refuses everywhere else.
+  if (q.instructions != null && typeof q.instructions !== "string")
+    return refuse("INSTRUCTIONS_MALFORMED",
+      "this business report's instructions are not text, so they could not be shown or sent as they were written");
   var own = [];
-  if (!blank(q.instructions)) own.push(String(q.instructions).trim());
+  if (!blank(q.instructions)) own.push(q.instructions.trim());
   var mp = markingPoints(q);
   if (mp.ok !== true) return mp;
   mp.points.forEach(function (p) { own.push(p.text); });
@@ -553,6 +570,6 @@ module.exports = {
   curriculumFindings: curriculumFindings, subjectOverrides: subjectOverrides,
   resolveAuthority: resolveAuthority,
   markingPoints: markingPoints, scorePoints: scorePoints, normText: normText,
-  reportGuidance: reportGuidance,
+  reportGuidance: reportGuidance, accomplishOf: accomplishOf,
   GUIDANCE_MAX_ITEMS: GUIDANCE_MAX_ITEMS, GUIDANCE_MAX_CHARS: GUIDANCE_MAX_CHARS,
 };

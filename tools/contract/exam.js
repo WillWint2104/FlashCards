@@ -329,20 +329,23 @@ function questionFindings(q, path) {
   // findings while its report question reached the marker indistinguishable from
   // an essay, and the state 13 audit found nothing anywhere that would have said so.
   //
-  // The accomplish list passed here mirrors markingRequirements in app.js: an
-  // authored requirements.accomplish, or the scaffold. tests/t35.mjs holds the two
-  // to the same answer, so the validator cannot pass a paper the runtime refuses.
+  // The accomplish list is ASSESS.accomplishOf, the same function markingRequirements
+  // in app.js calls, so the validator cannot pass a paper the runtime refuses.
+  //
+  // A refusal is filed under what it IS, by this file's own taxonomy: a point or an
+  // instruction that is not readable is malformed data; guidance this version cannot
+  // send whole is unsupported. Neither is `blocked`, which means a dependency that
+  // does not resolve while the paper itself may be perfect. All three stop a sitting.
   if (fx.format === "business_report") {
-    var rq = q.requirements && typeof q.requirements === "object" ? q.requirements : null;
-    var rg = ASSESS.reportGuidance(q, (rq && rq.accomplish) || q.scaffold || []);
+    var rg = ASSESS.reportGuidance(q, ASSESS.accomplishOf(q));
     if (rg.ok !== true)
-      add(STATE.blocked, rg.code, rg.why +
+      add(rg.code === "REPORT_GUIDANCE_OVER_BUDGET" ? STATE.unsupported : STATE.malformed, rg.code, rg.why +
         ". The response would be refused when submitted, so the paper cannot be sat as it stands");
-    else if (!rg.own)
+    else if (!rg.items.length)
       add(STATE.thin, "REPORT_GUIDANCE_ABSENT",
-        "a business report with no instructions and no marking points sends its marker none of its own guidance. " +
-        "Unless the prompt or the model answer names the genre, it is marked as an extended response and nothing " +
-        "about report structure can be judged");
+        "a business report with no instructions, no marking points and no requirements sends its marker nothing " +
+        "that says it is a report. Unless the prompt or the model answer names the genre, it is marked as an " +
+        "extended response and nothing about report structure can be judged");
   }
 
   return out;

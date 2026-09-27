@@ -18,7 +18,8 @@
 //   3. guidance the worker would silently truncate is refused whole, and the
 //      budget is read out of the worker rather than restated;
 //   4. the paper validator and the runtime reach the same verdict on the same
-//      question, so a paper that validates can always be marked.
+//      question, because both derive what is sent with ASSESS.accomplishOf, so a
+//      paper that validates can always be marked.
 //
 // The browser half - that the request on the wire carries it and the extended
 // response's request does not move - is tests/ui70.js.
@@ -142,7 +143,24 @@ ok(/what a strong response accomplishes: 1\. Use the case study below/.test(p2),
 ok(/RESPONSE TYPE: extended response/.test(p2),
    "KNOWN: the response-type line still says 'extended response' - the genre travels as guidance, not as a type");
 
-console.log("--- 5. the validator and the runtime agree");
+console.log("--- 5. the validator and the runtime agree, by construction");
+// The accomplish list is derived ONCE, by ASSESS.accomplishOf. This section used to
+// hand-copy the validator's own expression as its "runtime" side, which tested a
+// string against itself. Now the source is pinned: markingRequirements, the
+// marking request and the validator each call the shared function and nothing else.
+{
+  const app = fs.readFileSync(path.join(ROOT, "app.js"), "utf8");
+  const exam = fs.readFileSync(path.join(ROOT, "tools/contract/exam.js"), "utf8");
+  ok(/accomplish: ASSESS\.accomplishOf\(card\),/.test(app), "markingRequirements derives accomplish with ASSESS.accomplishOf");
+  ok(/ASSESS\.reportGuidance\(card, ASSESS\.accomplishOf\(card\)\)/.test(app), "the marking request routes with it");
+  ok(/ASSESS\.reportGuidance\(q, ASSESS\.accomplishOf\(q\)\)/.test(exam), "and so does the validator");
+  ok(!/card\.scaffold\) \|\| \[\]/.test(app) && !/q\.scaffold \|\| \[\]/.test(exam),
+     "and neither keeps a private copy of the derivation");
+  ok(JSON.stringify(A.accomplishOf({ requirements: { accomplish: ["a"] }, scaffold: ["s"] })) === '["a"]' &&
+     JSON.stringify(A.accomplishOf({ scaffold: ["s"] })) === '["s"]' &&
+     JSON.stringify(A.accomplishOf({ requirements: {} })) === "[]" && JSON.stringify(A.accomplishOf(null)) === "[]",
+     "accomplishOf: authored requirements win, then the scaffold, then nothing");
+}
 const examOf = q => { const d = clone(paper); d.sections[2].questions[0] = q; return P.examine(d); };
 const codes = r => r.findings.map(f => f.code);
 const real = examOf(clone(q14));
@@ -150,24 +168,35 @@ ok(real.state === "publishable" && !codes(real).some(c => /^REPORT_/.test(c)),
    "the real paper is publishable, with no report finding, because its report has words to route");
 const noWords = clone(q14); delete noWords.instructions; delete noWords.points;
 ok(codes(examOf(noWords)).includes("REPORT_GUIDANCE_ABSENT") && examOf(noWords).state === "thin",
-   "a report with no words is thin, with a finding that says it reaches the marker as an essay");
-// Same inputs through both doors, several ways; the verdicts have to match.
+   "a report with nothing to route is thin, with a note that says so");
+// The note is about what is SENT, not about which field it came from: a report
+// whose only guidance is an authored requirements.accomplish does tell its marker.
+const onlyReq = Object.assign(clone(noWords), { requirements: { accomplish: ["Uses report headings"] } });
+ok(!codes(examOf(onlyReq)).includes("REPORT_GUIDANCE_ABSENT"),
+   "no note when authored requirements carry the guidance instead, because they are sent");
 const cases = [
-  ["the real report", clone(q14)],
-  ["eleven points", Object.assign(clone(q14), { points: eleven })],
-  ["a long point", Object.assign(clone(q14), { points: ["z".repeat(301)] })],
-  ["ten points plus the instruction", Object.assign(clone(q14), { points: eleven.slice(0, 10) })],
-  ["eight points, the instruction and two authored accomplish items", Object.assign(clone(q14), { points: eleven.slice(0, 8), requirements: { accomplish: ["extra one", "extra two"] } })],
-  ["eight points, the instruction and a two-row scaffold", Object.assign(clone(q14), { points: eleven.slice(0, 8), scaffold: ["s1", "s2"] })],
-  ["a malformed point", Object.assign(clone(q14), { points: ["fine", 7] })],
+  ["the real report", clone(q14), "publishable"],
+  ["eleven points", Object.assign(clone(q14), { points: eleven }), "unsupported"],
+  ["a long point", Object.assign(clone(q14), { points: ["z".repeat(301)] }), "unsupported"],
+  ["ten points plus the instruction", Object.assign(clone(q14), { points: eleven.slice(0, 10) }), "unsupported"],
+  ["eight points, the instruction and two authored accomplish items", Object.assign(clone(q14), { points: eleven.slice(0, 8), requirements: { accomplish: ["extra one", "extra two"] } }), "unsupported"],
+  ["eight points, the instruction and a two-row scaffold", Object.assign(clone(q14), { points: eleven.slice(0, 8), scaffold: ["s1", "s2"] }), "unsupported"],
+  ["a malformed point", Object.assign(clone(q14), { points: ["fine", 7] }), "malformed"],
+  ["instructions that are an object", Object.assign(clone(q14), { instructions: { text: "Use the case study." } }), "malformed"],
+  ["instructions that are a list", Object.assign(clone(q14), { instructions: ["Use the case study.", "Write a report."] }), "malformed"],
 ];
-for (const [name, q] of cases) {
-  // markingRequirements in app.js: authored requirements.accomplish, or the scaffold.
-  const runtime = A.reportGuidance(q, (q.requirements && q.requirements.accomplish) || q.scaffold || []);
-  const blocked = examOf(q).state === "blocked";
-  ok((runtime.ok !== true) === blocked,
-     `${name}: runtime ${runtime.ok === true ? "marks it" : "refuses (" + runtime.code + ")"}, validator ${blocked ? "blocks it" : "lets it through"}`);
+for (const [name, q, want] of cases) {
+  const runtime = A.reportGuidance(q, A.accomplishOf(q));
+  const v = examOf(q);
+  ok((runtime.ok !== true) === !P.isSittable(v.state),
+     `${name}: runtime ${runtime.ok === true ? "marks it" : "refuses (" + runtime.code + ")"}, validator ${P.isSittable(v.state) ? "lets it be sat" : "stops it"}`);
+  ok(v.state === want, `${name}: filed as ${want}, by exam.js's own taxonomy (${v.state})`);
 }
+// Not `blocked`: that state means a dependency that does not resolve.
+ok(cases.every(([, q]) => examOf(q).state !== "blocked"), "no report refusal is filed as blocked");
+// And the non-string instructions never reach anyone as "[object Object]".
+const objI = Object.assign(clone(q14), { instructions: { text: "x" } });
+ok(A.reportGuidance(objI, []).code === "INSTRUCTIONS_MALFORMED", "object instructions are refused, not stringified");
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -134,6 +134,26 @@ console.log("--- 3. no flag, and a check after every mutant");
   ok(/summarise\(list, Object\.assign\(\{\}, priorResults\(\), THIS_RUN\)\);/.test(src),
     "and the summary reads them, not only what was on disk before it started");
 
+  // A RECORDED RESULT IS REUSED ONLY FOR THE MUTATION IT WAS RECORDED FOR, and only
+  // while that mutation can still be applied. Exercised, not grepped.
+  {
+    const m = { id: "x", file: "f.js", find: "alpha", replace: "beta", owner: "t0" };
+    const good = { id: "x", sig: mutate.sigOf(m), verdict: "KILLED" };
+    const once = () => "one alpha here", gone = () => "nothing to find", twice = () => "alpha alpha";
+    ok(mutate.reusable(m, good, once) === true, "an unchanged entry whose target is still there reuses its result");
+    ok(mutate.reusable(Object.assign({}, m, { replace: "gamma" }), good, once) === false,
+      "an EDITED entry does not reuse the verdict of the mutation it used to be");
+    ok(mutate.reusable(m, good, gone) === false,
+      "an entry whose target has left the file re-runs, and so is reported STALE rather than KILLED");
+    ok(mutate.reusable(m, good, twice) === false, "and so does one whose target is no longer unique");
+    ok(mutate.reusable(m, { id: "x", verdict: "KILLED" }, once) === false,
+      "a result recorded before signatures existed is not trusted");
+    ok(mutate.reusable(m, good, () => { throw new Error("ENOENT"); }) === false,
+      "and a target file that is missing is not a reason to reuse anything");
+    ok(/const todo = list\.filter\(m => !reusable\(m, done\[m\.id\]/.test(src),
+      "and the run decides what to skip with this, not with the id alone");
+  }
+
   // A mutation in a file the page is BUILT from, with no rebuild, tests the
   // previous fixture: the suite passes and the fault is filed as one nothing
   // notices. The list is therefore checked against build.js's own reads rather

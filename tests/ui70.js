@@ -14,7 +14,8 @@
 //
 // The other half is what must NOT move. The extended response is state 12's
 // format and it is frozen; its request is pinned here key by key, and measured
-// against the pre-change build it was byte-identical (3243 bytes).
+// against the pre-change build it was byte-identical - 3140 bytes for q15 with
+// this suite's own answer, which is the figure a re-run reproduces.
 const { chromium, T } = require('./env');
 const path = require('path');
 
@@ -34,8 +35,16 @@ const EXT_KEYS = ['answer', 'bands', 'bandsSource', 'code', 'command', 'criteria
 // the paper without one, which the audit logged - so JSON drops the undefined key.
 const REPORT_KEYS_BEFORE = EXT_KEYS.filter(k => k !== 'model_answer');
 
-async function sit(b, section, answer) {
-  const p = await (await b.newContext({ viewport: { width: 1280, height: 1000 } })).newPage();
+async function sit(b, section, answer, storedPaper) {
+  const ctx = await b.newContext({ viewport: { width: 1280, height: 1000 } });
+  // A paper already in a student's storage is not re-validated when it is sat, so
+  // a paper saved before the validator learned a rule reaches the runtime whatever
+  // the validator now says. Seeded exactly as tests/mkwalk.py seeds, before boot.
+  if (storedPaper) await ctx.addInitScript(sp => {
+    localStorage.setItem('marginal.trial.v1', JSON.stringify({ cards: {}, endpoint: '', code: '12Ec126', log: [],
+      customSets: [], lessons: {}, exams: [Object.assign({}, sp, { id: 'walk-2025-bus' })] }));
+  }, storedPaper);
+  const p = await ctx.newPage();
   const errs = []; p.on('pageerror', e => errs.push(String(e).slice(0, 200)));
   let body = null;
   await p.route(/workers\.dev/, async r => {
@@ -66,9 +75,10 @@ async function sit(b, section, answer) {
   });
   await p.fill('#ans', answer);
   await p.click('#check'); await settled(p);
-  await p.waitForFunction(() => !!document.querySelector('#sheet .sheet'), null, { timeout: 8000 }).catch(() => {});
+  await p.waitForFunction(() => !!(document.querySelector('#sheet') || {}).textContent, null, { timeout: 8000 }).catch(() => {});
+  const sheet = await p.$eval('#sheet', e => e.textContent.replace(/\s+/g, ' ').trim()).catch(() => '');
   await p.close();
-  return { surface, body, errs };
+  return { surface, body, errs, sheet };
 }
 
 (async () => {
@@ -123,6 +133,8 @@ async function sit(b, section, answer) {
      'it still gets the essay shape, which is right for an essay');
   ok(/between paragraphs/.test(E.surface.placeholder), 'and the paragraphs placeholder');
   const eb = E.body || {};
+  // Printed so the figure in the docs is one a re-run reproduces.
+  console.log('    extended request for q15:', JSON.stringify(eb).length, 'bytes');
   ok(JSON.stringify(Object.keys(eb).sort()) === JSON.stringify(EXT_KEYS),
      'its request carries exactly the keys it carried before: ' + Object.keys(eb).sort().join(','));
   ok(!('requirements' in eb), 'no requirements appear from nowhere');
@@ -131,6 +143,32 @@ async function sit(b, section, answer) {
      "none of its own marking points leak into the request: routing them is a separate decision");
   ok(eb.format === 'extended_response' && eb.responseType === 'extended', 'and it is still an extended response');
   ok(E.errs.length === 0, 'no page errors: ' + E.errs.join(' | '));
+
+  // ---- a stored paper the validator would now refuse -----------------------
+  //
+  // q14 with an instruction and ten points is eleven items, and the worker keeps
+  // ten. The runtime refusal is the only thing between that paper and a report
+  // marked against the first ten pieces of its own guidance.
+  console.log('--- a stored report over the marker\'s budget, and an extended response with its own instructions');
+  const over = JSON.parse(JSON.stringify(paper));
+  over.sections[2].questions[0].points = Array.from({ length: 10 }, (_, i) => 'Point ' + (i + 1));
+  over.sections[3].questions[0].instructions = 'Refer to the stimulus in your answer.';
+  const O = await sit(b, 'Section III - Business report', 'Executive summary\nA report.', over);
+  ok(O.body === null, 'the over-budget report is NOT sent to the marker at all');
+  ok(/not marked/i.test(O.sheet) && /marking guidance/.test(O.sheet) && /10/.test(O.sheet),
+     'and the student is told why, in words: ' + JSON.stringify(O.sheet.slice(0, 160)));
+  ok(!/\u2014/.test(O.sheet), 'with no em dash in what they read');
+  ok(O.errs.length === 0, 'no page errors: ' + O.errs.join(' | '));
+  // State 12 is frozen, so an extended response's own instructions render nowhere,
+  // exactly as before: they are not sent to its marker either, and showing a
+  // student a line their marker never reads is the mismatch this avoids.
+  const X = await sit(b, 'Section IV - Extended response', 'A paragraph.\n\nAnother paragraph.', over);
+  ok(X.surface.instructions.length === 0,
+     "an extended response's own instructions do not render: its surface is state 12's, unchanged");
+  ok(!JSON.stringify(X.body || {}).includes('Refer to the stimulus'),
+     'and they are not sent to its marker');
+  ok(JSON.stringify(Object.keys(X.body || {}).sort()) === JSON.stringify(EXT_KEYS),
+     'its request still carries exactly the keys it always has');
 
   console.log(`\n${pass} passed, ${fail} failed`);
   await b.close();

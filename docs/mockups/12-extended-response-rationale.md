@@ -145,6 +145,15 @@ own. Opened, the page still contains zero `textarea`, zero `input` and zero
 
 ## Does it still fit inline? Measured again, collapsed
 
+> **Correction, found by the state 13 review.** The table below was measured with
+> the web fonts blocked, as the test harness does, and did not say so. The fallback
+> face is wider than Nunito. With Fredoka and Nunito loaded, state 12 is better
+> than this table says: the mark clears the footer at **all eight** sizes, 599-638
+> against 781 at 390x844, and the judgement clears at seven of eight. The finding
+> that follows it - that the mark sat behind the old footer at 390x844 - was a
+> fallback-font artefact: with the real fonts the old footer covered the
+> judgement, not the mark. Recorded under UX-TEST-06.
+
 **And measured against the right fold this time.** Draft 2's table compared each
 element's bottom with `window.innerHeight`. This shell has a sticky header and a
 sticky footer painted over the page, so the last usable row of content is where

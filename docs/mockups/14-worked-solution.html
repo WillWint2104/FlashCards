@@ -199,14 +199,15 @@
 
   /* NARROW MOBILE: ONE COMPACT ROW (UX-TEST-06).
 
-     Measured rather than guessed. The four-column footer wraps at every width
-     below 660px and stands 119px tall at 390px against 63px at desktop, which is
-     14% of an 844px screen. At 390x844 that covered the marked result: the mark
-     sat at 718 to 786 with the footer starting at 725, so a student reached the
-     end of a paper and could not see what they had scored without scrolling a
-     page they had already finished. It is a shared-shell fault and it affected
-     every marked format, not only extended responses. The breakpoint is 640
-     because that is where the wrapping stops, not because it looks like a phone.
+     Measured rather than guessed, with the page's own fonts loaded. The
+     four-column footer wraps at every width below 660px and stands 119px tall at
+     390px against 63px at desktop, which is 14% of an 844px screen, starting at
+     y=725. On the extended response that put it over the marker's judgement, the
+     paragraph directly under the mark. (An earlier measurement with the web fonts
+     blocked put the mark itself under it; with Fredoka and Nunito loaded the mark
+     clears and the judgement does not.) It is a shared-shell fault and it
+     affected every marked format. The breakpoint is 640 because that is where the
+     wrapping stops, not because it looks like a phone.
 
      WHAT GOES. The item counter, and the trailing half of each label. Neither
      leaves the page: the paper bar above carries the section and the completion
@@ -215,9 +216,9 @@
      The counter is hidden at this width, not deleted, so the vocabularies stay
      distinct - completion in the bar, sequence position in the navigator.
 
-     WHAT STAYS. All three actions, and for the first time at any width they are
-     44px tall: the row was 37px and the flag 35px, both under the touch target
-     everywhere. */
+     WHAT STAYS. All three actions, 44px tall at this width. At desktop they are
+     40px and the flag 39px, under the 44px touch target; a narrow screen is where
+     a thumb uses them, so that is where they reach it. */
   @media(max-width:640px){
     .footin{gap:8px;padding:9px 12px;justify-content:space-between}
     .footin .where{display:none}

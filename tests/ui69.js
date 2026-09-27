@@ -8,8 +8,18 @@
 //      ends. Measured the wrong way - bottom <= window.innerHeight - the marked
 //      result cleared the fold at 390x844. Measured the right way it did not:
 //      the footer wrapped to four lines, stood 119px tall against 63px at
-//      desktop, and covered the mark. That was the shared shell, so it covered
-//      the mark on every marked format, not only extended responses.
+//      desktop, and covered marked content on every marked format.
+//
+//      EVERY NUMBER IN THIS SUITE IS THE HARNESS'S RENDERING. tests/env.js blocks
+//      the web fonts for speed, so these pages render in a fallback face that is
+//      wider than Nunito, and lines break earlier than a student sees. That is
+//      fine for what is ASSERTED here - one-row footers, 44px targets, no
+//      overflow, a result that clears once scrolled to - all of which hold in
+//      both. It is not fine for fold POSITIONS quoted as what a student sees:
+//      those were re-measured with Fredoka and Nunito loaded, and are recorded
+//      under UX-TEST-06 and UX-TEST-14 in docs/testmode-ux-audit.md. With the
+//      real fonts, what the old footer covered on the extended response was the
+//      marker's judgement, not the mark.
 //
 //   2. The state 12 disclosure. tests/t33.mjs reads the generated pages as text
 //      and can see that the marked state wraps the response in
@@ -248,12 +258,12 @@ const readFooter = (p, resultSel) => p.evaluate(sel => {
     // Both were under the fold in draft 2, because the whole 176-word response
     // was above them. Measured against the bars, which are what actually covers
     // content on this shell.
-    // ON ARRIVAL, WITHOUT SCROLLING: is the mark readable? At 1280x800 the whole
-    // band clears both bars. At 390x844 the band's last 12px of padding run
-    // under the footer and none of its text does, which is a card sliding under
-    // a bar rather than a mark hidden behind one. Both are asserted as what they
-    // are, and the phone's number is in the message so a change shows up as a
-    // number rather than as a flip.
+    // ON ARRIVAL, WITHOUT SCROLLING: is the mark readable? In the harness's
+    // fallback font, at 1280x800 the whole band clears both bars, and at 390x844
+    // the band's last 12px of padding run under the footer and none of its text
+    // does. With the page's own fonts the whole band clears at 390x844 too (text
+    // 599-638 against a footer at 781). What is asserted holds in both; the
+    // phone's number is in the message so a change shows up as a number.
     const arrival = await p.evaluate(() => {
       const el = document.querySelector('.result');
       const r = el.getBoundingClientRect();
@@ -315,7 +325,11 @@ const readFooter = (p, resultSel) => p.evaluate(sel => {
     await p.goto(url('docs/mockups/13-business-report.html')); await settled(p);
     ok(!(await p.$eval('details.case', e => e.open)), `13 ${name}: the case study is collapsed on arrival`);
     ok(!(await textHas(p, CASE)), `13 ${name}: and its text is not on the screen`);
-    ok(!(await textHas(p, 'Northline')) && !(await p.$eval('details.submitted', e => e.open)),
+    // Searched for by a phrase from THIS page's response. It looked for state 12's
+    // "Northline" until the review pointed out that word never occurs here, so the
+    // text half of this check could not fail.
+    const RESP13 = 'turning two stores into click-and-collect points';
+    ok(!(await textHas(p, RESP13)) && !(await p.$eval('details.submitted', e => e.open)),
        `13 ${name}: nor is the response, which is collapsed below it`);
     if (name === 'desktop') {
       const clear = await p.evaluate(() => {
@@ -326,6 +340,12 @@ const readFooter = (p, resultSel) => p.evaluate(sel => {
       });
       ok(clear, '13 desktop: the mark is on the first screen, clear of the footer');
     }
+    // The list of what the marker was told carries no verdict, and a tick drawn by
+    // CSS would not be in the markup t36 reads, so the rendered markers are read.
+    const marks13 = await p.$$eval('.told li', lis => lis.map(li =>
+      (getComputedStyle(li, '::marker').content || '') + ' ' + li.innerText));
+    ok(marks13.length === 6 && marks13.every(m => !/[\u2713\u2714\u2717\u2718]/.test(m)),
+       `13 ${name}: the six things the marker was told are listed with numbers, not ticks`);
     await p.click('details.case > summary'); await settled(p);
     ok(await p.$eval('details.case', e => e.open) && await textHas(p, CASE),
        `13 ${name}: one click puts the case study back, in full`);

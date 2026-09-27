@@ -21,6 +21,9 @@ const fs = require("node:fs"), path = require("node:path");
 const ASSESS = require("../../tools/contract/assessment.js");
 const HERE = path.dirname(new URL(import.meta.url).pathname);
 const ROOT = path.resolve(HERE, "..", "..");
+// tests/t36.mjs regenerates into a scratch directory and compares, so the pages
+// in the repo are provably what this produces rather than a copy that drifted.
+const OUTDIR = process.env.MOCKUP_OUT || HERE;
 
 const paper = JSON.parse(fs.readFileSync(path.join(ROOT, "tests/fixtures/bus-practice-paper.json"), "utf8"));
 const sec = paper.sections[2];
@@ -44,14 +47,28 @@ across.forEach(o => { delete o.quote; });
 const ratio = r.max ? r.score / r.max : 0;
 const mood = ratio >= 0.95 ? "Full marks" : ratio >= 0.6 ? "Most of it" : ratio >= 0.3 ? "Partly there" : "Not yet";
 
-// The chart's alt text is read off the chart's own labels, not described from
-// what a reader might see in it.
+// THE CHART'S ALT TEXT IS READ OFF THE CHART, every clause of it.
+//
+// The title and the axis come from its <text> labels. The bars come from its
+// <rect>s: the full-canvas background is not a bar, each remaining one is, and
+// the trend sentence is only written if the heights actually say it. An earlier
+// version hard-coded "each bar is taller than the one before", which was true of
+// this chart and would have told a screen-reader user the opposite of a falling one.
 const svg = Buffer.from(q.stimulus.img.split(",")[1], "base64").toString("utf8");
 const labels = [...svg.matchAll(/>([^<]+)<\/text>/g)].map(m => m[1]);
 const years = labels.filter(t => /^\d{4}$/.test(t));
 const ticks = labels.filter(t => /^\d+$/.test(t) && !/^\d{4}$/.test(t)).map(Number).sort((a, b) => a - b);
-const ALT = `Bar chart: ${labels[0]}, one bar for each year from ${years[0]} to ${years[years.length - 1]}, ` +
-  `on a scale from ${ticks[0]} to ${ticks[ticks.length - 1]}. Each bar is taller than the one before.`;
+const canvas = svg.match(/<svg[^>]*\bwidth="(\d+)"[^>]*\bheight="(\d+)"/);
+const attr = (tag, a) => Number((tag.match(new RegExp("\\b" + a + '="([\\d.]+)"')) || [])[1]);
+const bars = [...svg.matchAll(/<rect\b[^>]*>/g)].map(m => m[0])
+  .filter(t => !(canvas && attr(t, "width") === Number(canvas[1]) && attr(t, "height") === Number(canvas[2])))
+  .map(t => ({ x: attr(t, "x"), h: attr(t, "height") })).sort((a, b) => a.x - b.x);
+const rising = bars.length > 1 && bars.every((b, i) => i === 0 || b.h > bars[i - 1].h);
+const falling = bars.length > 1 && bars.every((b, i) => i === 0 || b.h < bars[i - 1].h);
+const ALT = `Bar chart: ${labels[0]}, ${bars.length} bars` +
+  (bars.length === years.length ? `, one for each year from ${years[0]} to ${years[years.length - 1]}` : "") +
+  `, on a scale from ${ticks[0]} to ${ticks[ticks.length - 1]}.` +
+  (rising ? " Each bar is taller than the one before." : falling ? " Each bar is shorter than the one before." : "");
 
 const report = {
   mark: r.score + " of " + r.max, mood,
@@ -297,14 +314,15 @@ ${TOK}
 
   /* NARROW MOBILE: ONE COMPACT ROW (UX-TEST-06).
 
-     Measured rather than guessed. The four-column footer wraps at every width
-     below 660px and stands 119px tall at 390px against 63px at desktop, which is
-     14% of an 844px screen. At 390x844 that covered the marked result: the mark
-     sat at 718 to 786 with the footer starting at 725, so a student reached the
-     end of a paper and could not see what they had scored without scrolling a
-     page they had already finished. It is a shared-shell fault and it affected
-     every marked format, not only extended responses. The breakpoint is 640
-     because that is where the wrapping stops, not because it looks like a phone.
+     Measured rather than guessed, with the page's own fonts loaded. The
+     four-column footer wraps at every width below 660px and stands 119px tall at
+     390px against 63px at desktop, which is 14% of an 844px screen, starting at
+     y=725. On the extended response that put it over the marker's judgement, the
+     paragraph directly under the mark. (An earlier measurement with the web fonts
+     blocked put the mark itself under it; with Fredoka and Nunito loaded the mark
+     clears and the judgement does not.) It is a shared-shell fault and it
+     affected every marked format. The breakpoint is 640 because that is where the
+     wrapping stops, not because it looks like a phone.
 
      WHAT GOES. The item counter, and the trailing half of each label. Neither
      leaves the page: the paper bar above carries the section and the completion
@@ -313,9 +331,9 @@ ${TOK}
      The counter is hidden at this width, not deleted, so the vocabularies stay
      distinct - completion in the bar, sequence position in the navigator.
 
-     WHAT STAYS. All three actions, and for the first time at any width they are
-     44px tall: the row was 37px and the flag 35px, both under the touch target
-     everywhere. */
+     WHAT STAYS. All three actions, 44px tall at this width. At desktop they are
+     40px and the flag 39px, under the 44px touch target; a narrow screen is where
+     a thumb uses them, so that is where they reach it. */
   @media(max-width:640px){
     .footin{gap:8px;padding:9px 12px;justify-content:space-between}
     .footin .where{display:none}
@@ -379,7 +397,7 @@ ${r.rubric.map(c => `          <li class="crit">
 
       <section class="sect">
         <h2 class="secth">What your marker was told to look for</h2>
-        <p class="lede">This question's own instructions and marking points, sent to the marker with your response. It did not score them one by one, so nothing here is ticked or crossed.</p>
+        <p class="lede">This question's own instructions and marking points, sent to the marker with your response. The case study itself is not sent, so the marker cannot check how you used it. It did not score these one by one, so nothing here is ticked or crossed.</p>
         <ol class="told">
 ${rg.items.map(x => `          <li>${esc(x)}</li>`).join("\n")}
         </ol>
@@ -418,7 +436,8 @@ ${across.map(o => `          <li class="ob">
 </body>
 </html>
 `;
-fs.writeFileSync(path.join(HERE, "13-business-report.html"), page(true));
-fs.writeFileSync(path.join(HERE, "13-business-report-answering.html"), page(false));
+fs.writeFileSync(path.join(OUTDIR, "13-business-report.html"), page(true));
+fs.writeFileSync(path.join(OUTDIR, "13-business-report-answering.html"), page(false));
+report.bars = bars.length; report.alt = ALT;
 report.words = WORDS;
 console.log(JSON.stringify(report, null, 1));

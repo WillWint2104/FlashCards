@@ -765,7 +765,7 @@ module.exports = [
   {
     id: "report-guidance-drops-instructions",
     file: "tools/contract/assessment.js",
-    find: "  if (!blank(q.instructions)) own.push(String(q.instructions).trim());",
+    find: "  if (!blank(q.instructions)) own.push(q.instructions.trim());",
     replace: "",
     owner: "t35",
     why: "the instruction is the one sentence that names the genre, and it was the first thing never sent",
@@ -789,7 +789,7 @@ module.exports = [
   {
     id: "report-validator-silent-on-no-words",
     file: "tools/contract/exam.js",
-    find: "    else if (!rg.own)\n      add(STATE.thin, \"REPORT_GUIDANCE_ABSENT\",",
+    find: "    else if (!rg.items.length)\n      add(STATE.thin, \"REPORT_GUIDANCE_ABSENT\",",
     replace: "    else if (false)\n      add(STATE.thin, \"REPORT_GUIDANCE_ABSENT\",",
     owner: "t35",
     why: "the paper validated publishable with zero findings while its report reached the marker as an essay",
@@ -813,11 +813,61 @@ module.exports = [
   {
     id: "leaf-instructions-render-nowhere",
     file: "app.js",
-    find: "    const ownInstr = q.instructions ? `<p class=\"exam-instr\">${esc(q.instructions)}</p>` : \"\";",
+    find: "    const ownInstr = reportInstrHTML(q);",
     replace: "    const ownInstr = \"\";",
     owner: "ui70",
     why: "only a parent's instructions rendered, so a leaf question's reached nobody, student or marker",
   },
+  // ---- state 13, the faults the adversarial review found ------------------
+  {
+    id: "report-runtime-refusal-dropped",
+    file: "app.js",
+    find: "    if (rg.ok !== true)\n      return ASSESS.refuse(rg.code, \"This response was not marked: \" + rg.why + \".\",",
+    replace: "    if (false)\n      return ASSESS.refuse(rg.code, \"This response was not marked: \" + rg.why + \".\",",
+    owner: "ui70",
+    why: "a stored paper is not re-validated, so this refusal is all that stops a report being marked against part of its guidance",
+  },
+  {
+    id: "report-instructions-render-for-every-format",
+    file: "app.js",
+    find: "    if (!(fx.ok && fx.format === \"business_report\")) return \"\";",
+    replace: "",
+    owner: "ui70",
+    why: "rendered for every format, an imported extended response's own instructions changed state 12's frozen surface",
+  },
+  {
+    id: "report-instructions-stringified",
+    file: "tools/contract/assessment.js",
+    find: "  if (q.instructions != null && typeof q.instructions !== \"string\")\n    return refuse(\"INSTRUCTIONS_MALFORMED\",",
+    replace: "  if (false)\n    return refuse(\"INSTRUCTIONS_MALFORMED\",",
+    owner: "t35",
+    why: "object instructions reached the student and the marker as \"[object Object]\"",
+  },
+  {
+    id: "report-refusal-filed-as-blocked",
+    file: "tools/contract/exam.js",
+    find: "      add(rg.code === \"REPORT_GUIDANCE_OVER_BUDGET\" ? STATE.unsupported : STATE.malformed, rg.code, rg.why +",
+    replace: "      add(STATE.blocked, rg.code, rg.why +",
+    owner: "t35",
+    why: "blocked means a dependency that does not resolve, and named the wrong problem for whoever has to fix the paper",
+  },
+  {
+    id: "accomplish-derivation-forked",
+    file: "app.js",
+    find: "      accomplish: ASSESS.accomplishOf(card),",
+    replace: "      accomplish: (r && r.accomplish) || (card && card.scaffold) || [],",
+    owner: "t35",
+    why: "three private copies of one expression is how the validator and the runtime came to be tested against themselves",
+  },
+  {
+    id: "mutate-reuses-a-gone-target",
+    file: "tools/mutate.js",
+    find: "  return text.split(m.find).length - 1 === 1;",
+    replace: "  return true;",
+    owner: "t26",
+    why: "a resumed run reported KILLED for a mutation whose target had left the file, without running anything",
+  },
+
   // ---- state 13's generated pages ------------------------------------------
   //
   // These target what t36 reads - the generated page and the fixture - because the

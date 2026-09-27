@@ -11,8 +11,9 @@
 //     per-point verdict;
 //   - the case study collapses once marked and is open in full while answering,
 //     and in both it sits directly under the instruction that says "below";
-//   - the marker's prose cites no figure the student did not write, because the
-//     marker is never sent the case study and cannot know one.
+//   - the marker's prose ON THE PAGE cites no figure and no case-study phrasing
+//     that nothing it is sent contains, because it is never sent the case study;
+//   - the pages are byte-identical to a fresh run of their generator.
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const fs = require("node:fs");
@@ -60,7 +61,17 @@ ok(items.some(x => /report structure with headings/.test(x)),
 const toldSect = (body(marked).match(/What your marker was told to look for[\s\S]*?<\/section>/) || [""])[0];
 ok(!/[✓✗✔✘]/.test(toldSect) && !/class="(hit|miss|tick)/.test(toldSect),
    "nothing in it is ticked or crossed, because the marker returns no per-point verdict");
-ok(/did not score them one by one/.test(toldSect), "and it says so, in words");
+ok(/did not score these one by one/.test(toldSect), "and it says so, in words");
+// A tick drawn by CSS never appears in the markup, so the stylesheet is read too:
+// no `content:` anywhere on the page may draw a tick or a cross, escaped or not.
+const css = (marked.match(/<style>([\s\S]*?)<\/style>/) || ["", ""])[1];
+const contents = [...css.matchAll(/content:\s*("[^"]*"|'[^']*')/g)].map(m => m[1]);
+ok(contents.every(c => !/[✓✔✗✘]|\\27(13|14|17|18)/i.test(c)),
+   "and no stylesheet rule draws one either: " + JSON.stringify(contents));
+// UX-TEST-11: the list says the marker was told to use the case study, which it is
+// never sent. The page says so beside the list, until the case study is sent.
+ok(/The case study itself is not sent, so the marker cannot check how you used it\./.test(toldSect),
+   "and it tells the student the case study was not sent, so the list cannot be read as a check of it");
 ok(!/What your marker was told/.test(answering), "the answering state does not show the marking points before the answer");
 
 console.log("--- 3. two disclosures once marked, none while answering");
@@ -82,28 +93,61 @@ const blocks = [...body(marked).matchAll(/<div class="response">([\s\S]*?)<\/div
 ok(blocks.join("\n\n") === fx.answer, "the collapsed response holds the submitted report BYTE-EXACTLY");
 ok(/\.response p\{white-space:pre-line\}/.test(marked),
    "its line breaks render as typed, so a heading line stays on its own line");
-ok(!/<h[2-6][^>]*>(Executive summary|Findings|Recommendations|Conclusion)</.test(body(marked)),
-   "and nothing the student typed is promoted to a heading: structure is not inferred");
+const respHTML = (body(marked).match(/<div class="response">([\s\S]*?)<\/div>/) || ["", ""])[1];
+ok(!/<h[1-6]\b/i.test(respHTML) && !/<(strong|b)\b/i.test(respHTML),
+   "no heading or bold anywhere inside the response: structure is not inferred");
+const lines = fx.answer.split(/\n/).map(x => x.trim()).filter(Boolean);
+const headed = [...body(marked).matchAll(/<h[1-6][^>]*>([^<]*)<\/h[1-6]>/gi)].map(m => unesc(m[1]).trim().toLowerCase());
+ok(!lines.some(l => headed.includes(l.toLowerCase())),
+   "and none of the student's lines appears as a heading anywhere on the page, in any casing");
 const words = fx.answer.trim().split(/\s+/).length;
 ok(new RegExp("\\u00b7 " + words + " words").test(marked), `the word count is counted (${words})`);
 const ta = answering.match(/<textarea[^>]*>([\s\S]*?)<\/textarea>/);
 ok(ta && unesc(ta[1]) === fx.answer, "the answering field holds the same report, byte-exactly");
 
 console.log("--- 5. the marker claims nothing it could not know");
-// The marker is sent the student's response, the question and the report's own
-// guidance. It is NOT sent the case study (the stimulus travels as a boolean, and
-// the extended prompt never reads it). So a figure in the marker's prose that is
-// not in the student's response is a figure the marker could not have had.
-const markerProse = [fx.review.summary]
-  .concat(fx.review.paragraphs.flatMap(p => p.sentences.flatMap(s => s.issues.flatMap(i => [i.head, i.why]))));
-const nums = markerProse.join(" ").match(/\b\d[\d,.]*\b/g) || [];
-ok(nums.length > 0, "the marker's prose does cite figures, so this check is not vacuous: " + nums.join(","));
-ok(nums.every(n => fx.answer.includes(n)),
-   "and every one of them is in the student's own report: " + nums.filter(n => !fx.answer.includes(n)).join(",") );
-const caseOnly = ["delivery times have slipped", "for three years", "the owners want to keep all six stores"]
-  .filter(p => !fx.answer.toLowerCase().includes(p));
-ok(caseOnly.every(p => !markerProse.join(" ").toLowerCase().includes(p)),
-   "and it repeats no case-study phrasing the student did not use");
+// Read off the PAGE, not the fixture: a hand edit to the page is exactly what this
+// has to catch. The marker's words are the judgement under the mark and each
+// observation's heading and reason. The quoted student sentences are the
+// student's, not the marker's, so the evidence blocks are cut out first.
+const markerProse = [
+  ...[...body(marked).matchAll(/<p class="mnote">(?:<span class="who">[^<]*<\/span>)?([\s\S]*?)<\/p>/g)].map(m => m[1]),
+  ...[...body(marked).matchAll(/<li class="ob">([\s\S]*?)<\/li>/g)].map(m => m[1].replace(/<div class="ev">[\s\S]*?<\/q><\/div>/g, " ")),
+].map(h => unesc(h.replace(/<[^>]+>/g, " "))).join(" ").replace(/\s+/g, " ");
+ok(markerProse.length > 400, "the marker's prose was found on the page (" + markerProse.length + " characters)");
+ok(!/Online orders at Tidewater Outfitters have grown/.test(markerProse), "and it excludes the student's quoted sentences");
+// What the marker IS sent: the response, the prompt, the instructions and points.
+const sent = [fx.answer, q.prompt, q.instructions].concat(rg.items).join(" ").toLowerCase();
+const nums = markerProse.match(/\b\d[\d,.]*\b/g) || [];
+ok(nums.length > 0, "the marker's prose does cite figures, so the figure check is not vacuous: " + nums.join(","));
+ok(nums.every(n => sent.includes(n)),
+   "every figure in it is in something the marker is sent: " + nums.filter(n => !sent.includes(n)).join(","));
+// Case-study phrasing: any four-word run of the case study that appears in nothing
+// the marker is sent is a run the marker could not have. None may appear in its prose.
+const tokens = t => t.toLowerCase().replace(/[^a-z0-9' ]/g, " ").split(/\s+/).filter(Boolean);
+const grams = (ws, n) => ws.slice(0, Math.max(0, ws.length - n + 1)).map((_, k) => ws.slice(k, k + n).join(" "));
+const sentGrams = new Set(grams(tokens(sent), 4));
+const caseOnly = grams(tokens(q.stimulus.text), 4).filter(g => !sentGrams.has(g));
+const proseGrams = new Set(grams(tokens(markerProse), 4));
+ok(caseOnly.length > 20, "there is case-study phrasing the marker is never sent (" + caseOnly.length + " four-word runs)");
+ok(caseOnly.every(g => !proseGrams.has(g)),
+   "and none of it appears in the marker's prose: " + caseOnly.filter(g => proseGrams.has(g)).join(" | "));
+
+console.log("--- 5b. the pages are what the generator produces, now");
+// "Generated, not written" is only true if the committed pages ARE the output.
+// Regenerated into a scratch directory with the shipped pipeline and compared.
+{
+  const os = require("node:os");
+  const cp = require("node:child_process");
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "t36-"));
+  cp.execFileSync(process.execPath, [path.join(ROOT, "docs/mockups/13-business-report.build.mjs")],
+    { env: Object.assign({}, process.env, { MOCKUP_OUT: tmp }), stdio: "ignore" });
+  for (const f of ["13-business-report.html", "13-business-report-answering.html"]) {
+    const fresh = fs.readFileSync(path.join(tmp, f), "utf8");
+    ok(fresh === read("docs/mockups/" + f), f + " is byte-identical to a fresh run of its generator");
+  }
+  fs.rmSync(tmp, { recursive: true, force: true });
+}
 
 console.log("--- 6. the same exclusions as state 12");
 {

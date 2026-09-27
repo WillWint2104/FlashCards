@@ -195,14 +195,15 @@
 
   /* NARROW MOBILE: ONE COMPACT ROW (UX-TEST-06).
 
-     Measured rather than guessed. The four-column footer wraps at every width
-     below 660px and stands 119px tall at 390px against 63px at desktop, which is
-     14% of an 844px screen. At 390x844 that covered the marked result: the mark
-     sat at 718 to 786 with the footer starting at 725, so a student reached the
-     end of a paper and could not see what they had scored without scrolling a
-     page they had already finished. It is a shared-shell fault and it affected
-     every marked format, not only extended responses. The breakpoint is 640
-     because that is where the wrapping stops, not because it looks like a phone.
+     Measured rather than guessed, with the page's own fonts loaded. The
+     four-column footer wraps at every width below 660px and stands 119px tall at
+     390px against 63px at desktop, which is 14% of an 844px screen, starting at
+     y=725. On the extended response that put it over the marker's judgement, the
+     paragraph directly under the mark. (An earlier measurement with the web fonts
+     blocked put the mark itself under it; with Fredoka and Nunito loaded the mark
+     clears and the judgement does not.) It is a shared-shell fault and it
+     affected every marked format. The breakpoint is 640 because that is where the
+     wrapping stops, not because it looks like a phone.
 
      WHAT GOES. The item counter, and the trailing half of each label. Neither
      leaves the page: the paper bar above carries the section and the completion
@@ -211,9 +212,9 @@
      The counter is hidden at this width, not deleted, so the vocabularies stay
      distinct - completion in the bar, sequence position in the navigator.
 
-     WHAT STAYS. All three actions, and for the first time at any width they are
-     44px tall: the row was 37px and the flag 35px, both under the touch target
-     everywhere. */
+     WHAT STAYS. All three actions, 44px tall at this width. At desktop they are
+     40px and the flag 39px, under the 44px touch target; a narrow screen is where
+     a thumb uses them, so that is where they reach it. */
   @media(max-width:640px){
     .footin{gap:8px;padding:9px 12px;justify-content:space-between}
     .footin .where{display:none}
@@ -255,7 +256,7 @@
         <summary><span class="nm">Case study: Tidewater Outfitters</span><span class="act"></span></summary>
         <div class="body">
           <p>Tidewater Outfitters sells camping equipment through six stores and a website. Online sales have grown for three years while store sales have fallen. The business leases all six stores on agreements expiring within two years. Its warehouse was built for store replenishment and is now picking individual online orders, and delivery times have slipped. The owners want to keep all six stores.</p>
-          <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MjAiIGhlaWdodD0iMjQwIiB2aWV3Qm94PSIwIDAgNDIwIDI0MCI+CjxyZWN0IHdpZHRoPSI0MjAiIGhlaWdodD0iMjQwIiBmaWxsPSIjZmZmZmZmIi8+Cjx0ZXh0IHg9IjEyIiB5PSIyMiIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEzIiBmaWxsPSIjMTExIj5PbmxpbmUgb3JkZXJzIHBlciB3ZWVrLCBUaWRld2F0ZXIgT3V0Zml0dGVyczwvdGV4dD4KPGxpbmUgeDE9IjQ4IiB5MT0iMjAwIiB4Mj0iNDA0IiB5Mj0iMjAwIiBzdHJva2U9IiMxMTEiIHN0cm9rZS13aWR0aD0iMSIvPgo8bGluZSB4MT0iNDgiIHkxPSI0MCIgeDI9IjQ4IiB5Mj0iMjAwIiBzdHJva2U9IiMxMTEiIHN0cm9rZS13aWR0aD0iMSIvPgo8cmVjdCB4PSI3MiIgeT0iMTUwIiB3aWR0aD0iNDYiIGhlaWdodD0iNTAiIGZpbGw9IiMyZTdkNWIiLz4KPHJlY3QgeD0iMTUwIiB5PSIxMjIiIHdpZHRoPSI0NiIgaGVpZ2h0PSI3OCIgZmlsbD0iIzJlN2Q1YiIvPgo8cmVjdCB4PSIyMjgiIHk9Ijg4IiB3aWR0aD0iNDYiIGhlaWdodD0iMTEyIiBmaWxsPSIjMmU3ZDViIi8+CjxyZWN0IHg9IjMwNiIgeT0iNjAiIHdpZHRoPSI0NiIgaGVpZ2h0PSIxNDAiIGZpbGw9IiMyZTdkNWIiLz4KPHRleHQgeD0iODQiIHk9IjIxNiIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjExIiBmaWxsPSIjMTExIj4yMDIyPC90ZXh0Pgo8dGV4dCB4PSIxNjIiIHk9IjIxNiIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjExIiBmaWxsPSIjMTExIj4yMDIzPC90ZXh0Pgo8dGV4dCB4PSIyNDAiIHk9IjIxNiIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjExIiBmaWxsPSIjMTExIj4yMDI0PC90ZXh0Pgo8dGV4dCB4PSIzMTgiIHk9IjIxNiIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjExIiBmaWxsPSIjMTExIj4yMDI1PC90ZXh0Pgo8dGV4dCB4PSIyMCIgeT0iNDYiIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWksc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzExMSI+ODAwPC90ZXh0Pgo8dGV4dCB4PSIyMCIgeT0iMjA0IiBmb250LWZhbWlseT0ic3lzdGVtLXVpLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTEiIGZpbGw9IiMxMTEiPjA8L3RleHQ+Cjwvc3ZnPg==" alt="Bar chart: Online orders per week, Tidewater Outfitters, one bar for each year from 2022 to 2025, on a scale from 0 to 800. Each bar is taller than the one before.">
+          <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MjAiIGhlaWdodD0iMjQwIiB2aWV3Qm94PSIwIDAgNDIwIDI0MCI+CjxyZWN0IHdpZHRoPSI0MjAiIGhlaWdodD0iMjQwIiBmaWxsPSIjZmZmZmZmIi8+Cjx0ZXh0IHg9IjEyIiB5PSIyMiIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjEzIiBmaWxsPSIjMTExIj5PbmxpbmUgb3JkZXJzIHBlciB3ZWVrLCBUaWRld2F0ZXIgT3V0Zml0dGVyczwvdGV4dD4KPGxpbmUgeDE9IjQ4IiB5MT0iMjAwIiB4Mj0iNDA0IiB5Mj0iMjAwIiBzdHJva2U9IiMxMTEiIHN0cm9rZS13aWR0aD0iMSIvPgo8bGluZSB4MT0iNDgiIHkxPSI0MCIgeDI9IjQ4IiB5Mj0iMjAwIiBzdHJva2U9IiMxMTEiIHN0cm9rZS13aWR0aD0iMSIvPgo8cmVjdCB4PSI3MiIgeT0iMTUwIiB3aWR0aD0iNDYiIGhlaWdodD0iNTAiIGZpbGw9IiMyZTdkNWIiLz4KPHJlY3QgeD0iMTUwIiB5PSIxMjIiIHdpZHRoPSI0NiIgaGVpZ2h0PSI3OCIgZmlsbD0iIzJlN2Q1YiIvPgo8cmVjdCB4PSIyMjgiIHk9Ijg4IiB3aWR0aD0iNDYiIGhlaWdodD0iMTEyIiBmaWxsPSIjMmU3ZDViIi8+CjxyZWN0IHg9IjMwNiIgeT0iNjAiIHdpZHRoPSI0NiIgaGVpZ2h0PSIxNDAiIGZpbGw9IiMyZTdkNWIiLz4KPHRleHQgeD0iODQiIHk9IjIxNiIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjExIiBmaWxsPSIjMTExIj4yMDIyPC90ZXh0Pgo8dGV4dCB4PSIxNjIiIHk9IjIxNiIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjExIiBmaWxsPSIjMTExIj4yMDIzPC90ZXh0Pgo8dGV4dCB4PSIyNDAiIHk9IjIxNiIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjExIiBmaWxsPSIjMTExIj4yMDI0PC90ZXh0Pgo8dGV4dCB4PSIzMTgiIHk9IjIxNiIgZm9udC1mYW1pbHk9InN5c3RlbS11aSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjExIiBmaWxsPSIjMTExIj4yMDI1PC90ZXh0Pgo8dGV4dCB4PSIyMCIgeT0iNDYiIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWksc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzExMSI+ODAwPC90ZXh0Pgo8dGV4dCB4PSIyMCIgeT0iMjA0IiBmb250LWZhbWlseT0ic3lzdGVtLXVpLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTEiIGZpbGw9IiMxMTEiPjA8L3RleHQ+Cjwvc3ZnPg==" alt="Bar chart: Online orders per week, Tidewater Outfitters, 4 bars, one for each year from 2022 to 2025, on a scale from 0 to 800. Each bar is taller than the one before.">
         </div>
       </details>
       <h1 class="exam-prompt">You have been engaged as a consultant to Tidewater Outfitters. Recommend strategies the business could use to respond to the shift in where its customers are buying.</h1>
@@ -310,7 +311,7 @@ By changing how the warehouse works and giving the stores a role in online sales
 
       <section class="sect">
         <h2 class="secth">What your marker was told to look for</h2>
-        <p class="lede">This question's own instructions and marking points, sent to the marker with your response. It did not score them one by one, so nothing here is ticked or crossed.</p>
+        <p class="lede">This question's own instructions and marking points, sent to the marker with your response. The case study itself is not sent, so the marker cannot check how you used it. It did not score these one by one, so nothing here is ticked or crossed.</p>
         <ol class="told">
           <li>Use the case study below. Present your answer as a business report with a clear structure.</li>
           <li>Uses a report structure with headings rather than continuous prose</li>
@@ -328,7 +329,7 @@ By changing how the warehouse works and giving the stores a role in online sales
           <li class="ob">
             <h4 class="obh">The operations problem is identified precisely</h4>
             <div class="ev"><div class="lbl">In your response</div><q>The warehouse was designed to send bulk stock to six stores, so it is slow at picking single online orders, and delivery times have slipped</q></div>
-            <p>You say why the warehouse struggles, not just that it does: it was built for bulk store replenishment and is now picking single orders. That is the cause the rest of the report can build on.</p>
+            <p>You say why the warehouse struggles, not just that it does: it was designed to send bulk stock to stores, and picking single online orders is a different job. That is the cause the rest of the report can build on.</p>
           </li>
           <li class="ob">
             <h4 class="obh">This recommendation is stated but not justified</h4>
