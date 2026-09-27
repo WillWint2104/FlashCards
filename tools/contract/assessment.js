@@ -465,6 +465,68 @@ function scorePoints(q, answer) {
            weighted: mp.weighted, score: score, max: finite(q && q.marks) ? q.marks : 0 };
 }
 
+// WHAT A BUSINESS REPORT TELLS ITS MARKER, AND THROUGH WHICH DOOR.
+//
+// A business report maps to written mode "extended", and until state 13 that was
+// the whole of it at runtime. The audit found that nothing saying "report" reached
+// the marker: the worker never reads `format`, the question's `instructions` were
+// never sent, and its marking points were read by nothing at all - not by the
+// marker, and not by scorePoints either, because only a short-mode format is ever
+// graded through it. The one authored report credits "a report structure with
+// headings rather than continuous prose", and the marker was never told.
+//
+// The door already exists. `requirements.accomplish` is printed into BOTH marking
+// passes as "what a strong response accomplishes", so the report's own words go
+// through it: its instructions first, because they are the sentence that names the
+// genre, then its marking points in order, then whatever the question would have
+// sent there anyway. Nothing is written for it. A report that authors none of
+// these sends exactly what it sent before.
+//
+// Scoped to business_report on purpose. An extended response's points are just as
+// unread, but routing them changes what the marker is told about the format state
+// 12 froze, and that is its own decision rather than a side effect of this one.
+//
+// The worker keeps at most ten items of at most 300 characters and drops the rest
+// without a word (proxy/worker.js, markingInput). Marking a report against the
+// first half of its own guidance is the silent normalisation this contract exists
+// to refuse, so guidance that does not fit is refused here, whole.
+var GUIDANCE_MAX_ITEMS = 10;
+var GUIDANCE_MAX_CHARS = 300;
+
+function reportGuidance(q, accomplish) {
+  var fx = normaliseFormat(q);
+  if (!fx.ok || fx.format !== "business_report")
+    return { ok: true, applies: false, items: [], own: 0 };
+
+  var own = [];
+  if (!blank(q.instructions)) own.push(String(q.instructions).trim());
+  var mp = markingPoints(q);
+  if (mp.ok !== true) return mp;
+  mp.points.forEach(function (p) { own.push(p.text); });
+
+  var rest = Array.isArray(accomplish)
+    ? accomplish.filter(function (x) { return !blank(x); }).map(function (x) { return String(x).trim(); })
+    : [];
+  // Exact duplicates only. Two authored sentences that say nearly the same thing
+  // are the author's to merge, and guessing which one they meant is not ours.
+  var items = [];
+  own.concat(rest).forEach(function (x) { if (items.indexOf(x) < 0) items.push(x); });
+
+  if (items.length > GUIDANCE_MAX_ITEMS)
+    return refuse("REPORT_GUIDANCE_OVER_BUDGET",
+      "this business report carries " + items.length + " pieces of marking guidance and the marker can read " +
+      GUIDANCE_MAX_ITEMS + ", so it would be marked against some of them without anyone being told which were left out",
+      { items: items.length, limit: GUIDANCE_MAX_ITEMS });
+  for (var i = 0; i < items.length; i++) {
+    if (items[i].length > GUIDANCE_MAX_CHARS)
+      return refuse("REPORT_GUIDANCE_OVER_BUDGET",
+        "piece " + (i + 1) + " of this business report's marking guidance is " + items[i].length +
+        " characters and the marker can read " + GUIDANCE_MAX_CHARS + ", so the end of it would be cut off without anyone seeing",
+        { item: i + 1, chars: items[i].length, limit: GUIDANCE_MAX_CHARS });
+  }
+  return { ok: true, applies: true, items: items, own: own.length };
+}
+
 // The app's own normaliser, here so the matching rule does not depend on the
 // caller passing an equivalent one.
 function normText(s) {
@@ -491,4 +553,6 @@ module.exports = {
   curriculumFindings: curriculumFindings, subjectOverrides: subjectOverrides,
   resolveAuthority: resolveAuthority,
   markingPoints: markingPoints, scorePoints: scorePoints, normText: normText,
+  reportGuidance: reportGuidance,
+  GUIDANCE_MAX_ITEMS: GUIDANCE_MAX_ITEMS, GUIDANCE_MAX_CHARS: GUIDANCE_MAX_CHARS,
 };

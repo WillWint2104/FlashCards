@@ -715,8 +715,8 @@ module.exports = [
     // Follows the end of the list, which moves every time a suite is added, and
     // t26 is what turns that into a caught failure rather than a mutation that
     // quietly stops mutating anything. ui69 moved it; this is the fix.
-    find: '"ui68", "ui69"]',
-    replace: '"ui68"]',
+    find: '"ui69", "ui70"]',
+    replace: '"ui69"]',
     owner: "t23",
     why: "a maintained regression outside the runner is invisible, which is how twenty-eight suites rotted unnoticed",
   },
@@ -748,6 +748,75 @@ module.exports = [
     replace: "    .foot-lbl{display:inline}",
     owner: "t34",
     why: "the trailing halves of the labels are what wrapped the row onto four lines at 390px",
+  },
+  // ---- state 13: a business report's own words reach its marker ------------
+  //
+  // Nothing that said "report" reached the marker, a report writer was handed the
+  // essay skeleton, and the question's own instructions rendered nowhere. Each of
+  // these puts one of those back, or breaks the guard that keeps state 12 still.
+  {
+    id: "report-guidance-never-applies",
+    file: "tools/contract/assessment.js",
+    find: "  if (!fx.ok || fx.format !== \"business_report\")\n    return { ok: true, applies: false, items: [], own: 0 };",
+    replace: "  if (true)\n    return { ok: true, applies: false, items: [], own: 0 };",
+    owner: "t35",
+    why: "the report reached its marker indistinguishable from an essay, with its marking points read by nothing at all",
+  },
+  {
+    id: "report-guidance-drops-instructions",
+    file: "tools/contract/assessment.js",
+    find: "  if (!blank(q.instructions)) own.push(String(q.instructions).trim());",
+    replace: "",
+    owner: "t35",
+    why: "the instruction is the one sentence that names the genre, and it was the first thing never sent",
+  },
+  {
+    id: "report-guidance-truncates-silently",
+    file: "tools/contract/assessment.js",
+    find: "  if (items.length > GUIDANCE_MAX_ITEMS)\n    return refuse(",
+    replace: "  if (false)\n    return refuse(",
+    owner: "t35",
+    why: "the worker keeps ten items and drops the rest without a word, so a report would be marked against half its own guidance",
+  },
+  {
+    id: "report-guidance-widens-to-extended",
+    file: "tools/contract/assessment.js",
+    find: "  if (!fx.ok || fx.format !== \"business_report\")\n    return { ok: true, applies: false, items: [], own: 0 };",
+    replace: "  if (!fx.ok || writtenModeOf(fx.format) !== \"extended\")\n    return { ok: true, applies: false, items: [], own: 0 };",
+    owner: "t35",
+    why: "routing the extended response's points too changes what state 12's frozen marker is told, as a side effect",
+  },
+  {
+    id: "report-validator-silent-on-no-words",
+    file: "tools/contract/exam.js",
+    find: "    else if (!rg.own)\n      add(STATE.thin, \"REPORT_GUIDANCE_ABSENT\",",
+    replace: "    else if (false)\n      add(STATE.thin, \"REPORT_GUIDANCE_ABSENT\",",
+    owner: "t35",
+    why: "the paper validated publishable with zero findings while its report reached the marker as an essay",
+  },
+  {
+    id: "report-request-ignores-guidance",
+    file: "app.js",
+    find: "topic: mc.topic, requirements: reportReq,",
+    replace: "topic: mc.topic, requirements: mc.requirements,",
+    owner: "ui70",
+    why: "the contract can route every word correctly and the request can still leave the page without them",
+  },
+  {
+    id: "report-shown-essay-skeleton",
+    file: "app.js",
+    find: "    if (fx.ok && fx.format === \"business_report\") return null;\n",
+    replace: "",
+    owner: "ui70",
+    why: "a report writer was told to write body paragraphs while the question credited headings",
+  },
+  {
+    id: "leaf-instructions-render-nowhere",
+    file: "app.js",
+    find: "    const ownInstr = q.instructions ? `<p class=\"exam-instr\">${esc(q.instructions)}</p>` : \"\";",
+    replace: "    const ownInstr = \"\";",
+    owner: "ui70",
+    why: "only a parent's instructions rendered, so a leaf question's reached nobody, student or marker",
   },
   // ---- Gate 3A: curriculum identity and evaluation safety -----------------
   {

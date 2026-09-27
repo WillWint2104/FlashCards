@@ -552,6 +552,22 @@
         "This response was not marked: " + mc.why + ". Marking it against another subject's criteria would not tell you anything true about it.",
         { subject: mc.subject, max: Number(card && card.marks) || 0 });
     }
+    // A BUSINESS REPORT'S OWN WORDS, THROUGH A DOOR THE MARKER ALREADY READS.
+    //
+    // Until this, nothing that said "report" reached the marker, and the report's
+    // marking points reached nothing at all. The substrate decides what travels:
+    // the question's instructions, then its points, then whatever the question
+    // would have sent as requirements anyway, all through requirements.accomplish,
+    // which both marking passes print as "what a strong response accomplishes".
+    // For every other format this is a no-op and the request is byte-identical to
+    // what it was, which is what keeps the frozen extended response frozen.
+    const rg = ASSESS.reportGuidance(card, mc.requirements && mc.requirements.accomplish);
+    if (rg.ok !== true)
+      return ASSESS.refuse(rg.code, "This response was not marked: " + rg.why + ".",
+        { max: Number(card && card.marks) || 0 });
+    const reportReq = rg.applies && rg.items.length
+      ? Object.assign({ concepts: [], relationships: [], syllabus: "" }, mc.requirements || {}, { accomplish: rg.items })
+      : mc.requirements;
     if (state.endpoint) {
       try {
         const res = await esPostJSON(state.endpoint, {
@@ -573,7 +589,7 @@
             command: fx.directiveText
               || ((card.command || card.directive) ? undefined : (commandOf(card.prompt) || undefined)),
             subject: mc.subject, criteria: mc.criteria,
-            bands: mc.bands, bandsSource: mc.bandsSource, topic: mc.topic, requirements: mc.requirements,
+            bands: mc.bands, bandsSource: mc.bandsSource, topic: mc.topic, requirements: reportReq,
             // BOTH, and they are different things. `format` is what kind of
             // response this is; `responseType` is which of the written marker's
             // two behaviours it wants. business_report shares extended's
@@ -1823,7 +1839,14 @@
     if (f === "calculation")
       return `<input class="calcin" id="ans" inputmode="decimal" placeholder="Your answer (number)" autocomplete="off">`;
     const big = ASSESS.writtenModeOf(f) === "extended";
-    return `<textarea id="ans" class="answerbox" rows="${big ? 14 : 5}" placeholder="${big ? "Write your full response here, using blank lines between paragraphs." : "Type your answer in full sentences."}"></textarea>`;
+    // Blank lines are what the marker splits on, so they stay. What a report
+    // separates with them is sections, and telling a report writer to write
+    // paragraphs was the same essay default as the skeleton.
+    const hint = f === "business_report"
+      ? "Write your full response here, using blank lines between sections."
+      : big ? "Write your full response here, using blank lines between paragraphs."
+      : "Type your answer in full sentences.";
+    return `<textarea id="ans" class="answerbox" rows="${big ? 14 : 5}" placeholder="${hint}"></textarea>`;
   }
   // The submit row, full width below both columns. Multiple choice grades on click.
   // ---- what this answer has to do, shown BEFORE it is written -----------------
@@ -1849,6 +1872,20 @@
     // `directive` and `command` in one place and hands back the author's own
     // words, so this cannot disagree with what the marker was told.
     const fx = ASSESS.normaliseFormat(card);
+    // A BUSINESS REPORT GETS NO SHAPE, RATHER THAN THE ESSAY'S (UX-TEST-09).
+    //
+    // A report maps to written mode "extended", so it was handed introduction /
+    // each body paragraph / conclusion under a note saying the marker wanted "a
+    // sustained argument, not a list of points" - while the one authored report
+    // credits "a report structure with headings rather than continuous prose".
+    // The comment above says this cannot disagree with what the marker was told.
+    // It disagreed with the author, and the student is the one who acts on it.
+    //
+    // Nothing per question describes a report's shape except the sentence in its
+    // own instructions, and that now renders above the answer. A report scaffold
+    // is state 13b, from the doctrine in GUIDED-MODE-PLAN.md, and until then the
+    // honest shape is none.
+    if (fx.ok && fx.format === "business_report") return null;
     const extended = fx.ok && ASSESS.writtenModeOf(fx.format) === "extended";
     const verb = String((fx.ok && fx.directiveText) || commandOf(card.prompt) || "").toLowerCase();
     let rows = extended ? shapes.extended : ((shapes.commands || {})[verb] || shapes.fallback || []);
@@ -2386,6 +2423,12 @@
     const authored = item.display;
     const pos = EXAM.seq.slice(0, EXAM.pos + 1).filter(x => x.kind === "q").length;
     const num = authored || pos;
+    // THE QUESTION'S OWN INSTRUCTIONS (UX-TEST-10). Only a parent's used to render,
+    // above its parts, so a leaf question's instructions reached nobody: not the
+    // student, and not the marker either. They sit above the question's own
+    // source, because the one authored example says "use the case study below"
+    // and it should be below.
+    const ownInstr = q.instructions ? `<p class="exam-instr">${esc(q.instructions)}</p>` : "";
     app.innerHTML = `${examBar()}
       <div class="exam-wrap"><div class="exam-q">
         <div class="exam-sec small">${esc(sec.name || "")}</div>
@@ -2393,6 +2436,7 @@
         ${item.parent && item.parent.instructions ? `<p class="exam-instr">${esc(item.parent.instructions)}</p>` : ""}
         ${examSourcesHTML(item.parent, "Source")}
         <div class="exam-qhead">Question ${esc(String(num))}${authored ? "" : " of " + t.total} · ${q.marks} mark${q.marks === 1 ? "" : "s"}</div>
+        ${ownInstr}
         ${examSourcesHTML(q, "Source")}
         <div class="exam-prompt">${linkGlossary(q.prompt)}</div>
         <div id="answerzone">${answerInput(q)}</div>

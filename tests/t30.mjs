@@ -72,15 +72,31 @@ console.log("2. a package authored the modern way imports");
   // question does not have one.
   const modern = good({}, { type: undefined, format: "business_report", directive: "recommend", marks: 20 });
   const v = E.examine(modern);
-  ok(v.state === "publishable", "a declared business_report with a directive is accepted: " +
+  // ADMITTED IS THE POINT, and `publishable` was standing in for it. Since state
+  // 13 a business report with no instructions and no marking points carries one
+  // thin note, REPORT_GUIDANCE_ABSENT, because it genuinely sends its marker none
+  // of its own guidance. Thin is sittable (section 1 asserts it). What this
+  // regression guards - the door refusing a question that declares its format
+  // the modern way - is asserted exactly: sittable, and that one note and no other.
+  ok(E.isSittable(v.state) && JSON.stringify(codes(v)) === JSON.stringify(["REPORT_GUIDANCE_ABSENT"]),
+    "a declared business_report with a directive is admitted, with only the report-guidance note: " +
     v.state + " " + JSON.stringify(codes(v)));
+  const worded = good({}, { type: undefined, format: "business_report", directive: "recommend", marks: 20,
+    instructions: "Present your answer as a business report." });
+  ok(E.examine(worded).state === "publishable",
+    "and the same report with its own instructions is publishable, clean: " + E.examine(worded).state +
+    " " + JSON.stringify(codes(E.examine(worded))));
 
   A.FORMATS.forEach(f => {
     const q = { type: undefined, format: f, marks: 4, prompt: "Do the thing.", model: "m" };
     if (f === "multiple_choice") { q.choices = [{ t: "a", ok: true }, { t: "b" }]; }
     if (f === "calculation") { q.expected = 12; }
     const r = E.examine(good({}, q));
-    ok(r.state === "publishable", "every canonical format is admitted at the door — " + f + ": " +
+    // The same exception, for the same reason, and only for the report.
+    const expect = f === "business_report" ? ["REPORT_GUIDANCE_ABSENT"] : [];
+    ok(E.isSittable(r.state) && JSON.stringify(codes(r)) === JSON.stringify(expect) &&
+       (f === "business_report" || r.state === "publishable"),
+      "every canonical format is admitted at the door — " + f + ": " +
       r.state + " " + JSON.stringify(codes(r)));
   });
 

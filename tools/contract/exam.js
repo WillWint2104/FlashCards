@@ -321,6 +321,30 @@ function questionFindings(q, path) {
       "no model answer and no marking points. This question is marked from the subject's criteria alone, which is " +
       "allowed and is less specific than a paper that carries them");
 
+  // WHAT A BUSINESS REPORT CAN TELL ITS MARKER, CHECKED BEFORE A STUDENT MEETS IT.
+  //
+  // A report reaches the marker as a report only through its own words - its
+  // instructions and its marking points, routed by ASSESS.reportGuidance - because
+  // the worker never reads `format`. This paper validated as publishable with zero
+  // findings while its report question reached the marker indistinguishable from
+  // an essay, and the state 13 audit found nothing anywhere that would have said so.
+  //
+  // The accomplish list passed here mirrors markingRequirements in app.js: an
+  // authored requirements.accomplish, or the scaffold. tests/t35.mjs holds the two
+  // to the same answer, so the validator cannot pass a paper the runtime refuses.
+  if (fx.format === "business_report") {
+    var rq = q.requirements && typeof q.requirements === "object" ? q.requirements : null;
+    var rg = ASSESS.reportGuidance(q, (rq && rq.accomplish) || q.scaffold || []);
+    if (rg.ok !== true)
+      add(STATE.blocked, rg.code, rg.why +
+        ". The response would be refused when submitted, so the paper cannot be sat as it stands");
+    else if (!rg.own)
+      add(STATE.thin, "REPORT_GUIDANCE_ABSENT",
+        "a business report with no instructions and no marking points sends its marker none of its own guidance. " +
+        "Unless the prompt or the model answer names the genre, it is marked as an extended response and nothing " +
+        "about report structure can be judged");
+  }
+
   return out;
 }
 
