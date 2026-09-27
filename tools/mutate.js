@@ -145,6 +145,20 @@ function priorResults() {
 // over three mutations that had just survived. A summary that cannot see the run
 // it is summarising is worse than no summary, because it is green.
 const THIS_RUN = {};
+// WHICH MUTATION A RESULT IS A RESULT FOR, and the id alone does not say.
+//
+// A restart skipped every id already in the results file, so an entry whose
+// `find` or `replace` had been edited kept the verdict of the mutation it used to
+// be. gate-drops-a-suite follows the tail of tests/run.js and is re-pointed every
+// time a suite is added; resumed, it reported KILLED for a string that no longer
+// existed in the file, without running anything. A result now carries the
+// signature of what was actually applied, and a result whose signature does not
+// match the current entry is not a result for it.
+const crypto = require("crypto");
+function sigOf(m) {
+  return crypto.createHash("sha1")
+    .update(JSON.stringify([m.file, m.find, m.replace, m.owner])).digest("hex").slice(0, 12);
+}
 function record(r) {
   THIS_RUN[r.id] = r;
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
@@ -275,7 +289,7 @@ async function main() {
   if (!only) list = list.filter(m => !m.manualOnly);
   const sample = val("--sample");
   if (sample) list = list.slice(0, Number(sample));
-  const todo = list.filter(m => !done[m.id]);
+  const todo = list.filter(m => !done[m.id] || done[m.id].sig !== sigOf(m));
   const timeout = Number(val("--timeout") || DEFAULT_TIMEOUT_MS);
 
   console.log("MUTATION RUN — " + list.length + " selected, " +
@@ -314,7 +328,7 @@ async function main() {
     lock(m);
     const a = apply(m);
     if (!a.ok) {
-      const r = { id: m.id, owner: m.owner, verdict: "STALE", ms: Date.now() - t0, why: a.why, at: new Date().toISOString() };
+      const r = { id: m.id, sig: sigOf(m), owner: m.owner, verdict: "STALE", ms: Date.now() - t0, why: a.why, at: new Date().toISOString() };
       record(r); times.push(r.ms);
       console.log(String(n) + "/" + todo.length + " — " + m.id + " — " + secs(r.ms) + " — STALE (" + a.why + ")");
       continue;
@@ -375,7 +389,7 @@ async function main() {
     // processes that were going to go have gone.
     const after = settle(base);
     const leaked = after.browser > base.browser || after.node > base.node + 1;
-    const r = { id: m.id, owner: m.owner, file: m.file, verdict: verdict, ms: ms,
+    const r = { id: m.id, sig: sigOf(m), owner: m.owner, file: m.file, verdict: verdict, ms: ms,
                 detail: detail, why: m.why, at: new Date().toISOString(),
                 processes: after, leaked: leaked };
     record(r); times.push(ms);
