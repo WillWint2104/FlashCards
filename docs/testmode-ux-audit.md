@@ -781,6 +781,11 @@ fixed; collapsing the question's own text once marked is a new pattern that woul
 have to apply to every format; tightening spacing only moves the line for this
 prompt's length. It needs a decision.
 
+**Status after decision 16:** a mobile responsive follow-up, **non-blocking for
+desktop Test Mode v1**. The 48px footer left the mark's text about 1px clear at
+390×844 (794.94 against 796). That margin is thin. It is not reopened in this
+phase; it belongs to the consolidated mobile pass.
+
 ### UX-TEST-15 — the demo-grade path still coaches paragraphs, under em dashes
 
 Found by the state 13 review, and older than it. When the marking endpoint cannot

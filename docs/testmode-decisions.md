@@ -238,6 +238,34 @@ own bullets, an executive summary written last, no title page, a report toolbelt
 overruled. It belongs with guided writing, and whether it ever reaches a timed
 Test Mode paper is its own decision.
 
+## 16. Desktop first. State 13 is frozen for desktop; the five formats are done
+
+Desktop and web are the primary release target for Test Mode v1:
+
+- **Primary acceptance:** a desktop browser, roughly 1280px and wider, at normal
+  laptop heights. It covers website navigation and workflow, correct marking and
+  data behaviour, and accessibility on the desktop implementation.
+- **Secondary acceptance:** tablet, and narrow or mobile responsive optimisation.
+  Mobile must not break catastrophically (no overflow, no unusable controls). A
+  fold or spacing issue at 390px is not an approval gate in this phase.
+
+State 13 (business report) is **frozen for desktop** as approved. The ~1px
+score/footer clearance at 390×844 is UX-TEST-14, logged as a **mobile responsive
+follow-up, non-blocking for desktop Test Mode v1**. The footer is not touched again
+in this phase.
+
+Multiple choice, calculation, short answer, extended response and business report
+are frozen desktop states. They reopen only for a shared implementation defect.
+State 13b stays deferred. State 16 stays retired: feedback on a marked question is
+inline.
+
+Work stops going format by format. The next objective is the complete desktop
+workflow: library, import, validation, overview, sitting, navigator, submit,
+results, review. Its acceptance is the synthetic Business Studies paper run end to
+end with no source edits. The audit is `docs/desktop-workflow-audit.md`. Mobile
+gets one consolidated responsive pass once the desktop workflow is genuinely end
+to end.
+
 ## Mockup order — dependency, not numerical
 
 ```
@@ -248,5 +276,10 @@ Test Mode paper is its own decision.
   → 6 Overview → 7 Section intro → 1 Library → 3 Import → 4 Validation
   → 5 Blocked → 2 Empty
 ```
+
+Superseded after decision 16 by the desktop workflow audit's proposal, pending
+approval: 19 Submit → 17 Results → 18 Review → 6 Overview (absorbs 7) → 1 Library
+(absorbs 2) → 3+4 Import and validation (absorbs 5). That is six pages for the ten
+remaining states.
 
 The hardest interaction model first, then propagated outward.
