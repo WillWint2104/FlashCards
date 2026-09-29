@@ -212,6 +212,18 @@ is deliberately NOT done: the response-type line still says "extended response"
 and the case study still does not reach the marker, both of which need a worker
 change.
 
+## 14a. Amended: what the marker is sent is what the question authored, for every written format
+
+Decision 14 scoped the channel to business reports so that state 12's request
+stayed byte-identical. That protected a correctness fault - an extended
+response's own marking points reached nothing - so the scope is now the general
+rule: authored assessment requirements that bear on marking reach the written
+marker, whatever the written format. A business report additionally sends its
+own instructions and its case study, and both passes are told its format. A
+correctness improvement is allowed to change a frozen state's request; state 12
+was re-verified rather than held byte-identical, and no teaching material was
+added to any request.
+
 ## 15. State 13 answers minimally now; the report doctrine is state 13b
 
 State 13's answering surface is the extended response's, with the contradiction

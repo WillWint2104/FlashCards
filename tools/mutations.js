@@ -715,8 +715,8 @@ module.exports = [
     // Follows the end of the list, which moves every time a suite is added, and
     // t26 is what turns that into a caught failure rather than a mutation that
     // quietly stops mutating anything. ui69 moved it; this is the fix.
-    find: '"ui69", "ui70"]',
-    replace: '"ui69"]',
+    find: '"ui70", "ui71"]',
+    replace: '"ui70"]',
     owner: "t23",
     why: "a maintained regression outside the runner is invisible, which is how twenty-eight suites rotted unnoticed",
   },
@@ -749,23 +749,31 @@ module.exports = [
     owner: "t34",
     why: "the trailing halves of the labels are what wrapped the row onto four lines at 390px",
   },
-  // ---- state 13: a business report's own words reach its marker ------------
+  // ---- what the written marker is sent (state 13, UX-TEST-11 and -12) -----
   //
-  // Nothing that said "report" reached the marker, a report writer was handed the
-  // essay skeleton, and the question's own instructions rendered nowhere. Each of
-  // these puts one of those back, or breaks the guard that keeps state 12 still.
+  // Nothing that said "report" reached the marker, an extended response's own
+  // points reached nothing, and a report's marker was never shown its case study.
+  // Each of these puts one of those back.
   {
-    id: "report-guidance-never-applies",
+    id: "guidance-never-applies",
     file: "tools/contract/assessment.js",
-    find: "  if (!fx.ok || fx.format !== \"business_report\")\n    return { ok: true, applies: false, items: [], own: 0 };",
+    find: "  if (!fx.ok || !writtenModeOf(fx.format))\n    return { ok: true, applies: false, items: [], own: 0 };",
     replace: "  if (true)\n    return { ok: true, applies: false, items: [], own: 0 };",
     owner: "t35",
-    why: "the report reached its marker indistinguishable from an essay, with its marking points read by nothing at all",
+    why: "a question's own marking points were read by nothing at runtime, not the marker and not scorePoints",
+  },
+  {
+    id: "guidance-report-only-again",
+    file: "tools/contract/assessment.js",
+    find: "  if (!fx.ok || !writtenModeOf(fx.format))\n    return { ok: true, applies: false, items: [], own: 0 };",
+    replace: "  if (!fx.ok || fx.format !== \"business_report\")\n    return { ok: true, applies: false, items: [], own: 0 };",
+    owner: "t35",
+    why: "scoped to reports, an extended response's four authored points reached nothing (UX-TEST-12)",
   },
   {
     id: "report-guidance-drops-instructions",
     file: "tools/contract/assessment.js",
-    find: "  if (!blank(q.instructions)) own.push(q.instructions.trim());",
+    find: "  if (report && !blank(q.instructions)) own.push(q.instructions.trim());",
     replace: "",
     owner: "t35",
     why: "the instruction is the one sentence that names the genre, and it was the first thing never sent",
@@ -776,47 +784,79 @@ module.exports = [
     find: "  if (items.length > GUIDANCE_MAX_ITEMS)\n    return refuse(",
     replace: "  if (false)\n    return refuse(",
     owner: "t35",
-    why: "the worker keeps ten items and drops the rest without a word, so a report would be marked against half its own guidance",
-  },
-  {
-    id: "report-guidance-widens-to-extended",
-    file: "tools/contract/assessment.js",
-    find: "  if (!fx.ok || fx.format !== \"business_report\")\n    return { ok: true, applies: false, items: [], own: 0 };",
-    replace: "  if (!fx.ok || writtenModeOf(fx.format) !== \"extended\")\n    return { ok: true, applies: false, items: [], own: 0 };",
-    owner: "t35",
-    why: "routing the extended response's points too changes what state 12's frozen marker is told, as a side effect",
+    why: "the worker keeps ten items and drops the rest without a word, so a question would be marked against half its own guidance",
   },
   {
     id: "report-validator-silent-on-no-words",
     file: "tools/contract/exam.js",
-    find: "    else if (!rg.items.length)\n      add(STATE.thin, \"REPORT_GUIDANCE_ABSENT\",",
-    replace: "    else if (false)\n      add(STATE.thin, \"REPORT_GUIDANCE_ABSENT\",",
+    find: "    else if (fx.format === \"business_report\" && !rg.items.length)",
+    replace: "    else if (false)",
     owner: "t35",
-    why: "the paper validated publishable with zero findings while its report reached the marker as an essay",
+    why: "the paper validated publishable with zero findings while its report reached the marker saying nothing of what it must do",
   },
   {
     id: "report-request-ignores-guidance",
     file: "app.js",
-    find: "topic: mc.topic, requirements: reportReq,",
+    find: "topic: mc.topic, requirements: guidedReq,",
     replace: "topic: mc.topic, requirements: mc.requirements,",
     owner: "ui70",
     why: "the contract can route every word correctly and the request can still leave the page without them",
   },
   {
-    id: "report-shown-essay-skeleton",
+    id: "source-context-not-sent",
     file: "app.js",
-    find: "    if (fx.ok && fx.format === \"business_report\") return null;\n",
+    find: "            stimulusContext: sc.text || undefined,",
     replace: "",
     owner: "ui70",
-    why: "a report writer was told to write body paragraphs while the question credited headings",
+    why: "a report was told to use its case study and marked by a model sent stimulus: true and nothing else (UX-TEST-11)",
   },
   {
-    id: "leaf-instructions-render-nowhere",
+    id: "worker-drops-format",
+    file: "proxy/worker.js",
+    find: "    format: [\"short_answer\", \"extended_response\", \"business_report\"].indexOf(b.format) >= 0 ? b.format : \"\",",
+    replace: "    format: \"\",",
+    owner: "t35",
+    why: "the worker threw format away and told both passes a business report was an extended response",
+  },
+  {
+    id: "worker-source-in-pass-2-only",
+    file: "proxy/worker.js",
+    find: "    sourceBlock(f), // pass 1 reads the same source the judgement will, or the two passes weigh different evidence",
+    replace: "",
+    owner: "t35",
+    why: "the diagnosis pass would read the response without the source it was written from, and the two passes would judge different evidence",
+  },
+  {
+    id: "chart-reader-rounds",
+    file: "tools/contract/exam.js",
+    find: "    if (Math.abs(v - Math.round(v)) > 0.01) return why(\"its bars do not read to whole values on the labelled axis\");",
+    replace: "",
+    owner: "t35",
+    why: "a value rounded from a bar height is a number nobody authored, handed to a marker as if it were",
+  },
+  {
+    id: "source-unrepresented-dropped-silently",
+    file: "tools/contract/exam.js",
+    find: "            lines.push(\"[An image was shown to the student here. It is not included, because \" + chart.why + \".]\");",
+    replace: "",
+    owner: "t35",
+    why: "a marker not told a chart existed judges the response as though the student had nothing to use",
+  },
+  {
+    id: "demo-tells-a-report-paragraphs",
     file: "app.js",
-    find: "    const ownInstr = reportInstrHTML(q);",
-    replace: "    const ownInstr = \"\";",
+    find: "    const unit = report ? \"section\" : \"paragraph\";",
+    replace: "    const unit = \"paragraph\";",
     owner: "ui70",
-    why: "only a parent's instructions rendered, so a leaf question's reached nobody, student or marker",
+    why: "the fallback told a business report to write paragraphs after its shape and placeholder had stopped (UX-TEST-15)",
+  },
+  {
+    id: "footer-chrome-back-to-63",
+    file: "docs/mockups/13-business-report.html",
+    find: "    .footin{gap:8px;padding:1.5px 12px;justify-content:space-between}",
+    replace: "    .footin{gap:8px;padding:9px 12px;justify-content:space-between}",
+    owner: "ui71",
+    why: "at 63px the footer sat 14px over the business report's score at 390x844, measured with the real fonts",
   },
   // ---- state 13, the faults the adversarial review found ------------------
   {
@@ -841,15 +881,15 @@ module.exports = [
     // Reproduces the original fault exactly - stringify and carry on - so an
     // assertion catches it. Dropping the guard alone makes .trim() throw on an
     // object, and a crash is not the fault this entry names.
-    find: "  if (q.instructions != null && typeof q.instructions !== \"string\")\n    return refuse(\"INSTRUCTIONS_MALFORMED\",",
-    replace: "  if (q.instructions != null && typeof q.instructions !== \"string\") q = Object.assign({}, q, { instructions: String(q.instructions) });\n  if (false)\n    return refuse(\"INSTRUCTIONS_MALFORMED\",",
+    find: "  if (report && q.instructions != null && typeof q.instructions !== \"string\")\n    return refuse(\"INSTRUCTIONS_MALFORMED\",",
+    replace: "  if (report && q.instructions != null && typeof q.instructions !== \"string\") q = Object.assign({}, q, { instructions: String(q.instructions) });\n  if (false)\n    return refuse(\"INSTRUCTIONS_MALFORMED\",",
     owner: "t35",
     why: "object instructions reached the student and the marker as \"[object Object]\"",
   },
   {
     id: "report-refusal-filed-as-blocked",
     file: "tools/contract/exam.js",
-    find: "      add(rg.code === \"REPORT_GUIDANCE_OVER_BUDGET\" ? STATE.unsupported : STATE.malformed, rg.code, rg.why +",
+    find: "      add(rg.code === \"MARKING_GUIDANCE_OVER_BUDGET\" ? STATE.unsupported : STATE.malformed, rg.code, rg.why +",
     replace: "      add(STATE.blocked, rg.code, rg.why +",
     owner: "t35",
     why: "blocked means a dependency that does not resolve, and named the wrong problem for whoever has to fix the paper",
@@ -912,9 +952,9 @@ module.exports = [
     id: "report-marker-cites-the-case-study",
     file: "docs/mockups/13-business-report.html",
     find: "to show why it is the right size of response.</p>",
-    replace: "to show why it is the right size of response for 800 orders a week.</p>",
+    replace: "to show why it is the right size of response for 900 orders a week.</p>",
     owner: "t36",
-    why: "the marker is never sent the case study, so a figure only the case study carries is one it could not know",
+    why: "a figure in the marker's prose that nothing it was sent contains is one it could not have had",
   },
   // ---- Gate 3A: curriculum identity and evaluation safety -----------------
   {

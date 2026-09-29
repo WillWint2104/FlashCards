@@ -29,6 +29,7 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log("  FAIL:", 
 // Not tests. Each one is named rather than matched by a pattern, because a
 // pattern is how a test file starts being treated as machinery.
 const SUPPORT = {
+  "fontcache.js": "serves the mockups' own web fonts from a gitignored cache to the suites that measure folds (ui71)",
   "env.js": "shared helpers: the fixture urls, the picker walks, the ladder climb",
   "run.js": "the runner itself",
   "gate.js": "the tiers",

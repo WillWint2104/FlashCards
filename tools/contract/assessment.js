@@ -465,58 +465,52 @@ function scorePoints(q, answer) {
            weighted: mp.weighted, score: score, max: finite(q && q.marks) ? q.marks : 0 };
 }
 
-// WHAT A BUSINESS REPORT TELLS ITS MARKER, AND THROUGH WHICH DOOR.
+// WHAT A WRITTEN QUESTION TELLS ITS MARKER ABOUT WHAT IT IS ASSESSING.
 //
-// A business report maps to written mode "extended", and until state 13 that was
-// the whole of it at runtime. The audit found that nothing saying "report" reached
-// the marker: the worker never reads `format`, the question's `instructions` were
-// never sent, and its marking points were read by nothing at all - not by the
-// marker, and not by scorePoints either, because only a short-mode format is ever
-// graded through it. The one authored report credits "a report structure with
-// headings rather than continuous prose", and the marker was never told.
+// The rule: authored assessment requirements that bear on the marking reach the
+// written marker, whatever the written format. For every written format that is
+// the question's marking points. A business report additionally sends its own
+// instructions first, because they are the sentence that names the genre.
+// Nothing is written for a question: one that authors neither sends what it
+// sent before.
 //
-// The door already exists. `requirements.accomplish` is printed into BOTH marking
-// passes as "what a strong response accomplishes", so the report's own words go
-// through it: its instructions first, because they are the sentence that names the
-// genre, then its marking points in order, then whatever the question would have
-// sent there anyway. Nothing is written for it. A report that authors none of
-// these sends exactly what it sent before.
+// This started as business-report-only (state 13), scoped so that state 12's
+// request stayed byte-identical. That kept an extended response's authored
+// points reaching nothing at all (UX-TEST-12), which is a correctness fault, not
+// a design to protect, so the scope is now every written format.
 //
-// Scoped to business_report on purpose. An extended response's points are just as
-// unread, but routing them changes what the marker is told about the format state
-// 12 froze, and that is its own decision rather than a side effect of this one.
+// The door is `requirements.accomplish`, which both marking passes print as "what
+// a strong response accomplishes". Points travel as their text only: whether they
+// carry marks is the app's business (scorePoints), and a marker told "2 marks"
+// against a point would read it as an allocation the paper may not have made.
 //
 // The worker keeps at most ten items of at most 300 characters and drops the rest
-// without a word (proxy/worker.js, markingInput). Marking a report against the
-// first half of its own guidance is the silent normalisation this contract exists
-// to refuse, so guidance that does not fit is refused here, whole.
+// without a word (proxy/worker.js, markingInput). Marking against the first half of
+// a question's own guidance is the silent normalisation this contract refuses, so
+// guidance that does not fit is refused here, whole.
 var GUIDANCE_MAX_ITEMS = 10;
 var GUIDANCE_MAX_CHARS = 300;
 
-// WHAT A QUESTION SENDS AS requirements.accomplish, decided in one place.
-//
-// markingRequirements in app.js and the paper validator in exam.js each derived
-// this with their own copy of the same expression, and tests/t35.mjs checked the
-// validator against a THIRD copy, so "the validator and the runtime agree" was a
-// test of a string against itself. All three now call this.
+// WHAT A QUESTION ALREADY SENT AS requirements.accomplish, decided in one place.
+// markingRequirements in app.js and the paper validator both call this, so they
+// cannot derive different lists.
 function accomplishOf(q) {
   return (q && q.requirements && q.requirements.accomplish) || (q && q.scaffold) || [];
 }
 
-function reportGuidance(q, accomplish) {
+function markerGuidance(q, accomplish) {
   var fx = normaliseFormat(q);
-  if (!fx.ok || fx.format !== "business_report")
+  if (!fx.ok || !writtenModeOf(fx.format))
     return { ok: true, applies: false, items: [], own: 0 };
+  var report = fx.format === "business_report";
 
-  // Instructions are text or absent. An object or a list was stringified into
-  // "[object Object]" or a comma-joined line and sent to the marker as the first
-  // thing a strong response accomplishes, while the student saw the same - the
-  // silent normalisation this contract refuses everywhere else.
-  if (q.instructions != null && typeof q.instructions !== "string")
+  // A report's instructions are text or absent. An object or a list used to be
+  // stringified into "[object Object]" and shown to the student and the marker.
+  if (report && q.instructions != null && typeof q.instructions !== "string")
     return refuse("INSTRUCTIONS_MALFORMED",
       "this business report's instructions are not text, so they could not be shown or sent as they were written");
   var own = [];
-  if (!blank(q.instructions)) own.push(q.instructions.trim());
+  if (report && !blank(q.instructions)) own.push(q.instructions.trim());
   var mp = markingPoints(q);
   if (mp.ok !== true) return mp;
   mp.points.forEach(function (p) { own.push(p.text); });
@@ -530,18 +524,18 @@ function reportGuidance(q, accomplish) {
   own.concat(rest).forEach(function (x) { if (items.indexOf(x) < 0) items.push(x); });
 
   if (items.length > GUIDANCE_MAX_ITEMS)
-    return refuse("REPORT_GUIDANCE_OVER_BUDGET",
-      "this business report carries " + items.length + " pieces of marking guidance and the marker can read " +
+    return refuse("MARKING_GUIDANCE_OVER_BUDGET",
+      "this question carries " + items.length + " pieces of marking guidance and the marker can read " +
       GUIDANCE_MAX_ITEMS + ", so it would be marked against some of them without anyone being told which were left out",
       { items: items.length, limit: GUIDANCE_MAX_ITEMS });
   for (var i = 0; i < items.length; i++) {
     if (items[i].length > GUIDANCE_MAX_CHARS)
-      return refuse("REPORT_GUIDANCE_OVER_BUDGET",
-        "piece " + (i + 1) + " of this business report's marking guidance is " + items[i].length +
+      return refuse("MARKING_GUIDANCE_OVER_BUDGET",
+        "piece " + (i + 1) + " of this question's marking guidance is " + items[i].length +
         " characters and the marker can read " + GUIDANCE_MAX_CHARS + ", so the end of it would be cut off without anyone seeing",
         { item: i + 1, chars: items[i].length, limit: GUIDANCE_MAX_CHARS });
   }
-  return { ok: true, applies: true, items: items, own: own.length };
+  return { ok: true, applies: true, items: items, own: own.length, report: report };
 }
 
 // The app's own normaliser, here so the matching rule does not depend on the
@@ -570,6 +564,6 @@ module.exports = {
   curriculumFindings: curriculumFindings, subjectOverrides: subjectOverrides,
   resolveAuthority: resolveAuthority,
   markingPoints: markingPoints, scorePoints: scorePoints, normText: normText,
-  reportGuidance: reportGuidance, accomplishOf: accomplishOf,
+  markerGuidance: markerGuidance, accomplishOf: accomplishOf,
   GUIDANCE_MAX_ITEMS: GUIDANCE_MAX_ITEMS, GUIDANCE_MAX_CHARS: GUIDANCE_MAX_CHARS,
 };

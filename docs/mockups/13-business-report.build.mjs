@@ -5,13 +5,13 @@
 //   tests/fixtures/bus-practice-paper.json   the question - prompt, instructions,
 //                                            case study, marking points - as authored
 //   13-business-report.fixture.json          the student's report and one model review
-//   the SHIPPED contract and worker          reportGuidance() decides what the marker
+//   the SHIPPED contract and worker          markerGuidance() decides what the marker
 //                                            is sent; finalize() decides what comes back
 //
 // So the page cannot show a marking point the question does not author, a list the
 // marker was not sent, or a quotation snapSentences did not locate. The one thing
 // this page adds to state 12's pattern is "What your marker was told to look for",
-// and that list is ASSESS.reportGuidance(q14).items, computed here, not copied.
+// and that list is ASSESS.markerGuidance(q14).items, computed here, not copied.
 //
 //   node docs/mockups/13-business-report.build.mjs
 import { createRequire } from "node:module";
@@ -32,9 +32,13 @@ if (ASSESS.normaliseFormat(q).format !== "business_report") throw new Error("q14
 const fx = JSON.parse(fs.readFileSync(path.join(HERE, "13-business-report.fixture.json"), "utf8"));
 const r = finalize(JSON.parse(JSON.stringify(fx.review)), q.marks, fx.answer,
                    null, fx.criteria, false, "extended", null);
-// What the marker is sent, by the same function the app sends it with.
-const rg = ASSESS.reportGuidance(q, []);
+// What the marker is sent, by the same functions the app sends it with: the
+// question's guidance, and the case study it was told to use.
+const PAPER = require("../../tools/contract/exam.js");
+const rg = ASSESS.markerGuidance(q, ASSESS.accomplishOf(q));
 if (rg.ok !== true) throw new Error("q14's guidance is refused: " + rg.why);
+const sc = PAPER.sourceContext([{ stimulus: sec.source }, q]);
+if (sc.ok !== true || sc.unrepresented.length) throw new Error("q14's case study cannot be sent whole");
 
 // ---- what the payload supports, and only that ------------------------------
 const esc = s => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -72,7 +76,7 @@ const ALT = `Bar chart: ${labels[0]}, ${bars.length} bars` +
 
 const report = {
   mark: r.score + " of " + r.max, mood,
-  sentToMarker: rg.items.length,
+  sentToMarker: rg.items.length, caseStudySent: sc.text.length,
   anchoredCount: anchored.length, acrossCount: across.length,
   everyQuoteVerbatim: anchored.every(o => fx.answer.includes(o.quote)),
   grounded: r.checks.grounded, prose: r.checks.prose,
@@ -333,9 +337,16 @@ ${TOK}
 
      WHAT STAYS. All three actions, 44px tall at this width. At desktop they are
      40px and the flag 39px, under the 44px touch target; a narrow screen is where
-     a thumb uses them, so that is where they reach it. */
+     a thumb uses them, so that is where they reach it.
+
+     HOW TALL IT IS. 1.5px above and below the 44px targets, plus the 1px top
+     border: 48px. It was 9px each side, 63px, and at 390x844 that put the footer
+     14px over "15 of 20" on the business report, measured with the real fonts.
+     At 48px the score's line ends at 794.94 and the footer starts at 796; at 49px
+     the margin was 0.06px, which is not a margin. The targets did not shrink;
+     only the chrome around them did. */
   @media(max-width:640px){
-    .footin{gap:8px;padding:9px 12px;justify-content:space-between}
+    .footin{gap:8px;padding:1.5px 12px;justify-content:space-between}
     .footin .where{display:none}
     .foot-lbl{display:none}
     .footin .btn.sm,.footin .flag{min-height:44px;padding-left:14px;padding-right:14px;
@@ -397,7 +408,7 @@ ${r.rubric.map(c => `          <li class="crit">
 
       <section class="sect">
         <h2 class="secth">What your marker was told to look for</h2>
-        <p class="lede">This question's own instructions and marking points, sent to the marker with your response. The case study itself is not sent, so the marker cannot check how you used it. It did not score these one by one, so nothing here is ticked or crossed.</p>
+        <p class="lede">This question's own instructions and marking points, sent to the marker with your response and the case study. It did not score them one by one, so nothing here is ticked or crossed.</p>
         <ol class="told">
 ${rg.items.map(x => `          <li>${esc(x)}</li>`).join("\n")}
         </ol>

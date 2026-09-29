@@ -214,9 +214,16 @@
 
      WHAT STAYS. All three actions, 44px tall at this width. At desktop they are
      40px and the flag 39px, under the 44px touch target; a narrow screen is where
-     a thumb uses them, so that is where they reach it. */
+     a thumb uses them, so that is where they reach it.
+
+     HOW TALL IT IS. 1.5px above and below the 44px targets, plus the 1px top
+     border: 48px. It was 9px each side, 63px, and at 390x844 that put the footer
+     14px over "15 of 20" on the business report, measured with the real fonts.
+     At 48px the score's line ends at 794.94 and the footer starts at 796; at 49px
+     the margin was 0.06px, which is not a margin. The targets did not shrink;
+     only the chrome around them did. */
   @media(max-width:640px){
-    .footin{gap:8px;padding:9px 12px;justify-content:space-between}
+    .footin{gap:8px;padding:1.5px 12px;justify-content:space-between}
     .footin .where{display:none}
     .foot-lbl{display:none}
     .footin .btn.sm,.footin .flag{min-height:44px;padding-left:14px;padding-right:14px;
@@ -311,7 +318,7 @@ By changing how the warehouse works and giving the stores a role in online sales
 
       <section class="sect">
         <h2 class="secth">What your marker was told to look for</h2>
-        <p class="lede">This question's own instructions and marking points, sent to the marker with your response. The case study itself is not sent, so the marker cannot check how you used it. It did not score these one by one, so nothing here is ticked or crossed.</p>
+        <p class="lede">This question's own instructions and marking points, sent to the marker with your response and the case study. It did not score them one by one, so nothing here is ticked or crossed.</p>
         <ol class="told">
           <li>Use the case study below. Present your answer as a business report with a clear structure.</li>
           <li>Uses a report structure with headings rather than continuous prose</li>

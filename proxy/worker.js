@@ -76,7 +76,7 @@ function markCriteria(raw) {
 // guarantee behind "the plan is context, not marks": it holds even if this prompt
 // is edited, and the only way to break it is to add a field to PASS2_FIELDS.
 // =============================================================================
-const DIAG_SYSTEM = `You are reading one student's extended response and describing exactly what is on the page. You are not the marker. You give no marks, no band, no grade and no overall verdict, and you never say whether the response is good.
+const DIAG_SYSTEM = `You are reading one student's written response and describing exactly what is on the page. You are not the marker. You give no marks, no band, no grade and no overall verdict, and you never say whether the response is good.
 
 Report only what the student actually wrote, and quote them. Every observation must carry a short verbatim quote copied exactly from the response, because an observation you cannot quote is discarded before the marker sees it. Copy the words as they appear. Never quote the question, the plan, the scaffold or your own paraphrase.
 
@@ -247,7 +247,7 @@ catch (e) { DIAG_SAFE = false; DIAG_UNSAFE_WHY = String(e.message || e); }
 // The grading prompt. Every model sentence, starter, reason, descriptor and
 // explanation must be in writable Year 12 English with NO em-dashes, so it
 // reads as something a student could actually write.
-const SYSTEM = `You are an experienced HSC marker for the SUBJECT named in the request, building a paragraph-by-paragraph review that teaches a student to improve their extended response. Mark as a specialist in that subject: use its terminology, its conventions and the kind of evidence it expects, never another subject's.
+const SYSTEM = `You are an experienced HSC marker for the SUBJECT named in the request, building a paragraph-by-paragraph review that teaches a student to improve their written response. Mark as a specialist in that subject: use its terminology, its conventions and the kind of evidence it expects, never another subject's.
 
 Mark honestly. Flag every real fault, even if that means most of a paragraph is marked, because leniency teaches a student that a flawed answer is nearly perfect. The marks must be consistent with what you flag: a paragraph with several weak sentences cannot score near full marks, and the total is the sum of the paragraph marks.
 
@@ -261,7 +261,7 @@ Each issue carries a three-rung ladder: Clear, Better, Band 6. Every rung must b
 
 Build every rung out of what is already in this student's response and in the question. Never lift a sentence from the reference answer, the scaffold or any material supplied with the request. A rung is a better version of what THEY wrote, not a model answer for them to memorise.
 
-Return the rubric exactly as the RESPONSE TYPE in the request directs. For an extended response that means one entry per MARKING CRITERION named in the request, in the order given, using those exact criterion names, each with marks, a one-line descriptor and band descriptors, setting here to true on the band the response sits in, and the rubric marks consistent with the paragraph marks. For a short answer it means an empty rubric, because band criteria describe an extended response and say nothing useful about a three-mark answer.
+Return the rubric exactly as the RESPONSE TYPE in the request directs. For an extended response or a business report that means one entry per MARKING CRITERION named in the request, in the order given, using those exact criterion names, each with marks, a one-line descriptor and band descriptors, setting here to true on the band the response sits in, and the rubric marks consistent with the paragraph marks. For a short answer it means an empty rubric, because band criteria describe extended writing and say nothing useful about a three-mark answer.
 
 A DIAGNOSIS of this response comes with the request. It lists what the student actually wrote, quoted from their own page, and every quote in it has already been checked against their response. Use it as your evidence. It carries no marks and no verdict, so the judgement is entirely yours, but do not contradict a quoted observation without saying why.
 
@@ -366,7 +366,7 @@ const REVIEW_TOOL = {
       rubric: {
         type: "array",
         maxItems: 4,
-        description: "For an extended response, one entry per marking criterion named in the request, in that order, using those exact names. For a short answer, an empty array.",
+        description: "For an extended response or a business report, one entry per marking criterion named in the request, in that order, using those exact names. For a short answer, an empty array.",
         items: {
           type: "object",
           properties: {
@@ -863,6 +863,7 @@ export default {
     // ---- PASS 1: diagnose what is actually on the page (no marks) -----------
     const diagnosis = await diagnose({
       subject: markSubject, prompt, command, marks, topic: ctx.topic, responseType: ctx.responseType,
+      format: ctx.format, stimulusContext: ctx.stimulusContext,
       requirements: ctx.requirements, validContent: ctx.validContent, plan: ctx.plan,
       response: paras, answer,
     }, env);
@@ -873,7 +874,8 @@ export default {
       userMessage = pass2Message({
         subject: markSubject, criteria, bands: ctx.bands, bandsSource: ctx.bandsSource,
         command, marks, prompt, topic: ctx.topic, requirements: ctx.requirements,
-        responseType: ctx.responseType, stimulus: ctx.stimulus, blocks: ctx.blocks,
+        responseType: ctx.responseType, format: ctx.format, stimulus: ctx.stimulus,
+        stimulusContext: ctx.stimulusContext, blocks: ctx.blocks,
         reference: String(model_answer || "").slice(0, 1600), vocab, scaffold: scaffoldText, faults: faultsText, rubric: ctx.rubric,
         diagnosis: diagnosisText(diagnosis),
         offPathway: offPathwayCount(diagnosis, ctx.validContent.pathways.length > 0),
@@ -1184,6 +1186,19 @@ function diagnosisText(d) {
 
 // Pass 1's message. This is the ONLY place the student's plan and our authored
 // argument pathways appear. Pass 1 cannot award a mark, so nothing here can.
+// What the response IS, in words, for both passes. The format decides the name;
+// the response type decides only how it is marked. Nothing here is a directive:
+// the directive travels separately, in the QUESTION line, as the author wrote it.
+function responseKindWords(f) {
+  if (f.format === "business_report") return "business report";
+  return f.responseType === "short" ? "short answer" : "extended response";
+}
+// The source block, identical in both passes, or nothing when there is none.
+function sourceBlock(f) {
+  return f.stimulusContext
+    ? `SOURCE MATERIAL THE STUDENT WAS GIVEN (authored, exactly as the student saw it, except where a note says something could not be included. Judge whether the response uses it, and whether its claims are supported by it, against this text and nothing else):\n${f.stimulusContext}`
+    : "";
+}
 function diagMessage(f) {
   const req = f.requirements || {};
   const listOr = (a, none) => (Array.isArray(a) && a.length ? a.map((x, i) => `${i + 1}. ${x}`).join("\n") : none);
@@ -1199,15 +1214,16 @@ function diagMessage(f) {
   const evidence = (vc.evidence || []).map(x => `- ${x.label}: ${x.fact}`).join("\n");
   return [
     `SUBJECT: ${f.subject || "(unspecified)"}`,
-    `RESPONSE TYPE: ${f.responseType === "short" ? "short answer" : "extended response"}, worth ${f.marks} marks. Describe it as what it is. A short answer has no introduction or conclusion to be missing.`,
+    `RESPONSE TYPE: ${responseKindWords(f)}, worth ${f.marks} marks. Describe it as what it is. A short answer has no introduction or conclusion to be missing.`,
     `QUESTION${f.command ? " (" + f.command + ")" : ""} (${f.marks} marks)${f.topic ? " [" + f.topic + "]" : ""}:\n${f.prompt}`,
+    sourceBlock(f), // pass 1 reads the same source the judgement will, or the two passes weigh different evidence
     `WHAT THIS QUESTION REQUIRES:\nconcepts: ${listOr(req.concepts, "(not specified)")}\nrelationships to demonstrate: ${listOr(req.relationships, "(not specified)")}\nwhat a strong response accomplishes: ${listOr(req.accomplish, "(not specified)")}${req.syllabus ? "\nsyllabus scope: " + req.syllabus : ""}`,
     `ARGUMENT PATHWAYS WE ANTICIPATED (a menu, NOT the correct answers. A different defensible argument is valid and you must record it as valid):\n${pathways || "(none provided)"}`,
     `CONCEPTS:\n${concepts || "(none provided)"}`,
     `VERIFIED EVIDENCE AVAILABLE TO THE STUDENT:\n${evidence || "(none provided)"}`,
     `THE STUDENT'S PLAN (what they intended. It is NOT proof they wrote it. Only the response can show that):\n${planText}`,
     `STUDENT RESPONSE (numbered paragraphs):\n${f.response}`,
-  ].join("\n\n");
+  ].filter(Boolean).join("\n\n");
 }
 
 // Everything the plan says, as one string, so its phrases can be kept out of pass 2.
@@ -1266,7 +1282,7 @@ async function diagnose(f, env) {
 // authored argument pathways are absent by construction, so no prompt edit can let
 // them score. Adding a key here is the only way to change that, and it throws
 // loudly rather than leaking quietly.
-const PASS2_FIELDS = ["subject", "criteria", "bands", "bandsSource", "rubric", "command", "marks", "prompt", "topic", "requirements", "reference", "vocab", "scaffold", "faults", "diagnosis", "offPathway", "responseType", "stimulus", "blocks", "response"];
+const PASS2_FIELDS = ["subject", "criteria", "bands", "bandsSource", "rubric", "command", "marks", "prompt", "topic", "requirements", "reference", "vocab", "scaffold", "faults", "diagnosis", "offPathway", "responseType", "format", "stimulus", "stimulusContext", "blocks", "response"];
 
 // How to mark THIS kind of response. A short answer is not a miniature essay: it
 // earns its marks by doing what the directive verb asks at the depth the mark
@@ -1276,7 +1292,7 @@ const PASS2_FIELDS = ["subject", "criteria", "bands", "bandsSource", "rubric", "
 function responseTypeRule(f) {
   const marks = Math.max(1, Math.round(Number(f.marks) || 1));
   if (f.responseType !== "short") {
-    return `RESPONSE TYPE: extended response, worth ${marks} marks. Mark it against the marking criteria and the band expectations above, and return one rubric entry per criterion.`;
+    return `RESPONSE TYPE: ${responseKindWords(f)}, worth ${marks} marks. Mark it as ${f.format === "business_report" ? "a business report" : "an extended response"} against the marking criteria and the band expectations above, and return one rubric entry per criterion.`;
   }
   const verb = f.command ? `The directive verb is "${f.command}", so mark whether the response does THAT.` : "Mark whether the response does what the question actually asks.";
   return [
@@ -1312,6 +1328,7 @@ function pass2Message(bag) {
       `BAND EXPECTATIONS (${f.bandsSource || "general HSC band expectations"}):\n${(f.bands || []).map(b => `${b.range}: ${b.text}`).join("\n") || "(none provided)"}`,
     f.rubric ? `THE MARKING GUIDE THE STUDENT SUPPLIED (aim the judgement at this where it differs from the general expectations):\n${f.rubric}` : "",
     `QUESTION${f.command ? " (" + f.command + ")" : ""} (${f.marks} marks)${f.topic ? " [" + f.topic + "]" : ""}:\n${f.prompt}`,
+    sourceBlock(f),
     `WHAT THIS QUESTION REQUIRES:\nconcepts: ${listOr(req.concepts, "(not specified)")}\nrelationships to demonstrate: ${listOr(req.relationships, "(not specified)")}\nwhat a strong response accomplishes: ${listOr(req.accomplish, "(not specified)")}${req.syllabus ? "\nsyllabus scope: " + req.syllabus : ""}`,
     responseTypeRule(f),
     `REFERENCE, WHAT A TOP ANSWER CAN COVER (a guide, never a checklist, and never the only valid answer):\n${f.reference || "(none provided)"}`,
@@ -1585,7 +1602,18 @@ function markingInput(body) {
     // A short answer is marked as a short answer. Anything else is an extended
     // response, which keeps every older client on exactly its current behaviour.
     responseType: b.responseType === "short" ? "short" : "extended",
+    // WHAT KIND OF RESPONSE THIS IS, which is a different question from which of
+    // the two marking behaviours it wants. A business report is marked with the
+    // extended behaviour and is still a business report: the worker used to throw
+    // `format` away at this line and then tell both passes it was an "extended
+    // response". Only the written formats are accepted; anything else is dropped.
+    format: ["short_answer", "extended_response", "business_report"].indexOf(b.format) >= 0 ? b.format : "",
     stimulus: !!b.stimulus,
+    // THE SOURCE MATERIAL THE STUDENT WAS GIVEN, as the app's contract built it
+    // from what was authored (tools/contract/exam.js sourceContext). The cap is the
+    // contract's SOURCE_MAX_CHARS, and the app refuses rather than send more, so
+    // this slice never cuts anything it is given.
+    stimulusContext: str(b.stimulusContext, 4000),
     topic: str(b.topic, 120),
     rubric: str(b.rubric, 3000),
     bandsSource: str(b.bandsSource, 80),

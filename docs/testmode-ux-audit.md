@@ -793,3 +793,60 @@ endpoint..." and the next step "This is a structural check only — ..."). State
 removed the paragraph default from a report's placeholder and shape; this path still
 has it. Logged rather than fixed with state 13, because it is every format's fallback
 and not the report's.
+
+### State 13 correctness pass — UX-TEST-11, -12, -14 and -15 FIXED, and the report's format carried through
+
+**UX-TEST-11, fixed.** The source material the student was given now reaches the
+marker, in both passes, as `stimulusContext`. It is built by
+`PAPER.sourceContext` from what was authored and nothing else: text and captions
+verbatim; an SVG bar chart as its title and one value per bar, read by a strict
+reader that accepts only a fully labelled axis and bars that read to whole values,
+with a sentence saying how the values were read; anything else declared to the
+marker in words as shown-but-not-included, and reported to the author by the
+validator as `SOURCE_NOT_REPRESENTED`. The budget is the worker's own 4000
+characters, refused whole rather than cut. A part is sent its parent's source; a
+section's source is included first. The student-facing caveat that the case study
+was not sent is gone.
+
+**The format, fixed.** The worker kept `format` nowhere. It now accepts the three
+written formats, and both passes say "business report" for one, with the directive
+- recommend - travelling separately in the question line. No "report" directive
+exists or was created. Where the shared system prompts still speak of an extended
+response, it is a rule about the extended marking behaviour and now names the
+business report beside it.
+
+**UX-TEST-12, fixed.** Authored marking points reach the written marker for every
+written format, as text, without mark values. A business report additionally sends
+its own instructions, first. State 12 was re-verified rather than held
+byte-identical: its request gained exactly one field, `requirements`, carrying its
+four points (3140 to 3506 bytes), and nothing else moved. Its generated pages are
+unchanged, because the worker's post-processing is untouched.
+
+**UX-TEST-14, fixed.** The narrow sticky footer is 48px: 1.5px above and below the
+44px targets. At 390x844, with the real fonts, the business report's score now ends
+at 794.94 against a footer at 796. Every marked page clears. `tests/ui71.js` holds
+this with Fredoka and Nunito served from a local cache and proven loaded, and
+fails if they are not.
+
+**UX-TEST-15, fixed.** The degraded demo grade counts a business report in
+sections and never tells it to write paragraphs; an extended response keeps its
+paragraph language. The three em dashes on that path are gone.
+
+### UX-TEST-16 — the request already carries teaching material
+
+Found while establishing the general rule for UX-TEST-12. Every written marking
+request already sends `vocab` (printed as REQUIRED METALANGUAGE), `scaffold`
+(printed as a shape the answer can follow) and, where no requirements are
+authored, the scaffold again as `requirements.accomplish`. For exam questions these
+are empty in every authored paper; for study cards and Essay Practice they are
+populated. By the rule that teaching scaffolds and vocabulary assistance should not
+reach the marker, they should not be there. They predate state 13 and nothing of
+that kind was added; removing them changes Essay Practice marking, which is its own
+decision.
+
+### UX-TEST-17 — should state 12 show "What your marker was told to look for"?
+
+State 13 shows the question's own guidance beside its result because it is sent to
+the marker. Since UX-TEST-12 an extended response's points are sent too, so the
+same section would be true on state 12's marked page. State 12 is frozen; this is
+logged for the consistency sweep.

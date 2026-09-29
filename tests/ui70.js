@@ -12,10 +12,12 @@
 // with headings rather than continuous prose". The question's own instructions
 // rendered nowhere. And the request carried nothing that said "report".
 //
-// The other half is what must NOT move. The extended response is state 12's
-// format and it is frozen; its request is pinned here key by key, and measured
-// against the pre-change build it was byte-identical - 3140 bytes for q15 with
-// this suite's own answer, which is the figure a re-run reproduces.
+// And the request now carries what the question authored for its marker: the
+// report's case study (UX-TEST-11), its format through both passes, and - for the
+// extended response too - its own marking points (UX-TEST-12). The extended
+// response's request is therefore NOT byte-identical to state 12's any more, on
+// purpose: it gained exactly one field, requirements, carrying its four points,
+// and this suite pins that it gained nothing else.
 const { chromium, T } = require('./env');
 const path = require('path');
 
@@ -24,10 +26,12 @@ let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  FAIL:', m); } };
 
 const paper = require('./fixtures/bus-practice-paper.json');
+const PAPER = require('../tools/contract/exam.js');
 const q14 = paper.sections[2].questions[0];
 const q15 = paper.sections[3].questions[0];
-// Every key the extended response's request carried before and after this change.
-// A key appearing here is a change to what state 12's marker is told.
+// Every key the extended response's request carried BEFORE state 13. A key
+// appearing beyond these is a change to what state 12's marker is told, and the
+// only one allowed is requirements, carrying its own authored points.
 const EXT_KEYS = ['answer', 'bands', 'bandsSource', 'code', 'command', 'criteria', 'format', 'marks',
   'model_answer', 'prompt', 'responseType', 'stimulus', 'subject'];
 // The report's request before state 13, captured from the pre-change build. It has
@@ -35,7 +39,7 @@ const EXT_KEYS = ['answer', 'bands', 'bandsSource', 'code', 'command', 'criteria
 // the paper without one, which the audit logged - so JSON drops the undefined key.
 const REPORT_KEYS_BEFORE = EXT_KEYS.filter(k => k !== 'model_answer');
 
-async function sit(b, section, answer, storedPaper) {
+async function sit(b, section, answer, storedPaper, unreachable) {
   const ctx = await b.newContext({ viewport: { width: 1280, height: 1000 } });
   // A paper already in a student's storage is not re-validated when it is sat, so
   // a paper saved before the validator learned a rule reaches the runtime whatever
@@ -51,6 +55,8 @@ async function sit(b, section, answer, storedPaper) {
     const s = JSON.parse(r.request().postData() || '{}');
     if (s.action === 'coach') return r.fulfill({ status: 200, contentType: 'application/json', body: '{"nudges":[]}' });
     body = s;
+    // The degraded path: the marker cannot be reached, so the app grades a demo.
+    if (unreachable) return r.abort();
     await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
       summary: 'ok', score: 10, total: 10, max: 20, paragraphs: [], rubric: [], overall: { summary: 'ok' },
       criteria: [], next_steps: [], missing_vocabulary: [], checks: {} }) });
@@ -108,13 +114,19 @@ async function sit(b, section, answer, storedPaper) {
   const want = [q14.instructions].concat(q14.points);
   ok(Array.isArray(acc) && JSON.stringify(acc) === JSON.stringify(want),
      "requirements.accomplish carries the report's own words, instruction first, points in order (" + (acc || []).length + ')');
-  ok(JSON.stringify(Object.keys(body).sort()) === JSON.stringify(REPORT_KEYS_BEFORE.concat('requirements').sort()),
-     'and requirements is the only key the report request gained: ' + Object.keys(body).sort().join(','));
+  ok(JSON.stringify(Object.keys(body).sort()) === JSON.stringify(REPORT_KEYS_BEFORE.concat('requirements', 'stimulusContext').sort()),
+     'and requirements and the source material are the only keys it gained: ' + Object.keys(body).sort().join(','));
+  // THE CASE STUDY, exactly as the contract builds it from what was authored.
+  const sc = PAPER.sourceContext([{ stimulus: paper.sections[2].source }, q14]);
+  ok(body.stimulusContext === sc.text, 'the case study travels exactly as the contract builds it (' + (body.stimulusContext || '').length + ' characters)');
+  ok(body.stimulusContext.includes(q14.stimulus.text) && /2022: 250[\s\S]*2025: 700/.test(body.stimulusContext),
+     'its text verbatim, and its chart as the four values the bars read to');
+  ok(body.stimulus === true, 'and the stimulus flag still says there was one');
 
   // Through the shipped worker: its intake, then both prompt builders.
   const ctx = W.markingInput(body);
   const base = { subject: body.subject, prompt: body.prompt, command: body.command, marks: body.marks,
-    responseType: ctx.responseType, requirements: ctx.requirements };
+    responseType: ctx.responseType, format: ctx.format, stimulusContext: ctx.stimulusContext, requirements: ctx.requirements };
   const paras = String(body.answer).split(/\n\s*\n/).map((t, i) => `P${i + 1}: ${t}`).join('\n');
   const p1 = W.diagMessage(Object.assign({}, base, { validContent: ctx.validContent, plan: ctx.plan, response: paras, answer: body.answer }));
   const p2 = W.pass2Message(Object.assign({}, base, { criteria: body.criteria, bands: ctx.bands, bandsSource: ctx.bandsSource,
@@ -124,10 +136,16 @@ async function sit(b, section, answer, storedPaper) {
   ok(want.every(x => p2.includes(x)), 'and so is the judging pass');
   ok(/report structure with headings/.test(p2),
      'including the point the audit was about, which the marker had never seen');
+  for (const [n, msg] of [['the diagnosis pass', p1], ['the judging pass', p2]]) {
+    ok(/RESPONSE TYPE: business report/.test(msg) && !/extended response/.test(msg),
+       `${n} is told it is a business report, never an extended response`);
+    ok(/QUESTION \(recommend\)/.test(msg), `${n} carries the directive, recommend, separately`);
+    ok(msg.includes(q14.stimulus.text) && /2025: 700/.test(msg), `${n} is given the case study and the chart's values`);
+  }
   ok(R.errs.length === 0, 'no page errors: ' + R.errs.join(' | '));
 
   // ---- the extended response, which must not have moved --------------------
-  console.log('--- sit the extended response (state 12, frozen)');
+  console.log('--- sit the extended response (state 12, re-verified)');
   const E = await sit(b, 'Section IV - Extended response', 'A paragraph.\n\nAnother paragraph.');
   ok(E.surface.shape && JSON.stringify(E.surface.shapeRows) === JSON.stringify(['introduction', 'each body paragraph', 'conclusion']),
      'it still gets the essay shape, which is right for an essay');
@@ -135,12 +153,21 @@ async function sit(b, section, answer, storedPaper) {
   const eb = E.body || {};
   // Printed so the figure in the docs is one a re-run reproduces.
   console.log('    extended request for q15:', JSON.stringify(eb).length, 'bytes');
-  ok(JSON.stringify(Object.keys(eb).sort()) === JSON.stringify(EXT_KEYS),
-     'its request carries exactly the keys it carried before: ' + Object.keys(eb).sort().join(','));
-  ok(!('requirements' in eb), 'no requirements appear from nowhere');
-  const flat = JSON.stringify(eb);
-  ok((q15.points || []).every(pt => !flat.includes(typeof pt === 'string' ? pt : pt.text)),
-     "none of its own marking points leak into the request: routing them is a separate decision");
+  ok(JSON.stringify(Object.keys(eb).sort()) === JSON.stringify(EXT_KEYS.concat('requirements').sort()),
+     'its request gained one key, requirements, and nothing else: ' + Object.keys(eb).sort().join(','));
+  const q15pts = (q15.points || []).map(pt => typeof pt === 'string' ? pt : pt.text);
+  ok(eb.requirements && JSON.stringify(eb.requirements.accomplish) === JSON.stringify(q15pts),
+     'carrying its own four marking points, which used to reach nothing (UX-TEST-12)');
+  ok(!('stimulusContext' in eb) && !('instructions' in eb), 'and no source it was not given, and no instructions');
+  {
+    const c = W.markingInput(eb);
+    const m2 = W.pass2Message({ subject: eb.subject, prompt: eb.prompt, command: eb.command, marks: eb.marks,
+      responseType: c.responseType, format: c.format, stimulusContext: c.stimulusContext, requirements: c.requirements,
+      criteria: eb.criteria, bands: c.bands, stimulus: c.stimulus, blocks: [], reference: '', vocab: [], scaffold: '',
+      faults: '', diagnosis: '', offPathway: 0, response: 'P1: x' });
+    ok(/RESPONSE TYPE: extended response/.test(m2) && q15pts.every(x => m2.includes(x)),
+       'its marker is still told it is an extended response, and is now given its points');
+  }
   ok(eb.format === 'extended_response' && eb.responseType === 'extended', 'and it is still an extended response');
   ok(E.errs.length === 0, 'no page errors: ' + E.errs.join(' | '));
 
@@ -167,8 +194,19 @@ async function sit(b, section, answer, storedPaper) {
      "an extended response's own instructions do not render: its surface is state 12's, unchanged");
   ok(!JSON.stringify(X.body || {}).includes('Refer to the stimulus'),
      'and they are not sent to its marker');
-  ok(JSON.stringify(Object.keys(X.body || {}).sort()) === JSON.stringify(EXT_KEYS),
-     'its request still carries exactly the keys it always has');
+  ok(JSON.stringify(Object.keys(X.body || {}).sort()) === JSON.stringify(EXT_KEYS.concat('requirements').sort()),
+     'its request carries the same keys as the extended response above');
+
+  // ---- the degraded path speaks the format's language (UX-TEST-15) ----------
+  console.log('--- the marker cannot be reached: the demo grade');
+  const D = await sit(b, 'Section III - Business report', 'Executive summary\nA report.\n\nFindings\nMore.', null, true);
+  ok(/demo grade/i.test(D.sheet) && /section\(s\)/.test(D.sheet) && /Development \(length & sections\)/.test(D.sheet),
+     'a report is counted in sections: ' + JSON.stringify(D.sheet.slice(0, 140)));
+  ok(!/paragraph/i.test(D.sheet), 'and is never told to write paragraphs');
+  ok(!/\u2014/.test(D.sheet), 'with no em dash anywhere it reads');
+  const DE = await sit(b, 'Section IV - Extended response', 'A paragraph.\n\nAnother paragraph.', null, true);
+  ok(/paragraph\(s\)/.test(DE.sheet) && /4 to 5 paragraphs/.test(DE.sheet) && !/\u2014/.test(DE.sheet),
+     'while an extended response keeps its paragraph language');
 
   console.log(`\n${pass} passed, ${fail} failed`);
   await b.close();

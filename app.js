@@ -377,6 +377,20 @@
     return (p.sections || []).some(sec => (sec.questions || []).some(q =>
       q === card || PAPER.partsOf(q).indexOf(card) >= 0)) ? p : null;
   }
+  // Every holder of source material the student saw for this question, outermost
+  // first: its section, then (for a part) its parent, then the question itself.
+  // A study card or an Essay Practice question is its own only holder.
+  function examHoldersOf(card) {
+    const owner = examOwns(card);
+    if (!owner) return [card];
+    for (const sec of owner.sections || []) for (const q of sec.questions || []) {
+      // A section keeps its source under `source`, as examRender draws it.
+      const secH = { stimulus: sec.source };
+      if (q === card) return [secH, card];
+      if (PAPER.partsOf(q).indexOf(card) >= 0) return [secH, q, card];
+    }
+    return [card];
+  }
   function markingContext(card) {
     // THE PAPER THIS CARD IS ACTUALLY IN, by identity, or none.
     //
@@ -552,22 +566,28 @@
         "This response was not marked: " + mc.why + ". Marking it against another subject's criteria would not tell you anything true about it.",
         { subject: mc.subject, max: Number(card && card.marks) || 0 });
     }
-    // A BUSINESS REPORT'S OWN WORDS, THROUGH A DOOR THE MARKER ALREADY READS.
-    //
-    // Until this, nothing that said "report" reached the marker, and the report's
-    // marking points reached nothing at all. The substrate decides what travels:
-    // the question's instructions, then its points, then whatever the question
-    // would have sent as requirements anyway, all through requirements.accomplish,
-    // which both marking passes print as "what a strong response accomplishes".
-    // For every other format this is a no-op and the request is byte-identical to
-    // what it was, which is what keeps the frozen extended response frozen.
-    const rg = ASSESS.reportGuidance(card, ASSESS.accomplishOf(card));
+    // WHAT THE QUESTION ITSELF SAYS IT IS ASSESSING, through a door the marker
+    // already reads. The substrate decides what travels: a business report's
+    // instructions, then the question's marking points, then whatever it sent as
+    // requirements anyway, all as requirements.accomplish, which both marking
+    // passes print as "what a strong response accomplishes". Every written format:
+    // an extended response's own points used to reach nothing (UX-TEST-12).
+    const rg = ASSESS.markerGuidance(card, ASSESS.accomplishOf(card));
     if (rg.ok !== true)
       return ASSESS.refuse(rg.code, "This response was not marked: " + rg.why + ".",
         { max: Number(card && card.marks) || 0 });
-    const reportReq = rg.applies && rg.items.length
+    const guidedReq = rg.applies && rg.items.length
       ? Object.assign({ concepts: [], relationships: [], syllabus: "" }, mc.requirements || {}, { accomplish: rg.items })
       : mc.requirements;
+    // THE SOURCE MATERIAL THE STUDENT WAS GIVEN, sent to the marker as authored
+    // (UX-TEST-11). A report was told to use its case study and marked by a model
+    // that was sent `stimulus: true` and nothing else. The substrate builds the
+    // text deterministically - text verbatim, a readable bar chart as its values,
+    // anything else declared as not included - and refuses rather than cut it.
+    const sc = PAPER.sourceContext(examHoldersOf(card));
+    if (sc.ok !== true)
+      return ASSESS.refuse(sc.code, "This response was not marked: " + sc.why + ".",
+        { max: Number(card && card.marks) || 0 });
     if (state.endpoint) {
       try {
         const res = await esPostJSON(state.endpoint, {
@@ -589,16 +609,16 @@
             command: fx.directiveText
               || ((card.command || card.directive) ? undefined : (commandOf(card.prompt) || undefined)),
             subject: mc.subject, criteria: mc.criteria,
-            bands: mc.bands, bandsSource: mc.bandsSource, topic: mc.topic, requirements: reportReq,
+            bands: mc.bands, bandsSource: mc.bandsSource, topic: mc.topic, requirements: guidedReq,
             // BOTH, and they are different things. `format` is what kind of
             // response this is; `responseType` is which of the written marker's
             // two behaviours it wants. business_report shares extended's
-            // plumbing and says separately that it is a report. The worker does
-            // not read `format` at all; what a report's marker learns about the
-            // genre arrives as its own authored words in requirements, above.
-            // Nothing is written for it: a report that authors none sends none.
+            // plumbing and says separately that it is a report, and the worker
+            // now carries that into both passes, so a report is marked AS a
+            // report while its directive - recommend - travels on its own.
             format: fx.format,
-            responseType: mode, stimulus: !!card.stimulus,
+            responseType: mode, stimulus: !!(card.stimulus || sc.text),
+            stimulusContext: sc.text || undefined,
             rubric: card.rubric || undefined,
             plan: opts.plan, validContent: opts.validContent, blocks: opts.blocks,
             code: state.code || undefined
@@ -616,12 +636,20 @@
         return MARKED({ score: Math.min(Number(g.score) || 0, Number(card.marks) || 0),
           max: Number(card.marks) || 0, kind: "llm", fb: g });
       } catch (e) {
-        return demoEssay(card, answer, "Couldn't reach your grading endpoint (" + e.message + ") — showing a demo grade instead.");
+        return demoEssay(card, answer, "Couldn't reach your grading endpoint (" + e.message + "), so this is a demo grade instead.");
       }
     }
-    return demoEssay(card, answer, "Demo grade — connect a grading endpoint in Settings for real AI marking.");
+    return demoEssay(card, answer, "Demo grade. Connect a grading endpoint in Settings for real AI marking.");
   }
+  // THE DEGRADED PATH SPEAKS THE FORMAT'S LANGUAGE (UX-TEST-15). It used to tell a
+  // business report to aim for "4-5 paragraphs", after the report's own shape and
+  // placeholder had stopped saying paragraphs. A report is counted in sections;
+  // what is counted is the same (blank-line-separated blocks), and nothing about
+  // how a report should be structured is added here - that is state 13b.
   function demoEssay(card, answer, note) {
+    const fx = ASSESS.normaliseFormat(card);
+    const report = fx.ok && fx.format === "business_report";
+    const unit = report ? "section" : "paragraph";
     const a = norm(answer);
     const need = card.vocab || [];
     const hit = need.filter(t => a.includes(norm(t)));
@@ -632,15 +660,17 @@
               + 0.2 * Math.min(paras.length / 4, 1);
     ratio = Math.max(0.05, Math.min(0.85, ratio));
     const fb = {
-      overall: { summary: note + " Structure detected: " + paras.length + " paragraph(s), " + words + " words." },
+      overall: { summary: note + " Structure detected: " + paras.length + " " + unit + "(s), " + words + " words." },
       criteria: [
         { name: "Required metalanguage", status: need.length === 0 ? "met" : hit.length >= need.length * 0.7 ? "met" : hit.length ? "partial" : "missing",
           comment: need.length ? hit.length + " of " + need.length + " key terms used." : "No required terms set for this card." },
-        { name: "Development (length & paragraphs)", status: words >= card.marks * 30 && paras.length >= 3 ? "met" : "partial",
-          comment: "Aim for roughly " + (card.marks * 35) + "+ words across 4–5 paragraphs for " + card.marks + " marks." }
+        { name: "Development (length & " + unit + "s)", status: words >= card.marks * 30 && paras.length >= 3 ? "met" : "partial",
+          comment: report
+            ? "Aim for roughly " + (card.marks * 35) + "+ words for " + card.marks + " marks, in sections separated by blank lines."
+            : "Aim for roughly " + (card.marks * 35) + "+ words across 4 to 5 paragraphs for " + card.marks + " marks." }
       ],
       missing_vocabulary: need.filter(t => !hit.includes(t)),
-      next_steps: ["This is a structural check only — it cannot judge your reasoning. Compare your answer with the guide below, then connect an endpoint for real marking."]
+      next_steps: ["This is a structural check only, and it cannot judge your reasoning. Compare your answer with the guide below, then connect an endpoint for real marking."]
     };
     return MARKED({ score: Math.round(ratio * card.marks), max: card.marks, kind: "demo", fb });
   }

@@ -9835,58 +9835,52 @@ function scorePoints(q, answer) {
            weighted: mp.weighted, score: score, max: finite(q && q.marks) ? q.marks : 0 };
 }
 
-// WHAT A BUSINESS REPORT TELLS ITS MARKER, AND THROUGH WHICH DOOR.
+// WHAT A WRITTEN QUESTION TELLS ITS MARKER ABOUT WHAT IT IS ASSESSING.
 //
-// A business report maps to written mode "extended", and until state 13 that was
-// the whole of it at runtime. The audit found that nothing saying "report" reached
-// the marker: the worker never reads `format`, the question's `instructions` were
-// never sent, and its marking points were read by nothing at all - not by the
-// marker, and not by scorePoints either, because only a short-mode format is ever
-// graded through it. The one authored report credits "a report structure with
-// headings rather than continuous prose", and the marker was never told.
+// The rule: authored assessment requirements that bear on the marking reach the
+// written marker, whatever the written format. For every written format that is
+// the question's marking points. A business report additionally sends its own
+// instructions first, because they are the sentence that names the genre.
+// Nothing is written for a question: one that authors neither sends what it
+// sent before.
 //
-// The door already exists. `requirements.accomplish` is printed into BOTH marking
-// passes as "what a strong response accomplishes", so the report's own words go
-// through it: its instructions first, because they are the sentence that names the
-// genre, then its marking points in order, then whatever the question would have
-// sent there anyway. Nothing is written for it. A report that authors none of
-// these sends exactly what it sent before.
+// This started as business-report-only (state 13), scoped so that state 12's
+// request stayed byte-identical. That kept an extended response's authored
+// points reaching nothing at all (UX-TEST-12), which is a correctness fault, not
+// a design to protect, so the scope is now every written format.
 //
-// Scoped to business_report on purpose. An extended response's points are just as
-// unread, but routing them changes what the marker is told about the format state
-// 12 froze, and that is its own decision rather than a side effect of this one.
+// The door is `requirements.accomplish`, which both marking passes print as "what
+// a strong response accomplishes". Points travel as their text only: whether they
+// carry marks is the app's business (scorePoints), and a marker told "2 marks"
+// against a point would read it as an allocation the paper may not have made.
 //
 // The worker keeps at most ten items of at most 300 characters and drops the rest
-// without a word (proxy/worker.js, markingInput). Marking a report against the
-// first half of its own guidance is the silent normalisation this contract exists
-// to refuse, so guidance that does not fit is refused here, whole.
+// without a word (proxy/worker.js, markingInput). Marking against the first half of
+// a question's own guidance is the silent normalisation this contract refuses, so
+// guidance that does not fit is refused here, whole.
 var GUIDANCE_MAX_ITEMS = 10;
 var GUIDANCE_MAX_CHARS = 300;
 
-// WHAT A QUESTION SENDS AS requirements.accomplish, decided in one place.
-//
-// markingRequirements in app.js and the paper validator in exam.js each derived
-// this with their own copy of the same expression, and tests/t35.mjs checked the
-// validator against a THIRD copy, so "the validator and the runtime agree" was a
-// test of a string against itself. All three now call this.
+// WHAT A QUESTION ALREADY SENT AS requirements.accomplish, decided in one place.
+// markingRequirements in app.js and the paper validator both call this, so they
+// cannot derive different lists.
 function accomplishOf(q) {
   return (q && q.requirements && q.requirements.accomplish) || (q && q.scaffold) || [];
 }
 
-function reportGuidance(q, accomplish) {
+function markerGuidance(q, accomplish) {
   var fx = normaliseFormat(q);
-  if (!fx.ok || fx.format !== "business_report")
+  if (!fx.ok || !writtenModeOf(fx.format))
     return { ok: true, applies: false, items: [], own: 0 };
+  var report = fx.format === "business_report";
 
-  // Instructions are text or absent. An object or a list was stringified into
-  // "[object Object]" or a comma-joined line and sent to the marker as the first
-  // thing a strong response accomplishes, while the student saw the same - the
-  // silent normalisation this contract refuses everywhere else.
-  if (q.instructions != null && typeof q.instructions !== "string")
+  // A report's instructions are text or absent. An object or a list used to be
+  // stringified into "[object Object]" and shown to the student and the marker.
+  if (report && q.instructions != null && typeof q.instructions !== "string")
     return refuse("INSTRUCTIONS_MALFORMED",
       "this business report's instructions are not text, so they could not be shown or sent as they were written");
   var own = [];
-  if (!blank(q.instructions)) own.push(q.instructions.trim());
+  if (report && !blank(q.instructions)) own.push(q.instructions.trim());
   var mp = markingPoints(q);
   if (mp.ok !== true) return mp;
   mp.points.forEach(function (p) { own.push(p.text); });
@@ -9900,18 +9894,18 @@ function reportGuidance(q, accomplish) {
   own.concat(rest).forEach(function (x) { if (items.indexOf(x) < 0) items.push(x); });
 
   if (items.length > GUIDANCE_MAX_ITEMS)
-    return refuse("REPORT_GUIDANCE_OVER_BUDGET",
-      "this business report carries " + items.length + " pieces of marking guidance and the marker can read " +
+    return refuse("MARKING_GUIDANCE_OVER_BUDGET",
+      "this question carries " + items.length + " pieces of marking guidance and the marker can read " +
       GUIDANCE_MAX_ITEMS + ", so it would be marked against some of them without anyone being told which were left out",
       { items: items.length, limit: GUIDANCE_MAX_ITEMS });
   for (var i = 0; i < items.length; i++) {
     if (items[i].length > GUIDANCE_MAX_CHARS)
-      return refuse("REPORT_GUIDANCE_OVER_BUDGET",
-        "piece " + (i + 1) + " of this business report's marking guidance is " + items[i].length +
+      return refuse("MARKING_GUIDANCE_OVER_BUDGET",
+        "piece " + (i + 1) + " of this question's marking guidance is " + items[i].length +
         " characters and the marker can read " + GUIDANCE_MAX_CHARS + ", so the end of it would be cut off without anyone seeing",
         { item: i + 1, chars: items[i].length, limit: GUIDANCE_MAX_CHARS });
   }
-  return { ok: true, applies: true, items: items, own: own.length };
+  return { ok: true, applies: true, items: items, own: own.length, report: report };
 }
 
 // The app's own normaliser, here so the matching rule does not depend on the
@@ -9940,7 +9934,7 @@ module.exports = {
   curriculumFindings: curriculumFindings, subjectOverrides: subjectOverrides,
   resolveAuthority: resolveAuthority,
   markingPoints: markingPoints, scorePoints: scorePoints, normText: normText,
-  reportGuidance: reportGuidance, accomplishOf: accomplishOf,
+  markerGuidance: markerGuidance, accomplishOf: accomplishOf,
   GUIDANCE_MAX_ITEMS: GUIDANCE_MAX_ITEMS, GUIDANCE_MAX_CHARS: GUIDANCE_MAX_CHARS,
 };
 
@@ -10269,33 +10263,24 @@ function questionFindings(q, path) {
       "no model answer and no marking points. This question is marked from the subject's criteria alone, which is " +
       "allowed and is less specific than a paper that carries them");
 
-  // WHAT A BUSINESS REPORT CAN TELL ITS MARKER, CHECKED BEFORE A STUDENT MEETS IT.
+  // WHAT A WRITTEN QUESTION CAN TELL ITS MARKER, CHECKED BEFORE A STUDENT MEETS IT.
   //
-  // A report reaches the marker as a report only through its own words - its
-  // instructions and its marking points, routed by ASSESS.reportGuidance - because
-  // the worker never reads `format`. This paper validated as publishable with zero
-  // findings while its report question reached the marker indistinguishable from
-  // an essay, and the state 13 audit found nothing anywhere that would have said so.
-  //
-  // The accomplish list is ASSESS.accomplishOf, the same function markingRequirements
-  // in app.js calls, so the validator cannot pass a paper the runtime refuses.
-  //
-  // A refusal is filed under what it IS, by this file's own taxonomy: a point or an
-  // instruction that is not readable is malformed data; guidance this version cannot
-  // send whole is unsupported. Neither is `blocked`, which means a dependency that
-  // does not resolve while the paper itself may be perfect. All three stop a sitting.
-  if (fx.format === "business_report") {
-    var rg = ASSESS.reportGuidance(q, ASSESS.accomplishOf(q));
+  // The guidance is ASSESS.markerGuidance over ASSESS.accomplishOf - the same two
+  // functions the app sends with - so the validator cannot pass a paper the
+  // runtime refuses. A refusal is filed under what it IS, by this file's own
+  // taxonomy: unreadable data is malformed; guidance this version cannot send
+  // whole is unsupported. Neither is `blocked`, which means a dependency that does
+  // not resolve. All three stop a sitting.
+  if (ASSESS.writtenModeOf(fx.format)) {
+    var rg = ASSESS.markerGuidance(q, ASSESS.accomplishOf(q));
     if (rg.ok !== true)
-      add(rg.code === "REPORT_GUIDANCE_OVER_BUDGET" ? STATE.unsupported : STATE.malformed, rg.code, rg.why +
+      add(rg.code === "MARKING_GUIDANCE_OVER_BUDGET" ? STATE.unsupported : STATE.malformed, rg.code, rg.why +
         ". The response would be refused when submitted, so the paper cannot be sat as it stands");
-    else if (!rg.items.length)
+    else if (fx.format === "business_report" && !rg.items.length)
       add(STATE.thin, "REPORT_GUIDANCE_ABSENT",
         "a business report with no instructions, no marking points and no requirements sends its marker nothing " +
-        "that says it is a report. Unless the prompt or the model answer names the genre, it is marked as an " +
-        "extended response and nothing about report structure can be judged");
+        "that says what the report must do. It is still marked as a business report, against the subject's criteria alone");
   }
-
   return out;
 }
 
@@ -10319,8 +10304,137 @@ function resourcesOf(holder) {
   return Array.isArray(s) ? s.filter(function (x) { return x != null; }) : [s];
 }
 
+// ---------------------------------------------------------------------------
+// WHAT THE MARKER IS SHOWN OF THE SOURCE MATERIAL THE STUDENT WAS GIVEN.
+//
+// A business report is told to "use the case study below" and marked on whether
+// its recommendations are justified "against the evidence in the case study", and
+// until this the marker was sent `stimulus: true` and nothing else (UX-TEST-11).
+// This builds the marker's copy of the source, deterministically, from what was
+// authored: no model summarises or reinterprets it first.
+//
+//   - text and captions travel verbatim;
+//   - an SVG bar chart travels as its title and one value per bar, read by a
+//     strict reader that accepts only a fully labelled axis and bars that read to
+//     whole values, and says in the text how the values were read;
+//   - anything else - a photograph, a chart kind this reader does not read - is
+//     NOT represented, the marker is told in words that something it cannot see
+//     was shown to the student, and the paper validator reports it to the author.
+//
+// Bounded by SOURCE_MAX_CHARS, which is the worker's own cap, and refused whole
+// over it rather than cut.
+var SOURCE_MAX_CHARS = 4000;
+
+function svgOf(img) {
+  if (typeof img !== "string") return null;
+  var m = img.match(/^data:image\/svg\+xml(;base64)?,(.*)$/);
+  if (!m) return null;
+  try {
+    if (m[1]) return typeof Buffer !== "undefined" ? Buffer.from(m[2], "base64").toString("utf8") : decodeURIComponent(escape(atob(m[2])));
+    return decodeURIComponent(m[2]);
+  } catch (e) { return null; }
+}
+function attrOf(tag, a) {
+  var m = tag.match(new RegExp("\\s" + a + '="(-?[\\d.]+)"'));
+  return m ? Number(m[1]) : null;
+}
+// A bar chart, or null with the reason it is not one this reader will vouch for.
+function readBarChart(svg) {
+  var why = function (r) { return { ok: false, why: r }; };
+  if (/<(path|polyline|polygon|circle|ellipse|image|use)\b/i.test(svg)) return why("it draws shapes other than bars, axes and labels");
+  var size = svg.match(/<svg\b[^>]*\swidth="([\d.]+)"[^>]*\sheight="([\d.]+)"/);
+  var rects = (svg.match(/<rect\b[^>]*>/g) || []).map(function (t) {
+    return { x: attrOf(t, "x") || 0, y: attrOf(t, "y") || 0, w: attrOf(t, "width"), h: attrOf(t, "height") };
+  }).filter(function (r) { return !(size && r.w === Number(size[1]) && r.h === Number(size[2])); });
+  var lines = (svg.match(/<line\b[^>]*>/g) || []).map(function (t) {
+    return { x1: attrOf(t, "x1"), y1: attrOf(t, "y1"), x2: attrOf(t, "x2"), y2: attrOf(t, "y2") };
+  });
+  var texts = [];
+  svg.replace(/<text\b([^>]*)>([^<]*)<\/text>/g, function (_, at, body) {
+    texts.push({ x: attrOf(at, "x"), y: attrOf(at, "y"), t: body.trim() }); return _;
+  });
+  var hz = lines.filter(function (l) { return l.y1 === l.y2; }), vt = lines.filter(function (l) { return l.x1 === l.x2; });
+  if (hz.length !== 1 || vt.length !== 1) return why("it does not have exactly one baseline and one value axis");
+  var B = hz[0].y1, axisX = vt[0].x1, top = Math.min(vt[0].y1, vt[0].y2);
+  if (Math.max(vt[0].y1, vt[0].y2) !== B || !(B > top)) return why("its value axis does not stand on its baseline");
+  var ticks = texts.filter(function (x) { return x.x < axisX && /^\d+(\.\d+)?$/.test(x.t); });
+  if (ticks.length !== 2) return why("its value axis is not labelled at exactly its two ends");
+  ticks.sort(function (a, b) { return b.y - a.y; });
+  var lo = ticks[0], hi = ticks[1];
+  if (Math.abs(lo.y - B) > 8 || Math.abs(hi.y - top) > 8) return why("its axis labels do not sit at the ends of the axis");
+  var vLo = Number(lo.t), vHi = Number(hi.t);
+  var cats = texts.filter(function (x) { return x.y > B && ticks.indexOf(x) < 0; });
+  var title = texts.filter(function (x) { return x.y < top && ticks.indexOf(x) < 0; }).map(function (x) { return x.t; }).join(" ");
+  var used = texts.filter(function (x) { return ticks.indexOf(x) >= 0 || cats.indexOf(x) >= 0 || x.y < top; });
+  if (used.length !== texts.length) return why("it carries labels this reader cannot place");
+  if (!rects.length || rects.length !== cats.length) return why("its bars and its category labels do not pair one to one");
+  var bars = [];
+  for (var i = 0; i < rects.length; i++) {
+    var r = rects[i];
+    if (Math.abs(r.y + r.h - B) > 0.5) return why("a bar does not stand on the baseline");
+    var cat = cats.filter(function (c) { return c.x >= r.x && c.x <= r.x + r.w; });
+    if (cat.length !== 1) return why("a bar has no single category label under it");
+    var v = vLo + (r.h / (B - top)) * (vHi - vLo);
+    if (Math.abs(v - Math.round(v)) > 0.01) return why("its bars do not read to whole values on the labelled axis");
+    bars.push({ label: cat[0].t, value: Math.round(v), x: r.x });
+  }
+  bars.sort(function (a, b) { return a.x - b.x; });
+  return { ok: true, title: title, lo: vLo, hi: vHi, bars: bars };
+}
+
+// Every holder the student was shown source material on, outermost first: the
+// section, then a part's parent, then the question itself.
+function sourceContext(holders) {
+  var blocks = [], unrepresented = [], n = 0;
+  (holders || []).forEach(function (h) {
+    resourcesOf(h).forEach(function (r) {
+      n++;
+      var lines = [];
+      if (typeof r === "string") { lines.push(r.trim()); }
+      else if (r && typeof r === "object") {
+        if (!blank(r.caption)) lines.push(String(r.caption).trim());
+        if (!blank(r.text)) lines.push(String(r.text).trim());
+        if (r.img != null) {
+          var svg = svgOf(r.img), chart = svg ? readBarChart(svg) : { ok: false, why: "it is an image, not a chart this reader can read" };
+          if (chart.ok) {
+            lines.push("Bar chart" + (chart.title ? ": " + chart.title : "") + ". Values read from the bar heights against the labelled axis (" +
+              chart.lo + " to " + chart.hi + "):\n" + chart.bars.map(function (b) { return "  " + b.label + ": " + b.value; }).join("\n"));
+          } else {
+            lines.push("[An image was shown to the student here. It is not included, because " + chart.why + ".]");
+            unrepresented.push({ source: n, kind: "image", why: chart.why });
+          }
+        }
+        if (Array.isArray(r.charts)) r.charts.forEach(function (c) {
+          var kind = (c && c.type) || "chart";
+          lines.push("[A " + kind + " chart was shown to the student here. It is not included, because this version cannot represent it as text.]");
+          unrepresented.push({ source: n, kind: kind, why: "this version cannot represent a " + kind + " chart as text" });
+        });
+      }
+      if (lines.length) blocks.push("SOURCE " + n + ":\n" + lines.join("\n"));
+    });
+  });
+  var text = blocks.join("\n\n");
+  if (text.length > SOURCE_MAX_CHARS)
+    return ASSESS.refuse("SOURCE_OVER_BUDGET",
+      "the source material for this question is " + text.length + " characters and the marker can read " + SOURCE_MAX_CHARS +
+      ", so it would be marked against part of the source without anyone being told which part",
+      { chars: text.length, limit: SOURCE_MAX_CHARS });
+  return { ok: true, text: text, sources: n, unrepresented: unrepresented };
+}
+
 function resourceFindings(holder, path) {
   var out = [];
+  // Source material the marker cannot be sent as text is reported here, where
+  // the author can still add a text or table equivalent, rather than discovered
+  // when a marker judges use of a chart it never saw.
+  var sc = sourceContext([holder]);
+  if (sc.ok !== true)
+    out.push(finding(STATE.unsupported, sc.code, path + ".stimulus", sc.why));
+  else sc.unrepresented.forEach(function (u) {
+    out.push(finding(STATE.thin, "SOURCE_NOT_REPRESENTED", path + ".stimulus",
+      "a " + u.kind + " in this source is shown to the student but cannot be sent to the marker as text, because " + u.why +
+      ". The marker is told it was there and cannot see it. Add a text or table equivalent to the source"));
+  });
   resourcesOf(holder).forEach(function (r, i) {
     var at = path + ".stimulus" + (Array.isArray(holder.stimulus) ? "[" + i + "]" : "");
     if (typeof r === "string") return;
@@ -10594,6 +10708,7 @@ module.exports = {
   isSittable: isSittable, examine: examine,
   numberOf: numberOf, sectionMarks: sectionMarks, totals: totals,
   resourcesOf: resourcesOf, resourcesFor: resourcesFor, REFERENCE_KEYS: REFERENCE_KEYS,
+  sourceContext: sourceContext, readBarChart: readBarChart, SOURCE_MAX_CHARS: SOURCE_MAX_CHARS,
   isParent: isParent, partsOf: partsOf, labelOf: labelOf, displayNumber: displayNumber,
   marksOf: marksOf, answerables: answerables,
   totalFindings: totalFindings, duplicateFindings: duplicateFindings,
@@ -11007,6 +11122,20 @@ module.exports = {
     return (p.sections || []).some(sec => (sec.questions || []).some(q =>
       q === card || PAPER.partsOf(q).indexOf(card) >= 0)) ? p : null;
   }
+  // Every holder of source material the student saw for this question, outermost
+  // first: its section, then (for a part) its parent, then the question itself.
+  // A study card or an Essay Practice question is its own only holder.
+  function examHoldersOf(card) {
+    const owner = examOwns(card);
+    if (!owner) return [card];
+    for (const sec of owner.sections || []) for (const q of sec.questions || []) {
+      // A section keeps its source under `source`, as examRender draws it.
+      const secH = { stimulus: sec.source };
+      if (q === card) return [secH, card];
+      if (PAPER.partsOf(q).indexOf(card) >= 0) return [secH, q, card];
+    }
+    return [card];
+  }
   function markingContext(card) {
     // THE PAPER THIS CARD IS ACTUALLY IN, by identity, or none.
     //
@@ -11182,22 +11311,28 @@ module.exports = {
         "This response was not marked: " + mc.why + ". Marking it against another subject's criteria would not tell you anything true about it.",
         { subject: mc.subject, max: Number(card && card.marks) || 0 });
     }
-    // A BUSINESS REPORT'S OWN WORDS, THROUGH A DOOR THE MARKER ALREADY READS.
-    //
-    // Until this, nothing that said "report" reached the marker, and the report's
-    // marking points reached nothing at all. The substrate decides what travels:
-    // the question's instructions, then its points, then whatever the question
-    // would have sent as requirements anyway, all through requirements.accomplish,
-    // which both marking passes print as "what a strong response accomplishes".
-    // For every other format this is a no-op and the request is byte-identical to
-    // what it was, which is what keeps the frozen extended response frozen.
-    const rg = ASSESS.reportGuidance(card, ASSESS.accomplishOf(card));
+    // WHAT THE QUESTION ITSELF SAYS IT IS ASSESSING, through a door the marker
+    // already reads. The substrate decides what travels: a business report's
+    // instructions, then the question's marking points, then whatever it sent as
+    // requirements anyway, all as requirements.accomplish, which both marking
+    // passes print as "what a strong response accomplishes". Every written format:
+    // an extended response's own points used to reach nothing (UX-TEST-12).
+    const rg = ASSESS.markerGuidance(card, ASSESS.accomplishOf(card));
     if (rg.ok !== true)
       return ASSESS.refuse(rg.code, "This response was not marked: " + rg.why + ".",
         { max: Number(card && card.marks) || 0 });
-    const reportReq = rg.applies && rg.items.length
+    const guidedReq = rg.applies && rg.items.length
       ? Object.assign({ concepts: [], relationships: [], syllabus: "" }, mc.requirements || {}, { accomplish: rg.items })
       : mc.requirements;
+    // THE SOURCE MATERIAL THE STUDENT WAS GIVEN, sent to the marker as authored
+    // (UX-TEST-11). A report was told to use its case study and marked by a model
+    // that was sent `stimulus: true` and nothing else. The substrate builds the
+    // text deterministically - text verbatim, a readable bar chart as its values,
+    // anything else declared as not included - and refuses rather than cut it.
+    const sc = PAPER.sourceContext(examHoldersOf(card));
+    if (sc.ok !== true)
+      return ASSESS.refuse(sc.code, "This response was not marked: " + sc.why + ".",
+        { max: Number(card && card.marks) || 0 });
     if (state.endpoint) {
       try {
         const res = await esPostJSON(state.endpoint, {
@@ -11219,16 +11354,16 @@ module.exports = {
             command: fx.directiveText
               || ((card.command || card.directive) ? undefined : (commandOf(card.prompt) || undefined)),
             subject: mc.subject, criteria: mc.criteria,
-            bands: mc.bands, bandsSource: mc.bandsSource, topic: mc.topic, requirements: reportReq,
+            bands: mc.bands, bandsSource: mc.bandsSource, topic: mc.topic, requirements: guidedReq,
             // BOTH, and they are different things. `format` is what kind of
             // response this is; `responseType` is which of the written marker's
             // two behaviours it wants. business_report shares extended's
-            // plumbing and says separately that it is a report. The worker does
-            // not read `format` at all; what a report's marker learns about the
-            // genre arrives as its own authored words in requirements, above.
-            // Nothing is written for it: a report that authors none sends none.
+            // plumbing and says separately that it is a report, and the worker
+            // now carries that into both passes, so a report is marked AS a
+            // report while its directive - recommend - travels on its own.
             format: fx.format,
-            responseType: mode, stimulus: !!card.stimulus,
+            responseType: mode, stimulus: !!(card.stimulus || sc.text),
+            stimulusContext: sc.text || undefined,
             rubric: card.rubric || undefined,
             plan: opts.plan, validContent: opts.validContent, blocks: opts.blocks,
             code: state.code || undefined
@@ -11246,12 +11381,20 @@ module.exports = {
         return MARKED({ score: Math.min(Number(g.score) || 0, Number(card.marks) || 0),
           max: Number(card.marks) || 0, kind: "llm", fb: g });
       } catch (e) {
-        return demoEssay(card, answer, "Couldn't reach your grading endpoint (" + e.message + ") — showing a demo grade instead.");
+        return demoEssay(card, answer, "Couldn't reach your grading endpoint (" + e.message + "), so this is a demo grade instead.");
       }
     }
-    return demoEssay(card, answer, "Demo grade — connect a grading endpoint in Settings for real AI marking.");
+    return demoEssay(card, answer, "Demo grade. Connect a grading endpoint in Settings for real AI marking.");
   }
+  // THE DEGRADED PATH SPEAKS THE FORMAT'S LANGUAGE (UX-TEST-15). It used to tell a
+  // business report to aim for "4-5 paragraphs", after the report's own shape and
+  // placeholder had stopped saying paragraphs. A report is counted in sections;
+  // what is counted is the same (blank-line-separated blocks), and nothing about
+  // how a report should be structured is added here - that is state 13b.
   function demoEssay(card, answer, note) {
+    const fx = ASSESS.normaliseFormat(card);
+    const report = fx.ok && fx.format === "business_report";
+    const unit = report ? "section" : "paragraph";
     const a = norm(answer);
     const need = card.vocab || [];
     const hit = need.filter(t => a.includes(norm(t)));
@@ -11262,15 +11405,17 @@ module.exports = {
               + 0.2 * Math.min(paras.length / 4, 1);
     ratio = Math.max(0.05, Math.min(0.85, ratio));
     const fb = {
-      overall: { summary: note + " Structure detected: " + paras.length + " paragraph(s), " + words + " words." },
+      overall: { summary: note + " Structure detected: " + paras.length + " " + unit + "(s), " + words + " words." },
       criteria: [
         { name: "Required metalanguage", status: need.length === 0 ? "met" : hit.length >= need.length * 0.7 ? "met" : hit.length ? "partial" : "missing",
           comment: need.length ? hit.length + " of " + need.length + " key terms used." : "No required terms set for this card." },
-        { name: "Development (length & paragraphs)", status: words >= card.marks * 30 && paras.length >= 3 ? "met" : "partial",
-          comment: "Aim for roughly " + (card.marks * 35) + "+ words across 4–5 paragraphs for " + card.marks + " marks." }
+        { name: "Development (length & " + unit + "s)", status: words >= card.marks * 30 && paras.length >= 3 ? "met" : "partial",
+          comment: report
+            ? "Aim for roughly " + (card.marks * 35) + "+ words for " + card.marks + " marks, in sections separated by blank lines."
+            : "Aim for roughly " + (card.marks * 35) + "+ words across 4 to 5 paragraphs for " + card.marks + " marks." }
       ],
       missing_vocabulary: need.filter(t => !hit.includes(t)),
-      next_steps: ["This is a structural check only — it cannot judge your reasoning. Compare your answer with the guide below, then connect an endpoint for real marking."]
+      next_steps: ["This is a structural check only, and it cannot judge your reasoning. Compare your answer with the guide below, then connect an endpoint for real marking."]
     };
     return MARKED({ score: Math.round(ratio * card.marks), max: card.marks, kind: "demo", fb });
   }

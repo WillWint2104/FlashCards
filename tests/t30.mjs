@@ -298,7 +298,11 @@ console.log("10. a question can hang more than one thing above itself");
   ok(E.resourcesOf({}).length === 0 && E.resourcesOf(null).length === 0, "nothing is none rather than a crash");
 
   const two = good({}, { stimulus: [{ caption: "Table 1", text: "rows" }, { caption: "Figure 1", img: "data:image/png;base64,iVBOR" }] });
-  ok(E.examine(two).state === "publishable", "a question built on a table AND a figure no longer has to choose: " + E.examine(two).state);
+  // Sittable with ONE note and no other: the PNG figure cannot be sent to the
+  // marker as text, and since UX-TEST-11 the author is told so. What this line is
+  // for - two resources on one question are accepted - is unchanged.
+  ok(E.isSittable(E.examine(two).state) && JSON.stringify(codes(E.examine(two))) === '["SOURCE_NOT_REPRESENTED"]',
+    "a question built on a table AND a figure no longer has to choose: " + E.examine(two).state + " " + JSON.stringify(codes(E.examine(two))));
 
   // A caption with nothing under it is a label for a resource never attached.
   const empty = E.examine(good({}, { stimulus: { caption: "Source 1" } }));
@@ -313,7 +317,10 @@ console.log("10. a question can hang more than one thing above itself");
   ok(!A.LEGACY_TYPE.lorenz && !A.LEGACY_TYPE.incomeSource,
     "chart kinds stay out of the format table");
   const charted = E.examine(good({}, { stimulus: { caption: "Fig", charts: [{ kind: "lorenz" }] } }));
-  ok(charted.state === "publishable", "and a question whose stimulus holds one is unremarkable: " + charted.state);
+  // Unremarkable as a FORMAT: the only note is that this version cannot send a
+  // chart of that kind to the marker as text, which the author is now told.
+  ok(E.isSittable(charted.state) && JSON.stringify(codes(charted)) === '["SOURCE_NOT_REPRESENTED"]',
+    "and a question whose stimulus holds one is unremarkable as a format: " + charted.state + " " + JSON.stringify(codes(charted)));
 }
 
 console.log("11. a question may point outside the paper, and pointing is checked for shape only");

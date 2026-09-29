@@ -1,28 +1,28 @@
-// A BUSINESS REPORT'S OWN WORDS REACH ITS MARKER, AND NOTHING ELSE MOVES.
+// WHAT THE WRITTEN MARKER IS SENT, AND THAT IT IS WHAT THE QUESTION AUTHORED.
 //
-// The state 13 audit found that nothing saying "report" reached the marker. The
-// worker never reads `format` (zero occurrences in proxy/worker.js), a question's
-// `instructions` were never sent, and a report's marking points were read by
-// nothing at runtime: not the marker, and not scorePoints either, because only a
-// short-mode format is graded through it. The one authored report credits "a
-// report structure with headings rather than continuous prose" and its marker was
-// never told.
+// Three faults, all found by the state 13 audit and review:
 //
-// The fix routes the report's own words through requirements.accomplish, which
-// both marking passes already print as "what a strong response accomplishes".
-// This suite holds four things about that:
+//   UX-TEST-12  a question's own marking points reached nothing for an extended
+//               response or a business report - not the marker, not scorePoints.
+//   UX-TEST-11  a business report was told to use its case study and marked by a
+//               model sent `stimulus: true` and nothing else.
+//   format      the worker threw `format` away and told both passes a business
+//               report was an "extended response".
 //
-//   1. it applies to a business report and to nothing else;
-//   2. what travels is authored - instructions first, then points, then whatever
-//      the question sent there before - in order, and nothing is written for it;
-//   3. guidance the worker would silently truncate is refused whole, and the
-//      budget is read out of the worker rather than restated;
-//   4. the paper validator and the runtime reach the same verdict on the same
-//      question, because both derive what is sent with ASSESS.accomplishOf, so a
-//      paper that validates can always be marked.
+// The rules this suite holds:
 //
-// The browser half - that the request on the wire carries it and the extended
-// response's request does not move - is tests/ui70.js.
+//   1. authored marking points reach the written marker for EVERY written format;
+//      a business report also sends its own instructions, first; nothing is
+//      written for a question, and guidance that would be truncated is refused;
+//   2. the source material the student saw reaches both passes, built
+//      deterministically - text verbatim, a readable bar chart as its values -
+//      and what cannot be represented is SAID to the marker and the author;
+//   3. both passes are told the response's format, and the directive travels
+//      separately, as the author wrote it;
+//   4. the validator and the runtime reach the same verdict, by construction.
+//
+// The browser half - that the request leaving the page carries all of it - is
+// tests/ui70.js.
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const fs = require("node:fs");
@@ -37,166 +37,152 @@ const ROOT = path.resolve(new URL("..", import.meta.url).pathname);
 const paper = JSON.parse(fs.readFileSync(path.join(ROOT, "tests/fixtures/bus-practice-paper.json"), "utf8"));
 const q14 = paper.sections[2].questions[0];
 const q15 = paper.sections[3].questions[0];
+const q11 = paper.sections[1].questions[0];
 const clone = o => JSON.parse(JSON.stringify(o));
 
-console.log("--- 1. a business report, and nothing else");
-ok(q14.format === "business_report", "the fixture's q14 is the authored business report");
-const g14 = A.reportGuidance(q14, []);
-ok(g14.ok === true && g14.applies === true, "reportGuidance applies to it");
-for (const [name, q] of [
-  ["extended_response", q15],
-  ["short_answer", { format: "short_answer", marks: 3, prompt: "x", points: ["a"], instructions: "Answer in a sentence." }],
-  ["calculation", { format: "calculation", marks: 2, prompt: "x", expected: 1.5 }],
-  ["multiple_choice", { format: "multiple_choice", marks: 1, prompt: "x", choices: [{ t: "a", ok: true }] }],
-]) {
-  const g = A.reportGuidance(q, ["something already there"]);
-  ok(g.ok === true && g.applies === false && g.items.length === 0,
-     `${name}: does not apply, adds nothing, and does not echo what it was given`);
-}
-// The legacy compound: an essay whose bare command is "Report" IS a business
-// report to the substrate, and has to be one here too.
-const legacy = { type: "essay", command: "Report", marks: 20, prompt: "Advise the board.", points: ["Uses headings"] };
-ok(A.normaliseFormat(legacy).format === "business_report", "the legacy compound normalises to a business report");
-ok(A.reportGuidance(legacy, []).applies === true && A.reportGuidance(legacy, []).items[0] === "Uses headings",
-   "and is routed like one");
-// "Report on ..." is an ordinary extended response, by the exact-string rule.
-ok(A.reportGuidance({ type: "essay", command: "Report on the issues", marks: 20, prompt: "x", points: ["p"] }, []).applies === false,
-   "while 'Report on ...' is an extended response and is not routed");
-
-console.log("--- 2. authored words only, in the author's order");
-ok(g14.items.length === 6, "q14 sends six items: one instruction and five points (" + g14.items.length + ")");
-ok(g14.items[0] === q14.instructions.trim(), "the instruction is first, because it is the sentence that names the genre");
-ok(q14.points.every((pt, i) => g14.items[i + 1] === pt), "then every point, verbatim and in authored order");
-ok(g14.own === 6, "all six are the report's own words");
-ok(g14.items.some(x => /report structure with headings/.test(x)),
-   "including the one the audit was about: 'a report structure with headings'");
-// Object points read the same as string points - the State 11 shape rule.
-const objs = { format: "business_report", marks: 20, prompt: "x",
-  points: [{ text: "Uses headings", marks: 2 }, { text: "Recommends two strategies", hint: "h" }] };
-ok(JSON.stringify(A.reportGuidance(objs, []).items) === JSON.stringify(["Uses headings", "Recommends two strategies"]),
-   "object points travel as their text, the same way string points do");
-// Nothing is invented for a report that says nothing.
+console.log("--- 1. authored marking points reach the marker, for every written format");
+const g14 = A.markerGuidance(q14, []), g15 = A.markerGuidance(q15, []);
+ok(g14.applies && g14.items.length === 6 && g14.items[0] === q14.instructions.trim() &&
+   q14.points.every((pt, i) => g14.items[i + 1] === pt),
+   "business report: its instructions first, then its five points, verbatim and in order");
+ok(g15.applies && JSON.stringify(g15.items) === JSON.stringify(q15.points.map(p => typeof p === "string" ? p : p.text)),
+   "extended response: its four points, which used to reach nothing (UX-TEST-12): " + g15.items.length);
+const sa = { format: "short_answer", marks: 3, prompt: "x", points: ["a", { text: "b", marks: 1 }], instructions: "Use a sentence." };
+ok(JSON.stringify(A.markerGuidance(sa, []).items) === '["a","b"]',
+   "short answer: its points as text, with no mark values and without its instructions");
+ok(A.markerGuidance({ format: "extended_response", marks: 20, prompt: "x", instructions: "Refer to Source A." }, []).items.length === 0,
+   "only a business report sends its instructions: an extended response's are not report guidance");
+for (const [name, q] of [["calculation", { format: "calculation", marks: 2, prompt: "x", expected: 1.5, points: ["p"] }],
+                         ["multiple_choice", { format: "multiple_choice", marks: 1, prompt: "x", choices: [{ t: "a", ok: true }] }]])
+  ok(A.markerGuidance(q, ["x"]).applies === false && A.markerGuidance(q, ["x"]).items.length === 0,
+     `${name}: never reaches the written marker, so nothing applies`);
+const legacy = { type: "essay", command: "Report", marks: 20, prompt: "Advise.", instructions: "Write a report.", points: ["Uses headings"] };
+ok(JSON.stringify(A.markerGuidance(legacy, []).items) === '["Write a report.","Uses headings"]',
+   "the legacy compound report is a business report here too");
 const bare = { format: "business_report", marks: 20, prompt: "x" };
-const gb = A.reportGuidance(bare, []);
-ok(gb.ok === true && gb.applies === true && gb.items.length === 0 && gb.own === 0,
-   "a report with no instructions and no points sends nothing extra: no sentence is written for it");
-ok(JSON.stringify(A.reportGuidance(bare, ["already"]).items) === JSON.stringify(["already"]),
-   "and whatever the question sent before still travels, untouched");
-// Merging: own words first, then the rest, exact duplicates once, blanks dropped.
-const m = A.reportGuidance({ format: "business_report", marks: 20, prompt: "x", instructions: "  Write a report.  ", points: ["A", "B"] },
-  ["B", "", "  ", "C", "A"]);
-ok(JSON.stringify(m.items) === JSON.stringify(["Write a report.", "A", "B", "C"]),
-   "own words first, then the rest; exact duplicates once; blanks dropped; whitespace trimmed: " + JSON.stringify(m.items));
-ok(m.own === 3, "own counts the report's words, not what was merged in");
+ok(A.markerGuidance(bare, []).items.length === 0 && JSON.stringify(A.markerGuidance(bare, ["already"]).items) === '["already"]',
+   "nothing is written for a question that authors nothing, and what it sent before still travels");
+const m = A.markerGuidance({ format: "business_report", marks: 20, prompt: "x", instructions: "  Write a report.  ", points: ["A", "B"] }, ["B", "", "  ", "C", "A"]);
+ok(JSON.stringify(m.items) === '["Write a report.","A","B","C"]' && m.own === 3,
+   "own words first, then the rest; exact duplicates once; blanks dropped");
+ok(A.markerGuidance(Object.assign(clone(q14), { instructions: { text: "x" } }), []).code === "INSTRUCTIONS_MALFORMED",
+   "a report's non-text instructions are refused, not stringified to [object Object]");
+ok(A.markerGuidance({ format: "extended_response", marks: 20, prompt: "x", points: ["fine", 7] }, []).code === "POINTS_MALFORMED",
+   "a malformed point is refused by the rule markingPoints applies everywhere");
 
-console.log("--- 3. refused whole rather than truncated in silence");
-// The budget is the worker's, read from the worker. If someone changes the cap
-// there, this refusal has to move with it or it stops meaning anything.
+console.log("--- 2. refused whole rather than truncated in silence");
 const src = fs.readFileSync(path.join(ROOT, "proxy/worker.js"), "utf8");
 const cap = src.match(/accomplish:\s*strs\(rq\.accomplish,\s*(\d+),\s*(\d+)\)/);
-ok(!!cap, "the worker's accomplish cap is where this suite expects to read it");
 ok(cap && Number(cap[1]) === A.GUIDANCE_MAX_CHARS && Number(cap[2]) === A.GUIDANCE_MAX_ITEMS,
-   `the contract's budget is the worker's: ${A.GUIDANCE_MAX_ITEMS} items of ${A.GUIDANCE_MAX_CHARS} characters`);
-// And the truncation it guards against is real: the shipped intake drops the
-// eleventh item and cuts the long one, and says nothing.
+   `the guidance budget is the worker's own: ${A.GUIDANCE_MAX_ITEMS} items of ${A.GUIDANCE_MAX_CHARS} characters`);
+const scap = src.match(/stimulusContext:\s*str\(b\.stimulusContext,\s*(\d+)\)/);
+ok(scap && Number(scap[1]) === P.SOURCE_MAX_CHARS, `and so is the source budget: ${P.SOURCE_MAX_CHARS} characters`);
 const eleven = Array.from({ length: 11 }, (_, i) => "point " + (i + 1));
 ok(W.markingInput({ requirements: { accomplish: eleven } }).requirements.accomplish.length === 10,
-   "the shipped worker keeps ten of eleven items and reports nothing, which is why this is refused");
-ok(W.markingInput({ requirements: { accomplish: ["x".repeat(301)] } }).requirements.accomplish[0].length === 300,
-   "and cuts a 301-character item to 300, also in silence");
+   "the shipped intake drops an eleventh item without a word, which is why this is refused");
+ok(A.markerGuidance({ format: "extended_response", marks: 20, prompt: "x", points: eleven.slice(0, 10) }, []).ok === true, "ten fit");
+ok(A.markerGuidance({ format: "extended_response", marks: 20, prompt: "x", points: eleven }, []).code === "MARKING_GUIDANCE_OVER_BUDGET",
+   "eleven are refused, for an extended response as much as a report");
+ok(A.markerGuidance({ format: "business_report", marks: 20, prompt: "x", points: ["y".repeat(301)] }, []).code === "MARKING_GUIDANCE_OVER_BUDGET",
+   "and so is an item over 300 characters");
+const bigSrc = P.sourceContext([{ stimulus: { caption: "C", text: "z".repeat(4100) } }]);
+ok(bigSrc.ok !== true && bigSrc.code === "SOURCE_OVER_BUDGET", "a source over its budget is refused, not cut");
 
-const ten = { format: "business_report", marks: 20, prompt: "x", points: eleven.slice(0, 10) };
-ok(A.reportGuidance(ten, []).ok === true, "ten items fit");
-const over = A.reportGuidance(Object.assign(clone(ten), { instructions: "Write a report." }), []);
-ok(over.ok !== true && over.code === "REPORT_GUIDANCE_OVER_BUDGET" && over.items === 11,
-   "eleven are refused, whole, with the count");
-ok(A.reportGuidance(ten, ["one more"]).code === "REPORT_GUIDANCE_OVER_BUDGET",
-   "and the budget is on what would actually be sent, not on the report's own words alone");
-ok(A.reportGuidance(ten, ["point 1"]).ok === true,
-   "while an exact duplicate costs nothing, because it is sent once");
-ok(A.reportGuidance({ format: "business_report", marks: 20, prompt: "x", points: ["y".repeat(300)] }, []).ok === true,
-   "a 300-character item fits");
-const long = A.reportGuidance({ format: "business_report", marks: 20, prompt: "x", points: ["ok", "y".repeat(301)] }, []);
-ok(long.code === "REPORT_GUIDANCE_OVER_BUDGET" && long.item === 2 && long.chars === 301,
-   "a 301-character item is refused, naming which piece and how long");
-ok(!/—/.test(over.why + long.why), "the refusal is read by a student, so it carries no em dash");
-const mal = A.reportGuidance({ format: "business_report", marks: 20, prompt: "x", points: ["fine", 7] }, []);
-ok(mal.ok !== true && mal.code === "POINTS_MALFORMED",
-   "a malformed point is refused by the same rule markingPoints applies everywhere");
+console.log("--- 3. the source material, built from what was authored");
+const sc14 = P.sourceContext([{ stimulus: paper.sections[2].source }, q14]);
+ok(sc14.ok === true && sc14.unrepresented.length === 0, "q14's case study is represented in full");
+ok(sc14.text.includes(q14.stimulus.caption) && sc14.text.includes(q14.stimulus.text),
+   "its caption and its text travel verbatim");
+ok(/2022: 250\n  2023: 390\n  2024: 560\n  2025: 700/.test(sc14.text),
+   "and its chart travels as its four values, read from the bar heights: 250, 390, 560, 700");
+ok(/Values read from the bar heights against the labelled axis \(0 to 800\)/.test(sc14.text),
+   "saying how they were read, so the marker is not handed a table nobody authored");
+// Strict: the reader vouches only for a chart it can read exactly.
+const svg = Buffer.from(q14.stimulus.img.split(",")[1], "base64").toString("utf8");
+ok(P.readBarChart(svg.replace('y="150" width="46" height="50"', 'y="149.5" width="46" height="50.5"')).ok === false,
+   "a bar that reads to 252.5 is refused rather than rounded");
+ok(P.readBarChart(svg.replace('>800<', '>eight hundred<')).ok === false, "an axis without numeric ends is refused");
+ok(P.readBarChart(svg.replace("</svg>", '<path d="M0 0L1 1"/></svg>')).ok === false, "a chart with other shapes is refused");
+const png = P.sourceContext([{ stimulus: { caption: "Figure 1", img: "data:image/png;base64,iVBOR" } }]);
+ok(png.ok === true && png.unrepresented.length === 1 && /An image was shown to the student here\. It is not included/.test(png.text),
+   "an image it cannot read is declared to the marker in words, never silently dropped");
+const lz = P.sourceContext([{ stimulus: { caption: "Fig", charts: [{ type: "lorenz" }] } }]);
+ok(lz.unrepresented.length === 1 && /A lorenz chart was shown to the student here/.test(lz.text), "so is a chart kind it cannot represent");
+// A part's source is its parent's: q11(a) is answered from Kerbside Coffee.
+const sc11a = P.sourceContext([{ stimulus: paper.sections[1].source }, q11, q11.parts[0]]);
+ok(sc11a.ok && sc11a.text.includes(q11.stimulus.text), "a part is sent its parent's case study");
 
-console.log("--- 4. what the marker is actually told");
-// Through the shipped intake and both shipped prompt builders.
-const ctx = W.markingInput({ responseType: "extended", requirements: { accomplish: g14.items } });
-ok(ctx.requirements.accomplish.length === 6, "the worker's intake keeps all six");
+console.log("--- 4. what both passes are actually told");
+const ctx = W.markingInput({ format: "business_report", responseType: "extended", stimulus: true,
+  stimulusContext: sc14.text, requirements: { accomplish: g14.items } });
+ok(ctx.format === "business_report" && ctx.stimulusContext === sc14.text, "the intake keeps the format and the whole source");
+ok(W.markingInput({ format: "report" }).format === "", "and drops a format it does not know rather than passing it on");
 const base = { subject: "Business Studies", prompt: q14.prompt, command: "recommend", marks: 20,
-  responseType: ctx.responseType, requirements: ctx.requirements };
+  responseType: ctx.responseType, format: ctx.format, stimulusContext: ctx.stimulusContext, requirements: ctx.requirements };
 const p1 = W.diagMessage(Object.assign({}, base, { validContent: ctx.validContent, plan: ctx.plan, response: "P1: x", answer: "x" }));
 const p2 = W.pass2Message(Object.assign({}, base, { criteria: ["a"], bands: [], stimulus: true, blocks: [],
   reference: "", vocab: [], scaffold: "(none)", faults: "(none)", diagnosis: "(none)", offPathway: 0, response: "P1: x" }));
-ok(g14.items.every(x => p1.includes(x)), "pass 1 (the diagnosis) is told all six");
-ok(g14.items.every(x => p2.includes(x)), "pass 2 (the judgement) is told all six");
-ok(/what a strong response accomplishes: 1\. Use the case study below/.test(p2),
-   "under 'what a strong response accomplishes', instruction first");
-// THE RESIDUAL, asserted as what it is. No worker change was made, so the one line
-// that names the response type still calls a report an extended response. When
-// that changes, this flips and brings someone back to docs/state13-audit.md.
-ok(/RESPONSE TYPE: extended response/.test(p2),
-   "KNOWN: the response-type line still says 'extended response' - the genre travels as guidance, not as a type");
+for (const [n, msg] of [["pass 1", p1], ["pass 2", p2]]) {
+  ok(/RESPONSE TYPE: business report, worth 20 marks/.test(msg), `${n} is told it is marking a business report`);
+  ok(!/extended response/.test(msg), `${n} never calls it an extended response`);
+  ok(/QUESTION \(recommend\) \(20 marks\)/.test(msg), `${n} carries the directive separately, as authored: recommend`);
+  ok(msg.includes(q14.stimulus.text) && /2025: 700/.test(msg), `${n} is given the case study and the chart's values`);
+  ok(g14.items.every(x => msg.includes(x)), `${n} is given all six pieces of the report's guidance`);
+}
+// The system prompts are shared by every written format. Where they still say
+// "extended response" it is a rule about the extended behaviour, and every such
+// rule now names the business report beside it.
+const bare_ext = t => (t.match(/extended response(?! or a business report)/g) || []).length;
+ok(bare_ext(W.SYSTEM) === 0 && bare_ext(W.DIAG_SYSTEM) === 0,
+   "neither system prompt speaks of an extended response without also naming the business report");
+// The facts a claim would be judged against are in front of the marker: rising
+// online orders support "online demand is growing" and contradict "online orders
+// have fallen"; the owners' stated wish is there to judge "close three stores"
+// against. This proves the marker is GIVEN them. Whether a model then judges well
+// cannot be proven without calling one, and no suite here does.
+ok(p2.includes("The owners want to keep all six stores.") && /2022: 250[\s\S]*2025: 700/.test(p2),
+   "the source facts a supported or contradicted claim turns on are in pass 2, verbatim");
+const ext = W.pass2Message(Object.assign({}, base, { format: "extended_response", stimulusContext: "",
+  criteria: ["a"], bands: [], stimulus: false, blocks: [], reference: "", vocab: [], scaffold: "", faults: "", diagnosis: "", offPathway: 0, response: "P1: x" }));
+ok(/RESPONSE TYPE: extended response/.test(ext) && !/SOURCE MATERIAL/.test(ext),
+   "an extended response is still called one, and with no source there is no source block");
 
 console.log("--- 5. the validator and the runtime agree, by construction");
-// The accomplish list is derived ONCE, by ASSESS.accomplishOf. This section used to
-// hand-copy the validator's own expression as its "runtime" side, which tested a
-// string against itself. Now the source is pinned: markingRequirements, the
-// marking request and the validator each call the shared function and nothing else.
 {
   const app = fs.readFileSync(path.join(ROOT, "app.js"), "utf8");
   const exam = fs.readFileSync(path.join(ROOT, "tools/contract/exam.js"), "utf8");
   ok(/accomplish: ASSESS\.accomplishOf\(card\),/.test(app), "markingRequirements derives accomplish with ASSESS.accomplishOf");
-  ok(/ASSESS\.reportGuidance\(card, ASSESS\.accomplishOf\(card\)\)/.test(app), "the marking request routes with it");
-  ok(/ASSESS\.reportGuidance\(q, ASSESS\.accomplishOf\(q\)\)/.test(exam), "and so does the validator");
-  ok(!/card\.scaffold\) \|\| \[\]/.test(app) && !/q\.scaffold \|\| \[\]/.test(exam),
-     "and neither keeps a private copy of the derivation");
-  ok(JSON.stringify(A.accomplishOf({ requirements: { accomplish: ["a"] }, scaffold: ["s"] })) === '["a"]' &&
-     JSON.stringify(A.accomplishOf({ scaffold: ["s"] })) === '["s"]' &&
-     JSON.stringify(A.accomplishOf({ requirements: {} })) === "[]" && JSON.stringify(A.accomplishOf(null)) === "[]",
-     "accomplishOf: authored requirements win, then the scaffold, then nothing");
+  ok(/ASSESS\.markerGuidance\(card, ASSESS\.accomplishOf\(card\)\)/.test(app), "the marking request routes guidance with it");
+  ok(/PAPER\.sourceContext\(examHoldersOf\(card\)\)/.test(app), "and builds the source with the contract's sourceContext");
+  ok(/ASSESS\.markerGuidance\(q, ASSESS\.accomplishOf\(q\)\)/.test(exam), "the validator uses the same guidance functions");
+  ok(!/card\.scaffold\) \|\| \[\]/.test(app) && !/q\.scaffold \|\| \[\]/.test(exam), "and neither keeps a private copy of the derivation");
 }
-const examOf = q => { const d = clone(paper); d.sections[2].questions[0] = q; return P.examine(d); };
+const examOf = (q, si = 2) => { const d = clone(paper); d.sections[si].questions[0] = q; return P.examine(d); };
 const codes = r => r.findings.map(f => f.code);
-const real = examOf(clone(q14));
-ok(real.state === "publishable" && !codes(real).some(c => /^REPORT_/.test(c)),
-   "the real paper is publishable, with no report finding, because its report has words to route");
+ok(examOf(clone(q14)).state === "publishable" && codes(examOf(clone(q14))).length === 0,
+   "the real paper is publishable with no finding: its report has words to route and its chart can be sent");
 const noWords = clone(q14); delete noWords.instructions; delete noWords.points;
-ok(codes(examOf(noWords)).includes("REPORT_GUIDANCE_ABSENT") && examOf(noWords).state === "thin",
-   "a report with nothing to route is thin, with a note that says so");
-// The note is about what is SENT, not about which field it came from: a report
-// whose only guidance is an authored requirements.accomplish does tell its marker.
-const onlyReq = Object.assign(clone(noWords), { requirements: { accomplish: ["Uses report headings"] } });
-ok(!codes(examOf(onlyReq)).includes("REPORT_GUIDANCE_ABSENT"),
-   "no note when authored requirements carry the guidance instead, because they are sent");
+ok(JSON.stringify(codes(examOf(noWords))) === '["MARKING_SUPPORT_ABSENT","REPORT_GUIDANCE_ABSENT"]',
+   "a report with nothing to route is thin, and says why (q14 also authors no model answer, which is its own note)");
+const pngQ = Object.assign(clone(q14), { stimulus: { caption: "Case study", text: "t", img: "data:image/png;base64,iVBOR" } });
+ok(codes(examOf(pngQ)).includes("SOURCE_NOT_REPRESENTED") && P.isSittable(examOf(pngQ).state),
+   "a figure the marker cannot be sent is reported to the author, and the paper can still be sat");
 const cases = [
-  ["the real report", clone(q14), "publishable"],
-  ["eleven points", Object.assign(clone(q14), { points: eleven }), "unsupported"],
-  ["a long point", Object.assign(clone(q14), { points: ["z".repeat(301)] }), "unsupported"],
-  ["ten points plus the instruction", Object.assign(clone(q14), { points: eleven.slice(0, 10) }), "unsupported"],
-  ["eight points, the instruction and two authored accomplish items", Object.assign(clone(q14), { points: eleven.slice(0, 8), requirements: { accomplish: ["extra one", "extra two"] } }), "unsupported"],
-  ["eight points, the instruction and a two-row scaffold", Object.assign(clone(q14), { points: eleven.slice(0, 8), scaffold: ["s1", "s2"] }), "unsupported"],
-  ["a malformed point", Object.assign(clone(q14), { points: ["fine", 7] }), "malformed"],
-  ["instructions that are an object", Object.assign(clone(q14), { instructions: { text: "Use the case study." } }), "malformed"],
-  ["instructions that are a list", Object.assign(clone(q14), { instructions: ["Use the case study.", "Write a report."] }), "malformed"],
+  ["the real report", clone(q14), 2, "publishable"],
+  ["an extended response with eleven points", Object.assign(clone(q15), { points: eleven }), 3, "unsupported"],
+  ["a report with ten points and its instruction", Object.assign(clone(q14), { points: eleven.slice(0, 10) }), 2, "unsupported"],
+  ["a report with eight points, its instruction and a two-row scaffold", Object.assign(clone(q14), { points: eleven.slice(0, 8), scaffold: ["s1", "s2"] }), 2, "unsupported"],
+  ["a malformed point", Object.assign(clone(q15), { points: ["fine", 7] }), 3, "malformed"],
+  ["report instructions that are an object", Object.assign(clone(q14), { instructions: { text: "x" } }), 2, "malformed"],
+  ["a source over its budget", Object.assign(clone(q14), { stimulus: { caption: "C", text: "z".repeat(4100) } }), 2, "unsupported"],
 ];
-for (const [name, q, want] of cases) {
-  const runtime = A.reportGuidance(q, A.accomplishOf(q));
-  const v = examOf(q);
-  ok((runtime.ok !== true) === !P.isSittable(v.state),
-     `${name}: runtime ${runtime.ok === true ? "marks it" : "refuses (" + runtime.code + ")"}, validator ${P.isSittable(v.state) ? "lets it be sat" : "stops it"}`);
-  ok(v.state === want, `${name}: filed as ${want}, by exam.js's own taxonomy (${v.state})`);
+for (const [name, q, si, want] of cases) {
+  const holders = [{ stimulus: paper.sections[si].source }, q];
+  const runtimeOk = A.markerGuidance(q, A.accomplishOf(q)).ok === true && P.sourceContext(holders).ok === true;
+  const v = examOf(q, si);
+  ok(runtimeOk === P.isSittable(v.state), `${name}: runtime ${runtimeOk ? "marks it" : "refuses"}, validator ${P.isSittable(v.state) ? "lets it be sat" : "stops it"}`);
+  ok(v.state === want, `${name}: filed as ${want} (${v.state})`);
 }
-// Not `blocked`: that state means a dependency that does not resolve.
-ok(cases.every(([, q]) => examOf(q).state !== "blocked"), "no report refusal is filed as blocked");
-// And the non-string instructions never reach anyone as "[object Object]".
-const objI = Object.assign(clone(q14), { instructions: { text: "x" } });
-ok(A.reportGuidance(objI, []).code === "INSTRUCTIONS_MALFORMED", "object instructions are refused, not stringified");
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

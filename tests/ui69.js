@@ -173,6 +173,7 @@ const readFooter = (p, resultSel) => p.evaluate(sel => {
            `${s.name} ${nm}: all three trailing labels are dropped, and there are three of them`);
         ok(r.actions.every(a => a.h >= 44),
            `${s.name} ${nm}: every action is at least 44px tall (${r.actions.map(a => a.h).join(',')})`);
+        ok(r.footer.h <= 48, `${s.name} ${nm}: and the row around them is 48px at most (${r.footer.h})`);
       } else {
         // WHAT MUST NOT HAVE MOVED. The desktop and tablet footer is the one that
         // was signed off: full labels, the counter in the middle, 63px tall.
@@ -279,9 +280,9 @@ const readFooter = (p, resultSel) => p.evaluate(sel => {
     });
     ok(arrival.textClears,
        `${name}: the mark itself is on the first screen, clear of both bars (${arrival.gap}px above the footer)`);
-    if (name === 'desktop') ok(arrival.bandClears, 'desktop: and the whole band clears, padding included');
-    else ok(!arrival.bandClears && arrival.band - arrival.ft <= 16,
-            `mobile: the band's last ${arrival.band - arrival.ft}px of padding run under the footer, and only padding`);
+    // Since the narrow footer went to 48px, the whole band clears on a phone too,
+    // padding and border included, even in the harness's wider fallback face.
+    ok(arrival.bandClears, `${name}: and the whole band clears, padding included (${arrival.band} <= ${arrival.ft})`);
 
     const before = (await boxOf(p, '.qcard')).height;
     await p.click('details.submitted > summary'); await settled(p);
