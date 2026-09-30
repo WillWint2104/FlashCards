@@ -17,7 +17,7 @@
 //
 // Multiple choice and calculation are read against the paper's own key (a
 // choice's `ok`, a calculation's `expected` and `tolerance`), which is all the
-// app's gradeMC and gradeCalc do. Written answers go where the app sends them:
+// app's gradeMC and gradeCalc do, through the same ASSESS.readCalcAnswer. Written answers go where the app sends them:
 // weighted points to ASSESS.scorePoints, everything else to the marker, which
 // here is the fixture's review run through the shipped finalize().
 import { createRequire } from "node:module";
@@ -47,8 +47,9 @@ function mark(a, input, review) {
     return ASSESS.marked({ score: ch.ok ? q.marks : 0, max: q.marks, kind: "mc" });
   }
   if (f === "calculation") {
-    const got = parseFloat(String(input).replace(/[^0-9.\-]/g, ""));
-    const ok = Number.isFinite(got) && Math.abs(got - q.expected) <= q.tolerance;
+    const rd = ASSESS.readCalcAnswer(input);
+    if (rd.ok !== true) return ASSESS.refuse(rd.code, rd.why, { max: q.marks });
+    const ok = Math.abs(rd.value - q.expected) <= q.tolerance;
     return ASSESS.marked({ score: ok ? q.marks : 0, max: q.marks, kind: "calc" });
   }
   const sp = ASSESS.scorePoints(q, input);

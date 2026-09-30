@@ -144,6 +144,25 @@ async function sit(b, section, answer, storedPaper, unreachable) {
   }
   ok(R.errs.length === 0, 'no page errors: ' + R.errs.join(' | '));
 
+  // ---- UX-TEST-18: a short answer's weighted points go to the marker --------
+  // 11(a) authors two one-mark points and no phrasings to match them with. It
+  // used to be scored locally by searching the answer for each point's own
+  // description, so a full, correct answer scored 0/2.
+  console.log('--- sit 11(a), whose weighted points author no phrasings');
+  const A11 = 'Speed. Customers at the vans wait too long in the 7am to 9am morning peak, so the vans are not serving orders quickly enough.';
+  const S = await sit(b, 'Section II - Short answer', A11);
+  const sb = S.body || {};
+  ok(!!S.body && sb.answer === A11, "11(a) goes to the marker rather than being scored against its points' descriptions");
+  const pts11 = (sb.requirements || {}).accomplish || [];
+  ok(pts11.length === 2 && pts11[0] === 'Names speed, or dependability, as the objective (1 mark)',
+     'its points travel as marking requirements, with their authored weights: ' + JSON.stringify(pts11));
+  ok(/^\s*2\s*\/\s*2/.test(S.sheet) && !/key points addressed/.test(S.sheet),
+     "the mark is the marker's, and no tick or miss is inferred from a point's description: " + S.sheet.slice(0, 80));
+  const U = await sit(b, 'Section II - Short answer', A11, null, true);
+  ok(/could not be reached/.test(U.sheet) && !/demo grade/i.test(U.sheet) && !/^\s*\d+\s*\//.test(U.sheet),
+     'an unreachable marker leaves it unmarked: no demo grade, no zero: ' + U.sheet.slice(0, 120));
+  ok(!S.errs.length && !U.errs.length, 'no page errors: ' + JSON.stringify(S.errs.concat(U.errs)));
+
   // ---- the extended response, which must not have moved --------------------
   console.log('--- sit the extended response (state 12, re-verified)');
   const E = await sit(b, 'Section IV - Extended response', 'A paragraph.\n\nAnother paragraph.');

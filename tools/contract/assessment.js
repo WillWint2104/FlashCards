@@ -448,21 +448,31 @@ function scorePoints(q, answer) {
   if (mp.ok !== true) return mp;
   var a = normText(answer);
   var pts = mp.points.map(function (pt) {
-    var need = (pt.need && pt.need.length) ? pt.need : [pt.text];
+    // WHAT A POINT MAY BE MATCHED AGAINST (UX-TEST-18): the phrasings its author
+    // wrote for matching, and nothing else. A point's text describes what earns
+    // the mark - "Names speed, or dependability, as the objective" - and is not a
+    // sentence the student has to type. Searching the answer for it scored full,
+    // correct answers zero. A point with no phrasings is a marking requirement,
+    // it carries no verdict here (hit: null), and the marker judges it.
+    var matchable = !!(pt.need && pt.need.some(function (al) { return normText(al) !== ""; }));
+    if (!matchable) return { text: pt.text, hit: null, hint: pt.hint, marks: pt.marks, matchable: false };
     // A phrasing that normalises to nothing matches nothing. Without this the
     // empty string is a substring of every answer, which is precisely how an
     // unanswered question came to score full marks.
-    var hit = need.some(function (al) { var n = normText(al); return n !== "" && a.indexOf(n) !== -1; });
-    return { text: pt.text, hit: hit, hint: pt.hint, marks: pt.marks };
+    var hit = pt.need.some(function (al) { var n = normText(al); return n !== "" && a.indexOf(n) !== -1; });
+    return { text: pt.text, hit: hit, hint: pt.hint, marks: pt.marks, matchable: true };
   });
-  var hits = pts.filter(function (p) { return p.hit; }).length;
+  var hits = pts.filter(function (p) { return p.hit === true; }).length;
+  // Scored here only when the paper authored BOTH the weighting and a way to
+  // match every point. Anything less goes to the marker with its weights.
+  var local = mp.weighted && pts.length > 0 && pts.every(function (p) { return p.matchable; });
   var score = null;
   if (mp.weighted) {
     var raw = pts.reduce(function (n, p) { return p.hit ? n + p.marks : n; }, 0);
-    score = Math.min(raw, q.marks);
+    if (local) score = Math.min(raw, q.marks);
   }
   return { ok: true, points: pts, hits: hits, count: pts.length,
-           weighted: mp.weighted, score: score, max: finite(q && q.marks) ? q.marks : 0 };
+           weighted: mp.weighted, local: local, score: score, max: finite(q && q.marks) ? q.marks : 0 };
 }
 
 // WHAT A WRITTEN QUESTION TELLS ITS MARKER ABOUT WHAT IT IS ASSESSING.
@@ -513,7 +523,11 @@ function markerGuidance(q, accomplish) {
   if (report && !blank(q.instructions)) own.push(q.instructions.trim());
   var mp = markingPoints(q);
   if (mp.ok !== true) return mp;
-  mp.points.forEach(function (p) { own.push(p.text); });
+  // A weighted point travels with its weight, so a marker judging it knows the
+  // author's allocation rather than guessing one (UX-TEST-18).
+  mp.points.forEach(function (p) {
+    own.push(mp.weighted ? p.text + " (" + p.marks + " mark" + (p.marks === 1 ? "" : "s") + ")" : p.text);
+  });
 
   var rest = Array.isArray(accomplish)
     ? accomplish.filter(function (x) { return !blank(x); }).map(function (x) { return String(x).trim(); })
@@ -551,11 +565,45 @@ function finite(n) { return typeof n === "number" && isFinite(n); }
 function num(n) { return finite(n) ? n : 0; }
 function clamp(n, lo, hi) { return Math.max(lo, Math.min(finite(hi) ? hi : n, num(n))); }
 function blank(s) { return s == null || String(s).trim() === ""; }
+// WHAT NUMBER A CALCULATION ANSWER STATES, OR THAT IT STATES NONE (UX-TEST-19).
+//
+// The grader stripped every character but digits, "." and "-" and parsed what
+// was left, so "60 000 / 40 000 = 1.5" became 60000400001.5 and "3:2" became
+// 32. "1.5 : 1" scored only because it collapsed to 1.51, inside a 0.05
+// tolerance. The rule now, in order:
+//
+//   working ends in "=": the value is what follows the LAST "=";
+//   a ratio "a : b" and nothing else numeric: the value is a / b;
+//   exactly one number: that number ("$42 000", "23.4%", "125 units");
+//   anything else - no number, or several with no rule to choose - is refused.
+//
+// A refusal leaves the answer unmarked. Guessing which of two numbers a student
+// meant would manufacture the mark this function exists to stop manufacturing.
+var CALC_NUM = /-?(?:\d{1,3}(?:[ ,]\d{3})+|\d+)(?:\.\d+)?|-?\.\d+/g;
+function readCalcAnswer(answer) {
+  var s = String(answer == null ? "" : answer).replace(/\u2212/g, "-").trim();
+  if (s.indexOf("=") !== -1) s = s.slice(s.lastIndexOf("=") + 1).trim();
+  if (!s) return refuse("CALC_UNREADABLE", "there is no value to mark. Write the final value, for example 1.5");
+  var toNum = function (t) { return Number(t.replace(/[ ,]/g, "")); };
+  var nums = s.match(CALC_NUM) || [];
+  var ratio = s.match(new RegExp("^\\D*?(" + CALC_NUM.source + ")\\s*:\\s*(" + CALC_NUM.source + ")\\D*$"));
+  if (ratio && nums.length === 2) {
+    var den = toNum(ratio[2]);
+    if (den === 0) return refuse("CALC_UNREADABLE", "a ratio whose second number is zero has no value");
+    return { ok: true, value: toNum(ratio[1]) / den, read: "ratio" };
+  }
+  if (nums.length === 1) return { ok: true, value: toNum(nums[0]), read: "number" };
+  return refuse("CALC_UNREADABLE", nums.length
+    ? "it contains " + nums.length + " numbers and no rule says which is the answer. Write the final value on its own, or after an equals sign"
+    : "it contains no number. Write the final value, for example 1.5");
+}
+
 function some(c) { return (Array.isArray(c) && c.length) ? c : null; }
 
 module.exports = {
   SUCCESS: SUCCESS, REFUSED: REFUSED, FAILED: FAILED,
   marked: marked, refuse: refuse, fail: fail,
+  readCalcAnswer: readCalcAnswer,
   isMarked: isMarked, outcomeOf: outcomeOf, tally: tally,
   FORMATS: FORMATS, isFormat: isFormat, writtenModeOf: writtenModeOf, isObjective: isObjective,
   formatWords: formatWords,

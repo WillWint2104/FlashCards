@@ -309,8 +309,14 @@
     return MARKED({ score: ch.ok ? card.marks : 0, max: card.marks, kind: "mc",
              correct: ch.ok, why: ch.why || "", answerText: card.choices.find(c => c.ok).t });
   }
+  // The contract reads the number (UX-TEST-19). It used to be every digit in the
+  // answer run together, so working turned into one huge wrong number and "3:2"
+  // into 32. An answer it cannot read as one value is not marked, not scored 0.
   function gradeCalc(card, answer) {
-    const got = parseFloat(String(answer).replace(/[^0-9.\-]/g, ""));
+    const rd = ASSESS.readCalcAnswer(answer);
+    if (rd.ok !== true) return ASSESS.refuse(rd.code, "This answer was not marked: " + rd.why + ".",
+      { max: Number(card && card.marks) || 0 });
+    const got = rd.value;
     const ok = Number.isFinite(got) && Math.abs(got - card.expected) <= card.tolerance;
     return MARKED({ score: ok ? card.marks : 0, max: card.marks, kind: "calc",
              correct: ok, working: card.working || "", model: card.model });
@@ -636,9 +642,15 @@
         return MARKED({ score: Math.min(Number(g.score) || 0, Number(card.marks) || 0),
           max: Number(card.marks) || 0, kind: "llm", fb: g });
       } catch (e) {
+        if (opts.noDemo) return ASSESS.fail("MARKER_UNREACHABLE",
+          "This response was not marked: the marker could not be reached. Your answer is still here, so you can submit it again.",
+          { max: Number(card && card.marks) || 0 });
         return demoEssay(card, answer, "Couldn't reach your grading endpoint (" + e.message + "), so this is a demo grade instead.");
       }
     }
+    if (opts.noDemo) return ASSESS.refuse("MARKER_NOT_CONNECTED",
+      "This response was not marked: it needs the marker, and no marker is connected.",
+      { max: Number(card && card.marks) || 0 });
     return demoEssay(card, answer, "Demo grade. Connect a grading endpoint in Settings for real AI marking.");
   }
   // THE DEGRADED PATH SPEAKS THE FORMAT'S LANGUAGE (UX-TEST-15). It used to tell a
@@ -1477,8 +1489,9 @@
       };
       if (rb) rb.onclick = revealW;
       const submit = () => {
-        const v = parseFloat((inp.value || "").replace(/[$,%\s]/g, ""));
-        if (isNaN(v)) return toast("Enter a number first.");
+        const rd = ASSESS.readCalcAnswer(inp.value);
+        if (rd.ok !== true) return toast(rd.why.charAt(0).toUpperCase() + rd.why.slice(1) + ".");
+        const v = rd.value;
         if (Math.abs(v - task.expected) <= (task.tol == null ? 0.5 : task.tol)) {
           go.disabled = true; inp.disabled = true;
           finish(`<div class="sheet good" style="margin-top:12px"><div class="bd">
@@ -2556,16 +2569,21 @@
       return ASSESS.refuse(sp.code || "POINTS_MALFORMED",
         "This response was not marked: " + (sp.why || "its marking points could not be read") + ".",
         { max: Number(q && q.marks) || 0 });
-    if (sp.weighted)
+    if (sp.local)
       return MARKED({ score: sp.score, max: sp.max, kind: "points",
                points: sp.points, weighted: true, model: q.model || "" });
     if (sp.count) {
-      // Unweighted points are diagnosis, not arithmetic. The marker awards the
-      // mark; the checklist still says which key points the answer reached, and
-      // carries `weighted: false` so no screen can imply a mark-per-point rule
-      // the paper never authored.
-      const g = await gradeWritten(q, answer);
-      return isMarked(g) ? Object.assign({}, g, { points: sp.points, weighted: false }) : g;
+      // THE MARKER JUDGES EVERY POINT THE PAPER DID NOT AUTHOR A WAY TO MATCH
+      // (UX-TEST-18), weighted or not. The points reach it as marking
+      // requirements, with their weights where authored. If it cannot be reached
+      // or refuses, the answer stays unmarked: no demo grade and no zero stands
+      // in for a judgement nobody made.
+      const g = await gradeWritten(q, answer, { noDemo: true });
+      // The checklist only where every point could be matched, so a tick or a
+      // miss is never inferred from a point's own description. It carries
+      // `weighted: false` because the mark came from the marker, not the points.
+      return (isMarked(g) && sp.points.every(p => p.matchable))
+        ? Object.assign({}, g, { points: sp.points, weighted: false }) : g;
     }
     return gradeLocal(q, answer);
   }

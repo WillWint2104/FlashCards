@@ -51,24 +51,30 @@ const SHORT = ans => ({
   const marks = await p.$eval('.exam-qhead',e=>e.textContent.trim());
   console.log('    question:', marks);
 
-  console.log('--- answer it: the checklist gives the mark ---');
+  // THE MARKER GIVES THE MARK, ON THE FIRST SUBMIT (UX-TEST-18). This half used
+  // to assert a local checklist mark, then a second door ("What would make this
+  // stronger") that asked the marker for its view. The checklist mark searched
+  // the answer for each point's own description, which scored correct answers
+  // zero. A point with no authored phrasings is now a marking requirement sent
+  // straight to the marker, so its judgement is what comes back, and a second
+  // request for the same judgement would be furniture.
+  console.log('--- answer it: marked AS a short answer, by the marker ---');
   await p.fill('#ans','McDonalds uses mobile ordering.');
   await p.click('#check'); await settled(p);
+  await p.waitForFunction(() => !!(document.querySelector('#sheet') || {}).textContent, null, { timeout: 8000 }).catch(() => {});
   ok(!!(await p.$('.sheet')),'it grades');
-  const kind = await p.$eval('#sheet',e=>e.textContent);
-  ok(/✓|✗/.test(kind) || /\d+\s*\/\s*\d+/.test(kind),'a mark is shown');
-  const btn = await p.$eval('#examreview',e=>e.textContent.trim()).catch(()=>'none');
-  // Renamed. "Mark this properly" implied the checklist had marked it improperly,
-  // which is the opposite of what a deterministic points mark is. The door is the
-  // same door: what the authored points cannot say, the marker can.
-  ok(/what would make this stronger/i.test(btn),'the same review is offered on a short answer: '+btn);
-  await p.screenshot({path:OUT+'shot-short-sheet.png'});
-
-  console.log('--- ask for it: marked AS a short answer ---');
-  await p.click('#examreview'); await settled(p);
   ok(sent && sent.responseType==='short','the request says it is a short answer: '+(sent&&sent.responseType));
   ok(sent && sent.marks>0 && sent.marks<=10,'with its own mark value: '+(sent&&sent.marks));
   ok(sent && typeof sent.command==='string','the directive verb travels: '+JSON.stringify(sent&&sent.command));
+  const acc = ((sent && sent.requirements) || {}).accomplish || [];
+  ok(acc.length > 0 && acc.every(x => / \(\d+ marks?\)$/.test(x)),
+     'its weighted points travel as requirements with their weights: ' + JSON.stringify(acc));
+  const kind = await p.$eval('#sheet',e=>e.textContent);
+  ok(/\d+\s*\/\s*\d+/.test(kind),'a mark is shown');
+  ok(!/key points addressed/.test(kind),'no tick or miss inferred from a point\'s description');
+  ok(!(await p.$('#examreview')),'no second door asking the marker for the judgement it just gave');
+  await p.screenshot({path:OUT+'shot-short-sheet.png'});
+
   // TEST MODE DOES NOT OPEN THE REWRITE WORKSPACE, AND THIS IS WHERE IT USED TO.
   //
   // What this half of the suite asserted until now: clicking through from a
