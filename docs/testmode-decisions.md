@@ -315,6 +315,39 @@ taxonomy (malformed, unsupported, blocked, valid but thin, publishable) and show
 the resolved subject and course before anything is added. The *"past paper"* and
 *"Study map"* copy goes.
 
+## 19. Page 1 review: desktop only, practice by question type, isolated attempts
+
+**Desktop only until the desktop workflow is functionally complete.** There is
+no mobile mockup work, no 390px fold optimisation, no mobile approval gate and
+no responsive-polish cycle. The code stays basically responsive. Mobile gets one
+consolidated phase afterwards.
+
+**The library's paper card and its three attempt states are approved.** Page 1
+is not frozen until it gains **Practise a question type**, which sits above
+Practice papers. It has one tile for each of multiple choice, short answer,
+calculations, business report and extended response. Each tile shows its
+derived count of available questions and a Start practice action. The types
+are the existing canonical formats, marked by the existing engines. They are
+not new assessment systems.
+
+**A question-type session is a separate attempt** from any paper sitting (see
+`docs/testmode-attempt-state.md`). It shares question data, marking, feedback,
+navigator and persistence code, and it has its own attempt identity and
+question scope.
+
+**Marking decisions taken with it:**
+
+- **UX-TEST-18, option A.** A marking point's description is not an accepted
+  answer. Points are scored locally only where the paper authors phrasings for
+  every point. Otherwise they go to the subject-aware marker with their
+  authored weights. A refusal or failure leaves the answer unmarked, and no
+  phrasing is ever inferred from a point's prose.
+- **UX-TEST-19.** The calculation parser is fixed before Slice A.
+- **UX-TEST-20.** The fixture is corrected rather than options shuffled. Seeded
+  shuffling can be considered later if there is a product reason.
+- **UX-TEST-21.** The old frozen figures are not hand-corrected. Every built
+  count derives from attempt data.
+
 ## Mockup order — dependency, not numerical
 
 ```

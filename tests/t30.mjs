@@ -517,6 +517,18 @@ console.log("13. the paper the product actually ships, which is now synthetic");
   ok(v.counts.malformed === 0 && v.counts.unsupported === 0 && v.counts.blocked === 0 && v.counts.thin === 0,
     "with nothing outstanding at all: " + JSON.stringify(v.counts));
 
+  // UX-TEST-20. Every key in the paper used to be option 1 and the app does not
+  // shuffle, so clicking the first option scored 10/10 and any walk that did so
+  // proved nothing about marking. The keys are spread across positions, and
+  // stay spread: no position holds more than half, and at least three are used.
+  const keyAt = paper.sections.flatMap(sec => sec.questions)
+    .filter(q => Array.isArray(q.choices))
+    .map(q => q.choices.findIndex(c => c && c.ok === true));
+  const byPos = keyAt.reduce((m, i) => (m[i] = (m[i] || 0) + 1, m), {});
+  ok(keyAt.length >= 10 && keyAt.every(i => i >= 0), "every multiple-choice question has exactly one key to find");
+  ok(Object.keys(byPos).length >= 3 && Math.max(...Object.values(byPos)) <= keyAt.length / 2,
+    "the keys are spread across option positions, not all authored first: " + JSON.stringify(byPos));
+
   // It has to exercise the whole contract or it is not a regression fixture.
   const walk = E.answerables(paper);
   const seen = {};

@@ -18,7 +18,8 @@
 // Multiple choice and calculation are read against the paper's own key (a
 // choice's `ok`, a calculation's `expected` and `tolerance`), which is all the
 // app's gradeMC and gradeCalc do, through the same ASSESS.readCalcAnswer. Written answers go where the app sends them:
-// weighted points to ASSESS.scorePoints, everything else to the marker, which
+// points the paper authored a way to match to ASSESS.scorePoints (sp.local),
+// everything else to the marker (UX-TEST-18), which
 // here is the fixture's review run through the shipped finalize().
 import { createRequire } from "node:module";
 import { finalize } from "../../tests/worker.mjs";
@@ -53,7 +54,7 @@ function mark(a, input, review) {
     return ASSESS.marked({ score: ok ? q.marks : 0, max: q.marks, kind: "calc" });
   }
   const sp = ASSESS.scorePoints(q, input);
-  if (sp.ok === true && sp.weighted) return ASSESS.marked({ score: sp.score, max: sp.max, kind: "points" });
+  if (sp.ok === true && sp.local) return ASSESS.marked({ score: sp.score, max: sp.max, kind: "points" });
   if (!review) throw new Error(keyOf(a) + " goes to the marker and the fixture carries no review for it");
   const mode = ASSESS.writtenModeOf(f) === "extended" ? "extended" : "short";
   const r = finalize(JSON.parse(JSON.stringify(review.review || review)), q.marks, input, null,

@@ -40,7 +40,7 @@ can be listed, and nowhere before.
 Stored beside `state.exams`, in the same local store and in the same backup file:
 
 ```
-state.attempts[paperId] = { current: Attempt | null, last: Attempt | null }
+state.attempts["paper:" + paperId] = { current: Attempt | null, last: Attempt | null }
 
 Attempt = {
   sections:    [si, ...],            what the student chose to sit
@@ -61,6 +61,34 @@ Attempt = {
 
 `results`, `answers` and `choice` are the three bags `EXAM` already holds.
 `sections` is `EXAM.sit`. The new fields are `flags`, `at` and the timestamps.
+
+## Two scopes, never one attempt (decision 19)
+
+A practice session on one question type is its **own attempt**, not a view onto
+a paper's. Short-answer practice that includes 11(a) from the synthetic paper
+does not mark 11(a) answered in that paper's sitting, and a paper sitting does
+not mark anything in a type session.
+
+```
+state.attempts["paper:" + paperId]       = { current, last }   a paper sitting
+state.attempts["type:" + canonicalFormat] = { current, last }   a question-type session
+```
+
+A type session's `Attempt` has the same fields, and its `sections` is replaced
+by `items`: the questions it covers, each named by paper and key
+(`{ paper: paperId, key: "1-0-0" }`). Its answers, results and flags are keyed
+the same way, so two papers' 11(a) never collide.
+
+They share question content, the marking engine, the feedback surfaces, the
+navigator, the three statuses, the counts and the persistence code. They share
+no attempt state.
+
+A tile's count is **available questions**: every question of that canonical
+format in every sittable paper in the library. Parts count, parents do not, and
+both options of an either/or count, because each can be practised on its own.
+The format is the contract's reading of the question, not the section it sits
+in. The synthetic paper's 11(d), 12(c) and 13 are extended responses inside
+Section II, so they count under Extended response.
 
 ## Not in v1
 

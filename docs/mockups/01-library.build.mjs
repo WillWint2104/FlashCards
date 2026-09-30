@@ -8,6 +8,9 @@
 //
 //   node docs/mockups/01-library.build.mjs
 //
+// With nothing imported the bank is empty, and five tiles reading "0 available"
+// would be noise; the empty page shows the one thing to do instead.
+//
 // Four pages from one template, so a variant cannot drift from the others:
 //   01-library.html               in progress (the primary proposal)
 //   01-library-not-started.html
@@ -38,6 +41,49 @@ const totals = PAPER.totals(paper);
 const identity = [cur.course, cur.stage].filter(Boolean).join(" · ");
 const facts = [plural(totals.questions, "question"), plural(paper.sections.length, "section"),
                plural(totals.marks, "mark"), paper.time].filter(Boolean).join(" · ");
+
+// ---- the question bank, by canonical format --------------------------------
+// What a format tile offers is every question of that format in every paper in
+// the library that can be sat: parts are questions, a parent is not, and both
+// options of an either/or are available on their own. The format is the
+// contract's reading (normaliseFormat), never the section's name, so 11(d), an
+// extended response authored inside Section II, is an extended response here.
+const TYPES = [
+  ["multiple_choice", "Multiple choice"],
+  ["short_answer", "Short answer"],
+  ["calculation", "Calculations"],
+  ["business_report", "Business report"],
+  ["extended_response", "Extended response"],
+];
+function bank(papers) {
+  const n = Object.fromEntries(TYPES.map(([f]) => [f, 0]));
+  let from = 0;
+  papers.forEach(pp => {
+    if (!PAPER.examine(pp).sittable) return;
+    from++;
+    pp.sections.forEach(sec => sec.questions.forEach(q =>
+      (PAPER.isParent(q) ? PAPER.partsOf(q) : [q]).forEach(leaf => {
+        const f = ASSESS.normaliseFormat(leaf).format;
+        if (f in n) n[f]++;
+        else throw new Error("a question whose format has no practice type: " + f);
+      })));
+  });
+  return { n, from };
+}
+function tiles(papers) {
+  const { n, from } = bank(papers);
+  return `<section class="types" aria-labelledby="t1">
+    <div class="sechead"><h2 id="t1">Practise a question type</h2>
+      <p class="secnote">From ${plural(from, "paper")} in your library</p></div>
+    <ul class="tiles">
+      ${TYPES.map(([f, name]) => `<li class="tile">
+        <h3>${esc(name)}</h3>
+        <p class="avail"><b>${n[f]}</b> available</p>
+        <a class="btn ghost sm" href="#practise-${f}" aria-label="Start ${esc(name.toLowerCase())} practice">Start practice</a>
+      </li>`).join("")}
+    </ul>
+  </section>`;
+}
 
 // ---- one paper card, in whichever status its attempt is in ------------------
 function card(a) {
@@ -124,13 +170,13 @@ function page(title, body, note) {
              padding:8px 20px;border-radius:99px}
   nav.tabs a[aria-current]{background:var(--card);color:var(--green-dk);box-shadow:0 1px 3px rgba(60,74,74,.12)}
 
-  .top{display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap;margin-bottom:22px}
+  .top{margin-bottom:28px}
   .top h1{font-size:30px;line-height:1.15}
   .top .lede{font-size:15px;color:var(--ink-2);font-weight:600;margin-top:6px;max-width:60ch}
   .policy{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:var(--green-dk);
           background:var(--green-soft);border:1px solid #BFEFD9;border-radius:99px;padding:3px 11px;margin-top:10px}
   .policy .dot{width:6px;height:6px;border-radius:99px;background:var(--green)}
-  .top .spacer{flex:1}
+  .spacer{flex:1}
 
   .btn{display:inline-flex;align-items:center;justify-content:center;min-height:46px;text-decoration:none;
        font-family:var(--disp);font-weight:600;font-size:15px;color:#fff;background:var(--green-dk);border:none;
@@ -139,7 +185,25 @@ function page(title, body, note) {
   .btn.ghost{background:var(--card);color:var(--ink);box-shadow:0 0 0 2px var(--line) inset}
   .btn.ghost:active{transform:none}
 
-  .count-line{font-family:var(--disp);font-weight:600;font-size:13px;color:var(--ink-2);margin-bottom:10px}
+  /* Two sections, each with a heading row. Practising one question type comes
+     first because it is the everyday entry; a whole paper is the other. */
+  section+section{margin-top:34px}
+  .sechead{display:flex;align-items:baseline;gap:14px;margin-bottom:12px}
+  .sechead h2{font-size:19px;line-height:1.3}
+  .secnote{font-size:13.5px;color:var(--ink-2);font-weight:700}
+  .btn.sm{min-height:44px;padding:9px 18px;font-size:14px;border-radius:12px}
+  .papers .sechead{align-items:center}
+
+  /* Five compact tiles, one row on a desktop. Each is the format's name, how
+     many questions of it the library holds, and one outlined action: the
+     paper card below keeps the only filled button on the page. */
+  .tiles{list-style:none;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
+  .tile{background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:16px 16px 16px;
+        display:flex;flex-direction:column;gap:4px}
+  .tile h3{font-size:16px;line-height:1.3}
+  .avail{font-size:13.5px;color:var(--ink-2);font-weight:700;margin-bottom:10px}
+  .avail b{color:var(--ink);font-size:15px}
+  .tile .btn{margin-top:auto;align-self:stretch}
 
   /* One card per paper. Three columns on a desktop: who the paper is, where the
      student's attempt stands, and what they can do next. The primary action is
@@ -180,6 +244,7 @@ function page(title, body, note) {
   .empty p{font-size:15px;color:var(--ink-2);font-weight:600;max-width:52ch;margin:0 auto 20px}
 
   /* Secondary target: stack, never scroll sideways. */
+  @media(max-width:1000px){ .tiles{grid-template-columns:repeat(3,minmax(0,1fr))} }
   @media(max-width:860px){
     .paper{grid-template-columns:1fr;gap:18px;padding:20px}
     .status{border-left:none;border-top:1px solid var(--line);padding:16px 0 0;min-height:0}
@@ -199,13 +264,9 @@ function page(title, body, note) {
     <a href="#study">Study</a><a href="#create">Create</a><a href="#test" aria-current="page">Test mode</a><a href="#essay">Essay practice</a>
   </nav>
   <div class="top">
-    <div>
-      <h1>Test mode</h1>
-      <p class="lede">Sit a practice paper. Each answer is marked as you submit it, and everything is saved as you go, so you can leave and come back.</p>
-      <span class="policy"><span class="dot"></span>Practice · marked as you go</span>
-    </div>
-    <span class="spacer"></span>
-    ${body.papers ? `<a class="btn ghost" href="#import">Import a paper</a>` : ""}
+    <h1>Test mode</h1>
+    <p class="lede">Practise individual question types or work through a complete paper. Answers are marked as you go and your progress is saved.</p>
+    <span class="policy"><span class="dot"></span>Practice · marked as you go</span>
   </div>
   ${body.html}
 </main>
@@ -221,7 +282,12 @@ for (const [file, name, note] of [
   ["01-library-completed.html", "completed", "Page 1, completed."],
 ]) {
   const a = derive(name);
-  const html = page("Library", { papers: 1, html: `<p class="count-line">1 paper</p>${card(a)}` }, note);
+  const html = page("Library", { papers: 1, html: tiles([paper]) +
+    `<section class="papers" aria-labelledby="pp">
+      <div class="sechead"><h2 id="pp">Practice papers</h2><span class="spacer"></span>
+        <a class="btn ghost sm" href="#import">Import a paper</a></div>
+      ${card(a)}
+    </section>` }, note);
   fs.writeFileSync(path.join(OUTDIR, file), html);
   out.push({ file, status: a.status, answered: `${a.answered}/${a.total}`, flagged: a.flagged, marks: `${a.got}/${a.max}` });
 }

@@ -916,3 +916,73 @@ are not edited for this. The built shell derives its bar from `tally()`, and the
 library's example attempt shows the derived *"12 of 20 answered · 8/90"* for the
 same answers.
 
+## UX-TEST-18, -19 and -20 fixed; -21 closed by rule (decision 19)
+
+**UX-TEST-18, fixed with option A.**
+
+- `scorePoints` matches a point only against the phrasings its author wrote
+  (`need`), and returns `local: true` only when every point has them and the
+  question is weighted.
+- A point without phrasings carries `hit: null`, not a miss.
+- `gradeShort` scores locally only when `local` is true. Everything else goes to
+  the marker, with each weighted point sent as a requirement carrying its weight
+  (*"Names speed, or dependability, as the objective (1 mark)"*).
+- The marker is asked with `noDemo`. If it is unreachable the answer is failed
+  (`MARKER_UNREACHABLE`), and if none is connected it is refused
+  (`MARKER_NOT_CONNECTED`). Both are unmarked, with the answer kept, and no demo
+  grade or zero stands in.
+- No checklist tick or miss is shown unless every point was matchable.
+- Guarded by:
+  - t31: the matching rule, the weights and the app's route;
+  - ui70: 11(a) reaches the marker with its weights and is marked 2/2, and when
+    the marker is unreachable it stays unmarked;
+  - ui7: the short answer is marked by the marker on first submit, with no
+    second request;
+  - mutations `points-matched-on-description`, `guidance-drops-point-weights`
+    and `marker-points-demo-graded`, all killed by their intended assertions.
+- Consequences:
+  - no question in the synthetic paper authors phrasings, so all its short
+    answers now go to the marker;
+  - the "What would make this stronger" door remains for locally scored answers
+    only;
+  - State 11's local-checklist variant now applies only to a paper that authors
+    phrasings. That is a note for when State 11 is built in Slice A, not a
+    redesign.
+
+**Still open, and larger than this item:** extended responses and business
+reports keep the demo fallback when the marker is unreachable (UX-TEST-15
+wording), so a failure still becomes a number there. This is logged as
+**UX-TEST-22**, below, for a decision.
+
+**UX-TEST-19, fixed.**
+
+- `ASSESS.readCalcAnswer` reads, in order: the value after the last `=`, then a
+  ratio `a : b` as a / b, then a single number with units. Anything else is
+  refused as `CALC_UNREADABLE` and left unmarked.
+- `1.5`, `1.5 : 1` and `3 : 2` all read as 1.5. `60 000 / 40 000 = 1.5` reads
+  as 1.5. `60000/40000`, `1,5` and `1.5 or 2` are refused.
+- `gradeCalc`, the guided lessons' own parser and the mockup attempts all read
+  through it, and no digit-stripping parser remains in app.js.
+- Guarded by t31 and by four mutations, all killed.
+
+**UX-TEST-20, fixed in the fixture.**
+
+- The ten keys now sit at B, D, A, C, D, B, C, A, B, D.
+- t30 asserts that no position holds more than half and at least three are
+  used. It fails on the old fixture with `{"0":10}`.
+- No shuffling was added.
+
+**UX-TEST-21, closed by rule.** The frozen figures stay as drawn. Built counts
+derive from attempt data, as the library already does.
+
+### UX-TEST-22: in Test Mode, an unreachable marker still becomes a demo mark for long responses
+
+`gradeWritten` without `noDemo` answers a fetch failure with `demoEssay`. That is
+a structural estimate, and `ASSESS.tally` counts it as a mark. Short answers no
+longer take this path (UX-TEST-18). Extended responses and business reports
+still do, inside a paper, where the estimate is added to the paper total.
+Decision 19's rule, that a failure leaves the response unmarked, reads as
+applying here too. It was not applied, because UX-TEST-15 approved the demo
+path's wording for these formats. Recommendation: in Test Mode, use `noDemo`
+for every written format, and keep the demo grade for Study mode.
+
