@@ -915,13 +915,26 @@ export default {
       return json({ error: "grader returned no review", stop_reason: data.stop_reason || null }, 502, cors);
     }
     // A review cut off part way through is worse than no review: finalize() sums the
-    // paragraph marks, so a response truncated after paragraph four of six would
-    // report a total several marks below what was actually awarded, and the student
-    // would read it as their grade. Fail loudly instead. The app already falls back
-    // to a labelled demo grade on a non-ok response, so nothing silently understates.
-    const chunkCount = String(answer).split(/\n\s*\n/).filter(x => x.trim()).length;
-    if (data.stop_reason === "max_tokens" && r.paragraphs.length < chunkCount) {
-      return json({ error: "grading ran long and was cut off before it finished. Try again.", stop_reason: "max_tokens" }, 502, cors);
+    // paragraph marks, so a truncated review reports a total below what was actually
+    // awarded, and the student would read it as their grade. This used to fail only
+    // when the review had fewer paragraphs than the answer had blank-line blocks, so
+    // a one-block short answer, or a model that split an essay more finely, let a
+    // truncated review through. Any truncation now fails, whatever its length.
+    //
+    // Test Mode leaves a non-ok reply unmarked (UX-TEST-22); Study falls back to a
+    // labelled demo grade. Either way nothing silently understates.
+    if (data.stop_reason === "max_tokens") {
+      return json({ error: "grading ran long and was cut off before it finished. Try again.", stop_reason: "max_tokens", retryable: true }, 502, cors);
+    }
+    // A paragraph without a mark is not a mark of zero. reconcileParagraphs reads a
+    // missing or non-numeric score as 0, which turned an unusable reply into a
+    // fabricated low grade. Only a review whose every paragraph carries a real score
+    // and scale reaches finalize.
+    const unusable = r.paragraphs.some(p => !p || typeof p !== "object" ||
+      typeof p.score !== "number" || !Number.isFinite(p.score) || p.score < 0 ||
+      typeof p.max !== "number" || !Number.isFinite(p.max) || p.max <= 0);
+    if (unusable) {
+      return json({ error: "grader returned an unusable mark", retryable: true }, 502, cors);
     }
     return json(finalize(r, markTotal, String(answer), diagnosis, criteria, ctx.validContent.pathways.length > 0, ctx.responseType, ctx.blocks), 200, cors);
   },

@@ -1010,3 +1010,54 @@ against the packages the app actually registers. Whether a paper with no
 marker-dependent questions (multiple choice and calculation only) should still
 be blocked by an unregistered subject is left open. It could be sat and marked
 without one.
+
+## UX-TEST-22 fixed: no demo grades in Test Mode (decision 20)
+
+Mapped first by four independent readers and a completeness critic. Every route
+by which a sitting could get a number the marker never gave is closed, in Test
+Mode only; Study keeps its demo grade.
+
+| route | was | now |
+| --- | --- | --- |
+| extended response and business report, marker unreachable or not connected | demo grade, counted | unmarked (`noDemo`) |
+| any 200 that is not a mark: `{}`, an error body, a non-numeric, negative or out-of-range score, a reply on another mark scale | a marked 0, or full marks after clamping | `MARKER_INVALID_REPLY`, unmarked, retryable |
+| a reply body that stalls after its headers | "Checking…" for ever | bounded at 15s, unmarked |
+| 429 and 5xx | "could not be reached" | `MARKER_BUSY` or `MARKER_FAILED`, retryable |
+| 400 and 403 | "could not be reached", retry offered | `MARKER_REFUSED_REQUEST` or `MARKER_ACCESS_DENIED`, no retry offered |
+| a short answer with no marking points | a keyword estimate (`gradeLocal`) | the marker |
+| "What would make this stronger" with the marker unreachable | a demo grade replaced the answer-key mark | the mark stays and the reason is shown |
+| a reply arriving after the student left, or after the answer changed | stored against the same position in whatever sitting was open | dropped |
+| the worker: a truncated review of a one-block answer | returned as a mark | a retryable 502 |
+| the worker: a paragraph with no numeric score or max | read as 0 | a retryable 502 |
+
+- **What the student sees.** *Not marked yet* with the reason, the answer still
+  in its box, and **Try marking again** wherever another attempt can succeed.
+  A refused request says *Not marked* and offers no retry. The worker's own
+  error text is never shown: two of its strings carry em dashes.
+- **Counting.** An unmarked answer is not answered and adds nothing, and its
+  marks stay in what the paper is out of, as `tally` has always done. The
+  results page now says so.
+- **"Saved".** The copy does not say *saved*. Attempts are not persisted until
+  Slice A, so *Your answer is still here* is what is true today.
+- **Tests.**
+  - `tests/ui72.js` (browser, 113 assertions) and `tests/t37.mjs` (worker, 9)
+    are both full tier only.
+  - Nine mutations. The demo-wording mutation now belongs to ui72's Study
+    section, because no sitting shows a demo grade any more.
+  - ui70 and ui7 stubs now reply on the question's own mark scale, as the real
+    worker does. Their old replies, out of 20 and out of 4 for 2-mark
+    questions, are now correctly refused.
+
+### UX-TEST-24: logged by the same map, outside this rule
+
+- **A calculation with no authored `tolerance` marks every answer wrong.**
+  `<= undefined` is false. The validator checks `expected` only. This is an
+  answer-key gap, not the marker's, so it belongs with import validation
+  (Page 2 and Slice A) as a finding. Do not compare with `Number.isFinite`
+  alone: a stored tolerance of `"0.05"` works today.
+- **Papers restored from a backup or synced are sat without `PAPER.examine`.**
+  A stored paper can reach any runtime route a validator would have refused.
+- **The worker rebuilds a missing rubric against the criterion names.** In an
+  extended response that produces criterion statuses the model never gave.
+  The mark itself comes from the paragraphs, which are now validated. The
+  rubric is left open.

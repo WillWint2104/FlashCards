@@ -55,10 +55,14 @@ async function sit(b, section, answer, storedPaper, unreachable) {
     const s = JSON.parse(r.request().postData() || '{}');
     if (s.action === 'coach') return r.fulfill({ status: 200, contentType: 'application/json', body: '{"nudges":[]}' });
     body = s;
-    // The degraded path: the marker cannot be reached, so the app grades a demo.
+    // The degraded path: the marker cannot be reached. In Test Mode that leaves
+    // the answer unmarked (UX-TEST-22); it used to grade a demo.
     if (unreachable) return r.abort();
+    // The worker's own reply shape: a score on the question's own mark scale. A
+    // reply out of 20 for a 2-mark question is not a mark and is refused now.
+    const mk = Math.round(Number(s.marks)) || 20, sc = Math.min(10, mk);
     await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
-      summary: 'ok', score: 10, total: 10, max: 20, paragraphs: [], rubric: [], overall: { summary: 'ok' },
+      summary: 'ok', score: sc, total: sc, max: mk, paragraphs: [], rubric: [], overall: { summary: 'ok' },
       criteria: [], next_steps: [], missing_vocabulary: [], checks: {} }) });
   });
   await p.goto(T + '?review=1'); await settled(p);
@@ -217,15 +221,20 @@ async function sit(b, section, answer, storedPaper, unreachable) {
      'its request carries the same keys as the extended response above');
 
   // ---- the degraded path speaks the format's language (UX-TEST-15) ----------
-  console.log('--- the marker cannot be reached: the demo grade');
+  // NO DEMO GRADE IN TEST MODE (UX-TEST-22). This section used to assert the
+  // demo grade's wording here, in a sitting. A sitting now leaves the answer
+  // unmarked, and the demo wording (sections for a report, paragraphs for an
+  // extended response) is pinned where it still runs, in Study: tests/ui72.js.
+  console.log('--- the marker cannot be reached: not marked yet, in a sitting');
   const D = await sit(b, 'Section III - Business report', 'Executive summary\nA report.\n\nFindings\nMore.', null, true);
-  ok(/demo grade/i.test(D.sheet) && /section\(s\)/.test(D.sheet) && /Development \(length & sections\)/.test(D.sheet),
-     'a report is counted in sections: ' + JSON.stringify(D.sheet.slice(0, 140)));
-  ok(!/paragraph/i.test(D.sheet), 'and is never told to write paragraphs');
-  ok(!/\u2014/.test(D.sheet), 'with no em dash anywhere it reads');
   const DE = await sit(b, 'Section IV - Extended response', 'A paragraph.\n\nAnother paragraph.', null, true);
-  ok(/paragraph\(s\)/.test(DE.sheet) && /4 to 5 paragraphs/.test(DE.sheet) && !/\u2014/.test(DE.sheet),
-     'while an extended response keeps its paragraph language');
+  [['the business report', D], ['the extended response', DE]].forEach(([n, x]) => {
+    ok(/Not marked yet/.test(x.sheet) && /could not be reached/.test(x.sheet),
+       n + ' is not marked yet: ' + JSON.stringify(x.sheet.slice(0, 120)));
+    ok(!/demo grade/i.test(x.sheet) && !/Structure detected/.test(x.sheet) && !/^\s*\d+\s*\//.test(x.sheet),
+       n + ' gets no demo grade and no score');
+    ok(/Try marking again/.test(x.sheet) && !/\u2014/.test(x.sheet), n + ' offers marking again, with no em dash');
+  });
 
   console.log(`\n${pass} passed, ${fail} failed`);
   await b.close();

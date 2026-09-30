@@ -8,9 +8,11 @@ const here = (p, sel) => p.waitForSelector(sel, { timeout: 8000 });
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 
 // A SHORT-ANSWER review: one paragraph, NO rubric, focus pointing at a real line.
-const SHORT = ans => ({
+// The worker's reply is on the question's own mark scale; a reply out of 4 for
+// a 2-mark question is not a mark and Test Mode refuses it (UX-TEST-22).
+const SHORT = (ans, marks) => ({
   summary:"You name the strategy but do not say what it does for the objective.",
-  total:2,max:4,score:2,
+  total:Math.min(2, marks),max:marks,score:Math.min(2, marks),
   paragraphs:[{name:"Your answer",score:2,max:4,reasons:[{kind:'weak',text:'Names it without explaining it'}],sentences:[
     {text:"McDonalds uses mobile ordering.",issues:[
       {kind:'fix',severity:'critical',head:'Say what it achieves',why:'You name mobile ordering but do not say what it does for the objective the question asks about.',
@@ -30,7 +32,7 @@ const SHORT = ans => ({
     const s=JSON.parse(r.request().postData()||'{}');
     if (s.action==='coach') return r.fulfill({status:200,contentType:'application/json',body:'{"nudges":[]}'});
     sent=s;
-    await r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(SHORT(s.answer))});
+    await r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(SHORT(s.answer, Math.round(Number(s.marks)) || 4))});
   });
   await p.goto(T+'?review=1'); await settled(p);
 
