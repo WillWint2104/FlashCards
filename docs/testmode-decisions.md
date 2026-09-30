@@ -348,6 +348,52 @@ question scope.
 - **UX-TEST-21.** The old frozen figures are not hand-corrected. Every built
   count derives from attempt data.
 
+## 20. Page 1 frozen; the no-demo rule; timing on a slower host
+
+**Page 1, the Test Mode library, is frozen for desktop** as approved. It reopens
+only if a later page exposes a genuine shared-shell defect. Locked with it:
+
+- **Short answer is 4.** Question-type practice follows the canonical response
+  format, never a section's title. Practising Section II belongs to the paper
+  workflow (paper, choose sections, Section II), not to the Short answer tile.
+- **Question-type attempts are isolated.** Practising a question outside a paper
+  never changes its answered state inside a saved paper sitting.
+- **Every displayed progress value and count is derived** from attempt data and
+  the question bank.
+- **Not drawn, and locked as rules:** a tile with a session in progress reads
+  *Resume practice*, and a type with nothing available reads *None available
+  yet*. Both are implemented when the attempt system lands.
+
+**No demo grades anywhere in Test Mode (UX-TEST-22).** A response without a
+valid marker result is unmarked, whatever the reason: unreachable, refused,
+timed out, or a malformed reply. Unmarked means:
+
+- the answer is kept;
+- *Not marked yet* is shown;
+- a retry is offered where retrying can change the outcome;
+- no score and no qualitative judgement;
+- nothing enters a total;
+- it does not count as answered under the Practice policy.
+
+This covers short answer, extended response, business report and anything else
+that depends on the marker. Study mode keeps its demo behaviour.
+
+**Timing on the `fc-v50` host.** The budgets stay frozen: fast 40, checkpoint 60,
+journeys 180, full 800. On this host the whole suite runs about 30% slower. The
+checkpoint tier measures 76.1s at `82e2269`, which measured 59.0s on the previous
+host, and 77.3 to 77.8s at `6a55d8f`.
+
+- On this host only, the absolute fast and checkpoint times are diagnostic.
+- An assertion failure still blocks.
+- A material rise against the same-host baseline still has to be investigated.
+- Every gate report states elapsed time, the unchanged budget, the host, and the
+  comparison with the baseline where it matters. Such a run is reported as
+  *correctness green, timing over budget on the known slower host*, never as
+  within budget.
+- When the environment changes, fast and checkpoint are re-measured once and
+  the hard budgets are authoritative again.
+- New expensive browser coverage goes in Full only.
+
 ## Mockup order — dependency, not numerical
 
 ```
