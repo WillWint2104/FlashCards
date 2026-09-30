@@ -181,18 +181,30 @@ async function unmarkedYet(p, n, why) {
   }
 
   // ---- 5. a reply that arrives after the student has left ----------------
+  // A question key is only a position, so the danger is a late reply landing on
+  // the SAME key in the NEXT sitting, overwriting what the student did there. The
+  // first sitting's answer gets a slow real mark; the second sitting's answer to
+  // the same question fails fast. If the old reply were stored, it would replace
+  // the new failure with a mark, and the next count would include it. Checking
+  // only the bar straight after the reply is not enough: nothing redraws it then.
   console.log('--- 5. a late reply does not land in the next sitting');
   {
     const { p, ctx, mode } = await open(b);
-    mode.reply = () => Object.assign(REVIEW(15, 20), { delay: 2500 });
-    await sit(p, '', 'Section III - Business report');
-    await p.fill('#ans', 'Executive summary\nConsolidate.');
+    const OLD = 'Speed. The old sitting\'s answer.', NEW = 'Speed. The new sitting\'s answer.';
+    mode.reply = s => s.answer === OLD ? Object.assign(REVIEW(2, 2), { delay: 2500 }) : 'abort';
+    await sit(p, '', 'Section II - Short answer');
+    await p.fill('#ans', OLD);
     await p.click('#check'); await settled(p);
     await p.click('#examquit'); await settled(p);
-    await sit(p, '', 'Section III - Business report');
+    await sit(p, '', 'Section II - Short answer');
+    await submit(p, NEW);
+    ok(/Not marked yet/.test(await sheet(p)), 'the new sitting\'s 11(a) is not marked yet');
     await p.waitForTimeout(3500); await settled(p);
-    ok(await bar(p) === '0/1 answered · 0/20 marks', 'the new sitting is untouched by the old reply: ' + await bar(p));
-    ok(!(await p.$('#sheet .sheet')), 'and no sheet appears on the new question');
+    ok(/Not marked yet/.test(await sheet(p)) && !/^\s*2\s*\/\s*2/.test(await sheet(p)), 'the old reply did not replace it on screen');
+    await p.click('#examnext'); await settled(p);
+    await submit(p, 'Casual operators have no guaranteed hours.');
+    ok(await bar(p) === '0/8 answered · 0/40 marks · 2 not marked',
+       'and it was not stored either: the next count has no mark from the old sitting: ' + await bar(p));
     await ctx.close();
   }
 
