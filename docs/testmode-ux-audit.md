@@ -855,3 +855,64 @@ State 13 shows the question's own guidance beside its result because it is sent 
 the marker. Since UX-TEST-12 an extended response's points are sent too, so the
 same section would be true on state 12's marked page. State 12 is frozen; this is
 logged for the consistency sweep.
+
+## Found while deriving the library's attempts (Slice A)
+
+Deriving the example attempts through the shipped code, rather than typing their
+marks, exposed three marking and content defects and one fault in the frozen
+mockups. The first two are marking-correctness defects, and desktop v1 accepts
+on correct marking.
+
+### UX-TEST-18: a correct short answer scores 0 when its points are weighted
+
+`ASSESS.scorePoints` credits a point when the answer contains one of its `need`
+phrasings, or the point's own `text` when none is authored. None of the synthetic
+paper's weighted points authors `need`, so each is matched against its own
+description:
+
+| question | full, correct answer | scored |
+| --- | --- | --- |
+| 11(a) | *"Speed. Customers at the vans wait too long in the 7am to 9am morning peak…"* | 0/2 |
+| 11(b) | no guaranteed hours or leave, insecurity leads to leaving, replacement cost | 0/3 |
+| 12(a) | *"The gross profit ratio has gone down from 40% in 2024 to about 37%…"* | 0/3 |
+
+A student would have to write *"Names speed, or dependability, as the
+objective"* to score. The validator calls the paper publishable, so the contract
+and the runtime disagree about whether these points can be marked. The fix is a
+decision and is not made here. Two routes:
+
+- a weighted point with no `need` goes to the marker, which awards against the
+  points and their weights;
+- a weighted point with no `need` becomes a validator finding.
+
+### UX-TEST-19: the calculation parser reads every digit in the answer as one number
+
+`gradeCalc` strips everything except digits, `.` and `-`, then parses:
+
+| answer | parsed | against 1.5 ± 0.05 |
+| --- | --- | --- |
+| `1.5` | 1.5 | correct |
+| `1.5 : 1` (the frozen state's own example) | 1.51 | correct **by accident** |
+| `60 000 / 40 000 = 1.5` | 60000400001.5 | wrong |
+| `3:2` | 32 | wrong |
+
+A tighter tolerance would fail `1.5 : 1`. This is a Slice A item when the frozen
+calculation state is built.
+
+### UX-TEST-20: every multiple-choice answer in the synthetic paper is option 1
+
+All ten keys are the first choice, and the app does not shuffle. Clicking the
+first option scores 10/10, as the desktop walk did. This is fixture content (the
+paper is ours), and it undermines any end-to-end check that uses it. Whether
+choices are shuffled at sitting time is a product decision, recorded here and not
+taken.
+
+### UX-TEST-21: the frozen shell and navigator show impossible progress
+
+State 15 reads *"12 of 20 answered · 21/90 marks"* with Q1 to Q10, 11(a) and
+11(b) answered, which are worth 15 at most. State 8 reads *"11 of 20 · 19/90"*,
+where at most 12 is available. The numbers were typed. The pages are frozen and
+are not edited for this. The built shell derives its bar from `tally()`, and the
+library's example attempt shows the derived *"12 of 20 answered · 8/90"* for the
+same answers.
+

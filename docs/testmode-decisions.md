@@ -266,6 +266,55 @@ end with no source edits. The audit is `docs/desktop-workflow-audit.md`. Mobile
 gets one consolidated responsive pass once the desktop workflow is genuinely end
 to end.
 
+## 17. Desktop v1 is Practice only
+
+The supported policy is **Practice · marked as you go**. A question is marked as
+it is submitted. Submitting the paper closes the attempt and goes to results.
+
+Exam conditions is **post-v1**. The policy pill stays as the architectural slot
+(decision 3), and nothing else is built for it: no batch marking, no
+marking-in-progress state, no Exam/Practice toggle, and no exam-condition
+persistence semantics.
+
+## 18. Six workflow pages, in journey order, delivered in two slices
+
+The remaining pages are designed in the order a student meets them:
+
+1. Test Mode home / library
+2. Import and validation
+3. Exam overview, Start or Resume
+4. Submit paper
+5. Results overview
+6. Individual-question review
+
+This replaces the dependency order proposed by the desktop audit. The attempt
+vocabulary is locked first, in `docs/testmode-attempt-state.md`: three statuses,
+and counts beside them.
+
+**Slice A, usable sitting.** Design pages 1 to 3, one full page at a time, each
+stopping for approval. Then implement those three with the already-approved
+question experience:
+
+- saved attempts, Start and Resume;
+- Previous, Next and Flag;
+- the navigator and nested part navigation;
+- section transitions;
+- the five frozen formats, without redesigning them.
+
+**Slice B, completion.** Once Slice A can sit, resume and navigate the synthetic
+paper on desktop, design pages 4 to 6, then implement them.
+
+**Priority zero in Slice A:** the Test Mode header resolves from the active
+paper's curriculum authority (active paper, then `subjectKey`, then the
+registered course), never from Study mode state. There is no Economics
+fallback, and no fallback of any kind.
+
+**Import moves into Test Mode.** The combined *"Import a set or a practice exam"*
+box in Create stops being the exam workflow. The import page uses the Gate 3C
+taxonomy (malformed, unsupported, blocked, valid but thin, publishable) and shows
+the resolved subject and course before anything is added. The *"past paper"* and
+*"Study map"* copy goes.
+
 ## Mockup order — dependency, not numerical
 
 ```
@@ -277,9 +326,7 @@ to end.
   → 5 Blocked → 2 Empty
 ```
 
-Superseded after decision 16 by the desktop workflow audit's proposal, pending
-approval: 19 Submit → 17 Results → 18 Review → 6 Overview (absorbs 7) → 1 Library
-(absorbs 2) → 3+4 Import and validation (absorbs 5). That is six pages for the ten
-remaining states.
+Superseded by decision 18: six pages in journey order (library, import and
+validation, overview, submit, results, review), delivered in two slices.
 
 The hardest interaction model first, then propagated outward.
