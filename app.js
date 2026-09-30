@@ -2619,7 +2619,7 @@
     const ans = ($("#ans") && $("#ans").value || "").trim();
     if (!ans) { toast("Write your answer first."); return; }
     const wasLabel = ch ? ch.textContent : "";
-    const sitting = EXAM.results, gen = EXAM.gen, sheetEl = $("#sheet");
+    const sitting = EXAM.results, gen = EXAM.gen;
     EXAM.answers[key] = ans;
     if (ch) { ch.disabled = true; ch.textContent = "Checking…"; }
     app.querySelectorAll("#sheet button").forEach(b => { b.disabled = true; });
@@ -2639,9 +2639,10 @@
     // that spends it comes back and says what it does.
     if (ch && !isMarked(g)) { ch.disabled = false; ch.textContent = wasLabel; }
     EXAM.results[key] = g;
-    // Drawn only onto the sheet it was asked from, still on screen: never onto
-    // another question's, and never into Study or the Test mode home.
-    if (EXAM.seq[EXAM.pos] === item && sheetEl && document.contains(sheetEl)) examSheet(item, key, g);
+    // Drawn only while its own question is on screen. Leaving the paper moves the
+    // sitting's generation on (examHome), so a reply never reaches the Test mode
+    // home or a Study card: it has already returned above.
+    if (EXAM.seq[EXAM.pos] === item) examSheet(item, key, g);
   }
   function examOnlyMarks(g, q) {
     if (g && g.kind === "demo") return ASSESS.fail("DEMO_NOT_ALLOWED",

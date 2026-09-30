@@ -274,8 +274,8 @@ module.exports = [
   {
     id: "tm-reply-follows-student-out",
     file: "app.js",
-    find: "    if (EXAM.seq[EXAM.pos] === item && sheetEl && document.contains(sheetEl)) examSheet(item, key, g);",
-    replace: "    if (EXAM.seq[EXAM.pos] === item) examSheet(item, key, g);",
+    find: "    EXAM.gen++;                                    // whatever sitting was open has ended",
+    replace: "",
     owner: "ui72",
     why: "a reply that landed after the student left drew itself into the Test mode home or a Study card",
   },
