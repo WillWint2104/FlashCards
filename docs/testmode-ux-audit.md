@@ -986,3 +986,27 @@ applying here too. It was not applied, because UX-TEST-15 approved the demo
 path's wording for these formats. Recommendation: in Test Mode, use `noDemo`
 for every written format, and keep the demo grade for Study mode.
 
+
+## Found while designing Page 2 (import and validation)
+
+### UX-TEST-23: a paper for a subject Marginal cannot mark passes validation as publishable
+
+`PAPER.examine()` checks that `curriculum.subjectKey` is well formed, but not that
+a registered subject package exists for it. The package check happens only at
+marking time, in `ASSESS.resolveAuthority`. The synthetic paper re-declared as
+`legal_studies` examines as **publishable, sittable**. Every written answer in it
+would then be refused at marking with *"no subject package named
+"legal_studies" is available"*.
+
+Page 2 has to resolve the subject anyway, because showing *Business Studies ·
+Stage 6* as resolved is the proof the page exists to give. It calls
+`resolveAuthority` against the registered packages, the same call
+`markingContext` makes. A failed resolution makes the page's verdict **Needs
+something resolved**. The mockup demonstrates this with the real function
+(`02-import-resolve.html`).
+
+For Slice A, the import has to use both checks: `examine()`, then resolution
+against the packages the app actually registers. Whether a paper with no
+marker-dependent questions (multiple choice and calculation only) should still
+be blocked by an unregistered subject is left open. It could be sat and marked
+without one.
