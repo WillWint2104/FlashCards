@@ -930,9 +930,13 @@ export default {
     // missing or non-numeric score as 0, which turned an unusable reply into a
     // fabricated low grade. Only a review whose every paragraph carries a real score
     // and scale reaches finalize.
+    // A paragraph worth nothing (a heading on its own line) is a real reply, and
+    // reconcileParagraphs shares the marks out around it; only a review with no
+    // scale at all, or a mark that is not a number, is unusable.
     const unusable = r.paragraphs.some(p => !p || typeof p !== "object" ||
       typeof p.score !== "number" || !Number.isFinite(p.score) || p.score < 0 ||
-      typeof p.max !== "number" || !Number.isFinite(p.max) || p.max <= 0);
+      typeof p.max !== "number" || !Number.isFinite(p.max) || p.max < 0) ||
+      r.paragraphs.every(p => p.max === 0);
     if (unusable) {
       return json({ error: "grader returned an unusable mark", retryable: true }, 502, cors);
     }

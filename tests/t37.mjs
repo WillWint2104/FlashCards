@@ -59,7 +59,7 @@ const broken = [
   ['score not a number', p => { p.score = null; }],
   ['score negative', p => { p.score = -1; }],
   ['max missing', p => { delete p.max; }],
-  ['max zero', p => { p.max = 0; }],
+  ['max negative', p => { p.max = -1; }],
 ];
 for (const [name, edit] of broken) {
   const r = JSON.parse(JSON.stringify(REVIEW)); edit(r.paragraphs[0]);
@@ -71,6 +71,18 @@ const second = JSON.parse(JSON.stringify(REVIEW));
 second.paragraphs.push({ name: 'More', reasons: [], sentences: [] });
 const two = await reply(second, 'tool_use');
 ok(two.status === 502 && noMark(two.body), 'one unusable paragraph among good ones still refuses the whole review: ' + two.status);
+
+console.log('--- a paragraph worth nothing is a real reply; a review with no scale is not ---');
+// A heading on its own line is worth 0, and reconcileParagraphs shares the marks
+// out around it. Refusing it would leave a real review unmarked for ever.
+const heading = JSON.parse(JSON.stringify(REVIEW));
+heading.paragraphs.unshift({ name: 'Heading', score: 0, max: 0, reasons: [], sentences: [] });
+const hd = await reply(heading, 'tool_use');
+ok(hd.status === 200 && hd.body.score === 2 && hd.body.max === 3,
+   'a zero-max heading paragraph still marks, reconciled: ' + hd.status + ' ' + JSON.stringify(hd.body && [hd.body.score, hd.body.max]));
+const noScale = JSON.parse(JSON.stringify(REVIEW)); noScale.paragraphs[0].max = 0; noScale.paragraphs[0].score = 0;
+const ns = await reply(noScale, 'tool_use');
+ok(ns.status === 502 && noMark(ns.body), 'a review whose every paragraph is worth nothing has no scale, and is refused: ' + ns.status);
 
 console.log(pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

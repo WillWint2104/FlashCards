@@ -1061,3 +1061,42 @@ Mode only; Study keeps its demo grade.
   extended response that produces criterion statuses the model never gave.
   The mark itself comes from the paragraphs, which are now validated. The
   rubric is left open.
+
+### UX-TEST-22: corrections from the adversarial review
+
+A three-lens review of the change, each finding checked by a skeptic, confirmed
+defects in it, and all are fixed:
+
+- **Blocker: a reply followed the student out of the paper.** Leaving changed
+  nothing the guards compared. A late reply then drew itself into the Test mode
+  home (a TypeError) or into a Study card. There, *Try marking again* would mark
+  Study text against the exam's question.
+  - A sitting now has a generation. Starting a paper and leaving to Test mode
+    home both move it on.
+  - A reply is drawn only onto the sheet it was asked from, and only while that
+    sheet is still on screen.
+  - Note for Slice A: once attempts persist, a reply for an answer the student
+    submitted should land in that saved attempt, by attempt, not be dropped.
+- **Refusals said "Not marked".** Decision 20 says every unmarked answer in a
+  sitting is *not marked yet*, and the results page already said so. Now only
+  the *Try marking again* button depends on whether a retry can help.
+- **The worker refused a paragraph worth nothing.** A heading on its own line is
+  a real reply, and `reconcileParagraphs` was written to absorb it. The worker
+  now refuses only negative or non-numeric marks, or a review whose every
+  paragraph is worth nothing.
+- **A fractional score was accepted.** The worker only sends whole marks. A
+  question worth a fractional number of marks is now refused before it is sent,
+  rather than shown on a scale the marker did not use.
+- **A failed second opinion said "This response was not marked"** beside a
+  mark on screen. It now says *Your mark stands. The marker could not give a
+  second opinion just now.*
+- **The Settings and home copy overstated the rule.** Answer-key short answers
+  are marked without the marker. The copy now says *answers that need the
+  marker*.
+- **Untested paths.** Timeouts, stalled bodies and the second opinion's late
+  reply had no test. ui72 now covers them:
+  - the timeout and the stalled body run under the page's fake clock;
+  - leaving mid-marking is tested for Study and for the home;
+  - the second-opinion scenario now asserts that the request was sent.
+
+  Six mutations were added for these guards.

@@ -124,6 +124,7 @@ async function unmarkedYet(p, n, why) {
       ['a score above the scale', { status: 200, body: REVIEW(25, 20) }],
       ['a reply on a different scale', { status: 200, body: REVIEW(5, 10) }],
       ['a negative score', { status: 200, body: REVIEW(-1, 20) }],
+      ['a fractional score', { status: 200, body: REVIEW(7.5, 20) }],
       ['a bare number', { status: 200, body: '7' }],
       ['text that is not JSON', { status: 200, body: 'oops' }],
     ];
@@ -158,7 +159,7 @@ async function unmarkedYet(p, n, why) {
     ok(why.test(s) && !/could not be reached/.test(s), n + ': says what happened: ' + s.slice(0, 140));
     ok(!/—/.test(s), n + ': the worker\'s own text, em dash and all, is not shown');
     ok((await has(p, '#examremark')) === retry, n + ': "Try marking again" ' + (retry ? 'offered' : 'not offered, because it cannot help'));
-    ok(retry ? /Not marked yet/.test(s) : (/Not marked/.test(s) && !/Not marked yet/.test(s)), n + ': ' + (retry ? '"not marked yet"' : '"not marked", with nothing to wait for'));
+    ok(/Not marked yet/.test(s), n + ': "not marked yet", as every unmarked answer in a sitting is (decision 20)');
     const ch = await p.$eval('#check', e => ({ disabled: e.disabled, label: e.textContent.trim() }));
     ok(!ch.disabled && !/Checking/.test(ch.label), n + ': the submit button comes back: ' + JSON.stringify(ch));
     ok(/1 not marked/.test(await bar(p)) && /^0\//.test(await bar(p)), n + ': not counted as answered');
@@ -246,9 +247,110 @@ async function unmarkedYet(p, n, why) {
     await p.click('#examreview');
     await p.waitForFunction(() => { const b = document.querySelector('#examreview'); return b && !b.disabled; }, null, { timeout: 15000 }).catch(() => {});
     await settled(p);
+    ok(mode.sent.length === 1, 'the second opinion was asked for: ' + mode.sent.length);
+    const said = await p.$$eval('.toast', es => es.map(e => e.textContent).join(' '));
+    ok(/Your mark stands/.test(said) && !/was not marked/.test(said) && !/\u2014/.test(said),
+       'and its failure says the mark stands, not that the answer was not marked: ' + JSON.stringify(said));
     const s = await sheet(p);
     ok(/^2\s*\/\s*2/.test(s) && !/demo grade/i.test(s), 'the unreachable marker leaves the 2/2 in place, with no demo grade over it: ' + s.slice(0, 60));
     ok(await bar(p) === '1/8 answered · 2/40 marks', 'and the bar is unchanged: ' + await bar(p));
+    await ctx.close();
+  }
+
+  // ---- 9. leaving while an answer is being marked ------------------------
+  // The reply must not follow the student out: not into the Test mode home, and
+  // not into a Study card, where a "Try marking again" would mark Study text
+  // against the exam's question.
+  console.log('--- 9. leave mid-marking: the reply stays out of wherever the student went');
+  {
+    const seed = { cards: {}, endpoint: '', code: '12Ec126', log: [], lessons: {},
+      customSets: [{ id: 'custom-x', name: 'Practice set', cards: [{ id: 'ext1', type: 'essay', marks: 20, prompt: 'Evaluate a marketing strategy.', model: 'm', vocab: [] }] }],
+      exams: [Object.assign({}, paper, { id: 'walk-2025-bus' })] };
+    for (const [n, fail] of [['a real mark', false], ['a failure', true]]) {
+      const { p, ctx, mode, errs } = await open(b, seed);
+      mode.reply = () => fail ? { status: 503, body: {}, delay: 2500 } : Object.assign(REVIEW(2, 2), { delay: 2500 });
+      await sit(p, '', 'Section II - Short answer');
+      await p.fill('#ans', 'Speed, because customers wait at the vans.');
+      await p.click('#check'); await settled(p);
+      await p.click('#examquit'); await settled(p);
+      await p.$$eval('.navtab', es => { const t = es.find(x => /Study/i.test(x.textContent)); t && t.click(); }); await settled(p);
+      await p.click('[data-open="custom-x"]'); await settled(p);
+      await p.$$eval('.mode', es => { const m = es.find(x => /Long answer/.test(x.textContent)); m && m.click(); }); await settled(p);
+      await p.waitForTimeout(3500); await settled(p);
+      const st = await sheet(p);
+      ok(st === '' && !(await has(p, '#examremark')), n + ' for the exam does not appear on the Study card: ' + JSON.stringify(st.slice(0, 80)));
+      ok(mode.sent.length === 1 && !errs.length, n + ': one request, no page errors: ' + JSON.stringify(errs));
+      await ctx.close();
+    }
+    const { p, ctx, mode, errs } = await open(b);
+    mode.reply = () => Object.assign(REVIEW(2, 2), { delay: 2500 });
+    await sit(p, '', 'Section II - Short answer');
+    await p.fill('#ans', 'Speed, because customers wait at the vans.');
+    await p.click('#check'); await settled(p);
+    await p.click('#examquit'); await settled(p);
+    await p.waitForTimeout(3500); await settled(p);
+    ok(!errs.length && !!(await p.$('.exam-row')), 'leaving to the Test mode home: the reply lands nowhere and breaks nothing: ' + JSON.stringify(errs));
+    await ctx.close();
+  }
+
+  // ---- 10. a marker that never answers, and a reply that stops part way ----
+  // Both are bounded, and both end unmarked with a retry. Time is moved on with
+  // the page's clock rather than waited for: 45 seconds for the request, 15 for
+  // a body that stalls after its headers.
+  console.log('--- 10. timeout and a stalled reply end unmarked, not stuck on Checking');
+  for (const [n, how, ms, why] of [['a marker that never answers', 'hang', 46000, /could not be reached/],
+                                   ['a reply that stops part way', 'stall', 16000, /stopped part way/]]) {
+    const ctx = await b.newContext({ viewport: { width: 1280, height: 1000 } });
+    await ctx.addInitScript(mode => {
+      const real = window.fetch;
+      window.fetch = (u, init) => {
+        if (!/workers\.dev/.test(String(u)) || /coach/.test(String(init && init.body))) return real(u, init);
+        if (mode === 'hang') return new Promise((_, no) => init && init.signal && init.signal.addEventListener('abort',
+          () => no(new DOMException('The operation was aborted.', 'AbortError'))));
+        const body = new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode('{"score":')); } });
+        return Promise.resolve(new Response(body, { status: 200, headers: { 'content-type': 'application/json' } }));
+      };
+    }, how);
+    const p = await ctx.newPage();
+    const errs = []; p.on('pageerror', e => errs.push(String(e).slice(0, 200)));
+    await p.clock.install();
+    await p.goto(T + '?review=1'); await settled(p);
+    await sit(p, '', 'Section III - Business report');
+    await p.fill('#ans', 'Executive summary\nConsolidate.');
+    await p.click('#check'); await settled(p);
+    ok(/Checking/.test(await p.$eval('#check', e => e.textContent)), n + ': checking while it waits');
+    await p.clock.fastForward(ms);
+    await p.waitForFunction(() => !!document.querySelector('#sheet .sheet'), null, { timeout: 10000 }).catch(() => {});
+    await settled(p);
+    await unmarkedYet(p, n, why);
+    ok(/^0\/1 answered · 0\/20 marks · 1 not marked$/.test(await bar(p)), n + ': counted as not marked: ' + await bar(p));
+    ok(!errs.length, n + ': no page errors ' + JSON.stringify(errs));
+    await ctx.close();
+  }
+
+  // ---- 11. a second opinion that arrives after the student left -----------
+  console.log('--- 11. a late second opinion does not land in the next sitting');
+  {
+    const keyed = JSON.parse(JSON.stringify(paper));
+    keyed.name = 'Phrased points paper';
+    keyed.sections[1].questions[0].parts[0].points = [{ text: 'Names speed as the objective', marks: 1, need: ['speed'] },
+                                                      { text: 'Links it to the waiting times', marks: 1, need: ['wait'] }];
+    const seed = { cards: {}, endpoint: '', code: '12Ec126', log: [], customSets: [], lessons: {},
+      exams: [Object.assign({}, keyed, { id: 'phrased' })] };
+    const { p, ctx, mode } = await open(b, seed);
+    mode.reply = s => /old sitting/.test(s.answer) ? Object.assign(REVIEW(0, 2), { delay: 2500 }) : 'abort';
+    await sit(p, 'Phrased points paper', 'Section II - Short answer');
+    await submit(p, 'Speed, because customers wait. The old sitting.');
+    await p.click('#examreview'); await settled(p);
+    await p.click('#examquit'); await settled(p);
+    await sit(p, 'Phrased points paper', 'Section II - Short answer');
+    await submit(p, 'Speed, because customers wait. The new sitting.');
+    ok(/^2\s*\/\s*2/.test(await sheet(p)), 'the new sitting marks 11(a) from its phrasings');
+    await p.waitForTimeout(3500); await settled(p);
+    await p.click('#examnext'); await settled(p);
+    await submit(p, 'Casual operators have no guaranteed hours.');
+    ok(await bar(p) === '1/8 answered · 2/40 marks · 1 not marked',
+       'the old second opinion (0/2) did not replace the new mark: ' + await bar(p));
     await ctx.close();
   }
 

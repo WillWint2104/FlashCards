@@ -11357,7 +11357,9 @@ module.exports = {
   // the answer "Checking" for ever.
   function markerBody(res) {
     let timer = null;
-    const stall = new Promise((_, no) => { timer = setTimeout(() => no(new Error("the marker's reply stopped part way")), MARKER_BODY_MS); });
+    const stall = new Promise((_, no) => { timer = setTimeout(() => {
+      const e = new Error("the marker's reply stopped part way"); e.name = "MarkerStall"; no(e);
+    }, MARKER_BODY_MS); });
     return Promise.race([res.json(), stall]).finally(() => clearTimeout(timer));
   }
   // A marker's judgement, in the shape the worker always sends one: an object,
@@ -11367,13 +11369,19 @@ module.exports = {
   function invalidMarkerReply(g, card) {
     const marks = Number(card && card.marks) || 0;
     const ok = g && typeof g === "object" && !Array.isArray(g) && g.error == null &&
-      typeof g.score === "number" && Number.isFinite(g.score) &&
+      typeof g.score === "number" && Number.isInteger(g.score) &&
       typeof g.max === "number" && g.max === Math.round(marks) && g.score >= 0 && g.score <= g.max;
     return ok ? null : ASSESS.fail("MARKER_INVALID_REPLY",
       "This response was not marked: the marker's reply did not contain a mark.", { max: marks, retry: true });
   }
   async function gradeWritten(card, answer, opts) {
     opts = opts || {};
+    // The marker marks in whole marks. A question worth 2.5 would come back out of
+    // 3, and showing that as a mark out of 2.5 would be a number the marker never
+    // gave. In Test Mode it is refused rather than rescaled.
+    if (opts.noDemo && card && !Number.isInteger(Number(card.marks)))
+      return ASSESS.refuse("MARKS_NOT_WHOLE", "This response was not marked: the question is worth " + card.marks +
+        " marks, and the marker only marks in whole marks.", { max: Number(card.marks) || 0, retry: false });
     // WHOSE CRITERIA MARK THIS, DECIDED FIRST AND REGARDLESS OF THE ENDPOINT.
     //
     // This check used to sit inside `if (state.endpoint)`, so a response whose
@@ -11484,6 +11492,9 @@ module.exports = {
         return MARKED({ score: Math.min(Number(g.score) || 0, Number(card.marks) || 0),
           max: Number(card.marks) || 0, kind: "llm", fb: g });
       } catch (e) {
+        if (opts.noDemo && e && e.name === "MarkerStall") return ASSESS.fail("MARKER_STALLED",
+          "This response was not marked: the marker's reply stopped part way.",
+          { max: Number(card && card.marks) || 0, retry: true });
         if (opts.noDemo && e && e.name === "SyntaxError") return ASSESS.fail("MARKER_INVALID_REPLY",
           "This response was not marked: the marker's reply could not be read.",
           { max: Number(card && card.marks) || 0, retry: true });
@@ -11635,7 +11646,7 @@ module.exports = {
       <div class="settings">
         <details>
           <summary>Settings — AI essay grading</summary>
-          <p>${state.endpoint ? "AI marking: connected ✓" : "In Study, extended answers get an instant demo grade until your teacher connects AI marking. Test mode does not give demo grades: written answers there stay unmarked until marking is connected."}</p>
+          <p>${state.endpoint ? "AI marking: connected ✓" : "In Study, extended answers get an instant demo grade until your teacher connects AI marking. Test mode does not give demo grades: answers that need the marker stay unmarked until marking is connected."}</p>
           ${state.endpoint ? `<input id="classcode" type="text" placeholder="Class code (only if your teacher gave you one)" value="${esc(state.code || "")}" style="max-width:240px">
           <button class="btn sm" id="saveEndpoint">Save</button>` : ""}
           <button class="btn sm ghost" id="resetAll">Reset my progress</button>
@@ -12907,10 +12918,14 @@ module.exports = {
     // In a sitting, a failure that marking again can fix is "not marked yet"
     // (UX-TEST-22). examOwns is identity-based, so a Study card never matches
     // and Study's wording is unchanged.
-    const yet = !!examOwns(card) && examCanRemark(g);
+    // In a sitting every unmarked answer is "not marked yet" (decision 20); only
+    // the "Try marking again" button depends on whether retrying can help.
+    // examOwns is identity-based, so a Study card never matches and Study's
+    // wording is unchanged.
+    const yet = !!examOwns(card);
     return `<div class="sheet unmarked"><div class="head">
         <div class="score nomark">${yet ? "Not marked yet" : "Not marked"}</div>
-        <h3>${yet ? "The marker did not return a mark" : failed ? "Marking could not run" : "This was not marked"}</h3>
+        <h3>${yet ? (failed ? "The marker did not return a mark" : "It could not be marked") : failed ? "Marking could not run" : "This was not marked"}</h3>
       </div><div class="bd">
         <p>${esc(why)}</p>
         <p class="whynot">Your answer is still here, and nothing has been recorded against it${card && card.marks ? ", including the " + card.marks + " mark" + (card.marks === 1 ? "" : "s") + " this question is worth" : ""}.</p>
@@ -13004,7 +13019,10 @@ module.exports = {
   function looksLikeExam(d) {
     return !!(d && typeof d.format === "string" && EXAM_FAMILY.test(d.format.trim()));
   }
-  const EXAM = { paper: null, sit: null, seq: [], pos: 0, results: {}, answers: {}, choice: {} };
+  // `gen` names the sitting. Starting a paper and leaving to Test mode home both
+  // move it on, so a marker reply that arrives for a sitting the student has left
+  // can tell it has nowhere to go (UX-TEST-22).
+  const EXAM = { paper: null, sit: null, seq: [], pos: 0, results: {}, answers: {}, choice: {}, gen: 0 };
   // A section with `choose: 1` is an either/or (e.g. HSC Section IV: attempt
   // Question 26 OR Question 27). The student picks at the section intro; only the
   // chosen question is sequenced, counted in the totals and shown in the results.
@@ -13046,6 +13064,7 @@ module.exports = {
   // and is where a paper is sat. Empty until a paper is imported, with a clear
   // pointer to the Create tab (papers are teacher-imported, not built in).
   function examHome() {
+    EXAM.gen++;                                    // whatever sitting was open has ended
     if (gated()) return authScreen();
     view = "test"; session = null; currentTopic = null;
     const papers = examList();
@@ -13053,7 +13072,7 @@ module.exports = {
       ${nav()}
       ${cloudBarHTML()}
       <div class="hi">Test mode</div>
-      <div class="hi-s">Sit a full practice exam, guided. You get feedback after every question and a mark breakdown at the end.${state.endpoint ? "" : " Written answers stay unmarked until your teacher connects marking."}</div>
+      <div class="hi-s">Sit a full practice exam, guided. You get feedback after every question and a mark breakdown at the end.${state.endpoint ? "" : " Answers that need the marker stay unmarked until your teacher connects marking."}</div>
       ${papers.length ? `<div class="exam-list">
         ${papers.map(p => {
           const c = examCounts(p);
@@ -13161,6 +13180,7 @@ module.exports = {
     });
     seq.push({ kind: "end" });
     EXAM.paper = paper; EXAM.sit = sit; EXAM.seq = seq; EXAM.pos = 0; EXAM.results = {}; EXAM.answers = {}; EXAM.choice = {};
+    EXAM.gen++;
     examRender();
   }
   // The picker: sit the whole paper or any combination of its sections, so a student
@@ -13392,7 +13412,7 @@ module.exports = {
     const ans = ($("#ans") && $("#ans").value || "").trim();
     if (!ans) { toast("Write your answer first."); return; }
     const wasLabel = ch ? ch.textContent : "";
-    const sitting = EXAM.results;
+    const sitting = EXAM.results, gen = EXAM.gen, sheetEl = $("#sheet");
     EXAM.answers[key] = ans;
     if (ch) { ch.disabled = true; ch.textContent = "Checking…"; }
     app.querySelectorAll("#sheet button").forEach(b => { b.disabled = true; });
@@ -13406,13 +13426,15 @@ module.exports = {
         { max: Number(q.marks) || 0, retry: true });
     }
     g = examOnlyMarks(g, q);
-    if (EXAM.results !== sitting || EXAM.answers[key] !== ans) return;
+    if (EXAM.gen !== gen || EXAM.results !== sitting || EXAM.answers[key] !== ans) return;
     // The audit found this button still reading "Checking…" after a refusal,
     // beside a score of undefined/undefined. Nothing was spent, so the control
     // that spends it comes back and says what it does.
     if (ch && !isMarked(g)) { ch.disabled = false; ch.textContent = wasLabel; }
     EXAM.results[key] = g;
-    if (EXAM.seq[EXAM.pos] === item) examSheet(item, key, g);
+    // Drawn only onto the sheet it was asked from, still on screen: never onto
+    // another question's, and never into Study or the Test mode home.
+    if (EXAM.seq[EXAM.pos] === item && sheetEl && document.contains(sheetEl)) examSheet(item, key, g);
   }
   function examOnlyMarks(g, q) {
     if (g && g.kind === "demo") return ASSESS.fail("DEMO_NOT_ALLOWED",
@@ -13562,9 +13584,10 @@ module.exports = {
     const sh = $("#sheet"); if (sh && sh.scrollIntoView) sh.scrollIntoView({ behavior: "smooth", block: "nearest" });
     wireGlossary();
   }
+  const SECOND_OPINION_FAILED = "Your mark stands. The marker could not give a second opinion just now.";
   async function examDeepReview(item, key) {
     const ans = EXAM.answers[key] || "";
-    const sitting = EXAM.results, pos = EXAM.pos;
+    const sitting = EXAM.results, pos = EXAM.pos, gen = EXAM.gen;
     const btn = $("#examreview"); if (btn) { btn.disabled = true; btn.textContent = "Marking…"; }
     // Never a demo grade, and never over the mark already here (UX-TEST-22): a
     // failure keeps the answer-key mark and says why.
@@ -13572,11 +13595,13 @@ module.exports = {
     try { g = examOnlyMarks(await gradeWritten(item.q, ans, { noDemo: true }), item.q); }
     catch (e) { g = ASSESS.fail("MARKING_STOPPED", "Marking stopped before it finished.", { retry: true }); }
     finally { if (btn && document.contains(btn)) { btn.disabled = false; btn.textContent = "What would make this stronger →"; } }
-    if (EXAM.results !== sitting || EXAM.pos !== pos || EXAM.answers[key] !== ans) return;
+    if (EXAM.gen !== gen || EXAM.results !== sitting || EXAM.pos !== pos || EXAM.answers[key] !== ans || !(btn && document.contains(btn))) return;
     // A refusal has a reason, and "could not be reached" is not it. Saying the
     // wrong one sends a student looking for a connection problem that is not
     // there.
-    if (ASSESS.outcomeOf(g) === "refused") { toast(g.why || "This was not marked."); return; }
+    // The answer is marked already; only the second opinion failed. Saying "this
+    // response was not marked" beside a mark on screen would be untrue.
+    if (ASSESS.outcomeOf(g) === "refused") { toast(SECOND_OPINION_FAILED, 4000); return; }
     // The marker's own words come back INTO THIS SHEET rather than opening the
     // revision workspace. What the authored points could not say - why a point
     // was missed, and what the response did overall - is the summary and the
@@ -13587,7 +13612,7 @@ module.exports = {
       EXAM.results[key] = g;
       examSheet(item, key, g);
     } else {
-      toast((g && g.why) || "Marking could not be reached just now.");
+      toast(SECOND_OPINION_FAILED, 4000);
     }
   }
   // WHAT USED TO BE HERE: examOpenReview, which handed a marked paper to
