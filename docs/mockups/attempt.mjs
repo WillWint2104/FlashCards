@@ -85,7 +85,7 @@ export function derive(name) {
   return {
     status, sections, whole: sections.length === paper.sections.length,
     total: items.length, answered: t.done, notMarked: t.refused + t.failed,
-    flagged: flagged.length, got: t.got, max: t.max,
+    flagged: flagged.length, flags: flagged, got: t.got, max: t.max,
     current: current ? { key: keyOf(current), display: current.display, item: items.indexOf(current) + 1 } : null,
     startedAt: at && at.startedAt, updatedAt: at && at.updatedAt, completedAt: at && at.completedAt,
     results, items,
