@@ -1011,6 +1011,20 @@ marker-dependent questions (multiple choice and calculation only) should still
 be blocked by an unregistered subject is left open. It could be sat and marked
 without one.
 
+**Fixed (decision 21), at the assessment path.** `examine(paper, { packages })`
+now asks whether every question has a way to be marked, not only whether the
+subject exists. `PAPER.markerDependent` lists the written questions that need
+the subject's marker: those without a complete local answer key under
+UX-TEST-18 Option A.
+- None need it: the paper is **Ready with limited support**
+  (`SUBJECT_MARKING_UNAVAILABLE`).
+- Any need it: **Needs something resolved** (`SUBJECT_UNREGISTERED` or
+  `CRITERIA_ABSENT`), with the count.
+
+The app's import door passes its registered packages (`examineExam`). Covered
+by `tests/t30.mjs` (contract, both cases) and `tests/ui68.js` (the door). Four
+mutations are each killed by their intended assertion.
+
 ## UX-TEST-22 fixed: no demo grades in Test Mode (decision 20)
 
 Mapped first by four independent readers and a completeness critic. Every route
@@ -1055,6 +1069,17 @@ Mode only; Study keeps its demo grade.
   answer-key gap, not the marker's, so it belongs with import validation
   (Page 2 and Slice A) as a finding. Do not compare with `Number.isFinite`
   alone: a stored tolerance of `"0.05"` works today.
+  - **Fixed (decision 21).** At import, a missing, blank, non-numeric or
+    negative tolerance is an invalid file (`CALC_TOLERANCE_MISSING`), as
+    strict as `expected` already was. A tolerance of 0 is valid and means an
+    exact answer.
+  - A paper stored before the rule is not re-examined. So `gradeCalc` refuses
+    to mark when the key is incomplete (`CALC_KEY_INCOMPLETE`). The answer is
+    then *Not marked yet*, not wrong.
+  - The runtime still reads a stored numeric string such as `"0.05"`, so
+    nothing that marks today stops marking.
+  - Covered by `tests/t30.mjs` and `tests/ui72.js` section 12 (missing, null
+    and blank).
 - **Papers restored from a backup or synced are sat without `PAPER.examine`.**
   A stored paper can reach any runtime route a validator would have refused.
 - **The worker rebuilds a missing rubric against the criterion names.** In an

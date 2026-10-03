@@ -83,6 +83,7 @@
   .verdict.note h2{color:var(--gold-dk)}
   .verdict.stop h2{color:var(--coral-dk)}
   .verdict p{font-size:14.5px;font-weight:600;color:var(--ink)}
+  .verdict p.more{margin-top:6px}
 
   .grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:28px}
   /* The proof asked for before anything is added: the subject as Marginal
@@ -91,6 +92,7 @@
   .ident{border-radius:14px;padding:16px 18px;margin-bottom:18px}
   .ident.ok{background:#F4F9F8;border:1.5px solid var(--line)}
   .ident.no{background:#FFF8F6;border:1.5px solid #F7C9C1}
+  .ident.plain{background:#F4F9F8;border:1.5px solid var(--line)}
   .ident .who{font-family:var(--disp);font-weight:600;font-size:26px;line-height:1.2}
   .ident .how{font-size:13.5px;font-weight:700;color:var(--ink-2);margin-top:6px;display:flex;gap:7px;align-items:baseline}
   .ident .claim{font-size:13px;font-weight:600;color:var(--ink-2);margin-top:2px}
@@ -163,7 +165,7 @@
     
     <div class="verdict stop">
       <span class="mark" aria-hidden="true">!</span>
-      <div><h2 id="rt" tabindex="-1">Needs something resolved</h2><p>Marginal cannot mark this paper's subject, so the paper cannot be added.</p></div>
+      <div><h2 id="rt" tabindex="-1">Needs something resolved</h2><p>Some questions in this paper need marking for a subject Marginal does not have, so the paper cannot be added.</p></div>
     </div>
     <div class="grid">
       <div class="left"><div class="ident no">
@@ -173,6 +175,7 @@
   </div><div class="paperid">
     <h3 class="k">Paper</h3>
     <p class="title">Legal Studies practice paper</p>
+    <p class="facts">Version 1</p>
     <p class="facts">20 questions · 4 sections · 90 marks · 3 hours (plus 5 minutes reading time)</p>
     <p class="src">Source: Marginal (original practice material, not a past HSC paper)</p>
   </div></div>
@@ -184,9 +187,9 @@
     </div>
     <section class="group stop" aria-labelledby="g-blocked">
       <h3 id="g-blocked">What needs resolving <span class="n" aria-hidden="true">1</span><span class="sr">, 1 item</span></h3>
-      <ul><li><p class="where">Subject details</p><p class="what">This file names a subject Marginal does not have (it calls it Legal Studies), so its written answers could not be marked. Changing the file only helps if it names the wrong subject.</p></li></ul>
+      <ul><li><p class="where">Subject details</p><p class="what">This file names a subject Marginal does not have (it calls it Legal Studies), and 10 questions in it need that subject's marker, so they could not be marked. Changing the file only helps if it names the wrong subject.</p></li></ul>
     </section><details class="tech"><summary>Details for whoever made this file</summary>
-      <ul><li><code>SUBJECT_UNREGISTERED</code> at <code>curriculum.subjectKey</code>. No subject package named &quot;legal_studies&quot; is available, so there are no criteria of its own to mark against.</li></ul>
+      <ul><li><code>SUBJECT_UNREGISTERED</code> at <code>curriculum.subjectKey</code>. No subject package named &quot;legal_studies&quot; is available, so there are no criteria of its own to mark against. 10 questions need the subject's marker, so the paper cannot be sat as it stands.</li></ul>
     </details>
     <div class="acts">
       <label class="btn" for="f">Choose a different file</label>

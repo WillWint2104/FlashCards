@@ -43,6 +43,7 @@ Stored beside `state.exams`, in the same local store and in the same backup file
 state.attempts["paper:" + paperId] = { current: Attempt | null, last: Attempt | null }
 
 Attempt = {
+  version:     exam.version,         the version it started on, never changed
   sections:    [si, ...],            what the student chose to sit
   answers:     { key: text | index },  saved as typed; key is examKey (si-qi[-pi])
   results:     { key: outcome },     the marked / refused / failed result, as now
@@ -60,7 +61,25 @@ Attempt = {
   says so when an attempt is in progress.
 
 `results`, `answers` and `choice` are the three bags `EXAM` already holds.
-`sections` is `EXAM.sit`. The new fields are `flags`, `at` and the timestamps.
+`sections` is `EXAM.sit`. The new fields are `version`, `flags`, `at` and the
+timestamps.
+
+## Versions: attempts are pinned (decision 21)
+
+`paperId` is the paper's own `exam.id`, never its title. A paper's identity is
+`exam.id` with `exam.version`.
+
+- **Importing a newer version** replaces the version the library shows. It does
+  not touch any attempt. Each `Attempt.version` stays the version it started
+  on, and its answers, keys and results keep meaning what they meant there.
+- **The superseded version is kept, out of sight,** for as long as a `current`
+  or `last` attempt is pinned to it, and removed when none is. The library
+  shows one card per `exam.id`, the newest.
+- **Resume** continues on the attempt's own version. **Try again** and a fresh
+  start use the library's version.
+- **A type session** names each item by paper, version and key
+  (`{ paper, version, key }`), so the same rule holds there.
+- **An older version** than the library's is not imported.
 
 ## Two scopes, never one attempt (decision 19)
 
@@ -75,8 +94,8 @@ state.attempts["type:" + canonicalFormat] = { current, last }   a question-type 
 ```
 
 A type session's `Attempt` has the same fields, and its `sections` is replaced
-by `items`: the questions it covers, each named by paper and key
-(`{ paper: paperId, key: "1-0-0" }`). Its answers, results and flags are keyed
+by `items`: the questions it covers, each named by paper, version and key
+(`{ paper: paperId, version: "1", key: "1-0-0" }`). Its answers, results and flags are keyed
 the same way, so two papers' 11(a) never collide.
 
 They share question content, the marking engine, the feedback surfaces, the

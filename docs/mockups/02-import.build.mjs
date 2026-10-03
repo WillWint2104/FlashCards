@@ -57,7 +57,7 @@ const list = a => a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") + " and 
 const GROUP = {
   publishable: { title: "Ready to import", tone: "ok", add: true, list: "",
                  lede: "Every question can be sat, and everything Marginal needs to mark it is in the file." },
-  thin:        { title: "Ready, with limited optional support", tone: "note", add: true, list: "Optional, and missing",
+  thin:        { title: "Ready with limited support", tone: "note", add: true, list: "Optional, and missing",
                  lede: "Every question can be sat, and everything Marginal needs to mark it is in the file. Some optional details are missing." },
   blocked:     { title: "Needs something resolved", tone: "stop", add: false, list: "What needs resolving",
                  lede: "It cannot be added yet. Whoever made the file needs to make the change below." },
@@ -99,6 +99,7 @@ const SAY = {
   MC_CHOICES_MISSING: () => "This multiple-choice question has fewer than two options.",
   MC_ANSWER_NOT_SINGULAR: () => "This multiple-choice question does not have exactly one correct option.",
   CALC_EXPECTED_MISSING: () => "This calculation does not give the answer it is marked against.",
+  CALC_TOLERANCE_MISSING: () => `This calculation does not say how close an answer has to be to count as correct, so every answer would be marked wrong. ${WHO} add one (0 for an exact answer).`,
   FORMAT_ABSENT: () => "This question does not say what kind of answer it takes.",
   POINTS_MALFORMED: () => "This question's marking points could not be read.",
   INSTRUCTIONS_MALFORMED: () => "This business report's instructions are not written as text, so they cannot be shown.",
@@ -121,9 +122,10 @@ const SAY = {
   SUBJECT_KEY_MALFORMED: () => `The paper names its subject in a form Marginal cannot match to a subject. ${WHO} correct it.`,
   KLA_KEY_MALFORMED: () => `The paper's learning area is written in a form Marginal cannot read. ${WHO} correct it.`,
   QUESTION_SUBJECT_OVERRIDE: () => `This question says it belongs to a different subject from the rest of the paper. ${WHO} correct it.`,
-  SUBJECT_UNREGISTERED: d => `This file names a subject Marginal does not have${d.course ? ` (it calls it ${d.course})` : ""}, so its written answers could not be marked. Changing the file only helps if it names the wrong subject.`,
+  SUBJECT_UNREGISTERED: d => `This file names a subject Marginal does not have${d.course ? ` (it calls it ${d.course})` : ""}, and ${plural(d.needs, "question")} in it ${d.needs === 1 ? "needs" : "need"} that subject's marker, so ${d.needs === 1 ? "it" : "they"} could not be marked. Changing the file only helps if it names the wrong subject.`,
   CRITERIA_ABSENT: d => `Marginal has ${d.label}, but no marking criteria for it, so written answers in this paper could not be marked.`,
   // optional, and missing
+  SUBJECT_MARKING_UNAVAILABLE: d => `Marginal has no marking for ${d.course || "this paper's subject"}. Every question here is marked from its own answer key, so this paper does not need it.`,
   JURISDICTION_ABSENT: () => "The paper does not say which state it is written for. This does not affect sitting or marking.",
   KLA_ABSENT: () => "The paper does not say which learning area it belongs to. This does not affect sitting or marking.",
   SECTION_NAME_ABSENT: () => "This section has no name, so students will see it as a number.",
@@ -171,7 +173,7 @@ function placeOf(paper, p) {
 // The numbers a totals sentence needs, from the paper, not from the message.
 function dataFor(paper, f, auth) {
   const cur = (paper && ASSESS.curriculumOf(paper)) || {};
-  const d = { course: cur.course || "", label: auth && auth.label };
+  const d = { course: cur.course || "", label: auth && auth.label, needs: paper ? PAPER.markerDependent(paper).length : 0 };
   const t = paper && Array.isArray(paper.sections) ? PAPER.totals(paper) : null;
   let m;
   if (f.code === "SECTION_TOTAL_DISAGREES" && (m = f.path.match(/^sections\[(\d+)\]/))) { d.said = paper.sections[+m[1]].marks; d.sum = t.sections[+m[1]]; }
@@ -189,22 +191,20 @@ function read(text, library) {
   try { data = JSON.parse(text); } catch (e) { return { kind: "unreadable", error: String(e.message) }; }
   if (data && typeof data === "object" && (Array.isArray(data.cards) || /^marginal-set@/.test(String(data.format || ""))))
     return { kind: "flashcards", name: data.name || "", cards: Array.isArray(data.cards) ? data.cards.length : 0 };
-  const v = PAPER.examine(data);
+  const v = PAPER.examine(data, { packages: PACKAGES });
   const version = v.findings.find(f => f.code === "PACKAGE_VERSION_UNSUPPORTED");
   if (version) return { kind: "version", finding: version, paper: data };
   const cur = ASSESS.curriculumOf(data) || {};
   const auth = ASSESS.resolveAuthority({ curriculum: cur, packages: PACKAGES });
+  // Given the packages, examine() asks whether every question can be marked
+  // (decision 21): an unregistered subject blocks the paper only when some
+  // question needs that subject's marker, and is limited support otherwise.
   const findings = v.findings.map(f => ({ state: f.state, code: f.code, path: f.path, message: f.message }));
-  // examine() checks the subject key's shape, not that a package exists for it
-  // (UX-TEST-23). The two refusals it cannot see are added here; the others
-  // duplicate a finding examine() already made.
-  if (!auth.ok && (auth.code === "SUBJECT_UNREGISTERED" || auth.code === "CRITERIA_ABSENT"))
-    findings.unshift({ state: "blocked", code: auth.code, path: "curriculum.subjectKey", message: auth.why });
   findings.forEach(f => { f.say = SAY[f.code](dataFor(data, f, auth)); });
   const worst = ORDER.find(s => findings.some(f => f.state === s)) || "publishable";
-  const ex = data && data.exam;
-  const dup = ex && library.find(p => p.exam && p.exam.id === ex.id && String(p.exam.version) === String(ex.version));
-  return { kind: "paper", paper: data, v, auth, cur, findings, worst, dup };
+  // The same paper is the same exam.id, compared by version, never by title.
+  const match = PAPER.libraryMatch(library, data);
+  return { kind: "paper", paper: data, v, auth, cur, findings, worst, match, dup: match.kind === "same" };
 }
 
 // ---- panels -------------------------------------------------------------------
@@ -223,6 +223,14 @@ function identity(r) {
     </div>`;
   }
   const said = cur.course || r.paper.subject || "";
+  if (!r.auth.ok && GROUP[r.worst].add) {
+    return `<div class="ident plain">
+      <h3 class="k">Subject and course</h3>
+      <p class="who">${esc([said, stage].filter(Boolean).join(" · "))}</p>
+      <p class="how">Named by the file. Marginal has no marking for this subject, and this paper does not need it</p>
+      ${claim ? `<p class="claim">${esc(claim)}, as stated in the file</p>` : ""}
+    </div>`;
+  }
   const how = r.auth.ok ? "Named by the file. Not checked further, because the file cannot be used as it is"
     : said ? "Named by the file, and not matched to any subject in Marginal" : "The file does not say which subject marks it";
   return `<div class="ident no">
@@ -244,6 +252,7 @@ function paperPanel(r) {
   return `<div class="paperid">
     <h3 class="k">Paper</h3>
     <p class="title">${esc(p.name || "Untitled paper")}</p>
+    ${p.exam && p.exam.version != null && String(p.exam.version) !== "" ? `<p class="facts">Version ${esc(p.exam.version)}${r.match && (r.match.kind === "newer" || r.match.kind === "different") ? ` · replaces version ${esc(r.match.from)} in your library` : ""}</p>` : ""}
     <p class="facts">${esc(facts.filter(Boolean).join(" · "))}</p>
     ${p.exam && p.exam.source ? `<p class="src">Source: ${esc(p.exam.source)}</p>` : ""}
   </div>`;
@@ -325,10 +334,12 @@ const fileBar = (name, size) => `
   <div class="file"><span class="doc" aria-hidden="true"></span><span class="fn">${esc(name)}</span>
     <span class="fs">${esc(size)}</span><span class="spacer"></span>
     <label class="link" for="f">Choose a different file</label></div>`;
-const verdictBox = (tone, title, lede) => `
+// \`more\` is markup the caller has already escaped: the consequence of adding,
+// said in the verdict because focus lands there when the check finishes.
+const verdictBox = (tone, title, lede, more) => `
     <div class="verdict ${tone}">
       <span class="mark" aria-hidden="true">${tone === "stop" ? "!" : "✓"}</span>
-      <div><h2 id="rt" tabindex="-1">${esc(title)}</h2><p>${esc(lede)}</p></div>
+      <div><h2 id="rt" tabindex="-1">${esc(title)}</h2><p>${esc(lede)}</p>${more ? `<p class="more">${more}</p>` : ""}</div>
     </div>`;
 const chooseAgain = `<label class="btn" for="f">Choose a different file</label>`;
 
@@ -336,25 +347,39 @@ function paperPage(r, file) {
   const g = GROUP[r.worst];
   let lede = g.lede;
   if (r.worst === "blocked" && r.findings.some(f => f.code === "SUBJECT_UNREGISTERED" || f.code === "CRITERIA_ABSENT"))
-    lede = "Marginal cannot mark this paper's subject, so the paper cannot be added.";
-  if (r.dup && g.add) {
+    lede = "Some questions in this paper need marking for a subject Marginal does not have, so the paper cannot be added.";
+  if (r.worst === "thin" && r.findings.some(f => f.code === "SUBJECT_MARKING_UNAVAILABLE"))
+    lede = "Every question can be sat and marked, because each one has its own answer key. Marginal does not have written-response marking for this subject.";
+  // An older version than the library's adds nothing: the library shows the
+  // newest version it has (decision 21), and a teacher's attempts are pinned to
+  // theirs either way, so there is nothing an older file could change.
+  const older = g.add && r.match.kind === "older";
+  if ((r.dup || older) && g.add) {
     return shell("already in your library", fileBar(file.name, file.size) + `
   <article class="result" aria-labelledby="rt">
-    ${verdictBox("ok", "Already in your library", "This paper, in this version, is already in your library. Nothing needs adding.")}
+    ${verdictBox("ok", "Already in your library", older
+      ? "Your library has version " + r.match.from + " of this paper, which is newer than this file's version " + r.match.to + ". Nothing is added."
+      : "This paper, in this version, is already in your library. Nothing needs adding.")}
     <div class="grid"><div class="left">${identity(r)}${paperPanel(r)}</div><div class="right">${contents(r)}</div></div>
     <div class="acts"><a class="btn" href="#library">Open it in your library</a><label class="btn ghost" for="f">Choose a different file</label></div>
   </article>`);
   }
+  // A version that cannot be ordered against the library's (not numbers) is not
+  // called newer: the teacher is told it replaces, and that Marginal cannot tell.
+  const replacing = g.add && (r.match.kind === "newer" || r.match.kind === "different");
+  const replaceCopy = !replacing ? ""
+    : r.match.kind === "newer" ? "<b>A newer version will replace the paper in your library.</b> Existing attempts will continue using the version they started with."
+    : `<b>This version will replace the paper in your library.</b> Marginal cannot tell whether version ${esc(r.match.to)} is newer than version ${esc(r.match.from)}, so check before replacing. Existing attempts will continue using the version they started with.`;
   const body = fileBar(file.name, file.size) + `
   <article class="result" aria-labelledby="rt">
-    ${verdictBox(g.tone, g.title, lede)}
+    ${verdictBox(g.tone, g.title, lede, replaceCopy)}
     <div class="grid">
       <div class="left">${identity(r)}${paperPanel(r)}</div>
       <div class="right">${contents(r)}${g.add ? adds(r.paper) : ""}</div>
     </div>
     ${findingsHTML(r)}
     <div class="acts">
-      ${g.add ? `<button type="button" class="btn">Add to library</button><label class="btn ghost" for="f">Choose a different file</label>` : chooseAgain}
+      ${g.add ? `<button type="button" class="btn">${replacing ? "Replace with this version" : "Add to library"}</button><label class="btn ghost" for="f">Choose a different file</label>` : chooseAgain}
     </div>
   </article>`;
   return shell(r.worst, body);
@@ -493,6 +518,7 @@ function shell(state, body) {
   .verdict.note h2{color:var(--gold-dk)}
   .verdict.stop h2{color:var(--coral-dk)}
   .verdict p{font-size:14.5px;font-weight:600;color:var(--ink)}
+  .verdict p.more{margin-top:6px}
 
   .grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:28px}
   /* The proof asked for before anything is added: the subject as Marginal
@@ -501,6 +527,7 @@ function shell(state, body) {
   .ident{border-radius:14px;padding:16px 18px;margin-bottom:18px}
   .ident.ok{background:#F4F9F8;border:1.5px solid var(--line)}
   .ident.no{background:#FFF8F6;border:1.5px solid #F7C9C1}
+  .ident.plain{background:#F4F9F8;border:1.5px solid var(--line)}
   .ident .who{font-family:var(--disp);font-weight:600;font-size:26px;line-height:1.2}
   .ident .how{font-size:13.5px;font-weight:700;color:var(--ink-2);margin-top:6px;display:flex;gap:7px;align-items:baseline}
   .ident .claim{font-size:13px;font-weight:600;color:var(--ink-2);margin-top:2px}
@@ -611,6 +638,24 @@ const VARIANTS = [
    [], "A flashcard set, chosen on the paper import page."],
   ["02-import-duplicate.html", "duplicate", () => asText(fresh()), [fresh()],
    "The same paper, same exam.id and version, already in the library."],
+  ["02-import-newer.html", "newer", () => { const p = fresh(); p.exam.version = "2"; return asText(p); }, [fresh()],
+   "Version 2 of a paper whose version 1 is in the library (decision 21)."],
+  ["02-import-older.html", "older", () => asText(fresh()), [(() => { const p = fresh(); p.exam.version = "2"; return p; })()],
+   "Version 1 of a paper whose version 2 is already in the library."],
+  ["02-import-different.html", "different", () => { const p = fresh(); p.exam.version = "term-3"; return asText(p); }, [fresh()],
+   "A version that cannot be ordered against the library's (term-3 over 1)."],
+  ["02-import-objective.html", "objective", () => {
+    // Every question marks from its own key: ten multiple choice and the
+    // calculation, under a subject Marginal has no package for (decision 21).
+    const p = fresh(); p.curriculum.subjectKey = "legal_studies"; p.curriculum.course = "Legal Studies";
+    p.name = "Legal Studies multiple choice and calculation paper"; p.subject = "Legal Studies";
+    const calc = p.sections[1].questions[0].parts[2];
+    p.sections = [p.sections[0], { name: "Section II - Calculation", questions: [Object.assign({}, calc, { number: "11" })] }];
+    delete p.marks; delete p.time; delete p.sections[0].marks;
+    return asText(p);
+  }, [], "An unregistered subject on a paper whose every question marks from its own key."],
+  ["02-import-tolerance.html", "tolerance", () => { const p = fresh(); delete p.sections[1].questions[0].parts[2].tolerance; return asText(p); }, [],
+   "A calculation with no tolerance (UX-TEST-24)."],
 ];
 
 const report = [];
@@ -618,8 +663,9 @@ fs.writeFileSync(path.join(OUTDIR, "02-import-choose.html"), startPage());
 report.push({ file: "02-import-choose.html", page: "no file chosen" });
 for (const [file, name, make, library, why] of VARIANTS) {
   const text = make();
+  const NAMED = { flashcards: "marketing-terms.json", objective: "legal-studies-objective-paper.json" };
   const f = { name: name === "ready" || name === "duplicate" ? path.basename(FIXTURE)
-              : name === "flashcards" ? "marketing-terms.json" : path.basename(FIXTURE, ".json") + "-" + name + ".json",
+              : NAMED[name] || path.basename(FIXTURE, ".json") + "-" + name + ".json",
               size: Math.max(1, Math.round(Buffer.byteLength(text) / 1024)) + " KB" };
   const r = read(text, library);
   const html = r.kind === "unreadable" ? unreadablePage(r, f) : r.kind === "flashcards" ? flashcardsPage(r, f)
@@ -627,7 +673,7 @@ for (const [file, name, make, library, why] of VARIANTS) {
   if (/—/.test(html)) throw new Error(file + " has an em dash");
   fs.writeFileSync(path.join(OUTDIR, file), html);
   report.push({ file, why, read: r.kind,
-    page: r.kind === "paper" ? (r.dup && GROUP[r.worst].add ? "Already in your library" : GROUP[r.worst].title)
+    page: r.kind === "paper" ? ((r.dup || r.match.kind === "older") && GROUP[r.worst].add ? "Already in your library" + (r.dup ? "" : " (older version)") : GROUP[r.worst].title + (r.match && r.match.kind !== "new" && r.match.kind !== "same" ? " (" + r.match.kind + " version)" : ""))
       : r.kind === "version" ? "Unsupported" : r.kind === "flashcards" ? "Unsupported (flashcard set)" : "Invalid file",
     findings: r.findings ? r.findings.map(x => x.code) : r.finding ? [r.finding.code] : [],
     resolved: r.auth ? (r.auth.ok ? r.auth.label : r.auth.code) : undefined });

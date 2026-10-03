@@ -394,6 +394,53 @@ host, and 77.3 to 77.8s at `6a55d8f`.
   the hard budgets are authoritative again.
 - New expensive browser coverage goes in Full only.
 
+## 21. Page 2 frozen; versions, unregistered subjects and the tolerance rule
+
+**Page 2, import and validation, is frozen for desktop** with the three decisions
+below applied. It reopens only if a real state appears that it cannot show.
+
+1. **A newer version replaces the paper in the library.** A paper's identity is
+   its `exam.id` and `exam.version`, never its title. Importing a newer version
+   replaces the library's visible version. Every existing attempt stays pinned
+   to the paper ID and version it started with. The page says: *A newer version
+   will replace the paper in your library. Existing attempts will continue
+   using the version they started with.* The button reads *Replace with this
+   version*.
+   - Versions are compared as dotted numbers (`PAPER.compareVersions`). A file
+     whose version cannot be ordered against the library's is not called
+     newer. It may replace, and the page says Marginal cannot tell which is
+     newer.
+   - An older version than the library's adds nothing. The library shows the
+     newest version it has, and attempts are pinned either way. This follows
+     from the rule rather than being separately decided; it is drawn
+     (`02-import-older.html`) so it can be overruled.
+2. **An unregistered subject blocks only the questions that need it.** The
+   check is made on the assessment path, not on the subject alone
+   (`PAPER.authorityFindings`, run by `examine(paper, { packages })`):
+   - every question objectively locally markable (multiple choice, or a
+     calculation with a complete answer and tolerance, or a short answer whose
+     every point authors its own phrasings): **Ready with limited support**,
+     saying subject-specific written marking is unavailable;
+   - any question that needs subject-aware written marking: **Needs something
+     resolved**, naming how many.
+3. **The five states are** *Ready to import*, *Ready with limited support*,
+   *Needs something resolved*, *Unsupported* and *Invalid file*. No comma and
+   no "optional".
+
+**UX-TEST-24, the tolerance half, is fixed at import.** A calculation without a
+numeric tolerance of 0 or more is an invalid file
+(`CALC_TOLERANCE_MISSING`), with teacher-facing copy that says what is missing
+and that 0 means an exact answer. A paper stored before this rule is not
+re-examined, so the runtime refuses to mark a calculation with no usable key
+(`CALC_KEY_INCOMPLETE`): the answer is *Not marked yet*, never marked wrong.
+Backup validation and the worker's rebuilt rubric statuses are out of this
+slice and stay open in the audit.
+
+**Timing on the `fc-v64` host.** The environment changed, so fast and
+checkpoint were re-measured once on a clean tree at `ed94ce5`: fast 32.6s of 40
+and checkpoint 51.2s of 60, both passing. **The hard budgets are authoritative
+again.** Decision 20's diagnostic-only rule applied to `fc-v50` alone.
+
 ## Mockup order — dependency, not numerical
 
 ```
