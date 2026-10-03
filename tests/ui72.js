@@ -354,6 +354,34 @@ async function unmarkedYet(p, n, why) {
     await ctx.close();
   }
 
+  // ---- 12. a stored calculation with no tolerance is not marked wrong -------
+  // The validator refuses it at the door now (UX-TEST-24), but a paper stored
+  // before that, or restored from a backup, is sat without being re-examined.
+  // Without a tolerance the comparison is never true, so the right answer used to
+  // be marked wrong. It is now not marked, and says why.
+  console.log('--- 12. a calculation the paper cannot mark: not marked, rather than marked wrong');
+  {
+    const noTol = JSON.parse(JSON.stringify(paper));
+    noTol.name = 'No tolerance paper';
+    delete noTol.sections[1].questions[0].parts[2].tolerance;
+    const seed = { cards: {}, endpoint: '', code: '12Ec126', log: [], customSets: [], lessons: {},
+      exams: [Object.assign({}, noTol, { id: 'no-tol' })] };
+    const { p, ctx, mode, errs } = await open(b, seed);
+    mode.reply = q => REVIEW(Math.min(2, Math.round(q.marks)), Math.round(q.marks));   // on each question's own scale
+    await sit(p, 'No tolerance paper', 'Section II - Short answer');
+    await submit(p, 'Speed, because customers wait.');          // 11(a)
+    await p.click('#examnext'); await settled(p);
+    await submit(p, 'Casual operators have no guaranteed hours.'); // 11(b)
+    await p.click('#examnext'); await settled(p);
+    await submit(p, '1.5');                                       // 11(c), the right answer
+    const st = await sheet(p);
+    ok(/Not marked yet/.test(st) && /how close/.test(st) && !/^\s*0\s*\//.test(st),
+       'the right answer to a calculation with no tolerance is not marked, rather than marked wrong: ' + st.slice(0, 120));
+    ok(/^2\/8 answered/.test(await bar(p)) && /1 not marked/.test(await bar(p)), 'and is counted as not marked: ' + await bar(p));
+    ok(!errs.length, 'no page errors ' + JSON.stringify(errs));
+    await ctx.close();
+  }
+
   // ---- 8. Study keeps its demo grade -------------------------------------
   // The demo is Study's, on purpose, and its wording is format-aware (UX-TEST-15):
   // sections for a report, paragraphs for an extended response. This is where

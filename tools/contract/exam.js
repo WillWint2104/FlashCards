@@ -305,6 +305,15 @@ function questionFindings(q, path) {
   if (fx.format === "calculation" && typeof q.expected !== "number")
     add(STATE.malformed, "CALC_EXPECTED_MISSING",
       "a calculation is marked against a number, and this question does not carry one");
+  // HOW CLOSE AN ANSWER HAS TO BE (UX-TEST-24). The runtime marks a calculation
+  // correct when it is within `tolerance` of `expected`, and with no tolerance
+  // that comparison is never true: every answer, the right one included, would be
+  // marked wrong. So it is required here, at the door, rather than discovered by
+  // the first student who gets it right. 0 means an exact answer.
+  if (fx.format === "calculation" && !(typeof q.tolerance === "number" && isFinite(q.tolerance) && q.tolerance >= 0))
+    add(STATE.malformed, "CALC_TOLERANCE_MISSING", q.tolerance == null || q.tolerance === ""
+      ? "a calculation says how close an answer has to be to count as correct (0 for an exact answer), and this one does not, so every answer would be marked wrong"
+      : JSON.stringify(q.tolerance) + " is not a tolerance. A tolerance is how far an answer may be from the expected value, a number of 0 or more");
 
   // A WRITTEN QUESTION WITH NO MODEL ANSWER IS THIN, NOT BROKEN.
   //
@@ -682,7 +691,45 @@ function duplicateFindings(paper) {
 // ---------------------------------------------------------------------------
 // The paper
 // ---------------------------------------------------------------------------
-function examine(paper) {
+// WHICH QUESTIONS NEED THE SUBJECT'S MARKER (UX-TEST-23).
+//
+// A subject package matters only to an answer the marker judges. Multiple choice
+// is marked from its key, a calculation from its expected value and tolerance,
+// and a short answer whose every point authors phrasings from those phrasings
+// (ASSESS.scorePoints, `local`). Everything else written is judged by the marker
+// against the subject's criteria, and cannot be marked without them.
+function markerDependent(paper) {
+  var out = [];
+  (paper && Array.isArray(paper.sections) ? paper.sections : []).forEach(function (sec, si) {
+    (sec && Array.isArray(sec.questions) ? sec.questions : []).forEach(function (q, qi) {
+      (isParent(q) ? partsOf(q) : [q]).forEach(function (leaf, pi) {
+        var fx = ASSESS.normaliseFormat(leaf || {});
+        if (!fx.ok || !ASSESS.writtenModeOf(fx.format)) return;
+        var sp = ASSESS.scorePoints(leaf, "");
+        if (sp.ok === true && sp.local) return;
+        out.push("sections[" + si + "].questions[" + qi + "]" + (isParent(q) ? ".parts[" + pi + "]" : ""));
+      });
+    });
+  });
+  return out;
+}
+// Whether the paper's subject resolves, and whether that matters. Run only when
+// the caller says which packages exist (opts.packages), which an importer does.
+// A malformed or missing key is already reported by curriculumFindings.
+function authorityFindings(paper, packages) {
+  var c = ASSESS.curriculumOf(paper);
+  if (!c || blank(c.subjectKey) || !ASSESS.isSubjectKey(c.subjectKey)) return [];
+  var auth = ASSESS.resolveAuthority({ curriculum: c, packages: packages });
+  if (auth.ok || (auth.code !== "SUBJECT_UNREGISTERED" && auth.code !== "CRITERIA_ABSENT")) return [];
+  var needs = markerDependent(paper);
+  if (needs.length)
+    return [finding(STATE.blocked, auth.code, "curriculum.subjectKey", auth.why + ". " + needs.length +
+      " question" + (needs.length === 1 ? " needs" : "s need") + " the subject's marker, so the paper cannot be sat as it stands")];
+  return [finding(STATE.thin, "SUBJECT_MARKING_UNAVAILABLE", "curriculum.subjectKey", auth.why +
+    ". Every question in this paper is marked from its own answer key, so it can be sat and marked; marking that needs the subject is not available")];
+}
+
+function examine(paper, opts) {
   var out = [];
 
   if (!paper || typeof paper !== "object")
@@ -731,7 +778,38 @@ function examine(paper) {
   if (Array.isArray(paper.sections) && paper.sections.length && !questions)
     out.push(finding(STATE.malformed, "NO_QUESTIONS", "sections", "this paper has sections and no questions in any of them"));
 
+  if (opts && opts.packages) out = out.concat(authorityFindings(paper, opts.packages));
+
   return verdict(out, paper);
+}
+
+// ---------------------------------------------------------------------------
+// A paper already in the library
+// ---------------------------------------------------------------------------
+// The same paper is the same exam.id, never the same title. Its version says
+// whether a file is that paper again, a newer one, or an older one. A newer
+// version replaces the library's copy for new starts; an attempt already begun
+// stays pinned to the version it began on (docs/testmode-attempt-state.md).
+function compareVersions(a, b) {
+  var num = /^\d+(\.\d+)*$/;
+  if (!num.test(a) || !num.test(b)) return a === b ? 0 : null;
+  var x = a.split(".").map(Number), y = b.split(".").map(Number);
+  for (var i = 0; i < Math.max(x.length, y.length); i++) {
+    var d = (x[i] || 0) - (y[i] || 0);
+    if (d) return d > 0 ? 1 : -1;
+  }
+  return 0;
+}
+function libraryMatch(library, paper) {
+  var id = paper && paper.exam && paper.exam.id;
+  if (blank(id)) return { kind: "new" };
+  var existing = (library || []).filter(function (p) { return p && p.exam && p.exam.id === id; })[0];
+  if (!existing) return { kind: "new" };
+  var from = blank(existing.exam.version) ? "" : String(existing.exam.version);
+  var to = blank(paper.exam.version) ? "" : String(paper.exam.version);
+  var cmp = compareVersions(to, from);
+  return { kind: cmp === 0 ? "same" : cmp === 1 ? "newer" : cmp === -1 ? "older" : "different",
+           existing: existing, from: from, to: to };
 }
 
 function verdict(findings, paper) {
@@ -771,4 +849,6 @@ module.exports = {
   marksOf: marksOf, answerables: answerables,
   totalFindings: totalFindings, duplicateFindings: duplicateFindings,
   questionFindings: questionFindings, curriculumFindings: curriculumFindings,
+  markerDependent: markerDependent, authorityFindings: authorityFindings,
+  libraryMatch: libraryMatch, compareVersions: compareVersions,
 };

@@ -264,6 +264,22 @@ const answer = async (p, text) => { await p.fill('#ans', text); await p.click('#
       'it is stored, and the key it declared survived rather than being dropped: ' + JSON.stringify(kept));
     ok(kept.filter(x => x.name === 'Imported').length === 1,
       'and only the one that passed got in: ' + JSON.stringify(kept));
+
+    // A SUBJECT MARGINAL CANNOT MARK, AT THE LEVEL OF THE ASSESSMENT PATH
+    // (UX-TEST-23, decision 21). Registration is not universally required: it is
+    // required by any question the subject's marker has to judge.
+    const legal = { jurisdiction: 'NSW', klaKey: 'hsie', subjectKey: 'legal_studies', course: 'Legal Studies' };
+    const written = await importPaper(Object.assign({}, body, { name: 'Legal written', curriculum: legal }));
+    ok(/legal_studies/.test(written) && /marker/.test(written) && !/imported/i.test(written),
+      'a Legal Studies paper with an essay, which needs the subject\'s marker, is refused at the door: ' + JSON.stringify(written));
+    const MCQ = { type: 'mc', prompt: 'Which of these is a current asset?', marks: 1, choices: [{ t: 'Inventory', ok: true }, { t: 'Land' }] };
+    const objective = await importPaper({ format: 'marginal-exam@1', name: 'Legal objective', curriculum: legal,
+      sections: [{ name: 'Section I', questions: [MCQ, SHORT_Q] }] });
+    ok(!/legal_studies|refused|cannot/i.test(objective),
+      'a Legal Studies paper whose every question marks from its own key is let in: ' + JSON.stringify(objective));
+    const after = await p.evaluate(() => (JSON.parse(localStorage.getItem('marginal.trial.v1') || '{}').exams || []).map(e => e.name));
+    ok(after.includes('Legal objective') && !after.includes('Legal written'),
+      'so the objective paper is stored and the written one is not: ' + JSON.stringify(after));
     await p.close();
   }
 
@@ -685,7 +701,8 @@ const answer = async (p, text) => { await p.fill('#ans', text); await p.click('#
         sections: [{ name: 'Section A', questions: [
           { id: 'm1', number: '1', marks: 1, format: 'multiple_choice', prompt: 'Which one?',
             choices: [{ t: 'Alpha', ok: true, why: 'Alpha is the one.' }, { t: 'Beta', why: 'Beta is not.' }] },
-          { id: 'm2', number: '2', marks: 3, format: 'calculation', expected: 1.5, prompt: 'Calculate it.', model: 'x' },
+          // A tolerance is required since UX-TEST-24: without one every answer is wrong.
+          { id: 'm2', number: '2', marks: 3, format: 'calculation', expected: 1.5, tolerance: 0.05, prompt: 'Calculate it.', model: 'x' },
         ] }],
       };
       ok(!JSON.stringify(MODERN).includes('"type"'), 'the package carries no legacy type field at all');

@@ -90,7 +90,7 @@ console.log("2. a package authored the modern way imports");
   A.FORMATS.forEach(f => {
     const q = { type: undefined, format: f, marks: 4, prompt: "Do the thing.", model: "m" };
     if (f === "multiple_choice") { q.choices = [{ t: "a", ok: true }, { t: "b" }]; }
-    if (f === "calculation") { q.expected = 12; }
+    if (f === "calculation") { q.expected = 12; q.tolerance = 0; }   // both required since UX-TEST-24
     const r = E.examine(good({}, q));
     // The same exception, for the same reason, and only for the report.
     const expect = f === "business_report" ? ["REPORT_GUIDANCE_ABSENT"] : [];
@@ -104,7 +104,7 @@ console.log("2. a package authored the modern way imports");
   ["mc", "calc", "short", "define", "essay"].forEach(t => {
     const q = { type: t, marks: 3, prompt: "p", model: "m" };
     if (t === "mc") q.choices = [{ t: "a", ok: true }, { t: "b" }];
-    if (t === "calc") q.expected = 7;
+    if (t === "calc") { q.expected = 7; q.tolerance = 0; }
     ok(E.examine(good({}, q)).state === "publishable", "the legacy type " + JSON.stringify(t) + " still imports");
   });
 }
@@ -528,6 +528,62 @@ console.log("13. the paper the product actually ships, which is now synthetic");
   ok(keyAt.length >= 10 && keyAt.every(i => i >= 0), "every multiple-choice question has exactly one key to find");
   ok(Object.keys(byPos).length >= 3 && Math.max(...Object.values(byPos)) <= keyAt.length / 2,
     "the keys are spread across option positions, not all authored first: " + JSON.stringify(byPos));
+
+  // ---- UX-TEST-24: a calculation the runtime cannot mark does not import ------
+  const calcAt = pp => pp.sections[1].questions[0].parts[2];
+  const tol = edit => { const pp = JSON.parse(JSON.stringify(paper)); edit(calcAt(pp)); return E.examine(pp); };
+  ok(calcAt(paper).tolerance === 0.05 && !codes(v).includes("CALC_TOLERANCE_MISSING"), "the fixture's calculation carries its tolerance");
+  [["missing", c => { delete c.tolerance; }], ["null", c => { c.tolerance = null; }], ["a string", c => { c.tolerance = "0.05"; }],
+   ["negative", c => { c.tolerance = -1; }]].forEach(([n, edit]) => {
+    const r = tol(edit);
+    ok(r.state === "malformed" && !r.sittable && codes(r).includes("CALC_TOLERANCE_MISSING"),
+      "a calculation whose tolerance is " + n + " is an invalid file, not a paper every answer of which is marked wrong: " + r.state);
+  });
+  ok(tol(c => { c.tolerance = 0; }).state === "publishable", "a tolerance of 0 is an exact answer, and is valid");
+
+  // ---- UX-TEST-23 at the assessment path (decision 21) ---------------------
+  // The packages are the ones the app registers, read the way the app reads them.
+  const sandbox = { window: {} }; sandbox.window.window = sandbox.window;
+  new Function("window", read("essay-content.js"))(sandbox.window);
+  const PK = { packages: sandbox.window.ESSAY.subjects };
+  const legal = pp => { pp.curriculum.subjectKey = "legal_studies"; pp.curriculum.course = "Legal Studies"; return pp; };
+  const copy = () => JSON.parse(JSON.stringify(paper));
+  ok(E.examine(paper, PK).state === "publishable", "the synthetic paper, against the registered packages, is still publishable");
+  const lw = E.examine(legal(copy()), PK);
+  ok(lw.state === "blocked" && !lw.sittable && codes(lw).includes("SUBJECT_UNREGISTERED"),
+    "a paper for a subject Marginal cannot mark, with questions that need its marker, is blocked: " + lw.state);
+  // Section I alone, with no declared totals, so questions can be added to it.
+  const objectiveOnly = () => { const pp = legal(copy()); pp.sections = [pp.sections[0]]; delete pp.marks; delete pp.sections[0].marks; return pp; };
+  const lo = E.examine(objectiveOnly(), PK);
+  ok(lo.state === "thin" && lo.sittable && codes(lo).includes("SUBJECT_MARKING_UNAVAILABLE") && !codes(lo).includes("SUBJECT_UNREGISTERED"),
+    "the same subject on a paper of multiple choice only can be sat, with limited support: " + lo.state + " " + JSON.stringify(codes(lo)));
+  const withCalc = objectiveOnly(); withCalc.sections[0].questions.push(JSON.parse(JSON.stringify(calcAt(paper))));
+  ok(E.examine(withCalc, PK).sittable, "a calculation with its expected value and tolerance is objective too");
+  const withLocal = objectiveOnly(); withLocal.sections[0].questions.push({ format: "short_answer", prompt: "Name one current asset.", marks: 1,
+    points: [{ text: "names a current asset", need: ["inventory", "cash"], marks: 1 }] });
+  ok(E.examine(withLocal, PK).sittable, "so is a short answer whose every point authors phrasings to match");
+  const withMarker = objectiveOnly(); withMarker.sections[0].questions.push({ format: "short_answer", prompt: "Explain one role of the courts.", marks: 3,
+    points: ["identifies a role", "explains it", "gives an example"] });
+  const wm = E.examine(withMarker, PK);
+  ok(wm.state === "blocked" && codes(wm).includes("SUBJECT_UNREGISTERED"),
+    "one question that needs the marker makes the unregistered subject blocking again: " + wm.state);
+  ok(E.examine(legal(copy())).state === "publishable",
+    "without packages, examine() says nothing about registration, as before (callers that know the packages pass them)");
+  const noCriteria = { packages: Object.assign({}, PK.packages, { legal_studies: { label: "Legal Studies", markingCriteria: [] } }) };
+  ok(codes(E.examine(legal(copy()), noCriteria)).includes("CRITERIA_ABSENT"), "a package with no criteria is treated the same way");
+  ok(/examineExam\(d\) \{ return PAPER\.examine\(d, \{ packages: esAllSubjects\(\)\.subjects/.test(read("app.js")),
+    "the app's import door passes the packages it registers");
+
+  // ---- decision 21: the same paper is the same exam.id, never the same title --
+  const bump = (pp, ver) => Object.assign(JSON.parse(JSON.stringify(pp)), { exam: Object.assign({}, pp.exam, { version: ver }) });
+  ok(E.libraryMatch([paper], paper).kind === "same", "the same id and version is already in the library");
+  ok(E.libraryMatch([paper], bump(paper, "2")).kind === "newer", "a higher version is newer");
+  ok(E.libraryMatch([bump(paper, "2")], paper).kind === "older", "a lower version is older");
+  ok(E.libraryMatch([bump(paper, "1.10")], bump(paper, "1.9")).kind === "older", "versions compare as numbers, part by part");
+  ok(E.libraryMatch([bump(paper, "draft")], bump(paper, "final")).kind === "different", "versions that are not numbers are only different");
+  const renamed = Object.assign(JSON.parse(JSON.stringify(paper)), { exam: Object.assign({}, paper.exam, { id: "another-paper" }) });
+  ok(E.libraryMatch([paper], renamed).kind === "new", "the same title under another id is a different paper");
+  ok(E.libraryMatch([paper], Object.assign(copy(), { exam: undefined })).kind === "new", "a paper with no id matches nothing");
 
   // It has to exercise the whole contract or it is not a regression fixture.
   const walk = E.answerables(paper);

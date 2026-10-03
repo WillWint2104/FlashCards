@@ -316,8 +316,16 @@
     const rd = ASSESS.readCalcAnswer(answer);
     if (rd.ok !== true) return ASSESS.refuse(rd.code, "This answer was not marked: " + rd.why + ".",
       { max: Number(card && card.marks) || 0 });
+    // A stored or restored paper can reach here without the key the validator now
+    // requires (UX-TEST-24). Without an expected value and a tolerance no answer
+    // can be judged, so it is not marked, rather than marked wrong.
+    const exp = Number(card && card.expected), tol = Number(card && card.tolerance);
+    if (card.expected == null || card.tolerance == null || card.tolerance === "" ||
+        !Number.isFinite(exp) || !Number.isFinite(tol) || tol < 0)
+      return ASSESS.refuse("CALC_KEY_INCOMPLETE", "This answer was not marked: the question does not say what the answer is or how close it has to be, so no answer could be judged.",
+        { max: Number(card && card.marks) || 0 });
     const got = rd.value;
-    const ok = Number.isFinite(got) && Math.abs(got - card.expected) <= card.tolerance;
+    const ok = Number.isFinite(got) && Math.abs(got - exp) <= tol;
     return MARKED({ score: ok ? card.marks : 0, max: card.marks, kind: "calc",
              correct: ok, working: card.working || "", model: card.model });
   }
@@ -2320,7 +2328,11 @@
   // through the Gate 3B substrate rather than a hardcoded list of legacy type
   // strings, which is what had been refusing packages authored the documented
   // modern way.
-  function examineExam(d) { return PAPER.examine(d); }
+  // With the packages this build registers, so a paper whose subject Marginal
+  // cannot mark is refused at the door when any of its questions needs that
+  // subject's marker, and let in when every question marks from its own key
+  // (UX-TEST-23, decision 21).
+  function examineExam(d) { return PAPER.examine(d, { packages: esAllSubjects().subjects || {} }); }
   // What the import box says. A refusal names the worst thing first and says how
   // many others there are, because the count is the difference between "fix this"
   // and "this file needs work".
