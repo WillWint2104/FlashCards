@@ -360,10 +360,17 @@ async function unmarkedYet(p, n, why) {
   // Without a tolerance the comparison is never true, so the right answer used to
   // be marked wrong. It is now not marked, and says why.
   console.log('--- 12. a calculation the paper cannot mark: not marked, rather than marked wrong');
-  {
+  // Three ways a stored tolerance is absent. Number() reads null and "" as 0, so
+  // without its own check either would quietly become "exact" and mark a rounded
+  // answer wrong, or this one right on a scale the paper never set.
+  for (const [how, unset] of [
+    ['missing', q => { delete q.tolerance; }],
+    ['null', q => { q.tolerance = null; }],
+    ['blank', q => { q.tolerance = ''; }],
+  ]) {
     const noTol = JSON.parse(JSON.stringify(paper));
     noTol.name = 'No tolerance paper';
-    delete noTol.sections[1].questions[0].parts[2].tolerance;
+    unset(noTol.sections[1].questions[0].parts[2]);
     const seed = { cards: {}, endpoint: '', code: '12Ec126', log: [], customSets: [], lessons: {},
       exams: [Object.assign({}, noTol, { id: 'no-tol' })] };
     const { p, ctx, mode, errs } = await open(b, seed);
@@ -375,9 +382,9 @@ async function unmarkedYet(p, n, why) {
     await p.click('#examnext'); await settled(p);
     await submit(p, '1.5');                                       // 11(c), the right answer
     const st = await sheet(p);
-    ok(/Not marked yet/.test(st) && /how close/.test(st) && !/^\s*0\s*\//.test(st),
-       'the right answer to a calculation with no tolerance is not marked, rather than marked wrong: ' + st.slice(0, 120));
-    ok(/^2\/8 answered/.test(await bar(p)) && /1 not marked/.test(await bar(p)), 'and is counted as not marked: ' + await bar(p));
+    ok(/Not marked yet/.test(st) && /how close/.test(st) && !/^\s*\d+\s*\//.test(st),
+       how + ' tolerance: the right answer is not marked, rather than marked wrong or right: ' + st.slice(0, 120));
+    ok(/^2\/8 answered/.test(await bar(p)) && /1 not marked/.test(await bar(p)), how + ' tolerance: counted as not marked: ' + await bar(p));
     ok(!errs.length, 'no page errors ' + JSON.stringify(errs));
     await ctx.close();
   }
