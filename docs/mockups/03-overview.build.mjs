@@ -14,8 +14,11 @@
 // Nothing is typed. The paper's identity, sections, marks and time come from
 // the paper through the contract. An attempt's counts come from attempt.mjs,
 // which derives them through the shipped contract and marker. The questions a
-// type offers are the contract's reading of each question's format, counted
-// the way Page 1's tiles count them.
+// type offers are the contract's reading of each question's format, by the same
+// rule as Page 1's tiles (parts count, parents do not, both options of an
+// either/or count). Its sittable test is examine() with the packages (decision
+// 21); Page 1's generator predates that and calls examine() without them. The
+// counts agree on every paper drawn.
 //
 //   node docs/mockups/03-overview.build.mjs
 //
@@ -49,66 +52,83 @@ const day = iso => {
 };
 const plural = (n, w) => n + " " + w + (n === 1 ? "" : "s");
 const list = xs => xs.length < 2 ? xs.join("") : xs.slice(0, -1).join(", ") + " and " + xs[xs.length - 1];
-const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
-
 // ---- the paper, as the contract reads it -------------------------------------
 const cur = ASSESS.curriculumOf(paper);
 if (!cur || !cur.course) throw new Error("the paper no longer declares a course");
 // The header names the subject the way the sitting will: from the paper's own
 // curriculum, resolved against the packages Marginal has (decision 4, P0). A
 // subject Marginal does not have is shown as the file names it.
-const auth = ASSESS.resolveAuthority({ curriculum: cur, packages: PACKAGES });
 const subjectOf = c => {
   const a = ASSESS.resolveAuthority({ curriculum: c, packages: PACKAGES });
   return a.ok ? a.label : c.course;
 };
-const SUBJECT = auth.ok ? auth.label : cur.course;
+const SUBJECT = subjectOf(cur);
 const identity = [SUBJECT, cur.stage].filter(Boolean).join(" · ");
 const totals = PAPER.totals(paper);
 const version = paper.exam && paper.exam.version;
 
-// Each section as the picker shows it. A section's authored instructions open
-// with its mark total; that sentence is dropped only when it says exactly what
-// the row already shows, so nothing the author wrote is hidden.
+// Each section as the picker shows it.
+// - Its authored instructions open with its mark total. That sentence is dropped
+//   only when it says exactly what the row already shows, so nothing the author
+//   wrote is hidden.
+// - Its short name is its authored name up to " - " ("Section II"), which is how
+//   the summaries and notes refer to it. A section with no name is numbered, as
+//   the app numbers it. Nothing is numbered from its position in the array.
 const SECTIONS = paper.sections.map((sec, si) => {
   const t = PAPER.totals({ sections: [sec] });
   let ins = String(sec.instructions || "").trim();
   const lead = ins.match(/^(\d+) marks?\.\s*/);
   if (lead && Number(lead[1]) === t.marks) ins = ins.slice(lead[0].length);
+  const name = String(sec.name || "").trim() || "Section " + (si + 1);
   const either = Number(sec.choose) > 0 && sec.choose < sec.questions.length;
-  return {
-    si, roman: ROMAN[si], name: sec.name || "Section " + ROMAN[si], q: t.questions, m: t.marks, ins,
-    either: either ? { n: Number(sec.choose), of: sec.questions.map(q => PAPER.numberOf(q)) } : null,
-  };
+  return { si, name, short: name.split(" - ")[0].trim() || name, q: t.questions, m: t.marks, ins,
+           either: either ? { n: Number(sec.choose), of: sec.questions.length } : null };
 });
+const shortOf = si => SECTIONS[si].short;
 
 // ---- the selection summaries --------------------------------------------------
 // These two run in Node to draw each variant and in the page when a box changes.
-// They may use nothing but their argument.
+// They may use nothing but their arguments, and they escape what they print.
 function sectionSummary(rows) {
-  const on = rows.filter(r => r.on);
+  const e = x => String(x).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const on = rows.filter(r => r.on), n = rows.length;
+  const sec = k => k + " section" + (k === 1 ? "" : "s");
   if (!on.length) return { text: "Choose at least one section to start.", ok: false };
-  const q = on.reduce((n, r) => n + r.q, 0), m = on.reduce((n, r) => n + r.m, 0);
-  const names = on.map(r => r.roman);
-  const which = on.length === rows.length ? "All " + rows.length + " sections"
-    : on.length === 1 ? "Section " + names[0] + " only"
-    : "Sections " + names.slice(0, -1).join(", ") + " and " + names[names.length - 1];
+  const q = on.reduce((t, r) => t + r.q, 0), m = on.reduce((t, r) => t + r.m, 0);
+  const which = on.length === n ? (n === 1 ? "The whole paper" : "All " + sec(n))
+    : on.length === 1 ? e(on[0].short) + " only" : on.length + " of " + sec(n);
   return { text: "<b>" + which + "</b> · " + q + " question" + (q === 1 ? "" : "s") + " · " + m + " mark" + (m === 1 ? "" : "s"), ok: true };
 }
 function questionSummary(rows, all) {
-  const on = all ? rows : rows.filter(r => r.on);
+  const on = all ? rows : rows.filter(r => r.on), n = rows.length;
+  const qs = k => k + " question" + (k === 1 ? "" : "s");
   if (!on.length) return { text: "Choose at least one question to start.", ok: false };
-  const m = on.reduce((n, r) => n + r.m, 0);
-  const which = all ? "All " + rows.length + " question" + (rows.length === 1 ? "" : "s")
-    : on.length + " of " + rows.length + " questions";
+  const m = on.reduce((t, r) => t + r.m, 0);
+  const which = n === 1 ? qs(1) : all ? "All " + qs(n) : on.length + " of " + qs(n);
   return { text: "<b>" + which + "</b> · " + m + " mark" + (m === 1 ? "" : "s"), ok: true };
 }
 
 // ---- the question bank for one format ----------------------------------------
 // Every question of the format in every paper that can be sat, in paper order:
 // parts are questions, a parent is not, and both options of an either/or are
-// there, because each can be practised on its own. Each carries the source it
-// refers to, which the sitting shows beside it.
+// there, because each can be practised on its own. Sittable is examine() with
+// the packages Marginal has (decision 21), as Page 2 imports.
+//
+// What "Refers to" names is every resource the sitting shows with the question,
+// in the order it shows them: the section's source material, the parent's
+// sources, then the question's own (app.js examSourcesHTML). The first is named
+// by its caption, or by the label the sitting gives it when it has none; the
+// rest are counted. Body text is never printed: it is the source, not its name.
+function sourceNames(sec, parent, leaf) {
+  return [[PAPER.resourcesOf({ stimulus: sec.source }), "Source material"],
+          [parent ? PAPER.resourcesOf(parent) : [], "Source"],
+          [PAPER.resourcesOf(leaf), "Source"]]
+    .flatMap(([rs, label]) => rs.map((r, i) => {
+      const cap = r && typeof r === "object" && typeof r.caption === "string" ? r.caption.trim() : "";
+      return cap || (rs.length > 1 ? label + " " + (i + 1) : label);
+    }));
+}
+const refersTo = names => names[0] + (names.length > 1 ? ", and " + plural(names.length - 1, "more source") : "");
 function bankOf(format, papers) {
   const out = [];
   papers.forEach(pp => {
@@ -117,14 +137,10 @@ function bankOf(format, papers) {
       const parent = PAPER.isParent(q);
       (parent ? PAPER.partsOf(q) : [q]).forEach((leaf, pi) => {
         if (ASSESS.normaliseFormat(leaf).format !== format) return;
-        const holders = parent ? [sec, q, leaf] : [sec, q];
-        const sources = holders.flatMap(h => PAPER.resourcesOf(h))
-          .map(r => typeof r === "string" ? r.split("\n")[0] : (r && (r.caption || String(r.text || "").split("\n")[0])) || "")
-          .filter(s => s && s !== "Note");
         out.push({
           paper: pp, key: keyOf({ si, qi, pi: parent ? pi : null }),
           display: parent ? PAPER.displayNumber(PAPER.numberOf(q), PAPER.labelOf(leaf, pi)) : PAPER.numberOf(q),
-          m: Number(leaf.marks), prompt: leaf.prompt, sources,
+          m: Number(leaf.marks), prompt: leaf.prompt, sources: sourceNames(sec, parent ? q : null, leaf),
         });
       });
     }));
@@ -145,6 +161,7 @@ const HOW = `<h3 class="k">How practice works</h3>
         <li>Move between questions in any order, and flag any you want to come back to.</li>
         <li>Your answers are saved as you go, so you can leave and resume.</li>
       </ul>`;
+const startButton = (label, ok) => `<button type="button" class="btn"${ok ? "" : " disabled"}>${label}</button>`;
 
 function aboutPaper() {
   return `<aside class="about" aria-labelledby="ab">
@@ -152,51 +169,56 @@ function aboutPaper() {
     ${paper.instructions ? `<h3 class="k">Instructions</h3>
       <blockquote class="ins"><p>${esc(paper.instructions)}</p><cite>From the paper</cite></blockquote>` : ""}
     ${paper.time ? `<h3 class="k">Time</h3>
-      <p class="p">The paper allows ${esc(paper.time)}. Practice is not timed, so use it as a guide to pace.</p>` : ""}
+      <p class="p">The whole paper allows ${esc(paper.time)}. Practice is not timed, so use the paper's times as a guide to pace.</p>` : ""}
     ${HOW}
     <h3 class="k">Source</h3>
     <p class="p">${esc(paper.exam.source)}${version ? ` · Version ${esc(version)}` : ""}</p>
   </aside>`;
 }
 
-function sectionRows(chosen) {
-  return SECTIONS.map(s => ({ roman: s.roman, q: s.q, m: s.m, on: chosen.includes(s.si) }));
-}
+const sectionRows = chosen => SECTIONS.map(s => ({ short: s.short, q: s.q, m: s.m, on: chosen.includes(s.si) }));
+// Which sections an attempt covers, said only when it is not the whole paper
+// (docs/testmode-attempt-state.md), from the sections' own names.
+const scopeOf = a => a.whole ? "" : list(a.sections.map(shortOf)) + " only";
+
 function choosePanel(chosen, last) {
   const rows = sectionRows(chosen);
   const sum = sectionSummary(rows);
-  return `<section class="panel" aria-labelledby="cs" data-kind="sections">
+  return `<div class="panel" data-kind="sections">
     ${last ? lastStrip(last) : ""}
+    <section aria-labelledby="cs">
     <div class="phead"><h2 id="cs">Choose sections</h2><span class="spacer"></span>
       <button type="button" class="link" data-all="1">Select all</button><button type="button" class="link" data-all="0">Clear</button></div>
     <p class="plede">Sit the whole paper, or only the sections you want to practise.</p>
     <ul class="secs">
       ${SECTIONS.map((s, i) => `<li><label class="row${rows[i].on ? " on" : ""}">
-        <input type="checkbox" data-q="${s.q}" data-m="${s.m}" data-roman="${s.roman}"${rows[i].on ? " checked" : ""}>
+        <input type="checkbox" data-q="${s.q}" data-m="${s.m}" data-short="${esc(s.short)}"${rows[i].on ? " checked" : ""}>
         <span class="main">
           <span class="name">${esc(s.name)}</span>
           ${s.ins ? `<span class="ins">${esc(s.ins)}</span>` : ""}
-          ${s.either ? `<span class="either">You choose ${s.either.n === 1 ? "Question " + list(s.either.of).replace(/ and /, " or ") : s.either.n + " of Questions " + list(s.either.of)} when you reach this section.</span>` : ""}
         </span>
-        <span class="meta">${s.either ? "choose " + s.either.n + " of " + s.either.of.length : plural(s.q, "question")} · ${plural(s.m, "mark")}</span>
+        <span class="meta">${s.either ? "choose " + s.either.n + " of " + s.either.of : plural(s.q, "question")} · ${plural(s.m, "mark")}</span>
       </label></li>`).join("")}
     </ul>
     <div class="go">
       <p class="sum" aria-live="polite">${sum.text}</p>
-      <a class="btn${sum.ok ? "" : " off"}" href="#sitting"${sum.ok ? "" : ` aria-disabled="true"`}>Start paper</a>
+      ${startButton("Start paper", sum.ok)}
     </div>
-  </section>`;
+    </section>
+  </div>`;
 }
 
 // The completed attempt stays readable while a new one is set up: Try again
 // starts a new current and keeps last (docs/testmode-attempt-state.md).
 function lastStrip(a) {
-  return `<div class="last">
+  const scope = scopeOf(a);
+  return `<section class="last" aria-labelledby="la">
+      <h2 class="vh" id="la">Your last attempt</h2>
       <span class="state done">Completed ${day(a.completedAt)}</span>
-      <p class="lastline"><b>${a.got} / ${a.max}</b> · ${a.answered} of ${a.total} answered${a.notMarked ? ` · ${a.notMarked} not marked` : ""}</p>
+      <p class="lastline"><b>${a.got} / ${a.max}</b> · ${a.answered} of ${a.total} answered${a.notMarked ? ` · ${a.notMarked} not marked` : ""}${scope ? ` · ${esc(scope)}` : ""}</p>
       <span class="spacer"></span><a class="btn ghost sm" href="#results">View results</a>
       <p class="keep">Those results stay available until you submit the new attempt.</p>
-    </div>`;
+    </section>`;
 }
 
 function resumePanel(a) {
@@ -205,9 +227,12 @@ function resumePanel(a) {
     const items = a.items.filter(x => x.si === si);
     const t = ASSESS.tally(items.map(x => ({ marks: x.q.marks, result: a.results[keyOf(x)] })));
     const flags = a.flags.filter(k => items.some(x => keyOf(x) === k)).length;
-    const s = SECTIONS[si];
-    return { s, items: items.length, t, flags };
+    // Started means something was submitted, marked or not. A section whose only
+    // answers are unmarked has been started, and says so in decision 20's words.
+    const touched = items.some(x => a.results[keyOf(x)]);
+    return { s: SECTIONS[si], items: items.length, t, flags, touched };
   });
+  const scope = scopeOf(a);
   return `<section class="panel" aria-labelledby="ya">
     <div class="phead"><h2 id="ya">Your attempt</h2><span class="state live">In progress</span></div>
     <p class="count"><b>${a.answered} of ${a.total}</b> answered${a.flagged ? ` · <span class="flagged">⚑ ${a.flagged} flagged</span>` : ""}${a.notMarked ? ` · ${a.notMarked} not marked` : ""}</p>
@@ -215,17 +240,17 @@ function resumePanel(a) {
     <p class="sub"><b>${a.got}/${a.max}</b> marks so far · started ${day(a.startedAt)} · saved ${day(a.updatedAt)}</p>
     <table class="bysec">
       <caption class="k">By section</caption>
-      <thead><tr><th scope="col">Section</th><th scope="col">Answered</th><th scope="col">Flagged</th><th scope="col">Marks</th></tr></thead>
+      <thead><tr><th scope="col">Section</th><th scope="col">Answered</th><th scope="col">Flagged</th><th scope="col">Marks so far</th></tr></thead>
       <tbody>
       ${rows.map(r => `<tr>
         <th scope="row">${esc(r.s.name)}</th>
         <td>${r.t.done} of ${r.items}${r.t.refused + r.t.failed ? ` · ${r.t.refused + r.t.failed} not marked` : ""}</td>
         <td>${r.flags ? `<span class="flagged">⚑ ${r.flags}</span>` : `<span class="none">None</span>`}</td>
-        <td>${r.t.done ? `<b>${r.t.got}</b>/${r.t.max}` : `<span class="none">Not started</span>`}</td>
+        <td>${r.t.done ? `<b>${r.t.got}</b>/${r.t.max}` : `<span class="none">${r.touched ? "Not marked yet" : "Not started"}</span>`}</td>
       </tr>`).join("")}
       </tbody>
     </table>
-    <p class="fixed">${a.whole ? "You are sitting all " + plural(a.sections.length, "section") : "You are sitting " + list(a.sections.map(i => "Section " + ROMAN[i]))}. Sections are fixed once an attempt starts.</p>
+    <p class="fixed">${scope ? "You are sitting " + esc(scope.replace(/ only$/, "")) + ". " : ""}Sections are fixed once an attempt starts.</p>
     <div class="go">
       <p class="sum">Picks up at <b>Question ${esc(a.current.display)}</b></p>
       <a class="btn" href="#resume">Resume paper</a>
@@ -234,33 +259,36 @@ function resumePanel(a) {
 }
 
 function typePanel(format, bank, chosenKeys) {
-  const all = chosenKeys == null;
+  const one = bank.length === 1;
+  const all = one || chosenKeys == null;
   const rows = bank.map(b => ({ m: b.m, on: all || chosenKeys.includes(b.key) }));
   const sum = questionSummary(rows, all);
   const papers = [...new Set(bank.map(b => b.paper))];
+  // One question offers no choice, so it has none: no All or Choose, no boxes.
   return `<section class="panel${all ? "" : " choosing"}" aria-labelledby="qq" data-kind="questions">
-    <div class="phead"><h2 id="qq">Questions</h2></div>
-    <fieldset class="mode"><legend class="vh">Which questions</legend>
+    <div class="phead"><h2 id="qq">${one ? "Question" : "Questions"}</h2><span class="spacer"></span>
+      ${one ? "" : `<span class="pick"><button type="button" class="link" data-all="1">Select all</button><button type="button" class="link" data-all="0">Clear</button></span>`}</div>
+    ${one ? "" : `<fieldset class="mode"><legend class="vh">Which questions</legend>
       <label class="opt${all ? " on" : ""}"><input type="radio" name="mode" value="all"${all ? " checked" : ""}>All ${plural(bank.length, "question")}</label>
       <label class="opt${all ? "" : " on"}"><input type="radio" name="mode" value="choose"${all ? "" : " checked"}>Choose questions</label>
-    </fieldset>
+    </fieldset>`}
     ${papers.map(pp => `<div class="from">
       <h3 class="k">${esc(pp.name)}</h3>
       <ul class="qs">
         ${bank.filter(b => b.paper === pp).map(b => {
           const on = rows[bank.indexOf(b)].on;
           return `<li><label class="qrow${on ? " on" : ""}">
-          <input type="checkbox" data-m="${b.m}"${on ? " checked" : ""}${all ? " disabled" : ""}>
+          ${one ? "" : `<input type="checkbox" data-m="${b.m}"${on ? " checked" : ""}${all ? " disabled" : ""}>`}
           <span class="qn">Question ${esc(b.display)}</span>
           <span class="qbody"><span class="qp">${esc(b.prompt)}</span>
-            ${b.sources.length ? `<span class="qsrc">Refers to ${esc(list(b.sources))}</span>` : ""}</span>
+            ${b.sources.length ? `<span class="qsrc">Refers to ${esc(refersTo(b.sources))}</span>` : ""}</span>
           <span class="qm">${plural(b.m, "mark")}</span>
         </label></li>`; }).join("")}
       </ul>
     </div>`).join("")}
     <div class="go">
       <p class="sum" aria-live="polite">${sum.text}</p>
-      <a class="btn${sum.ok ? "" : " off"}" href="#sitting"${sum.ok ? "" : ` aria-disabled="true"`}>Start practice</a>
+      ${startButton("Start practice", sum.ok)}
     </div>
   </section>`;
 }
@@ -268,13 +296,15 @@ function typePanel(format, bank, chosenKeys) {
 function aboutType(format, bank) {
   const papers = [...new Set(bank.map(b => b.paper))];
   const eg = bank[0];
+  const withSource = bank.filter(b => b.sources.length).length;
   return `<aside class="about" aria-labelledby="ab">
     <h2 id="ab">About this practice</h2>
     <h3 class="k">Where the questions come from</h3>
     <p class="p">From ${plural(papers.length, "paper")} in your library: ${esc(list(papers.map(p => p.name)))}.</p>
-    <p class="p">Questions come in paper order${bank.some(b => b.sources.length) ? ", each with the source it refers to" : ""}.</p>
+    <p class="p">Questions are grouped by how they are answered, not by the section they are in. They come in paper order${
+      withSource === bank.length ? ", each with the source it refers to" : withSource ? ", with the source each refers to where it has one" : ""}.</p>
     <h3 class="k">Separate from your papers</h3>
-    <p class="p">Answering Question ${esc(eg.display)} here does not answer it in ${esc(eg.paper.name)}, and sitting the paper does not change this practice.</p>
+    <p class="p">Answering Question ${esc(eg.display)} here does not answer it in your attempt at ${esc(eg.paper.name)}, and sitting the paper does not change this practice.</p>
     ${HOW}
     <h3 class="k">Time</h3>
     <p class="p">Not timed.</p>
@@ -310,6 +340,8 @@ function page(note, unit, top, main, aside) {
   a{color:inherit}
   h1,h2,h3,.disp{font-family:var(--disp);letter-spacing:-.01em;font-weight:600}
   :focus-visible{outline:2px solid var(--green-dk);outline-offset:3px;border-radius:10px}
+  /* A box focused from the keyboard scrolls clear of the sticky action bar. */
+  html{scroll-padding-bottom:110px}
   .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
   /* The header names the open paper's subject, as the sitting does (decision 4). */
@@ -346,7 +378,7 @@ function page(note, unit, top, main, aside) {
   .btn:active{transform:translateY(2px);box-shadow:0 2px 0 var(--green-edge)}
   .btn.ghost{background:var(--card);color:var(--ink);box-shadow:0 0 0 2px var(--line) inset}
   .btn.sm{min-height:44px;padding:9px 18px;font-size:14px;border-radius:12px}
-  .btn.off{background:#C9D3D2;box-shadow:none;color:#3C4A4A;pointer-events:none}
+  .btn:disabled{background:#C9D3D2;box-shadow:none;color:var(--ink);cursor:not-allowed;transform:none}
   .link{background:none;border:none;font-family:var(--disp);font-weight:600;font-size:14px;color:var(--green-dk);
         text-decoration:underline;text-underline-offset:3px;padding:4px 6px}
 
@@ -369,7 +401,6 @@ function page(note, unit, top, main, aside) {
   .row .main{display:flex;flex-direction:column;gap:2px}
   .name{font-family:var(--disp);font-weight:600;font-size:16px;line-height:1.35}
   .ins{font-size:14px;color:var(--ink-2);font-weight:600}
-  .either{font-size:13.5px;color:var(--ink);font-weight:700}
   .meta{font-size:14px;color:var(--ink);font-weight:700;white-space:nowrap;margin-top:1px}
 
   /* The total and the action share one bar at the foot of the panel, so what
@@ -377,7 +408,7 @@ function page(note, unit, top, main, aside) {
      sticks to the bottom of the window while the panel is in view: a library
      with twenty multiple choice questions must not push Start off the screen. */
   .go{display:flex;align-items:center;gap:18px;margin:20px -26px 0;padding:16px 26px;background:#F6F9F9;border-top:1px solid var(--line);
-      position:sticky;bottom:0;z-index:2}
+      position:sticky;bottom:0;z-index:2;box-shadow:0 -10px 16px -14px rgba(60,74,74,.35)}
   .sum{font-size:15px;color:var(--ink-2);font-weight:700;flex:1}
   .sum b{color:var(--ink)}
 
@@ -420,7 +451,7 @@ function page(note, unit, top, main, aside) {
   .qs li+li{border-top:1px solid var(--line)}
   .qrow{display:grid;grid-template-columns:auto 118px minmax(0,1fr) auto;gap:14px;align-items:start;padding:13px 16px}
   .panel:not(.choosing) .qrow{grid-template-columns:118px minmax(0,1fr) auto}
-  .panel:not(.choosing) .qrow input{display:none}
+  .panel:not(.choosing) .qrow input,.panel:not(.choosing) .pick{display:none}
   .choosing .qrow{cursor:pointer}
   .choosing .qrow.on{background:#F6FCF9}
   .qn{font-family:var(--disp);font-weight:600;font-size:15px;white-space:nowrap}
@@ -434,6 +465,7 @@ function page(note, unit, top, main, aside) {
   .about h2{font-size:17px;line-height:1.3;margin-bottom:4px}
   .about .k{margin-top:16px;margin-bottom:4px}
   .p{font-size:14px;color:var(--ink);font-weight:600}
+  .p+.p{margin-top:8px}
   .ins{margin:0}
   blockquote.ins{border-left:3px solid #CFE9DD;padding:2px 0 2px 12px}
   blockquote.ins p{font-size:14px;color:var(--ink);font-weight:600}
@@ -461,7 +493,7 @@ function page(note, unit, top, main, aside) {
   <nav class="tabs" aria-label="Marginal">
     <a href="#study">Study</a><a href="#create">Create</a><a href="#test" aria-current="page">Test mode</a><a href="#essay">Essay practice</a>
   </nav>
-  <a class="back" href="#test">← Test mode</a>
+  <a class="back" href="#test"><span aria-hidden="true">← </span>Test mode</a>
   <div class="top">
     <p class="kicker">${esc(top.kicker)}</p>
     <h1>${esc(top.title)}</h1>
@@ -482,10 +514,9 @@ document.querySelectorAll(".panel[data-kind]").forEach(panel => {
   const sync = () => {
     boxes().forEach(b => b.closest("label").classList.toggle("on", b.checked));
     const all = panel.dataset.kind === "questions" && !panel.classList.contains("choosing");
-    const rows = boxes().map(b => ({ q: Number(b.dataset.q), m: Number(b.dataset.m), roman: b.dataset.roman, on: b.checked }));
+    const rows = boxes().map(b => ({ q: Number(b.dataset.q), m: Number(b.dataset.m), short: b.dataset.short, on: b.checked }));
     const s = panel.dataset.kind === "sections" ? sectionSummary(rows) : questionSummary(rows, all);
-    sum.innerHTML = s.text; go.classList.toggle("off", !s.ok);
-    if (s.ok) go.removeAttribute("aria-disabled"); else go.setAttribute("aria-disabled", "true");
+    sum.innerHTML = s.text; go.disabled = !s.ok;
   };
   boxes().forEach(b => b.addEventListener("change", sync));
   panel.querySelectorAll("[data-all]").forEach(x => x.addEventListener("click", () => {
@@ -495,7 +526,8 @@ document.querySelectorAll(".panel[data-kind]").forEach(panel => {
     const choose = r.value === "choose" && r.checked;
     panel.classList.toggle("choosing", choose);
     panel.querySelectorAll(".opt").forEach(o => o.classList.toggle("on", o.querySelector("input").checked));
-    boxes().forEach(b => { b.disabled = !choose; if (!choose) b.checked = true; });
+    // The picks are kept while All is chosen, so going back to Choose finds them.
+    boxes().forEach(b => { b.disabled = !choose; });
     sync();
   }));
 });
@@ -559,5 +591,35 @@ const write = (file, html, facts) => {
     typePanel(format, bank, pick), aboutType(format, bank)),
     { chosen: bank.filter(b => pick.includes(b.key)).map(b => b.display).join(" "),
       summary: questionSummary(bank.map(b => ({ m: b.m, on: pick.includes(b.key) })), false).text });
+}
+// ---- branches no variant draws, checked so they cannot rot --------------------
+{
+  const fail = m => { throw new Error("undrawn branch: " + m); };
+  // One calculation in the library: no All or Choose, no boxes, one question.
+  const calc = bankOf("calculation", [paper]);
+  const one = typePanel("calculation", calc, null);
+  if (calc.length !== 1 || /type="(radio|checkbox)"/.test(one) || !one.includes("<b>1 question</b> · "))
+    fail("a one-question bank offers a choice: " + calc.length);
+  // A section whose only answer the marker could not mark has been started.
+  const a = derive("in_progress"), k = keyOf(a.items.find(x => x.si === 2));
+  const unmarked = Object.assign({}, a, { results: Object.assign({}, a.results,
+    { [k]: ASSESS.refuse("MARKER_NOT_CONNECTED", "Marking is not connected.", { max: 20 }) }) });
+  const row = resumePanel(unmarked).split("<tr>").find(r => r.includes(esc(SECTIONS[2].name)));
+  if (!/Not marked yet/.test(row) || /Not started/.test(row)) fail("an unmarked section reads as not started");
+  // Sources: a section's own source comes first, and a resource with no caption
+  // is named as the sitting labels it, never by its text.
+  const pp = JSON.parse(JSON.stringify(paper));
+  pp.sections[1].source = { caption: "Source A: industry data", text: "Body text that must not be printed." };
+  pp.sections[1].questions[0].stimulus = [{ text: "An uncaptioned paragraph." }];
+  const sa = bankOf("short_answer", [pp]);
+  if (sa[0].sources[0] !== "Source A: industry data" || sa[0].sources.some(n => /Body text|uncaptioned/.test(n)))
+    fail("Refers to: " + JSON.stringify(sa[0].sources));
+  // Summaries never print "1 sections" or "1 of 1 questions", and name a section
+  // by its own name, not its position.
+  const t1 = sectionSummary([{ short: "Part A", q: 1, m: 2, on: true }]).text;
+  const t2 = sectionSummary([{ short: "Part A", q: 3, m: 5, on: false }, { short: "Part B", q: 1, m: 2, on: true }]).text;
+  const t3 = questionSummary([{ m: 4, on: true }], false).text;
+  if (t1 !== "<b>The whole paper</b> · 1 question · 2 marks" || t2 !== "<b>Part B only</b> · 1 question · 2 marks" ||
+      t3 !== "<b>1 question</b> · 4 marks") fail([t1, t2, t3].join(" | "));
 }
 console.log(JSON.stringify({ subject: SUBJECT, identity, pages: report }, null, 1));
