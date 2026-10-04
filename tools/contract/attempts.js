@@ -424,6 +424,79 @@ function itemState(a, key) {
            drafted: !r && !blank(a.drafts[key]), flagged: a.flags.indexOf(key) >= 0, current: a.at === key };
 }
 
+// THE SUBMIT REPORT (Slice B, state 1). Everything a page says about an attempt
+// it is about to close, from one walk of the sequence and one predicate (the
+// outcome tally uses), so the totals, the lists, the sentence beside the button
+// and the table by section cannot disagree with each other or with summary().
+//
+// `pending` is the keys being marked right now. It is the app's in-memory
+// TM_PENDING and is never stored: after a reload it is empty, and nothing is
+// "being marked". An item's status is what is stored, whatever is pending on it:
+//   marked        a valid mark                       counts as answered
+//   not_marked    a submitted answer with no mark     its marks stay in max, never in got
+//   not_answered  nothing submitted                   a draft beside it is not marked
+// and `help` says what could change a not-marked answer: "retry" (the marker
+// failed and may not next time), "change" (the answer as written cannot be
+// read), or "none" (nothing the student can do here changes it).
+function report(a, exams, pending) {
+  var seq = sequence(a, exams), busy = {};
+  (pending || []).forEach(function (k) { busy[k] = true; });
+  var items = seq.map(function (e) {
+    var r = a.results[e.key], o = r ? ASSESS.outcomeOf(r) : null;
+    var status = o === "success" ? "marked" : r ? "not_marked" : "not_answered";
+    var d = a.drafts[e.key], drafted = !blank(d);
+    var fmt = e.eitherSlot ? null : ASSESS.normaliseFormat(e.q).format;
+    return {
+      key: e.key, paper: e.paper.id, si: e.si, qi: e.qi, pi: e.pi, display: e.display, format: fmt,
+      parent: e.parent ? { number: PAPER.numberOf(e.parent), marks: PAPER.marksOf(e.parent) } : null,
+      eitherSlot: e.eitherSlot, options: e.eitherSlot ? e.options.map(function (x) { return x.number; }) : null,
+      marks: marksOf(e), weight: weightOf(e), status: status,
+      score: status === "marked" ? r.score : null, max: status === "marked" ? r.max : null,
+      code: status === "not_marked" ? (r.code || null) : null, why: status === "not_marked" ? (r.why || null) : null,
+      help: status !== "not_marked" ? null
+        : o === "failed" && r.retry !== false ? "retry" : r.code === "CALC_UNREADABLE" ? "change" : "none",
+      draft: status === "not_answered" && drafted ? (fmt === "multiple_choice" ? "selected" : "written") : null,
+      changed: status !== "not_answered" && drafted && String(d) !== String(a.answers[e.key]),
+      pending: !!busy[e.key], flagged: a.flags.indexOf(e.key) >= 0,
+    };
+  });
+  var row = function (st) {
+    var xs = items.filter(function (x) { return x.status === st; });
+    return { count: xs.reduce(function (n, x) { return n + x.weight; }, 0),
+             worth: xs.reduce(function (n, x) { return n + x.marks; }, 0),
+             pending: xs.filter(function (x) { return x.pending; }).length };
+  };
+  var t = ASSESS.tally(items.map(function (x) { return { marks: x.marks, result: a.results[x.key] }; }));
+  var out = {
+    scope: a.scope, items: items,
+    rows: { marked: Object.assign(row("marked"), { earned: t.got }), notMarked: row("not_marked"), notAnswered: row("not_answered") },
+    total: items.reduce(function (n, x) { return n + x.weight; }, 0), max: t.max, got: t.got,
+    flagged: items.filter(function (x) { return x.flagged; }).map(function (x) { return x.key; }),
+    pending: items.filter(function (x) { return x.pending; }).map(function (x) { return x.key; }),
+    changed: items.filter(function (x) { return x.changed; }).map(function (x) { return x.key; }),
+    at: (seq.filter(function (e) { return e.key === a.at; })[0] || seq[seq.length - 1] || {}).key || null,
+    sections: null, either: [],
+  };
+  if (a.scope === SCOPE.paper) {
+    var paper = byId(exams, a.paper);
+    out.sections = a.sections.map(function (si) {
+      var xs = items.filter(function (x) { return x.si === si; });
+      var st = ASSESS.tally(xs.map(function (x) { return { marks: x.marks, result: a.results[x.key] }; }));
+      return { si: si, total: xs.reduce(function (n, x) { return n + x.weight; }, 0), done: st.done,
+               notMarked: st.refused + st.failed, flagged: xs.filter(function (x) { return x.flagged; }).length,
+               got: st.got, max: st.max, touched: xs.some(function (x) { return !!a.results[x.key]; }) };
+    });
+    out.either = a.sections.filter(function (si) { return Number(paper.sections[si].choose) > 0; }).map(function (si) {
+      var sec = paper.sections[si], c = a.choice[si];
+      var chosen = c === undefined || c === null ? null : c;
+      return { si: si, choose: Number(sec.choose), chosen: chosen,
+               options: (sec.questions || []).map(function (q, qi) { return { qi: qi, number: PAPER.numberOf(q), marks: PAPER.marksOf(q) }; }),
+               locked: chosen !== null && hasWork(a, function (k) { return k.split("-")[0] === String(si); }) };
+    });
+  }
+  return out;
+}
+
 // ---- reading a store from anywhere ----------------------------------------------------------
 // A stored or restored store is not trusted to be well formed. Anything that is
 // not a recognisable attempt is dropped, not repaired into one.
@@ -441,6 +514,15 @@ function sane(attempts, exams) {
         : false;
       if (!ok) return;
       ["choice", "answers", "drafts", "results"].forEach(function (b) { if (!a[b] || typeof a[b] !== "object") a[b] = {}; });
+      // A stored result says what it is, so every reader agrees on it: the tally
+      // and isMarked() read an outcome-less {score, max} differently, and an old
+      // {error} carries no outcome at all.
+      Object.keys(a.results).forEach(function (k) {
+        var r = a.results[k];
+        if (!r || typeof r !== "object") { delete a.results[k]; return; }
+        var o = ASSESS.outcomeOf(r);
+        if (r.outcome !== o) r.outcome = o;
+      });
       if (!Array.isArray(a.flags)) a.flags = [];
       keep[slot] = a;
     });
@@ -456,5 +538,5 @@ module.exports = {
   sectionName: sectionName, sectionShort: sectionShort, assessable: assessable, bank: bank, bankCounts: bankCounts,
   startPaper: startPaper, startType: startType, begin: begin, discard: discard, complete: complete,
   sequence: sequence, entryAt: entryAt, marksOf: marksOf, setDraft: setDraft, record: record, toggleFlag: toggleFlag, moveTo: moveTo, choose: choose,
-  summary: summary, weightOf: weightOf, restorePapers: restorePapers, itemState: itemState, sane: sane, clone: clone,
+  summary: summary, report: report, weightOf: weightOf, restorePapers: restorePapers, itemState: itemState, sane: sane, clone: clone,
 };

@@ -219,6 +219,64 @@ console.log('--- a backup restores papers by the version rule');
      'an older version from a backup stays hidden while its restored attempt is pinned to it');
 }
 
+console.log('--- the submit report adds up, from one predicate (Slice B, state 1)');
+{
+  const s = store(), p = fresh(); A.addPaper(s, p);
+  const a = A.startPaper(p, null, T(1));
+  const M = (score, max) => ASSESS.marked({ score, max, kind: 'mc' });
+  for (let i = 0; i < 10; i++) A.record(a, '0-' + i, 0, M(i % 2, 1), T(2));
+  A.record(a, '1-0-0', 'Speed.', M(2, 2), T(3));
+  A.setDraft(a, '1-0-0', 'Speed, because the queue is long.', T(3));               // changed after marking
+  A.record(a, '1-0-2', '60000 40000', ASSESS.refuse('CALC_UNREADABLE', 'Write the final value.', { max: 4 }), T(4));
+  A.record(a, '1-1-0', 'An answer.', ASSESS.fail('MARKER_UNREACHABLE', 'Not reached.', { max: 3, retry: true }), T(5));
+  A.record(a, '1-1-1', 'Another.', ASSESS.refuse('MARKER_NOT_CONNECTED', 'No marker.', { max: 5, retry: false }), T(5));
+  A.setDraft(a, '1-0-3', 'A draft never submitted.', T(6));
+  A.setDraft(a, '1-1-2', 'Being marked now.', T(6));
+  A.toggleFlag(a, '0-6', T(7)); A.toggleFlag(a, '1-2', T(7));
+  const r = A.report(a, s.exams, ['1-1-2']), sm = A.summary(a, s.exams);
+  const by = k => r.items.find(x => x.key === k);
+  ok(r.rows.marked.count + r.rows.notMarked.count + r.rows.notAnswered.count === sm.total && r.total === sm.total,
+     'the three rows add up to the attempt: ' + [r.rows.marked.count, r.rows.notMarked.count, r.rows.notAnswered.count, sm.total].join(' '));
+  ok(r.rows.marked.worth + r.rows.notMarked.worth + r.rows.notAnswered.worth === sm.max && r.max === 90,
+     'their marks add up to what the paper is out of: ' + [r.rows.marked.worth, r.rows.notMarked.worth, r.rows.notAnswered.worth].join(' + '));
+  ok(r.rows.marked.earned === sm.got && r.rows.marked.count === sm.answered && r.rows.notMarked.count === sm.notMarked,
+     'and agree with summary() on marks, answered and not marked');
+  ok(by('1-0-2').help === 'change' && by('1-1-0').help === 'retry' && by('1-1-1').help === 'none',
+     'a not-marked answer says what could change it: ' + ['1-0-2', '1-1-0', '1-1-1'].map(k => by(k).help).join(' '));
+  ok(by('1-0-3').status === 'not_answered' && by('1-0-3').draft === 'written' && by('1-2').draft === null,
+     'a draft never submitted is not answered, and is told apart from a blank question');
+  ok(by('1-0-0').status === 'marked' && by('1-0-0').changed && r.changed.join() === '1-0-0',
+     'a change after marking keeps the mark and is reported as a change');
+  ok(by('1-1-2').pending && by('1-1-2').status === 'not_answered' && r.rows.notAnswered.pending === 1 && r.pending.join() === '1-1-2',
+     'an answer being marked is pending, and not answered until its mark lands');
+  ok(r.flagged.join(' ') === '0-6 1-2' && r.flagged.length === sm.flagged, 'flags are the attempt\'s, in paper order');
+  const slot = r.items.find(x => x.eitherSlot);
+  ok(slot && slot.options.join(' ') === '15 16' && slot.weight === 1 && slot.marks === 20 && slot.status === 'not_answered',
+     'an unchosen either/or is one item, worth one option');
+  ok(r.either.length === 1 && r.either[0].chosen === null && !r.either[0].locked, 'and the either/or reads as not chosen');
+  A.choose(a, 3, 1, T(8)); A.setDraft(a, '3-1', 'Started.', T(8));
+  const r2 = A.report(a, s.exams, []);
+  ok(r2.either[0].chosen === 1 && r2.either[0].locked && !r2.items.some(x => x.key === '3-0'),
+     'chosen with work, it is locked, and the other option is in no list');
+  ok(r2.pending.length === 0 && r2.sections.length === 4 && r2.sections.reduce((n, x) => n + x.total, 0) === r2.total,
+     'nothing is pending without a pending list, and the sections add up');
+  const part = A.startPaper(p, [1], T(9));
+  const r3 = A.report(part, s.exams, []);
+  ok(r3.total === 8 && r3.max === 40 && r3.sections.length === 1 && r3.either.length === 0, 'a partial attempt reports only its sections');
+}
+{
+  const s = store(), p = fresh(); A.addPaper(s, p);
+  const a = A.startPaper(p, null, T(1));
+  a.results['0-0'] = { score: 1, max: 1 };          // written before outcomes existed
+  a.results['0-1'] = { error: 'no' };
+  a.results['0-2'] = 'nonsense';
+  const st = { [A.paperKey(p)]: { current: a, last: null } };
+  A.sane(st, s.exams);
+  ok(a.results['0-0'].outcome === 'success' && A.itemState(a, '0-0').answered && A.summary(a, s.exams).answered === 1,
+     'a stored result without an outcome is read one way by every reader');
+  ok(a.results['0-1'].outcome === 'refused' && !('0-2' in a.results), 'an old error is refused, and a result that is not one is dropped');
+}
+
 console.log('--- a restored store is not trusted');
 {
   const p = fresh();

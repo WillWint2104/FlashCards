@@ -37,11 +37,11 @@ const fx = JSON.parse(fs.readFileSync(path.join(HERE, "attempts.fixture.json"), 
 // those frozen states show.
 const S12 = JSON.parse(fs.readFileSync(path.join(HERE, "12-extended-response.fixture.json"), "utf8"));
 const S13 = JSON.parse(fs.readFileSync(path.join(HERE, "13-business-report.fixture.json"), "utf8"));
-const BORROWED = { "2-0": S13, "3-0": S12 };
+export const BORROWED = { "2-0": S13, "3-0": S12 };
 
 export const keyOf = a => a.si + "-" + a.qi + (a.pi == null ? "" : "-" + a.pi);
 
-function mark(a, input, review) {
+export function mark(a, input, review) {
   const q = a.q, f = ASSESS.normaliseFormat(q).format;
   if (f === "multiple_choice") {
     const ch = q.choices[input];

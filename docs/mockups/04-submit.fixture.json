@@ -1,0 +1,73 @@
+{
+  "_why": "What a student did before reaching Submit paper, as five alternative attempts on the synthetic Business Studies paper. Only inputs are authored here: which sections, what was submitted, what is still in the box, what was flagged, the either/or choice, where the student is, and which submissions the marker failed on or is still marking. An answer given as \"completed\" reuses the completed attempt's input and marker review from attempts.fixture.json, so its mark is the one Pages 1 and 3 already show. A failure names the app's own failure code, and its words are read from app.js. Everything the page shows (status, counts, marks, what could change a not-marked answer) is derived by ATT.report through the shipped contract. `pending` stands in for the app's in-memory TM_PENDING, which is never stored. The drafts and the unreadable calculation are original text written for this fixture.",
+  "primary": {
+    "scope": "paper",
+    "sections": [0, 1, 2, 3],
+    "startedAt": "2026-10-01T16:10:00+10:00",
+    "updatedAt": "2026-10-02T20:05:00+10:00",
+    "at": "3-0",
+    "answers": {
+      "0-0": "completed", "0-1": "completed", "0-2": "completed", "0-3": "completed", "0-4": "completed",
+      "0-5": "completed", "0-6": "completed", "0-7": "completed", "0-8": "completed", "0-9": "completed",
+      "1-0-0": "completed", "1-0-1": "completed", "1-0-2": "60000 40000", "1-1-0": "completed", "2-0": "completed"
+    },
+    "fail": { "1-1-0": "MARKER_UNREACHABLE" },
+    "drafts": {
+      "1-0-0": "Speed. The case study says customers wait too long at the vans between 7am and 9am, so orders are not being filled quickly at the time most customers arrive.",
+      "1-0-3": "Kerbside Coffee could roster a second operator on the busiest vans from 7am to 9am. This shortens the queue at the times the case study says customers complain"
+    },
+    "flags": ["0-6", "1-0-1", "1-2"],
+    "choice": {},
+    "pending": []
+  },
+  "marking": {
+    "base": "primary",
+    "drafts": {
+      "1-1-1": "The expense ratio rose because expenses grew faster than sales. Expenses rose by $51 000 while sales rose by $90 000, and selling prices did not change."
+    },
+    "pending": ["1-1-1"]
+  },
+  "section": {
+    "scope": "paper",
+    "sections": [1],
+    "startedAt": "2026-10-03T15:40:00+10:00",
+    "updatedAt": "2026-10-03T16:25:00+10:00",
+    "at": "1-2",
+    "answers": { "1-0-0": "completed", "1-0-1": "completed", "1-0-2": "completed", "1-0-3": "completed", "1-1-0": "completed" },
+    "fail": {},
+    "drafts": {
+      "1-1-1": "Expenses grew by $51 000 while sales grew by $90 000, so expenses took a larger share of each dollar of sales."
+    },
+    "flags": ["1-1-2"],
+    "choice": {},
+    "pending": [],
+    "last": "completed"
+  },
+  "complete": {
+    "scope": "paper",
+    "sections": [0, 1, 2, 3],
+    "startedAt": "2026-10-01T16:10:00+10:00",
+    "updatedAt": "2026-10-03T19:30:00+10:00",
+    "at": "3-0",
+    "answers": "completed",
+    "fail": {},
+    "drafts": {},
+    "flags": ["1-1-1"],
+    "choice": { "3": 0 },
+    "pending": []
+  },
+  "practice": {
+    "scope": "type",
+    "format": "short_answer",
+    "startedAt": "2026-10-03T09:15:00+10:00",
+    "updatedAt": "2026-10-03T09:52:00+10:00",
+    "at": "1-1-1",
+    "answers": { "1-0-0": "completed", "1-0-1": "completed", "1-1-0": "completed" },
+    "fail": { "1-1-0": "MARKER_BUSY" },
+    "drafts": {
+      "1-1-1": "Expenses grew faster than sales, so the expense ratio rose. Selling prices stayed the same, so"
+    },
+    "flags": ["1-0-1"],
+    "pending": []
+  }
+}
