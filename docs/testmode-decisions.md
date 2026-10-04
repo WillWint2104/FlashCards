@@ -441,6 +441,48 @@ checkpoint were re-measured once on a clean tree at `ed94ce5`: fast 32.6s of 40
 and checkpoint 51.2s of 60, both passing. **The hard budgets are authoritative
 again.** Decision 20's diagnostic-only rule applied to `fc-v50` alone.
 
+## 22. Page 3 approved; Slice A design is closed and implementation begins
+
+**Page 3, overview and practice setup, is approved for desktop.** No more
+desktop mockups are made for Slice A. Locked with it:
+
+- **Question-type practice** offers *All questions* or an explicit *Choose
+  questions*. No choose-a-number and no random selection in v1. A deliberate
+  *Random N* can come later, when the bank is large.
+- **Attempt scope is immutable once an attempt starts.** Sections or questions
+  are never added to or removed from an existing attempt. An in-progress attempt
+  offers **Resume** (primary) and **Start again** (secondary). Start again asks
+  for confirmation, discards that in-progress attempt, and returns to setup. A
+  student never has to submit a half-finished attempt to choose differently.
+- **Partial-paper instructions.** The authored instructions are kept verbatim
+  and labelled *Original paper instructions*. When only some sections are
+  chosen, a *For this practice* summary (*Section II only · 8 questions · 40
+  marks*) sits with them. A whole-paper sitting does not need it.
+- **A completed attempt** offers *Start new attempt*, not *Start paper*.
+
+**Rules carried from the Page 3 audit into implementation,** without reopening
+Page 1 visually:
+
+- Practice-type counts include only questions with a safe assessment path. An
+  unregistered-subject paper can contribute its locally markable questions; its
+  written questions that need an unavailable marker do not count.
+- Section names and numbers come from the authored section, never from array
+  position.
+- Access to a previous completed result while a new attempt is in progress
+  waits for Slice B, when Results exists.
+
+**Slice A is implemented in dependency order:** attempt persistence, active-paper
+subject identity, Page 1, Page 2, Page 3, the sitting shell, the five frozen
+formats, practice-type sessions, and resume. Desktop only. Slice B (Submit,
+Results, review) does not start until Slice A is accepted on two real journeys:
+question-type practice from choosing to resuming, with the paper attempt proved
+untouched, and a paper from import to resuming, with no source edits.
+
+The marking invariants stay locked: no demo marks in Test Mode; a marker failure
+or refusal leaves the answer unmarked; unmarked results enter no total; a
+successful retry replaces the unmarked state; a late reply cannot change a later
+screen or sitting; Study keeps its demo behaviour.
+
 ## Mockup order — dependency, not numerical
 
 ```
