@@ -377,11 +377,23 @@ function moveTo(a, key, t) { a.at = key; return touch(a, t); }
 // An either/or chosen in the sitting. It can be changed only while nothing has
 // been submitted or drafted for the option chosen, because the choice decides
 // which question the answer belongs to.
-function choose(a, si, qi, t) {
+function choose(a, si, qi, t, paper) {
   var cur = a.choice[si];
   if (cur !== undefined && cur !== null && cur !== qi && hasWork(a, function (k) { return k.split("-")[0] === String(si); }))
     throw new Error("an either/or with an answer in it cannot be changed");
   a.choice[si] = qi;
+  // A flag set on the unchosen slot, or on the option not taken, follows the
+  // student to the question they chose, rather than vanishing from every count.
+  // The chosen question's first key is its own, or its first part's when it has
+  // parts (which needs the paper; without it, a question without parts is assumed).
+  var q = paper && paper.sections && paper.sections[si] ? (paper.sections[si].questions || [])[qi] : null;
+  var first = si + "-" + qi + (q && PAPER.isParent(q) ? "-0" : "");
+  var mine = function (k) { return k === first || (k.indexOf(si + "-" + qi + "-") === 0 && first !== si + "-" + qi); };
+  var stray = a.flags.filter(function (k) { return k.split("-")[0] === String(si) && !mine(k); });
+  if (stray.length) {
+    a.flags = a.flags.filter(function (k) { return stray.indexOf(k) < 0; });
+    if (!a.flags.some(mine)) a.flags.push(first);
+  }
   return touch(a, t);
 }
 function hasWork(a, pick) {
@@ -437,7 +449,9 @@ function itemState(a, key) {
 //   not_answered  nothing submitted                   a draft beside it is not marked
 // and `help` says what could change a not-marked answer: "retry" (the marker
 // failed and may not next time), "change" (the answer as written cannot be
-// read), or "none" (nothing the student can do here changes it).
+// read), "settings" (a marker setting the class's teacher controls), or "none"
+// (nothing in the sitting changes it).
+var SETTINGS_FIXES = ["MARKER_NOT_CONNECTED", "MARKER_ACCESS_DENIED"];
 function report(a, exams, pending) {
   var seq = sequence(a, exams), busy = {};
   (pending || []).forEach(function (k) { busy[k] = true; });
@@ -454,9 +468,12 @@ function report(a, exams, pending) {
       score: status === "marked" ? r.score : null, max: status === "marked" ? r.max : null,
       code: status === "not_marked" ? (r.code || null) : null, why: status === "not_marked" ? (r.why || null) : null,
       help: status !== "not_marked" ? null
-        : o === "failed" && r.retry !== false ? "retry" : r.code === "CALC_UNREADABLE" ? "change" : "none",
+        : o === "failed" && r.retry !== false ? "retry" : r.code === "CALC_UNREADABLE" ? "change"
+        : SETTINGS_FIXES.indexOf(r.code) >= 0 ? "settings" : "none",
       draft: status === "not_answered" && drafted ? (fmt === "multiple_choice" ? "selected" : "written") : null,
-      changed: status !== "not_answered" && drafted && String(d) !== String(a.answers[e.key]),
+      // A change still being marked was submitted; a multiple-choice re-pick is
+      // not shown beside its mark by the sitting, so it is not reported either.
+      changed: status !== "not_answered" && drafted && !busy[e.key] && fmt !== "multiple_choice" && String(d) !== String(a.answers[e.key]),
       pending: !!busy[e.key], flagged: a.flags.indexOf(e.key) >= 0,
     };
   });
@@ -477,8 +494,8 @@ function report(a, exams, pending) {
     at: (seq.filter(function (e) { return e.key === a.at; })[0] || seq[seq.length - 1] || {}).key || null,
     sections: null, either: [],
   };
-  if (a.scope === SCOPE.paper) {
-    var paper = byId(exams, a.paper);
+  var paper = a.scope === SCOPE.paper ? byId(exams, a.paper) : null;
+  if (paper) {
     out.sections = a.sections.map(function (si) {
       var xs = items.filter(function (x) { return x.si === si; });
       var st = ASSESS.tally(xs.map(function (x) { return { marks: x.marks, result: a.results[x.key] }; }));

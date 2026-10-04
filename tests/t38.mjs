@@ -241,7 +241,7 @@ console.log('--- the submit report adds up, from one predicate (Slice B, state 1
      'their marks add up to what the paper is out of: ' + [r.rows.marked.worth, r.rows.notMarked.worth, r.rows.notAnswered.worth].join(' + '));
   ok(r.rows.marked.earned === sm.got && r.rows.marked.count === sm.answered && r.rows.notMarked.count === sm.notMarked,
      'and agree with summary() on marks, answered and not marked');
-  ok(by('1-0-2').help === 'change' && by('1-1-0').help === 'retry' && by('1-1-1').help === 'none',
+  ok(by('1-0-2').help === 'change' && by('1-1-0').help === 'retry' && by('1-1-1').help === 'settings',
      'a not-marked answer says what could change it: ' + ['1-0-2', '1-1-0', '1-1-1'].map(k => by(k).help).join(' '));
   ok(by('1-0-3').status === 'not_answered' && by('1-0-3').draft === 'written' && by('1-2').draft === null,
      'a draft never submitted is not answered, and is told apart from a blank question');
@@ -275,6 +275,36 @@ console.log('--- the submit report adds up, from one predicate (Slice B, state 1
   ok(a.results['0-0'].outcome === 'success' && A.itemState(a, '0-0').answered && A.summary(a, s.exams).answered === 1,
      'a stored result without an outcome is read one way by every reader');
   ok(a.results['0-1'].outcome === 'refused' && !('0-2' in a.results), 'an old error is refused, and a result that is not one is dropped');
+}
+
+console.log('--- a flag follows an either/or choice; changes still being marked are not changes');
+{
+  const s = store(), p = fresh(); A.addPaper(s, p);
+  const a = A.startPaper(p, null, T(1));
+  A.toggleFlag(a, '3-0', T(2));                       // the unchosen slot, Question 15 or 16
+  A.choose(a, 3, 1, T(3), p);
+  ok(A.report(a, s.exams, []).flagged.join() === '3-1' && A.summary(a, s.exams).flagged === 1,
+     'a flag on the slot moves to the question chosen: ' + a.flags.join());
+  A.choose(a, 3, 0, T(4), p);
+  ok(a.flags.join() === '3-0', 'and with nothing written, switching takes it along');
+  const q = fresh(); q.exam = Object.assign({}, q.exam, { id: 'parents-copy' }); q.sections[3].questions = q.sections[3].questions.map((x, i) => ({ id: x.id, number: x.number, marks: x.marks, prompt: 'Option',
+    parts: [{ id: 'a' + i, label: 'a', marks: x.marks - 5, format: 'extended_response', prompt: x.prompt }, { id: 'b' + i, label: 'b', marks: 5, format: 'extended_response', prompt: x.prompt }] }));
+  A.addPaper(s, q);
+  const b = A.startPaper(q, null, T(1));
+  A.toggleFlag(b, '3-0', T(2)); A.choose(b, 3, 0, T(3), q);
+  ok(b.flags.join() === '3-0-0' && A.report(b, s.exams, []).flagged.join() === '3-0-0', 'and onto the first part when the option has parts: ' + b.flags.join());
+
+  const c = A.startPaper(p, null, T(1));
+  A.record(c, '1-0-0', 'Speed.', ASSESS.marked({ score: 1, max: 2, kind: 'points' }), T(2));
+  A.setDraft(c, '1-0-0', 'Speed, because customers wait.', T(3));
+  ok(A.report(c, s.exams, ['1-0-0']).changed.length === 0, 'a change being marked was submitted, so it is not reported as a change');
+  ok(A.report(c, s.exams, []).changed.join() === '1-0-0', 'after a reload, with nothing pending, it is a change again');
+  A.record(c, '0-0', 1, ASSESS.marked({ score: 0, max: 1, kind: 'mc' }), T(2)); A.setDraft(c, '0-0', '2', T(3));
+  ok(!A.report(c, s.exams, []).changed.includes('0-0'), 'a multiple-choice re-pick is not listed, since the sitting does not show it beside the mark');
+  A.record(c, '1-1-0', 'x', ASSESS.refuse('MARKER_NOT_CONNECTED', 'No marker.', { max: 3, retry: false }), T(2));
+  ok(A.report(c, s.exams, []).items.find(x => x.key === '1-1-0').help === 'settings', 'a refusal a marker setting fixes says so');
+  A.record(c, '1-0-2', '1.5', ASSESS.refuse('CALC_KEY_INCOMPLETE', 'No key.', { max: 4 }), T(2));
+  ok(A.report(c, s.exams, []).items.find(x => x.key === '1-0-2').help === 'none', 'and one nothing in the sitting changes says that');
 }
 
 console.log('--- a restored store is not trusted');

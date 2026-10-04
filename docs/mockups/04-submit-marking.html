@@ -68,7 +68,7 @@
   .sm{font-size:13px}
 
   /* Still being marked: blue, because blue already means in progress here. */
-  .busy{margin-top:16px;border:1.5px solid #C4E4FA;background:var(--blue-soft);border-radius:14px;padding:14px 16px}
+  section.busy{margin-top:16px;border:1.5px solid #C4E4FA;background:var(--blue-soft);border-radius:14px;padding:14px 16px}
   .busy h3{font-size:16px;color:var(--blue-dk)}
   .busy>p{font-size:14px;font-weight:600;color:var(--ink);margin-top:2px}
   .busy ul{list-style:none;margin-top:10px;display:flex;flex-direction:column;gap:8px}
@@ -153,12 +153,12 @@
   <div class="layout">
     <section class="panel" aria-labelledby="dh">
       <h2 id="dh" tabindex="-1">Submitting ends this attempt with the marks you have now</h2>
-      <p class="plede">Each answer was marked when you submitted it, so submitting marks nothing more. Your results open next, where you can review your marks but not change them.</p>
+      <p class="plede">Answers are marked as you submit them, so submitting the paper marks nothing more. Your results open next, where you can review your marks but not change them.</p>
       <section class="busy" aria-labelledby="bz">
     <h3 id="bz">Question 12(b) is still being marked</h3>
     <p>You can submit once its mark arrives, which takes at most about a minute, or leave it unmarked.</p>
     <ul><li>
-      <div class="bzrow"><span class="where"><b>Question 12(b)</b> · 5 marks</span><span class="tag busy">Sent for marking</span>
+      <div class="bzrow"><span class="where"><b>Question 12(b)</b> · 5 marks</span><span class="tag busy">Being marked now</span>
         <span class="spacer"></span><button type="button" class="link">Leave it unmarked</button></div>
       <p class="then">If you leave it unmarked, it is submitted without a mark and its 5 marks still count in the 90. A mark that arrives later is not used.</p>
     </li></ul>
@@ -175,7 +175,7 @@
   </table>
   <p class="note">Questions not marked or not answered earn nothing when you submit. Their 55 marks still count in the 90.</p>
   <p class="note"><span class="flagged">⚑ 3 flagged</span> · Flags do not change a mark, and they do not stop you submitting. <a href="#g-fl">See flagged</a></p>
-  <p class="note">1 answer was changed after it was marked, and the change was not submitted, so the earlier mark stands. <a href="#g-ch">See which</a></p>
+  <p class="note">1 answer was changed after marking and the change was not submitted, so the earlier mark stands. <a href="#g-ch">See which</a></p>
       
       <section class="grp" id="g-nm" tabindex="-1" aria-labelledby="h-nm">
     <h3 id="h-nm">Submitted, not marked <span class="n">2</span></h3>
@@ -192,7 +192,7 @@
       <p class="route"><a class="link" href="#go-1-1-0">Go to 12(a) to try marking again</a></p>
     </li></ul></section><section class="grp" id="g-na" tabindex="-1" aria-labelledby="h-na">
     <h3 id="h-na">Not answered <span class="n">5</span></h3>
-    <p class="glede">Nothing has been submitted for marking for these.</p>
+    <p class="glede">None of these has a mark yet.</p>
     <ul><li>
       <div class="where"><b>Question 11(d)</b> · 5 marks · Section II</div>
       <p class="tagline"><span class="tag">Draft saved · written, not submitted</span></p>
@@ -222,15 +222,15 @@
     <h3 id="h-ch">Changed after marking <span class="n">1</span></h3>
     <ul><li>
       <div class="where"><b>Question 11(a)</b> · 2 marks · Section II</div>
-      <p class="why">You changed this answer after it was marked and did not submit the change. Your mark of 2 of 2 stands.</p>
+      <p class="why">You changed this answer after it was marked and did not submit the change. Your mark of 2 of 2 marks stands.</p>
       <p class="route"><a class="link" href="#go-1-0-0">Go to 11(a)</a></p>
     </li></ul></section><section class="grp" id="g-fl" tabindex="-1" aria-labelledby="h-fl">
     <h3 id="h-fl">Flagged <span class="n gold">3</span></h3>
-    <p class="glede">You flagged these to come back to. Some are also listed above.</p>
+    <p class="glede">You flagged these to come back to. One of these is also listed above.</p>
     <ul><li class="fl"><div class="where"><span class="flagged">⚑</span> <b>Question 7</b> · 1 mark · Section I</div>
-      <p class="tagline"><span class="tag">Answered · 0 of 1</span></p>
+      <p class="tagline"><span class="tag">Answered · 0 of 1 mark</span></p>
       <p class="route"><a class="link" href="#go-0-6">Go to 7</a></p></li><li class="fl"><div class="where"><span class="flagged">⚑</span> <b>Question 11(b)</b> · 3 marks · Section II</div>
-      <p class="tagline"><span class="tag">Answered · 3 of 3</span></p>
+      <p class="tagline"><span class="tag">Answered · 3 of 3 marks</span></p>
       <p class="route"><a class="link" href="#go-1-0-1">Go to 11(b)</a></p></li><li class="fl"><div class="where"><span class="flagged">⚑</span> <b>Question 13</b> · 12 marks · Section II</div>
       <p class="tagline"><span class="tag">Not started</span></p>
       <p class="route"><a class="link" href="#go-1-2">Go to 13</a></p></li></ul></section>
@@ -271,7 +271,7 @@
     <p class="p sm">Sections are fixed once an attempt starts.</p>
     <h3 class="k">Section IV - Extended response</h3>
       <blockquote class="ins"><p>20 marks. Attempt EITHER Question 15 OR Question 16. Allow about 35 minutes for this section.</p><cite>Original paper instructions</cite></blockquote>
-      <p class="p either">Not chosen yet. You answer one of these, not both, so it counts as one question worth 20 marks.</p>
+      <p class="p either">Not chosen yet. Answer one of these, not both. It counts as one question.</p>
     <h3 class="k">Saved</h3><p class="p">Started 1 Oct · saved 2 Oct</p>
   </aside>
   </div>

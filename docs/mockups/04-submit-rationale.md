@@ -26,7 +26,10 @@ if it does.
 So the page is the decision first and the detail after it:
 
 1. **The decision.** *Submitting ends this attempt with the marks you have
-   now*, and one sentence on why nothing more is marked.
+   now*, and the policy in one sentence: *Answers are marked as you submit
+   them, so submitting the paper marks nothing more.* It is worded as the
+   policy, not as a claim that every answer here was marked, because some
+   were not.
 2. **What you are submitting.** Three rows that add up to the attempt:
    *Answered and marked*, *Submitted, not marked*, *Not answered*, each with
    its questions, what they are worth, and what they earned. The total row is
@@ -66,8 +69,11 @@ shows today goes.
     reply it could not read). Route: *Go to 12(a) to try marking again*.
   - *changing the answer can help*: a calculation written so it cannot be
     read. Route: *Go to 11(c) to change your answer*.
-  - *cannot be marked here*: a refusal nothing in the sitting changes, such as
-    no marker connected. *Marking it again here will not change this.*
+  - *your teacher can fix this in Settings*: no marker connected, or the
+    class code not accepted. The shipped reason says what to do.
+  - *cannot be marked here*: a refusal nothing changes, such as a question
+    whose answer key is incomplete. *Marking it again here will not change
+    this.*
 - **Unmarked and unanswered marks stay in the total.** *Questions not marked
   or not answered earn nothing when you submit. Their 55 marks still count in
   the 90.*
@@ -87,15 +93,38 @@ shows today goes.
   to do there. The back link at the top returns to where the student was.
 - **Marking still in flight blocks submission.** While an answer is being
   marked, a blue notice names it (blue already means *in progress* here; gold
-  is flags only). Submit paper is a real disabled button, and the bar says
+  is flags only). It is tagged *Being marked now* (or *Being marked again*
+  for a retry) in the notice and in its list alike, with no route that would
+  send it for marking a second time, and each row of the table counts what in
+  it is being marked. Submit paper is a real disabled button, and the bar says
   why: *Question 12(b) is still being marked. You can submit when it has its
   mark, or leave it unmarked.* The notice has *Leave it unmarked* with its
   consequence spelled out. When the mark lands, the page updates in place and
-  Submit paper is enabled.
+  Submit paper is enabled. If focus was inside the notice when it closes
+  (*Leave it unmarked*, or the last mark arriving), it moves to Submit paper;
+  otherwise it stays where it is. The bar's sentence is a polite live region
+  whose text changes, so the change is announced.
+- **A second opinion in flight blocks submission too.** *What would make this
+  stronger* sends a marked answer to the marker again. Today nothing tracks it
+  as pending, so submitting would throw its reply away. When the page is
+  built, those requests are tracked in their own in-memory record (not the
+  submission one, whose guard would discard the second opinion's own reply),
+  and the notice reads *A second opinion on Question 11(b) is still being
+  marked. Your mark of 3 of 3 marks stands until it arrives.*
 - **Being marked is never shown after a reload.** It is the app's in-memory
   record, never stored. After a reload, a first submission that had not come
   back is a draft again (*Draft saved · written, not submitted*), with a route
   to submit it. The build checks this.
+
+- **Changes after marking** are listed only where the sitting shows them: a
+  written answer rewritten after *Try again* and not resubmitted (its earlier
+  mark stands), or an unmarked answer edited and not resubmitted (it stays not
+  marked). A change still being marked was submitted, so it is not listed. A
+  multiple-choice re-pick is not listed, because the sitting does not show it
+  beside the mark.
+- **A practice session that holds both options of an either/or** lists them
+  as two questions, as decision 22 approved for the bank: in practice each
+  option is practised on its own.
 
 ## Contract added for this page
 
@@ -108,8 +137,13 @@ shows today goes.
 - `ATT.sane` now writes an explicit outcome onto every stored result, so
   `isMarked()` and the tally can never read one result two ways (a gap the
   design review found).
+- `ATT.choose` now carries a flag along with an either/or choice. A flag set
+  on *Question 15 or 16*, or on the option not taken, moves to the question
+  chosen (its first part, when it has parts). Before this, choosing silently
+  dropped it from every count and from this page. This one changes Slice A's
+  sitting, as a fix; tested in `tests/t38.mjs`.
 
-Nothing in the app calls either yet. The page is not built.
+Nothing in the app calls `ATT.report` yet. The page is not built.
 
 ## For decision
 
@@ -143,7 +177,11 @@ Nothing in the app calls either yet. The page is not built.
 
 ## Not drawn, checked by the build
 
-- A refusal nothing can change reads *cannot be marked here*, with no retry.
+- A refusal a setting fixes reads *your teacher can fix this in Settings*,
+  never *cannot be marked here*; one nothing changes reads *cannot be marked
+  here*, with no retry. Both with the app's own reasons.
+- A retry still being marked offers no second retry, and is counted as being
+  marked on its row.
 - Nothing is being marked after a reload.
 - A chosen either/or with work in it is locked, and its other option is in no
   list.

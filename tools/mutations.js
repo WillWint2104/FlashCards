@@ -1719,4 +1719,28 @@ module.exports = [
     owner: "ui73",
     why: "a practice session drawn from several sections was labelled with the current question's section, as if the whole session were Section II",
   },
+  {
+    id: "sliceB-flag-lost-on-choice",
+    file: "tools/contract/attempts.js",
+    find: "    a.flags = a.flags.filter(function (k) { return stray.indexOf(k) < 0; });\n    if (!a.flags.some(mine)) a.flags.push(first);",
+    replace: "",
+    owner: "t38",
+    why: "a flag set on Question 15 or 16 vanished from every count, and from Submit, the moment the student chose one of them",
+  },
+  {
+    id: "sliceB-change-in-flight-reported",
+    file: "tools/contract/attempts.js",
+    find: "changed: status !== \"not_answered\" && drafted && !busy[e.key] && fmt !== \"multiple_choice\"",
+    replace: "changed: status !== \"not_answered\" && drafted && fmt !== \"multiple_choice\"",
+    owner: "t38",
+    why: "Submit told a student their resubmitted answer was a change they had not submitted, while it was being marked",
+  },
+  {
+    id: "sliceB-stored-result-read-two-ways",
+    file: "tools/contract/attempts.js",
+    find: "        if (r.outcome !== o) r.outcome = o;",
+    replace: "",
+    owner: "t38",
+    why: "a stored result with no outcome counted as answered in the total and as not marked on its chip, so one page could disagree with itself",
+  },
 ];

@@ -129,8 +129,8 @@ const sessionFrom = a => {
   return names.length === 1 ? "From " + names[0] : "From " + plural(names.length, "paper") + " in your library";
 };
 const statusTag = x => {
-  if (x.pending) return x.status === "marked" ? "Marked · a new answer is being marked" : "Being marked now";
-  if (x.status === "marked") return "Answered · " + x.score + " of " + x.max;
+  if (x.pending) return x.status === "marked" ? "Marked · a new answer is being marked" : x.status === "not_marked" ? "Being marked again" : "Being marked now";
+  if (x.status === "marked") return "Answered · " + x.score + " of " + plural(x.max, "mark");
   if (x.status === "not_marked") return "Not marked yet";
   if (x.eitherSlot) return "Not chosen yet";
   return x.draft === "written" ? "Draft saved · written, not submitted" : x.draft === "selected" ? "Selected, not submitted" : "Not started";
@@ -138,8 +138,12 @@ const statusTag = x => {
 const HELP = {
   retry: ["marking it again can help", "to try marking again"],
   change: ["changing the answer can help", "to change your answer"],
+  settings: ["your teacher can fix this in Settings", ""],
   none: ["cannot be marked here", ""],
 };
+// An either/or, in words that hold for any number of options and for options with parts.
+const eitherRule = (n, weight) => (n === 2 ? "Answer one of these, not both." : "Answer only one of these.") +
+  (weight > 1 ? " It counts as " + weight + " questions, the parts of the one you choose." : " It counts as one question.");
 
 // ---- the pieces ---------------------------------------------------------------------------
 function blocked(r, a) {
@@ -150,7 +154,7 @@ function blocked(r, a) {
     <h3 id="bz">${one ? esc(label(xs[0])) + " is still being marked" : plural(xs.length, "answer") + " are still being marked"}</h3>
     <p>You can submit once ${one ? "its mark arrives" : "their marks arrive"}, which takes at most about a minute, or leave ${one ? "it" : "them"} unmarked.</p>
     <ul>${xs.map(x => `<li>
-      <div class="bzrow"><span class="where"><b>${esc(label(x))}</b> · ${plural(x.marks, "mark")}</span><span class="tag busy">Sent for marking</span>
+      <div class="bzrow"><span class="where"><b>${esc(label(x))}</b> · ${plural(x.marks, "mark")}</span><span class="tag busy">${esc(statusTag(x))}</span>
         <span class="spacer"></span><button type="button" class="link">Leave it unmarked</button></div>
       <p class="then">${x.status === "marked"
         ? "If you leave it unmarked, your earlier mark of " + x.score + " of " + x.max + " stands and the new answer is not marked."
@@ -162,20 +166,30 @@ function blocked(r, a) {
 function consequence(r, a) {
   const R = r.rows, lost = R.notMarked.worth + R.notAnswered.worth;
   const cell = (n, txt) => n ? txt : "";
+  const busy = n => n ? ` <span class="sm">· ${n} being marked</span>` : "";
+  const verb = a.scope === "type" ? "finishing" : "submitting";
   const whole = a.scope === "type" ? "This practice" : a.sections.length === paper.sections.length ? "The whole paper" : list(a.sections.map(shortOf)) + " only";
   return `<table class="tally">
-    <caption class="vh">What you are submitting</caption>
+    <caption class="vh">What you are ${verb}</caption>
     <thead><tr><th scope="col">Status</th><th scope="col">Questions</th><th scope="col">Worth</th><th scope="col">Earned</th></tr></thead>
     <tbody>
-      <tr><th scope="row">Answered and marked</th><td>${R.marked.count || `<span class="none">None</span>`}</td><td>${cell(R.marked.count, plural(R.marked.worth, "mark"))}</td><td>${cell(R.marked.count, `<b>${R.marked.earned}</b>`)}</td></tr>
-      <tr><th scope="row">${R.notMarked.count ? `<a href="#g-nm">Submitted, not marked</a>` : "Submitted, not marked"}</th><td>${R.notMarked.count || `<span class="none">None</span>`}</td><td>${cell(R.notMarked.count, plural(R.notMarked.worth, "mark"))}</td><td>${cell(R.notMarked.count, `<span class="none">Not marked</span>`)}</td></tr>
-      <tr><th scope="row">${R.notAnswered.count ? `<a href="#g-na">Not answered</a>` : "Not answered"}</th><td>${!R.notAnswered.count ? `<span class="none">None</span>` : cell(R.notAnswered.count, R.notAnswered.count + (R.notAnswered.pending ? ` <span class="sm">· ${R.notAnswered.pending} being marked</span>` : ""))}</td><td>${cell(R.notAnswered.count, plural(R.notAnswered.worth, "mark"))}</td><td>${cell(R.notAnswered.count, `<span class="none">None</span>`)}</td></tr>
+      <tr><th scope="row">Answered and marked</th><td>${R.marked.count ? R.marked.count + busy(R.marked.pending) : `<span class="none">None</span>`}</td><td>${cell(R.marked.count, plural(R.marked.worth, "mark"))}</td><td>${cell(R.marked.count, `<b>${R.marked.earned}</b>`)}</td></tr>
+      <tr><th scope="row">${R.notMarked.count ? `<a href="#g-nm">Submitted, not marked</a>` : "Submitted, not marked"}</th><td>${R.notMarked.count ? R.notMarked.count + busy(R.notMarked.pending) : `<span class="none">None</span>`}</td><td>${cell(R.notMarked.count, plural(R.notMarked.worth, "mark"))}</td><td>${cell(R.notMarked.count, `<span class="none">Not marked</span>`)}</td></tr>
+      <tr><th scope="row">${R.notAnswered.count ? `<a href="#g-na">Not answered</a>` : "Not answered"}</th><td>${!R.notAnswered.count ? `<span class="none">None</span>` : R.notAnswered.count + busy(R.notAnswered.pending)}</td><td>${cell(R.notAnswered.count, plural(R.notAnswered.worth, "mark"))}</td><td>${cell(R.notAnswered.count, `<span class="none">None</span>`)}</td></tr>
     </tbody>
     <tfoot><tr><th scope="row">${esc(whole)}</th><td>${r.total}</td><td>${plural(r.max, "mark")}</td><td><b>${r.got}/${r.max}</b> marks so far</td></tr></tfoot>
   </table>
   ${lost ? `<p class="note">Questions not marked or not answered earn nothing${a.scope === "type" ? "" : " when you submit"}. Their ${plural(lost, "mark")} still count in the ${r.max}.</p>` : ""}
-  ${r.flagged.length ? `<p class="note"><span class="flagged">⚑ ${r.flagged.length} flagged</span> · Flags do not change a mark, and they do not stop you submitting. <a href="#g-fl">See flagged</a></p>` : ""}
-  ${r.changed.length ? `<p class="note">${r.changed.length === 1 ? "1 answer was" : r.changed.length + " answers were"} changed after ${r.changed.length === 1 ? "it was" : "they were"} marked, and the change was not submitted, so the earlier mark stands. <a href="#g-ch">See which</a></p>` : ""}`;
+  ${r.flagged.length ? `<p class="note"><span class="flagged">⚑ ${r.flagged.length} flagged</span> · Flags do not change a mark, and they do not stop you ${verb}. <a href="#g-fl">See flagged</a></p>` : ""}
+  ${changedNote(r)}`;
+}
+// A change nobody submitted: a marked answer keeps its mark, a not-marked one stays not marked.
+function changedNote(r) {
+  const m = r.items.filter(x => x.changed && x.status === "marked").length, n = r.items.filter(x => x.changed && x.status === "not_marked").length;
+  if (!m && !n) return "";
+  const parts = [m ? (m === 1 ? "1 answer was" : m + " answers were") + " changed after marking and the change was not submitted, so the earlier mark stands" : "",
+                 n ? (n === 1 ? "1 not-marked answer was" : n + " not-marked answers were") + " edited and the edit was not submitted, so it stays not marked" : ""].filter(Boolean);
+  return `<p class="note">${parts.join(". ")}. <a href="#g-ch">See which</a></p>`;
 }
 function lastStrip(rec, a) {
   if (!rec.last) return "";
@@ -183,7 +197,7 @@ function lastStrip(rec, a) {
   return `<section class="last" aria-labelledby="la">
     <h3 class="vh" id="la">Your last completed attempt</h3>
     <span class="state done">Completed ${day(rec.last.completedAt)}</span>
-    <p class="lastline"><b>${l.got} / ${l.max}</b> · ${l.answered} of ${l.total} answered${rec.last.sections && rec.last.sections.length !== (a.sections || []).length
+    <p class="lastline"><b>${l.got} / ${l.max}</b> · ${l.answered} of ${l.total} answered${rec.last.sections && rec.last.sections.join() !== (a.sections || []).join()
       ? " · " + (rec.last.sections.length === paper.sections.length ? "the whole paper" : esc(list(rec.last.sections.map(shortOf))) + " only") : ""}</p>
     <span class="spacer"></span><a class="btn ghost sm" href="#results">View results</a>
     <p class="keep">Submitting replaces this result. Only your latest completed ${a.scope === "type" ? "session" : "attempt"} is kept.</p>
@@ -202,27 +216,32 @@ function groups(r, a) {
   if (nm.length) out.push(`<section class="grp" id="g-nm" tabindex="-1" aria-labelledby="h-nm">
     <h3 id="h-nm">Submitted, not marked <span class="n">${nm.length}</span></h3>
     <p class="glede">Each answer is still here, and nothing has been recorded against it.</p>
-    <ul>${nm.map(x => row(x, `<p class="tagline"><span class="tag nm">Not marked yet · ${HELP[x.help][0]}</span></p>
+    <ul>${nm.map(x => row(x, x.pending
+      ? `<p class="tagline"><span class="tag busy">${esc(statusTag(x))}</span></p><p class="why">It is being marked again now. Until its mark arrives it stays not marked.</p>`
+      : `<p class="tagline"><span class="tag nm">Not marked yet · ${HELP[x.help][0]}</span></p>
       <p class="why">${esc(x.why || "No reason was recorded.")}</p>${x.help === "none" ? `<p class="why sm">Marking it again here will not change this.</p>` : ""}`,
-      go(x, HELP[x.help][1]))).join("")}</ul></section>`);
+      x.pending ? "" : go(x, HELP[x.help][1]))).join("")}</ul></section>`);
   const na = r.items.filter(x => x.status === "not_answered");
   if (na.length) out.push(`<section class="grp" id="g-na" tabindex="-1" aria-labelledby="h-na">
     <h3 id="h-na">Not answered <span class="n">${r.rows.notAnswered.count}</span></h3>
-    <p class="glede">Nothing has been submitted for marking for these.</p>
+    <p class="glede">${na.some(x => x.pending) ? "None of these has a mark yet." : "Nothing has been submitted for marking for these."}</p>
     <ul>${na.map(x => row(x, `<p class="tagline"><span class="tag${x.pending ? " busy" : ""}">${esc(statusTag(x))}</span></p>
-      ${x.eitherSlot ? `<p class="why">Answer one of these, not both. It counts as one question.</p>`
+      ${x.eitherSlot ? `<p class="why">${eitherRule(x.options.length, x.weight)}</p>`
         : x.pending ? `<p class="why">It has been sent for marking. Until its mark arrives it is not answered.</p>`
         : x.draft ? `<p class="why">${a.scope === "type" ? "Finishing" : "Submitting the paper"} does not mark it.</p>` : ""}`,
       x.pending ? "" : go(x, x.draft ? "to submit it for marking" : ""))).join("")}</ul></section>`);
   const ch = r.items.filter(x => x.changed);
   if (ch.length) out.push(`<section class="grp" id="g-ch" tabindex="-1" aria-labelledby="h-ch">
     <h3 id="h-ch">Changed after marking <span class="n">${ch.length}</span></h3>
-    <ul>${ch.map(x => row(x, `<p class="why">You changed this answer after it was marked and did not submit the change. ${x.status === "marked" ? "Your mark of " + x.score + " of " + x.max + " stands." : "It stays not marked."}</p>`,
+    <ul>${ch.map(x => row(x, `<p class="why">${x.status === "marked" ? "You changed this answer after it was marked and did not submit the change. Your mark of " + x.score + " of " + plural(x.max, "mark") + " stands." : "You edited this answer and did not submit the edit. It stays not marked."}</p>`,
       go(x, ""))).join("")}</ul></section>`);
   const fl = r.items.filter(x => x.flagged);
   if (fl.length) out.push(`<section class="grp" id="g-fl" tabindex="-1" aria-labelledby="h-fl">
     <h3 id="h-fl">Flagged <span class="n gold">${fl.length}</span></h3>
-    <p class="glede">You flagged these to come back to.${nm.length || na.length || ch.length ? " Some are also listed above." : ""}</p>
+    <p class="glede">You flagged these to come back to.${(() => {
+      const dup = fl.filter(x => x.status !== "marked" || x.changed).length;
+      return !dup ? "" : fl.length === 1 ? " It is also listed above." : dup === fl.length ? " They are also listed above." : dup === 1 ? " One of these is also listed above." : " " + dup + " of these are also listed above.";
+    })()}</p>
     <ul>${fl.map(x => `<li class="fl"><div class="where"><span class="flagged">⚑</span> <b>${esc(label(x))}</b> · ${plural(x.marks, "mark")}${a.scope === "paper" ? " · " + esc(shortOf(x.si)) : ""}</div>
       <p class="tagline"><span class="tag${x.status === "not_marked" ? " nm" : ""}">${esc(statusTag(x))}</span></p>
       <p class="route">${go(x, "")}</p></li>`).join("")}</ul></section>`);
@@ -274,7 +293,7 @@ function aside(r, a) {
     const sec = secOf(e.si), opt = qi => e.options.find(o => o.qi === qi);
     const others = e.options.filter(o => o.qi !== e.chosen).map(o => "Question " + o.number);
     const status = e.chosen === null
-      ? `Not chosen yet. You answer one of these, not both, so it counts as one question worth ${plural(e.options[0].marks, "mark")}.`
+      ? `Not chosen yet. ${eitherRule(e.options.length, (r.items.find(y => y.eitherSlot && y.si === e.si) || { weight: 1 }).weight)}`
       : e.locked ? `You chose Question ${esc(opt(e.chosen).number)}. ${esc(list(others))} ${others.length === 1 ? "is" : "are"} not part of this attempt.`
       : `You chose Question ${esc(opt(e.chosen).number)} and have not written anything for it, so you can still change your choice.`;
     return `<h3 class="k">${esc(ATT.sectionName(sec, e.si))}</h3>
@@ -370,7 +389,7 @@ function page(note, { a, r, rec }) {
   .sm{font-size:13px}
 
   /* Still being marked: blue, because blue already means in progress here. */
-  .busy{margin-top:16px;border:1.5px solid #C4E4FA;background:var(--blue-soft);border-radius:14px;padding:14px 16px}
+  section.busy{margin-top:16px;border:1.5px solid #C4E4FA;background:var(--blue-soft);border-radius:14px;padding:14px 16px}
   .busy h3{font-size:16px;color:var(--blue-dk)}
   .busy>p{font-size:14px;font-weight:600;color:var(--ink);margin-top:2px}
   .busy ul{list-style:none;margin-top:10px;display:flex;flex-direction:column;gap:8px}
@@ -455,7 +474,7 @@ function page(note, { a, r, rec }) {
   <div class="layout">
     <section class="panel" aria-labelledby="dh">
       <h2 id="dh" tabindex="-1">${type ? "Finishing ends this session" : "Submitting ends this attempt"} with the marks you have now</h2>
-      <p class="plede">Each answer was marked when you submitted it, so ${type ? "finishing" : "submitting"} marks nothing more. Your results open next, where you can review your marks but not change them.</p>
+      <p class="plede">Answers are marked as you submit them, so ${type ? "finishing" : "submitting the paper"} marks nothing more. Your results open next, where you can review your marks but not change them.</p>
       ${blocked(r, a)}
       ${consequence(r, a)}
       ${lastStrip(rec, a)}
@@ -515,7 +534,17 @@ write("04-submit-practice.html", "practice", "Finish practice for a short-answer
   const nm = ASSESS.refuse("MARKER_NOT_CONNECTED", (APP.match(/ASSESS\.refuse\("MARKER_NOT_CONNECTED",\s*"([^"]+)"/) || fail("no MARKER_NOT_CONNECTED"))[1], { max: 3, retry: false });
   a.results["1-1-0"] = nm;
   const r2 = ATT.report(a, exams, []);
-  if (r2.items.find(x => x.key === "1-1-0").help !== "none" || !/cannot be marked here/.test(groups(r2, a))) fail("a refusal reads as retryable");
+  const g2 = groups(r2, a);
+  if (r2.items.find(x => x.key === "1-1-0").help !== "settings" || !/your teacher can fix this in Settings/.test(g2) || /cannot be marked here/.test(g2))
+    fail("a refusal a setting fixes reads as unfixable or as retryable");
+  const kq = (APP.match(/ASSESS\.refuse\("CALC_KEY_INCOMPLETE",\s*"([^"]+)"/) || fail("no CALC_KEY_INCOMPLETE"))[1];
+  a.results["1-0-2"] = ASSESS.refuse("CALC_KEY_INCOMPLETE", kq, { max: 4 });
+  const r3 = ATT.report(a, exams, []), g3 = groups(r3, a);
+  if (r3.items.find(x => x.key === "1-0-2").help !== "none" || !/cannot be marked here/.test(g3) || !/Marking it again here will not change this/.test(g3))
+    fail("a refusal nothing can change reads as fixable");
+  // A retry still being marked offers no second retry, and is counted as being marked on its row.
+  const r4 = ATT.report(primary.a, exams, ["1-1-0"]);
+  if (/Go to 12\(a\) to try marking again/.test(groups(r4, primary.a)) || r4.rows.notMarked.pending !== 1) fail("a retry in flight invites another");
   // Nothing is "being marked" once the page is reloaded: pending is never stored.
   if (ATT.report(JSON.parse(JSON.stringify(primary.a)), exams).pending.length) fail("pending survived a reload");
 }

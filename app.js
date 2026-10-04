@@ -3373,7 +3373,7 @@
     $("#examflag").onclick = () => { tmFlushDraft(); ATT.toggleFlag(a, e.key, tmNow()); save(); tmDraw(); };
     app.querySelectorAll("[data-tmgo]").forEach(b => b.onclick = () => tmGo(Number(b.dataset.tmgo)));
     app.querySelectorAll("[data-examchoose]").forEach(b => b.onclick = () => {
-      ATT.choose(a, e.si, Number(b.dataset.examchoose), tmNow());
+      ATT.choose(a, e.si, Number(b.dataset.examchoose), tmNow(), e.paper);
       SIT.seq = ATT.sequence(a, state.exams);
       const first = SIT.seq.findIndex(x => x.si === e.si);
       SIT.pos = first < 0 ? SIT.pos : first;
@@ -3382,7 +3382,7 @@
     const sw = $("#tmswitch"); if (sw) sw.onclick = () => {
       const other = (e.sec.questions || []).findIndex((_, qi) => qi !== e.qi);
       if (other < 0) return;
-      try { ATT.choose(a, e.si, other, tmNow()); } catch (err) { return toast("Clear what you have written for this question first.", 3500); }
+      try { ATT.choose(a, e.si, other, tmNow(), e.paper); } catch (err) { return toast("Clear what you have written for this question first.", 3500); }
       SIT.seq = ATT.sequence(a, state.exams);
       const first = SIT.seq.findIndex(x => x.si === e.si);
       SIT.pos = first < 0 ? SIT.pos : first;

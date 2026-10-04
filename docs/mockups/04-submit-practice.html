@@ -68,7 +68,7 @@
   .sm{font-size:13px}
 
   /* Still being marked: blue, because blue already means in progress here. */
-  .busy{margin-top:16px;border:1.5px solid #C4E4FA;background:var(--blue-soft);border-radius:14px;padding:14px 16px}
+  section.busy{margin-top:16px;border:1.5px solid #C4E4FA;background:var(--blue-soft);border-radius:14px;padding:14px 16px}
   .busy h3{font-size:16px;color:var(--blue-dk)}
   .busy>p{font-size:14px;font-weight:600;color:var(--ink);margin-top:2px}
   .busy ul{list-style:none;margin-top:10px;display:flex;flex-direction:column;gap:8px}
@@ -153,10 +153,10 @@
   <div class="layout">
     <section class="panel" aria-labelledby="dh">
       <h2 id="dh" tabindex="-1">Finishing ends this session with the marks you have now</h2>
-      <p class="plede">Each answer was marked when you submitted it, so finishing marks nothing more. Your results open next, where you can review your marks but not change them.</p>
+      <p class="plede">Answers are marked as you submit them, so finishing marks nothing more. Your results open next, where you can review your marks but not change them.</p>
       
       <table class="tally">
-    <caption class="vh">What you are submitting</caption>
+    <caption class="vh">What you are finishing</caption>
     <thead><tr><th scope="col">Status</th><th scope="col">Questions</th><th scope="col">Worth</th><th scope="col">Earned</th></tr></thead>
     <tbody>
       <tr><th scope="row">Answered and marked</th><td>2</td><td>5 marks</td><td><b>5</b></td></tr>
@@ -166,7 +166,7 @@
     <tfoot><tr><th scope="row">This practice</th><td>4</td><td>13 marks</td><td><b>5/13</b> marks so far</td></tr></tfoot>
   </table>
   <p class="note">Questions not marked or not answered earn nothing. Their 8 marks still count in the 13.</p>
-  <p class="note"><span class="flagged">⚑ 1 flagged</span> · Flags do not change a mark, and they do not stop you submitting. <a href="#g-fl">See flagged</a></p>
+  <p class="note"><span class="flagged">⚑ 1 flagged</span> · Flags do not change a mark, and they do not stop you finishing. <a href="#g-fl">See flagged</a></p>
   
       
       <section class="grp" id="g-nm" tabindex="-1" aria-labelledby="h-nm">
@@ -187,9 +187,9 @@
       <p class="route"><a class="link" href="#go-exam-mockup-1#1-1-1">Go to 12(b) to submit it for marking</a></p>
     </li></ul></section><section class="grp" id="g-fl" tabindex="-1" aria-labelledby="h-fl">
     <h3 id="h-fl">Flagged <span class="n gold">1</span></h3>
-    <p class="glede">You flagged these to come back to. Some are also listed above.</p>
+    <p class="glede">You flagged these to come back to.</p>
     <ul><li class="fl"><div class="where"><span class="flagged">⚑</span> <b>Question 11(b)</b> · 3 marks</div>
-      <p class="tagline"><span class="tag">Answered · 3 of 3</span></p>
+      <p class="tagline"><span class="tag">Answered · 3 of 3 marks</span></p>
       <p class="route"><a class="link" href="#go-exam-mockup-1#1-0-1">Go to 11(b)</a></p></li></ul></section>
       
       <div class="go">
