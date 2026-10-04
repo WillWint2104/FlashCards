@@ -13,6 +13,7 @@
   // disagree, so there is no second copy.
   const ASSESS = window.MarginalAssessment;
   const PAPER = window.MarginalExam;
+  const ATT = window.MarginalAttempts;
   const MARKED = r => ASSESS.marked(r);
   // The one gate in front of every piece of arithmetic, scheduling and progress
   // state in this file. A refusal and a failure both answer false.
@@ -47,6 +48,10 @@
   state.customSets = state.customSets || [];
   state.lessons = state.lessons || {};
   state.exams = state.exams || [];  // imported practice-exam papers (marginal-exam@1)
+  // What the student has done in Test Mode, by paper and by question type
+  // (tools/contract/attempts.js). Whatever was stored is read, never trusted:
+  // an attempt that no longer points at a paper is dropped, not repaired.
+  state.attempts = ATT.sane(state.attempts, state.exams);
   // Teacher's TEACHER SETUP config is the source of truth for the endpoint —
   // students have no field to edit it, so always sync from CONFIG (this also
   // clears any endpoint a returning user has stale in localStorage).
@@ -210,7 +215,8 @@
     const payload = {
       format: BACKUP_FORMAT, exported: new Date().toISOString(),
       subject: C.subject || "",
-      data: { cards: state.cards, lessons: state.lessons, log: state.log, customSets: state.customSets, exams: state.exams }
+      data: { cards: state.cards, lessons: state.lessons, log: state.log, customSets: state.customSets, exams: state.exams,
+              attempts: state.attempts }
     };
     const stamp = new Date().toISOString().slice(0, 10);
     download("marginal-backup-" + stamp + ".json", JSON.stringify(payload, null, 2));
@@ -238,6 +244,12 @@
     if (Array.isArray(d.exams)) {
       const ids = new Set((state.exams || []).map(x => x.id));
       d.exams.forEach(p => { if (!ids.has(p.id)) state.exams.push(p); });
+    }
+    // Attempts travel with their papers. One already here wins: a backup is
+    // older than the browser it is restored into, or no newer than it.
+    if (d.attempts && typeof d.attempts === "object") {
+      const incoming = ATT.sane(JSON.parse(JSON.stringify(d.attempts)), state.exams);
+      Object.keys(incoming).forEach(k => { if (!state.attempts[k]) state.attempts[k] = incoming[k]; });
     }
     if (Array.isArray(d.log)) state.log = state.log.concat(d.log);
     save();
