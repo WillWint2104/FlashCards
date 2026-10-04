@@ -81,5 +81,14 @@ console.log('--- what adding it offers (decision 22)');
   ok(o.total === 11 && o.parts.join(', ') === '10 multiple choice, 1 calculation', 'an objective unregistered paper offers its local questions: ' + JSON.stringify(o));
 }
 
+console.log('--- files that are not papers are named for what they are');
+{
+  ok(R.read('null', [], PK).kind === 'unreadable' && R.read('42', [], PK).kind === 'unreadable', 'JSON that is not an object is not a paper, and nothing throws');
+  ok(R.read(T({ format: 'marginal-backup@1', data: {} }), [], PK).kind === 'backup', 'a Marginal backup is recognised as one');
+  const bare = R.read(T([{ front: 'a', back: 'b' }, { front: 'c', back: 'd' }]), [], PK);
+  ok(bare.kind === 'flashcards' && bare.cards === 2, 'a flashcard set saved as a bare list of cards goes to Create: ' + JSON.stringify(bare));
+  ok(R.read(T([]), [], PK).kind === 'paper', 'an empty list is not taken for a set');
+}
+
 console.log(pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

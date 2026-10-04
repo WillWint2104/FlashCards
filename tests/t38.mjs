@@ -12,6 +12,7 @@ const require = createRequire(import.meta.url);
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const A = require(path.join(ROOT, 'tools/contract/attempts.js'));
 const ASSESS = require(path.join(ROOT, 'tools/contract/assessment.js'));
+const P = require(path.join(ROOT, 'tools/contract/exam.js'));
 const read = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
 const win = {}; new Function('window', read('essay-content.js'))(win);
 const PACKAGES = win.ESSAY.subjects;
@@ -137,6 +138,22 @@ console.log('--- the either/or is one slot until chosen');
   A.choose(a, 3, 0, T(6));
   ok(A.sequence(a, s.exams)[19].key === '3-0', 'with the draft cleared, the choice can change');
 }
+{
+  // Options that are parents: the slot is one item to visit, but it stands for
+  // the option's parts, as PAPER.totals counts them before the attempt starts.
+  const s = store(), p = fresh();
+  const iv = p.sections[3];
+  iv.questions = iv.questions.map((q, i) => ({ id: q.id, number: q.number, marks: q.marks, prompt: 'Option ' + (i + 1),
+    parts: [{ id: q.id + 'a', label: 'a', marks: q.marks - 5, format: 'extended_response', prompt: q.prompt },
+            { id: q.id + 'b', label: 'b', marks: 5, format: 'extended_response', prompt: q.prompt }] }));
+  A.addPaper(s, p);
+  const a = A.startPaper(p, null, T(1));
+  const before = A.summary(a, s.exams).total, seq = A.sequence(a, s.exams);
+  ok(seq.filter(e => e.si === 3).length === 1 && before === P.totals(p).questions,
+     'an unchosen either/or of parents counts as the overview counts it: ' + before + ' vs ' + P.totals(p).questions);
+  A.choose(a, 3, 1, T(2));
+  ok(A.summary(a, s.exams).total === before, 'and choosing does not change the count');
+}
 
 console.log('--- a type session never touches the paper (decision 19)');
 {
@@ -181,6 +198,25 @@ console.log('--- Start again, completing, deleting');
   A.begin(s, A.typeKey('multiple_choice'), A.startType('multiple_choice', A.bank('multiple_choice', s.exams, PACKAGES).slice(0, 2), T(4)));
   A.deletePaper(s, A.identityOf(p));
   ok(!s.exams.length && !Object.keys(s.attempts).length, 'deleting a paper removes its versions, its attempts and the sessions it lent to');
+}
+
+console.log('--- a backup restores papers by the version rule');
+{
+  const s = store(), v1 = fresh(); v1.id = 'here-1'; A.addPaper(s, v1);
+  const v2 = fresh(); v2.id = 'backup-2'; v2.exam.version = '2';
+  const dup = fresh(); dup.id = 'backup-1';
+  A.restorePapers(s, [dup, v2]);
+  ok(A.library(s.exams).length === 1 && A.library(s.exams)[0] === v2, 'a newer version from a backup replaces, one card: ' + A.library(s.exams).map(p => p.id));
+  A.collect(s);
+  ok(!s.exams.some(p => p.id === 'backup-1') && !s.exams.includes(v1), 'and the unpinned old copies are collected');
+  const t = store(), w2 = fresh(); w2.id = 'here-2'; w2.exam.version = '2'; A.addPaper(t, w2);
+  const old = fresh(); old.id = 'backup-old';
+  const pinnedOld = A.startPaper(old, null, T(1));
+  A.restorePapers(t, [old]);
+  t.attempts[A.paperKey(old)] = { current: pinnedOld, last: null };
+  A.collect(t);
+  ok(A.library(t.exams).length === 1 && A.library(t.exams)[0] === w2 && t.exams.includes(old),
+     'an older version from a backup stays hidden while its restored attempt is pinned to it');
 }
 
 console.log('--- a restored store is not trusted');

@@ -195,6 +195,27 @@ const shot = (p, n) => p.screenshot({ path: OUT + 'shot-sliceA-' + n + '.png' })
     await toTest(p);
     const cardsBefore = await p.$$eval('.tm-paper', es => es.length);
     await p.click('#tmimport'); await settled(p);
+    // Two files that are not added, read first. A paper missing an optional
+    // detail is ready with limited support, and the verdict lists what is
+    // missing (the Gate 3C note, which is the reason the check exists).
+    const check = async (doc, name) => {
+      const f = path.join(OUT, name); fs.writeFileSync(f, JSON.stringify(doc));
+      await p.setInputFiles('#tmfile', f);
+      await p.waitForSelector('#tmrt', { timeout: 8000 }); await settled(p);
+      const out = { title: await text(p, '#tmrt'), body: await text(p, '#tmimportbody'), add: await has(p, '#tmadd'),
+                    items: await p.$$eval('.tm-group li', es => es.map(e => e.textContent.replace(/\s+/g, ' ').trim())) };
+      await p.click('[data-tmagain]'); await settled(p);
+      return out;
+    };
+    const thinDoc = JSON.parse(JSON.stringify(v1)); delete thinDoc.curriculum.jurisdiction;
+    const thin = await check(thinDoc, 'acceptance-paper-thin.json');
+    ok(thin.title === 'Ready with limited support' && thin.add, 'a paper missing its state is ready with limited support: ' + thin.title);
+    ok(thin.items.length >= 1 && thin.items.some(t => /state|jurisdiction/i.test(t)), 'and the verdict lists what is missing: ' + JSON.stringify(thin.items));
+    // A subject Marginal cannot mark, with written questions that need its
+    // marker, is refused at the door: the page passes the packages it has.
+    const legalDoc = JSON.parse(JSON.stringify(v1)); legalDoc.curriculum.subjectKey = 'legal_studies'; legalDoc.curriculum.course = 'Legal Studies';
+    const legal = await check(legalDoc, 'acceptance-paper-legal.json');
+    ok(legal.title === 'Needs something resolved' && !legal.add, 'an unregistered subject whose questions need its marker cannot be added: ' + legal.title);
     await p.setInputFiles('#tmfile', file1);
     await p.waitForSelector('#tmrt', { timeout: 8000 }); await settled(p);
     const verdict = await text(p, '#tmrt');

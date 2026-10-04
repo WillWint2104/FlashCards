@@ -1021,8 +1021,10 @@ UX-TEST-18 Option A.
 - Any need it: **Needs something resolved** (`SUBJECT_UNREGISTERED` or
   `CRITERIA_ABSENT`), with the count.
 
-The app's import door passes its registered packages (`examineExam`). Covered
-by `tests/t30.mjs` (contract, both cases) and `tests/ui68.js` (the door). Four
+The app's import door passes its registered packages (`examineExam`; since Slice A,
+`IR.read(..., tmPackages())` on Test mode's import page). Covered by
+`tests/t30.mjs` (contract, both cases) and `tests/ui68.js` (the door; since Slice A,
+`tests/ui73.js`). Four
 mutations are each killed by their intended assertion.
 
 ## UX-TEST-22 fixed: no demo grades in Test Mode (decision 20)

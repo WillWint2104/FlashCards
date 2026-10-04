@@ -127,6 +127,27 @@ function addPaper(store, paper) {
   collect(store);
   return { kind: m.kind, replaced: m.existing || null };
 }
+// Papers from a backup go through the same version rule as an import, so a
+// restore never puts two versions of one paper in the library. A paper whose
+// version the library already has (or has newer) is kept hidden, as a
+// superseded version is, in case a restored attempt is pinned to it; the caller
+// merges attempts and then runs collect(), which drops it if none is.
+function restorePapers(store, papers) {
+  store.exams = store.exams || [];
+  store.attempts = store.attempts || {};
+  var ids = {};
+  store.exams.forEach(function (p) { ids[p.id] = true; });
+  (papers || []).forEach(function (p) {
+    if (!p || typeof p !== "object" || ids[p.id]) return;
+    ids[p.id] = true;
+    if (p.superseded) { store.exams.push(p); return; }
+    var m = PAPER.libraryMatch(library(store.exams), p);
+    if (m.kind === "same" || m.kind === "older") { p.superseded = true; store.exams.push(p); return; }
+    if (m.kind === "newer" || m.kind === "different") m.existing.superseded = true;
+    store.exams.push(p);
+  });
+  return store;
+}
 // Deleting a paper deletes every version of it and every attempt on it,
 // including the questions it lent to type sessions. A type session that loses
 // questions this way is discarded rather than left pointing at nothing.
@@ -374,6 +395,12 @@ function marksOf(e) { return e.eitherSlot ? PAPER.marksOf(e.q) : Number(e.q.mark
 // ---- what a page shows --------------------------------------------------------------------
 // Answered means marked. A result that is refused or failed is NOT answered and
 // is counted as not marked; its marks stay in what the attempt is out of.
+// How many answerables an entry stands for. An either/or not yet chosen is one
+// slot in the sitting, but the paper counts the option it stands in for, parts
+// and all (PAPER.totals), so "N of M answered" agrees with the overview's count.
+function weightOf(e) {
+  return e && e.eitherSlot && PAPER.isParent(e.q) ? Math.max(1, PAPER.partsOf(e.q).length) : 1;
+}
 function summary(a, exams) {
   if (!a) return { status: STATUS.notStarted, total: 0, answered: 0, notMarked: 0, flagged: 0, got: 0, max: 0 };
   var seq = sequence(a, exams);
@@ -383,7 +410,7 @@ function summary(a, exams) {
   var here = seq.filter(function (e) { return e.key === a.at; })[0] || null;
   return {
     status: a.completedAt ? STATUS.completed : STATUS.inProgress,
-    total: seq.length, answered: t.done, notMarked: t.refused + t.failed,
+    total: seq.reduce(function (n, e) { return n + weightOf(e); }, 0), answered: t.done, notMarked: t.refused + t.failed,
     flagged: (a.flags || []).filter(function (k) { return keys[k]; }).length,
     got: t.got, max: t.max, at: here,
     whole: a.scope === SCOPE.paper && byId(exams, a.paper) ? a.sections.length === byId(exams, a.paper).sections.length : null,
@@ -429,5 +456,5 @@ module.exports = {
   sectionName: sectionName, sectionShort: sectionShort, assessable: assessable, bank: bank, bankCounts: bankCounts,
   startPaper: startPaper, startType: startType, begin: begin, discard: discard, complete: complete,
   sequence: sequence, entryAt: entryAt, marksOf: marksOf, setDraft: setDraft, record: record, toggleFlag: toggleFlag, moveTo: moveTo, choose: choose,
-  summary: summary, itemState: itemState, sane: sane, clone: clone,
+  summary: summary, weightOf: weightOf, restorePapers: restorePapers, itemState: itemState, sane: sane, clone: clone,
 };

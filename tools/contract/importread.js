@@ -163,7 +163,13 @@ var UNREADABLE = ["NOT_AN_OBJECT", "SECTIONS_MISSING", "SECTION_NOT_AN_OBJECT", 
 function read(text, library, packages) {
   var data;
   try { data = JSON.parse(text); } catch (e) { return { kind: "unreadable", error: String(e && e.message || e) }; }
-  if (data && typeof data === "object" && (Array.isArray(data.cards) || /^marginal-set@/.test(String(data.format || ""))))
+  // JSON that is not an object at all (null, a number, a string) is no paper.
+  if (!data || typeof data !== "object") return { kind: "unreadable", error: "The file holds " + (data === null ? "null" : typeof data) + ", not a paper." };
+  if (/^marginal-backup@/.test(String(data.format || ""))) return { kind: "backup" };
+  // A flashcard set, in either of its two shapes: a set object, or a bare list of cards.
+  var cardLike = function (c) { return c && typeof c === "object" && ("front" in c || "prompt" in c || "q" in c || "question" in c); };
+  if (Array.isArray(data) && data.length && data.every(cardLike)) return { kind: "flashcards", name: "", cards: data.length };
+  if (Array.isArray(data.cards) || /^marginal-set@/.test(String(data.format || "")))
     return { kind: "flashcards", name: data.name || "", cards: Array.isArray(data.cards) ? data.cards.length : 0 };
   var v = PAPER.examine(data, { packages: packages || {} });
   var version = v.findings.filter(function (f) { return f.code === "PACKAGE_VERSION_UNSUPPORTED"; })[0];

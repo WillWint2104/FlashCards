@@ -403,6 +403,84 @@ async function unmarkedYet(p, n, why) {
   // The demo is Study's, on purpose, and its wording is format-aware (UX-TEST-15):
   // sections for a report, paragraphs for an extended response. This is where
   // that wording is pinned now that no sitting shows it.
+  // ---- 13. what the Slice A review found ------------------------------------
+  console.log('--- 13. late replies, re-marking and finishing, after the Slice A review');
+  {
+    const SA = 'Speed, because customers wait at the vans.';
+    const stored = p => p.evaluate(() => JSON.parse(localStorage.getItem('marginal.trial.v1') || '{}').attempts || {});
+    // a. Leaving by the Study tab straight from the sitting: the reply draws nothing there.
+    {
+      const { p, ctx, mode, errs } = await open(b);
+      mode.reply = () => Object.assign(REVIEW(2, 2), { delay: 2500 });
+      await sit(p, '', 'Section II - Short answer');
+      await p.fill('#ans', SA); await p.click('#check'); await settled(p);
+      await p.$$eval('.navtab', es => es.find(x => /Study/i.test(x.textContent)).click()); await settled(p);
+      await p.waitForTimeout(3500); await settled(p);
+      ok(!(await has(p, '#examquit')) && !(await p.evaluate(() => document.body.classList.contains('tm-sitting'))),
+         'a reply that lands after the Study tab was chosen does not redraw the sitting over Study');
+      ok(!errs.length, 'no page errors: ' + JSON.stringify(errs));
+      await ctx.close();
+    }
+    // b. Leaving and resuming the same question while it is marked: the result is drawn.
+    {
+      const { p, ctx, mode } = await open(b);
+      mode.reply = () => Object.assign(REVIEW(2, 2), { delay: 2500 });
+      await sit(p, '', 'Section II - Short answer');
+      await p.fill('#ans', SA); await p.click('#check'); await settled(p);
+      await p.click('#examquit'); await settled(p);
+      await p.click('[data-examresume]'); await settled(p);
+      await p.waitForTimeout(3500); await settled(p);
+      const ch = await p.$eval('#check', e => e.textContent.trim()).catch(() => '(no button)');
+      ok(/Marks\s*2 of 2/.test(await sheet(p)) && !/Checking/.test(ch), 'resumed on the question being marked, its result appears when it lands: ' + ch);
+      await ctx.close();
+    }
+    // c. Finish while an answer is being marked: refused, and the attempt stays open.
+    {
+      const { p, ctx, mode } = await open(b);
+      mode.reply = () => Object.assign(REVIEW(12, 20), { delay: 2500 });
+      await sit(p, '', 'Section III - Business report');
+      await p.fill('#ans', 'Executive summary\nConsolidate.'); await p.click('#check'); await settled(p);
+      await p.click('#examfinish'); await settled(p);
+      const t = await p.$$eval('.toast', es => es.map(e => e.textContent).join(' | '));
+      ok(/still being marked/.test(t), 'Finish waits for marking: ' + JSON.stringify(t));
+      await p.waitForTimeout(3500); await settled(p);
+      const at = await stored(p);
+      const rec = Object.keys(at).filter(k => k.startsWith('paper:')).map(k => at[k])[0] || {};
+      ok(rec.current && !rec.last && Object.values(rec.current.results).some(r => r && r.score === 12),
+         'and the attempt is still in progress, holding the mark that landed');
+      await ctx.close();
+    }
+    // d. An unmarked answer edited in its box: "Try marking again" marks the edit.
+    {
+      const { p, ctx, mode } = await open(b);
+      mode.reply = () => ({ status: 503, body: {} });
+      await sit(p, '', 'Section II - Short answer');
+      await submit(p, SA);
+      await p.fill('#ans', SA + ' And the queue is longest at 8am.'); await settled(p);
+      mode.reply = () => REVIEW(2, 2);
+      await remark(p);
+      ok(/at 8am/.test(mode.sent[mode.sent.length - 1].answer || ''), 'the edited answer is the one sent for marking');
+      ok(/at 8am/.test(await p.$eval('#ans', e => e.value)), 'and it is the one in the box afterwards');
+      await ctx.close();
+    }
+    // e. A rewrite after Try again survives a reload, in its box.
+    {
+      const { p, ctx, mode } = await open(b);
+      mode.reply = () => REVIEW(1, 2);
+      await sit(p, '', 'Section II - Short answer');
+      await submit(p, SA);
+      await p.click('#examretry'); await settled(p);
+      await p.fill('#ans', 'A rewrite in progress.'); await p.waitForTimeout(700);
+      await p.click('#examquit'); await settled(p);
+      await p.reload(); await settled(p);
+      await p.$$eval('.navtab', es => es.find(x => /Test mode/i.test(x.textContent)).click()); await settled(p);
+      await p.click('[data-examresume]'); await settled(p);
+      ok((await p.$eval('#ans', e => e.value).catch(() => '')) === 'A rewrite in progress.' && !(await p.$eval('#ans', e => e.disabled).catch(() => true)),
+         'on resume the rewrite is in an open box, not hidden behind the old mark');
+      await ctx.close();
+    }
+  }
+
   console.log('--- 8. Study mode still demo-grades, in the format\'s own words');
   for (const [n, card, want, never] of [
     ['a business report card', { id: 'rep1', type: 'essay', command: 'Report', marks: 20, prompt: 'Recommend strategies a retailer could use to respond to growing online sales.', model: 'A model report.', vocab: [] },

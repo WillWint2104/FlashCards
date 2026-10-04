@@ -571,8 +571,9 @@ console.log("13. the paper the product actually ships, which is now synthetic");
     "without packages, examine() says nothing about registration, as before (callers that know the packages pass them)");
   const noCriteria = { packages: Object.assign({}, PK.packages, { legal_studies: { label: "Legal Studies", markingCriteria: [] } }) };
   ok(codes(E.examine(legal(copy()), noCriteria)).includes("CRITERIA_ABSENT"), "a package with no criteria is treated the same way");
-  ok(/examineExam\(d\) \{ return PAPER\.examine\(d, \{ packages: esAllSubjects\(\)\.subjects/.test(read("app.js")),
-    "the app's import door passes the packages it registers");
+  ok(/IR\.read\(text, ATT\.library\(state\.exams\), tmPackages\(\)\)/.test(read("app.js")) &&
+     /function tmPackages\(\) \{ return esAllSubjects\(\)\.subjects/.test(read("app.js")),
+    "the app's import door (Test mode, Slice A) passes the packages it registers");
 
   // ---- decision 21: the same paper is the same exam.id, never the same title --
   const bump = (pp, ver) => Object.assign(JSON.parse(JSON.stringify(pp)), { exam: Object.assign({}, pp.exam, { version: ver }) });
@@ -641,7 +642,8 @@ console.log("14. the app asks the contract rather than keeping its own copy");
   ok(!/function validateExam\(/.test(app), "validateExam is gone from app.js rather than wrapped");
   ok(!/\["mc", "calc", "short", "define", "essay"\]\.includes\(q\.type\)/.test(app),
     "and so is the hardcoded legacy type list it gated on");
-  ok(/PAPER\.examine/.test(app), "the importer asks the paper contract");
+  ok(/IR\.read\(/.test(app) && /PAPER\.examine\(data, \{ packages: packages \|\| \{\} \}\)/.test(read("tools/contract/importread.js")),
+    "the importer (Test mode's import page, through importread.js) asks the paper contract");
   ok(/window\.MarginalExam/.test(app), "which reaches the page through the student bundle");
 
   const bundle = read("tools/contract/bundle.js");
