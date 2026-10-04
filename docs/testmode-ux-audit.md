@@ -1127,3 +1127,47 @@ defects in it, and all are fixed:
   - the second-opinion scenario now asserts that the request was sent.
 
   Six mutations were added for these guards.
+
+## Slice A: adversarial review before reporting (18 fixed, 3 refuted)
+
+A four-dimension review (marking invariants, persistence and versions, import
+and library, copy and controls), each finding checked by a verifier that tried
+to refute it. Fixed:
+
+- **Late replies** are drawn only when their question is on screen now
+  (`tmShowing`), read from the page rather than a counter. A reply no longer
+  redraws the sitting over Study or Create, and one that lands after the student
+  left and resumed the same question shows its result instead of "Checking…".
+- **Try marking again** marks what is in the box, so an edit made beside an
+  unmarked answer is what gets marked.
+- **A second opinion** never lands over a newer mark, a resubmission or a
+  rewrite in progress, and Try again is disabled while it is asked.
+- **Finish** waits while an answer is being marked.
+- **A rewrite after Try again** reopens in its box on resume.
+- **An unchosen either/or of parent questions** counts as `PAPER.totals` counts
+  it (`ATT.weightOf`), so the overview and the sitting agree.
+- **Picks up at** names an unchosen either/or slot ("Question 15 or 16").
+- **Delete paper** says which practice sessions are deleted with it; Start again
+  on a practice session counts drafts.
+- **The weighted mark rule** says "One mark for each point" only when every
+  point is worth one mark.
+- **Backup restore** goes through the import's version rule
+  (`ATT.restorePapers`), so two versions of one paper never both show.
+- **The import page:** a duplicate or older file no longer says what it adds;
+  versionless replace copy reads properly; a file holding `null`, a Marginal
+  backup, or a bare list of cards is named for what it is.
+- **Create** says papers are imported in Test mode and carries the pasted paper
+  there.
+
+Covered by `tests/ui72.js` section 13, `tests/t38.mjs` and `tests/t39.mjs`, and
+seven mutations, each killed by its intended assertion.
+
+Refuted: a completed practice session lacking "Start new attempt" (type sessions
+start afresh from setup by design); a parent header showing the whole question's
+marks in the sitting (it is the authored question's heading); "Those results stay
+available" (true of the stored last attempt, whose screen is Slice B).
+
+Four mutants from the earlier catalogue survived the first Slice A run because
+the code they mutated had been retired: Study's unmarked sheet, a dead
+`examineExam`, Study's instruction line and Create's import note. Each now
+targets the code that does that job in Test mode, and the dead code is removed.

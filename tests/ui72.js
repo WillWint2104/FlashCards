@@ -481,6 +481,31 @@ async function unmarkedYet(p, n, why) {
     }
   }
 
+  // f. A second opinion that lands while the student is rewriting changes nothing.
+  {
+    const keyed = JSON.parse(JSON.stringify(paper));
+    keyed.name = 'Phrased points paper';
+    keyed.sections[1].questions[0].parts[0].points = [{ text: 'Names speed as the objective', marks: 1, need: ['speed'] },
+                                                      { text: 'Links it to the waiting times', marks: 1, need: ['wait'] }];
+    const seed = { cards: {}, endpoint: '', code: '12Ec126', log: [], customSets: [], lessons: {},
+      exams: [Object.assign({}, keyed, { id: 'phrased' })] };
+    const { p, ctx, mode } = await open(b, seed);
+    await sit(p, 'Phrased points paper', 'Section II - Short answer');
+    await submit(p, 'Speed, because customers wait too long.');
+    mode.reply = () => Object.assign(REVIEW(1, 2), { delay: 2500 });
+    await p.click('#examreview'); await settled(p);
+    ok(await p.$eval('#examretry', e => e.disabled), 'f: Try again waits while a second opinion is asked');
+    await p.click('#examnext'); await settled(p); await p.click('#examprev'); await settled(p);
+    await p.click('#examretry'); await settled(p);
+    await p.fill('#ans', 'A rewrite in progress.'); await p.waitForTimeout(3500); await settled(p);
+    const st = await p.evaluate(() => { const at = JSON.parse(localStorage.getItem('marginal.trial.v1') || '{}').attempts || {};
+      const a = Object.values(at).map(r => r.current).find(Boolean); return { score: a.results['1-0-0'] && a.results['1-0-0'].score, draft: a.drafts['1-0-0'] }; });
+    ok(mode.sent.length === 1 && st.score === 2 && st.draft === 'A rewrite in progress.',
+       'f: the late second opinion neither replaces the mark nor deletes the rewrite: ' + JSON.stringify(st));
+    ok((await p.$eval('#ans', e => e.value)) === 'A rewrite in progress.', 'f: and the rewrite is still in the box');
+    await ctx.close();
+  }
+
   console.log('--- 8. Study mode still demo-grades, in the format\'s own words');
   for (const [n, card, want, never] of [
     ['a business report card', { id: 'rep1', type: 'essay', command: 'Report', marks: 20, prompt: 'Recommend strategies a retailer could use to respond to growing online sales.', model: 'A model report.', vocab: [] },

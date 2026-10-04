@@ -1687,4 +1687,12 @@ module.exports = [
     owner: "t39",
     why: "a file holding only null threw on the import page, so no verdict was shown",
   },
+  {
+    id: "sliceA-second-opinion-over-a-rewrite",
+    file: "app.js",
+    find: "    if (a.results[key] !== was || tmPending(a)[key] != null || a.drafts[key] != null) return;",
+    replace: "",
+    owner: "ui72",
+    why: "a second opinion that landed while the student was rewriting replaced their mark and deleted the rewrite",
+  },
 ];
