@@ -44,6 +44,10 @@ console.log('--- identity and versions');
   ok(s.exams.includes(v1) && v1.superseded === true, 'the old version is kept, hidden, while an attempt is pinned to it');
   const seq = A.sequence(s.attempts[k].current, s.exams);
   ok(seq[0].paper === v1 && seq[0].q.prompt !== 'Version two prompt.', 'the attempt keeps sitting version 1');
+  const own = new Set(), walk = o => { if (o && typeof o === 'object' && !own.has(o)) { own.add(o); Object.values(o).forEach(walk); } };
+  walk(v1.sections);
+  ok(seq.length > 0 && seq.every(e => own.has(e.q)),
+     'every entry carries the paper\'s own question object, not a copy (ownership is by identity)');
   ok(A.startPaper(v2, null, T(2)).version === '2', 'a new attempt starts on the library version');
   const v0 = fresh(); v0.exam.version = '0';
   ok(A.addPaper(s, v0).kind === 'older' && !s.exams.includes(v0), 'an older version is not added');

@@ -67,18 +67,19 @@ async function sit(b, section, answer, storedPaper, unreachable) {
   });
   await p.goto(T + '?review=1'); await settled(p);
   await p.$$eval('.navtab', es => { const t = es.find(x => /Test mode/i.test(x.textContent)); t && t.click(); }); await settled(p);
-  await p.$$eval('button, .area', es => { const t = es.find(x => /^Sit\b|Sit /i.test(x.textContent.trim())); t && t.click(); }); await settled(p);
-  await p.click('text=Clear'); await settled(p);
-  await p.$$eval('.exam-pick', (es, name) => { const t = es.find(x => x.textContent.includes(name)); t && t.click(); }, section); await settled(p);
-  await p.click('text=Start'); await settled(p);
+  // Slice A: the card opens the overview, where the section is chosen.
+  await p.click('[data-examsit]'); await settled(p);
+  await p.click('#exampicknone'); await settled(p);
+  await p.$$eval('.tm-row', (es, name) => { const t = es.find(x => x.textContent.includes(name)); t && t.click(); }, section); await settled(p);
+  await p.click('#exampickgo'); await settled(p);
   const begin = await p.$('#exambegin'); if (begin) { await begin.click(); await settled(p); }
   const choose = await p.$('[data-examchoose="0"]'); if (choose) { await choose.click(); await settled(p); }
   const surface = await p.evaluate(() => {
-    const q = document.querySelector('.exam-q');
+    const q = document.querySelector('.tm-qcard');
     return {
       order: q ? [...q.children].map(e => e.className || e.tagName) : [],
-      instructions: [...document.querySelectorAll('.exam-q .exam-instr')].map(e => e.textContent.trim()),
-      shape: !!document.querySelector('.ansshape'),
+      instructions: [...document.querySelectorAll('.tm-qcard .tm-instr')].map(e => e.textContent.trim()),
+      shape: !!document.querySelector('.ansshape, .tm-help'),
       shapeRows: [...document.querySelectorAll('.ansshape .es-skellabel')].map(e => e.textContent.trim()),
       placeholder: (document.querySelector('#ans') || {}).placeholder || null,
     };
@@ -102,7 +103,7 @@ async function sit(b, section, answer, storedPaper, unreachable) {
   const s = R.surface;
   ok(s.instructions.length === 1 && s.instructions[0] === q14.instructions,
      "the question's own instructions render, once and verbatim (UX-TEST-10): " + JSON.stringify(s.instructions));
-  const iI = s.order.indexOf('exam-instr'), iH = s.order.indexOf('exam-qhead'), iS = s.order.indexOf('exam-source'), iP = s.order.indexOf('exam-prompt');
+  const iI = s.order.indexOf('tm-instr'), iH = s.order.indexOf('exam-qhead'), iS = s.order.indexOf('tm-case'), iP = s.order.indexOf('exam-prompt');
   ok(iH >= 0 && iI > iH && iS > iI && iP > iS,
      'under the question heading and ABOVE its case study, so "use the case study below" is true: ' + s.order.join(' > '));
   ok(!s.shape && s.shapeRows.length === 0,
@@ -160,7 +161,7 @@ async function sit(b, section, answer, storedPaper, unreachable) {
   const pts11 = (sb.requirements || {}).accomplish || [];
   ok(pts11.length === 2 && pts11[0] === 'Names speed, or dependability, as the objective (1 mark)',
      'its points travel as marking requirements, with their authored weights: ' + JSON.stringify(pts11));
-  ok(/^\s*2\s*\/\s*2/.test(S.sheet) && !/key points addressed/.test(S.sheet),
+  ok(/Marks\s*2 of 2/.test(S.sheet) && !/key points addressed/.test(S.sheet),
      "the mark is the marker's, and no tick or miss is inferred from a point's description: " + S.sheet.slice(0, 80));
   const U = await sit(b, 'Section II - Short answer', A11, null, true);
   ok(/could not be reached/.test(U.sheet) && !/demo grade/i.test(U.sheet) && !/^\s*\d+\s*\//.test(U.sheet),
@@ -170,8 +171,10 @@ async function sit(b, section, answer, storedPaper, unreachable) {
   // ---- the extended response, which must not have moved --------------------
   console.log('--- sit the extended response (state 12, re-verified)');
   const E = await sit(b, 'Section IV - Extended response', 'A paragraph.\n\nAnother paragraph.');
-  ok(E.surface.shape && JSON.stringify(E.surface.shapeRows) === JSON.stringify(['introduction', 'each body paragraph', 'conclusion']),
-     'it still gets the essay shape, which is right for an essay');
+  // The frozen state 12 answering screen draws no help region and no essay
+  // skeleton (Slice A follows it): the extended response is the prompt and the box.
+  ok(!E.surface.shape && E.surface.shapeRows.length === 0,
+     'it gets no answer shape, as state 12 draws it');
   ok(/between paragraphs/.test(E.surface.placeholder), 'and the paragraphs placeholder');
   const eb = E.body || {};
   // Printed so the figure in the docs is one a re-run reproduces.

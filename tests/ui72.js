@@ -50,31 +50,34 @@ async function open(b, seed) {
   await p.goto(T + '?review=1'); await settled(p);
   return { p, ctx, mode, errs };
 }
+// Slice A: the card opens the paper's overview. A paper with an attempt in
+// progress is started afresh with Start again (confirmed, discarding it), which
+// is what a "next sitting" is now: attempts persist, so re-entering a paper
+// without it resumes the same attempt.
 async function sit(p, paperName, sectionName) {
   await p.$$eval('.navtab', es => { const t = es.find(x => /Test mode/i.test(x.textContent)); t && t.click(); }); await settled(p);
   await p.evaluate(n => {
-    const r = [...document.querySelectorAll('.exam-row')].find(x => !n || x.textContent.includes(n)) || document.querySelector('.exam-row');
-    r.querySelector('[data-examsit]').click();
+    const r = [...document.querySelectorAll('.tm-paper')].find(x => !n || x.textContent.includes(n)) || document.querySelector('.tm-paper');
+    r.querySelector('[data-tmopen]').click();
   }, paperName || ''); await settled(p);
+  if (await p.$('#tmstartagain')) { await p.click('#tmstartagain'); await settled(p); }
   if (sectionName) {
     await p.click('#exampicknone'); await settled(p);
-    await p.$$eval('.exam-pick', (es, name) => { const t = es.find(x => x.textContent.includes(name)); t && t.click(); }, sectionName); await settled(p);
+    await p.$$eval('.tm-row', (es, name) => { const t = es.find(x => x.textContent.includes(name)); t && t.click(); }, sectionName); await settled(p);
   }
   await p.click('#exampickgo'); await settled(p);
-  const begin = await p.$('#exambegin'); if (begin) { await begin.click(); await settled(p); }
   const choose = await p.$('[data-examchoose="0"]'); if (choose) { await choose.click(); await settled(p); }
 }
 async function submit(p, text) {
   if (text != null) await p.fill('#ans', text);
   await p.evaluate(() => { const s = document.querySelector('#sheet'); if (s) s.innerHTML = ''; });
   await p.click('#check');
-  await p.waitForFunction(() => !!(document.querySelector('#sheet') || {}).textContent, null, { timeout: 15000 }).catch(() => {});
+  await p.waitForFunction(() => !!document.querySelector('#sheet .tm-result'), null, { timeout: 15000 }).catch(() => {});
   await settled(p);
 }
 async function remark(p) {
-  await p.evaluate(() => { const s = document.querySelector('#sheet .sheet'); if (s) s.remove(); });
   await p.click('#examremark');
-  await p.waitForFunction(() => !!document.querySelector('#sheet .sheet'), null, { timeout: 15000 }).catch(() => {});
+  await p.waitForFunction(() => !!document.querySelector('#sheet .tm-result') && !/Checking/.test((document.querySelector('#check') || {}).textContent || ''), null, { timeout: 15000 }).catch(() => {});
   await settled(p);
 }
 const sheet = p => p.$eval('#sheet', e => e.textContent.replace(/\s+/g, ' ').trim()).catch(() => '');
@@ -86,7 +89,7 @@ async function unmarkedYet(p, n, why) {
   ok(/Not marked yet/.test(s) && why.test(s), n + ': not marked yet, and says why: ' + JSON.stringify(s.slice(0, 150)));
   ok(!/demo grade/i.test(s) && !/Structure detected/.test(s) && !/^\s*\d+\s*\//.test(s) && !/Not yet|Partly there|Most of it|Full marks/.test(s),
      n + ': no score and no judgement');
-  ok(await has(p, '#examremark') && await has(p, '#examnext'), n + ': offers "Try marking again", and Continue still moves on');
+  ok(await has(p, '#examremark') && await has(p, '#examnext, #examfinish'), n + ': offers "Try marking again", and the footer still moves on');
   ok(!/—/.test(s), n + ': no em dash');
   const kept = await p.$eval('#ans', e => e.value).catch(() => '');
   ok(kept.length > 0, n + ': the answer is still in its box');
@@ -108,7 +111,7 @@ async function unmarkedYet(p, n, why) {
     ok(mode.sent.length === 1, n + ': the marker was asked');
     await unmarkedYet(p, n, /could not be reached/);
     const br = await bar(p);
-    ok(/^0\/\d+ answered · 0\/\d+ marks · 1 not marked$/.test(br), n + ': counted as not marked, not as answered, and adds nothing: ' + br);
+    ok(/^0 of \d+ answered · 0\/\d+ marks · 1 not marked$/.test(br), n + ': counted as not marked, not as answered, and adds nothing: ' + br);
     ok(!errs.length, n + ': no page errors ' + JSON.stringify(errs));
     await ctx.close();
   }
@@ -135,12 +138,12 @@ async function unmarkedYet(p, n, why) {
       else await remark(p);
       await unmarkedYet(p, n, /did not contain a mark|could not be read/);
     }
-    ok(/^0\/1 answered · 0\/20 marks · 1 not marked$/.test(await bar(p)), 'none of them counted: ' + await bar(p));
+    ok(/^0 of 1 answered · 0\/20 marks · 1 not marked$/.test(await bar(p)), 'none of them counted: ' + await bar(p));
     mode.reply = () => REVIEW(12, 20);
     await remark(p);
     const s = await sheet(p);
-    ok(/^12\s*\/\s*20/.test(s) && !/not marked/i.test(s), 'Try marking again replaces the unmarked state with the marker\'s real mark: ' + s.slice(0, 60));
-    ok(await bar(p) === '1/1 answered · 12/20 marks', 'and only now does it count, once: ' + await bar(p));
+    ok(/Marks\s*12 of 20/.test(s) && !/not marked/i.test(s), 'Try marking again replaces the unmarked state with the marker\'s real mark: ' + s.slice(0, 60));
+    ok(await bar(p) === '1 of 1 answered · 12/20 marks', 'and only now does it count, once: ' + await bar(p));
     ok(!(await has(p, '#examremark')), 'no "Try marking again" on a marked answer');
     await ctx.close();
   }
@@ -162,7 +165,7 @@ async function unmarkedYet(p, n, why) {
     ok(/Not marked yet/.test(s), n + ': "not marked yet", as every unmarked answer in a sitting is (decision 20)');
     const ch = await p.$eval('#check', e => ({ disabled: e.disabled, label: e.textContent.trim() }));
     ok(!ch.disabled && !/Checking/.test(ch.label), n + ': the submit button comes back: ' + JSON.stringify(ch));
-    ok(/1 not marked/.test(await bar(p)) && /^0\//.test(await bar(p)), n + ': not counted as answered');
+    ok(/1 not marked/.test(await bar(p)) && /^0 of /.test(await bar(p)), n + ': not counted as answered');
     await ctx.close();
   }
 
@@ -172,7 +175,9 @@ async function unmarkedYet(p, n, why) {
     const { p, ctx } = await open(b);
     await sit(p, '', 'Section III - Business report');
     await submit(p, 'Executive summary\nConsolidate.');
-    await p.click('#examnext'); await settled(p);
+    // Slice A: the last item's footer finishes the paper (confirmed), and the
+    // existing results screen reads the completed attempt.
+    await p.click('#examfinish'); await settled(p);
     const big = await p.$eval('.bigscore', e => e.textContent.replace(/\s+/g, '')).catch(() => '');
     const txt = await p.$eval('.summary', e => e.textContent.replace(/\s+/g, ' ')).catch(() => '');
     ok(big === '0/20', 'the unmarked answer adds nothing, and the paper is still out of 20: ' + big);
@@ -201,10 +206,10 @@ async function unmarkedYet(p, n, why) {
     await submit(p, NEW);
     ok(/Not marked yet/.test(await sheet(p)), 'the new sitting\'s 11(a) is not marked yet');
     await p.waitForTimeout(3500); await settled(p);
-    ok(/Not marked yet/.test(await sheet(p)) && !/^\s*2\s*\/\s*2/.test(await sheet(p)), 'the old reply did not replace it on screen');
+    ok(/Not marked yet/.test(await sheet(p)) && !/Marks\s*2 of 2/.test(await sheet(p)), 'the old reply did not replace it on screen');
     await p.click('#examnext'); await settled(p);
     await submit(p, 'Casual operators have no guaranteed hours.');
-    ok(await bar(p) === '0/8 answered · 0/40 marks · 2 not marked',
+    ok(await bar(p) === '0 of 8 answered · 0/40 marks · 2 not marked',
        'and it was not stored either: the next count has no mark from the old sitting: ' + await bar(p));
     await ctx.close();
   }
@@ -225,7 +230,7 @@ async function unmarkedYet(p, n, why) {
     await unmarkedYet(p, 'the unreachable marker', /could not be reached/);
     mode.reply = () => REVIEW(1, 2);
     await remark(p);
-    ok(/^1\s*\/\s*2/.test(await sheet(p)), 'and the mark is the marker\'s: ' + (await sheet(p)).slice(0, 40));
+    ok(/Marks\s*1 of 2/.test(await sheet(p)), 'and the mark is the marker\'s: ' + (await sheet(p)).slice(0, 40));
     await ctx.close();
   }
 
@@ -242,7 +247,7 @@ async function unmarkedYet(p, n, why) {
     const { p, ctx, mode } = await open(b, seed);
     await sit(p, 'Phrased points paper', 'Section II - Short answer');
     await submit(p, 'Speed, because customers wait too long.');
-    ok(mode.sent.length === 0 && /^2\s*\/\s*2/.test(await sheet(p)), 'scored from its authored phrasings, without the marker: ' + (await sheet(p)).slice(0, 30));
+    ok(mode.sent.length === 0 && /Marks\s*2 of 2/.test(await sheet(p)), 'scored from its authored phrasings, without the marker: ' + (await sheet(p)).slice(0, 30));
     ok(await has(p, '#examreview'), 'and the second-opinion door is offered');
     await p.click('#examreview');
     await p.waitForFunction(() => { const b = document.querySelector('#examreview'); return b && !b.disabled; }, null, { timeout: 15000 }).catch(() => {});
@@ -252,8 +257,8 @@ async function unmarkedYet(p, n, why) {
     ok(/Your mark stands/.test(said) && !/was not marked/.test(said) && !/\u2014/.test(said),
        'and its failure says the mark stands, not that the answer was not marked: ' + JSON.stringify(said));
     const s = await sheet(p);
-    ok(/^2\s*\/\s*2/.test(s) && !/demo grade/i.test(s), 'the unreachable marker leaves the 2/2 in place, with no demo grade over it: ' + s.slice(0, 60));
-    ok(await bar(p) === '1/8 answered · 2/40 marks', 'and the bar is unchanged: ' + await bar(p));
+    ok(/Marks\s*2 of 2/.test(s) && !/demo grade/i.test(s), 'the unreachable marker leaves the 2/2 in place, with no demo grade over it: ' + s.slice(0, 60));
+    ok(await bar(p) === '1 of 8 answered · 2/40 marks', 'and the bar is unchanged: ' + await bar(p));
     await ctx.close();
   }
 
@@ -289,7 +294,12 @@ async function unmarkedYet(p, n, why) {
     await p.click('#check'); await settled(p);
     await p.click('#examquit'); await settled(p);
     await p.waitForTimeout(3500); await settled(p);
-    ok(!errs.length && !!(await p.$('.exam-row')), 'leaving to the Test mode home: the reply lands nowhere and breaks nothing: ' + JSON.stringify(errs));
+    ok(!errs.length && !!(await p.$('.tm-paper')), 'leaving to the Test mode home: the reply draws nothing there and breaks nothing: ' + JSON.stringify(errs));
+    // Slice A: the attempt persists, so the reply lands where it belongs, in the
+    // attempt it was asked for, and the student finds it there on resuming.
+    await p.click('[data-examresume]'); await settled(p);
+    ok(/Marks\s*2 of 2/.test(await sheet(p)) && /^1 of 8 answered/.test(await bar(p)),
+       'and on resuming, the mark is on the answer it was given for: ' + (await sheet(p)).slice(0, 40) + ' | ' + await bar(p));
     await ctx.close();
   }
 
@@ -320,10 +330,10 @@ async function unmarkedYet(p, n, why) {
     await p.click('#check'); await settled(p);
     ok(/Checking/.test(await p.$eval('#check', e => e.textContent)), n + ': checking while it waits');
     await p.clock.fastForward(ms);
-    await p.waitForFunction(() => !!document.querySelector('#sheet .sheet'), null, { timeout: 10000 }).catch(() => {});
+    await p.waitForFunction(() => !!document.querySelector('#sheet .tm-result'), null, { timeout: 10000 }).catch(() => {});
     await settled(p);
     await unmarkedYet(p, n, why);
-    ok(/^0\/1 answered · 0\/20 marks · 1 not marked$/.test(await bar(p)), n + ': counted as not marked: ' + await bar(p));
+    ok(/^0 of 1 answered · 0\/20 marks · 1 not marked$/.test(await bar(p)), n + ': counted as not marked: ' + await bar(p));
     ok(!errs.length, n + ': no page errors ' + JSON.stringify(errs));
     await ctx.close();
   }
@@ -345,11 +355,11 @@ async function unmarkedYet(p, n, why) {
     await p.click('#examquit'); await settled(p);
     await sit(p, 'Phrased points paper', 'Section II - Short answer');
     await submit(p, 'Speed, because customers wait. The new sitting.');
-    ok(/^2\s*\/\s*2/.test(await sheet(p)), 'the new sitting marks 11(a) from its phrasings');
+    ok(/Marks\s*2 of 2/.test(await sheet(p)), 'the new sitting marks 11(a) from its phrasings');
     await p.waitForTimeout(3500); await settled(p);
     await p.click('#examnext'); await settled(p);
     await submit(p, 'Casual operators have no guaranteed hours.');
-    ok(await bar(p) === '1/8 answered · 2/40 marks · 1 not marked',
+    ok(await bar(p) === '1 of 8 answered · 2/40 marks · 1 not marked',
        'the old second opinion (0/2) did not replace the new mark: ' + await bar(p));
     await ctx.close();
   }
@@ -384,7 +394,7 @@ async function unmarkedYet(p, n, why) {
     const st = await sheet(p);
     ok(/Not marked yet/.test(st) && /how close/.test(st) && !/^\s*\d+\s*\//.test(st),
        how + ' tolerance: the right answer is not marked, rather than marked wrong or right: ' + st.slice(0, 120));
-    ok(/^2\/8 answered/.test(await bar(p)) && /1 not marked/.test(await bar(p)), how + ' tolerance: counted as not marked: ' + await bar(p));
+    ok(/^2 of 8 answered/.test(await bar(p)) && /1 not marked/.test(await bar(p)), how + ' tolerance: counted as not marked: ' + await bar(p));
     ok(!errs.length, 'no page errors ' + JSON.stringify(errs));
     await ctx.close();
   }

@@ -81,8 +81,8 @@ module.exports = [
   {
     id: "testmode-reaches-rewrite-workspace",
     file: "app.js",
-    find: "    if (rb) rb.onclick = () => examDeepReview(item, key);",
-    replace: "    if (rb) rb.onclick = () => openReview(g.fb, () => examRender());",
+    find: "    const rv = $(\"#examreview\"); if (rv) rv.onclick = () => tmSecondOpinion(e);",
+    replace: "    const rv = $(\"#examreview\"); if (rv) rv.onclick = () => openReview(g.fb, () => tmDraw());",
     owner: "t32",
     why: "a marked paper was one click from the Clear/Better/Band 6 rungs, a rewrite box and criterion score pills",
   },
@@ -218,8 +218,8 @@ module.exports = [
   {
     id: "tm-extended-demo-graded",
     file: "app.js",
-    find: "      else if (ASSESS.writtenModeOf(f) === \"extended\") g = await gradeWritten(q, ans, { noDemo: true });",
-    replace: "      else if (ASSESS.writtenModeOf(f) === \"extended\") g = await gradeWritten(q, ans);",
+    find: "      else if (ASSESS.writtenModeOf(f) === \"extended\") g = await gradeWritten(e.q, ans, { noDemo: true });",
+    replace: "      else if (ASSESS.writtenModeOf(f) === \"extended\") g = await gradeWritten(e.q, ans);",
     owner: "ui72",
     why: "an extended response or business report in a sitting got a demo grade whenever the marker could not be reached",
   },
@@ -242,24 +242,24 @@ module.exports = [
   {
     id: "tm-no-try-marking-again",
     file: "app.js",
-    find: "      : (remark ? `<button class=\"btn ghost\" id=\"examremark\">Try marking again</button>` : \"\");",
-    replace: "      : \"\";",
+    find: "        ${examCanRemark(g) ? `<div class=\"tm-submitrow\"><button type=\"button\" class=\"tm-btn ghost\" id=\"examremark\">Try marking again</button></div>` : \"\"}",
+    replace: "",
     owner: "ui72",
     why: "an answer the marker failed on had no way to be marked except leaving and redrawing the question",
   },
   {
     id: "tm-late-reply-stored",
     file: "app.js",
-    find: "    if (EXAM.gen !== gen || EXAM.results !== sitting || EXAM.answers[key] !== ans) return;",
-    replace: "",
+    find: "    if (!rec || rec.current !== a || tmPending(a)[key] !== ans) return;   // discarded, restarted or resubmitted\n    delete tmPending(a)[key];\n    const draft = a.drafts[key];\n    ATT.record(a, key,",
+    replace: "    if (!rec) return;\n    delete tmPending(a)[key];\n    const draft = a.drafts[key];\n    ATT.record(rec.current || a, key,",
     owner: "ui72",
-    why: "a question key is only a position, so a reply that arrived after the student left landed a mark in their next sitting",
+    why: "a question key is only a position, so a reply stored by key in whatever attempt is current landed a mark in the attempt that replaced the one it was asked for",
   },
   {
     id: "tm-second-opinion-demo",
     file: "app.js",
-    find: "    try { g = examOnlyMarks(await gradeWritten(item.q, ans, { noDemo: true }), item.q); }",
-    replace: "    try { g = await gradeWritten(item.q, ans); }",
+    find: "    try { g = examOnlyMarks(await gradeWritten(e.q, ans, { noDemo: true }), e.q); }",
+    replace: "    try { g = await gradeWritten(e.q, ans); }",
     owner: "ui72",
     why: "'What would make this stronger' replaced an answer-key mark with a demo grade when the marker was unreachable",
   },
@@ -282,10 +282,10 @@ module.exports = [
   {
     id: "tm-second-opinion-late-reply",
     file: "app.js",
-    find: "    if (EXAM.gen !== gen || EXAM.results !== sitting || EXAM.pos !== pos || EXAM.answers[key] !== ans || !(btn && document.contains(btn))) return;",
-    replace: "",
+    find: "    if (!rec || rec.current !== a || a.answers[key] !== ans) return;\n    // Never a demo grade, and never over the mark already here: a failure keeps\n    // the answer-key mark and says why.\n    if (!isMarked(g)) { if (here) toast(SECOND_OPINION_FAILED, 4000); return; }\n    ATT.record(a, key, ans, g, tmNow());",
+    replace: "    if (!rec) return;\n    // Never a demo grade, and never over the mark already here: a failure keeps\n    // the answer-key mark and says why.\n    if (!isMarked(g)) { if (here) toast(SECOND_OPINION_FAILED, 4000); return; }\n    ATT.record(rec.current || a, key, ans, g, tmNow());",
     owner: "ui72",
-    why: "a second opinion that arrived after the student left replaced a mark in their next sitting",
+    why: "a second opinion that arrived after Start again replaced a mark in the attempt that replaced the one it was asked for",
   },
   {
     id: "tm-stalled-body-unbounded",
@@ -1244,10 +1244,10 @@ module.exports = [
   {
     id: "gate3a-exam-sheet-scores-a-refusal",
     file: "app.js",
-    find: "    if (!isMarked(g)) return unmarkedHTML(q, g);",
-    replace: "    if (false) return unmarkedHTML(q, g);",
+    find: "    if (!isMarked(g)) {\n      const why = g && (g.why || g.note) ? String(g.why || g.note) : \"No reason was recorded.\";",
+    replace: "    if (false) {\n      const why = g && (g.why || g.note) ? String(g.why || g.note) : \"No reason was recorded.\";",
     owner: "ui68",
-    why: "without it the sheet rendered undefined/undefined under the heading \"Not yet\"",
+    why: "without it the result row rendered undefined of undefined under a judgement nobody made",
   },
   {
     id: "gate3a-stale-paper-marks-a-flashcard",
@@ -1258,14 +1258,10 @@ module.exports = [
     why: "EXAM.paper outlives the sitting, so reading it unconditionally marked a flashcard under the curriculum of a paper the student had already left",
   },
   {
-    // The third results bag. Two of them were on the shared tally and this one
-    // was still doing its own arithmetic - correct, but the same shape as the
-    // fault that had just escaped, so it is on the tally too and this holds it
-    // there.
     id: "gate3a-section-total-sums-a-refusal",
     file: "app.js",
-    find: "      got += t.got; max += t.max;",
-    replace: "      got += t.got; max += t.max;\n      t.got = active.reduce((n, x) => n + (EXAM.results[si + \"-\" + x.qi] || {}).score, 0);",
+    find: "        const t = ASSESS.tally(gr.items.map(e => ({ marks: ATT.marksOf(e), result: a.results[e.key] })));\n        return `<div class=\"exam-ressec\">",
+    replace: "        const t = ASSESS.tally(gr.items.map(e => ({ marks: ATT.marksOf(e), result: a.results[e.key] })));\n        t.got = gr.items.reduce((n, e) => n + (a.results[e.key] || {}).score, 0);\n        return `<div class=\"exam-ressec\">",
     owner: "ui68",
     why: "a section total that adds up refusals reads NaN beside a paper total that does not",
   },
@@ -1395,17 +1391,11 @@ module.exports = [
     why: "judging a value by its form rather than against the register is the original defect wearing a different name",
   },
   {
-    // The exact future this guard exists for: something on the exam path starts
-    // handing on a COPY of a question instead of the paper's own object. Nothing
-    // does today, which is why examOwns can compare by identity at all - and why
-    // the constraint has to be guarded rather than assumed, because an importer
-    // that normalised or rehydrated questions would break it in silence and put
-    // the cross-subject leak back.
     id: "gate3a-exam-path-clones-a-question",
-    file: "app.js",
-    find: '          seq.push({ kind: "q", si, qi, pi: null, sec, q, parent: null, display: PAPER.numberOf(q) });',
-    replace: '          seq.push({ kind: "q", si, qi, pi: null, sec, q: JSON.parse(JSON.stringify(q)), parent: null, display: PAPER.numberOf(q) });',
-    owner: "ui68",
+    file: "tools/contract/attempts.js",
+    find: "  return { key: key, paper: paper, si: x.si, qi: x.qi, pi: x.pi, q: x.q, parent: x.parent, sec: sec,",
+    replace: "  return { key: key, paper: paper, si: x.si, qi: x.qi, pi: x.pi, q: JSON.parse(JSON.stringify(x.q)), parent: x.parent, sec: sec,",
+    owner: "t38",
     why: "a cloned question is not the paper's question, so ownership by identity would silently stop resolving and every written answer in the paper would fall through to the flashcard package",
   },
   {
@@ -1604,14 +1594,12 @@ module.exports = [
     why: "a duplicate is a paper claiming two questions are called the same thing, and a claim has to be made before it can be wrong",
   },
   {
-    // The section intro counting the array again: parents counted as one, and a
-    // parent's absent aggregate read as its worth.
     id: "gate3c-section-intro-counts-the-array",
     file: "app.js",
-    find: "    const qn = pick ? qs.length : t.questions;\n    const mk = t.marks;",
-    replace: "    const qn = qs.length;\n    const mk = pick ? (qs[0] ? qs[0].marks || 0 : 0) : qs.reduce((n, q) => n + (q.marks || 0), 0);",
+    find: "      const t = PAPER.totals({ sections: [sec] });\n      let ins = String(sec.instructions || \"\").trim();",
+    replace: "      const t = { questions: (sec.questions || []).length, marks: (sec.questions || []).reduce((n, q) => n + (q.marks || 0), 0) };\n      let ins = String(sec.instructions || \"\").trim();",
     owner: "ui68",
-    why: "the section intro promises what the student is walking into, and counting parents told them three questions before a section they answer eight times",
+    why: "the section choice promises what the student is walking into, and counting parents told them one question before a section they answer twice",
   },
   {
     // The traversal handing out a copy of the parent. Everything reads the same

@@ -2437,9 +2437,12 @@
     const t = PAPER.totals(p);
     return [tmPlural(t.questions, "question"), tmPlural((p.sections || []).length, "section"), tmPlural(t.marks, "mark"), p.time].filter(Boolean).join(" · ");
   }
+  // A paper stored before the curriculum block existed has only a display label.
+  // Saying nothing would hide that nothing can mark it, so the card says so.
   function tmIdentityLine(p) {
     const c = ASSESS.curriculumOf(p) || {};
-    return [tmSubjectOf(p) || c.course || "", c.stage || ""].filter(Boolean).join(" · ");
+    if (!c.subjectKey && !c.course) return p && p.subject ? p.subject + " (no subject key)" : "No subject declared";
+    return [tmSubjectOf(p) || c.course || c.subjectKey, c.stage || ""].filter(Boolean).join(" · ");
   }
   function tmShell(inner, opts) {
     return `${nav()}${(opts && opts.cloud) ? cloudBarHTML() : ""}<div class="tm${opts && opts.cls ? " " + opts.cls : ""}">${inner}</div>`;
@@ -3033,7 +3036,11 @@
   // always work, nothing needs an answer before moving, drafts are saved as they
   // are typed, and a flag is a fact of its own. What the student did goes into
   // the attempt through ATT; this draws it.
-  const SIT = { key: null, seq: [], pos: 0, edit: {}, pending: {}, soln: {}, saveT: null };
+  const SIT = { key: null, seq: [], pos: 0, edit: {}, soln: {}, saveT: null };
+  // What is being marked, per attempt: an answer submitted in one attempt is not
+  // "being marked" in the attempt that replaced it after Start again.
+  const TM_PENDING = new WeakMap();
+  const tmPending = a => { let m = TM_PENDING.get(a); if (!m) TM_PENDING.set(a, m = {}); return m; };
   function tmAttempt() { const r = state.attempts[SIT.key]; return r ? r.current : null; }
   function tmFlushDraft() {
     const a = tmAttempt(), e = SIT.seq[SIT.pos], el = $("#ans");
@@ -3194,7 +3201,7 @@
     const marked = !!g && isMarked(g);
     const editing = !!SIT.edit[key] || !g || !marked;
     const draft = a.drafts[key] != null ? a.drafts[key] : (g ? a.answers[key] : "");
-    const pending = SIT.pending[key] != null;
+    const pending = tmPending(a)[key] != null;
     const marks = Number(q.marks) || 0;
     const part = !!e.parent;
     const savedLine = part ? "Saved. Moving to another part keeps this answer." : "Saved. You can leave and come back to this " + (a.scope === "paper" ? "paper" : "practice") + ".";
@@ -3240,7 +3247,7 @@
       }
     }
     return `${part ? tmParentHTML(e, a) : ""}${head}${reportIns}${caseBlock}${prompt}${body}
-      <div id="sheet">${g && !(SIT.edit[key] && marked) ? tmResultHTML(e, a, f, g) : ""}</div>`;
+      <div id="sheet">${g && !pending && !(SIT.edit[key] && marked) ? tmResultHTML(e, a, f, g) : ""}</div>`;
   }
   function tmMarkerHint(e) {
     const sp = ASSESS.scorePoints(e.q, "");
@@ -3395,7 +3402,7 @@
     let ans = override != null ? override : f === "multiple_choice" ? a.drafts[key] : (($("#ans") && $("#ans").value) || "").trim();
     if (ans == null || String(ans).trim() === "") { toast(f === "multiple_choice" ? "Choose an answer first." : "Write your answer first."); return; }
     if (f !== "multiple_choice") ATT.setDraft(a, key, ans, tmNow());
-    SIT.pending[key] = ans; save();
+    tmPending(a)[key] = ans; save();
     const slow = !(f === "multiple_choice" || f === "calculation");
     if (slow) tmDraw();
     EXAM.paper = e.paper;
@@ -3410,8 +3417,8 @@
     }
     g = examOnlyMarks(g, e.q);
     const rec = state.attempts[recKey];
-    if (!rec || rec.current !== a || SIT.pending[key] !== ans) return;   // discarded, restarted or resubmitted
-    delete SIT.pending[key];
+    if (!rec || rec.current !== a || tmPending(a)[key] !== ans) return;   // discarded, restarted or resubmitted
+    delete tmPending(a)[key];
     const draft = a.drafts[key];
     ATT.record(a, key, f === "multiple_choice" ? Number(ans) : ans, g, tmNow());
     // Typing that went on while it was being marked is kept as a draft.
