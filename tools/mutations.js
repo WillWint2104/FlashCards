@@ -951,8 +951,8 @@ module.exports = [
     // Follows the end of the list, which moves every time a suite is added, and
     // t26 is what turns that into a caught failure rather than a mutation that
     // quietly stops mutating anything. ui69 moved it; this is the fix.
-    find: '"ui71", "ui72"]',
-    replace: '"ui71"]',
+    find: '"ui72", "ui73"]',
+    replace: '"ui72"]',
     owner: "t23",
     why: "a maintained regression outside the runner is invisible, which is how twenty-eight suites rotted unnoticed",
   },
@@ -1621,5 +1621,22 @@ module.exports = [
     replace: "    if (data && data.format === EXAM_FORMAT) return importExamFromBox(data, msg);",
     owner: "ui68",
     why: "a person holding an exam file this release cannot run was told the set has no cards array, and the exam contract's correct refusal was unreachable",
+  },
+  // ---- Slice A acceptance (decision 22) ------------------------------------
+  {
+    id: "sliceA-resume-starts-at-the-top",
+    file: "app.js",
+    find: "    SIT.pos = i < 0 ? 0 : i;",
+    replace: "    SIT.pos = 0;",
+    owner: "ui73",
+    why: "a resumed attempt reopened on its first question, so the student lost their place every time they left",
+  },
+  {
+    id: "sliceA-attempt-follows-the-library-version",
+    file: "tools/contract/attempts.js",
+    find: "  var paper = byId(exams, attempt.paper);\n  if (!paper) return [];",
+    replace: "  var pinnedTo = byId(exams, attempt.paper);\n  var paper = pinnedTo && library(exams).filter(function (p) { return identityOf(p) === identityOf(pinnedTo); })[0];\n  if (!paper) return [];",
+    owner: "ui73",
+    why: "importing a newer version silently changed the questions under an attempt already in progress, so its answers sat against prompts the student never read",
   },
 ];

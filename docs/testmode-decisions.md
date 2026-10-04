@@ -483,6 +483,25 @@ or refusal leaves the answer unmarked; unmarked results enter no total; a
 successful retry replaces the unmarked state; a late reply cannot change a later
 screen or sitting; Study keeps its demo behaviour.
 
+### Implementation notes (Slice A, for approval)
+
+Four places where implementing the frozen pages needed a reading, recorded so
+review can overrule any of them:
+
+- **Resuming a practice session goes through its overview.** The library's
+  *Resume practice* opens the type overview, which shows the session in progress
+  with *Resume practice* and *Start again*, as a paper's overview does. One
+  route for both scopes; the scope is visible before resuming.
+- **Completing an attempt still uses the legacy results screen.** *Finish*
+  completes the attempt (`current` becomes `last`) and shows the existing
+  results page read from the attempt. Submit confirmation, Results and Review
+  are Slice B and were not started.
+- **Multiple choice is choose, then submit.** Picking an option saves it as a
+  draft; *Submit for marking* marks it, as state 8's one primary action does for
+  every format.
+- **An extended response has no help region,** matching state 12. Only a short
+  answer carries "What this question expects", built from authored guidance.
+
 ## Mockup order — dependency, not numerical
 
 ```

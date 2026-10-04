@@ -15514,7 +15514,10 @@ module.exports = {
           flush();
           const sibs = gr.items.filter(x => x.parent === e.parent);
           const done = sibs.filter(x => ATT.itemState(a, x.key).answered).length;
-          html += `<div class="tm-pblock"><div class="pbh"><b>Question ${esc(PAPER.numberOf(e.parent) || "")}</b><span>${tmPlural(PAPER.marksOf(e.parent), "mark")} · ${done} of ${tmPlural(sibs.length, "part")} answered</span></div>
+          // A practice session may hold only some of a question's parts: the block
+          // states the marks of the parts in it, so it adds up with the section.
+          const pm = sibs.length < PAPER.partsOf(e.parent).length ? sibs.reduce((n, x) => n + ATT.marksOf(x), 0) : PAPER.marksOf(e.parent);
+          html += `<div class="tm-pblock"><div class="pbh"><b>Question ${esc(PAPER.numberOf(e.parent) || "")}</b><span>${tmPlural(pm, "mark")} · ${done} of ${tmPlural(sibs.length, "part")} answered</span></div>
             <div class="tm-chips">${sibs.map(x => chip(x, PAPER.labelOf(x.q, x.pi))).join("")}</div></div>`;
           return;
         }

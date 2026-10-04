@@ -109,6 +109,33 @@ The format is the contract's reading of the question, not the section it sits
 in. The synthetic paper's 11(d), 12(c) and 13 are extended responses inside
 Section II, so they count under Extended response.
 
+## As implemented (Slice A)
+
+The record above is the design. The code is `tools/contract/attempts.js`
+(`window.MarginalAttempts` in the page), proved by `tests/t38.mjs`, and it
+differs from the design in four places, all deliberate:
+
+- **Every stored version is its own object with its own runtime `id`.** An
+  attempt pins `paper` (that runtime id) as well as `exam` (the identity) and
+  `version`. Resume reads the pinned object, so a newer import cannot change the
+  questions under an attempt in progress. A superseded object carries
+  `superseded: true`, is left out of the library, and is removed by
+  `ATT.collect` once no `current` or `last` attempt pins it.
+- **`drafts` and `answers` are separate bags.** `drafts[key]` is what is in the
+  box, saved as it is typed. `answers[key]` is what was submitted for marking,
+  beside `results[key]`. Resume restores both: a draft the student never
+  submitted comes back in its box, unmarked and uncounted.
+- **A type session's item is `{ paper, exam, version, key }`, and its keys are
+  `paper + "#" + key`** (the runtime id, then the paper key), so two papers'
+  11(a), or two versions of one paper, never share a draft, flag or result.
+- **Counts are derived, never stored.** `ATT.summary` runs the attempt's
+  results through `ASSESS.tally`: answered means marked; refused and failed are
+  "not marked" and enter no total. A flag is a fact of its own.
+
+Scope is immutable: `ATT.begin` throws if an attempt is already in progress, and
+`ATT.choose` (the either/or) throws once there is work in that section. Start
+again is `ATT.discard`, which drops `current` and keeps `last`.
+
 ## Not in v1
 
 - Attempt history beyond the latest completed one.
