@@ -39,14 +39,15 @@ const SHORT = (ans, marks) => ({
   console.log('--- sit only the short-answer section ---');
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Test mode/i.test(x.textContent)); t&&t.click();});
   await settled(p);
-  await p.$$eval('button, .area',es=>{const t=es.find(x=>/^Sit\b|Sit /i.test(x.textContent.trim())); t&&t.click();});
+  // Slice A: the paper's card opens its overview (Page 3), where sections are chosen.
+  await p.click('[data-examsit]');
   await settled(p);
   await p.click('text=Clear'); await settled(p);
   await p.$$eval('.exam-pick, [data-exampick], label, button',es=>{
     const t=es.find(x=>/Short answer/i.test(x.textContent)); t&&t.click();
   });
   await settled(p);
-  await p.click('text=Start'); await settled(p);
+  await p.click('#exampickgo'); await settled(p);
   // walk past the section intro
   const begin = await p.$('#exambegin'); if (begin) { await begin.click(); await settled(p); }
   ok(!!(await p.$('#ans')),'a short-answer question is on screen');
@@ -64,7 +65,7 @@ const SHORT = (ans, marks) => ({
   await p.fill('#ans','McDonalds uses mobile ordering.');
   await p.click('#check'); await settled(p);
   await p.waitForFunction(() => !!(document.querySelector('#sheet') || {}).textContent, null, { timeout: 8000 }).catch(() => {});
-  ok(!!(await p.$('.sheet')),'it grades');
+  ok(!!(await p.$('.tm-result')),'it grades');
   ok(sent && sent.responseType==='short','the request says it is a short answer: '+(sent&&sent.responseType));
   ok(sent && sent.marks>0 && sent.marks<=10,'with its own mark value: '+(sent&&sent.marks));
   ok(sent && typeof sent.command==='string','the directive verb travels: '+JSON.stringify(sent&&sent.command));
@@ -72,7 +73,7 @@ const SHORT = (ans, marks) => ({
   ok(acc.length > 0 && acc.every(x => / \(\d+ marks?\)$/.test(x)),
      'its weighted points travel as requirements with their weights: ' + JSON.stringify(acc));
   const kind = await p.$eval('#sheet',e=>e.textContent);
-  ok(/\d+\s*\/\s*\d+/.test(kind),'a mark is shown');
+  ok(/Marks\s*\d+ of \d+/.test(kind),'a mark is shown: '+kind.replace(/\s+/g,' ').slice(0,80));
   ok(!/key points addressed/.test(kind),'no tick or miss inferred from a point\'s description');
   ok(!(await p.$('#examreview')),'no second door asking the marker for the judgement it just gave');
   await p.screenshot({path:OUT+'shot-short-sheet.png'});

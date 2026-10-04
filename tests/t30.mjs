@@ -650,12 +650,16 @@ console.log("14. the app asks the contract rather than keeping its own copy");
   ok(/window\.MarginalExam =/.test(built), "and the built page carries it: the student runs this file, not a copy");
 
   // The display number is the paper's, where the paper says.
-  ok(/PAPER\.numberOf\(q\)/.test(app), "the question header asks the paper what this question is called");
+  // Slice A: the sitting reads every answerable from the attempt contract,
+  // which names it from the paper, and the header prints that name.
+  const attemptsSrc = read("tools/contract/attempts.js");
+  ok(/PAPER\.numberOf\(q\)/.test(attemptsSrc) && /Question \$\{esc\(e\.display/.test(app),
+    "the question header asks the paper what this question is called");
   ok(!/const num = EXAM\.seq\.slice\(0, EXAM\.pos \+ 1\)\.filter\(x => x\.kind === "q"\)\.length;/.test(app),
     "and no longer calls the student's position a question number");
 
   // The round trip stops discarding what it does not recognise.
-  ok(/Object\.assign\(\{\}, data, \{/.test(app),
+  ok(/Object\.assign\(\{\}, r\.paper, \{/.test(app),
     "the importer carries the package whole rather than rebuilding it from a whitelist");
   ok(!/const paper = \{ id: "exam-" \+ Date\.now\(\), name: data\.name/.test(app),
     "the eight-field whitelist is gone");
@@ -666,11 +670,11 @@ console.log("14. the app asks the contract rather than keeping its own copy");
   ok(!/q\.stimulus \? examSourceHTML/.test(app), "and no call site still assumes exactly one");
 
   // Two levels reach the runtime, not just the contract.
-  ok(/PAPER\.partsOf\(q\)\.forEach\(\(part, pi\)/.test(app), "sequencing expands a parent into its parts");
-  ok(/function examKey\(it\)/.test(app) && !/si \+ "-" \+ qi/.test(app),
+  ok(/PAPER\.answerables\(/.test(attemptsSrc) && /PAPER\.partsOf\(q\)\[pi\]/.test(attemptsSrc), "sequencing expands a parent into its parts");
+  ok(/function keyOf\(a\)/.test(attemptsSrc) && !/si \+ "-" \+ qi/.test(app),
     "one key names one answerable, and no caller builds its own");
-  ok(/PAPER\.answerables\(EXAM\.paper, EXAM\.choice\)/.test(app),
-    "and the totals, the results and the picker read the same walk");
+  ok(/ATT\.sequence\(a, state\.exams\)/.test(app) && /ATT\.summary\(/.test(app),
+    "and the totals, the results and the navigator read the same walk");
   ok(/PAPER\.partsOf\(q\)\.indexOf\(card\) >= 0/.test(app),
     "a part belongs to its paper for marking, which is Gate 3A one level down");
 
@@ -678,7 +682,7 @@ console.log("14. the app asks the contract rather than keeping its own copy");
   // was counting the array: "3 questions" before a section answered eight times,
   // and a parent with no authored aggregate announced as worth nothing.
   ok(!/const mk = pick \? \(qs\[0\] \? qs\[0\]\.marks \|\| 0 : 0\)/.test(app),
-    "the section intro no longer adds up a parent's own marks field");
+    "the section choice no longer adds up a parent's own marks field");
   ok(/const t = PAPER\.totals\(\{ sections: \[sec\] \}\);/.test(app),
     "it asks the contract what the section holds");
 

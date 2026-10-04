@@ -839,9 +839,10 @@
   }
 
   // ===================== STUDY =====================
-  function home() { if (gated()) return authScreen(); session = null; currentTopic ? areaMap(currentTopic) : mainPage(); }
+  function home() { tmLeave(); if (gated()) return authScreen(); session = null; currentTopic ? areaMap(currentTopic) : mainPage(); }
 
   function mainPage() {
+    tmLeave();
     if (gated()) return authScreen();
     view = "study"; session = null; currentTopic = null;
     app.innerHTML = `
@@ -2249,82 +2250,22 @@
   // `gen` names the sitting. Starting a paper and leaving to Test mode home both
   // move it on, so a marker reply that arrives for a sitting the student has left
   // can tell it has nowhere to go (UX-TEST-22).
-  const EXAM = { paper: null, sit: null, seq: [], pos: 0, results: {}, answers: {}, choice: {}, gen: 0 };
-  // A section with `choose: 1` is an either/or (e.g. HSC Section IV: attempt
-  // Question 26 OR Question 27). The student picks at the section intro; only the
-  // chosen question is sequenced, counted in the totals and shown in the results.
-  // ONE ANSWERABLE, ONE KEY. A part needs its own slot for its answer and its
-  // result, and a paper with no parts must keep the keys it already had, so the
-  // part index is appended only where there is one. 21(a) is "1-0-0"; a plain
-  // question 22 is still "1-1".
-  function examKey(it) { return it.si + "-" + it.qi + (it.pi == null ? "" : "-" + it.pi); }
-  // Everything a student answers in this sitting, with the choices they have made
-  // so far applied. One walk, asked by the totals, the results and the picker, so
-  // none of them can believe the paper holds a different set of questions.
-  function answerablesNow() { return PAPER.answerables(EXAM.paper, EXAM.choice); }
-  function examChooseCount(sec) { const n = Number(sec && sec.choose) || 0; return n > 0 ? n : 0; }
-  function examIsActive(si, qi) {
-    const sec = EXAM.paper.sections[si];
-    if (!examChooseCount(sec)) return true;
-    const c = EXAM.choice[si];
-    return c === undefined ? false : c === qi;
-  }
+  // EXAM.paper is the paper the question on screen belongs to, which is how
+  // markingContext and examOwns find a question's subject and sources by object
+  // identity. A practice session moves it as it moves between papers. What the
+  // student did is not kept here: it is in state.attempts (tools/contract/attempts.js).
+  const EXAM = { paper: null, gen: 0 };
 
-  function examList() { return state.exams || []; }
-  // What to call this paper's course on a list row. The curriculum block owns it;
-  // `subject` is cover text and is used only for papers stored before the block
-  // existed, where saying nothing would hide the fact that the paper has no
-  // identity anything can mark from.
-  function examCourse(p) {
-    const c = ASSESS.curriculumOf(p);
-    if (c && (c.course || c.subjectKey)) return c.course || c.subjectKey;
-    return p && p.subject ? p.subject + " (no subject key)" : "no subject declared";
+  // The library: one paper per identity, the version not superseded (decision 21).
+  function examList() { return ATT.library(state.exams); }
+  // PAPERS ARE IMPORTED IN TEST MODE (decision 18). The Create tab's import box
+  // used to take a paper too, and file it under a "Study map" it never reached.
+  // It now says where papers go and opens that page; it imports nothing.
+  function importExamFromBox(data, msg) {
+    msg.innerHTML = 'This is a practice paper. Papers are imported in Test mode, where they are checked before they are added. <button type="button" class="btn sm" id="importtotest">Open Test mode import</button>';
+    const b = document.getElementById("importtotest");
+    if (b) b.onclick = () => { view = "test"; tmImport(); };
   }
-  // What a row on the Test mode list says this paper is. The contract counts it:
-  // an either/or contributes only what will be attempted, and a question with
-  // parts contributes its parts rather than itself.
-  function examCounts(p) {
-    const t = PAPER.totals(p);
-    return { qs: t.questions, mk: t.marks };
-  }
-  // Test mode: the front-page entry to practice exams. Lists every imported paper
-  // and is where a paper is sat. Empty until a paper is imported, with a clear
-  // pointer to the Create tab (papers are teacher-imported, not built in).
-  function examHome() {
-    EXAM.gen++;                                    // whatever sitting was open has ended
-    if (gated()) return authScreen();
-    view = "test"; session = null; currentTopic = null;
-    const papers = examList();
-    app.innerHTML = `
-      ${nav()}
-      ${cloudBarHTML()}
-      <div class="hi">Test mode</div>
-      <div class="hi-s">Sit a full practice exam, guided. You get feedback after every question and a mark breakdown at the end.${state.endpoint ? "" : " Answers that need the marker stay unmarked until your teacher connects marking."}</div>
-      ${papers.length ? `<div class="exam-list">
-        ${papers.map(p => {
-          const c = examCounts(p);
-          return `<div class="exam-row">
-            <div class="exam-rowmain"><span class="exam-rowname">📝 ${esc(p.name)}</span>
-              <span class="exam-rowmeta">${esc(examCourse(p))} · ${c.qs} question${c.qs === 1 ? "" : "s"} · ${c.mk} mark${c.mk === 1 ? "" : "s"}${p.time ? " · " + esc(p.time) : ""}</span></div>
-            <div class="exam-rowacts"><button class="btn sm" data-examsit="${esc(p.id)}">Sit this paper</button>
-              <button class="btn sm ghost danger" data-examdel="${esc(p.id)}">Delete</button></div>
-          </div>`;
-        }).join("")}
-      </div>` : `<div class="exam-empty">
-        <p class="exam-emptyh">No practice exams yet</p>
-        <p>Practice exams are imported, not built in. Paste a paper's JSON in the Create tab and it will appear here, ready to sit.</p>
-        <button class="btn sm" id="examgocreate">Go to Create to import one</button>
-      </div>`}`;
-    wireNav();
-    wireCloudBar();
-    app.querySelectorAll("[data-examsit]").forEach(b => b.onclick = () => examStartById(b.dataset.examsit));
-    app.querySelectorAll("[data-examdel]").forEach(b => b.onclick = () => {
-      if (!confirm("Delete this practice exam?")) return;
-      state.exams = (state.exams || []).filter(x => x.id !== b.dataset.examdel); save(); examHome();
-    });
-    const gc = $("#examgocreate"); if (gc) gc.onclick = () => { view = "create"; builder(); };
-  }
-
   // WHAT IS WRONG WITH THIS PAPER, ALL OF IT, AND WHICH KIND OF WRONG.
   //
   // This function used to be forty lines of checks that returned strings, and the
@@ -2345,169 +2286,7 @@
   // subject's marker, and let in when every question marks from its own key
   // (UX-TEST-23, decision 21).
   function examineExam(d) { return PAPER.examine(d, { packages: esAllSubjects().subjects || {} }); }
-  // What the import box says. A refusal names the worst thing first and says how
-  // many others there are, because the count is the difference between "fix this"
-  // and "this file needs work".
-  function examVerdictText(v) {
-    const worst = v.findings.filter(f => f.state === v.state);
-    const head = worst.length ? worst[0].message : "this paper cannot be imported";
-    const rest = v.findings.length - 1;
-    const where = worst.length && worst[0].path ? " (" + worst[0].path + ")" : "";
-    return head + where + (rest > 0 ? " — and " + rest + " other" + (rest === 1 ? "" : "s") + "." : ".");
-  }
-
-  function importExamFromBox(data, msg) {
-    const v = examineExam(data);
-    if (!v.sittable) return msg.textContent = examVerdictText(v);
-    // The curriculum block travels with the paper. It was the five fields below
-    // and nothing else, so a subjectKey written beside them was discarded at the
-    // door and the paper reached the marker with no identity at all.
-    // EVERYTHING THE PACKAGE SAID, NOT THE EIGHT FIELDS THIS FUNCTION KNEW.
-    //
-    // This rebuilt the paper from a fixed whitelist, so anything the contract
-    // gained afterwards was discarded at the door: a declared total, a source, a
-    // package version, a syllabus reference. Nothing authored them yet, which is
-    // the only reason it had not cost anything. The paper is carried whole and
-    // the runtime's own id is put on top of it, so a field added to the contract
-    // survives the round trip without this line being edited again.
-    const paper = Object.assign({}, data, {
-      id: "exam-" + Date.now(),
-      name: data.name || "Practice exam",
-      subject: data.subject || "",
-      curriculum: Object.assign({}, data.curriculum || {}),
-      time: data.time || "", instructions: data.instructions || "",
-    });
-    state.exams.push(paper); save();
-    // A thin paper imports. Saying nothing about it would be the quiet kind of
-    // normalisation this architecture keeps refusing: the student can sit it, and
-    // whoever imported it should know what it does not carry.
-    const thin = v.findings.filter(f => f.state === PAPER.STATE.thin).length;
-    builder("Imported ✓ — open Test mode to sit it." +
-      (thin ? " " + thin + " note" + (thin === 1 ? "" : "s") + " on what this paper does not carry." : ""));
-  }
-  function examStartById(id) { const p = examList().find(x => x.id === id); if (p) examPick(p); }
-  // Sit the whole paper, or just the sections chosen on the picker. `picks` is an
-  // array of section indexes; omitting it sits everything.
-  function examStart(paper, picks) {
-    const all = (paper.sections || []).map((_, i) => i);
-    const sit = (Array.isArray(picks) && picks.length) ? all.filter(i => picks.indexOf(i) >= 0) : all;
-    const seq = [];
-    (paper.sections || []).forEach((sec, si) => {
-      if (sit.indexOf(si) < 0) return;                 // not sitting this section
-      seq.push({ kind: "section", si, sec });
-      // A parent is not sequenced: nobody answers "Question 21". Its parts are,
-      // in order, each carrying the parent it belongs to so the shared stimulus
-      // and instructions can be read rather than copied into it.
-      (sec.questions || []).forEach((q, qi) => {
-        if (!PAPER.isParent(q)) {
-          seq.push({ kind: "q", si, qi, pi: null, sec, q, parent: null, display: PAPER.numberOf(q) });
-          return;
-        }
-        PAPER.partsOf(q).forEach((part, pi) => seq.push({
-          kind: "q", si, qi, pi, sec, q: part, parent: q,
-          display: PAPER.displayNumber(PAPER.numberOf(q), PAPER.labelOf(part, pi)),
-        }));
-      });
-    });
-    seq.push({ kind: "end" });
-    EXAM.paper = paper; EXAM.sit = sit; EXAM.seq = seq; EXAM.pos = 0; EXAM.results = {}; EXAM.answers = {}; EXAM.choice = {};
-    EXAM.gen++;
-    examRender();
-  }
-  // The picker: sit the whole paper or any combination of its sections, so a student
-  // can drill just multiple choice, just short answer, or just the extended response.
-  function examPick(paper) {
-    const secs = paper.sections || [];
-    const counts = secs.map((sec, i) => {
-      const t = PAPER.totals({ sections: [sec] });
-      return { qs: t.questions, mk: t.marks };
-    });
-    const tot = counts.reduce((a, c) => ({ qs: a.qs + c.qs, mk: a.mk + c.mk }), { qs: 0, mk: 0 });
-    app.innerHTML = `
-      <div class="exam-bar"><button class="x" id="exampickquit" title="Back">←</button>
-        <span class="lbl">${esc(paper.name)}</span></div>
-      <div class="exam-wrap"><div class="exam-sectionintro" style="text-align:left">
-        <div class="exam-sec">What do you want to sit?</div>
-        <p class="exam-instr">Sit the whole paper, or tick just the sections you want to practise.</p>
-        <div class="exam-picks">
-          ${secs.map((sec, i) => `<label class="exam-pick"><input type="checkbox" data-exampick="${i}" checked>
-            <span class="exam-pickmain"><span class="exam-pickname">${esc(sec.name || ("Section " + (i + 1)))}</span>
-            <span class="exam-pickmeta">${counts[i].qs} question${counts[i].qs === 1 ? "" : "s"} · ${counts[i].mk} mark${counts[i].mk === 1 ? "" : "s"}</span></span></label>`).join("")}
-        </div>
-        <div class="exam-pickrow">
-          <span class="es-help" id="exampicksum">${tot.qs} questions · ${tot.mk} marks</span>
-          <span class="exam-pickbtns">
-            <button class="btn ghost sm" id="exampickall">Select all</button>
-            <button class="btn ghost sm" id="exampicknone">Clear</button>
-            <button class="btn" id="exampickgo">Start</button>
-          </span>
-        </div>
-      </div></div>`;
-    const boxes = () => Array.from(app.querySelectorAll("[data-exampick]"));
-    const chosen = () => boxes().filter(b => b.checked).map(b => Number(b.dataset.exampick));
-    const sync = () => {
-      const c = chosen();
-      const qs = c.reduce((n, i) => n + counts[i].qs, 0), mk = c.reduce((n, i) => n + counts[i].mk, 0);
-      $("#exampicksum").textContent = c.length ? `${qs} question${qs === 1 ? "" : "s"} · ${mk} mark${mk === 1 ? "" : "s"}` : "nothing selected";
-      $("#exampickgo").disabled = !c.length;
-    };
-    boxes().forEach(b => b.onchange = sync);
-    $("#exampickall").onclick = () => { boxes().forEach(b => b.checked = true); sync(); };
-    $("#exampicknone").onclick = () => { boxes().forEach(b => b.checked = false); sync(); };
-    $("#exampickquit").onclick = examHome;
-    $("#exampickgo").onclick = () => examStart(paper, chosen());
-    sync();
-  }
-  function examTotals() {
-    // Count only ACTIVE questions. In an either/or section that is the chosen
-    // question; before the choice is made, count the first option as representative
-    // so the paper's mark total is right from the start.
-    const qs = EXAM.seq.filter(x => {
-      if (x.kind !== "q") return false;
-      const sec = EXAM.paper.sections[x.si];
-      if (!examChooseCount(sec)) return true;
-      const c = EXAM.choice[x.si];
-      return c === undefined ? x.qi < examChooseCount(sec) : c === x.qi;
-    });
-    // ONLY A MARK ADDS UP. This reduce read g.score off every stored result, and
-    // a refusal has no score, so one unresolved question turned the paper total
-    // into NaN and said so on screen. tally() reads the outcome first and a
-    // question nobody marked still costs its marks, because a student refused a
-    // mark on a twenty-mark question has not been set a shorter paper.
-    const t = ASSESS.tally(qs.map(x => ({ marks: x.q.marks, result: EXAM.results[examKey(x)] })));
-    return { total: qs.length, maxMarks: t.max, done: t.done, got: t.got,
-             refused: t.refused, failed: t.failed };
-  }
-  function examBar() {
-    const t = examTotals();
-    return `<div class="exam-bar"><button class="x" id="examquit" title="Leave this paper">←</button>
-      <span class="lbl">${esc(EXAM.paper.name)}</span>
-      <span class="exam-progress">${t.done}/${t.total} answered · ${t.got}/${t.maxMarks} marks${
-        (t.refused + t.failed) ? " · " + (t.refused + t.failed) + " not marked" : ""}</span></div>`;
-  }
-  function examQuit() { if (confirm("Leave this paper? Your progress on this attempt is not saved.")) examHome(); }
-  // Render a source/stimulus block (shared section source or per-question stimulus).
-  // Accepts a plain string, or an object with caption/text/img/charts.
-  // A question can hang more than one thing above itself. The contract accepts a
-  // list or a single object; this draws either without the callers caring which,
-  // and numbers them only when there is more than one to tell apart.
-  function examSourcesHTML(holder, label) {
-    const list = PAPER.resourcesOf(holder);
-    return list.map((r, i) => examSourceHTML(r, list.length > 1 ? label + " " + (i + 1) : label)).join("");
-  }
   function examWireSources(holder) { PAPER.resourcesOf(holder).forEach(r => wireStimulus(r)); }
-  function examSourceHTML(src, label) {
-    if (!src) return "";
-    let inner = "";
-    if (typeof src === "string") inner = `<p>${esc(src)}</p>`;
-    else {
-      if (src.caption) inner += `<p class="exam-srccap">${esc(src.caption)}</p>`;
-      if (src.text) inner += `<p>${esc(src.text)}</p>`;
-      if (src.img) inner += `<img class="exam-srcimg" src="${esc(src.img)}" alt="${esc(src.caption || "source")}" title="Tap to enlarge">`;
-      if (Array.isArray(src.charts)) inner += src.charts.map((c, i) => rvChartHTML(c, i)).join("");
-    }
-    return `<div class="exam-source"><div class="exam-srclbl">${esc(label)}</div><div class="exam-srcbody">${inner}</div></div>`;
-  }
   // Data displays (graphs, tables, Gantt charts) are rendered as images and scale to
   // the column, which can make small print hard to read. Tapping one opens it full
   // screen so a student can actually read the figures they are answering on.
@@ -2521,152 +2300,6 @@
       document.body.appendChild(box);
       document.addEventListener("keydown", function esc2(e) { if (e.key === "Escape") { shut(); document.removeEventListener("keydown", esc2); } });
     });
-  }
-  function examRender() {
-    const item = EXAM.seq[EXAM.pos];
-    if (!item || item.kind === "end") return examResults();
-    // Skip the questions a student did not choose in an either/or section.
-    if (item.kind === "q" && !examIsActive(item.si, item.qi)) { EXAM.pos++; return examRender(); }
-    if (item.kind === "section") return examRenderSection(item);
-    return examRenderQuestion(item);
-  }
-  function examRenderSection(item) {
-    const sec = item.sec;
-    const pick = examChooseCount(sec);
-    const qs = sec.questions || [];
-    // THE CONTRACT COUNTS THIS, because the section intro is a promise about what
-    // the student is walking into. Counting the array told them "3 questions"
-    // before a section they answer eight times, and reading a parent's own `marks`
-    // read a field a parent does not have to carry, so a question with four
-    // five-mark parts and no authored aggregate announced itself as worth nothing.
-    // `qn` stays the number of top-level options where the section is an either/or,
-    // because that IS what they are choosing between.
-    const t = PAPER.totals({ sections: [sec] });
-    const qn = pick ? qs.length : t.questions;
-    const mk = t.marks;
-    // Either/or: the student picks which question to attempt before starting.
-    const body = pick
-      ? `<p class="exam-meta">${mk} mark${mk === 1 ? "" : "s"} · choose ${pick} of ${qn}</p>
-         ${examSourcesHTML({ stimulus: sec.source }, "Source material")}
-         <div class="exam-choices">${qs.map((q, qi) =>
-           `<button class="exam-choice" data-examchoose="${qi}"><span class="exam-choicelbl">${esc(q.label || ("Question " + (qi + 1)))}</span><span class="exam-choicetext">${esc(q.prompt)}</span></button>`).join("")}</div>`
-      : `<p class="exam-meta">${qn} question${qn === 1 ? "" : "s"} · ${mk} mark${mk === 1 ? "" : "s"}</p>
-         ${examSourcesHTML({ stimulus: sec.source }, "Source material")}
-         <button class="btn" id="exambegin">Begin ${esc(sec.name || "section")}</button>`;
-    app.innerHTML = `${examBar()}
-      <div class="exam-wrap"><div class="exam-sectionintro">
-        <div class="exam-sec">${esc(sec.name || "Section")}</div>
-        ${sec.instructions ? `<p class="exam-instr">${esc(sec.instructions)}</p>` : ""}
-        ${body}
-      </div></div>`;
-    $("#examquit").onclick = examQuit;
-    const bg = $("#exambegin"); if (bg) bg.onclick = () => { EXAM.pos++; examRender(); };
-    app.querySelectorAll("[data-examchoose]").forEach(b => b.onclick = () => {
-      EXAM.choice[item.si] = Number(b.dataset.examchoose); EXAM.pos++; examRender();
-    });
-    examWireSources({ stimulus: sec.source }); wireGlossary(); examWireLightbox();
-  }
-  function examRenderQuestion(item) {
-    const { q, sec, si, qi } = item;
-    const key = examKey(item);
-    const t = examTotals();
-    // WHAT THE PAPER CALLS THIS QUESTION, IF IT SAYS.
-    //
-    // This counted the student's position and called it the question number,
-    // which is a different fact. The shipped paper already disagrees with itself
-    // because of it: its business report is the 34th question a student reaches
-    // and the prompt calls it Question 25. An authored number is the paper's own
-    // answer and wins; position is what is left when nothing is authored.
-    const authored = item.display;
-    const pos = EXAM.seq.slice(0, EXAM.pos + 1).filter(x => x.kind === "q").length;
-    const num = authored || pos;
-    // THE QUESTION'S OWN INSTRUCTIONS (UX-TEST-10). Only a parent's used to render,
-    // above its parts, so a leaf question's instructions reached nobody: not the
-    // student, and not the marker either. They sit above the question's own
-    // source, because the one authored example says "use the case study below"
-    // and it should be below. A report's only: see reportInstrHTML.
-    const ownInstr = reportInstrHTML(q);
-    app.innerHTML = `${examBar()}
-      <div class="exam-wrap"><div class="exam-q">
-        <div class="exam-sec small">${esc(sec.name || "")}</div>
-        ${examSourcesHTML({ stimulus: sec.source }, "Source material")}
-        ${item.parent && item.parent.instructions ? `<p class="exam-instr">${esc(item.parent.instructions)}</p>` : ""}
-        ${examSourcesHTML(item.parent, "Source")}
-        <div class="exam-qhead">Question ${esc(String(num))}${authored ? "" : " of " + t.total} · ${q.marks} mark${q.marks === 1 ? "" : "s"}</div>
-        ${ownInstr}
-        ${examSourcesHTML(q, "Source")}
-        <div class="exam-prompt">${linkGlossary(q.prompt)}</div>
-        <div id="answerzone">${answerInput(q)}</div>
-        ${answerShapeBlock(item.parent && !q.stimulus ? Object.assign({}, q, { stimulus: item.parent.stimulus }) : q)}
-        ${submitRow(q)}
-        <div id="sheet"></div>
-      </div></div>`;
-    const prev = EXAM.answers[key];
-    if (prev && $("#ans")) $("#ans").value = prev;
-    $("#examquit").onclick = examQuit;
-    examWireAnswer(item, key);
-    examWireSources({ stimulus: sec.source }); examWireSources(item.parent); examWireSources(q);
-    wireGlossary(); examWireLightbox();
-  }
-  function examWireAnswer(item, key) {
-    const q = item.q;
-    const f = drawFormat(q);
-    if (f === "multiple_choice") {
-      app.querySelectorAll(".choice").forEach(b => b.onclick = () => {
-        app.querySelectorAll(".choice").forEach(x => x.onclick = null);
-        const g = gradeMC(q, +b.dataset.i);
-        b.classList.add(g.correct ? "right" : "wrong");
-        EXAM.answers[key] = q.choices[+b.dataset.i].t; EXAM.results[key] = g;
-        examSheet(item, key, g);
-      });
-      return;
-    }
-    const ch = $("#check");
-    if (ch) ch.onclick = () => examSubmit(item, key);
-  }
-  // Marking one answer, from its Submit button or from "Try marking again".
-  //
-  // TEST MODE NEVER TAKES A DEMO GRADE (UX-TEST-22). Every marker call here
-  // passes noDemo, so a marker that is unreachable, refuses, times out or
-  // replies with something that is not a mark leaves the answer unmarked: kept,
-  // shown as not marked yet, counted in nothing. `examOnlyMarks` is the second
-  // line of defence, for any route that still produces a demo grade.
-  //
-  // THE REPLY HAS TO STILL BELONG HERE. Marking can take 45 seconds, and in that
-  // time a student can leave and sit another paper, or change the answer and
-  // submit again. A result is stored only if the sitting is the same object and
-  // the answer it marked is still the answer on record, because a question key
-  // is only a position and would otherwise land a mark on a different paper's
-  // question, or attach an old answer's mark to a new answer.
-  async function examSubmit(item, key) {
-    const q = item.q, f = drawFormat(q), ch = $("#check");
-    const ans = ($("#ans") && $("#ans").value || "").trim();
-    if (!ans) { toast("Write your answer first."); return; }
-    const wasLabel = ch ? ch.textContent : "";
-    const sitting = EXAM.results, gen = EXAM.gen;
-    EXAM.answers[key] = ans;
-    if (ch) { ch.disabled = true; ch.textContent = "Checking…"; }
-    app.querySelectorAll("#sheet button").forEach(b => { b.disabled = true; });
-    let g;
-    try {
-      if (f === "calculation") g = gradeCalc(q, ans);
-      else if (ASSESS.writtenModeOf(f) === "extended") g = await gradeWritten(q, ans, { noDemo: true });
-      else g = await gradeShort(q, ans);
-    } catch (e) {
-      g = ASSESS.fail("MARKING_STOPPED", "This response was not marked: marking stopped before it finished.",
-        { max: Number(q.marks) || 0, retry: true });
-    }
-    g = examOnlyMarks(g, q);
-    if (EXAM.gen !== gen || EXAM.results !== sitting || EXAM.answers[key] !== ans) return;
-    // The audit found this button still reading "Checking…" after a refusal,
-    // beside a score of undefined/undefined. Nothing was spent, so the control
-    // that spends it comes back and says what it does.
-    if (ch && !isMarked(g)) { ch.disabled = false; ch.textContent = wasLabel; }
-    EXAM.results[key] = g;
-    // Drawn only while its own question is on screen. Leaving the paper moves the
-    // sitting's generation on (examHome), so a reply never reaches the Test mode
-    // home or a Study card: it has already returned above.
-    if (EXAM.seq[EXAM.pos] === item) examSheet(item, key, g);
   }
   function examOnlyMarks(g, q) {
     if (g && g.kind === "demo") return ASSESS.fail("DEMO_NOT_ALLOWED",
@@ -2729,22 +2362,6 @@
     // answer without asking anyone (UX-TEST-22). Study mode still uses it.
     return gradeWritten(q, answer, { noDemo: true });
   }
-  // The checklist, for a weighted question and an unweighted one. The only
-  // difference is the sentence underneath: where the paper authored a weighting
-  // it can be stated, and where it did not, the points are described as what
-  // they are rather than made to imply an arithmetic nobody wrote.
-  function pointsHTML(g, ratio) {
-    const pts = g.points || [];
-    const hits = pts.filter(p => p.hit).length;
-    const rule = g.weighted
-      ? "One mark for each point addressed. " + pts.length + " points, " + g.max + " marks."
-      : "These are the key points considered in marking. They are not one mark each.";
-    return `<div class="exam-pointhead">${hits} of ${pts.length} key points addressed</div>` +
-      `<div class="exam-points">${pts.map(pt =>
-        `<div class="exam-pt ${pt.hit ? "hit" : "miss"}"><span class="exam-ptmark">${pt.hit ? "✓" : ""}</span><span class="exam-ptbody">${esc(pt.text)}${(!pt.hit && pt.hint) ? `<span class="exam-pthint">${esc(pt.hint)}</span>` : ""}</span></div>`).join("")}</div>` +
-      `<div class="exam-pointrule">${esc(rule)}</div>` +
-      (g.model ? `<details ${ratio < 0.7 ? "open" : ""}><summary>Model answer</summary><p>${linkGlossary(g.model)}</p></details>` : "");
-  }
   // THE MARKER'S OWN SUMMARY, PREFERRED OVER THE DERIVED COPY OF IT.
   //
   // `overall` is a legacy field finalize derives from `summary`, and for a long
@@ -2756,146 +2373,1192 @@
   function fbSummary(fb) {
     return (fb && (fb.summary || (fb.overall && fb.overall.summary))) || "";
   }
-  function examSheetHTML(q, g) {
-    // A response nothing judged gets no mood, no score and no ratio. Everything
-    // below this line assumes two finite numbers, which is exactly the assumption
-    // that produced "undefined/undefined" under the heading "Not yet".
-    if (!isMarked(g)) return unmarkedHTML(q, g);
-    const ratio = g.max ? g.score / g.max : 0;
-    const mood = ratio >= 0.95 ? ["great", "Full marks"] : ratio >= 0.6 ? ["good", "Most of it"] : ratio >= 0.3 ? ["mid", "Partly there"] : ["low", "Not yet"];
-    let body = "";
-    if (g.kind === "mc") body = `<p><b>${g.correct ? "Correct." : "Not this one."}</b> ${esc(g.why)}</p>${g.correct ? "" : `<p>Answer: <b>${esc(g.answerText)}</b></p>`}`;
-    else if (g.kind === "calc") body = `<p>${g.correct ? "Correct." : "Expected <b>" + esc(g.model) + "</b>."}</p>${g.working ? `<p class="working"><b>Working:</b> ${esc(g.working)}</p>` : ""}`;
-    else if (g.kind === "points") body = pointsHTML(g, ratio);
-    else if (g.kind === "local") body = `${(g.matched.length || g.missing.length) ? `<div class="chips">${g.matched.map(t => `<span class="chip">${esc(t)} ✓</span>`).join("")}${g.missing.map(t => `<span class="chip todo" data-term="${esc(t)}">${esc(t)}</span>`).join("")}</div>` : ""}<details ${ratio < 0.7 ? "open" : ""}><summary>Model answer</summary><p>${linkGlossary(g.model)}</p></details>`;
-    else { const fb = g.fb || {}; body = (Array.isArray(g.points) && g.points.length ? pointsHTML(g, ratio) : "") + `${fbSummary(fb) ? `<p>${esc(fbSummary(fb))}</p>` : ""}${(fb.criteria || []).map(c => `<div class="crit ${c.status}"><span class="dot"></span><b>${esc(c.name)}:</b> ${esc(c.comment || c.status)}</div>`).join("")}${(fb.missing_vocabulary || []).length ? `<div class="chips">${fb.missing_vocabulary.map(t => `<span class="chip todo">${esc(t)}</span>`).join("")}</div>` : ""}${q.model ? `<details><summary>What a top answer covers</summary><p>${linkGlossary(q.model)}</p></details>` : ""}`; }
-    return `<div class="sheet ${mood[0]}"><div class="head"><div class="score">${g.score}<small>/${g.max}</small></div><h3>${mood[1]}</h3></div><div class="bd">${body}</div></div>`;
+  // ===================== TEST MODE (Slice A, decisions 16 to 22) =====================
+  //
+  // Four screens, each the approved desktop design, and one record of what the
+  // student did:
+  //
+  //   Library    Page 1   papers with their attempt status, question types
+  //   Import     Page 2   a file checked before anything is added
+  //   Overview   Page 3   what will be sat, chosen, started, resumed or restarted
+  //   Sitting    states 8, 11 to 15, the shell around the five frozen formats
+  //
+  // What a student did lives in state.attempts and every rule about it is in
+  // tools/contract/attempts.js (ATT). This code renders what ATT returns, records
+  // what the student does through ATT, and saves. It counts nothing itself.
+  //
+  // THE HEADER BELONGS TO THE OPEN PAPER (decision 4). index.html carries a Study
+  // subject as a literal. In Test Mode the header names the subject of the paper
+  // that is open, resolved from its own curriculum, and nothing at all when no
+  // paper is open. It never falls back to whatever Study last showed.
+  var TM_HEADER = (() => { const u = document.querySelector("header .unit"); return u ? u.innerHTML : ""; })();
+  function tmUnit(subject) {
+    const u = document.querySelector("header .unit");
+    if (u) u.innerHTML = subject ? `<b>${esc(subject)}</b>Test mode` : "Test mode";
+    document.body.classList.add("tm-on");
   }
-  function examSheet(item, key, g) {
-    const last = !EXAM.seq.slice(EXAM.pos + 1).some(x => x.kind === "q");
-    // TEST MODE IS READ-ONLY REVIEW, AND THIS IS WHERE IT STOPPED BEING ONE.
-    //
-    // A marked written response returns `paragraphs[]`, and that put `Work
-    // through the issues` in this action row, one click from `Try again`. It
-    // opens the Essay Practice workspace: the Clear / Better / Band 6 rungs as
-    // pickable model sentences, a rewrite box, per-criterion score pills and
-    // band descriptors marked "you are here". Every one of those is on the list
-    // of things a marked paper must not show - criterion mini-marks, band
-    // descriptors, generated replacement prose - and they were reachable from
-    // every marked paper in the product.
-    //
-    // The workspace is not deleted. It is Essay Practice's, it is good, and it
-    // is where revision is taught. What closes is the door out of an exam into
-    // it: Test Mode explains the assessment, Essay Practice teaches the rewrite.
-    const askable = ["points", "local"].includes(g.kind) && !!state.endpoint;
-    const reviewBtn = askable ? `<button class="btn ghost" id="examreview">What would make this stronger →</button>` : "";
-    // The bar is rendered once, at the top of the question screen, so it was a
-    // question behind all the way through a paper. That is tolerable for a score
-    // and not for "not marked", which is the one thing a student needs to see at
-    // the moment it becomes true.
-    const bar = document.querySelector(".exam-progress");
-    if (bar) {
-      const t2 = examTotals();
-      bar.textContent = t2.done + "/" + t2.total + " answered · " + t2.got + "/" + t2.maxMarks + " marks" +
-        ((t2.refused + t2.failed) ? " · " + (t2.refused + t2.failed) + " not marked" : "");
+  function tmLeave() {
+    const u = document.querySelector("header .unit");
+    if (u && TM_HEADER != null) u.innerHTML = TM_HEADER;
+    document.body.classList.remove("tm-on", "tm-sitting");
+  }
+  function tmPackages() { return esAllSubjects().subjects || {}; }
+  function tmSubjectOf(paper) {
+    const c = ASSESS.curriculumOf(paper) || {};
+    const a = ASSESS.resolveAuthority({ curriculum: c, packages: tmPackages() });
+    return a.ok ? a.label : (c.course || "");
+  }
+  const tmPlural = (n, w) => n + " " + w + (n === 1 ? "" : "s");
+  const tmList = a => a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1];
+  const TM_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  function tmDay(iso) {
+    try {
+      const p = new Intl.DateTimeFormat("en-AU", { timeZone: "Australia/Sydney", day: "numeric", month: "numeric" }).formatToParts(new Date(iso));
+      return p.find(x => x.type === "day").value + " " + TM_MONTHS[Number(p.find(x => x.type === "month").value) - 1];
+    } catch (e) { return ""; }
+  }
+  const TM_TYPES = [
+    ["multiple_choice", "Multiple choice"], ["short_answer", "Short answer"], ["calculation", "Calculations"],
+    ["business_report", "Business report"], ["extended_response", "Extended response"],
+  ];
+  const tmTypeName = f => (TM_TYPES.find(x => x[0] === f) || [f, f])[1];
+  const TM_POLICY = `<span class="tm-policy"><span class="tm-dot"></span>Practice · marked as you go</span>`;
+  function tmNow() { return new Date().toISOString(); }
+  function tmRec(key) { return state.attempts[key] || { current: null, last: null }; }
+  // Which sections an attempt covers, said only when it is not the whole paper,
+  // in the sections' own names (decision 22).
+  function tmScope(a) {
+    if (!a || a.scope !== "paper") return "";
+    const p = ATT.byId(state.exams, a.paper);
+    if (!p || a.sections.length === p.sections.length) return "";
+    return tmList(a.sections.map(i => ATT.sectionShort(p.sections[i], i))) + " only";
+  }
+  function tmFacts(p) {
+    const t = PAPER.totals(p);
+    return [tmPlural(t.questions, "question"), tmPlural((p.sections || []).length, "section"), tmPlural(t.marks, "mark"), p.time].filter(Boolean).join(" · ");
+  }
+  function tmIdentityLine(p) {
+    const c = ASSESS.curriculumOf(p) || {};
+    return [tmSubjectOf(p) || c.course || "", c.stage || ""].filter(Boolean).join(" · ");
+  }
+  function tmShell(inner, opts) {
+    return `${nav()}${(opts && opts.cloud) ? cloudBarHTML() : ""}<div class="tm${opts && opts.cls ? " " + opts.cls : ""}">${inner}</div>`;
+  }
+  const tmBack = (label, id) => `<button type="button" class="tm-back" id="${id || "tmback"}"><span aria-hidden="true">← </span>${esc(label || "Test mode")}</button>`;
+
+  // ---- Page 1: the library ------------------------------------------------------
+  function examHome() { return tmLibrary(); }
+  function tmLibrary() {
+    EXAM.gen++;                                    // whatever sitting was open has ended
+    if (gated()) return authScreen();
+    view = "test"; session = null; currentTopic = null;
+    tmUnit("");
+    const papers = ATT.library(state.exams).slice().reverse();
+    const counts = ATT.bankCounts(state.exams, tmPackages());
+    const tiles = `<section class="tm-types" aria-labelledby="tmt1">
+        <div class="tm-sechead"><h2 id="tmt1">Practise a question type</h2>
+          <p class="tm-secnote">From ${tmPlural(papers.length, "paper")} in your library</p></div>
+        <ul class="tm-tiles">${TM_TYPES.map(([f, name]) => {
+          const rec = tmRec(ATT.typeKey(f));
+          const act = rec.current
+            ? `<button type="button" class="tm-btn ghost sm" data-tmtype="${f}">Resume practice</button>`
+            : counts[f] ? `<button type="button" class="tm-btn ghost sm" data-tmtype="${f}" aria-label="Start ${esc(name.toLowerCase())} practice">Start practice</button>`
+            : `<p class="tm-none">None available yet</p>`;
+          return `<li class="tm-tile"><h3>${esc(name)}</h3><p class="tm-avail"><b>${counts[f]}</b> available</p>${act}</li>`;
+        }).join("")}</ul>
+      </section>`;
+    const cards = papers.map(tmCard).join("");
+    const body = papers.length ? tiles + `<section class="tm-papers" aria-labelledby="tmpp">
+        <div class="tm-sechead"><h2 id="tmpp">Practice papers</h2><span class="tm-spacer"></span>
+          <button type="button" class="tm-btn ghost sm" id="tmimport">Import a paper</button></div>
+        ${cards}
+      </section>`
+      : `<section class="tm-empty" aria-labelledby="tme1">
+        <h2 id="tme1">No papers yet</h2>
+        <p>Import a paper from its JSON file. It is checked before it is added, and you will see the subject and course it belongs to before you start it.</p>
+        <button type="button" class="tm-btn" id="tmimport">Import a paper</button>
+      </section>`;
+    app.innerHTML = tmShell(`
+      <div class="tm-top">
+        <h1>Test mode</h1>
+        <p class="tm-lede">Practise individual question types or work through a complete paper. Answers are marked as you go and your progress is saved.${state.endpoint ? "" : " Answers that need the marker stay unmarked until your teacher connects marking."}</p>
+        ${TM_POLICY}
+      </div>
+      ${body}`, { cloud: true, cls: "tm-lib" });
+    wireNav(); wireCloudBar();
+    const im = $("#tmimport"); if (im) im.onclick = () => tmImport();
+    app.querySelectorAll("[data-tmtype]").forEach(b => b.onclick = () => tmTypeOverview(b.dataset.tmtype));
+    app.querySelectorAll("[data-examsit],[data-tmopen]").forEach(b => b.onclick = () => tmPaperOverview(b.dataset.examsit || b.dataset.tmopen));
+    app.querySelectorAll("[data-examresume]").forEach(b => b.onclick = () => tmSit(ATT.paperKey(b.dataset.examresume)));
+    app.querySelectorAll("[data-examresults]").forEach(b => b.onclick = () => tmResults(ATT.paperKey(b.dataset.examresults)));
+    app.querySelectorAll("[data-examdel]").forEach(b => b.onclick = () => {
+      const id = b.dataset.examdel, rec = tmRec(ATT.paperKey(id));
+      const s = rec.current ? ATT.summary(rec.current, state.exams) : null;
+      const msg = s ? "Delete this paper? Your attempt in progress (" + s.answered + " of " + s.total + " answered) will be deleted with it."
+        : rec.last ? "Delete this paper and its completed results?" : "Delete this paper?";
+      if (!confirm(msg)) return;
+      ATT.deletePaper(state, id); save(); tmLibrary();
+    });
+  }
+  function tmCard(p) {
+    const id = ATT.identityOf(p);
+    const rec = tmRec(ATT.paperKey(id));
+    const a = rec.current || rec.last;
+    const s = a ? ATT.summary(a, state.exams) : null;
+    const scope = tmScope(a);
+    let status, actions;
+    if (rec.current) {
+      const pct = s.total ? Math.round(100 * s.answered / s.total) : 0;
+      status = `<span class="tm-state live">In progress</span>
+        <p class="tm-count"><b>${s.answered} of ${s.total}</b> answered${s.flagged ? ` · <span class="tm-flagged">⚑ ${s.flagged} flagged</span>` : ""}${s.notMarked ? ` · ${s.notMarked} not marked` : ""}</p>
+        <div class="tm-pbar" role="progressbar" aria-label="Answered" aria-valuemin="0" aria-valuemax="${s.total}" aria-valuenow="${s.answered}"><i style="width:${pct}%"></i></div>
+        <p class="tm-sub"><b>${s.got}/${s.max}</b> marks so far · saved ${tmDay(rec.current.updatedAt)}</p>`;
+      actions = `<button type="button" class="tm-btn" data-examresume="${esc(id)}">Resume paper</button>
+        ${s.at ? `<p class="tm-where">Picks up at Question ${esc(s.at.display || "")}</p>` : ""}`;
+    } else if (rec.last) {
+      status = `<span class="tm-state done">Completed ${tmDay(rec.last.completedAt)}</span>
+        <p class="tm-score"><b>${s.got}</b> / ${s.max}</p>
+        <p class="tm-sub">${s.answered} of ${s.total} answered${s.notMarked ? ` · ${s.notMarked} not marked` : ""}</p>`;
+      actions = `<button type="button" class="tm-btn" data-examresults="${esc(id)}">View results</button>
+        <button type="button" class="tm-btn ghost" data-tmopen="${esc(id)}">Try again</button>`;
+    } else {
+      status = `<span class="tm-state">Not started</span>`;
+      actions = `<button type="button" class="tm-btn" data-examsit="${esc(id)}">Start paper</button>`;
     }
-    // Not marked: "Try marking again" where another attempt can succeed, and
-    // no "Try again", because the answer is still in its box above and nothing
-    // was marked to try again from. Marked: as before.
-    const remark = examCanRemark(g);
-    const acts = isMarked(g)
-      ? `<button class="btn ghost" id="examretry">Try again</button>${reviewBtn}`
-      : (remark ? `<button class="btn ghost" id="examremark">Try marking again</button>` : "");
-    $("#sheet").innerHTML = examSheetHTML(item.q, g) +
-      `<div class="exam-acts">${acts}<button class="btn" id="examnext">${last ? "Finish paper" : "Continue"}</button></div>`;
-    const rt = $("#examretry"); if (rt) rt.onclick = () => examRender();
-    const rm = $("#examremark"); if (rm) rm.onclick = () => examSubmit(item, key);
-    $("#examnext").onclick = () => { EXAM.pos++; examRender(); };
-    const rb = $("#examreview");
-    if (rb) rb.onclick = () => examDeepReview(item, key);
+    return `<article class="tm-paper" aria-labelledby="tmp-${esc(p.id)}">
+      <div class="tm-who">
+        <p class="tm-kicker">${esc(tmIdentityLine(p))}</p>
+        <h2 id="tmp-${esc(p.id)}"><button type="button" class="tm-title" data-tmopen="${esc(id)}">${esc(p.name || "Untitled paper")}</button></h2>
+        <p class="tm-facts">${esc(tmFacts(p))}</p>
+        ${scope ? `<p class="tm-scope">${esc(scope)}</p>` : ""}
+      </div>
+      <div class="tm-status">${status}</div>
+      <div class="tm-acts">${actions}
+        <button class="tm-del" type="button" data-examdel="${esc(id)}">Delete paper</button>
+      </div>
+    </article>`;
+  }
+
+  // ---- Page 2: import -------------------------------------------------------------
+  // Nothing is stored until Add to library. Choosing another file, going back or
+  // leaving discards the check.
+  const IR = window.MarginalImportRead;
+  const TMI = { text: "", name: "", size: "", pasted: false, r: null };
+  function tmImport(keep) {
+    if (gated()) return authScreen();
+    view = "test"; session = null; currentTopic = null;
+    tmUnit("");
+    if (!keep) { TMI.text = ""; TMI.name = ""; TMI.size = ""; TMI.pasted = false; TMI.r = null; }
+    app.innerHTML = tmShell(`
+      ${tmBack()}
+      <div class="tm-top">
+        <h1>Import a paper</h1>
+        <p class="tm-lede">Choose a paper's JSON file. Marginal checks it, and shows you the subject it belongs to, before anything is added to your library.</p>
+      </div>
+      <input id="tmfile" type="file" accept="application/json,.json" class="tm-sr">
+      <div id="tmimportbody">${TMI.r ? tmImportResult() : tmImportStart()}</div>`, { cls: "tm-imp" });
+    wireNav();
+    $("#tmback").onclick = tmLibrary;
+    const f = $("#tmfile");
+    f.onchange = () => {
+      const file = f.files && f.files[0]; if (!file) return;
+      const rd = new FileReader();
+      rd.onload = () => tmCheck(String(rd.result || ""), file.name, Math.max(1, Math.round(file.size / 1024)) + " KB", false);
+      rd.readAsText(file);
+      f.value = "";
+    };
+    tmWireImport();
+  }
+  function tmImportStart() {
+    return `<label class="tm-drop" for="tmfile" id="tmdrop">
+        <span class="tm-doc big" aria-hidden="true"></span>
+        <span class="tm-dh">Choose a paper's JSON file</span>
+        <span class="tm-ds">or drop it here. It is checked before anything is added.</span>
+        <span class="tm-btn" aria-hidden="true">Choose file</span>
+      </label>
+      <details class="tm-paste"${TMI.pasted ? " open" : ""}><summary>Paste JSON instead</summary>
+        <textarea id="tmpaste" rows="6" aria-label="Paper JSON" placeholder='{"format":"${esc(PAPER.FORMAT)}", ...}'>${TMI.pasted ? esc(TMI.text) : ""}</textarea>
+        <button type="button" class="tm-btn ghost" id="tmcheck">Check this JSON</button>
+      </details>`;
+  }
+  function tmWireImport() {
+    const ck = $("#tmcheck");
+    if (ck) ck.onclick = () => { const t = ($("#tmpaste").value || ""); if (t.trim()) tmCheck(t, "Pasted JSON", "", true); };
+    const dz = $("#tmdrop");
+    if (dz) {
+      dz.ondragover = e => { e.preventDefault(); dz.classList.add("over"); };
+      dz.ondragleave = () => dz.classList.remove("over");
+      dz.ondrop = e => {
+        e.preventDefault(); dz.classList.remove("over");
+        const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (!file) return;
+        const rd = new FileReader();
+        rd.onload = () => tmCheck(String(rd.result || ""), file.name, Math.max(1, Math.round(file.size / 1024)) + " KB", false);
+        rd.readAsText(file);
+      };
+    }
+    const again = () => { const f = $("#tmfile"); if (f) f.click(); };
+    app.querySelectorAll("[data-tmagain]").forEach(b => b.onclick = again);
+    const ep = $("#tmeditpaste"); if (ep) ep.onclick = () => { TMI.r = null; TMI.pasted = true; tmImport(true); };
+    const add = $("#tmadd"); if (add) add.onclick = tmAdd;
+    const lib = $("#tmopenlib"); if (lib) lib.onclick = tmLibrary;
+    const cr = $("#tmgocreate"); if (cr) cr.onclick = () => { tmLeave(); view = "create"; builder(); };
+  }
+  function tmCheck(text, name, size, pasted) {
+    TMI.text = text; TMI.name = name; TMI.size = size; TMI.pasted = pasted;
+    TMI.r = IR.read(text, ATT.library(state.exams), tmPackages());
+    $("#tmimportbody").innerHTML = tmImportResult();
+    tmWireImport();
+    // Focus goes to the verdict the moment it exists, so it is read first.
+    const h = $("#tmrt"); if (h) h.focus();
+  }
+  function tmAdd() {
+    const r = TMI.r;
+    if (!r || r.kind !== "paper" || !r.group.add || r.dup || r.older) return;
+    // The paper is carried whole and the runtime's own id is put on top of it,
+    // so a field the contract gains later survives the round trip.
+    const paper = Object.assign({}, r.paper, { id: "exam-" + Date.now(), name: r.paper.name || "Practice exam",
+      subject: r.paper.subject || "", curriculum: Object.assign({}, r.paper.curriculum || {}),
+      time: r.paper.time || "", instructions: r.paper.instructions || "" });
+    const out = ATT.addPaper(state, paper);
+    if (out.kind === "same" || out.kind === "older") return tmLibrary();
+    save();
+    TMI.r = null;
+    tmLibrary();
+    toast(out.kind === "newer" || out.kind === "different" ? "Replaced with this version. Existing attempts keep the version they started with." : "Added to your library.", 3500);
+  }
+  function tmFileBar() {
+    return `<div class="tm-file"><span class="tm-doc" aria-hidden="true"></span><span class="tm-fn">${esc(TMI.name)}</span>
+      ${TMI.size ? `<span class="tm-fs">${esc(TMI.size)}</span>` : ""}<span class="tm-spacer"></span>
+      ${TMI.pasted ? `<button type="button" class="tm-link" id="tmeditpaste">Edit pasted JSON</button>` : `<button type="button" class="tm-link" data-tmagain>Choose a different file</button>`}</div>`;
+  }
+  function tmVerdict(tone, title, lede, more) {
+    return `<div class="tm-verdict ${tone}">
+      <span class="mark" aria-hidden="true">${tone === "stop" ? "!" : "✓"}</span>
+      <div><h2 id="tmrt" tabindex="-1">${esc(title)}</h2><p>${esc(lede)}</p>${more ? `<p class="more">${more}</p>` : ""}</div>
+    </div>`;
+  }
+  const TM_AGAIN = `<button type="button" class="tm-btn" data-tmagain>Choose a different file</button>`;
+  function tmImportResult() {
+    const r = TMI.r;
+    const tech = items => `<details class="tm-tech"><summary>Details for whoever made this file</summary><ul>${items}</ul></details>`;
+    if (r.kind === "unreadable") return tmFileBar() + `<article class="tm-check" aria-labelledby="tmrt">
+      ${tmVerdict("stop", IR.GROUP.malformed.title, "This file cannot be read as JSON, so it cannot be checked as a paper. It may have been cut off, or it may be a different kind of file.")}
+      ${tech(`<li>${esc(r.error)}</li>`)}
+      <div class="tm-acts2">${TM_AGAIN}</div></article>`;
+    if (r.kind === "flashcards") return tmFileBar() + `<article class="tm-check" aria-labelledby="tmrt">
+      ${tmVerdict("stop", IR.GROUP.unsupported.title, "This is a flashcard set, not a paper. Flashcard sets are imported in Create, where they can be studied.")}
+      <p class="tm-held">${esc(r.name ? '"' + r.name + '", ' : "")}${tmPlural(r.cards, "card")}.</p>
+      <div class="tm-acts2"><button type="button" class="tm-btn" id="tmgocreate">Go to Create</button><button type="button" class="tm-btn ghost" data-tmagain>Choose a different file</button></div></article>`;
+    if (r.kind === "version") return tmFileBar() + `<article class="tm-check" aria-labelledby="tmrt">
+      ${tmVerdict("stop", IR.GROUP.unsupported.title, IR.GROUP.unsupported.lede)}
+      <section class="tm-group stop" aria-labelledby="tmg-u"><h3 id="tmg-u">${esc(IR.GROUP.unsupported.list)}</h3>
+        <ul><li><p class="where">File format</p><p class="what">${esc(r.say)}</p></li></ul></section>
+      <p class="tm-held">Nothing else in the file is read, because this version cannot tell what the rest of it means.</p>
+      ${tech(`<li><code>${esc(r.finding.code)}</code> at <code>${esc(r.finding.path)}</code>. ${esc(r.finding.message)}.</li>`)}
+      <div class="tm-acts2">${TM_AGAIN}</div></article>`;
+    const g = r.group;
+    const grid = `<div class="tm-igrid"><div>${tmIdent(r)}${tmPaperId(r)}</div><div>${tmContents(r)}${g.add ? tmAdds(r.paper) : ""}</div></div>`;
+    if ((r.dup || r.older) && g.add) return tmFileBar() + `<article class="tm-check" aria-labelledby="tmrt">
+      ${tmVerdict("ok", "Already in your library", r.older
+        ? "Your library has version " + r.match.from + " of this paper, which is newer than this file's version " + r.match.to + ". Nothing is added."
+        : "This paper, in this version, is already in your library. Nothing needs adding.")}
+      ${grid}
+      <div class="tm-acts2"><button type="button" class="tm-btn" id="tmopenlib">Open it in your library</button><button type="button" class="tm-btn ghost" data-tmagain>Choose a different file</button></div></article>`;
+    const replaceCopy = !r.replacing ? ""
+      : r.match.kind === "newer" ? "<b>A newer version will replace the paper in your library.</b> Existing attempts will continue using the version they started with."
+      : `<b>This version will replace the paper in your library.</b> Marginal cannot tell whether version ${esc(r.match.to)} is newer than version ${esc(r.match.from)}, so check before replacing. Existing attempts will continue using the version they started with.`;
+    const gs = IR.groups(r);
+    const findings = gs.shown.map(x => `<section class="tm-group ${x.tone}" aria-labelledby="tmg-${x.state}">
+        <h3 id="tmg-${x.state}">${esc(x.title)} <span class="n" aria-hidden="true">${x.count}</span><span class="tm-sr">, ${tmPlural(x.count, "item")}</span></h3>
+        <ul>${x.items.map(i => `<li><p class="where">${esc(i.where)}</p><p class="what">${esc(i.what)}</p></li>`).join("")}</ul>
+      </section>`).join("") +
+      (gs.held ? `<p class="tm-held">${tmPlural(gs.held, "optional note")} will be listed once the file can be added.</p>` : "") +
+      (r.findings.length ? tech(gs.tech.map(t => `<li><code>${esc(t.code)}</code> at <code>${esc(t.path)}</code>. ${esc(t.message)}.</li>`).join("")) : "");
+    return tmFileBar() + `<article class="tm-check" aria-labelledby="tmrt">
+      ${tmVerdict(g.tone, g.title, r.lede, replaceCopy)}
+      ${grid}
+      ${findings}
+      <div class="tm-acts2">${g.add ? `<button type="button" class="tm-btn" id="tmadd">${r.replacing ? "Replace with this version" : "Add to library"}</button><button type="button" class="tm-btn ghost" data-tmagain>Choose a different file</button>` : TM_AGAIN}</div>
+    </article>`;
+  }
+  // The subject is ticked only when the file can be added AND it resolved.
+  function tmIdent(r) {
+    const cur = r.cur, stage = cur.stage || "", st = cur.jurisdiction || "";
+    const claim = [stage, st].filter(Boolean).join(", ");
+    if (r.auth.ok && (r.group.add || r.dup)) return `<div class="tm-ident ok"><h3 class="k">Subject and course</h3>
+      <p class="who">${esc([r.auth.label, stage].filter(Boolean).join(" · "))}</p>
+      <p class="how"><span class="tick" aria-hidden="true">✓</span>Matched to Marginal's ${esc(r.auth.label)} marking criteria</p>
+      ${claim ? `<p class="claim">${esc(claim)}, as stated in the file</p>` : ""}</div>`;
+    const said = cur.course || (r.paper && r.paper.subject) || "";
+    if (!r.auth.ok && r.group.add) return `<div class="tm-ident plain"><h3 class="k">Subject and course</h3>
+      <p class="who">${esc([said, stage].filter(Boolean).join(" · "))}</p>
+      <p class="how">Named by the file. Marginal has no marking for this subject, and this paper does not need it</p>
+      ${claim ? `<p class="claim">${esc(claim)}, as stated in the file</p>` : ""}</div>`;
+    const how = r.auth.ok ? "Named by the file. Not checked further, because the file cannot be used as it is"
+      : said ? "Named by the file, and not matched to any subject in Marginal" : "The file does not say which subject marks it";
+    return `<div class="tm-ident no"><h3 class="k">Subject and course</h3>
+      <p class="who">${said ? esc([said, stage].filter(Boolean).join(" · ")) : "Not identified"}</p>
+      <p class="how">${r.auth.ok ? "" : `<span class="cross" aria-hidden="true">✕</span>`}${esc(how)}</p></div>`;
+  }
+  function tmPaperId(r) {
+    const p = r.paper;
+    const t = r.readable ? PAPER.totals(p) : null;
+    const facts = r.readable ? [tmPlural(t.questions, "question"), tmPlural(p.sections.length, "section"),
+      r.disputed ? "total marks disputed" : tmPlural(t.marks, "mark"), p.time] : [p.time];
+    const v = p.exam && p.exam.version != null && String(p.exam.version) !== "" ? String(p.exam.version) : "";
+    return `<div class="tm-paperid"><h3 class="k">Paper</h3>
+      <p class="title">${esc(p.name || "Untitled paper")}</p>
+      ${v ? `<p class="facts">Version ${esc(v)}${r.replacing ? ` · replaces version ${esc(r.match.from)} in your library` : ""}</p>` : ""}
+      <p class="facts">${esc(facts.filter(Boolean).join(" · "))}</p>
+      ${p.exam && p.exam.source ? `<p class="src">Source: ${esc(p.exam.source)}</p>` : ""}</div>`;
+  }
+  function tmContents(r) {
+    const c = IR.contents(r);
+    if (!c) return `<h3 class="k">Contents</h3><p class="tm-none">The sections could not be read, so the contents cannot be listed.</p>`;
+    return `<h3 class="k">Contents</h3><ul class="tm-csecs">${c.map(x => `<li><span class="sn">${esc(x.name)}</span><span class="sm">${esc(x.meta)}</span></li>`).join("")}</ul>`;
+  }
+  function tmAdds(p) {
+    const a = IR.adds(p, tmPackages());
+    if (!a.total) return "";
+    return `<p class="tm-adds">Adds ${a.total} question${a.total === 1 ? "" : "s"} to <b>Practise a question type</b>: ${esc(tmList(a.parts))}.` +
+      (a.either.length ? ` Both options in ${esc(tmList(a.either))} can be practised.` : "") + `</p>`;
+  }
+
+  // ---- Page 3: overview and practice setup (decision 22) ---------------------------
+  // One shell, two ways in, never one attempt. A paper offers its sections, a type
+  // its questions. An attempt in progress offers Resume (primary) and Start again
+  // (secondary, confirmed, discarding it). A completed attempt's next one is
+  // "Start new attempt". Scope never changes inside an attempt.
+  const TM_HOW = `<h3 class="k">How practice works</h3>
+      <ul class="tm-how">
+        <li>Each answer is marked, with feedback, when you submit it for marking.</li>
+        <li>Move between questions in any order, and flag any you want to come back to.</li>
+        <li>Your answers are saved as you go, so you can leave and resume.</li>
+      </ul>`;
+  function tmSectionSummary(rows) {
+    const on = rows.filter(r => r.on), n = rows.length;
+    const sec = k => k + " section" + (k === 1 ? "" : "s");
+    if (!on.length) return { text: "Choose at least one section to start.", ok: false, whole: false };
+    const q = on.reduce((t, r) => t + r.q, 0), m = on.reduce((t, r) => t + r.m, 0);
+    const which = on.length === n ? (n === 1 ? "The whole paper" : "All " + sec(n))
+      : on.length === 1 ? esc(on[0].short) + " only" : on.length + " of " + sec(n);
+    return { text: "<b>" + which + "</b> · " + tmPlural(q, "question") + " · " + tmPlural(m, "mark"), ok: true, whole: on.length === n };
+  }
+  function tmQuestionSummary(rows, all) {
+    const on = all ? rows : rows.filter(r => r.on), n = rows.length;
+    if (!on.length) return { text: "Choose at least one question to start.", ok: false };
+    const m = on.reduce((t, r) => t + r.m, 0);
+    const which = n === 1 ? tmPlural(1, "question") : all ? "All " + tmPlural(n, "question") : on.length + " of " + tmPlural(n, "question");
+    return { text: "<b>" + which + "</b> · " + tmPlural(m, "mark"), ok: true };
+  }
+  function tmSectionRows(p) {
+    return (p.sections || []).map((sec, si) => {
+      const t = PAPER.totals({ sections: [sec] });
+      let ins = String(sec.instructions || "").trim();
+      const lead = ins.match(/^(\d+) marks?\.\s*/);
+      if (lead && Number(lead[1]) === t.marks) ins = ins.slice(lead[0].length);
+      const pick = Number(sec.choose) || 0;
+      return { si, name: ATT.sectionName(sec, si), short: ATT.sectionShort(sec, si), q: t.questions, m: t.marks, ins,
+               meta: (pick && pick < (sec.questions || []).length ? "choose " + pick + " of " + sec.questions.length : tmPlural(t.questions, "question")) + " · " + tmPlural(t.marks, "mark") };
+    });
+  }
+  // The aside. During partial practice the paper's own instructions stay verbatim,
+  // under "Original paper instructions", with what is actually being sat above
+  // them (decision 22). A whole-paper sitting needs no such line.
+  function tmAboutPaper(p, practice) {
+    const v = ATT.versionOf(p);
+    return `<aside class="tm-about" aria-labelledby="tmab">
+      <h2 id="tmab">About this paper</h2>
+      <div id="tmforthis">${practice ? tmForThis(practice) : ""}</div>
+      ${p.instructions ? `<h3 class="k">Original paper instructions</h3>
+        <blockquote class="tm-ins"><p>${esc(p.instructions)}</p></blockquote>` : ""}
+      ${p.time ? `<h3 class="k">Time</h3>
+        <p class="tm-p">The whole paper allows ${esc(p.time)}. Practice is not timed, so use the paper's times as a guide to pace.</p>` : ""}
+      ${TM_HOW}
+      ${(p.exam && p.exam.source) || v ? `<h3 class="k">Source</h3>
+        <p class="tm-p">${esc((p.exam && p.exam.source) || "")}${(p.exam && p.exam.source) && v ? " · " : ""}${v ? "Version " + esc(v) : ""}</p>` : ""}
+    </aside>`;
+  }
+  function tmForThis(sum) {
+    return sum && sum.ok && !sum.whole ? `<div class="tm-forthis"><h3 class="k">For this practice</h3><p>${sum.text}</p></div>` : "";
+  }
+  function tmPaperOverview(identity) {
+    if (gated()) return authScreen();
+    view = "test"; session = null; currentTopic = null;
+    EXAM.gen++;
+    const p = ATT.library(state.exams).find(x => ATT.identityOf(x) === identity);
+    if (!p) return tmLibrary();
+    const key = ATT.paperKey(identity), rec = tmRec(key);
+    tmUnit(tmSubjectOf(rec.current ? (ATT.byId(state.exams, rec.current.paper) || p) : p));
+    const top = `${tmBack()}
+      <div class="tm-top">
+        <p class="tm-kicker">${esc(tmIdentityLine(p))}</p>
+        <h1>${esc(p.name || "Untitled paper")}</h1>
+        <div class="tm-factrow"><p class="tm-facts">${esc([tmPlural(PAPER.totals(p).questions, "question"), tmPlural(p.sections.length, "section"), tmPlural(PAPER.totals(p).marks, "mark")].join(" · "))}</p>${TM_POLICY}</div>
+      </div>`;
+    if (rec.current) {
+      const a = rec.current, s = ATT.summary(a, state.exams), ap = ATT.byId(state.exams, a.paper) || p;
+      const seq = ATT.sequence(a, state.exams);
+      const pct = s.total ? Math.round(100 * s.answered / s.total) : 0;
+      const rows = a.sections.map(si => {
+        const items = seq.filter(e => e.si === si);
+        const t = ASSESS.tally(items.map(e => ({ marks: ATT.marksOf(e), result: a.results[e.key] })));
+        const flags = items.filter(e => a.flags.indexOf(e.key) >= 0).length;
+        const touched = items.some(e => a.results[e.key]);
+        return { name: ATT.sectionName(ap.sections[si], si), items: items.length, t, flags, touched };
+      });
+      const scope = tmScope(a);
+      const pinned = ATT.versionOf(ap) !== ATT.versionOf(p);
+      app.innerHTML = tmShell(top + `<div class="tm-layout">
+        <section class="tm-panel" aria-labelledby="tmya">
+          <div class="tm-phead"><h2 id="tmya">Your attempt</h2><span class="tm-state live">In progress</span></div>
+          ${pinned ? `<p class="tm-pin">This attempt is on version ${esc(ATT.versionOf(ap))}. Your library now has version ${esc(ATT.versionOf(p))}, which your next attempt will use.</p>` : ""}
+          <p class="tm-count"><b>${s.answered} of ${s.total}</b> answered${s.flagged ? ` · <span class="tm-flagged">⚑ ${s.flagged} flagged</span>` : ""}${s.notMarked ? ` · ${s.notMarked} not marked` : ""}</p>
+          <div class="tm-pbar" role="progressbar" aria-label="Answered" aria-valuemin="0" aria-valuemax="${s.total}" aria-valuenow="${s.answered}"><i style="width:${pct}%"></i></div>
+          <p class="tm-sub"><b>${s.got}/${s.max}</b> marks so far · started ${tmDay(a.startedAt)} · saved ${tmDay(a.updatedAt)}</p>
+          <table class="tm-bysec"><caption class="k">By section</caption>
+            <thead><tr><th scope="col">Section</th><th scope="col">Answered</th><th scope="col">Flagged</th><th scope="col">Marks so far</th></tr></thead>
+            <tbody>${rows.map(r => `<tr><th scope="row">${esc(r.name)}</th>
+              <td>${r.t.done} of ${r.items}${r.t.refused + r.t.failed ? ` · ${r.t.refused + r.t.failed} not marked` : ""}</td>
+              <td>${r.flags ? `<span class="tm-flagged">⚑ ${r.flags}</span>` : `<span class="tm-muted">None</span>`}</td>
+              <td>${r.t.done ? `<b>${r.t.got}</b>/${r.t.max}` : `<span class="tm-muted">${r.touched ? "Not marked yet" : "Not started"}</span>`}</td></tr>`).join("")}</tbody>
+          </table>
+          <p class="tm-fixed">${scope ? "You are sitting " + esc(scope.replace(/ only$/, "")) + ". " : ""}Sections are fixed once an attempt starts. To sit different sections, start again.</p>
+          <div class="tm-go">
+            <p class="tm-sum">${s.at ? `Picks up at <b>Question ${esc(s.at.display || "")}</b>` : ""}</p>
+            <button type="button" class="tm-btn ghost" id="tmstartagain">Start again</button>
+            <button type="button" class="tm-btn" id="tmresume">Resume paper</button>
+          </div>
+        </section>
+        ${tmAboutPaper(ap, null)}
+      </div>`, { cls: "tm-ov" });
+      wireNav();
+      $("#tmback").onclick = tmLibrary;
+      $("#tmresume").onclick = () => tmSit(key);
+      $("#tmstartagain").onclick = () => {
+        const n = Object.keys(a.answers).length + Object.keys(a.drafts).filter(k => !(k in a.answers)).length;
+        if (!confirm("Start again? This discards the attempt in progress" + (n ? ", including " + tmPlural(n, "answer") + " you have written" : "") +
+                     ". It cannot be undone." + (rec.last ? " Your last completed attempt is kept." : ""))) return;
+        ATT.discard(state, key); save(); tmPaperOverview(identity);
+      };
+      return;
+    }
+    const rows = tmSectionRows(p);
+    const all = rows.map(r => r.si);
+    const sum = tmSectionSummary(rows.map(r => ({ short: r.short, q: r.q, m: r.m, on: true })));
+    const last = rec.last, ls = last ? ATT.summary(last, state.exams) : null, lscope = tmScope(last);
+    app.innerHTML = tmShell(top + `<div class="tm-layout">
+      <div class="tm-panel" data-kind="sections">
+        ${last ? `<section class="tm-last" aria-labelledby="tmla"><h2 class="tm-sr" id="tmla">Your last attempt</h2>
+          <span class="tm-state done">Completed ${tmDay(last.completedAt)}</span>
+          <p class="tm-lastline"><b>${ls.got} / ${ls.max}</b> · ${ls.answered} of ${ls.total} answered${ls.notMarked ? ` · ${ls.notMarked} not marked` : ""}${lscope ? " · " + esc(lscope) : ""}</p>
+          <span class="tm-spacer"></span><button type="button" class="tm-btn ghost sm" id="tmlastresults">View results</button>
+          <p class="tm-keep">Those results stay available until you submit the new attempt.</p></section>` : ""}
+        <section aria-labelledby="tmcs">
+          <div class="tm-phead"><h2 id="tmcs">Choose sections</h2><span class="tm-spacer"></span>
+            <button type="button" class="tm-link" id="exampickall">Select all</button><button type="button" class="tm-link" id="exampicknone">Clear</button></div>
+          <p class="tm-plede">Sit the whole paper, or only the sections you want to practise.</p>
+          <ul class="tm-secs">${rows.map(r => `<li><label class="tm-row on">
+            <input type="checkbox" data-exampick="${r.si}" checked>
+            <span class="main"><span class="name">${esc(r.name)}</span>${r.ins ? `<span class="ins">${esc(r.ins)}</span>` : ""}</span>
+            <span class="meta">${esc(r.meta)}</span></label></li>`).join("")}</ul>
+          <div class="tm-go">
+            <p class="tm-sum" id="exampicksum" aria-live="polite">${sum.text}</p>
+            <button type="button" class="tm-btn" id="exampickgo">${last ? "Start new attempt" : "Start paper"}</button>
+          </div>
+        </section>
+      </div>
+      ${tmAboutPaper(p, null)}
+    </div>`, { cls: "tm-ov" });
+    wireNav();
+    $("#tmback").onclick = tmLibrary;
+    const lr = $("#tmlastresults"); if (lr) lr.onclick = () => tmResults(key);
+    const boxes = () => Array.from(app.querySelectorAll("[data-exampick]"));
+    const chosen = () => boxes().filter(b => b.checked).map(b => Number(b.dataset.exampick));
+    const sync = () => {
+      boxes().forEach(b => b.closest("label").classList.toggle("on", b.checked));
+      const s = tmSectionSummary(rows.map(r => ({ short: r.short, q: r.q, m: r.m, on: chosen().indexOf(r.si) >= 0 })));
+      $("#exampicksum").innerHTML = s.text;
+      $("#exampickgo").disabled = !s.ok;
+      $("#tmforthis").innerHTML = tmForThis(s);
+    };
+    boxes().forEach(b => b.onchange = sync);
+    $("#exampickall").onclick = () => { boxes().forEach(b => { b.checked = true; }); sync(); };
+    $("#exampicknone").onclick = () => { boxes().forEach(b => { b.checked = false; }); sync(); };
+    $("#exampickgo").onclick = () => {
+      const c = chosen(); if (!c.length) return;
+      if (tmRec(key).current) return tmPaperOverview(identity);   // started in another tab
+      ATT.begin(state, key, ATT.startPaper(p, c.length === all.length ? null : c, tmNow()));
+      save(); tmSit(key);
+    };
+    sync();
+  }
+
+  function tmTypeOverview(format) {
+    if (gated()) return authScreen();
+    view = "test"; session = null; currentTopic = null;
+    EXAM.gen++;
+    const key = ATT.typeKey(format), rec = tmRec(key);
+    const bank = ATT.bank(format, state.exams, tmPackages());
+    const source = rec.current ? ATT.sequence(rec.current, state.exams) : null;
+    const papersOf = xs => xs.map(b => ATT.byId(state.exams, b.paper)).filter((p, i, arr) => p && arr.indexOf(p) === i);
+    const papers = rec.current ? papersOf(rec.current.items) : papersOf(bank);
+    const subjects = papers.map(tmSubjectOf).filter((s, i, arr) => s && arr.indexOf(s) === i);
+    tmUnit(subjects.length === 1 ? subjects[0] : "");
+    if (!rec.current && !bank.length) return tmLibrary();
+    const name = tmTypeName(format);
+    const top = `${tmBack()}
+      <div class="tm-top">
+        <p class="tm-kicker">Practise a question type</p>
+        <h1>${esc(name)} practice</h1>
+        <div class="tm-factrow"><p class="tm-facts">${rec.current ? tmPlural(rec.current.items.length, "question") + " in this session"
+          : tmPlural(bank.length, "question") + " available · from " + tmPlural(papers.length, "paper")}</p>${TM_POLICY}</div>
+      </div>`;
+    const eg = (source && source[0]) || null;
+    const about = `<aside class="tm-about" aria-labelledby="tmab">
+      <h2 id="tmab">About this practice</h2>
+      <h3 class="k">Where the questions come from</h3>
+      <p class="tm-p">From ${tmPlural(papers.length, "paper")} in your library: ${esc(tmList(papers.map(p => p.name)))}.</p>
+      <p class="tm-p">Questions are grouped by how they are answered, not by the section they are in. They come in paper order.</p>
+      <h3 class="k">Separate from your papers</h3>
+      <p class="tm-p">Answering Question ${esc((eg ? eg.display : bank[0] && bank[0].display) || "")} here does not answer it in your attempt at ${esc((eg ? eg.paper.name : papers[0] && papers[0].name) || "the paper")}, and sitting the paper does not change this practice.</p>
+      ${TM_HOW}
+      <h3 class="k">Time</h3><p class="tm-p">Not timed.</p>
+    </aside>`;
+    if (rec.current) {
+      const a = rec.current, s = ATT.summary(a, state.exams);
+      const pct = s.total ? Math.round(100 * s.answered / s.total) : 0;
+      app.innerHTML = tmShell(top + `<div class="tm-layout">
+        <section class="tm-panel" aria-labelledby="tmya">
+          <div class="tm-phead"><h2 id="tmya">Your practice session</h2><span class="tm-state live">In progress</span></div>
+          <p class="tm-count"><b>${s.answered} of ${s.total}</b> answered${s.flagged ? ` · <span class="tm-flagged">⚑ ${s.flagged} flagged</span>` : ""}${s.notMarked ? ` · ${s.notMarked} not marked` : ""}</p>
+          <div class="tm-pbar" role="progressbar" aria-label="Answered" aria-valuemin="0" aria-valuemax="${s.total}" aria-valuenow="${s.answered}"><i style="width:${pct}%"></i></div>
+          <p class="tm-sub"><b>${s.got}/${s.max}</b> marks so far · started ${tmDay(a.startedAt)} · saved ${tmDay(a.updatedAt)}</p>
+          <ul class="tm-qs tm-qsread">${source.map(e => {
+            const st = ATT.itemState(a, e.key);
+            const tag = st.answered ? "Answered" : st.notMarked ? "Not marked yet" : st.drafted ? "Draft saved" : "Not started";
+            return `<li><div class="tm-qrow"><span class="tm-qn">Question ${esc(e.display || "")}</span>
+              <span class="tm-qbody"><span class="tm-qp">${esc(e.q.prompt || "")}</span><span class="tm-qsrc">${esc(e.paper.name)}</span></span>
+              <span class="tm-qm">${tag}${st.flagged ? ' · <span class="tm-flagged">⚑</span>' : ""}</span></div></li>`;
+          }).join("")}</ul>
+          <p class="tm-fixed">The questions are fixed once a session starts. To choose different ones, start again.</p>
+          <div class="tm-go">
+            <p class="tm-sum">${s.at ? `Picks up at <b>Question ${esc(s.at.display || "")}</b>` : ""}</p>
+            <button type="button" class="tm-btn ghost" id="tmstartagain">Start again</button>
+            <button type="button" class="tm-btn" id="tmresume">Resume practice</button>
+          </div>
+        </section>${about}</div>`, { cls: "tm-ov" });
+      wireNav();
+      $("#tmback").onclick = tmLibrary;
+      $("#tmresume").onclick = () => tmSit(key);
+      $("#tmstartagain").onclick = () => {
+        const n = Object.keys(a.answers).length;
+        if (!confirm("Start again? This discards this practice session" + (n ? ", including " + tmPlural(n, "answer") + " you have submitted" : "") + ". It cannot be undone.")) return;
+        ATT.discard(state, key); save(); tmTypeOverview(format);
+      };
+      return;
+    }
+    const one = bank.length === 1;
+    const rows = bank.map(b => ({ m: b.marks }));
+    const sum = tmQuestionSummary(rows, true);
+    app.innerHTML = tmShell(top + `<div class="tm-layout">
+      <section class="tm-panel" aria-labelledby="tmqq" data-kind="questions">
+        <div class="tm-phead"><h2 id="tmqq">${one ? "Question" : "Questions"}</h2><span class="tm-spacer"></span>
+          ${one ? "" : `<span class="tm-pick"><button type="button" class="tm-link" id="tmqall">Select all</button><button type="button" class="tm-link" id="tmqnone">Clear</button></span>`}</div>
+        ${one ? "" : `<fieldset class="tm-mode"><legend class="tm-sr">Which questions</legend>
+          <label class="tm-opt on"><input type="radio" name="tmmode" value="all" checked>All ${tmPlural(bank.length, "question")}</label>
+          <label class="tm-opt"><input type="radio" name="tmmode" value="choose">Choose questions</label></fieldset>`}
+        ${papersOf(bank).map(pp => `<div class="tm-from"><h3 class="k">${esc(pp.name)}</h3><ul class="tm-qs">
+          ${bank.map((b, i) => b.paper !== pp.id ? "" : `<li><label class="tm-qrow on">
+            ${one ? "" : `<input type="checkbox" data-tmq="${i}" checked disabled>`}
+            <span class="tm-qn">Question ${esc(b.display || "")}</span>
+            <span class="tm-qbody"><span class="tm-qp">${esc(b.prompt)}</span>${tmRefersTo(b)}</span>
+            <span class="tm-qm">${tmPlural(b.marks, "mark")}</span></label></li>`).join("")}
+        </ul></div>`).join("")}
+        <div class="tm-go">
+          <p class="tm-sum" id="tmqsum" aria-live="polite">${sum.text}</p>
+          <button type="button" class="tm-btn" id="tmtypego">Start practice</button>
+        </div>
+      </section>${about}</div>`, { cls: "tm-ov" });
+    wireNav();
+    $("#tmback").onclick = tmLibrary;
+    const panel = app.querySelector(".tm-panel");
+    const boxes = () => Array.from(app.querySelectorAll("[data-tmq]"));
+    const choosing = () => panel.classList.contains("choosing");
+    const sync = () => {
+      boxes().forEach(b => b.closest("label").classList.toggle("on", b.checked));
+      const s = tmQuestionSummary(bank.map((b, i) => ({ m: b.marks, on: one || boxes()[i].checked })), one || !choosing());
+      $("#tmqsum").innerHTML = s.text; $("#tmtypego").disabled = !s.ok;
+    };
+    app.querySelectorAll("input[name=tmmode]").forEach(r => r.onchange = () => {
+      const ch = r.value === "choose" && r.checked;
+      panel.classList.toggle("choosing", ch);
+      app.querySelectorAll(".tm-opt").forEach(o => o.classList.toggle("on", o.querySelector("input").checked));
+      // The picks are kept while All is chosen, so going back to Choose finds them.
+      boxes().forEach(b => { b.disabled = !ch; });
+      sync();
+    });
+    boxes().forEach(b => b.onchange = sync);
+    const qa = $("#tmqall"), qn = $("#tmqnone");
+    if (qa) qa.onclick = () => { boxes().forEach(b => { b.checked = true; }); sync(); };
+    if (qn) qn.onclick = () => { boxes().forEach(b => { b.checked = false; }); sync(); };
+    $("#tmtypego").onclick = () => {
+      const picked = one || !choosing() ? bank : bank.filter((b, i) => boxes()[i].checked);
+      if (!picked.length) return;
+      if (tmRec(key).current) return tmTypeOverview(format);
+      ATT.begin(state, key, ATT.startType(format, picked, tmNow()));
+      save(); tmSit(key);
+    };
+    sync();
+  }
+  // What a question refers to: every resource the sitting shows with it, in its
+  // order. The first by caption or the sitting's own label, the rest counted.
+  function tmSourceNames(paper, si, qi, pi) {
+    const sec = paper.sections[si], q = sec.questions[qi];
+    const parent = pi == null ? null : q, leaf = pi == null ? q : PAPER.partsOf(q)[pi];
+    return [[PAPER.resourcesOf({ stimulus: sec.source }), "Source material"], [parent ? PAPER.resourcesOf(parent) : [], "Source"], [PAPER.resourcesOf(leaf), "Source"]]
+      .flatMap(([rs, label]) => rs.map((r, i) => {
+        const c = r && typeof r === "object" && typeof r.caption === "string" ? r.caption.trim() : "";
+        return c || (rs.length > 1 ? label + " " + (i + 1) : label);
+      }));
+  }
+  function tmRefersTo(b) {
+    const p = ATT.byId(state.exams, b.paper); if (!p) return "";
+    const n = tmSourceNames(p, b.si, b.qi, b.pi);
+    return n.length ? `<span class="tm-qsrc">Refers to ${esc(n[0] + (n.length > 1 ? ", and " + tmPlural(n.length - 1, "more source") : ""))}</span>` : "";
+  }
+
+  // ---- the sitting (states 8, 11, 12, 13, 14, 15) ---------------------------------
+  // One shell for a paper attempt and a practice session alike. Previous and Next
+  // always work, nothing needs an answer before moving, drafts are saved as they
+  // are typed, and a flag is a fact of its own. What the student did goes into
+  // the attempt through ATT; this draws it.
+  const SIT = { key: null, seq: [], pos: 0, edit: {}, pending: {}, soln: {}, saveT: null };
+  function tmAttempt() { const r = state.attempts[SIT.key]; return r ? r.current : null; }
+  function tmFlushDraft() {
+    const a = tmAttempt(), e = SIT.seq[SIT.pos], el = $("#ans");
+    if (!a || !e || !el || el.disabled) return;
+    if ((a.drafts[e.key] || "") !== el.value) ATT.setDraft(a, e.key, el.value, tmNow());
+    clearTimeout(SIT.saveT); save();
+  }
+  function tmSit(key) {
+    if (gated()) return authScreen();
+    const a = tmRec(key).current;
+    if (!a) return tmLibrary();
+    view = "test"; session = null; currentTopic = null;
+    EXAM.gen++;
+    SIT.key = key; SIT.edit = {}; SIT.soln = {};
+    SIT.seq = ATT.sequence(a, state.exams);
+    if (!SIT.seq.length) { toast("This attempt's questions are no longer in your library.", 3500); return tmLibrary(); }
+    const i = SIT.seq.findIndex(e => e.key === a.at);
+    SIT.pos = i < 0 ? 0 : i;
+    tmDraw();
+  }
+  function tmGo(i) {
+    const a = tmAttempt(); if (!a) return tmLibrary();
+    tmFlushDraft();
+    SIT.pos = Math.max(0, Math.min(SIT.seq.length - 1, i));
+    ATT.moveTo(a, SIT.seq[SIT.pos].key, tmNow()); save();
+    tmDraw(true);
+  }
+  function tmFmtWords(q) {
+    const fx = ASSESS.normaliseFormat(q);
+    const fw = { multiple_choice: "multiple choice", short_answer: "short answer", calculation: "calculation",
+                 business_report: "business report", extended_response: "extended response" }[fx.format] || "";
+    return [fw, fx.directiveText ? String(fx.directiveText).toLowerCase() : ""].filter(Boolean).join(" · ");
+  }
+  function tmProgress(a) {
+    const s = ATT.summary(a, state.exams);
+    return { s, html: `<span class="exam-progress"><b>${s.answered}</b> of ${s.total} answered<span class="tm-livescore"> · <b>${s.got}</b>/${s.max} marks</span>${s.notMarked ? ` · ${s.notMarked} not marked` : ""}</span>
+      <div class="tm-pbar"><i style="width:${s.total ? Math.round(100 * s.answered / s.total) : 0}%"></i></div>` };
+  }
+  // Everything the student is shown beside the question, outermost first.
+  function tmHolders(e) {
+    const out = [];
+    PAPER.resourcesOf({ stimulus: e.sec.source }).forEach((r, i, all) => out.push({ r, owner: "section", label: all.length > 1 ? "Source material " + (i + 1) : "Source material" }));
+    if (e.parent) PAPER.resourcesOf(e.parent).forEach((r, i, all) => out.push({ r, owner: "parent", label: all.length > 1 ? "Source " + (i + 1) : "Source" }));
+    PAPER.resourcesOf(e.q).forEach((r, i, all) => out.push({ r, owner: "question", label: all.length > 1 ? "Source " + (i + 1) : "Source" }));
+    return out;
+  }
+  function tmSourceBody(r) {
+    if (typeof r === "string") return r.split(/\n\s*\n/).map(t => `<p>${esc(t)}</p>`).join("");
+    let h = "";
+    if (r.text) h += String(r.text).split(/\n\s*\n/).map(t => `<p>${esc(t)}</p>`).join("");
+    if (r.img) h += `<img class="exam-srcimg" src="${esc(r.img)}" alt="${esc(r.alt || r.caption || "Source")}">`;
+    if (Array.isArray(r.charts)) h += r.charts.map((c, i) => rvChartHTML(c, i)).join("");
+    return h;
+  }
+  function tmSourcePanel(e, hs) {
+    const own = hs[0].owner === "parent" ? "Shared source · Question " + (PAPER.numberOf(e.parent) || "")
+      : hs[0].owner === "section" ? "Source material · " + ATT.sectionShort(e.sec, e.si) : "Source · Question " + (e.display || "");
+    const cap0 = hs[0].r && typeof hs[0].r === "object" && hs[0].r.caption ? hs[0].r.caption : hs[0].label;
+    return `<aside class="tm-srcpanel" aria-label="Source">
+      <div class="tm-srchead"><span class="ic" aria-hidden="true">📄</span><span class="t">${esc(cap0)}<small>${esc(own)}</small></span>
+        <button type="button" class="tm-expand" id="tmexpand" title="Open the source in a larger reading view">⤢ Expand</button></div>
+      <div class="tm-srcbody">${hs.map((h, i) => `${i ? `<h3 class="tm-srcsub">${esc(h.r && h.r.caption ? h.r.caption : h.label)}</h3>` : ""}${tmSourceBody(h.r)}`).join("")}</div>
+    </aside>`;
+  }
+  // Short answer help, collapsed, and only from what is authored: the
+  // directive's own row, the source when there is one, and what the marks mean
+  // (state 8, decision 5). Withheld on every other format.
+  function tmHelp(e) {
+    const shapes = (window.ESSAY && window.ESSAY.answerShapes) || null;
+    if (!shapes) return "";
+    const fx = ASSESS.normaliseFormat(e.q);
+    if (fx.format !== "short_answer") return "";
+    const verb = String(fx.directiveText || "").toLowerCase();
+    const rows = [];
+    const cmd = (shapes.commands || {})[verb];
+    if (cmd && cmd.length) rows.push(["says " + verb, cmd[cmd.length - 1].job]);
+    if (tmHolders(e).length && shapes.stimulus) rows.push([shapes.stimulus.label, shapes.stimulus.job]);
+    const m = Number(e.q.marks) || 0;
+    if (m) rows.push([tmPlural(m, "mark"), "about " + (m === 1 ? "one creditworthy point" : m + " distinct creditworthy points")]);
+    if (!rows.length) return "";
+    return `<details class="tm-help"><summary>What this question expects <span class="chev" aria-hidden="true">▾</span></summary>
+      <div class="body">${rows.map(r => `<div class="tm-hrow"><span class="k">${esc(r[0])}</span><span>${esc(r[1])}</span></div>`).join("")}</div></details>`;
+  }
+  function tmMood(g) {
+    const ratio = g.max ? g.score / g.max : 0;
+    return ratio >= 0.95 ? "Full marks" : ratio >= 0.6 ? "Most of it" : ratio >= 0.3 ? "Partly there" : "Not yet";
+  }
+  function tmDraw(scrollTop) {
+    const a = tmAttempt(); if (!a) return tmLibrary();
+    const e = SIT.seq[SIT.pos];
+    EXAM.paper = e.paper;                          // markingContext reads the paper this question is in
+    tmUnit(tmSubjectOf(e.paper));
+    document.body.classList.add("tm-sitting");
+    const st = ATT.itemState(a, e.key);
+    const g = a.results[e.key];
+    const f = e.eitherSlot ? "either" : drawFormat(e.q);
+    const single = f === "extended_response" || f === "business_report";
+    const hs = e.eitherSlot ? [] : tmHolders(e);
+    const prog = tmProgress(a);
+    const name = a.scope === "paper" ? (e.paper.name || "Paper") : tmTypeName(a.format) + " practice";
+    const secline = a.scope === "paper"
+      ? ATT.sectionName(e.sec, e.si) + " · " + tmPlural(PAPER.totals({ sections: [e.sec] }).marks, "mark")
+      : (e.paper.name || "") + " · " + ATT.sectionShort(e.sec, e.si);
+    app.innerHTML = tmShell(`
+      <div class="tm-bar">
+        <button class="x" id="examquit" title="Leave. Your answers are saved." aria-label="Leave and return to Test mode">←</button>
+        <div class="paper"><div class="nm">${esc(name)}</div><div class="sec">${esc(secline)}</div></div>
+        <span class="tm-spacer"></span>
+        ${TM_POLICY}
+        <button type="button" class="tm-navbtn" id="examnav" aria-haspopup="dialog"><span class="grid" aria-hidden="true">${"<i></i>".repeat(9)}</span>Questions</button>
+        <div class="tm-prog">${prog.html}</div>
+      </div>
+      <div class="tm-work${single || !hs.length ? " single" : ""}">
+        <div class="tm-qcard">${e.eitherSlot ? tmEitherHTML(e) : tmQuestionHTML(e, a, f, g, single ? hs : [])}</div>
+        ${!single && hs.length ? tmSourcePanel(e, hs) : ""}
+      </div>
+      <div class="tm-footer"><div class="tm-footin">
+        <button type="button" class="tm-btn sm ghost" id="examprev"${SIT.pos ? "" : " disabled"}>← Previous${SIT.pos ? `<span class="foot-lbl">&nbsp;·&nbsp;${esc(tmShort(SIT.seq[SIT.pos - 1]))}</span>` : ""}</button>
+        <button type="button" class="tm-flag${st.flagged ? " on" : ""}" id="examflag" aria-pressed="${st.flagged}">⚑ ${st.flagged ? "Flagged" : "Flag"}<span class="foot-lbl">&nbsp;for revisit</span></button>
+        <span class="tm-whereitem">Item ${SIT.pos + 1} of ${SIT.seq.length} · ${esc(ATT.sectionShort(e.sec, e.si))}</span>
+        ${SIT.pos < SIT.seq.length - 1
+          ? `<button type="button" class="tm-btn sm ghost" id="examnext">Next<span class="foot-lbl">&nbsp;·&nbsp;${esc(tmShort(SIT.seq[SIT.pos + 1]))}</span>&nbsp;→</button>`
+          : `<button type="button" class="tm-btn sm ghost" id="examfinish">${a.scope === "paper" ? "Finish paper" : "Finish practice"}</button>`}
+      </div></div>
+      <div id="tmnavwrap"></div>`, { cls: "tm-sit" });
+    wireNav();
+    tmWireSitting(e, a, f, g);
+    if (scrollTop) window.scrollTo(0, 0);
+  }
+  function tmShort(e) { return e.eitherSlot ? "Question " + e.options.map(o => o.number).filter(Boolean).join(" or ") : (e.display || "Item"); }
+  function tmEitherHTML(e) {
+    const ins = String(e.sec.instructions || "").trim();
+    return `<div class="exam-qhead"><span>${esc(ATT.sectionName(e.sec, e.si))}</span><span class="marks">· ${tmPlural(PAPER.marksOf(e.q), "mark")}</span></div>
+      ${ins ? `<p class="tm-instr">${esc(ins)}</p>` : ""}
+      <p class="exam-prompt">Choose the question you will answer.</p>
+      <div class="tm-choices">${e.options.map(o => `<button type="button" class="tm-choice" data-examchoose="${o.qi}">
+        <span class="tm-lbl">Question ${esc(o.number || o.qi + 1)}</span><span class="txt">${esc(PAPER.isParent(o.q) ? (o.q.instructions || "") : (o.q.prompt || ""))}</span></button>`).join("")}</div>
+      <p class="tm-saved">You can change your choice until you have written anything for it.</p>`;
+  }
+  function tmParentHTML(e, a) {
+    const sibs = SIT.seq.filter(x => x.paper === e.paper && x.si === e.si && x.qi === e.qi && x.parent);
+    const caption = PAPER.resourcesOf(e.parent).map(r => r && typeof r === "object" ? r.caption : "").filter(Boolean)[0] || "";
+    const done = sibs.filter(x => ATT.itemState(a, x.key).answered).length;
+    const chips = sibs.length > 1 ? `<div class="pprog"><span class="pdone">${done} of ${tmPlural(sibs.length, "part")} answered</span>
+      <div class="parts" role="group" aria-label="Parts of Question ${esc(PAPER.numberOf(e.parent) || "")}">${sibs.map(x => {
+        const s = ATT.itemState(a, x.key), lab = PAPER.labelOf(x.q, x.pi);
+        const here = x === e;
+        const cls = ["pt", s.answered ? "done" : "", s.flagged ? "flag" : "", here ? "here" : "", s.notMarked && !here ? "nm" : "", !s.answered && !s.notMarked && !here ? "todo" : ""].filter(Boolean).join(" ");
+        const title = (x.display || "") + " · " + tmPlural(Number(x.q.marks) || 0, "mark") + " · " + (s.answered ? "answered" : s.notMarked ? "not marked yet" : "not answered yet") + (s.flagged ? " · flagged for revisit" : "") + (here ? " · you are here" : "");
+        return `<button type="button" class="${cls}" data-tmgo="${SIT.seq.indexOf(x)}" title="${esc(title)}"${here ? ' aria-current="true"' : ""}>${s.answered ? '<span class="g">✓</span>' : ""}${s.flagged ? '<span class="g fg">⚑</span>' : ""}${esc(lab)}</button>`;
+      }).join("")}</div></div>` : "";
+    return `<div class="tm-parent"><div class="prow"><span class="pnum">Question ${esc(PAPER.numberOf(e.parent) || "")}</span>
+      <span class="pmeta">${esc([caption, tmPlural(PAPER.marksOf(e.parent), "mark")].filter(Boolean).join(" · "))}</span></div>${chips}</div>
+      ${e.parent.instructions ? `<p class="tm-instr">${esc(e.parent.instructions)}</p>` : ""}`;
+  }
+  function tmQuestionHTML(e, a, f, g, inline) {
+    const q = e.q, key = e.key;
+    const marked = !!g && isMarked(g);
+    const editing = !!SIT.edit[key] || !g || !marked;
+    const draft = a.drafts[key] != null ? a.drafts[key] : (g ? a.answers[key] : "");
+    const pending = SIT.pending[key] != null;
+    const marks = Number(q.marks) || 0;
+    const part = !!e.parent;
+    const savedLine = part ? "Saved. Moving to another part keeps this answer." : "Saved. You can leave and come back to this " + (a.scope === "paper" ? "paper" : "practice") + ".";
+    let body = "";
+    const head = `<div class="exam-qhead"><span>Question ${esc(e.display || "")}</span><span class="marks">· ${tmPlural(marks, "mark")}</span>
+      ${tmFmtWords(q) ? `<span class="fmt">${esc(tmFmtWords(q))}</span>` : ""}${tmSwitchHTML(e, a)}</div>`;
+    const reportIns = f === "business_report" && typeof q.instructions === "string" && q.instructions.trim()
+      ? `<p class="tm-instr">${esc(q.instructions)}</p>` : "";
+    const caseBlock = inline.length ? inline.map(h => marked && !editing
+      ? `<details class="tm-case"><summary><span class="nm">${esc(h.r && h.r.caption ? h.r.caption : h.label)}</span></summary><div class="body">${tmSourceBody(h.r)}</div></details>`
+      : `<figure class="tm-case"><figcaption>${esc(h.r && h.r.caption ? h.r.caption : h.label)}</figcaption><div class="body">${tmSourceBody(h.r)}</div></figure>`).join("") : "";
+    const prompt = `<p class="exam-prompt">${linkGlossary(q.prompt || "")}</p>`;
+    if (f === "multiple_choice") {
+      const chosen = g && a.answers[key] != null && !editing ? Number(a.answers[key]) : (a.drafts[key] != null ? Number(a.drafts[key]) : null);
+      const shown = marked && !editing;
+      body = `<div class="tm-mc" role="radiogroup" aria-label="Options">${(q.choices || []).map((c, i) => {
+          const cls = ["choice", chosen === i ? "sel" : "", shown && c.ok ? "right" : "", shown && chosen === i && !c.ok ? "wrong" : ""].filter(Boolean).join(" ");
+          return `<button type="button" class="${cls}" data-i="${i}" role="radio" aria-checked="${chosen === i}"${shown ? " disabled" : ""}>
+            <span class="ltr">${"ABCDEFGH"[i] || i + 1}</span><span class="t">${esc(c.t)}</span>${shown && c.ok ? '<span class="ok">✓ Answer</span>' : ""}</button>`;
+        }).join("")}</div>
+        ${shown ? "" : `<div class="tm-submitrow"><button type="button" class="tm-btn" id="check"${chosen == null || pending ? " disabled" : ""}>${pending ? "Checking…" : "Submit for marking"}</button><span class="tm-hint">Checked against the answer key.</span></div>`}`;
+    } else if (f === "calculation") {
+      const shown = marked && !editing;
+      body = `<input type="text" class="tm-answerbox short${shown ? (g.correct ? " ok" : " no") : ""}" id="ans" aria-label="Your answer" autocomplete="off" value="${esc(shown ? a.answers[key] : draft || "")}"${shown ? " disabled" : ""}>
+        <div class="tm-saved"><span class="tick">✓</span> ${esc(savedLine)}</div>
+        ${shown ? "" : `<div class="tm-submitrow"><button type="button" class="tm-btn" id="check">Check answer</button>
+          ${q.model ? `<button type="button" class="tm-btn sm ghost" id="tmsoln" aria-expanded="${!!SIT.soln[key]}">${SIT.soln[key] ? "Hide worked solution ▴" : "View worked solution"}</button>` : ""}
+          <span class="tm-hint">Checked against the expected answer.</span></div>${SIT.soln[key] ? tmSolutionHTML(q, a, key) : ""}`}`;
+    } else {
+      const big = f === "extended_response" || f === "business_report";
+      if (marked && !editing && big) {
+        const ans = String(a.answers[key] || "");
+        body = `<details class="tm-submitted"><summary><span class="nm">Your submitted response</span><span>· ${tmPlural(ans.trim() ? ans.trim().split(/\s+/).length : 0, "word")}</span></summary>
+          <div class="response">${ans.split(/\n\s*\n/).map(p => `<p>${esc(p)}</p>`).join("")}</div></details>
+          <div class="tm-saved"><span class="tick">✓</span> Submitted. You can leave and come back to this ${a.scope === "paper" ? "paper" : "practice"}.</div>`;
+      } else {
+        const shown = marked && !editing;
+        body = `<textarea class="tm-answerbox${big ? " big" : ""}" id="ans" rows="${big ? 14 : 5}" aria-label="Your answer"
+          placeholder="${big ? (f === "business_report" ? "Write your report here, using blank lines between sections." : "Write your full response here, using blank lines between paragraphs.") : "Write your answer here."}"${shown || pending ? " disabled" : ""}>${esc(shown ? a.answers[key] : draft || "")}</textarea>
+          <div class="tm-saved"><span class="tick">✓</span> ${esc(savedLine)}</div>
+          ${shown ? "" : `${big ? "" : tmHelp(e)}<div class="tm-submitrow"><button type="button" class="tm-btn" id="check"${pending ? " disabled" : ""}>${pending ? "Checking…" : "Submit for marking"}</button>
+            <span class="tm-hint">${tmMarkerHint(e)}</span></div>`}`;
+      }
+    }
+    return `${part ? tmParentHTML(e, a) : ""}${head}${reportIns}${caseBlock}${prompt}${body}
+      <div id="sheet">${g && !(SIT.edit[key] && marked) ? tmResultHTML(e, a, f, g) : ""}</div>`;
+  }
+  function tmMarkerHint(e) {
+    const sp = ASSESS.scorePoints(e.q, "");
+    if (sp.ok === true && sp.local) return "Checked against the paper's marking points.";
+    const subj = tmSubjectOf(e.paper);
+    return subj ? "Marked against " + subj + " criteria." : "Marked by the marker.";
+  }
+  // An either/or that has been chosen can be changed while nothing has been
+  // written for it.
+  function tmSwitchHTML(e, a) {
+    if (a.scope !== "paper" || !(Number(e.sec.choose) > 0) || e.eitherSlot) return "";
+    const busy = Object.keys(a.answers).concat(Object.keys(a.drafts)).some(k => k.split("-")[0] === String(e.si));
+    return busy ? "" : `<button type="button" class="tm-link sm" id="tmswitch">Choose the other question</button>`;
+  }
+  // The worked solution, from the authored model and nothing else: its
+  // sentence split where it says "=", set as a process (state 14).
+  function tmSolutionHTML(q, a, key) {
+    const model = String(q.model || "").replace(/\s+/g, " ").trim().replace(/\.$/, "");
+    const parts = model.split(/\s=\s/).map(s => s.replace(/ divided by /g, " ÷ ").replace(/ \/ /g, " ÷ "));
+    let steps;
+    if (parts.length >= 3) {
+      steps = [["Use the formula", parts[0] + " = " + parts[1]]].concat(parts.slice(2, -1).map((p, i) => [i ? "Calculate" : "Substitute the values", "= " + p]));
+      steps.push(["Answer", parts[0] + " = " + parts[parts.length - 1]]);
+    } else steps = [["Answer", model]];
+    return `<div class="tm-soln"><div class="solnhead">Worked solution <span class="viewed"><span class="tk">✓</span> Solution viewed</span></div>
+      <ol class="steps">${steps.map((s, i) => `<li class="step${i === steps.length - 1 ? " final" : ""}"><span class="no">${i + 1}</span>
+        <div class="t"><div class="tm-lbl">${esc(s[0])}</div><div class="math">${esc(s[1])}</div></div></li>`).join("")}</ol></div>`;
+  }
+  function tmResultHTML(e, a, f, g) {
+    const q = e.q, key = e.key;
+    if (!isMarked(g)) {
+      const why = g && (g.why || g.note) ? String(g.why || g.note) : "No reason was recorded.";
+      const marks = Number(q.marks) || 0;
+      return `<div class="tm-result nm"><span class="badge">Not marked yet</span><span class="pair"><span class="k">Marks</span><span class="v">None yet</span></span></div>
+        <p class="tm-mnote"><span class="who">Why</span>${esc(why)}</p>
+        <p class="tm-whynot">Your answer is still here, and nothing has been recorded against it${marks ? ", including the " + tmPlural(marks, "mark") + " this question is worth" : ""}.</p>
+        ${examCanRemark(g) ? `<div class="tm-submitrow"><button type="button" class="tm-btn ghost" id="examremark">Try marking again</button></div>` : ""}`;
+    }
+    const pair = `<span class="pair"><span class="k">Marks</span><span class="v">${g.score} of ${g.max}</span></span>`;
+    if (f === "multiple_choice") {
+      const right = (q.choices || []).find(c => c.ok);
+      return `<div class="tm-result ${g.correct ? "ok" : "no"}"><span class="badge">${g.correct ? "<span>✓</span>Correct" : "<span>✕</span>Not this one"}</span>${pair}</div>
+        ${g.why ? `<p class="tm-mnote">${esc(g.why)}</p>` : ""}${!g.correct && right ? `<p class="tm-mnote">The answer is <b>${esc(right.t)}</b>.</p>` : ""}
+        <div class="tm-submitrow"><button type="button" class="tm-btn" id="examretry">Try again</button></div>`;
+    }
+    if (f === "calculation") {
+      const yours = `<span class="pair"><span class="k">Your answer</span><span class="v">${esc(a.answers[key])}</span></span>`;
+      const soln = q.model ? `<button type="button" class="tm-btn sm ghost" id="tmsoln" aria-expanded="${!!SIT.soln[key]}">${SIT.soln[key] ? "Hide worked solution ▴" : "View worked solution"}</button>` : "";
+      return g.correct
+        ? `<div class="tm-result ok"><span class="badge"><span>✓</span>Correct</span>${yours}<span class="pair"><span class="k">Expected answer</span><span class="v">${esc(q.expected)}</span></span>${pair}</div>
+           <div class="tm-submitrow">${soln}</div>${SIT.soln[key] ? tmSolutionHTML(q, a, key) : ""}`
+        : `<div class="tm-result no"><span class="badge"><span>✕</span>Not quite</span>${yours}${pair}</div>
+           <div class="tm-submitrow"><button type="button" class="tm-btn" id="examretry">Try again</button>${soln}</div>${SIT.soln[key] ? tmSolutionHTML(q, a, key) : ""}`;
+    }
+    const subj = tmSubjectOf(e.paper);
+    const fromMarker = g.kind === "llm";
+    const summary = fromMarker ? fbSummary(g.fb || {}) : "";
+    const mnote = fromMarker && summary ? `<p class="tm-mnote"><span class="who">Marked against ${esc(subj || "the subject's")} criteria</span>${esc(summary)}</p>` : "";
+    const askable = ["points", "local"].includes(g.kind) && !!state.endpoint;
+    const actions = `<div class="tm-submitrow"><button type="button" class="tm-btn" id="examretry">Try again</button>${askable ? `<button type="button" class="tm-btn sm ghost" id="examreview">What would make this stronger →</button>` : ""}</div>`;
+    const result = `<div class="tm-result"><span class="badge">${esc(tmMood(g))}</span>${pair}</div>`;
+    if (f === "short_answer" || !(f === "extended_response" || f === "business_report")) {
+      const pts = Array.isArray(g.points) && g.points.length ? g.points : null;
+      const hits = pts ? pts.filter(p => p.hit).length : 0;
+      return result + mnote + actions + (pts ? `<div class="tm-mark"><div class="markhead">How this was marked<span class="count">${hits} of ${pts.length} key points addressed</span></div>
+        <ol class="pts">${pts.map(p => `<li class="prow ${p.hit ? "hit" : "miss"}"><span class="mk2" aria-hidden="true">${p.hit ? "✓" : ""}</span><span class="txt">${esc(p.text)}</span>${p.hit ? "" : '<span class="tm-tag">not addressed</span>'}</li>`).join("")}</ol>
+        <div class="markrule">${g.weighted ? "One mark for each point addressed. " + tmPlural(pts.length, "point") + ", " + tmPlural(g.max, "mark") + "." : "These are the key points considered in marking. They are not one mark each."}</div></div>` : "");
+    }
+    // Extended response and business report (states 12 and 13): what the payload
+    // supports, and only that.
+    const fb = g.fb || {};
+    const rubric = (Array.isArray(fb.rubric) ? fb.rubric : []).filter(r => r && r.name);
+    const crits = rubric.length ? rubric.map(r => ({ name: r.name, d: r.descriptor || "" }))
+      : ((markingContext(q) || {}).criteria || []).map(n => ({ name: typeof n === "string" ? n : (n && n.name) || "", d: "" })).filter(x => x.name);
+    const anchored = [], across = [];
+    (fb.paragraphs || []).forEach(p => (p.sentences || []).forEach(sn => (sn.issues || []).forEach(iss => {
+      (sn.unplaced ? across : anchored).push({ quote: sn.text, head: iss.head || "", why: iss.why || "" });
+    })));
+    const rg = f === "business_report" ? ASSESS.markerGuidance(q, ASSESS.accomplishOf(q)) : null;
+    return result + mnote + actions +
+      (crits.length ? `<section class="tm-sect"><h2 class="secth">How this was marked</h2>
+        <p class="lede">${crits.length === 1 ? "The criterion" : "The " + crits.length + " criteria"} your response was judged against${subj ? ", in the order the " + esc(subj) + " course sets them" : ""}.</p>
+        <ol class="crits">${crits.map(c => `<li class="tm-crit"><h3 class="critn">${esc(c.name)}</h3>${c.d ? `<p>${esc(c.d)}</p>` : ""}</li>`).join("")}</ol></section>` : "") +
+      (rg && rg.ok === true && rg.items && rg.items.length ? `<section class="tm-sect"><h2 class="secth">What your marker was told to look for</h2>
+        <p class="lede">This question's own instructions and marking points, sent to the marker with your response${tmHolders(e).length ? " and the case study" : ""}. It did not score them one by one, so nothing here is ticked or crossed.</p>
+        <ol class="told">${rg.items.map(t => `<li>${esc(typeof t === "string" ? t : (t && (t.text || t.label)) || "")}</li>`).join("")}</ol></section>` : "") +
+      (anchored.length || across.length ? `<section class="tm-sect"><h2 class="secth">What the marker noticed</h2>
+        <p class="lede">Where the marker could point at the sentence it meant, your own words are shown. Where it could not, the observation is about the response as a whole.</p>
+        <ol class="obs">${anchored.map(o => `<li class="ob"><h4 class="obh">${esc(o.head)}</h4><div class="ev"><div class="tm-lbl">In your response</div><q>${esc(o.quote)}</q></div>${o.why ? `<p>${esc(o.why)}</p>` : ""}</li>`).join("")}
+          ${across.map(o => `<li class="ob"><h4 class="obh">${esc(o.head)}</h4><div class="acrossl">Across your response</div>${o.why ? `<p>${esc(o.why)}</p>` : ""}</li>`).join("")}</ol></section>` : "");
+  }
+  function tmWireSitting(e, a, f, g) {
+    $("#examquit").onclick = () => { tmFlushDraft(); document.body.classList.remove("tm-sitting"); tmLibrary(); };
+    $("#examnav").onclick = tmNavigator;
+    const pv = $("#examprev"); if (pv) pv.onclick = () => tmGo(SIT.pos - 1);
+    const nx = $("#examnext"); if (nx) nx.onclick = () => tmGo(SIT.pos + 1);
+    const fin = $("#examfinish"); if (fin) fin.onclick = tmFinish;
+    $("#examflag").onclick = () => { tmFlushDraft(); ATT.toggleFlag(a, e.key, tmNow()); save(); tmDraw(); };
+    app.querySelectorAll("[data-tmgo]").forEach(b => b.onclick = () => tmGo(Number(b.dataset.tmgo)));
+    app.querySelectorAll("[data-examchoose]").forEach(b => b.onclick = () => {
+      ATT.choose(a, e.si, Number(b.dataset.examchoose), tmNow());
+      SIT.seq = ATT.sequence(a, state.exams);
+      const first = SIT.seq.findIndex(x => x.si === e.si);
+      SIT.pos = first < 0 ? SIT.pos : first;
+      ATT.moveTo(a, SIT.seq[SIT.pos].key, tmNow()); save(); tmDraw(true);
+    });
+    const sw = $("#tmswitch"); if (sw) sw.onclick = () => {
+      const other = (e.sec.questions || []).findIndex((_, qi) => qi !== e.qi);
+      if (other < 0) return;
+      try { ATT.choose(a, e.si, other, tmNow()); } catch (err) { return toast("Clear what you have written for this question first.", 3500); }
+      SIT.seq = ATT.sequence(a, state.exams);
+      const first = SIT.seq.findIndex(x => x.si === e.si);
+      SIT.pos = first < 0 ? SIT.pos : first;
+      ATT.moveTo(a, SIT.seq[SIT.pos].key, tmNow()); save(); tmDraw(true);
+    };
+    const ex = $("#tmexpand"); if (ex) ex.onclick = () => tmReader(e);
+    const ans = $("#ans");
+    if (ans && !ans.disabled) {
+      ans.oninput = () => { ATT.setDraft(a, e.key, ans.value, tmNow()); clearTimeout(SIT.saveT); SIT.saveT = setTimeout(save, 400); };
+      if (f === "calculation") ans.onkeydown = ev => { if (ev.key === "Enter") { ev.preventDefault(); const c = $("#check"); if (c) c.click(); } };
+    }
+    app.querySelectorAll(".tm-mc .choice").forEach(b => b.onclick = () => {
+      if (b.disabled) return;
+      ATT.setDraft(a, e.key, String(b.dataset.i), tmNow()); save(); tmDraw();
+    });
+    const ch = $("#check"); if (ch) ch.onclick = () => tmSubmit(e);
+    const rm = $("#examremark"); if (rm) rm.onclick = () => tmSubmit(e, a.answers[e.key]);
+    const rt = $("#examretry"); if (rt) rt.onclick = () => {
+      SIT.edit[e.key] = true;
+      if (a.drafts[e.key] == null && f !== "multiple_choice") ATT.setDraft(a, e.key, String(a.answers[e.key] || ""), tmNow());
+      if (f === "multiple_choice") ATT.setDraft(a, e.key, "", tmNow());
+      save(); tmDraw();
+    };
+    const so = $("#tmsoln"); if (so) so.onclick = () => {
+      SIT.soln[e.key] = !SIT.soln[e.key];
+      // Opening it is recorded: the attempt is not represented as solved alone.
+      if (SIT.soln[e.key]) { a.viewed = a.viewed || {}; a.viewed[e.key] = true; ATT.moveTo(a, e.key, tmNow()); save(); }
+      tmDraw();
+    };
+    const rv = $("#examreview"); if (rv) rv.onclick = () => tmSecondOpinion(e);
+    examWireSources({ stimulus: e.sec.source }); if (e.parent) examWireSources(e.parent); if (!e.eitherSlot) examWireSources(e.q);
+    wireGlossary(); examWireLightbox();
+  }
+  // MARKING ONE ANSWER. Test Mode never takes a demo grade (UX-TEST-22), and the
+  // reply has to still belong where it lands: it is stored in the attempt it was
+  // asked for, against the answer it marked, and only if that attempt is still
+  // the one in progress and that answer was not since resubmitted. It is drawn
+  // only if its question is still on screen.
+  async function tmSubmit(e, override) {
+    const a = tmAttempt(); if (!a) return;
+    const f = drawFormat(e.q), key = e.key, recKey = SIT.key, gen = EXAM.gen;
+    let ans = override != null ? override : f === "multiple_choice" ? a.drafts[key] : (($("#ans") && $("#ans").value) || "").trim();
+    if (ans == null || String(ans).trim() === "") { toast(f === "multiple_choice" ? "Choose an answer first." : "Write your answer first."); return; }
+    if (f !== "multiple_choice") ATT.setDraft(a, key, ans, tmNow());
+    SIT.pending[key] = ans; save();
+    const slow = !(f === "multiple_choice" || f === "calculation");
+    if (slow) tmDraw();
+    EXAM.paper = e.paper;
+    let g;
+    try {
+      if (f === "multiple_choice") g = gradeMC(e.q, Number(ans));
+      else if (f === "calculation") g = gradeCalc(e.q, ans);
+      else if (ASSESS.writtenModeOf(f) === "extended") g = await gradeWritten(e.q, ans, { noDemo: true });
+      else g = await gradeShort(e.q, ans);
+    } catch (err) {
+      g = ASSESS.fail("MARKING_STOPPED", "This response was not marked: marking stopped before it finished.", { max: Number(e.q.marks) || 0, retry: true });
+    }
+    g = examOnlyMarks(g, e.q);
+    const rec = state.attempts[recKey];
+    if (!rec || rec.current !== a || SIT.pending[key] !== ans) return;   // discarded, restarted or resubmitted
+    delete SIT.pending[key];
+    const draft = a.drafts[key];
+    ATT.record(a, key, f === "multiple_choice" ? Number(ans) : ans, g, tmNow());
+    // Typing that went on while it was being marked is kept as a draft.
+    if (draft != null && draft !== ans && f !== "multiple_choice") a.drafts[key] = draft;
+    if (isMarked(g)) delete SIT.edit[key];
+    save();
+    if (EXAM.gen !== gen || SIT.key !== recKey || !SIT.seq[SIT.pos] || SIT.seq[SIT.pos].key !== key) return;
+    tmDraw();
     const sh = $("#sheet"); if (sh && sh.scrollIntoView) sh.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    wireGlossary();
   }
   const SECOND_OPINION_FAILED = "Your mark stands. The marker could not give a second opinion just now.";
-  async function examDeepReview(item, key) {
-    const ans = EXAM.answers[key] || "";
-    const sitting = EXAM.results, pos = EXAM.pos, gen = EXAM.gen;
+  async function tmSecondOpinion(e) {
+    const a = tmAttempt(); if (!a) return;
+    const key = e.key, ans = a.answers[key], recKey = SIT.key, gen = EXAM.gen;
     const btn = $("#examreview"); if (btn) { btn.disabled = true; btn.textContent = "Marking…"; }
-    // Never a demo grade, and never over the mark already here (UX-TEST-22): a
-    // failure keeps the answer-key mark and says why.
+    EXAM.paper = e.paper;
     let g;
-    try { g = examOnlyMarks(await gradeWritten(item.q, ans, { noDemo: true }), item.q); }
-    catch (e) { g = ASSESS.fail("MARKING_STOPPED", "Marking stopped before it finished.", { retry: true }); }
-    finally { if (btn && document.contains(btn)) { btn.disabled = false; btn.textContent = "What would make this stronger →"; } }
-    if (EXAM.gen !== gen || EXAM.results !== sitting || EXAM.pos !== pos || EXAM.answers[key] !== ans || !(btn && document.contains(btn))) return;
-    // A refusal has a reason, and "could not be reached" is not it. Saying the
-    // wrong one sends a student looking for a connection problem that is not
-    // there.
-    // The answer is marked already; only the second opinion failed. Saying "this
-    // response was not marked" beside a mark on screen would be untrue.
-    if (ASSESS.outcomeOf(g) === "refused") { toast(SECOND_OPINION_FAILED, 4000); return; }
-    // The marker's own words come back INTO THIS SHEET rather than opening the
-    // revision workspace. What the authored points could not say - why a point
-    // was missed, and what the response did overall - is the summary and the
-    // criteria, and those render here. `paragraphs[]` arrives with the payload
-    // and is deliberately not rendered: it is the sentence-by-sentence material
-    // Essay Practice is built on.
-    if (isMarked(g)) {
-      EXAM.results[key] = g;
-      examSheet(item, key, g);
-    } else {
-      toast(SECOND_OPINION_FAILED, 4000);
-    }
+    try { g = examOnlyMarks(await gradeWritten(e.q, ans, { noDemo: true }), e.q); }
+    catch (err) { g = ASSESS.fail("MARKING_STOPPED", "Marking stopped before it finished.", { retry: true }); }
+    const rec = state.attempts[recKey];
+    const here = EXAM.gen === gen && SIT.key === recKey && SIT.seq[SIT.pos] && SIT.seq[SIT.pos].key === key;
+    if (btn && document.contains(btn)) { btn.disabled = false; btn.textContent = "What would make this stronger →"; }
+    if (!rec || rec.current !== a || a.answers[key] !== ans) return;
+    // Never a demo grade, and never over the mark already here: a failure keeps
+    // the answer-key mark and says why.
+    if (!isMarked(g)) { if (here) toast(SECOND_OPINION_FAILED, 4000); return; }
+    ATT.record(a, key, ans, g, tmNow()); save();
+    if (here) tmDraw();
   }
-  // WHAT USED TO BE HERE: examOpenReview, which handed a marked paper to
-  // openReview - the Essay Practice workspace - with a revise callback that
-  // reopened the question "ready to be rewritten". Nothing calls it now. Test
-  // Mode reviews a completed attempt and does not rewrite it, so the function
-  // that crossed that line is gone rather than left dark for something to find.
-  // examRevise went with it. Its last line was "Rewrite this part, then submit
-  // it again", which is the sentence that gives away what the door was for.
-  function examResults() {
-    let got = 0, max = 0, unmarked = 0;
-    const sit = EXAM.sit || (EXAM.paper.sections || []).map((_, i) => i);
-    const rows = (EXAM.paper.sections || []).map((sec, si) => {
-      if (sit.indexOf(si) < 0) return "";               // not sat this time
-      // ONE PLACE DECIDES WHAT ADDS UP, and this was a second.
-      //
-      // `g ? g.score : 0` was true of a refusal too - the object exists, the
-      // score does not - so this row rendered "undefined/20" and the section
-      // total became NaN. Gating on isMarked fixed the arithmetic and left the
-      // shape of the fault: three bags of results, and each one summing itself.
-      // That is exactly how the session summary was missed. The section total
-      // comes from the same tally the paper total does, so a change to what
-      // counts as marked cannot reach one of them and not the others.
-      // The same walk the paper was sequenced from, so a results page cannot
-      // contain a different set of questions from the one the student sat. It is
-      // also what makes parts appear here at all: this used to map over the
-      // section's top-level questions, so 21(a) to (d) would have shown as one
-      // row for a question nobody answered.
-      const active = answerablesNow().filter(a => a.si === si);
-      const t = ASSESS.tally(active.map(a => ({ marks: a.q.marks, result: EXAM.results[examKey(a)] })));
-      const qs = active.map(a => {
-        // A question nobody marked is named as such and contributes nothing to
-        // the score while still costing its marks.
-        const g = EXAM.results[examKey(a)], m = isMarked(g);
-        const q = a.q;
-        const named = a.display ? esc(String(a.display)) + ". " : "";
-        return `<div class="exam-resq"><span>${named}${esc(q.prompt.slice(0, 70))}${q.prompt.length > 70 ? "…" : ""}</span><span class="exam-resm${m ? "" : " nomark"}">${m ? g.score + "/" + (q.marks || 0) : "not marked"}</span></div>`;
-      }).join("");
-      got += t.got; max += t.max; unmarked += t.refused + t.failed;
-      return `<div class="exam-ressec"><div class="exam-ressech">${esc(sec.name || "Section")} <span class="exam-resm">${t.got}/${t.max}</span></div>${qs}</div>`;
+  function tmFinish() {
+    const a = tmAttempt(); if (!a) return;
+    tmFlushDraft();
+    const s = ATT.summary(a, state.exams);
+    const left = s.total - s.answered - s.notMarked;
+    const what = a.scope === "paper" ? "this paper" : "this practice";
+    if (!confirm("Finish " + what + "?" + (left > 0 ? " " + tmPlural(left, "question") + (left === 1 ? " has" : " have") + " no submitted answer." : "") +
+                 (s.notMarked ? " " + s.notMarked + " answer" + (s.notMarked === 1 ? " is" : "s are") + " not marked yet." : "") +
+                 " You can review your marks afterwards, but not change them.")) return;
+    ATT.complete(state, SIT.key, tmNow()); save();
+    document.body.classList.remove("tm-sitting");
+    tmResults(SIT.key);
+  }
+  // A larger reading view of the source, which leaves the answer untouched.
+  function tmReader(e) {
+    const hs = tmHolders(e); if (!hs.length) return;
+    const box = document.createElement("div");
+    box.className = "tm-reader";
+    box.setAttribute("role", "dialog"); box.setAttribute("aria-modal", "true"); box.setAttribute("aria-label", "Source");
+    box.innerHTML = `<div class="tm-readerin"><button type="button" class="tm-btn sm ghost tm-readerx">Close</button>
+      ${hs.map(h => `<h2>${esc(h.r && h.r.caption ? h.r.caption : h.label)}</h2>${tmSourceBody(h.r)}`).join("")}</div>`;
+    const shut = () => { box.remove(); document.removeEventListener("keydown", onKey); const x = $("#tmexpand"); if (x) x.focus(); };
+    const onKey = ev => { if (ev.key === "Escape") shut(); };
+    box.onclick = ev => { if (ev.target === box) shut(); };
+    box.querySelector(".tm-readerx").onclick = shut;
+    document.addEventListener("keydown", onKey);
+    document.body.appendChild(box);
+    box.querySelector(".tm-readerx").focus();
+  }
+  // THE NAVIGATOR (state 15). Structure mirrors the paper: sections, leaf chips,
+  // parent blocks with their parts, and an either/or as two chips sharing one
+  // item. Every chip carries its authored number with a Q, never a bare position.
+  function tmNavigator() {
+    const a = tmAttempt(); if (!a) return;
+    tmFlushDraft();
+    const here = SIT.seq[SIT.pos];
+    const chip = (e, label) => {
+      const s = ATT.itemState(a, e.key), i = SIT.seq.indexOf(e);
+      const cls = ["tm-chip", s.answered ? "done" : "", s.notMarked ? "nm" : "", s.flagged ? "flag" : "", e === here ? "here" : "", !s.answered && !s.notMarked && e !== here ? "todo" : ""].filter(Boolean).join(" ");
+      const title = label + " · " + (s.answered ? "answered" : s.notMarked ? "not marked yet" : s.drafted ? "draft saved" : "not answered yet") + (s.flagged ? " · flagged" : "") + (e === here ? " · you are here, item " + (i + 1) + " of " + SIT.seq.length : "");
+      return `<button type="button" class="${cls}" data-tmnav="${i}" title="${esc(title)}"${e === here ? ' aria-current="true"' : ""}>${s.answered ? "✓ " : ""}${s.flagged ? "⚑ " : ""}${esc(label)}</button>`;
+    };
+    const groups = [];
+    SIT.seq.forEach(e => {
+      const gk = e.paper.id + "|" + e.si;
+      let gr = groups.find(x => x.k === gk);
+      if (!gr) groups.push(gr = { k: gk, paper: e.paper, si: e.si, sec: e.sec, items: [] });
+      gr.items.push(e);
+    });
+    const blocks = groups.map(gr => {
+      const t = ASSESS.tally(gr.items.map(e => ({ marks: ATT.marksOf(e), result: a.results[e.key] })));
+      let html = "", run = [];
+      const flush = () => { if (run.length) html += `<div class="tm-chips">${run.join("")}</div>`; run = []; };
+      gr.items.forEach((e, idx) => {
+        if (e.eitherSlot) {
+          run.push(`<span class="tm-either">${e.options.map(o => chip(e, "Q" + (o.number || o.qi + 1))).join('<span class="or">or</span>')}<span class="tm-muted">Not chosen yet</span></span>`);
+          return;
+        }
+        if (e.parent) {
+          if (idx && gr.items[idx - 1].parent === e.parent) return;
+          flush();
+          const sibs = gr.items.filter(x => x.parent === e.parent);
+          const done = sibs.filter(x => ATT.itemState(a, x.key).answered).length;
+          html += `<div class="tm-pblock"><div class="pbh"><b>Question ${esc(PAPER.numberOf(e.parent) || "")}</b><span>${tmPlural(PAPER.marksOf(e.parent), "mark")} · ${done} of ${tmPlural(sibs.length, "part")} answered</span></div>
+            <div class="tm-chips">${sibs.map(x => chip(x, PAPER.labelOf(x.q, x.pi))).join("")}</div></div>`;
+          return;
+        }
+        run.push(chip(e, "Q" + (e.display || "")));
+      });
+      flush();
+      const title = a.scope === "paper" ? ATT.sectionName(gr.sec, gr.si) : (gr.paper.name || "") + " · " + ATT.sectionShort(gr.sec, gr.si);
+      return `<section class="tm-navsec"><div class="nsh"><h3>${esc(title)}</h3><span>${t.done} of ${gr.items.length} answered · ${t.got}/${t.max} marks</span></div>${html}</section>`;
     }).join("");
-    app.innerHTML = `${examBar()}<div class="exam-wrap"><div class="summary">
-      <div class="bigscore">${got}<small>/${max}</small></div>
-      <h2>${esc(EXAM.paper.name)}</h2>
-      <p>Paper complete.${unmarked ? ` ${unmarked} answer${unmarked === 1 ? " is" : "s are"} not marked yet, so ${unmarked === 1 ? "its marks are" : "their marks are"} not in this total, though they still count in what the paper is out of.` : ""} Your marks by section are below.</p>
-      <div class="exam-results">${rows}</div>
-      <div class="row center"><button class="btn" id="examretake">Retake paper</button><button class="btn ghost" id="exambackhome">Back to Test mode</button></div>
+    const s = ATT.summary(a, state.exams);
+    const wrap = $("#tmnavwrap");
+    wrap.innerHTML = `<div class="tm-scrim" id="tmscrim"><div class="tm-navsheet" role="dialog" aria-modal="true" aria-labelledby="tmnavh">
+      <div class="tm-navhead"><h2 id="tmnavh">Questions</h2><span class="tm-spacer"></span><button type="button" class="tm-btn sm ghost" id="tmnavx">Close</button></div>
+      <div class="tm-navstats"><span>${s.answered} of ${s.total} answered</span><span>${s.flagged} flagged</span>${s.notMarked ? `<span>${s.notMarked} not marked</span>` : ""}
+        <span class="pill">You are on item ${SIT.pos + 1} of ${SIT.seq.length} · ${esc(here.eitherSlot ? tmShort(here) : "Question " + (here.display || ""))} · ${esc(ATT.sectionShort(here.sec, here.si))}</span></div>
+      <div class="tm-navbody">${blocks}</div>
+      <p class="tm-legend"><span class="tm-chip done">✓ answered</span><span class="tm-chip flag">⚑ flagged</span><span class="tm-chip here">current</span><span class="tm-chip todo">not answered yet</span></p>
     </div></div>`;
-    $("#examquit").onclick = examHome;
-    $("#examretake").onclick = () => examStart(EXAM.paper, EXAM.sit);
-    $("#exambackhome").onclick = examHome;
+    const shut = () => { wrap.innerHTML = ""; document.removeEventListener("keydown", onKey); const b = $("#examnav"); if (b) b.focus(); };
+    const onKey = ev => { if (ev.key === "Escape") shut(); };
+    document.addEventListener("keydown", onKey);
+    $("#tmnavx").onclick = shut;
+    $("#tmscrim").onclick = ev => { if (ev.target.id === "tmscrim") shut(); };
+    wrap.querySelectorAll("[data-tmnav]").forEach(b => b.onclick = () => { document.removeEventListener("keydown", onKey); tmGo(Number(b.dataset.tmnav)); });
+    $("#tmnavx").focus();
+  }
+  // THE EXISTING RESULTS SCREEN, kept for a completed attempt until Slice B
+  // designs Results. It reads the attempt; it decides nothing.
+  function tmResults(key) {
+    const rec = tmRec(key), a = rec.last || rec.current;
+    if (!a) return tmLibrary();
+    view = "test"; EXAM.gen++;
+    document.body.classList.remove("tm-sitting");
+    const seq = ATT.sequence(a, state.exams);
+    const s = ATT.summary(a, state.exams);
+    const groups = [];
+    seq.forEach(e => { const k = e.paper.id + "|" + e.si; let gr = groups.find(x => x.k === k); if (!gr) groups.push(gr = { k, e, items: [] }); gr.items.push(e); });
+    tmUnit(seq[0] ? tmSubjectOf(seq[0].paper) : "");
+    const title = a.scope === "paper" ? ((seq[0] && seq[0].paper.name) || "Paper") : tmTypeName(a.format) + " practice";
+    app.innerHTML = tmShell(`${tmBack()}<div class="summary">
+      <div class="bigscore">${s.got}<small>/${s.max}</small></div>
+      <h2>${esc(title)}</h2>
+      <p>${a.completedAt ? "Completed " + tmDay(a.completedAt) + "." : "In progress."}${s.notMarked ? ` ${s.notMarked} answer${s.notMarked === 1 ? " is" : "s are"} not marked yet, so ${s.notMarked === 1 ? "its marks are" : "their marks are"} not in this total, though they still count in what this is out of.` : ""} Your marks by section are below.</p>
+      <div class="exam-results">${groups.map(gr => {
+        const t = ASSESS.tally(gr.items.map(e => ({ marks: ATT.marksOf(e), result: a.results[e.key] })));
+        return `<div class="exam-ressec"><div class="exam-ressech">${esc(a.scope === "paper" ? ATT.sectionName(gr.e.sec, gr.e.si) : (gr.e.paper.name || "") + " · " + ATT.sectionShort(gr.e.sec, gr.e.si))} <span class="exam-resm">${t.got}/${t.max}</span></div>
+          ${gr.items.map(e => { const g = a.results[e.key], m = isMarked(g); const p = String(e.q.prompt || "");
+            return `<div class="exam-resq"><span>${e.display ? esc(String(e.display)) + ". " : ""}${esc(p.slice(0, 70))}${p.length > 70 ? "…" : ""}</span><span class="exam-resm${m ? "" : " nomark"}">${m ? g.score + "/" + (Number(e.q.marks) || 0) : g ? "not marked" : "not answered"}</span></div>`; }).join("")}</div>`;
+      }).join("")}</div>
+      <div class="tm-hrow center"><button class="tm-btn" id="exambackhome">Back to Test mode</button></div>
+    </div>`, { cls: "tm-res" });
+    wireNav();
+    $("#tmback").onclick = tmLibrary;
+    $("#exambackhome").onclick = tmLibrary;
   }
 
   // ===================== CREATE (set builder + JSON import/export) =====================
@@ -2910,6 +3573,7 @@
   // writing one. The note is carried through the re-render instead.
   let builderNote = "";
   function builder(note) {
+    tmLeave();
     if (gated()) return authScreen();
     builderNote = note || "";
     view = "create";
@@ -3966,7 +4630,7 @@
     //
     // examOwns asks whether a card IS one of the sat paper's questions, by object
     // identity. That works because nothing between state.exams and the marker
-    // copies a question: examStart stores the reference sec.questions[qi] and
+    // copies a question: ATT.sequence hands back the reference sec.questions[qi] and
     // every later step passes that same object along. It is a real constraint on
     // the whole exam path and it was previously written down nowhere, so an
     // importer that normalised, rehydrated or wrapped a question would have
@@ -3981,9 +4645,12 @@
       return {
         paper: p2 ? (p2.id || null) : null,
         subjectKey: p2 ? ((ASSESS.curriculumOf(p2) || {}).subjectKey || null) : null,
-        questions: (EXAM.seq || []).filter(x => x.kind === "q").map(x => {
-          const held = p2 && p2.sections && p2.sections[x.si] && (p2.sections[x.si].questions || [])[x.qi];
-          return { si: x.si, qi: x.qi, identical: held === x.q, owned: !!examOwns(x.q) };
+        // Every question of this paper the sitting holds, compared with the
+        // object the stored paper holds at that place.
+        questions: (SIT.seq || []).filter(e => e.paper === p2 && !e.eitherSlot).map(e => {
+          const top = p2.sections[e.si] && (p2.sections[e.si].questions || [])[e.qi];
+          const held = e.pi == null ? top : PAPER.partsOf(top)[e.pi];
+          return { si: e.si, qi: e.qi, pi: e.pi, identical: held === e.q, owned: !!examOwns(e.q) };
         }),
       };
     };

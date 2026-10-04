@@ -217,13 +217,14 @@ const quoted = (s, q) => String(s).includes('"' + q + '"');
      "examRevise, which reopened the answer to be rewritten, is gone with it");
   ok(!/Work through the issues \(\$\{rvIssueCount/.test(app),
      "the exam sheet no longer offers `Work through the issues`");
-  const sheet = app.slice(app.indexOf("function examSheet("), app.indexOf("async function examDeepReview"));
-  ok(!/openReview\(/.test(sheet), "nothing in the exam sheet opens the review workspace");
+  // Slice A: the result is drawn by tmResultHTML and wired by tmWireSitting.
+  const sheet = app.slice(app.indexOf("function tmResultHTML("), app.indexOf("async function tmSubmit("));
+  ok(sheet.length > 1000 && !/openReview\(/.test(sheet), "nothing in the exam sheet opens the review workspace");
   ok(!/hasReview/.test(sheet), "the branch that decided to open it is gone");
-  ok(/examDeepReview\(item, key\)/.test(sheet), "the one remaining action asks the marker instead");
-  const deep = app.slice(app.indexOf("async function examDeepReview"), app.indexOf("function examResults"));
-  ok(!/openReview\(/.test(deep), "and the marker's answer comes back into the sheet, not into the workspace");
-  ok(/examSheet\(item, key, g\)/.test(deep), "by re-rendering the sheet");
+  ok(/rv\.onclick = \(\) => tmSecondOpinion\(e\)/.test(sheet), "the one remaining action asks the marker instead");
+  const deep = app.slice(app.indexOf("async function tmSecondOpinion"), app.indexOf("function tmFinish"));
+  ok(deep.length > 200 && !/openReview\(/.test(deep), "and the marker's answer comes back into the sheet, not into the workspace");
+  ok(/ATT\.record\(a, key, ans, g, tmNow\(\)\); save\(\);\s*if \(here\) tmDraw\(\);/.test(deep), "by re-rendering the sheet");
 }
 
 console.log("\n" + pass + " passed, " + fail + " failed");
