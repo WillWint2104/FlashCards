@@ -162,16 +162,24 @@ const shot = (p, n) => p.screenshot({ path: OUT + 'shot-sliceA-' + n + '.png' })
     const resumeBtn = await p.$('[data-tmtype="short_answer"]');
     ok(resumeBtn && /Resume practice/.test(await resumeBtn.textContent()), 'after a reload, the library offers Resume practice');
     await resumeBtn.click(); await settled(p);
-    ok(await has(p, '#tmresume') && await has(p, '#tmstartagain'), 'the overview offers Resume and Start again');
-    ok(!(await has(p, 'input[name=tmmode]')), 'and no way to change the questions in an attempt in progress');
-    await p.click('#tmresume'); await settled(p);
+    // Decision 23: Resume goes straight to the saved question, not through setup.
+    ok(await has(p, '#examquit') && !(await has(p, '#tmresume')), 'Resume practice opens the sitting directly, not the overview');
     ok((await qhead(p)) === second, 'resume opens where the student left: ' + await qhead(p));
+    ok((await text(p, '.tm-bar .sec')) === 'From Business Studies practice paper',
+       'the session is labelled by where its questions come from, not by the current section: ' + await text(p, '.tm-bar .sec'));
+    ok(/Section II/.test(await text(p, '.tm-whereitem')), 'the section stays with the current question, in the footer');
     ok((await p.$eval('#ans', e => e.value)) === 'A draft I have not submitted yet.', 'with the unsubmitted draft restored');
     ok((await bar(p)) === marked, 'and the same count: ' + await bar(p));
     await p.click('#examprev'); await settled(p);
     ok(await has(p, '#sheet .tm-result:not(.nm)') && await p.$eval('#examflag', e => e.getAttribute('aria-pressed') === 'true'),
        '11(a) keeps its mark and its flag');
     await shot(p, 'type-resumed-1440');
+
+    // The overview is still there when opened on purpose, from the tile's name.
+    await p.click('#examquit'); await settled(p);
+    await p.click('[data-tmtypeopen="short_answer"]'); await settled(p);
+    ok(await has(p, '#tmresume') && await has(p, '#tmstartagain'), 'opened on purpose, the overview offers Resume and Start again');
+    ok(!(await has(p, 'input[name=tmmode]')), 'and no way to change the questions in an attempt in progress');
 
     const after = await store(p);
     ok(JSON.stringify(after.attempts[paperKey]) === paperBefore, 'the paper attempt is byte for byte what it was before the session');
@@ -273,7 +281,7 @@ const shot = (p, n) => p.screenshot({ path: OUT + 'shot-sliceA-' + n + '.png' })
     ok(/Resume paper/.test(resumeCard), 'the card offers Resume paper');
     await p.evaluate(t => [...document.querySelectorAll('.tm-paper')].find(x => x.textContent.includes(t)).querySelector('[data-examresume]').click(), TITLE);
     await settled(p);
-    if (await has(p, '#tmresume')) { await p.click('#tmresume'); await settled(p); }
+    ok(await has(p, '#examquit') && !(await has(p, '#tmresume')), 'Resume paper opens the sitting directly, not the overview');
     ok((await qhead(p)) === draftAt, 'resume opens where the student left: ' + await qhead(p));
     ok((await p.$eval('#ans', e => e.value)) === 'A justification I will finish later.', 'with the draft restored');
     ok((await bar(p)) === progress, 'and the same scope and count: ' + await bar(p));

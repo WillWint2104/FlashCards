@@ -1695,4 +1695,28 @@ module.exports = [
     owner: "ui72",
     why: "a second opinion that landed while the student was rewriting replaced their mark and deleted the rewrite",
   },
+  {
+    id: "sliceA-practice-resume-through-setup",
+    file: "app.js",
+    find: "      return tmRec(ATT.typeKey(f)).current ? tmSit(ATT.typeKey(f)) : tmTypeOverview(f);",
+    replace: "      return tmTypeOverview(f);",
+    owner: "ui73",
+    why: "Resume practice sent a returning student back through setup instead of to the question they left (decision 23)",
+  },
+  {
+    id: "sliceA-paper-resume-through-setup",
+    file: "app.js",
+    find: "    app.querySelectorAll(\"[data-examresume]\").forEach(b => b.onclick = () => tmSit(ATT.paperKey(b.dataset.examresume)));",
+    replace: "    app.querySelectorAll(\"[data-examresume]\").forEach(b => b.onclick = () => tmPaperOverview(b.dataset.examresume));",
+    owner: "ui73",
+    why: "Resume paper sent a returning student back through setup instead of to the question they left (decision 23)",
+  },
+  {
+    id: "sliceA-session-labelled-by-section",
+    file: "app.js",
+    find: "      : tmSessionFrom();",
+    replace: "      : (e.paper.name || \"\") + \" \u00b7 \" + ATT.sectionShort(e.sec, e.si);",
+    owner: "ui73",
+    why: "a practice session drawn from several sections was labelled with the current question's section, as if the whole session were Section II",
+  },
 ];

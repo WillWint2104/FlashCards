@@ -488,10 +488,8 @@ screen or sitting; Study keeps its demo behaviour.
 Four places where implementing the frozen pages needed a reading, recorded so
 review can overrule any of them:
 
-- **Resuming a practice session goes through its overview.** The library's
-  *Resume practice* opens the type overview, which shows the session in progress
-  with *Resume practice* and *Start again*, as a paper's overview does. One
-  route for both scopes; the scope is visible before resuming.
+- **Resuming a practice session goes through its overview.** Overruled by
+  decision 23: *Resume* goes straight to the saved question.
 - **Completing an attempt still uses the legacy results screen.** *Finish*
   completes the attempt (`current` becomes `last`) and shows the existing
   results page read from the attempt. Submit confirmation, Results and Review
@@ -501,6 +499,56 @@ review can overrule any of them:
   every format.
 - **An extended response has no help region,** matching state 12. Only a short
   answer carries "What this question expects", built from authored guidance.
+
+## 23. Slice A approved for desktop; Slice B begins with Submit
+
+Slice A is approved as functionally complete on desktop: format practice and
+partial or whole paper practice, with navigation, flags, leaving, reloading and
+resuming, separate attempt state and version pinning. The two end-to-end
+journeys (`tests/ui73.js`) are the evidence.
+
+**Resume goes to the question, Start goes to setup.**
+
+- *Start paper* and *Start practice* open the overview, where sections or
+  questions are chosen.
+- *Resume paper* and *Resume practice* in the library open the sitting at the
+  exact saved question. A returning student is never sent through setup again.
+- The overview stays available when opened on purpose: a paper's title, and a
+  question type's name, open it, with *Resume* and *Start again* for an
+  attempt in progress.
+
+**Kept as implemented:**
+
+- Multiple choice is select, then submit explicitly.
+- An extended response has no "What this question expects" helper. State 12
+  stays frozen; scaffolding is not reintroduced because it is easy to add.
+- The old results screen stays, as a transitional screen only, until Slice B
+  replaces it. It is not polished or extended.
+
+**A practice session is labelled by where its questions come from,** never by
+the current question's section: "From Business Studies practice paper" (or
+"From 2 papers in your library"). The section stays with the current question,
+in the footer.
+
+**Timing.** Checkpoint is at 57.9 of 60 seconds and takes nothing more. New
+Slice B browser coverage is Full-only unless there is a compelling reason;
+Full has about 184 seconds of room.
+
+**Slice B, the last major desktop Test Mode slice,** designs three full-page
+desktop states, one at a time, each stopping for approval: Submit paper,
+Results overview, individual-question review. No question format and no
+Slice A page is redesigned. Mobile stays deferred.
+
+**Submit paper (state 1) must derive and show:** answered and marked;
+submitted but unmarked; unanswered; flagged; the either/or requirement; the
+sections chosen; and the marks earned so far in Practice. Unanswered, unmarked
+and flagged stay distinct, and a marker failure never reads as zero or as
+finished marking. Desktop v1 is Practice only, so submitting does not batch
+mark: it closes the attempt on the results already obtained, question by
+question. While a response is still being marked, final submission is blocked
+until it settles or is explicitly left unmarked. There are routes back to
+unanswered, flagged and unmarked questions, and an either/or is never
+presented as requiring both options.
 
 ## Mockup order — dependency, not numerical
 

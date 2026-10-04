@@ -14496,7 +14496,9 @@ module.exports = {
             ? `<button type="button" class="tm-btn ghost sm" data-tmtype="${f}">Resume practice</button>`
             : counts[f] ? `<button type="button" class="tm-btn ghost sm" data-tmtype="${f}" aria-label="Start ${esc(name.toLowerCase())} practice">Start practice</button>`
             : `<p class="tm-none">None available yet</p>`;
-          return `<li class="tm-tile"><h3>${esc(name)}</h3><p class="tm-avail"><b>${counts[f]}</b> available</p>${act}</li>`;
+          // The name opens the overview on purpose; Resume goes straight back to the question (decision 23).
+          const title = rec.current || counts[f] ? `<button type="button" class="tm-title" data-tmtypeopen="${f}">${esc(name)}</button>` : esc(name);
+          return `<li class="tm-tile"><h3>${title}</h3><p class="tm-avail"><b>${counts[f]}</b> available</p>${act}</li>`;
         }).join("")}</ul>
       </section>`;
     const cards = papers.map(tmCard).join("");
@@ -14519,7 +14521,12 @@ module.exports = {
       ${body}`, { cloud: true, cls: "tm-lib" });
     wireNav(); wireCloudBar();
     const im = $("#tmimport"); if (im) im.onclick = () => tmImport();
-    app.querySelectorAll("[data-tmtype]").forEach(b => b.onclick = () => tmTypeOverview(b.dataset.tmtype));
+    // Start goes to setup; Resume goes to the saved question, not through setup again.
+    app.querySelectorAll("[data-tmtype]").forEach(b => b.onclick = () => {
+      const f = b.dataset.tmtype;
+      return tmRec(ATT.typeKey(f)).current ? tmSit(ATT.typeKey(f)) : tmTypeOverview(f);
+    });
+    app.querySelectorAll("[data-tmtypeopen]").forEach(b => b.onclick = () => tmTypeOverview(b.dataset.tmtypeopen));
     app.querySelectorAll("[data-examsit],[data-tmopen]").forEach(b => b.onclick = () => tmPaperOverview(b.dataset.examsit || b.dataset.tmopen));
     app.querySelectorAll("[data-examresume]").forEach(b => b.onclick = () => tmSit(ATT.paperKey(b.dataset.examresume)));
     app.querySelectorAll("[data-examresults]").forEach(b => b.onclick = () => tmResults(ATT.paperKey(b.dataset.examresults)));
@@ -15170,6 +15177,12 @@ module.exports = {
     const ratio = g.max ? g.score / g.max : 0;
     return ratio >= 0.95 ? "Full marks" : ratio >= 0.6 ? "Most of it" : ratio >= 0.3 ? "Partly there" : "Not yet";
   }
+  // A practice session is labelled by where its questions come from, never by
+  // the current question's section, which the footer and the question carry.
+  function tmSessionFrom() {
+    const names = Array.from(new Set(SIT.seq.map(x => x.paper.name || "Untitled paper")));
+    return names.length === 1 ? "From " + names[0] : "From " + tmPlural(names.length, "paper") + " in your library";
+  }
   function tmDraw(scrollTop) {
     const a = tmAttempt(); if (!a) return tmLibrary();
     const e = SIT.seq[SIT.pos];
@@ -15185,7 +15198,7 @@ module.exports = {
     const name = a.scope === "paper" ? (e.paper.name || "Paper") : tmTypeName(a.format) + " practice";
     const secline = a.scope === "paper"
       ? ATT.sectionName(e.sec, e.si) + " · " + tmPlural(PAPER.totals({ sections: [e.sec] }).marks, "mark")
-      : (e.paper.name || "") + " · " + ATT.sectionShort(e.sec, e.si);
+      : tmSessionFrom();
     app.innerHTML = tmShell(`
       <div class="tm-bar">
         <button class="x" id="examquit" title="Leave. Your answers are saved." aria-label="Leave and return to Test mode">←</button>
