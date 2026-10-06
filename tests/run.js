@@ -3,7 +3,8 @@
 //
 //   node build.js && node tests/run.js            everything
 //   node tests/run.js ui16 ui17                   just these
-const { execFileSync } = require("child_process");
+const { execFileSync, execFile } = require("child_process");
+const os = require("os");
 const path = require("path"), fs = require("fs");
 const HERE = __dirname, ROOT = path.resolve(HERE, "..");
 const only = process.argv.slice(2);
@@ -34,6 +35,45 @@ const run = (cmd, args, label) => {
   }
 };
 
+// The same step, without waiting on it: for the fixture builders and the
+// pure-Node suites, which read the repository and write only their own outputs
+// (t26 its own tests/out/mutguard, t36 a fresh temp directory), so several can
+// run at once on a machine with more than one core. Each result is held and
+// printed in the order the list gives, so the output, and the gate that parses
+// it, read exactly as they did when everything ran one after another. Browser
+// suites stay serial: they share the machine's one display of timing and the
+// mutation runner's process guard, and overlapping them would change what they
+// measure.
+const runAsync = (cmd, args, label) => new Promise(resolve => {
+  const t0 = Date.now();
+  execFile(cmd, args, { cwd: HERE, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }, (e, stdout, stderr) => {
+    resolve({ label: label || args[0], ms: Date.now() - t0, e, stdout: String(stdout || ""), stderr: String(stderr || "") });
+  });
+});
+const report = r => {
+  process.stdout.write(r.label.padEnd(9));
+  timings.push({ name: r.label, ms: r.ms });
+  if (!r.e) {
+    const last = r.stdout.trim().split("\n").filter(Boolean).pop() || "(no output)";
+    console.log(last);
+    const m = last.match(/(\d+)\s+failed/);
+    if (m) return Number(m[1]) === 0;
+    return last !== "(no output)" && !/fail/i.test(last);
+  }
+  const out = (r.stdout + r.stderr).trim().split("\n").filter(Boolean);
+  console.log(out.filter(l => /FAIL|failed|Error/.test(l)).slice(0, 3).join(" | ") || "FAILED");
+  return false;
+};
+const LANES = Math.max(1, Math.min(4, (os.cpus() || []).length || 1));
+async function runAll(jobs) {
+  const results = new Array(jobs.length);
+  let next = 0;
+  const lane = async () => { while (next < jobs.length) { const i = next++; results[i] = await runAsync(...jobs[i]); } };
+  await Promise.all(Array.from({ length: Math.min(LANES, jobs.length) }, lane));
+  return results.map(report);
+}
+
+(async () => {
 if (!fs.existsSync(path.join(ROOT, "marginal-preview.html"))) {
   console.error("Run `node build.js` in the repo root first."); process.exit(1);
 }
@@ -41,14 +81,14 @@ console.log("--- building fixtures");
 // Run all six before deciding, so the output names every broken one. A stale
 // fixture is the worst failure mode this harness has: the suites would pass
 // against the PREVIOUS build and the run would print "all suites green".
-const built = [
-  run("node", ["mkshim.js"], "shim"),
-  run("node", ["mkblockshim.js"], "blocks"),
-  run("node", ["mkwashim.js"], "wa"),
-  run("node", ["mklearnshim.js"], "learn"),
-  run("node", ["mkevidenceshim.js"], "evid"),
-  run("python3", ["mkwalk.py"], "walk"),
-];
+const built = await runAll([
+  ["node", ["mkshim.js"], "shim"],
+  ["node", ["mkblockshim.js"], "blocks"],
+  ["node", ["mkwashim.js"], "wa"],
+  ["node", ["mklearnshim.js"], "learn"],
+  ["node", ["mkevidenceshim.js"], "evid"],
+  ["python3", ["mkwalk.py"], "walk"],
+]);
 if (built.some(x => !x)) {
   console.error("\nfixture build failed; refusing to run the suites against stale fixtures");
   process.exit(1);
@@ -64,7 +104,7 @@ const pick = list => only.length ? list.filter(x => only.includes(x)) : list;
 
 let bad = 0;
 const worker = pick(WORKER), ui = pick(UI);
-if (worker.length) { console.log("\n--- worker, block and content suites"); worker.forEach(f => { if (!run("node", [f + ".mjs"], f)) bad++; }); }
+if (worker.length) { console.log("\n--- worker, block and content suites"); (await runAll(worker.map(f => ["node", [f + ".mjs"], f]))).forEach(ok => { if (!ok) bad++; }); }
 if (ui.length) { console.log("\n--- ui suites"); ui.forEach(f => { if (!run("node", [f + ".js"], f)) bad++; }); }
 const bots = pick(BOTS);
 if (bots.length) { console.log("\n--- simulated students"); if (!run("node", ["bots/run.js"], "bots")) bad++; }
@@ -81,3 +121,4 @@ if (process.env.ES_TIMING !== "0" && timings.length) {
 }
 console.log(bad ? "\n" + bad + " suite(s) failed" : "\nall suites green");
 process.exit(bad ? 1 : 0);
+})();
