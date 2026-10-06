@@ -393,6 +393,39 @@ console.log('--- a closed attempt keeps the cause, not the advice (decision 25)'
   ok(A.report(a, s.exams, []).items.find(x => x.key === '1-1-0').cause === 'The marker is busy.', 'and the report carries the cause');
 }
 
+console.log('--- one question, for review');
+{
+  const s = store(), p = fresh(); A.addPaper(s, p);
+  const a = A.startPaper(p, null, T(1));
+  A.record(a, '1-0-0', 'the marked version', marked(2, 2), T(2));
+  A.setDraft(a, '1-0-0', 'a later edit', T(3));
+  A.record(a, '1-1-0', 'sent', ASSESS.fail('MARKER_UNREACHABLE', 'This response was not marked: the marker could not be reached.', { max: 3, retry: true }), T(2));
+  A.setDraft(a, '1-0-3', 'written, never sent', T(3));
+  A.toggleFlag(a, '1-0-1', T(3));
+  A.complete({ exams: s.exams, attempts: { k: { current: a, last: null } } }, 'k', T(4));
+  const R = k => A.reviewAt(a, s.exams, k);
+  const first = R(null);
+  ok(first.index === 0 && first.entry.key === A.sequence(a, s.exams)[0].key && first.prev === null && first.closed,
+     'with no key, Review starts at the first answerable, with nothing before it, on a closed attempt');
+  const ch = R('1-0-0');
+  ok(ch.item.status === 'marked' && ch.answer === 'the marked version' && ch.later === 'a later edit' && ch.result.score === 2,
+     'a changed answer keeps the marked version, its mark, and the later edit apart');
+  ok(ch.prev.key === A.sequence(a, s.exams)[ch.index - 1].key && ch.next.key === '1-0-1', 'and knows its neighbours in the attempt');
+  const nm = R('1-1-0');
+  ok(nm.item.status === 'not_marked' && nm.answer === 'sent' && nm.later === null && nm.item.cause === 'The marker could not be reached.',
+     'a not-marked answer keeps its response and its cause, and has no later text');
+  const na = R('1-0-3');
+  ok(na.item.status === 'not_answered' && na.answer === null && na.unsent === 'written, never sent' && na.later === null && na.result === null,
+     'a question nothing was submitted for has no answer and no result; its draft is unsent, not an answer');
+  ok(R('1-0-1').item.flagged && R('1-0-2').unsent === null && R('1-0-2').answer === null, 'a flag is read; an empty question has nothing at all');
+  const last = R(A.sequence(a, s.exams).slice(-1)[0].key);
+  ok(last.next === null && last.item.eitherSlot && last.entry.eitherSlot && last.prev.display === '14' && last.item.options.join() === '15,16',
+     'the unchosen either/or is the last item, one slot naming both options, with nothing after it');
+  ok(R('9-9') === null, 'a key not in the attempt has no review');
+  const sm = A.results(a, s.exams).items.map(x => x.key + x.status).join();
+  ok(A.sequence(a, s.exams).map(e => R(e.key)).map(r => r.item.key + r.item.status).join() === sm, 'every review item is the Results item for the same key');
+}
+
 console.log('--- a restored store is not trusted');
 {
   const p = fresh();

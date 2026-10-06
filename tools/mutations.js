@@ -1744,6 +1744,22 @@ module.exports = [
     why: "a stored result with no outcome counted as answered in the total and as not marked on its chip, so one page could disagree with itself",
   },
   {
+    id: "sliceB-review-later-from-any-draft",
+    file: "tools/contract/attempts.js",
+    find: "           answer: it.graded, later: it.changed ? String(d) : null,",
+    replace: "           answer: it.graded, later: d != null ? String(d) : null,",
+    owner: "t38",
+    why: "Review showed a draft beside a question nothing was submitted for as text changed after marking, implying a mark it never had",
+  },
+  {
+    id: "sliceB-review-unsent-as-answer",
+    file: "tools/contract/attempts.js",
+    find: "           answer: it.graded, later:",
+    replace: "           answer: it.graded != null ? it.graded : (d == null ? null : String(d)), later:",
+    owner: "t38",
+    why: "an unsubmitted draft was shown as the submitted answer, so Review presented text nobody marked as the student's answer",
+  },
+  {
     id: "sliceB-empty-attempt-closes",
     file: "tools/contract/attempts.js",
     find: "  if (!rec.current || !submittedAny(rec.current)) return null;",

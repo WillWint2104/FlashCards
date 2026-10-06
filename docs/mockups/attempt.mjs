@@ -53,13 +53,17 @@ export function mark(a, input, review) {
     const ok = Math.abs(rd.value - q.expected) <= q.tolerance;
     return ASSESS.marked({ score: ok ? q.marks : 0, max: q.marks, kind: "calc" });
   }
+  // Stored as the app's gradeShort and gradeWritten store it: the points for a
+  // locally matched answer, the marker's finalized review (fb) otherwise, so a
+  // page that reviews a marked answer reads the feedback the app would keep.
   const sp = ASSESS.scorePoints(q, input);
-  if (sp.ok === true && sp.local) return ASSESS.marked({ score: sp.score, max: sp.max, kind: "points" });
+  if (sp.ok === true && sp.local) return ASSESS.marked({ score: sp.score, max: sp.max, kind: "points", points: sp.points, weighted: true, model: q.model || "" });
   if (!review) throw new Error(keyOf(a) + " goes to the marker and the fixture carries no review for it");
   const mode = ASSESS.writtenModeOf(f) === "extended" ? "extended" : "short";
   const r = finalize(JSON.parse(JSON.stringify(review.review || review)), q.marks, input, null,
                      (review.criteria || S13.criteria), false, mode, null);
-  return ASSESS.marked({ score: r.score, max: r.max, kind: "written" });
+  const g = ASSESS.marked({ score: Math.min(Number(r.score) || 0, Number(q.marks) || 0), max: Number(q.marks) || 0, kind: "llm", fb: r });
+  return sp.ok === true && sp.count && sp.points.every(p => p.matchable) ? Object.assign({}, g, { points: sp.points, weighted: false }) : g;
 }
 
 // The facts every page reads, and nothing else. `status` is one of three words.

@@ -1,0 +1,12 @@
+{
+  "_why": "Which question of which closed attempt each Review page shows. Inputs only. An attempt is named by the Results page it is reviewed from (05-results.fixture.json), and is closed exactly as that page closes it, so a Results cell and the Review page it opens read one attempt. Every status, mark, cause, feedback and text on these pages is derived through the shipped contract (ATT.reviewAt over the replayed attempt); the marker's feedback is the frozen states' own reviews run through the shipped finalize().",
+  "pages": {
+    "06-review.html": { "results": "05-results-complete.html", "key": "1-1-1", "note": "a marked short answer, 3 of 5 (the primary proposal)" },
+    "06-review-extended.html": { "results": "05-results-complete.html", "key": "3-0", "note": "a marked extended response, 14 of 20" },
+    "06-review-unmarked.html": { "results": "05-results.html", "key": "1-1-0", "note": "submitted, not marked: the marker could not be reached" },
+    "06-review-changed.html": { "results": "05-results.html", "key": "1-0-0", "note": "marked, then changed and never submitted" },
+    "06-review-notanswered.html": { "results": "05-results.html", "key": "1-0-3", "note": "not answered, with a draft that was never submitted" },
+    "06-review-either.html": { "results": "05-results.html", "key": "3-0", "note": "an either/or in which neither question was chosen" },
+    "06-review-questions.html": { "results": "05-results.html", "key": "1-1-0", "navigator": true, "note": "the Questions navigator, open, in a closed attempt" }
+  }
+}

@@ -634,6 +634,25 @@ function sane(attempts, exams) {
   return out;
 }
 
+// ONE QUESTION OF AN ATTEMPT, FOR REVIEW (Slice B, state 3). It reads the same
+// report item Results reads, so a cell and the page it opens cannot disagree,
+// and keeps apart the three texts a question can have: the version a result was
+// given for (answer), text changed after that and never submitted (later), and
+// text written for a question nothing was submitted for (unsent). A null key is
+// the first answerable, where Review each question starts. Nothing here marks.
+function reviewAt(a, exams, key) {
+  var seq = sequence(a, exams);
+  var i = key == null ? 0 : seq.map(function (e) { return e.key; }).indexOf(key);
+  if (!seq.length || i < 0) return null;
+  var e = seq[i], it = report(a, exams, []).items[i], d = a.drafts[e.key];
+  var near = function (x) { return x ? { key: x.key, display: x.display, eitherSlot: x.eitherSlot,
+    options: x.eitherSlot ? x.options.map(function (o) { return o.number; }) : null } : null; };
+  return { index: i, count: seq.length, entry: e, item: it, result: a.results[e.key] || null,
+           answer: it.graded, later: it.changed ? String(d) : null,
+           unsent: it.status === "not_answered" && it.draft ? String(d) : null,
+           prev: near(seq[i - 1]), next: near(seq[i + 1]), closed: !!a.completedAt };
+}
+
 module.exports = {
   SCOPE: SCOPE, STATUS: STATUS, TYPES: TYPES,
   identityOf: identityOf, versionOf: versionOf, paperKey: paperKey, typeKey: typeKey, keyOf: keyOf, itemKey: itemKey,
@@ -641,5 +660,5 @@ module.exports = {
   sectionName: sectionName, sectionShort: sectionShort, assessable: assessable, bank: bank, bankCounts: bankCounts,
   startPaper: startPaper, startType: startType, begin: begin, discard: discard, complete: complete,
   sequence: sequence, entryAt: entryAt, marksOf: marksOf, setDraft: setDraft, record: record, toggleFlag: toggleFlag, moveTo: moveTo, choose: choose,
-  summary: summary, report: report, results: results, causeOf: causeOf, leaveUnmarked: leaveUnmarked, submittedAny: submittedAny, weightOf: weightOf, restorePapers: restorePapers, itemState: itemState, sane: sane, clone: clone,
+  summary: summary, report: report, results: results, reviewAt: reviewAt, causeOf: causeOf, leaveUnmarked: leaveUnmarked, submittedAny: submittedAny, weightOf: weightOf, restorePapers: restorePapers, itemState: itemState, sane: sane, clone: clone,
 };
