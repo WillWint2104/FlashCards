@@ -229,7 +229,7 @@ one level up.
 | --- | --- |
 | `checks.*` | the renderer's gate, never a number on screen |
 | `diagnosis` | pass-1 reader output; already folded into everything above |
-| `issues[].ladder` | **three model-written replacement sentences — "Clear, Better, Band 6".** Mandatory in the schema, so it always arrives. This is Essay Practice's revision material and is exactly the generated replacement prose Test Mode must not show. **The renderer drops it.** |
+| `issues[].ladder` | **three model-written replacement sentences — "Clear, Better, Band 6".** Mandatory in the schema, so it always arrives. This is Essay Practice's revision material and is exactly the generated replacement prose Test Mode must not show. **Test Mode's renderer drops it.** It is shown only in Essay Practice's review workspace (`openReview`), which Test Mode never opens. |
 | `paragraphs[].reasons[]`, `.note` | per-paragraph coaching commentary against the bands |
 | `missing_vocabulary` | **UX-TEST-05** — unconditionally `[]` from the worker, rendered as chips in two places in `app.js`. Dead UI |
 | `next_steps[]` | derived from `issues[].head`; usable, but it arrives **stripped of its sentence**, so it must be treated as class A unless re-paired with a verified sentence |

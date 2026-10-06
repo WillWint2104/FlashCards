@@ -1259,7 +1259,6 @@ module.exports = [
   },
   {
     id: "gate3a-section-total-sums-a-refusal",
-    file: "app.js",
     // Results' section and question subtotals now come from ATT.results (Slice B).
     file: "tools/contract/attempts.js",
     find: "    var t = ASSESS.tally(xs.map(function (x) { return { marks: x.marks, result: a.results[x.key] }; }));\n    var w = ",

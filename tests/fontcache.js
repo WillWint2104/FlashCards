@@ -22,8 +22,16 @@ const CSS_URL = "https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;6
 const UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
 const DIR = path.join(OUT, "fonts");
 
+// Downloaded beside the cache and moved in only once complete, so a timeout or
+// a dropped connection never leaves a truncated file that later runs trust.
 function fetchTo(url, file) {
-  execFileSync("curl", ["-sS", "-f", "--max-time", "30", "-A", UA, "-o", file, url], { stdio: ["ignore", "ignore", "pipe"] });
+  const tmp = file + ".part";
+  try {
+    execFileSync("curl", ["-sS", "-f", "--max-time", "30", "-A", UA, "-o", tmp, url], { stdio: ["ignore", "ignore", "pipe"] });
+    fs.renameSync(tmp, file);
+  } finally {
+    try { fs.unlinkSync(tmp); } catch (e) { /* renamed, or never written */ }
+  }
 }
 function ensureFonts() {
   fs.mkdirSync(DIR, { recursive: true });

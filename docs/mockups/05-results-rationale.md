@@ -103,7 +103,7 @@ cannot back the first six; the rest belong to individual-question review
 parent groups with the parts in the attempt and their caption, a tally and one
 of the three words for each, the outcome per item (failed or refused), the
 dates, and the version the attempt was on against the library's. Tested in
-`tests/t38.mjs`. Nothing in the app calls it yet.
+`tests/t38.mjs`. The app renders Results from it (`tmResults`).
 
 ## Decided (decision 25)
 
