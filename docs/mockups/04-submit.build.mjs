@@ -187,8 +187,8 @@ function consequence(r, a) {
 function changedNote(r) {
   const m = r.items.filter(x => x.changed && x.status === "marked").length, n = r.items.filter(x => x.changed && x.status === "not_marked").length;
   if (!m && !n) return "";
-  const parts = [m ? (m === 1 ? "1 answer was" : m + " answers were") + " changed after marking and the change was not submitted, so the earlier mark stands" : "",
-                 n ? (n === 1 ? "1 not-marked answer was" : n + " not-marked answers were") + " edited and the edit was not submitted, so it stays not marked" : ""].filter(Boolean);
+  const parts = [m ? (m === 1 ? "1 answer has" : m + " answers have") + " changed since marking, so the earlier mark stands, for the earlier version" : "",
+                 n ? (n === 1 ? "1 not-marked answer has" : n + " not-marked answers have") + " changed since it was sent for marking, so it stays not marked" : ""].filter(Boolean);
   return `<p class="note">${parts.join(". ")}. <a href="#g-ch">See which</a></p>`;
 }
 function lastStrip(rec, a) {
@@ -233,7 +233,7 @@ function groups(r, a) {
   const ch = r.items.filter(x => x.changed);
   if (ch.length) out.push(`<section class="grp" id="g-ch" tabindex="-1" aria-labelledby="h-ch">
     <h3 id="h-ch">Changed after marking <span class="n">${ch.length}</span></h3>
-    <ul>${ch.map(x => row(x, `<p class="why">${x.status === "marked" ? "You changed this answer after it was marked and did not submit the change. Your mark of " + x.score + " of " + plural(x.max, "mark") + " stands." : "You edited this answer and did not submit the edit. It stays not marked."}</p>`,
+    <ul>${ch.map(x => row(x, `<p class="why">${x.status === "marked" ? "This answer has changed since it was marked, and the new version has no mark. Your mark of " + x.score + " of " + plural(x.max, "mark") + " stands, for the version it was given for." : "This answer has changed since it was sent for marking. It stays not marked."}</p>`,
       go(x, ""))).join("")}</ul></section>`);
   const fl = r.items.filter(x => x.flagged);
   if (fl.length) out.push(`<section class="grp" id="g-fl" tabindex="-1" aria-labelledby="h-fl">

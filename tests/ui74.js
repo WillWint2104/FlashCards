@@ -157,12 +157,35 @@ const rows = p => p.$$eval('.tm-tally tbody tr, .tm-tally tfoot tr', es => es.ma
     ok(/submitted without a mark/.test(await text(p, '#tmbusy')), 'Leave it unmarked spells out its consequence');
     await p.click('[data-tmleave="1-0-1"]'); await settled(p);
     ok(!(await has(p, '#tmbusy')) && !(await p.$eval('#tmsubmitpaper', e => e.disabled)), 'left unmarked, nothing blocks');
+    ok((await p.evaluate(() => document.activeElement && document.activeElement.id)) === 'tmsubmitpaper', 'and focus moves to Submit paper, the next thing to do');
+    ok(/Submitting closes this attempt/.test(await text(p, '#tmlive')), 'the change is announced from a region that outlives the redraw: ' + JSON.stringify(await text(p, '#tmlive')));
     ok(/11\(b\)/.test(await text(p, '#tmg-nm')) && /chose not to wait/.test(await text(p, '#tmg-nm')), 'and it is listed as submitted, not marked');
     await p.waitForTimeout(3500); await settled(p);
     const c = await current(p);
     ok(c.a.results['1-0-1'] && c.a.results['1-0-1'].code === 'MARKING_LEFT' && c.a.results['1-0-1'].outcome !== 'success',
        'the late reply is ignored: ' + JSON.stringify(c.a.results['1-0-1'] && { code: c.a.results['1-0-1'].code, score: c.a.results['1-0-1'].score }));
     ok(/11\(b\)/.test(await text(p, '#tmg-nm')), 'and the page still shows it not marked');
+    await ctx.close();
+  }
+  {
+    // The same words sent again after Leave it unmarked are a new request: the
+    // abandoned one's reply (here a failure, arriving first) is not taken for it.
+    const { p, ctx, mode } = await open(b);
+    let n = 0;
+    mode.reply = () => ++n === 1 ? { status: 503, body: {}, delay: 2500 } : Object.assign(REVIEW(3, 3), { delay: 4000 });
+    await sit(p, '', ['Section II']);
+    await navTo(p, '11(b)');
+    const SAME = 'Casual operators have no guaranteed hours, so they leave for steadier work.';
+    await p.fill('#ans', SAME); await p.click('#check'); await settled(p);
+    await review(p);
+    await p.click('[data-tmleave="1-0-1"]'); await settled(p);
+    await p.$$eval('#tmg-nm [data-tmreviewgo]', es => es.find(e => /11\(b\)/.test(e.textContent)).click()); await settled(p);
+    ok((await p.$eval('#ans', e => e.value)) === SAME && await has(p, '#examremark'), 'back on 11(b), the same words can be marked again');
+    await p.click('#examremark'); await settled(p);
+    await p.waitForTimeout(5000); await settled(p);
+    const c = await current(p);
+    ok(c.a.results['1-0-1'] && c.a.results['1-0-1'].score === 3 && c.a.results['1-0-1'].outcome === 'success',
+       'the retry\'s own mark lands, and the abandoned request\'s failure is ignored: ' + JSON.stringify(c.a.results['1-0-1'] && c.a.results['1-0-1'].code));
     await ctx.close();
   }
 
@@ -206,13 +229,35 @@ const rows = p => p.$$eval('.tm-tally tbody tr, .tm-tally tfoot tr', es => es.ma
     mode.reply = () => Object.assign(REVIEW(1, 2), { delay: 3000 });
     await p.click('#examreview'); await settled(p);
     await review(p);
-    ok(!(await has(p, '#tmbusy')) && !(await p.$eval('#tmsubmitpaper', e => e.disabled)), 'a second opinion cannot change the score, so it does not block');
+    ok(!(await has(p, '#tmbusy')) && !(await p.$eval('#tmsubmitpaper', e => e.disabled)), 'a second opinion does not block');
+    const before = await text(p, '#tmrsum');
+    await p.waitForTimeout(3500); await settled(p);              // it lands while the page is open
+    ok((await text(p, '#tmrsum')) === before && (await current(p)).a.results['1-0-0'].score === 2,
+       'landing while the page is open, it is abandoned: the total shown is the one Submit closes at');
     await p.click('#tmsubmitpaper'); await settled(p);
-    await p.waitForTimeout(3500); await settled(p);
     const at = await stored(p), rec = at[Object.keys(at)[0]];
     ok(!rec.current && rec.last.results['1-0-0'].score === 2 && rec.last.results['1-0-0'].kind === 'points',
        'it was abandoned on submit, and its late reply did not touch the closed attempt: ' + JSON.stringify(rec.last.results['1-0-0'] && rec.last.results['1-0-0'].score));
     ok(mode.sent.length === 1 && !errs.length, 'one request, no page errors ' + JSON.stringify(errs));
+    await ctx.close();
+  }
+
+  console.log('--- 5b. another tab changed the attempt: this one does not close it on stale data');
+  {
+    const { p, ctx } = await open(b);
+    await sit(p, '', ['Section I']);
+    await p.click('.choice'); await p.click('#check'); await settled(p);
+    await review(p);
+    await p.evaluate(() => {                                   // what another tab's save does
+      const st = JSON.parse(localStorage.getItem('marginal.trial.v1'));
+      const k = Object.keys(st.attempts).find(x => st.attempts[x].current);
+      st.attempts[k].current.updatedAt = '2099-01-01T00:00:00.000Z';
+      localStorage.setItem('marginal.trial.v1', JSON.stringify(st));
+    });
+    await p.click('#tmsubmitpaper'); await settled(p);
+    const t = await p.$$eval('.toast', es => es.map(e => e.textContent).join(' | '));
+    const c = await current(p);
+    ok(/changed in another tab/.test(t) && c && !c.rec.last, 'it says so, and nothing is closed: ' + JSON.stringify(t));
     await ctx.close();
   }
 

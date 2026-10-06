@@ -15659,7 +15659,9 @@ module.exports = {
     if (ans == null || String(ans).trim() === "") { toast(f === "multiple_choice" ? "Choose an answer first." : "Write your answer first."); return; }
     // Marking the stored answer again leaves whatever is in the box as the draft.
     if (f !== "multiple_choice" && override == null) ATT.setDraft(a, key, ans, tmNow());
-    tmPending(a)[key] = ans; save();
+    // One token per request, not the text: after Leave it unmarked a resubmission
+    // of the same words is a new request, and the abandoned one's reply is not it.
+    const tok = { ans }; tmPending(a)[key] = tok; save();
     const slow = !(f === "multiple_choice" || f === "calculation");
     if (slow) tmDraw();
     EXAM.paper = e.paper;
@@ -15674,7 +15676,7 @@ module.exports = {
     }
     g = examOnlyMarks(g, e.q);
     const rec = state.attempts[recKey];
-    if (!rec || rec.current !== a || tmPending(a)[key] !== ans) return;   // discarded, restarted or resubmitted
+    if (!rec || rec.current !== a || tmPending(a)[key] !== tok) return;   // discarded, restarted, resubmitted or left unmarked
     delete tmPending(a)[key];
     const draft = a.drafts[key];
     ATT.record(a, key, f === "multiple_choice" ? Number(ans) : ans, g, tmNow());
@@ -15707,6 +15709,9 @@ module.exports = {
     // Never a demo grade, and never over the mark already here: a failure keeps
     // the answer-key mark and says why.
     if (!isMarked(g)) { if (here) toast(SECOND_OPINION_FAILED, 4000); return; }
+    // Once Review & submit is open, the total it shows is the one Submit closes
+    // at (decision 24): a second opinion landing then is abandoned, not recorded.
+    if (tmReviewShowing(a)) return;
     ATT.record(a, key, ans, g, tmNow()); save();
     if (here) tmDraw();
   }
@@ -15741,7 +15746,12 @@ module.exports = {
     if (gated()) return authScreen();
     const rec = tmRec(key), a = rec.current;
     if (!a) return tmLibrary();
-    const had = opts && opts.settled && document.activeElement && document.activeElement.closest && document.activeElement.closest("#tmbusy");
+    // A redraw while the student is on the page keeps their place: what had focus
+    // keeps it, or, when the notice it was in has closed, the next thing to do.
+    const ae = document.activeElement;
+    const had = opts && opts.settled && ae && ae.closest && ae.closest("#tmbusy");
+    const prev = !(opts && opts.settled) || !ae || ae === document.body ? null : ae.id ? "#" + ae.id
+      : ["data-tmreviewgo", "data-tmleave"].filter(x => ae.hasAttribute && ae.hasAttribute(x)).map(x => "[" + x + '="' + ae.getAttribute(x) + '"]')[0] || null;
     view = "test"; session = null; currentTopic = null;
     REVIEW.key = key; REVIEW.a = a;
     document.body.classList.remove("tm-sitting");
@@ -15794,8 +15804,8 @@ module.exports = {
     const cell = (n, txt) => n ? txt : "";
     const lost = R.notMarked.worth + R.notAnswered.worth;
     const mChanged = r.items.filter(x => x.changed && x.status === "marked").length, nChanged = r.items.filter(x => x.changed && x.status === "not_marked").length;
-    const changedNote = mChanged || nChanged ? `<p class="tm-rnote">${[mChanged ? (mChanged === 1 ? "1 answer was" : mChanged + " answers were") + " changed after marking and the change was not submitted, so the earlier mark stands, for the earlier version" : "",
-      nChanged ? (nChanged === 1 ? "1 not-marked answer was" : nChanged + " not-marked answers were") + " edited and the edit was not submitted, so it stays not marked" : ""].filter(Boolean).join(". ")}. <a href="#tmg-ch">See which</a></p>` : "";
+    const changedNote = mChanged || nChanged ? `<p class="tm-rnote">${[mChanged ? (mChanged === 1 ? "1 answer has" : mChanged + " answers have") + " changed since marking, so the earlier mark stands, for the earlier version" : "",
+      nChanged ? (nChanged === 1 ? "1 not-marked answer has" : nChanged + " not-marked answers have") + " changed since it was sent for marking, so it stays not marked" : ""].filter(Boolean).join(". ")}. <a href="#tmg-ch">See which</a></p>` : "";
     const tally = `<table class="tm-tally">
       <caption class="tm-sr">What you are ${verb}</caption>
       <thead><tr><th scope="col">Status</th><th scope="col">Questions</th><th scope="col">Worth</th><th scope="col">Earned</th></tr></thead>
@@ -15814,8 +15824,8 @@ module.exports = {
     let last = "";
     if (rec.last) {
       const l = ATT.summary(rec.last, state.exams);
-      const lscope = !type && rec.last.sections && rec.last.sections.join() !== a.sections.join()
-        ? " · " + (rec.last.sections.length === paper.sections.length ? "the whole paper" : esc(tmList(rec.last.sections.map(si => ATT.sectionShort(secOf(si), si)))) + " only") : "";
+      const lscope = !type && rec.last.sections && (rec.last.sections.join() !== a.sections.join() || rec.last.paper !== a.paper)
+        ? " · " + esc(tmScope(rec.last) || "the whole paper") : "";
       last = `<section class="tm-last tm-rlast" aria-labelledby="tmrla"><h3 class="tm-sr" id="tmrla">Your last completed ${type ? "session" : "attempt"}</h3>
         <span class="tm-state done">Completed ${tmDay(rec.last.completedAt)}</span>
         <p class="tm-lastline"><b>${l.got} / ${l.max}</b> · ${l.answered} of ${l.total} answered${lscope}</p>
@@ -15840,8 +15850,8 @@ module.exports = {
         ${x.pending ? "" : `<p class="tm-rroute">${go(x, x.draft ? "to submit it for marking" : "")}</p>`}</li>`).join(""));
     if (ch.length) groups += grp("tmg-ch", "Changed after marking", ch.length, false, "",
       ch.map(x => `<li>${where(x)}<p class="tm-rwhy">${x.status === "marked"
-        ? "You changed this answer after it was marked and did not submit the change. Your mark of " + x.score + " of " + tmPlural(x.max, "mark") + " stands, for the version it was given for."
-        : "You edited this answer and did not submit the edit. It stays not marked."}</p><p class="tm-rroute">${go(x, "")}</p></li>`).join(""));
+        ? "This answer has changed since it was marked, and the new version has no mark. Your mark of " + x.score + " of " + tmPlural(x.max, "mark") + " stands, for the version it was given for."
+        : "This answer has changed since it was sent for marking. It stays not marked."}</p><p class="tm-rroute">${go(x, "")}</p></li>`).join(""));
     if (fl.length) {
       const dup = fl.filter(x => x.status !== "marked" || x.changed).length;
       groups += grp("tmg-fl", "Flagged", fl.length, true, "You flagged these to come back to." + (!dup ? "" : fl.length === 1 ? " It is also listed above."
@@ -15918,28 +15928,41 @@ module.exports = {
     const bq = $("#tmbacktoq"); if (bq) bq.onclick = () => tmSitAt(key, a.at);
     const sb = $("#tmsubmitpaper"); if (sb) sb.onclick = () => tmClose(key, a);
     app.querySelectorAll('a[href^="#tmg-"]').forEach(x => x.onclick = ev => { ev.preventDefault(); const t = document.getElementById(x.getAttribute("href").slice(1)); if (t) { t.scrollIntoView({ block: "start" }); t.focus({ preventScroll: true }); } });
-    if (had) { const s = $("#tmsubmitpaper"); (s && !s.disabled ? s : $("#tmrdh")).focus(); }
-    else if (!(opts && opts.settled)) { window.scrollTo(0, 0); const h = $("#tmrdh"); if (h) h.focus({ preventScroll: true }); }
+    if (opts && opts.settled) {
+      const keep = prev && !had ? app.querySelector(prev) : null;
+      const s = $("#tmsubmitpaper"), next = app.querySelector("[data-tmleave]");
+      const to = keep || (had ? (next || (s && !s.disabled ? s : $("#tmrdh"))) : null);
+      if (to) to.focus({ preventScroll: true });
+      // Announced from a region that outlives the redraw, so the change is read.
+      let live = document.getElementById("tmlive");
+      if (!live) { live = document.createElement("div"); live.id = "tmlive"; live.className = "tm-sr"; live.setAttribute("aria-live", "polite"); document.body.appendChild(live); }
+      const said = (($("#tmrsum") || {}).textContent || "").trim();
+      if (live.textContent !== said) live.textContent = said;
+    } else { window.scrollTo(0, 0); const h = $("#tmrdh"); if (h) h.focus({ preventScroll: true }); }
   }
   // Leave it unmarked (decision 24): stop waiting for this reply. A late one is
   // dropped by tmSubmit, which keeps only the reply it is still waiting for.
   function tmLeaveUnmarked(key, k) {
     const a = tmRec(key).current; if (!a) return tmLibrary();
-    const sent = tmPending(a)[k];
-    if (sent == null) return tmReview(key);
+    const p = tmPending(a)[k];
+    if (p == null) return tmReview(key);
+    const sent = p.ans;
     delete tmPending(a)[k];
     const e = ATT.sequence(a, state.exams).find(x => x.key === k);
     ATT.leaveUnmarked(a, k, sent, ASSESS.fail("MARKING_LEFT", TM_LEFT, { max: e ? Number(e.q.marks) || 0 : 0, retry: true }), tmNow());
     save();
     tmReview(key, { settled: true });
-    const s = $("#tmsubmitpaper"); (s && !s.disabled ? s : $("#tmrdh")).focus();
   }
   // The one irreversible action. Checked again at the press: the page may be
   // stale (another tab, a reply still out), and a disabled button is not a guard.
   function tmClose(key, shown) {
     const rec = tmRec(key), a = rec.current;
     if (!a) return tmLibrary();
-    if (a !== shown) { toast("This attempt changed in another tab. Check it again before you submit.", 3500); return tmReview(key); }
+    let kept = null; try { kept = ((JSON.parse(store.getItem(LS_KEY) || "{}").attempts || {})[key] || {}).current || null; } catch (err) { kept = null; }
+    if (a !== shown || (kept && kept.updatedAt !== a.updatedAt) || (!kept && store.getItem(LS_KEY))) {
+      toast("This attempt changed in another tab. Reload the page before you " + (a.scope === "type" ? "finish." : "submit."), 4500);
+      return;
+    }
     if (tmPendingKeys(a).length || !ATT.submittedAny(a)) return tmReview(key);
     // A second opinion still out cannot change the score: it is abandoned here,
     // and its late reply finds the attempt closed and is dropped.
