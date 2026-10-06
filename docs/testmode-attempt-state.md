@@ -136,6 +136,27 @@ Scope is immutable: `ATT.begin` throws if an attempt is already in progress, and
 `ATT.choose` (the either/or) throws once there is work in that section. Start
 again is `ATT.discard`, which drops `current` and keeps `last`.
 
+## As implemented (Slice B)
+
+- **Submit closes; nothing reopens.** `ATT.complete` moves `current` to `last`
+  and refuses an attempt nothing was submitted from. Everything after it reads
+  `last` and writes nothing: Results (`ATT.results`) and Review
+  (`ATT.reviewAt`) call no `record`, `setDraft`, `toggleFlag`, `moveTo`,
+  `choose` or `save`, so a completed attempt is immutable (decision 26,
+  `tests/ui75.js`).
+- **One item, three texts.** `ATT.reviewAt` returns the Results item for a key
+  and keeps apart `answer` (the version a result was given for), `later` (text
+  changed after it and never submitted) and `unsent` (text written for a
+  question nothing was submitted for). The old mark never sits beside the later
+  text.
+- **Causes, not advice.** A not-marked item's `cause` is `ATT.causeOf(why)`:
+  the first sentence of the recorded reason, without what to do next.
+- **Nothing marked.** Any surface showing an attempt's mark shows *Nothing
+  marked* when `summary().answered` (or `rows.marked.count`) is 0, and the real
+  `got / max` otherwise, including a legitimate 0.
+- **A finished practice session** is `attempts["type:" + format].last`, shown
+  from its tile and overview as *Last completed*, never merged with `current`.
+
 ## Not in v1
 
 - Attempt history beyond the latest completed one.
