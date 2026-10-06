@@ -588,6 +588,20 @@ const answer = async (p, text) => {
     ok(/imported/i.test(msg), 'the nested paper imports: ' + JSON.stringify(msg));
 
     // RELOAD. A cold page in the same context, reading the paper out of storage.
+    // Pages share storage through the browser, asynchronously. A cold page that
+    // read it before the import's write had arrived saw an empty library, and the
+    // walkthrough's boot seeded its own paper over the import: this check's rare
+    // failure (twice in many Full runs, once more in three runs of this suite).
+    // The importing page is closed first, which is also the truer reload.
+    // Wait until storage outside the importing page holds the paper, read from a
+    // page with no scripts (the walkthrough's boot reseeds an empty library, so it
+    // cannot be the page that looks). A write that never lands still fails below.
+    require('fs').writeFileSync(require('./env').OUT + 'probe.html', '<!doctype html><title>probe</title>');
+    const probe = await ctx.newPage(); await probe.goto(require('./env').fileUrl('probe.html'));
+    const landed = await probe.waitForFunction(() => /Round trip paper/.test(localStorage.getItem('marginal.trial.v1') || ''), null, { timeout: 5000 }).then(() => true, () => false);
+    if (!landed) console.log('    the import was not in storage outside its page after 5s');
+    await probe.close();
+    await p.close();
     const p2 = await ctx.newPage();
     p2.on('pageerror', e => errs.push(String(e.message)));
     await p2.route(/workers\.dev/, r => r.abort());
@@ -689,7 +703,7 @@ const answer = async (p, text) => {
     ok(/Question 1\(a\)/.test(head), 'the paper starts at the question it calls 1(a): ' + JSON.stringify(head));
     const shown = await p2.$eval('#app', e => e.textContent);
     ok(/Source 1/.test(shown), 'with the shared source on screen above it');
-    await p.close(); await p2.close();
+    await p2.close();
     } finally { await ctx.close(); }
   }
 

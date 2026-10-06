@@ -476,7 +476,7 @@ function report(a, exams, pending) {
     var d = a.drafts[e.key], drafted = !blank(d);
     var fmt = e.eitherSlot ? null : ASSESS.normaliseFormat(e.q).format;
     return {
-      key: e.key, paper: e.paper.id, si: e.si, qi: e.qi, pi: e.pi, display: e.display, format: fmt,
+      key: e.key, paper: e.paper.id, si: e.si, qi: e.qi, pi: e.pi, display: e.display, format: fmt, outcome: o,
       parent: e.parent ? { number: PAPER.numberOf(e.parent), marks: PAPER.marksOf(e.parent) } : null,
       eitherSlot: e.eitherSlot, options: e.eitherSlot ? e.options.map(function (x) { return x.number; }) : null,
       marks: marksOf(e), weight: weightOf(e), status: status,
@@ -533,6 +533,61 @@ function report(a, exams, pending) {
   return out;
 }
 
+// THE RESULTS MAP (Slice B, state 2). A closed attempt as bands, one per paper
+// and section in paper order, each holding its parent questions (with the parts
+// in this attempt, never flattened) and its single questions. Every tally is the
+// report's own items through ASSESS.tally, so Results cannot disagree with Submit.
+// A group's state is the page's three words for it:
+//   marked          something in it was marked: got / max (a real 0 included)
+//   nothing_marked  something was submitted and none of it was marked
+//   not_answered    nothing in it was submitted
+function results(a, exams) {
+  var r = report(a, exams, []);
+  var seq = sequence(a, exams), byKey = {};
+  seq.forEach(function (e) { byKey[e.key] = e; });
+  var tallyOf = function (xs) {
+    var t = ASSESS.tally(xs.map(function (x) { return { marks: x.marks, result: a.results[x.key] }; }));
+    var w = function (st) { return xs.filter(function (x) { return x.status === st; }).reduce(function (n, x) { return n + x.weight; }, 0); };
+    var notMarked = w("not_marked"), notAnswered = w("not_answered");
+    return { total: xs.reduce(function (n, x) { return n + x.weight; }, 0), done: t.done, notMarked: notMarked, notAnswered: notAnswered,
+             got: t.got, max: t.max, flagged: xs.filter(function (x) { return x.flagged; }).length,
+             state: t.done ? "marked" : notMarked ? "nothing_marked" : "not_answered" };
+  };
+  var bands = [];
+  r.items.forEach(function (x) {
+    var e = byKey[x.key], bk = x.paper + "|" + x.si;
+    var band = bands.filter(function (b) { return b.key === bk; })[0];
+    if (!band) bands.push(band = { key: bk, paper: x.paper, paperName: e.paper.name || "", si: x.si,
+                                   name: sectionName(e.sec, x.si), short: sectionShort(e.sec, x.si), entries: [], items: [] });
+    band.items.push(x);
+    if (e.parent) {
+      var gk = bk + "|" + x.qi;
+      var g = band.entries.filter(function (y) { return y.key === gk; })[0];
+      if (!g) {
+        var cap = PAPER.resourcesOf(e.parent).filter(function (res) { return res && typeof res === "object" && typeof res.caption === "string" && res.caption.trim(); })[0];
+        band.entries.push(g = { kind: "parent", key: gk, qi: x.qi, number: PAPER.numberOf(e.parent), caption: cap ? cap.caption.trim() : "",
+                                parts: PAPER.partsOf(e.parent).length, items: [] });
+      }
+      g.items.push(x);
+    } else band.entries.push({ kind: "leaf", key: x.key, item: x });
+  });
+  bands.forEach(function (b) {
+    Object.assign(b, tallyOf(b.items));
+    b.entries.forEach(function (g) { if (g.kind === "parent") Object.assign(g, tallyOf(g.items)); });
+  });
+  r.bands = bands;
+  r.whole = tallyOf(r.items);
+  r.startedAt = a.startedAt || null; r.completedAt = a.completedAt || null;
+  if (a.scope === SCOPE.paper) {
+    var pinnedTo = byId(exams, a.paper);
+    var lib = library(exams).filter(function (p) { return identityOf(p) === a.exam; })[0] || null;
+    r.version = pinnedTo ? versionOf(pinnedTo) : (a.version || "");
+    r.libraryVersion = lib ? versionOf(lib) : null;
+    r.superseded = !!(pinnedTo && pinnedTo.superseded);
+  } else { r.version = null; r.libraryVersion = null; r.superseded = false; }
+  return r;
+}
+
 // ---- reading a store from anywhere ----------------------------------------------------------
 // A stored or restored store is not trusted to be well formed. Anything that is
 // not a recognisable attempt is dropped, not repaired into one.
@@ -574,5 +629,5 @@ module.exports = {
   sectionName: sectionName, sectionShort: sectionShort, assessable: assessable, bank: bank, bankCounts: bankCounts,
   startPaper: startPaper, startType: startType, begin: begin, discard: discard, complete: complete,
   sequence: sequence, entryAt: entryAt, marksOf: marksOf, setDraft: setDraft, record: record, toggleFlag: toggleFlag, moveTo: moveTo, choose: choose,
-  summary: summary, report: report, leaveUnmarked: leaveUnmarked, submittedAny: submittedAny, weightOf: weightOf, restorePapers: restorePapers, itemState: itemState, sane: sane, clone: clone,
+  summary: summary, report: report, results: results, leaveUnmarked: leaveUnmarked, submittedAny: submittedAny, weightOf: weightOf, restorePapers: restorePapers, itemState: itemState, sane: sane, clone: clone,
 };

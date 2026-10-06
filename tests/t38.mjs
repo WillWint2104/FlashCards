@@ -341,6 +341,44 @@ console.log('--- leave it unmarked, and what a mark was given for (decision 24)'
   ok(A.report(a, s.exams, []).canFinish && A.report(a, s.exams, []).submitted === 3, 'one submission, marked or not, is enough');
 }
 
+console.log('--- the results map: bands, parents with their parts, three words for a group (Slice B, state 2)');
+{
+  const s = store(), p = fresh(); A.addPaper(s, p);
+  const a = A.startPaper(p, null, T(1));
+  const M = (score, max) => ASSESS.marked({ score, max, kind: 'points' });
+  A.record(a, '0-0', 1, ASSESS.marked({ score: 1, max: 1, kind: 'mc' }), T(2));
+  A.record(a, '1-0-0', 'x', M(2, 2), T(2)); A.record(a, '1-0-1', 'x', M(0, 3), T(2));
+  A.record(a, '1-1-0', 'x', ASSESS.fail('MARKER_UNREACHABLE', 'Not reached.', { max: 3, retry: true }), T(2));
+  const r = A.results(a, s.exams);
+  ok(r.bands.reduce((n, b) => n + b.got, 0) === r.got && r.bands.reduce((n, b) => n + b.max, 0) === r.max && r.max === 90,
+     'the bands add up to the attempt');
+  const ii = r.bands[1];
+  const q11 = ii.entries.find(g => g.number === '11'), q12 = ii.entries.find(g => g.number === '12');
+  ok(ii.entries.reduce((n, g) => n + (g.kind === 'parent' ? g.max : g.item.marks), 0) === ii.max, 'parents and single questions add up to their section');
+  ok(q11.state === 'marked' && q11.got === 2 && q11.max === 14 && q11.items.length === 4 && q11.caption === 'Case study: Kerbside Coffee',
+     'a parent keeps its parts, its own total, and its caption verbatim');
+  ok(q12.state === 'nothing_marked' && r.bands[2].state === 'not_answered', 'nothing marked and not answered are two different words, never 0');
+  A.record(a, '1-0-2', '1', ASSESS.marked({ score: 0, max: 4, kind: 'calc' }), T(2)); A.record(a, '1-0-3', 'x', M(0, 5), T(2));
+  A.record(a, '1-0-1', 'x', M(0, 3), T(2)); A.record(a, '1-0-0', 'x', M(0, 2), T(2));
+  const z = A.results(a, s.exams).bands[1].entries.find(g => g.number === '11');
+  ok(z.state === 'marked' && z.got === 0 && z.done === 4, 'a parent whose marked parts earned 0 is a real 0, not nothing marked');
+  ok(r.items.find(x => x.key === '1-1-0').outcome === 'failed', 'each item says whether it failed or was refused');
+  // practice: a parent's out of is the parts in the session; two papers never merge
+  const q = fresh(); q.exam = Object.assign({}, q.exam, { id: 'second-paper' }); q.name = 'Second paper'; A.addPaper(s, q);
+  const bank = A.bank('short_answer', s.exams, PACKAGES);
+  const t = A.startType('short_answer', bank.filter(x => x.key === '1-0-0'), T(1));
+  const r2 = A.results(t, s.exams), g = r2.bands[0].entries[0];
+  ok(g.kind === 'parent' && g.items.length === 1 && g.parts === 4 && g.max === 2, 'a practice holding one part of 11 is out of that part\'s marks: ' + g.max);
+  const t2 = A.startType('short_answer', bank.filter(x => x.key === '1-0-0' || x.key === '1-0-1'), T(1));
+  const r3 = A.results(t2, s.exams);
+  ok(r3.bands.length === 2 && r3.bands[0].paper !== r3.bands[1].paper, 'two papers\' 11(a) are two bands, never one: ' + r3.bands.map(b => b.paperName).join(' | '));
+  // the version an attempt was on, against the library's
+  const k = A.paperKey(p); s.attempts[k] = { current: null, last: a };
+  const v2 = fresh(); v2.exam.version = '2'; A.addPaper(s, v2);
+  const r4 = A.results(a, s.exams);
+  ok(r4.version === '1' && r4.libraryVersion === '2' && r4.superseded, 'results say which version the attempt was on, and what the library has now');
+}
+
 console.log('--- a restored store is not trusted');
 {
   const p = fresh();
