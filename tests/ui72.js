@@ -175,13 +175,15 @@ async function unmarkedYet(p, n, why) {
     const { p, ctx } = await open(b);
     await sit(p, '', 'Section III - Business report');
     await submit(p, 'Executive summary\nConsolidate.');
-    // Slice A: the last item's footer finishes the paper (confirmed), and the
-    // existing results screen reads the completed attempt.
+    // Slice B: the last item opens Review & submit, Submit paper closes the
+    // attempt, and the existing results screen reads it.
     await p.click('#examfinish'); await settled(p);
+    await p.click('#tmsubmitpaper'); await settled(p);
     const big = await p.$eval('.bigscore', e => e.textContent.replace(/\s+/g, '')).catch(() => '');
     const txt = await p.$eval('.summary', e => e.textContent.replace(/\s+/g, ' ')).catch(() => '');
     ok(big === '0/20', 'the unmarked answer adds nothing, and the paper is still out of 20: ' + big);
-    ok(/1 answer is not marked yet, so its marks are not in this total/.test(txt), 'the total says what it leaves out');
+    ok(/1 answer is not marked, so its marks are not in this total/.test(txt) && !/not marked yet/.test(txt),
+       'the total says what it leaves out, and a closed attempt does not promise a mark later (decision 24)');
     ok(/not marked/.test(await p.$eval('.exam-results', e => e.textContent)), 'its row says not marked');
     await ctx.close();
   }
@@ -441,9 +443,12 @@ async function unmarkedYet(p, n, why) {
       await sit(p, '', 'Section III - Business report');
       await p.fill('#ans', 'Executive summary\nConsolidate.'); await p.click('#check'); await settled(p);
       await p.click('#examfinish'); await settled(p);
-      const t = await p.$$eval('.toast', es => es.map(e => e.textContent).join(' | '));
-      ok(/still being marked/.test(t), 'Finish waits for marking: ' + JSON.stringify(t));
+      const busy = await p.$eval('#tmbusy', e => e.textContent.replace(/\s+/g, ' ')).catch(() => '');
+      ok(/still being marked/.test(busy) && await p.$eval('#tmsubmitpaper', e => e.disabled).catch(() => false),
+         'Review & submit says it is still being marked, and Submit paper waits: ' + JSON.stringify(busy.slice(0, 80)));
       await p.waitForTimeout(3500); await settled(p);
+      ok(!(await has(p, '#tmbusy')) && !(await p.$eval('#tmsubmitpaper', e => e.disabled).catch(() => true)),
+         'when the mark lands, the page updates in place and Submit paper is enabled');
       const at = await stored(p);
       const rec = Object.keys(at).filter(k => k.startsWith('paper:')).map(k => at[k])[0] || {};
       ok(rec.current && !rec.last && Object.values(rec.current.results).some(r => r && r.score === 12),

@@ -187,6 +187,9 @@ console.log('--- Start again, completing, deleting');
   const s = store(), p = fresh(); A.addPaper(s, p);
   const k = A.paperKey(p);
   A.begin(s, k, A.startPaper(p, null, T(1)));
+  ok(A.complete(s, k, T(2)) === null && s.attempts[k].current && !s.attempts[k].last,
+     'an attempt nothing was submitted from is not closed (decision 24)');
+  A.record(s.attempts[k].current, '0-1', 0, marked(0, 1), T(2));
   const done = A.complete(s, k, T(2));
   ok(done && done.completedAt === T(2) && s.attempts[k].current === null && A.summary(done, s.exams).status === 'completed',
      'completing moves the attempt to last');
@@ -305,6 +308,37 @@ console.log('--- a flag follows an either/or choice; changes still being marked 
   ok(A.report(c, s.exams, []).items.find(x => x.key === '1-1-0').help === 'settings', 'a refusal a marker setting fixes says so');
   A.record(c, '1-0-2', '1.5', ASSESS.refuse('CALC_KEY_INCOMPLETE', 'No key.', { max: 4 }), T(2));
   ok(A.report(c, s.exams, []).items.find(x => x.key === '1-0-2').help === 'none', 'and one nothing in the sitting changes says that');
+}
+
+console.log('--- leave it unmarked, and what a mark was given for (decision 24)');
+{
+  const s = store(), p = fresh(); A.addPaper(s, p);
+  const a = A.startPaper(p, null, T(1));
+  const left = () => ASSESS.fail('MARKING_LEFT', 'You chose not to wait for its mark.', { max: 3, retry: true });
+  // a first submission, still out
+  A.setDraft(a, '1-0-1', 'First try.', T(2));
+  A.leaveUnmarked(a, '1-0-1', 'First try.', left(), T(3));
+  const r1 = A.report(a, s.exams, []).items.find(x => x.key === '1-0-1');
+  ok(r1.status === 'not_marked' && r1.help === 'retry' && r1.graded === 'First try.' && !a.drafts['1-0-1'],
+     'a first submission left unmarked is submitted, not marked, with the text that was sent');
+  // a resubmission over a mark
+  A.record(a, '1-0-0', 'Speed.', ASSESS.marked({ score: 2, max: 2, kind: 'points' }), T(2));
+  A.setDraft(a, '1-0-0', 'Speed, and a longer second version.', T(3));
+  A.leaveUnmarked(a, '1-0-0', 'Speed, and a longer second version.', left(), T(4));
+  const r2 = A.report(a, s.exams, []).items.find(x => x.key === '1-0-0');
+  ok(r2.status === 'marked' && r2.score === 2 && r2.graded === 'Speed.' && r2.changed && a.drafts['1-0-0'] === 'Speed, and a longer second version.',
+     'a resubmission left unmarked keeps the earlier mark, given for the earlier version, and the new text stays a change');
+  // a retry of a not-marked answer
+  A.record(a, '1-1-0', 'Old.', ASSESS.fail('MARKER_BUSY', 'Busy.', { max: 3, retry: true }), T(2));
+  A.setDraft(a, '1-1-0', 'Edited.', T(3));
+  A.leaveUnmarked(a, '1-1-0', 'Edited.', left(), T(4));
+  const r3 = A.report(a, s.exams, []).items.find(x => x.key === '1-1-0');
+  ok(r3.status === 'not_marked' && r3.code === 'MARKER_BUSY' && r3.graded === 'Old.', 'a retry left unmarked stays not marked, as it was');
+  const empty = A.startPaper(p, null, T(1));
+  A.setDraft(empty, '0-0', '2', T(2)); A.toggleFlag(empty, '0-1', T(2));
+  const re = A.report(empty, s.exams, []);
+  ok(re.submitted === 0 && re.canFinish === false, 'drafts and flags alone are nothing submitted, so it cannot be finished');
+  ok(A.report(a, s.exams, []).canFinish && A.report(a, s.exams, []).submitted === 3, 'one submission, marked or not, is enough');
 }
 
 console.log('--- a restored store is not trusted');

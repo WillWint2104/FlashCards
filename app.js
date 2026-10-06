@@ -3182,7 +3182,7 @@
         <span class="tm-whereitem">Item ${SIT.pos + 1} of ${SIT.seq.length} · ${esc(ATT.sectionShort(e.sec, e.si))}</span>
         ${SIT.pos < SIT.seq.length - 1
           ? `<button type="button" class="tm-btn sm ghost" id="examnext">Next<span class="foot-lbl">&nbsp;·&nbsp;${esc(tmShort(SIT.seq[SIT.pos + 1]))}</span>&nbsp;→</button>`
-          : `<button type="button" class="tm-btn sm ghost" id="examfinish">${a.scope === "paper" ? "Finish paper" : "Finish practice"}</button>`}
+          : `<button type="button" class="tm-btn sm ghost" id="examfinish">${a.scope === "paper" ? "Review &amp; submit" : "Review &amp; finish"}</button>`}
       </div></div>
       <div id="tmnavwrap"></div>`, { cls: "tm-sit" });
     wireNav();
@@ -3269,8 +3269,20 @@
             <span class="tm-hint">${tmMarkerHint(e)}</span></div>`}`;
       }
     }
+    // A mark is for the version it was given for (decision 24). Beside newer
+    // text it says so, rather than sitting under that text as if it assessed it.
+    const stale = marked && f !== "multiple_choice" && a.drafts[key] != null && a.drafts[key] !== String(a.answers[key]);
+    const sheet = !g || pending ? "" : marked && f !== "multiple_choice" && (SIT.edit[key] || stale) ? tmEarlierHTML(a, key, g, stale)
+      : SIT.edit[key] && marked ? "" : tmResultHTML(e, a, f, g);
     return `${part ? tmParentHTML(e, a) : ""}${head}${reportIns}${caseBlock}${prompt}${body}
-      <div id="sheet">${g && !pending && !(SIT.edit[key] && marked) ? tmResultHTML(e, a, f, g) : ""}</div>`;
+      <div id="sheet">${sheet}</div>`;
+  }
+  function tmEarlierHTML(a, key, g, stale) {
+    const was = String(a.answers[key] == null ? "" : a.answers[key]);
+    return `<div class="tm-earlier"><p><b>${stale ? "Your earlier version" : "Your answer"} was marked ${g.score} of ${tmPlural(g.max, "mark")}.</b> ${stale
+      ? "That mark is for the version you submitted earlier, not the text in the box. It stands until you submit this version."
+      : "Change it and submit it again to have a new version marked. Until then, this mark stands."}</p>
+      ${stale ? `<details class="tm-earlierv"><summary>Show the version that was marked</summary><div class="tm-earliertext">${was.split(/\n\s*\n/).map(p => `<p>${esc(p)}</p>`).join("")}</div></details>` : ""}</div>`;
   }
   function tmMarkerHint(e) {
     const sp = ASSESS.scorePoints(e.q, "");
@@ -3460,7 +3472,8 @@
     if (draft != null && draft !== ans && f !== "multiple_choice") a.drafts[key] = draft;
     if (isMarked(g)) delete SIT.edit[key];
     save();
-    if (!tmShowing(a, key)) return;
+    // Drawn where it is shown: the question, or the Review page waiting on it.
+    if (!tmShowing(a, key)) { if (tmReviewShowing(a)) tmReview(recKey, { settled: true }); return; }
     tmDraw();
     const sh = $("#sheet"); if (sh && sh.scrollIntoView) sh.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
@@ -3487,20 +3500,242 @@
     ATT.record(a, key, ans, g, tmNow()); save();
     if (here) tmDraw();
   }
+  // ---- Review & submit (Slice B, state 1; decisions 23 and 24) ----------------------------
+  // The last question and the navigator open this page; nothing is submitted
+  // until its one irreversible button. Practice marks each answer as it is
+  // submitted, so closing marks nothing more: it ends the attempt on the
+  // results it has. Everything here is read from ATT.report, one walk and one
+  // predicate, so the table, the lists and the bar's sentence agree.
+  const REVIEW = { key: null, a: null };
   function tmFinish() {
     const a = tmAttempt(); if (!a) return;
     tmFlushDraft();
-    // An answer still being marked would lose its result to a completed attempt.
-    if (Object.keys(tmPending(a)).length) { toast("An answer is still being marked. You can finish once it has its result.", 3500); return; }
-    const s = ATT.summary(a, state.exams);
-    const left = s.total - s.answered - s.notMarked;
-    const what = a.scope === "paper" ? "this paper" : "this practice";
-    if (!confirm("Finish " + what + "?" + (left > 0 ? " " + tmPlural(left, "question") + (left === 1 ? " has" : " have") + " no submitted answer." : "") +
-                 (s.notMarked ? " " + s.notMarked + " answer" + (s.notMarked === 1 ? " is" : "s are") + " not marked yet." : "") +
-                 " You can review your marks afterwards, but not change them.")) return;
-    ATT.complete(state, SIT.key, tmNow()); save();
+    tmReview(SIT.key);
+  }
+  const tmPendingKeys = a => Object.keys(tmPending(a));
+  function tmReviewShowing(a) { return view === "test" && !!$("#tmreview") && REVIEW.a === a && tmRec(REVIEW.key).current === a; }
+  // Back to a question: the sitting opens on it, as Resume does.
+  function tmSitAt(key, k) {
+    const a = tmRec(key).current; if (!a) return tmLibrary();
+    if (k && ATT.sequence(a, state.exams).some(e => e.key === k)) ATT.moveTo(a, k, tmNow());
+    save(); tmSit(key);
+  }
+  const TM_LEFT = "This response was not marked: you chose not to wait for its mark.";
+  const TM_REVIEW_HELP = {
+    retry: ["marking it again can help", "to try marking again"],
+    change: ["changing the answer can help", "to change your answer"],
+    settings: ["your teacher can fix this in Settings", ""],
+    none: ["cannot be marked here", ""],
+  };
+  function tmReview(key, opts) {
+    if (gated()) return authScreen();
+    const rec = tmRec(key), a = rec.current;
+    if (!a) return tmLibrary();
+    const had = opts && opts.settled && document.activeElement && document.activeElement.closest && document.activeElement.closest("#tmbusy");
+    view = "test"; session = null; currentTopic = null;
+    REVIEW.key = key; REVIEW.a = a;
     document.body.classList.remove("tm-sitting");
-    tmResults(SIT.key);
+    const seq = ATT.sequence(a, state.exams);
+    if (!seq.length) return tmLibrary();
+    const r = ATT.report(a, state.exams, tmPendingKeys(a));
+    const type = a.scope === "type", paper = type ? null : ATT.byId(state.exams, a.paper);
+    const subjects = Array.from(new Set(seq.map(e => tmSubjectOf(e.paper)).filter(Boolean)));
+    tmUnit(subjects.length === 1 ? subjects[0] : "");
+    const secOf = si => paper.sections[si];
+    const shortOf = (x) => ATT.sectionShort(type ? seq.find(e => e.key === x.key).sec : secOf(x.si), x.si);
+    const label = x => x.eitherSlot ? "Question " + x.options.join(" or ") : "Question " + (x.display || "");
+    const short = x => x.eitherSlot ? x.options.join(" or ") : (x.display || "");
+    const names = Array.from(new Set(seq.map(e => e.paper.name || "Untitled paper")));
+    const from = names.length === 1 ? "From " + names[0] : "From " + tmPlural(names.length, "paper") + " in your library";
+    const verb = type ? "finishing" : "submitting";
+    const whole = type ? "This practice" : a.sections.length === paper.sections.length ? "The whole paper" : tmList(a.sections.map(si => ATT.sectionShort(secOf(si), si))) + " only";
+    const tag = x => {
+      if (x.pending) return x.status === "marked" ? "Marked · a new answer is being marked" : x.status === "not_marked" ? "Being marked again" : "Being marked now";
+      if (x.status === "marked") return "Answered · " + x.score + " of " + tmPlural(x.max, "mark");
+      if (x.status === "not_marked") return "Not marked yet";
+      if (x.eitherSlot) return "Not chosen yet";
+      return x.draft === "written" ? "Draft saved · written, not submitted" : x.draft === "selected" ? "Selected, not submitted" : "Not started";
+    };
+    const eitherRule = (n, w) => (n === 2 ? "Answer one of these, not both." : "Answer only one of these.") +
+      (w > 1 ? " It counts as " + w + " questions, the parts of the one you choose." : " It counts as one question.");
+    const go = (x, why) => `<button type="button" class="tm-link" data-tmreviewgo="${esc(x.key)}">${x.eitherSlot
+      ? "Go to " + esc(shortOf(x)) + " to choose" : "Go to " + esc(short(x)) + (why ? " " + why : "")}</button>`;
+    const where = x => `<div class="tm-rwhere"><b>${esc(label(x))}</b> · ${tmPlural(x.marks, "mark")}${type ? "" : " · " + esc(shortOf(x))}${x.flagged ? ` <span class="tm-flagged">⚑ flagged</span>` : ""}</div>`;
+    const R = r.rows;
+
+    // Still being marked: blocks, with Leave it unmarked spelled out.
+    const busyXs = r.items.filter(x => x.pending);
+    const one = busyXs.length === 1;
+    const busy = busyXs.length ? `<section class="tm-rbusy" id="tmbusy" aria-labelledby="tmbz">
+      <h3 id="tmbz">${one ? esc(label(busyXs[0])) + " is still being marked" : tmPlural(busyXs.length, "answer") + " are still being marked"}</h3>
+      <p>You can ${type ? "finish" : "submit"} once ${one ? "its mark arrives" : "their marks arrive"}, which takes at most about a minute, or leave ${one ? "it" : "them"} unmarked.</p>
+      <ul>${busyXs.map(x => `<li>
+        <div class="tm-rbzrow"><span class="tm-rwhere"><b>${esc(label(x))}</b> · ${tmPlural(x.marks, "mark")}</span><span class="tm-rtag busy">${esc(tag(x))}</span>
+          <span class="tm-spacer"></span><button type="button" class="tm-link" data-tmleave="${esc(x.key)}">Leave it unmarked</button></div>
+        <p class="tm-rthen">${x.status === "marked"
+          ? "If you leave it unmarked, your earlier mark of " + x.score + " of " + tmPlural(x.max, "mark") + " stands, for the version it was given for, and the new answer is not marked."
+          : x.status === "not_marked" ? "If you leave it unmarked, it stays not marked."
+          : "If you leave it unmarked, it is submitted without a mark and its " + tmPlural(x.marks, "mark") + " still count in the " + r.max + ". A mark that arrives later is not used."}</p>
+      </li>`).join("")}</ul></section>` : "";
+
+    // What you are submitting: three rows that add up to the attempt.
+    const none = `<span class="tm-none">None</span>`;
+    const bm = n => n ? ` <span class="tm-rsm">· ${n} being marked</span>` : "";
+    const cell = (n, txt) => n ? txt : "";
+    const lost = R.notMarked.worth + R.notAnswered.worth;
+    const mChanged = r.items.filter(x => x.changed && x.status === "marked").length, nChanged = r.items.filter(x => x.changed && x.status === "not_marked").length;
+    const changedNote = mChanged || nChanged ? `<p class="tm-rnote">${[mChanged ? (mChanged === 1 ? "1 answer was" : mChanged + " answers were") + " changed after marking and the change was not submitted, so the earlier mark stands, for the earlier version" : "",
+      nChanged ? (nChanged === 1 ? "1 not-marked answer was" : nChanged + " not-marked answers were") + " edited and the edit was not submitted, so it stays not marked" : ""].filter(Boolean).join(". ")}. <a href="#tmg-ch">See which</a></p>` : "";
+    const tally = `<table class="tm-tally">
+      <caption class="tm-sr">What you are ${verb}</caption>
+      <thead><tr><th scope="col">Status</th><th scope="col">Questions</th><th scope="col">Worth</th><th scope="col">Earned</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Answered and marked</th><td>${R.marked.count ? R.marked.count + bm(R.marked.pending) : none}</td><td>${cell(R.marked.count, tmPlural(R.marked.worth, "mark"))}</td><td>${cell(R.marked.count, `<b>${R.marked.earned}</b>`)}</td></tr>
+        <tr><th scope="row">${R.notMarked.count ? `<a href="#tmg-nm">Submitted, not marked</a>` : "Submitted, not marked"}</th><td>${R.notMarked.count ? R.notMarked.count + bm(R.notMarked.pending) : none}</td><td>${cell(R.notMarked.count, tmPlural(R.notMarked.worth, "mark"))}</td><td>${cell(R.notMarked.count, `<span class="tm-none">Not marked</span>`)}</td></tr>
+        <tr><th scope="row">${R.notAnswered.count ? `<a href="#tmg-na">Not answered</a>` : "Not answered"}</th><td>${R.notAnswered.count ? R.notAnswered.count + bm(R.notAnswered.pending) : none}</td><td>${cell(R.notAnswered.count, tmPlural(R.notAnswered.worth, "mark"))}</td><td>${cell(R.notAnswered.count, none)}</td></tr>
+      </tbody>
+      <tfoot><tr><th scope="row">${esc(whole)}</th><td>${r.total}</td><td>${tmPlural(r.max, "mark")}</td><td><b>${r.got}/${r.max}</b> marks so far</td></tr></tfoot>
+    </table>
+    ${lost ? `<p class="tm-rnote">Questions not marked or not answered earn nothing${type ? "" : " when you submit"}. Their ${tmPlural(lost, "mark")} still count in the ${r.max}.</p>` : ""}
+    ${r.flagged.length ? `<p class="tm-rnote"><span class="tm-flagged">⚑ ${r.flagged.length} flagged</span> · Flags do not change a mark, and they do not stop you ${verb}. <a href="#tmg-fl">See flagged</a></p>` : ""}
+    ${changedNote}`;
+
+    // The last completed result, which closing this one replaces.
+    let last = "";
+    if (rec.last) {
+      const l = ATT.summary(rec.last, state.exams);
+      const lscope = !type && rec.last.sections && rec.last.sections.join() !== a.sections.join()
+        ? " · " + (rec.last.sections.length === paper.sections.length ? "the whole paper" : esc(tmList(rec.last.sections.map(si => ATT.sectionShort(secOf(si), si)))) + " only") : "";
+      last = `<section class="tm-last tm-rlast" aria-labelledby="tmrla"><h3 class="tm-sr" id="tmrla">Your last completed ${type ? "session" : "attempt"}</h3>
+        <span class="tm-state done">Completed ${tmDay(rec.last.completedAt)}</span>
+        <p class="tm-lastline"><b>${l.got} / ${l.max}</b> · ${l.answered} of ${l.total} answered${lscope}</p>
+        <span class="tm-spacer"></span><button type="button" class="tm-btn ghost sm" id="tmrlastresults">View results</button>
+        <p class="tm-keep">${r.canFinish ? (type ? "Finishing" : "Submitting") + " replaces this result. " : ""}Only your latest completed ${type ? "session" : "attempt"} is kept.</p></section>`;
+    }
+
+    // The detail: one list per thing to go back to.
+    const nm = r.items.filter(x => x.status === "not_marked"), na = r.items.filter(x => x.status === "not_answered");
+    const ch = r.items.filter(x => x.changed), fl = r.items.filter(x => x.flagged);
+    const grp = (id, title, n, gold, lede, rows) => `<section class="tm-rgrp" id="${id}" tabindex="-1" aria-labelledby="${id}h">
+      <h3 id="${id}h">${title} <span class="tm-rn${gold ? " gold" : ""}">${n}</span></h3>${lede ? `<p class="tm-rglede">${lede}</p>` : ""}<ul>${rows}</ul></section>`;
+    let groups = "";
+    if (nm.length) groups += grp("tmg-nm", "Submitted, not marked", nm.length, false, "Each answer is still here, and nothing has been recorded against it.",
+      nm.map(x => `<li>${where(x)}${x.pending
+        ? `<p class="tm-rtagline"><span class="tm-rtag busy">${esc(tag(x))}</span></p><p class="tm-rwhy">It is being marked again now. Until its mark arrives it stays not marked.</p>`
+        : `<p class="tm-rtagline"><span class="tm-rtag nm">Not marked yet · ${TM_REVIEW_HELP[x.help][0]}</span></p><p class="tm-rwhy">${esc(x.why || "No reason was recorded.")}</p>${x.help === "none" ? `<p class="tm-rwhy tm-rsm">Marking it again here will not change this.</p>` : ""}<p class="tm-rroute">${go(x, TM_REVIEW_HELP[x.help][1])}</p>`}</li>`).join(""));
+    if (na.length) groups += grp("tmg-na", "Not answered", R.notAnswered.count, false, na.some(x => x.pending) ? "None of these has a mark yet." : "Nothing has been submitted for marking for these.",
+      na.map(x => `<li>${where(x)}<p class="tm-rtagline"><span class="tm-rtag${x.pending ? " busy" : ""}">${esc(tag(x))}</span></p>
+        ${x.eitherSlot ? `<p class="tm-rwhy">${eitherRule(x.options.length, x.weight)}</p>` : x.pending ? `<p class="tm-rwhy">It has been sent for marking. Until its mark arrives it is not answered.</p>`
+          : x.draft ? `<p class="tm-rwhy">${type ? "Finishing" : "Submitting the paper"} does not mark it.</p>` : ""}
+        ${x.pending ? "" : `<p class="tm-rroute">${go(x, x.draft ? "to submit it for marking" : "")}</p>`}</li>`).join(""));
+    if (ch.length) groups += grp("tmg-ch", "Changed after marking", ch.length, false, "",
+      ch.map(x => `<li>${where(x)}<p class="tm-rwhy">${x.status === "marked"
+        ? "You changed this answer after it was marked and did not submit the change. Your mark of " + x.score + " of " + tmPlural(x.max, "mark") + " stands, for the version it was given for."
+        : "You edited this answer and did not submit the edit. It stays not marked."}</p><p class="tm-rroute">${go(x, "")}</p></li>`).join(""));
+    if (fl.length) {
+      const dup = fl.filter(x => x.status !== "marked" || x.changed).length;
+      groups += grp("tmg-fl", "Flagged", fl.length, true, "You flagged these to come back to." + (!dup ? "" : fl.length === 1 ? " It is also listed above."
+        : dup === fl.length ? " They are also listed above." : dup === 1 ? " One of these is also listed above." : " " + dup + " of these are also listed above."),
+        fl.map(x => `<li><div class="tm-rwhere"><span class="tm-flagged">⚑</span> <b>${esc(label(x))}</b> · ${tmPlural(x.marks, "mark")}${type ? "" : " · " + esc(shortOf(x))}</div>
+          <p class="tm-rtagline"><span class="tm-rtag${x.status === "not_marked" ? " nm" : ""}">${esc(tag(x))}</span></p><p class="tm-rroute">${go(x, "")}</p></li>`).join(""));
+    }
+    const bysec = r.sections ? `<table class="tm-bysec tm-rbysec"><caption class="k">By section</caption>
+      <thead><tr><th scope="col">Section</th><th scope="col">Answered</th><th scope="col">Flagged</th><th scope="col">Marks so far</th></tr></thead>
+      <tbody>${r.sections.map(s => `<tr><th scope="row">${esc(ATT.sectionName(secOf(s.si), s.si))}</th>
+        <td>${s.done} of ${s.total}${s.notMarked ? ` · ${s.notMarked} not marked` : ""}</td>
+        <td>${s.flagged ? `<span class="tm-flagged">⚑ ${s.flagged}</span>` : none}</td>
+        <td>${s.done ? `<b>${s.got}</b>/${s.max}` : `<span class="tm-none">${s.touched ? "Not marked yet" : "Not started"}</span>`}</td></tr>`).join("")}</tbody></table>` : "";
+
+    // The bar: one sentence naming what is lost, and the one action.
+    const closes = type ? "Finishing closes this session" : "Submitting closes this attempt";
+    let sum, action;
+    if (!r.canFinish && !r.pending.length) {
+      sum = "Nothing has been submitted for marking yet.";
+      action = `<button type="button" class="tm-btn" id="tmbacktoq">Back to questions</button>`;
+    } else if (r.pending.length) {
+      sum = (one ? esc(label(busyXs[0])) + " is" : tmPlural(busyXs.length, "answer") + " are") + " still being marked. You can " + (type ? "finish" : "submit") + " when " +
+        (one ? "it has its mark, or leave it unmarked." : "they have their marks, or leave them unmarked.");
+      action = `<button type="button" class="tm-btn" id="tmsubmitpaper" disabled>${type ? "Finish practice" : "Submit paper"}</button>`;
+    } else {
+      const gaps = [R.notMarked.count ? tmPlural(R.notMarked.count, "answer") + " not marked" : "", R.notAnswered.count ? tmPlural(R.notAnswered.count, "question") + " not answered" : ""].filter(Boolean);
+      sum = gaps.length ? `${closes} at <b>${r.got}/${r.max}</b>, with ${tmList(gaps)}.` : `All ${r.total} answered and marked. ${closes} at <b>${r.got}/${r.max}</b>.`;
+      action = `<button type="button" class="tm-btn" id="tmsubmitpaper">${type ? "Finish practice" : "Submit paper"}</button>`;
+    }
+    const empty = !r.canFinish && !r.pending.length;
+    const decision = empty
+      ? `<h2 id="tmrdh" tabindex="-1">Nothing has been submitted yet</h2>
+         <p class="tm-plede">Answer at least one question before ending this ${type ? "session" : "attempt"}. To abandon it instead, use Start again on its page.</p>`
+      : `<h2 id="tmrdh" tabindex="-1">${type ? "Finishing ends this session" : "Submitting ends this attempt"} with the marks you have now</h2>
+         <p class="tm-plede">Answers are marked as you submit them, so ${type ? "finishing" : "submitting the paper"} marks nothing more. Your results open next, where you can review your marks but not change them.</p>`;
+
+    // The aside: the scope, each either/or in the paper's own words, and when.
+    const saved = `<h3 class="k">Saved</h3><p class="tm-p">Started ${tmDay(a.startedAt)} · saved ${tmDay(a.updatedAt)}</p>`;
+    const aside = type ? `<aside class="tm-about" aria-labelledby="tmrab"><h2 id="tmrab">About this practice</h2>
+        <h3 class="k">Questions</h3><p class="tm-p">${esc(from)}. ${tmPlural(r.total, "question")}, fixed once a session starts.</p>
+        <h3 class="k">Your paper attempts</h3><p class="tm-p">Finishing this practice does not change any paper attempt, even where they share a question.</p>${saved}</aside>`
+      : `<aside class="tm-about" aria-labelledby="tmrab"><h2 id="tmrab">About this attempt</h2>
+        <h3 class="k">Sections</h3><ul class="tm-rsecl">${a.sections.map(si => `<li>${esc(ATT.sectionName(secOf(si), si))}</li>`).join("")}</ul>
+        <p class="tm-p tm-rsm">${a.sections.length === paper.sections.length ? "" : "You are sitting " + esc(tmList(a.sections.map(si => ATT.sectionShort(secOf(si), si)))) + ". "}Sections are fixed once an attempt starts.</p>
+        ${r.either.map(e => {
+          const sec = secOf(e.si), opt = qi => e.options.find(o => o.qi === qi);
+          const others = e.options.filter(o => o.qi !== e.chosen).map(o => "Question " + o.number);
+          const slot = r.items.find(y => y.eitherSlot && y.si === e.si);
+          const status = e.chosen === null ? "Not chosen yet. " + eitherRule(e.options.length, slot ? slot.weight : 1)
+            : e.locked ? "You chose Question " + opt(e.chosen).number + ". " + tmList(others) + (others.length === 1 ? " is" : " are") + " not part of this attempt."
+            : "You chose Question " + opt(e.chosen).number + " and have not written anything for it, so you can still change your choice.";
+          return `<h3 class="k">${esc(ATT.sectionName(sec, e.si))}</h3>${sec.instructions ? `<blockquote class="tm-ins"><p>${esc(sec.instructions)}</p><cite>Original paper instructions</cite></blockquote>` : ""}<p class="tm-p tm-reither">${esc(status)}</p>`;
+        }).join("")}${saved}</aside>`;
+
+    const facts = type ? esc(from) + " · " + tmPlural(r.total, "question") + " · " + tmPlural(r.max, "mark")
+      : "<b>" + esc(whole) + "</b> · " + tmPlural(r.total, "question") + " · " + tmPlural(r.max, "mark");
+    const back = r.items.find(x => x.key === r.at);
+    app.innerHTML = tmShell(`<div id="tmreview">
+      <button type="button" class="tm-back" id="tmrback"><span aria-hidden="true">← </span>Back to ${esc(back ? label(back) : "the questions")}</button>
+      <div class="tm-top"><p class="tm-kicker">${esc(type ? tmTypeName(a.format) + " practice" : paper.name || "Paper")}</p>
+        <h1>${type ? "Finish practice" : "Submit paper"}</h1>
+        <div class="tm-factrow"><p class="tm-facts">${facts}</p>${TM_POLICY}</div></div>
+      <div class="tm-layout">
+        <section class="tm-panel tm-rpanel" aria-labelledby="tmrdh">
+          ${decision}${busy}${tally}${last}${groups}${bysec}
+          <div class="tm-go"><p class="tm-sum" id="tmrsum" aria-live="polite">${sum}</p>${action}</div>
+        </section>${aside}
+      </div></div>`, { cls: "tm-ov tm-review" });
+    wireNav();
+    $("#tmrback").onclick = () => tmSitAt(key, r.at);
+    app.querySelectorAll("[data-tmreviewgo]").forEach(b => b.onclick = () => tmSitAt(key, b.dataset.tmreviewgo));
+    app.querySelectorAll("[data-tmleave]").forEach(b => b.onclick = () => tmLeaveUnmarked(key, b.dataset.tmleave));
+    const lr = $("#tmrlastresults"); if (lr) lr.onclick = () => tmResults(key);
+    const bq = $("#tmbacktoq"); if (bq) bq.onclick = () => tmSitAt(key, a.at);
+    const sb = $("#tmsubmitpaper"); if (sb) sb.onclick = () => tmClose(key, a);
+    app.querySelectorAll('a[href^="#tmg-"]').forEach(x => x.onclick = ev => { ev.preventDefault(); const t = document.getElementById(x.getAttribute("href").slice(1)); if (t) { t.scrollIntoView({ block: "start" }); t.focus({ preventScroll: true }); } });
+    if (had) { const s = $("#tmsubmitpaper"); (s && !s.disabled ? s : $("#tmrdh")).focus(); }
+    else if (!(opts && opts.settled)) { window.scrollTo(0, 0); const h = $("#tmrdh"); if (h) h.focus({ preventScroll: true }); }
+  }
+  // Leave it unmarked (decision 24): stop waiting for this reply. A late one is
+  // dropped by tmSubmit, which keeps only the reply it is still waiting for.
+  function tmLeaveUnmarked(key, k) {
+    const a = tmRec(key).current; if (!a) return tmLibrary();
+    const sent = tmPending(a)[k];
+    if (sent == null) return tmReview(key);
+    delete tmPending(a)[k];
+    const e = ATT.sequence(a, state.exams).find(x => x.key === k);
+    ATT.leaveUnmarked(a, k, sent, ASSESS.fail("MARKING_LEFT", TM_LEFT, { max: e ? Number(e.q.marks) || 0 : 0, retry: true }), tmNow());
+    save();
+    tmReview(key, { settled: true });
+    const s = $("#tmsubmitpaper"); (s && !s.disabled ? s : $("#tmrdh")).focus();
+  }
+  // The one irreversible action. Checked again at the press: the page may be
+  // stale (another tab, a reply still out), and a disabled button is not a guard.
+  function tmClose(key, shown) {
+    const rec = tmRec(key), a = rec.current;
+    if (!a) return tmLibrary();
+    if (a !== shown) { toast("This attempt changed in another tab. Check it again before you submit.", 3500); return tmReview(key); }
+    if (tmPendingKeys(a).length || !ATT.submittedAny(a)) return tmReview(key);
+    // A second opinion still out cannot change the score: it is abandoned here,
+    // and its late reply finds the attempt closed and is dropped.
+    ATT.complete(state, key, tmNow()); save();
+    REVIEW.key = null; REVIEW.a = null;
+    tmResults(key);
   }
   // A larger reading view of the source, which leaves the answer untouched.
   function tmReader(e) {
@@ -3573,11 +3808,13 @@
         <span class="pill">You are on item ${SIT.pos + 1} of ${SIT.seq.length} · ${esc(here.eitherSlot ? tmShort(here) : "Question " + (here.display || ""))} · ${esc(ATT.sectionShort(here.sec, here.si))}</span></div>
       <div class="tm-navbody">${blocks}</div>
       <p class="tm-legend"><span class="tm-chip done">✓ answered</span><span class="tm-chip flag">⚑ flagged</span><span class="tm-chip here">current</span><span class="tm-chip todo">not answered yet</span></p>
+      <div class="tm-navfoot"><button type="button" class="tm-btn sm ghost" id="tmnavreview">${a.scope === "paper" ? "Review &amp; submit" : "Review &amp; finish"}</button></div>
     </div></div>`;
     const shut = () => { wrap.innerHTML = ""; document.removeEventListener("keydown", onKey); const b = $("#examnav"); if (b) b.focus(); };
     const onKey = ev => { if (ev.key === "Escape") shut(); };
     document.addEventListener("keydown", onKey);
     $("#tmnavx").onclick = shut;
+    $("#tmnavreview").onclick = () => { document.removeEventListener("keydown", onKey); tmFinish(); };
     $("#tmscrim").onclick = ev => { if (ev.target.id === "tmscrim") shut(); };
     wrap.querySelectorAll("[data-tmnav]").forEach(b => b.onclick = () => { document.removeEventListener("keydown", onKey); tmGo(Number(b.dataset.tmnav)); });
     $("#tmnavx").focus();
@@ -3598,7 +3835,7 @@
     app.innerHTML = tmShell(`${tmBack()}<div class="summary">
       <div class="bigscore">${s.got}<small>/${s.max}</small></div>
       <h2>${esc(title)}</h2>
-      <p>${a.completedAt ? "Completed " + tmDay(a.completedAt) + "." : "In progress."}${s.notMarked ? ` ${s.notMarked} answer${s.notMarked === 1 ? " is" : "s are"} not marked yet, so ${s.notMarked === 1 ? "its marks are" : "their marks are"} not in this total, though they still count in what this is out of.` : ""} Your marks by section are below.</p>
+      <p>${a.completedAt ? "Completed " + tmDay(a.completedAt) + "." : "In progress."}${s.notMarked ? ` ${s.notMarked} answer${s.notMarked === 1 ? " is" : "s are"} not marked${a.completedAt ? "" : " yet"}, so ${s.notMarked === 1 ? "its marks are" : "their marks are"} not in this total, though they still count in what this is out of.` : ""} Your marks by section are below.</p>
       <div class="exam-results">${groups.map(gr => {
         const t = ASSESS.tally(gr.items.map(e => ({ marks: ATT.marksOf(e), result: a.results[e.key] })));
         return `<div class="exam-ressec"><div class="exam-ressech">${esc(a.scope === "paper" ? ATT.sectionName(gr.e.sec, gr.e.si) : (gr.e.paper.name || "") + " · " + ATT.sectionShort(gr.e.sec, gr.e.si))} <span class="exam-resm">${t.got}/${t.max}</span></div>

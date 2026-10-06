@@ -167,8 +167,10 @@ const answer = async (p, text) => {
     ok(/1 of 2 answered/.test(bar), 'the refused question is not counted as answered: ' + JSON.stringify(bar));
     ok(/1 not marked/.test(bar), 'and is counted as what it is: ' + JSON.stringify(bar));
 
-    // Slice A: the last item finishes the paper; the results screen reads the attempt.
+    // Slice B: the last item opens Review & submit; Submit paper closes the attempt
+    // and the results screen reads it.
     await p.click('#examfinish'); await settled(p);
+    await p.click('#tmsubmitpaper'); await settled(p);
     const res = await p.evaluate(() => ({
       big: (document.querySelector('.bigscore') || {}).textContent || '(none)',
       rows: Array.from(document.querySelectorAll('.exam-resq')).map(e => e.textContent.replace(/\s+/g, ' ').trim()),
@@ -478,7 +480,8 @@ const answer = async (p, text) => {
       await answer(p, 'A response about weaving strategies. '.repeat(20));
       // Slice A: finishing completes the attempt; Try again on the card opens the
       // overview, and Start new attempt begins the next one.
-      await p.click('#examfinish'); await settled(p);   // sit() accepts the confirmation
+      await p.click('#examfinish'); await settled(p);   // Review & submit
+      await p.click('#tmsubmitpaper'); await settled(p);
       await p.click('#exambackhome'); await settled(p);
       const rt = await p.$('[data-tmopen="retaken"].tm-btn');
       ok(!!rt, 'the completed card offers Try again');

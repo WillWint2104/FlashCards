@@ -951,8 +951,8 @@ module.exports = [
     // Follows the end of the list, which moves every time a suite is added, and
     // t26 is what turns that into a caught failure rather than a mutation that
     // quietly stops mutating anything. ui69 moved it; this is the fix.
-    find: '"ui72", "ui73"]',
-    replace: '"ui72"]',
+    find: "\"ui73\", \"ui74\"]",
+    replace: "\"ui73\"]",
     owner: "t23",
     why: "a maintained regression outside the runner is invisible, which is how twenty-eight suites rotted unnoticed",
   },
@@ -1642,10 +1642,10 @@ module.exports = [
   {
     id: "sliceA-finish-while-marking",
     file: "app.js",
-    find: "    if (Object.keys(tmPending(a)).length) { toast(\"An answer is still being marked. You can finish once it has its result.\", 3500); return; }",
-    replace: "",
+    find: "      action = `<button type=\"button\" class=\"tm-btn\" id=\"tmsubmitpaper\" disabled>${type ? \"Finish practice\" : \"Submit paper\"}</button>`;",
+    replace: "      action = `<button type=\"button\" class=\"tm-btn\" id=\"tmsubmitpaper\">${type ? \"Finish practice\" : \"Submit paper\"}</button>`;",
     owner: "ui72",
-    why: "finishing while an answer was being marked completed the attempt without that answer's result, which then landed nowhere",
+    why: "Submit paper could be pressed while an answer was being marked, so the attempt closed without that answer's result",
   },
   {
     id: "sliceA-remark-marks-the-old-answer",
@@ -1742,5 +1742,53 @@ module.exports = [
     replace: "",
     owner: "t38",
     why: "a stored result with no outcome counted as answered in the total and as not marked on its chip, so one page could disagree with itself",
+  },
+  {
+    id: "sliceB-empty-attempt-closes",
+    file: "tools/contract/attempts.js",
+    find: "  if (!rec.current || !submittedAny(rec.current)) return null;",
+    replace: "  if (!rec.current) return null;",
+    owner: "t38",
+    why: "an attempt nothing was submitted from could be closed, replacing a real completed result with an empty one",
+  },
+  {
+    id: "sliceB-empty-attempt-offers-submit",
+    file: "app.js",
+    find: "    if (!r.canFinish && !r.pending.length) {",
+    replace: "    if (false) {",
+    owner: "ui74",
+    why: "with nothing submitted, the page still offered Submit paper",
+  },
+  {
+    id: "sliceB-leave-overwrites-mark",
+    file: "tools/contract/attempts.js",
+    find: "  if (a.results[key]) return touch(a, t);\n  return record(a, key, sent, result, t);",
+    replace: "  return record(a, key, sent, result, t);",
+    owner: "t38",
+    why: "Leave it unmarked on a resubmission replaced a valid mark with a not-marked result, and the newer text with the version that was marked",
+  },
+  {
+    id: "sliceB-late-reply-after-leave",
+    file: "app.js",
+    find: "    delete tmPending(a)[k];\n    const e = ATT.sequence(a, state.exams).find(x => x.key === k);",
+    replace: "    const e = ATT.sequence(a, state.exams).find(x => x.key === k);",
+    owner: "ui74",
+    why: "after Leave it unmarked, the abandoned request's late reply still landed and changed the answer's status",
+  },
+  {
+    id: "sliceB-stale-mark-under-new-text",
+    file: "app.js",
+    find: "    const stale = marked && f !== \"multiple_choice\" && a.drafts[key] != null && a.drafts[key] !== String(a.answers[key]);",
+    replace: "    const stale = false;",
+    owner: "ui74",
+    why: "a mark sat under newer text as if it had assessed it, instead of saying it was for the earlier version",
+  },
+  {
+    id: "sliceB-entry-says-submit",
+    file: "app.js",
+    find: "id=\"examfinish\">${a.scope === \"paper\" ? \"Review &amp; submit\" : \"Review &amp; finish\"}</button>",
+    replace: "id=\"examfinish\">${a.scope === \"paper\" ? \"Submit paper\" : \"Finish practice\"}</button>",
+    owner: "ui74",
+    why: "a button labelled Submit paper opened a page where nothing had been submitted yet",
   },
 ];

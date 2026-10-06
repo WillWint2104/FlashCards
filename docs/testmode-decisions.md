@@ -550,6 +550,54 @@ until it settles or is explicitly left unmarked. There are routes back to
 unanswered, flagged and unmarked questions, and an either/or is never
 presented as requiring both options.
 
+## 24. Submit and Finish are frozen for desktop; Results is next
+
+The Submit page (`docs/mockups/04-submit*.html`) is approved and frozen for
+desktop: the decision first, marked, submitted-but-not-marked and not answered
+kept apart, the either/or as one requirement, flags advisory and never
+blocking, and a route back to anything that needs attention. It is built from
+`ATT.report`.
+
+**Leave it unmarked.**
+
+- A first submission with no result is recorded as *Submitted, not marked*.
+- A re-mark of an answer already marked keeps the earlier valid mark.
+- The abandoned request's late reply is ignored.
+- The version a mark was given for is kept apart from newer text. Wherever the
+  answer in view has changed since its mark, the page says the mark applies to
+  the earlier version.
+
+**One closure for both scopes.** A practice session uses the same page and
+the same statuses (marked, submitted but not marked, not answered, flagged,
+being marked, changed after marking). There is no second completion
+architecture.
+
+**Honest verbs.**
+
+- The last question and the navigator offer *Review & submit* (a paper) or
+  *Review & finish* (a practice session). They open this page; nothing is
+  submitted yet.
+- The page's one irreversible button is *Submit paper* or *Finish practice*.
+
+**A completed attempt is closed.** An answer submitted but not marked stays
+not marked in it permanently. Results does not offer *Try marking again*;
+another mark belongs to a new attempt.
+
+**An attempt nothing was submitted from cannot be finished.** The page says
+*Nothing has been submitted yet. Answer at least one question before ending
+this attempt*, and offers *Back to questions*. Abandoning it is Start again.
+Once one response has been submitted, marked or not, the rest may be left
+unanswered. This stops an empty attempt replacing a real completed result.
+
+**Only score-affecting work blocks.** A marking request blocks submission
+until it settles or the student chooses *Leave it unmarked*. A pending *What
+would make this stronger* request cannot change the score: it does not block,
+it is abandoned on submit, and its late reply is ignored.
+
+**Next:** Results overview (Slice B, state 2), designed after the Submit path
+is working in the app. It must make a 90-mark paper readable at a glance
+without flattening nested parts or treating unmarked responses as zero.
+
 ## Mockup order — dependency, not numerical
 
 ```

@@ -280,9 +280,13 @@ function discard(store, key) {
 }
 // Completing moves current to last. Submit is Slice B; the existing finish
 // path calls this so a completed state exists to show.
+// Closing an attempt (decision 24). One that nothing was ever submitted from is
+// not closed: it would replace a real completed result with an empty one. A
+// student who wants to abandon it uses Start again (discard).
+function submittedAny(a) { return Object.keys((a && a.results) || {}).length > 0; }
 function complete(store, key, t) {
   var rec = recordFor(store, key);
-  if (!rec.current) return null;
+  if (!rec.current || !submittedAny(rec.current)) return null;
   rec.current.completedAt = now(t);
   rec.current.updatedAt = rec.current.completedAt;
   rec.last = rec.current;
@@ -367,6 +371,17 @@ function record(a, key, answer, result, t) {
   a.results[key] = result;
   delete a.drafts[key];
   return touch(a, t);
+}
+// "Leave it unmarked" (decision 24), for an answer whose marking reply has not
+// come back. It never removes a mark, and it never stores the sent text over
+// the version a stored result was given for:
+//   first submission   recorded as submitted, not marked, with `result`
+//   a mark already     the mark and its graded answer stay; the sent text stays a draft
+//   a not-marked one   stays not marked; the sent text stays a draft
+// The caller stops waiting for the reply, so a late one is ignored.
+function leaveUnmarked(a, key, sent, result, t) {
+  if (a.results[key]) return touch(a, t);
+  return record(a, key, sent, result, t);
 }
 function toggleFlag(a, key, t) {
   var i = a.flags.indexOf(key);
@@ -475,6 +490,8 @@ function report(a, exams, pending) {
       // not shown beside its mark by the sitting, so it is not reported either.
       changed: status !== "not_answered" && drafted && !busy[e.key] && fmt !== "multiple_choice" && String(d) !== String(a.answers[e.key]),
       pending: !!busy[e.key], flagged: a.flags.indexOf(e.key) >= 0,
+      // The version a stored result was given for, kept apart from newer text.
+      graded: r ? (a.answers[e.key] == null ? null : String(a.answers[e.key])) : null,
     };
   });
   var row = function (st) {
@@ -494,6 +511,8 @@ function report(a, exams, pending) {
     at: (seq.filter(function (e) { return e.key === a.at; })[0] || seq[seq.length - 1] || {}).key || null,
     sections: null, either: [],
   };
+  out.submitted = items.filter(function (x) { return x.status !== "not_answered"; }).length;
+  out.canFinish = submittedAny(a);
   var paper = a.scope === SCOPE.paper ? byId(exams, a.paper) : null;
   if (paper) {
     out.sections = a.sections.map(function (si) {
@@ -555,5 +574,5 @@ module.exports = {
   sectionName: sectionName, sectionShort: sectionShort, assessable: assessable, bank: bank, bankCounts: bankCounts,
   startPaper: startPaper, startType: startType, begin: begin, discard: discard, complete: complete,
   sequence: sequence, entryAt: entryAt, marksOf: marksOf, setDraft: setDraft, record: record, toggleFlag: toggleFlag, moveTo: moveTo, choose: choose,
-  summary: summary, report: report, weightOf: weightOf, restorePapers: restorePapers, itemState: itemState, sane: sane, clone: clone,
+  summary: summary, report: report, leaveUnmarked: leaveUnmarked, submittedAny: submittedAny, weightOf: weightOf, restorePapers: restorePapers, itemState: itemState, sane: sane, clone: clone,
 };
