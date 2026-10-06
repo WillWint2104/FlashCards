@@ -331,7 +331,7 @@ const shot = (p, n) => p.screenshot({ path: OUT + 'shot-sliceA-' + n + '.png' })
     while (!(await has(p, '#examfinish'))) { await p.click('#examnext'); await settled(p); }
     await p.click('#examfinish'); await settled(p);
     await p.click('#tmsubmitpaper'); await settled(p);
-    await p.click('#exambackhome').catch(() => {}); await settled(p);
+    await p.click('#tmback').catch(() => {}); await settled(p);
     await toTest(p);
     await p.evaluate(t => [...document.querySelectorAll('.tm-paper')].find(x => x.textContent.includes(t)).querySelector('[data-tmopen]').click(), TITLE);
     await settled(p);

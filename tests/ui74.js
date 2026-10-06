@@ -138,7 +138,7 @@ const rows = p => p.$$eval('.tm-tally tbody tr, .tm-tally tfoot tr', es => es.ma
     const after = await stored(p), rec = after[Object.keys(after)[0]];
     ok(!rec.current && rec.last && rec.last.completedAt, 'Submit paper closes the attempt');
     const res = await text(p, '#app');
-    ok(!(await has(p, '#examremark')) && !/Try marking again/.test(res) && /1 answer is not marked, so its marks/.test(res) && !/not marked yet/.test(res),
+    ok(!(await has(p, '#examremark')) && !/Try marking again/.test(res) && /Reason at the time:/.test(res) && !/not marked yet/.test(res),
        'the closed attempt\'s unmarked answer stays unmarked: no Try marking again, and no "yet" (decision 24)');
     ok(!errs.length, 'no page errors ' + JSON.stringify(errs));
     await ctx.close();

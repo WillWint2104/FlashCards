@@ -95,7 +95,7 @@ function sourcePanel(e, hs) {
 // A light edge is marked, a solid dark edge not marked, a dashed edge not answered.
 function statusTags(v) {
   const x = v.item;
-  const main = x.status === "marked" ? `<span class="tm-rvtag m"><b>${x.score} / ${x.max}</b><span class="vh"> marks${v.later ? ", for the version that was marked" : ""}</span></span>`
+  const main = x.status === "marked" ? `<span class="tm-rvtag m"><b>${x.score} / ${x.max}</b><span class="tm-sr"> marks${v.later ? ", for the version that was marked" : ""}</span></span>`
     : x.status === "not_marked" ? `<span class="tm-rvtag nm">Not marked · ${plural(x.marks, "mark")}</span>`
     : `<span class="tm-rvtag na">${x.eitherSlot ? "Not chosen" : "Not answered"} · ${plural(x.marks, "mark")}</span>`;
   return `<span class="tm-rvst">${main}${v.later ? `<a class="tm-rvtag ch" href="#tmlater">Changed after marking</a>` : ""}${x.flagged ? `<span class="tm-rvfl">⚑ Flagged</span>` : ""}</span>`;
@@ -292,45 +292,9 @@ ${REVIEW_CSS}
   return { html: html.replace("/*APPCSS*/", appCSS(html)), a, v };
 }
 
-// ---- the review shell's own rules (everything else is the app's) ---------------------------
-const REVIEW_CSS = `
-  /* Review shell (state 3). Edges follow Results and the navigator: light is
-     marked, solid dark is not marked, dashed is not answered. */
-  .tm-rv .tm-bar .tm-back{margin:0;padding:0}
-  .tm-rvclosed{display:inline-flex;align-items:center;font-size:12px;font-weight:800;color:var(--ink-2);background:#F1F5F5;border:1px solid var(--line);border-radius:99px;padding:3px 11px}
-  .tm-rv .tm-prog .exam-progress{margin:0;font-size:13px;color:var(--ink-2)}
-  .tm-rv .tm-prog .exam-progress b{font-family:var(--disp);font-size:16px;color:var(--ink)}
-  .tm-rvst{margin-left:auto;display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px}
-  .tm-rvtag{font-family:var(--body);font-size:12.5px;font-weight:800;color:var(--ink);background:#fff;border:1.5px solid #C9D3D2;border-radius:8px;padding:1px 9px;text-decoration:none;white-space:nowrap}
-  .tm-rvtag b{font-family:var(--disp);font-weight:600;font-size:14px}
-  .tm-rvtag.m{border-color:#C9D3D2}
-  .tm-rvtag.nm{border-color:var(--ink-3)}
-  .tm-rvtag.na{border-color:var(--ink-3);border-style:dashed}
-  .tm-rvtag.ch{color:var(--ink-2);background:#F1F5F5;border-color:var(--line)}
-  .tm-rvtag.ch:hover{text-decoration:underline;text-underline-offset:3px}
-  .tm-rv .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-  .tm-rvfl{font-size:12.5px;font-weight:800;color:var(--gold-dk);white-space:nowrap}
-  .tm-rvlbl{margin:14px 0 6px;font-family:var(--disp);font-weight:600;font-size:13px;color:var(--ink-2)}
-  .tm-rvlater{margin-top:22px;padding:14px 16px;border:1.5px solid var(--line);border-radius:14px;background:#F6F9F9;max-width:62ch}
-  .tm-rvlater h3{font-size:15px;font-weight:600}
-  .tm-rvlater>p{margin-top:4px;font-size:14px;font-weight:600;color:var(--ink-2)}
-  .tm-rvtext{margin-top:10px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 14px}
-  .tm-rvtext p{font-size:15px;line-height:1.65;color:var(--ink);white-space:pre-line}
-  .tm-rvtext p+p{margin-top:10px}
-  .tm-rvunsent{margin-top:16px;max-width:62ch}
-  .tm-rvunsent summary{cursor:pointer;font-family:var(--disp);font-weight:600;font-size:13.5px;color:var(--green-dk)}
-  .tm-rvwhy{margin-top:6px;font-size:13.5px;font-weight:600;color:var(--ink-2)}
-  .tm-result.na{background:#fff;border-color:var(--ink-3);border-style:dashed}
-  .tm-result.na .badge{color:var(--ink);box-shadow:0 0 0 1.5px var(--line) inset}
-  .tm-rv .tm-result.nm{border-color:var(--ink-3)}
-  .tm-rvopth{margin-top:22px;font-size:15px;font-weight:600}
-  .tm-rvopts{list-style:none;margin-top:8px;display:grid;gap:8px}
-  .tm-rvopts li{border:1.5px solid var(--line);border-radius:14px;padding:12px 16px;display:flex;flex-direction:column;gap:3px}
-  .tm-rvopts .tm-lbl{font-family:var(--disp);font-weight:600;font-size:14px}
-  .tm-rvopts .txt{font-size:14.5px;font-weight:600;color:var(--ink)}
-  .tm-rv blockquote.tm-ins{margin-top:10px}
-  .tm-rv a.pt,.tm-rv a.tm-chip{text-decoration:none}
-`;
+// The review shell's rules are the app's own now (index.html, "RESULTS AND
+// REVIEW"), so these pages read them with everything else from index.html.
+const REVIEW_CSS = "";
 
 // ---- the app's CSS, kept to the rules a page uses -------------------------------------------
 // A rule is kept when every class and id its selector names is on the page, so

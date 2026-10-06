@@ -1260,9 +1260,11 @@ module.exports = [
   {
     id: "gate3a-section-total-sums-a-refusal",
     file: "app.js",
-    find: "        const t = ASSESS.tally(gr.items.map(e => ({ marks: ATT.marksOf(e), result: a.results[e.key] })));\n        return `<div class=\"exam-ressec\">",
-    replace: "        const t = ASSESS.tally(gr.items.map(e => ({ marks: ATT.marksOf(e), result: a.results[e.key] })));\n        t.got = gr.items.reduce((n, e) => n + (a.results[e.key] || {}).score, 0);\n        return `<div class=\"exam-ressec\">",
-    owner: "ui68",
+    // Results' section and question subtotals now come from ATT.results (Slice B).
+    file: "tools/contract/attempts.js",
+    find: "    var t = ASSESS.tally(xs.map(function (x) { return { marks: x.marks, result: a.results[x.key] }; }));\n    var w = ",
+    replace: "    var t = ASSESS.tally(xs.map(function (x) { return { marks: x.marks, result: a.results[x.key] }; }));\n    t.got = xs.reduce(function (n, x) { return n + (a.results[x.key] || {}).score; }, 0);\n    var w = ",
+    owner: "t38",
     why: "a section total that adds up refusals reads NaN beside a paper total that does not",
   },
   {

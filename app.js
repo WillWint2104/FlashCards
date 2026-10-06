@@ -2462,7 +2462,10 @@
             : `<p class="tm-none">None available yet</p>`;
           // The name opens the overview on purpose; Resume goes straight back to the question (decision 23).
           const title = rec.current || counts[f] ? `<button type="button" class="tm-title" data-tmtypeopen="${f}">${esc(name)}</button>` : esc(name);
-          return `<li class="tm-tile"><h3>${title}</h3><p class="tm-avail"><b>${counts[f]}</b> available</p>${act}</li>`;
+          // A finished session stays reachable, secondary to Resume (decision 25).
+          const last = rec.last ? ATT.summary(rec.last, state.exams) : null;
+          const lastLine = last ? `<p class="tm-lastdone">Last completed · ${last.answered ? `<b>${last.got} / ${last.max}</b>` : "Nothing marked"} · <button type="button" class="tm-link sm" data-tmtyperesults="${f}">View results</button></p>` : "";
+          return `<li class="tm-tile"><h3>${title}</h3><p class="tm-avail"><b>${counts[f]}</b> available</p>${lastLine}${act}</li>`;
         }).join("")}</ul>
       </section>`;
     const cards = papers.map(tmCard).join("");
@@ -2491,6 +2494,7 @@
       return tmRec(ATT.typeKey(f)).current ? tmSit(ATT.typeKey(f)) : tmTypeOverview(f);
     });
     app.querySelectorAll("[data-tmtypeopen]").forEach(b => b.onclick = () => tmTypeOverview(b.dataset.tmtypeopen));
+    app.querySelectorAll("[data-tmtyperesults]").forEach(b => b.onclick = () => tmResults(ATT.typeKey(b.dataset.tmtyperesults)));
     app.querySelectorAll("[data-examsit],[data-tmopen]").forEach(b => b.onclick = () => tmPaperOverview(b.dataset.examsit || b.dataset.tmopen));
     app.querySelectorAll("[data-examresume]").forEach(b => b.onclick = () => tmSit(ATT.paperKey(b.dataset.examresume)));
     app.querySelectorAll("[data-examresults]").forEach(b => b.onclick = () => tmResults(ATT.paperKey(b.dataset.examresults)));
@@ -2526,7 +2530,7 @@
         ${s.at ? `<p class="tm-where">Picks up at ${esc(tmWhere(s.at))}</p>` : ""}`;
     } else if (rec.last) {
       status = `<span class="tm-state done">Completed ${tmDay(rec.last.completedAt)}</span>
-        <p class="tm-score"><b>${s.got}</b> / ${s.max}</p>
+        <p class="tm-score">${tmScoreHTML(s)}</p>
         <p class="tm-sub">${s.answered} of ${s.total} answered${s.notMarked ? ` · ${s.notMarked} not marked` : ""}</p>`;
       actions = `<button type="button" class="tm-btn" data-examresults="${esc(id)}">View results</button>
         <button type="button" class="tm-btn ghost" data-tmopen="${esc(id)}">Try again</button>`;
@@ -2867,7 +2871,7 @@
       <div class="tm-panel" data-kind="sections">
         ${last ? `<section class="tm-last" aria-labelledby="tmla"><h2 class="tm-sr" id="tmla">Your last attempt</h2>
           <span class="tm-state done">Completed ${tmDay(last.completedAt)}</span>
-          <p class="tm-lastline"><b>${ls.got} / ${ls.max}</b> · ${ls.answered} of ${ls.total} answered${ls.notMarked ? ` · ${ls.notMarked} not marked` : ""}${lscope ? " · " + esc(lscope) : ""}</p>
+          <p class="tm-lastline"><b>${ls.answered ? ls.got + " / " + ls.max : "Nothing marked"}</b> · ${ls.answered} of ${ls.total} answered${ls.notMarked ? ` · ${ls.notMarked} not marked` : ""}${lscope ? " · " + esc(lscope) : ""}</p>
           <span class="tm-spacer"></span><button type="button" class="tm-btn ghost sm" id="tmlastresults">View results</button>
           <p class="tm-keep">Those results stay available until you submit the new attempt.</p></section>` : ""}
         <section aria-labelledby="tmcs">
@@ -2921,8 +2925,15 @@
     const papers = rec.current ? papersOf(rec.current.items) : papersOf(bank);
     const subjects = papers.map(tmSubjectOf).filter((s, i, arr) => s && arr.indexOf(s) === i);
     tmUnit(subjects.length === 1 ? subjects[0] : "");
-    if (!rec.current && !bank.length) return tmLibrary();
+    if (!rec.current && !bank.length && !rec.last) return tmLibrary();
     const name = tmTypeName(format);
+    // The last finished session, kept apart from any session in progress (decision 25).
+    const ls = rec.last ? ATT.summary(rec.last, state.exams) : null;
+    const lastStrip = ls ? `<section class="tm-last" aria-labelledby="tmla"><h2 class="tm-sr" id="tmla">Your last completed session</h2>
+      <span class="tm-state done">Last completed ${tmDay(rec.last.completedAt)}</span>
+      <p class="tm-lastline"><b>${ls.answered ? ls.got + " / " + ls.max : "Nothing marked"}</b> · ${ls.answered} of ${ls.total} answered</p>
+      <span class="tm-spacer"></span><button type="button" class="tm-btn ghost sm" id="tmlastresults">View results</button>
+      <p class="tm-keep">${rec.current ? "Finishing the session in progress replaces this result." : "Those results stay available until you finish a new session."}</p></section>` : "";
     const top = `${tmBack()}
       <div class="tm-top">
         <p class="tm-kicker">Practise a question type</p>
@@ -2946,6 +2957,7 @@
       const pct = s.total ? Math.round(100 * s.answered / s.total) : 0;
       app.innerHTML = tmShell(top + `<div class="tm-layout">
         <section class="tm-panel" aria-labelledby="tmya">
+          ${lastStrip}
           <div class="tm-phead"><h2 id="tmya">Your practice session</h2><span class="tm-state live">In progress</span></div>
           <p class="tm-count"><b>${s.answered} of ${s.total}</b> answered${s.flagged ? ` · <span class="tm-flagged">⚑ ${s.flagged} flagged</span>` : ""}${s.notMarked ? ` · ${s.notMarked} not marked` : ""}</p>
           <div class="tm-pbar" role="progressbar" aria-label="Answered" aria-valuemin="0" aria-valuemax="${s.total}" aria-valuenow="${s.answered}"><i style="width:${pct}%"></i></div>
@@ -2967,6 +2979,7 @@
       wireNav();
       $("#tmback").onclick = tmLibrary;
       $("#tmresume").onclick = () => tmSit(key);
+      const lr = $("#tmlastresults"); if (lr) lr.onclick = () => tmResults(key);
       $("#tmstartagain").onclick = () => {
         const n = Object.keys(a.answers).length + Object.keys(a.drafts).filter(k => !(k in a.answers)).length;
         if (!confirm("Start again? This discards this practice session" + (n ? ", including " + tmPlural(n, "answer") + " you have written" : "") + ". It cannot be undone.")) return;
@@ -2974,11 +2987,18 @@
       };
       return;
     }
+    if (!bank.length) {
+      // Nothing left to practise, but the last session's results are still there.
+      app.innerHTML = tmShell(top + `<div class="tm-layout"><section class="tm-panel">${lastStrip}<p class="tm-p">No ${esc(name.toLowerCase())} questions are in your library now.</p></section>${about}</div>`, { cls: "tm-ov" });
+      wireNav(); $("#tmback").onclick = tmLibrary; $("#tmlastresults").onclick = () => tmResults(key);
+      return;
+    }
     const one = bank.length === 1;
     const rows = bank.map(b => ({ m: b.marks }));
     const sum = tmQuestionSummary(rows, true);
     app.innerHTML = tmShell(top + `<div class="tm-layout">
       <section class="tm-panel" aria-labelledby="tmqq" data-kind="questions">
+        ${lastStrip}
         <div class="tm-phead"><h2 id="tmqq">${one ? "Question" : "Questions"}</h2><span class="tm-spacer"></span>
           ${one ? "" : `<span class="tm-pick"><button type="button" class="tm-link" id="tmqall">Select all</button><button type="button" class="tm-link" id="tmqnone">Clear</button></span>`}</div>
         ${one ? "" : `<fieldset class="tm-mode"><legend class="tm-sr">Which questions</legend>
@@ -2998,6 +3018,7 @@
       </section>${about}</div>`, { cls: "tm-ov" });
     wireNav();
     $("#tmback").onclick = tmLibrary;
+    const lr = $("#tmlastresults"); if (lr) lr.onclick = () => tmResults(key);
     const panel = app.querySelector(".tm-panel");
     const boxes = () => Array.from(app.querySelectorAll("[data-tmq]"));
     const choosing = () => panel.classList.contains("choosing");
@@ -3311,8 +3332,12 @@
       <ol class="steps">${steps.map((s, i) => `<li class="step${i === steps.length - 1 ? " final" : ""}"><span class="no">${i + 1}</span>
         <div class="t"><div class="tm-lbl">${esc(s[0])}</div><div class="math">${esc(s[1])}</div></div></li>`).join("")}</ol></div>`;
   }
-  function tmResultHTML(e, a, f, g) {
+  // `closed` is ATT.reviewAt's view of a completed attempt (decision 26): the
+  // same marked states, with every action that could change a mark taken out.
+  function tmResultHTML(e, a, f, g, closed) {
     const q = e.q, key = e.key;
+    const answer = closed ? closed.answer : a.answers[key];
+    const shown = closed ? RV.soln : SIT.soln;
     if (!isMarked(g)) {
       const why = g && (g.why || g.note) ? String(g.why || g.note) : "No reason was recorded.";
       const marks = Number(q.marks) || 0;
@@ -3326,23 +3351,23 @@
       const right = (q.choices || []).find(c => c.ok);
       return `<div class="tm-result ${g.correct ? "ok" : "no"}"><span class="badge">${g.correct ? "<span>✓</span>Correct" : "<span>✕</span>Not this one"}</span>${pair}</div>
         ${g.why ? `<p class="tm-mnote">${esc(g.why)}</p>` : ""}${!g.correct && right ? `<p class="tm-mnote">The answer is <b>${esc(right.t)}</b>.</p>` : ""}
-        <div class="tm-submitrow"><button type="button" class="tm-btn" id="examretry">Try again</button></div>`;
+        ${closed ? "" : `<div class="tm-submitrow"><button type="button" class="tm-btn" id="examretry">Try again</button></div>`}`;
     }
     if (f === "calculation") {
-      const yours = `<span class="pair"><span class="k">Your answer</span><span class="v">${esc(a.answers[key])}</span></span>`;
-      const soln = q.model ? `<button type="button" class="tm-btn sm ghost" id="tmsoln" aria-expanded="${!!SIT.soln[key]}">${SIT.soln[key] ? "Hide worked solution ▴" : "View worked solution"}</button>` : "";
+      const yours = `<span class="pair"><span class="k">Your answer</span><span class="v">${esc(answer)}</span></span>`;
+      const soln = q.model ? `<button type="button" class="tm-btn sm ghost" id="tmsoln" aria-expanded="${!!shown[key]}">${shown[key] ? "Hide worked solution ▴" : "View worked solution"}</button>` : "";
       return g.correct
         ? `<div class="tm-result ok"><span class="badge"><span>✓</span>Correct</span>${yours}<span class="pair"><span class="k">Expected answer</span><span class="v">${esc(q.expected)}</span></span>${pair}</div>
-           <div class="tm-submitrow">${soln}</div>${SIT.soln[key] ? tmSolutionHTML(q, a, key) : ""}`
+           <div class="tm-submitrow">${soln}</div>${shown[key] ? tmSolutionHTML(q, a, key) : ""}`
         : `<div class="tm-result no"><span class="badge"><span>✕</span>Not quite</span>${yours}${pair}</div>
-           <div class="tm-submitrow"><button type="button" class="tm-btn" id="examretry">Try again</button>${soln}</div>${SIT.soln[key] ? tmSolutionHTML(q, a, key) : ""}`;
+           <div class="tm-submitrow">${closed ? "" : `<button type="button" class="tm-btn" id="examretry">Try again</button>`}${soln}</div>${shown[key] ? tmSolutionHTML(q, a, key) : ""}`;
     }
     const subj = tmSubjectOf(e.paper);
     const fromMarker = g.kind === "llm";
     const summary = fromMarker ? fbSummary(g.fb || {}) : "";
     const mnote = fromMarker && summary ? `<p class="tm-mnote"><span class="who">Marked against ${esc(subj || "the subject's")} criteria</span>${esc(summary)}</p>` : "";
     const askable = ["points", "local"].includes(g.kind) && !!state.endpoint;
-    const actions = `<div class="tm-submitrow"><button type="button" class="tm-btn" id="examretry">Try again</button>${askable ? `<button type="button" class="tm-btn sm ghost" id="examreview">What would make this stronger →</button>` : ""}</div>`;
+    const actions = closed ? "" : `<div class="tm-submitrow"><button type="button" class="tm-btn" id="examretry">Try again</button>${askable ? `<button type="button" class="tm-btn sm ghost" id="examreview">What would make this stronger →</button>` : ""}</div>`;
     const result = `<div class="tm-result"><span class="badge">${esc(tmMood(g))}</span>${pair}</div>`;
     if (f === "short_answer" || !(f === "extended_response" || f === "business_report")) {
       const pts = Array.isArray(g.points) && g.points.length ? g.points : null;
@@ -3618,7 +3643,7 @@
         ? " · " + esc(tmScope(rec.last) || "the whole paper") : "";
       last = `<section class="tm-last tm-rlast" aria-labelledby="tmrla"><h3 class="tm-sr" id="tmrla">Your last completed ${type ? "session" : "attempt"}</h3>
         <span class="tm-state done">Completed ${tmDay(rec.last.completedAt)}</span>
-        <p class="tm-lastline"><b>${l.got} / ${l.max}</b> · ${l.answered} of ${l.total} answered${lscope}</p>
+        <p class="tm-lastline"><b>${l.answered ? l.got + " / " + l.max : "Nothing marked"}</b> · ${l.answered} of ${l.total} answered${lscope}</p>
         <span class="tm-spacer"></span><button type="button" class="tm-btn ghost sm" id="tmrlastresults">View results</button>
         <p class="tm-keep">${r.canFinish ? (type ? "Finishing" : "Submitting") + " replaces this result. " : ""}Only your latest completed ${type ? "session" : "attempt"} is kept.</p></section>`;
     }
@@ -3714,7 +3739,7 @@
     $("#tmrback").onclick = () => tmSitAt(key, r.at);
     app.querySelectorAll("[data-tmreviewgo]").forEach(b => b.onclick = () => tmSitAt(key, b.dataset.tmreviewgo));
     app.querySelectorAll("[data-tmleave]").forEach(b => b.onclick = () => tmLeaveUnmarked(key, b.dataset.tmleave));
-    const lr = $("#tmrlastresults"); if (lr) lr.onclick = () => tmResults(key);
+    const lr = $("#tmrlastresults"); if (lr) lr.onclick = () => tmResults(key, { from: "review" });
     const bq = $("#tmbacktoq"); if (bq) bq.onclick = () => tmSitAt(key, a.at);
     const sb = $("#tmsubmitpaper"); if (sb) sb.onclick = () => tmClose(key, a);
     app.querySelectorAll('a[href^="#tmg-"]').forEach(x => x.onclick = ev => { ev.preventDefault(); const t = document.getElementById(x.getAttribute("href").slice(1)); if (t) { t.scrollIntoView({ block: "start" }); t.focus({ preventScroll: true }); } });
@@ -3842,34 +3867,403 @@
     wrap.querySelectorAll("[data-tmnav]").forEach(b => b.onclick = () => { document.removeEventListener("keydown", onKey); tmGo(Number(b.dataset.tmnav)); });
     $("#tmnavx").focus();
   }
-  // THE EXISTING RESULTS SCREEN, kept for a completed attempt until Slice B
-  // designs Results. It reads the attempt; it decides nothing.
-  function tmResults(key) {
-    const rec = tmRec(key), a = rec.last || rec.current;
+  // ===================== RESULTS AND REVIEW (Slice B, states 2 and 3) =====================
+  //
+  // A completed attempt, read and never changed (decisions 25 and 26). Results
+  // is the attempt as a map of its marks; Review is one question at a time in
+  // the frozen marked states, in a shell that can only move. Both render what
+  // ATT.results and ATT.reviewAt return for rec.last. Nothing here calls
+  // record, setDraft, toggleFlag, moveTo, choose or save: a completed attempt is
+  // immutable, so there is no edit, flag, Try again, Try marking again or second
+  // opinion anywhere in this flow.
+  const RV = { key: null, k: null, soln: {} };
+  function tmRvLabel(x) { return x.eitherSlot ? "Question " + x.options.join(" or ") : "Question " + x.display; }
+  function tmRvShort(x) { return x.eitherSlot ? "Question " + x.options.join(" or ") : x.display; }
+  // A score, or Nothing marked when no answer holds a valid mark (decision 25).
+  function tmScoreHTML(s) { return s.answered ? `<b>${s.got}</b> / ${s.max}` : `Nothing marked`; }
+  function tmEitherLine(r, si, type) {
+    if (type) return "";
+    const e = r.either.find(y => y.si === si); if (!e) return "";
+    const slot = r.items.find(y => y.eitherSlot && y.si === si);
+    const others = e.options.filter(o => o.qi !== e.chosen).map(o => "Question " + o.number);
+    if (e.chosen === null) return (e.options.length === 2 ? "Neither question was chosen." : "None of these questions was chosen.") +
+      (slot && slot.weight > 1 ? " It counted as " + slot.weight + " questions." : " It counted as one question.");
+    const chosen = e.options.find(o => o.qi === e.chosen);
+    const answered = r.items.some(y => y.si === si && y.status !== "not_answered");
+    return "You chose Question " + chosen.number + (answered ? "." : " and did not answer it.") + " " + tmList(others) + (others.length === 1 ? " was" : " were") + " not part of this attempt.";
+  }
+  function tmResults(key, opts) {
+    const rec = tmRec(key), a = rec.last;
     if (!a) return tmLibrary();
-    view = "test"; EXAM.gen++;
+    if (gated()) return authScreen();
+    view = "test"; session = null; currentTopic = null; EXAM.gen++;
     document.body.classList.remove("tm-sitting");
+    RV.key = key; RV.k = null; RV.soln = {};
+    const from = (opts && opts.from) || "";
+    const r = ATT.results(a, state.exams), type = a.scope === "type", R = r.rows;
+    const paper = type ? null : ATT.byId(state.exams, a.paper);
     const seq = ATT.sequence(a, state.exams);
-    const s = ATT.summary(a, state.exams);
-    const groups = [];
-    seq.forEach(e => { const k = e.paper.id + "|" + e.si; let gr = groups.find(x => x.k === k); if (!gr) groups.push(gr = { k, e, items: [] }); gr.items.push(e); });
     tmUnit(seq[0] ? tmSubjectOf(seq[0].paper) : "");
-    const title = a.scope === "paper" ? ((seq[0] && seq[0].paper.name) || "Paper") : tmTypeName(a.format) + " practice";
-    app.innerHTML = tmShell(`${tmBack()}<div class="summary">
-      <div class="bigscore">${s.got}<small>/${s.max}</small></div>
-      <h2>${esc(title)}</h2>
-      <p>${a.completedAt ? "Completed " + tmDay(a.completedAt) + "." : "In progress."}${s.notMarked ? ` ${s.notMarked} answer${s.notMarked === 1 ? " is" : "s are"} not marked${a.completedAt ? "" : " yet"}, so ${s.notMarked === 1 ? "its marks are" : "their marks are"} not in this total, though they still count in what this is out of.` : ""} Your marks by section are below.</p>
-      <div class="exam-results">${groups.map(gr => {
-        const t = ASSESS.tally(gr.items.map(e => ({ marks: ATT.marksOf(e), result: a.results[e.key] })));
-        return `<div class="exam-ressec"><div class="exam-ressech">${esc(a.scope === "paper" ? ATT.sectionName(gr.e.sec, gr.e.si) : (gr.e.paper.name || "") + " · " + ATT.sectionShort(gr.e.sec, gr.e.si))} <span class="exam-resm">${t.got}/${t.max}</span></div>
-          ${gr.items.map(e => { const g = a.results[e.key], m = isMarked(g); const p = String(e.q.prompt || "");
-            return `<div class="exam-resq"><span>${e.display ? esc(String(e.display)) + ". " : ""}${esc(p.slice(0, 70))}${p.length > 70 ? "…" : ""}</span><span class="exam-resm${m ? "" : " nomark"}">${m ? g.score + "/" + (Number(e.q.marks) || 0) : g ? "not marked" : "not answered"}</span></div>`; }).join("")}</div>`;
-      }).join("")}</div>
-      <div class="tm-hrow center"><button class="tm-btn" id="exambackhome">Back to Test mode</button></div>
-    </div>`, { cls: "tm-res" });
+    const names = [...new Set(r.bands.map(b => b.paperName))];
+    const fromLine = names.length === 1 ? "From " + names[0] : "From " + tmPlural(names.length, "paper") + " in your library";
+    const scopeWords = type ? fromLine : !paper || a.sections.length === paper.sections.length ? "The whole paper"
+      : tmList(a.sections.map(si => ATT.sectionShort(paper.sections[si], si))) + " only";
+    const what = type ? "session" : "attempt";
+    const lost = R.notMarked.worth + R.notAnswered.worth;
+    const subl = [R.marked.count + " of " + r.total + " answered", R.notMarked.count ? R.notMarked.count + " not marked" : "",
+                  r.flagged.length ? `<span class="tm-flagged">⚑ ${r.flagged.length} flagged</span>` : ""].filter(Boolean).join(" · ");
+    const score = R.marked.count ? `<p class="tm-rs-big" id="tmrsscore"><b>${r.got}</b> / ${r.max}<span class="tm-sr"> marks</span></p>`
+      : `<p class="tm-rs-big none" id="tmrsscore">Nothing marked</p>`;
+    const note = !R.marked.count ? `Nothing in this ${what} was marked, so it has no mark. It was out of ${tmPlural(r.max, "mark")}.`
+      : lost ? `Questions not marked or not answered earned nothing. Their ${tmPlural(lost, "mark")} still count in the ${r.max}.` : "";
+    const none = `<span class="tm-rs-none">None</span>`, cv = (n, t) => n ? t : "";
+    const tally = `<table class="tm-tally"><caption class="tm-sr">What your mark is made of</caption>
+      <thead><tr><th scope="col">Status</th><th scope="col">Questions</th><th scope="col">Worth</th><th scope="col">Earned</th></tr></thead>
+      <tbody>
+        <tr><th scope="row"><span class="tm-rs-sw" aria-hidden="true"></span>Answered and marked</th><td>${R.marked.count || none}</td><td>${cv(R.marked.count, tmPlural(R.marked.worth, "mark"))}</td><td>${cv(R.marked.count, `<b>${R.marked.earned}</b>`)}</td></tr>
+        <tr><th scope="row"><span class="tm-rs-sw nm" aria-hidden="true"></span>${R.notMarked.count ? `<a href="#tmrg-nm" data-tmrsjump="tmrg-nm">Submitted, not marked</a>` : "Submitted, not marked"}</th><td>${R.notMarked.count || none}</td><td>${cv(R.notMarked.count, tmPlural(R.notMarked.worth, "mark"))}</td><td>${cv(R.notMarked.count, `<span class="tm-rs-none">Not marked</span>`)}</td></tr>
+        <tr><th scope="row"><span class="tm-rs-sw na" aria-hidden="true"></span>${R.notAnswered.count ? `<a href="#tmrg-na" data-tmrsjump="tmrg-na">Not answered</a>` : "Not answered"}</th><td>${R.notAnswered.count || none}</td><td>${cv(R.notAnswered.count, tmPlural(R.notAnswered.worth, "mark"))}</td><td>${cv(R.notAnswered.count, none)}</td></tr>
+      </tbody>
+      <tfoot><tr><th scope="row">${esc(type ? "This practice" : scopeWords)}</th><td>${r.total}</td><td>${tmPlural(r.max, "mark")}</td><td>${R.marked.count ? `<b>${r.got}</b> / ${r.max}` : `<span class="tm-rs-none">Nothing marked</span>`}</td></tr></tfoot>
+    </table>`;
+    const first = r.items[0];
+    const cur = rec.current;
+    const prog = cur ? `<section class="tm-rs-prog" aria-labelledby="tmrspg"><h2 class="tm-sr" id="tmrspg">Your ${what} in progress</h2><span class="tm-state live">In progress</span>
+      <p>You started a new ${what} on ${tmDay(cur.startedAt)}${cur.scope === "paper" && paper && cur.sections.length !== paper.sections.length ? ", " + esc(tmList(cur.sections.map(si => ATT.sectionShort(paper.sections[si], si)))) + " only" : ""}. ${type ? "Finishing" : "Submitting"} it replaces these results.</p>
+      <span class="tm-spacer"></span><button type="button" class="tm-btn ghost sm" id="tmrsresume">${type ? "Resume practice" : "Resume paper"}</button></section>` : "";
+    const back = from === "review" ? (type ? "Back to Review &amp; finish" : "Back to Review &amp; submit") : "Test mode";
+    app.innerHTML = tmShell(`<button type="button" class="tm-back" id="tmback"><span aria-hidden="true">← </span>${back}</button>
+      <div class="tm-top">
+        <p class="tm-kicker">${esc(type ? tmTypeName(a.format) + " practice" : (paper && paper.name) || "Paper")}</p>
+        <h1 tabindex="-1">Results</h1>
+        <div class="tm-factrow"><p class="tm-facts"><b>${esc(scopeWords)}</b> · ${tmPlural(r.total, "question")} · ${tmPlural(r.max, "mark")}</p><span class="tm-state done">Completed ${tmDay(r.completedAt)}</span>${TM_POLICY}</div>
+      </div>
+      ${prog}
+      <section class="tm-rs-sum" aria-labelledby="tmrsh">
+        <div class="tm-rs-head">
+          <div><h2 class="k" id="tmrsh">Your mark</h2>${score}<p class="tm-rs-subl">${subl}</p>${note ? `<p class="tm-rs-note">${note}</p>` : ""}</div>
+          ${tally}
+          <div class="tm-rs-acts">
+            <button type="button" class="tm-btn" id="tmrsreview" data-tmrv="${esc(first.key)}">Review each question</button>
+            <p class="tm-rs-hint">Starts at ${esc(tmRvLabel(first))}. You can review your ${R.marked.count ? "marks" : "answers"} but not change them.</p>
+            ${cur ? "" : `<button type="button" class="tm-btn ghost sm" id="tmrsagain">${type ? "Start practice" : "Start new attempt"}</button>`}
+          </div>
+        </div>
+        <div class="tm-rs-map"><h2 class="tm-sr">Marks by section and question</h2>${tmRsBands(r, type)}</div>
+      </section>
+      <div class="tm-layout">
+        <section class="tm-panel" aria-labelledby="tmrslh"><h2 class="tm-sr" id="tmrslh">Questions to look at again</h2>${tmRsDetails(r, a, paper)}</section>
+        ${tmRsAbout(r, a, paper)}
+      </div>`, { cls: "tm-rs" });
     wireNav();
-    $("#tmback").onclick = tmLibrary;
-    $("#exambackhome").onclick = tmLibrary;
+    $("#tmback").onclick = () => from === "review" && rec.current ? tmReview(key) : tmLibrary();
+    app.querySelectorAll("[data-tmrv]").forEach(b => b.onclick = () => tmReviewQ(key, b.dataset.tmrv));
+    app.querySelectorAll("[data-tmrsjump]").forEach(l => l.onclick = ev => { ev.preventDefault(); const g = document.getElementById(l.dataset.tmrsjump); if (g) { g.scrollIntoView(); g.focus(); } });
+    const rs = $("#tmrsresume"); if (rs) rs.onclick = () => tmSit(key);
+    const ag = $("#tmrsagain"); if (ag) ag.onclick = () => type ? tmTypeOverview(a.format) : tmPaperOverview(a.exam || ATT.identityOf(paper));
+    const h = app.querySelector(".tm-top h1"); if (h && !(opts && opts.at)) h.focus({ preventScroll: true });
+    if (opts && opts.at) { const c = app.querySelector(`.tm-rs-cell[data-tmrv="${CSS.escape(opts.at)}"]`); if (c) { c.focus(); } }
+  }
+  function tmRsCell(x) {
+    const lab = x.eitherSlot ? "Q" + x.options.join(" or Q") : x.pi != null ? (/\(([^)]+)\)$/.exec(x.display || "") || [, x.display])[1] : "Q" + x.display;
+    const st = x.status === "marked" ? "m" : x.status === "not_marked" ? "nm" : "na";
+    const top = (x.flagged ? `<span class="fl" aria-hidden="true">⚑</span>` : "") + esc(lab) + (st === "m" ? "" : " · " + tmPlural(x.marks, "mark"));
+    const val = st === "m" ? x.score + " / " + x.max : st === "nm" ? "Not marked" : "Not answered";
+    const said = tmRvLabel(x) + ": " + (st === "m" ? x.score + " of " + tmPlural(x.max, "mark") : tmPlural(x.marks, "mark") + ", " + (st === "nm" ? "submitted, not marked" : "not answered")) + (x.flagged ? ", flagged" : "") + ". Review it.";
+    return `<button type="button" class="tm-rs-cell ${st}" data-tmrv="${esc(x.key)}" aria-label="${esc(said)}"><span class="l">${top}</span><span class="v">${esc(val)}</span></button>`;
+  }
+  function tmRsBands(r, type) {
+    const sub = g => g.state === "marked" ? `<b>${g.got}</b> / ${g.max}` : `<span class="tm-rs-none">${g.state === "nothing_marked" ? "Nothing marked" : "Not answered"}</span>`;
+    const subWords = g => g.state === "marked" ? g.got + " of " + tmPlural(g.max, "mark") : g.state === "nothing_marked" ? "nothing marked" : "not answered";
+    const counts = (g, unit) => [g.done + " of " + tmPlural(g.total, unit) + " answered", g.notMarked ? g.notMarked + " not marked" : "", g.notAnswered ? g.notAnswered + " not answered" : ""].filter(Boolean).join(" · ");
+    const band = b => {
+      const id = "tmrsb-" + r.bands.indexOf(b);
+      const title = type ? esc(b.paperName) + " · " + esc(b.short) : esc(b.name);
+      const ei = tmEitherLine(r, b.si, type);
+      if (b.entries.length === 1 && b.entries[0].kind === "leaf") {
+        return `<section class="tm-rs-band tm-rs-half" aria-labelledby="${id}"><div class="tm-rs-bh"><div class="tm-rs-bt"><h3 id="${id}">${title}</h3>
+          <p class="tm-rs-bc">${esc(ei || counts(b, "question"))}</p></div>${tmRsCell(b.entries[0].item)}</div></section>`;
+      }
+      return `<section class="tm-rs-band" aria-labelledby="${id}">
+        <div class="tm-rs-bh"><div class="tm-rs-bt"><h3 id="${id}">${title}</h3><p class="tm-rs-bc">${esc(counts(b, "question"))}</p></div>
+          <p class="tm-rs-bs"><span class="tm-sr">${esc(b.name)}: ${esc(subWords(b))}</span><span aria-hidden="true">${sub(b)}</span></p></div>
+        <div class="tm-rs-ents">${b.entries.map(g => g.kind === "leaf" ? tmRsCell(g.item) : `<div class="tm-rs-pg" role="group" aria-labelledby="tmrsg-${esc(g.key)}">
+          <div class="tm-rs-pgh"><h4 id="tmrsg-${esc(g.key)}">Question ${esc(g.number)}</h4><span class="tm-rs-ps"><span class="tm-sr">${esc(subWords(g))}</span><span aria-hidden="true">${sub(g)}</span></span></div>
+          ${g.caption || g.items.length < g.parts ? `<p class="tm-rs-cap">${esc(g.caption)}${g.items.length < g.parts ? (g.caption ? " · " : "") + g.items.length + " of its " + g.parts + " parts were in this " + (type ? "practice" : "attempt") : ""}</p>` : ""}
+          <div class="tm-rs-cells">${g.items.map(tmRsCell).join("")}</div>
+          <p class="tm-rs-pc">${esc(counts(g, "part"))}</p></div>`).join("")}${ei ? `<p class="tm-rs-bc either">${esc(ei)}</p>` : ""}</div>
+      </section>`;
+    };
+    const single = x => x && x.entries.length === 1 && x.entries[0].kind === "leaf";
+    const out = [];
+    for (let i = 0; i < r.bands.length; i++) {
+      const b = r.bands[i], n = r.bands[i + 1];
+      if (single(b) && single(n)) { out.push(`<div class="tm-rs-pair">${band(b)}${band(n)}</div>`); i++; }
+      else out.push(band(b));
+    }
+    return out.join("");
+  }
+  function tmRsDetails(r, a, paper) {
+    const type = a.scope === "type", what = type ? "session" : "attempt", R = r.rows;
+    const many = type && new Set(r.bands.map(b => b.paper)).size > 1;
+    const src = x => many ? " · " + esc((r.bands.find(b => b.paper === x.paper) || {}).paperName || "") : "";
+    const secOf = x => paper ? " · " + esc(ATT.sectionShort(paper.sections[x.si], x.si)) : "";
+    const where = x => `<div class="tm-rwhere"><b>${esc(tmRvLabel(x))}</b> · ${tmPlural(x.marks, "mark")}${type ? src(x) : secOf(x)}${x.flagged ? ` <span class="tm-flagged">⚑ flagged</span>` : ""}</div>`;
+    const go = (x, extra) => `<p class="tm-rroute"><button type="button" class="tm-link" data-tmrv="${esc(x.key)}">Review ${esc(tmRvLabel(x))}${extra || ""}</button></p>`;
+    const grp = (id, title, n, gold, lede, rows) => `<section class="tm-rgrp" id="${id}" tabindex="-1" aria-labelledby="${id}h"><h3 id="${id}h">${title} <span class="tm-rn${gold ? " gold" : ""}">${n}</span></h3>${lede ? `<p class="tm-plede">${lede}</p>` : ""}<ul>${rows}</ul></section>`;
+    const naTag = x => x.eitherSlot ? "Not chosen" : x.draft === "written" ? "Draft saved · written, not submitted" : x.draft === "selected" ? "Selected, not submitted" : "Not started";
+    const nm = r.items.filter(x => x.status === "not_marked"), na = r.items.filter(x => x.status === "not_answered");
+    const ch = r.items.filter(x => x.changed), fl = r.items.filter(x => x.flagged);
+    let out = "";
+    if (nm.length) out += grp("tmrg-nm", "Submitted, not marked", nm.length, false,
+      `${nm.length === 1 ? "It was" : "Each was"} submitted and not marked. This ${what} is closed, so ${nm.length === 1 ? "it stays" : "they stay"} not marked. ${nm.length === 1 ? "Its" : "Their"} ${tmPlural(R.notMarked.worth, "mark")} still count in the ${r.max}.`,
+      nm.map(x => `<li>${where(x)}<p class="tm-rtagline"><span class="tm-rtag nm">Not marked</span></p><p class="tm-rwhy">Reason at the time: ${esc(x.cause || "No reason was recorded.")}</p>${go(x)}</li>`).join(""));
+    if (na.length) {
+      // Three or more neighbours with nothing in them read as one row.
+      const runs = [];
+      na.forEach(x => {
+        const plain = !x.draft && !x.flagged && !x.eitherSlot, last = runs[runs.length - 1];
+        const same = last && last.plain && plain && last.items[0].paper === x.paper && last.items[0].si === x.si && (last.items[0].qi === x.qi || (last.items[0].pi == null && x.pi == null)) &&
+          r.items.indexOf(x) === r.items.indexOf(last.items[last.items.length - 1]) + 1;
+        if (same) last.items.push(x); else runs.push({ plain, items: [x] });
+      });
+      const rows = runs.flatMap(run => run.plain && run.items.length >= 3 ? [`<li><div class="tm-rwhere"><b>Questions ${esc(run.items[0].display)} to ${esc(run.items[run.items.length - 1].display)}</b> · ${tmPlural(run.items.reduce((n, x) => n + x.marks, 0), "mark")}${type ? src(run.items[0]) : secOf(run.items[0])}</div>
+          <p class="tm-rtagline"><span class="tm-rtag na">Not started</span></p>${go(run.items[0])}</li>`]
+        : run.items.map(x => `<li>${where(x)}<p class="tm-rtagline"><span class="tm-rtag na">${naTag(x)}</span></p>
+          ${x.eitherSlot ? `<p class="tm-rwhy">${esc(tmEitherLine(r, x.si, type))}</p>` : x.draft ? `<p class="tm-rwhy">It was never submitted for marking.</p>` : ""}${go(x)}</li>`));
+      out += grp("tmrg-na", "Not answered", R.notAnswered.count, false,
+        `Nothing was submitted for marking for ${R.notAnswered.count === 1 ? "this, so it" : "these, so they"} earned nothing. ${R.notAnswered.count === 1 ? "Its" : "Their"} ${tmPlural(R.notAnswered.worth, "mark")} still count in the ${r.max}.`, rows.join(""));
+    }
+    if (ch.length) out += grp("tmrg-ch", "Changed after marking", ch.length, false, "",
+      ch.map(x => `<li>${where(x)}<p class="tm-rwhy">${x.status === "marked" ? "This answer has changed since it was marked, and the new version has no mark. Your mark of " + x.score + " of " + tmPlural(x.max, "mark") + " stands, for the version it was given for." : "This answer has changed since it was sent for marking. It stays not marked."}</p>${go(x, x.status === "marked" ? " to see the version that was marked" : "")}</li>`).join(""));
+    if (fl.length) {
+      const dup = fl.filter(x => x.status !== "marked" || x.changed).length;
+      out += grp("tmrg-fl", "Flagged", fl.length, true, "You flagged these to come back to. Flags never changed a mark." + (!dup ? "" : fl.length === 1 ? " It is also listed above." : dup === fl.length ? " They are also listed above." : dup === 1 ? " One of these is also listed above." : " " + dup + " of these are also listed above."),
+        fl.map(x => `<li><div class="tm-rwhere"><span class="tm-flagged">⚑</span> <b>${esc(tmRvLabel(x))}</b> · ${tmPlural(x.marks, "mark")}${type ? src(x) : secOf(x)}</div>
+          <p class="tm-rtagline"><span class="tm-rtag ${x.status === "marked" ? "m" : x.status === "not_marked" ? "nm" : "na"}">${x.status === "marked" ? "Answered · " + x.score + " of " + tmPlural(x.max, "mark") : x.status === "not_marked" ? "Not marked" : naTag(x)}</span></p>${go(x)}</li>`).join(""));
+    }
+    return out || `<p class="tm-rs-clear">Nothing was left not marked or not answered, and nothing was flagged.</p>`;
+  }
+  function tmRsAbout(r, a, paper) {
+    const type = a.scope === "type";
+    const dates = tmDay(r.startedAt) === tmDay(r.completedAt) ? "Started and completed " + tmDay(r.completedAt) : "Started " + tmDay(r.startedAt) + " · completed " + tmDay(r.completedAt);
+    const closedLine = type ? "This practice is finished. Its marks will not change, and another mark for any answer needs a new session."
+      : "This attempt is closed. Its marks will not change, and another mark for any answer needs a new attempt.";
+    const kept = type ? "Only your latest completed session is kept. Finishing a new one replaces these results." : "Only your latest completed attempt is kept. Submitting a new attempt replaces these results.";
+    if (type) {
+      const names = [...new Set(r.bands.map(b => b.paperName))];
+      return `<aside class="tm-about" aria-labelledby="tmrsab"><h2 id="tmrsab">About this practice</h2>
+        <h3 class="k">Questions</h3><p class="tm-p">${esc(names.length === 1 ? "From " + names[0] : "From " + tmPlural(names.length, "paper") + " in your library")}. ${tmPlural(r.total, "question")}, fixed once a session starts.</p>
+        <h3 class="k">Your paper attempts</h3><p class="tm-p">This practice did not change any paper attempt, even where they share a question.</p>
+        <h3 class="k">Closed</h3><p class="tm-p">${closedLine}</p>
+        <h3 class="k">Dates</h3><p class="tm-p">${dates}</p>
+        <h3 class="k">Kept</h3><p class="tm-p">${kept}</p></aside>`;
+    }
+    const secs = paper ? paper.sections : [];
+    const whole = paper && a.sections.length === secs.length;
+    const ver = r.superseded && r.version && r.libraryVersion ? `<h3 class="k">Version</h3><p class="tm-p">This attempt was on version ${esc(r.version)}. Your library now has version ${esc(r.libraryVersion)}, which your next attempt will use.</p>` : "";
+    const either = r.either.map(e => { const sec = secs[e.si];
+      return `<h3 class="k">${esc(ATT.sectionName(sec, e.si))}</h3>${sec.instructions ? `<blockquote class="tm-ins"><p>${esc(sec.instructions)}</p><cite>Original paper instructions</cite></blockquote>` : ""}<p class="tm-p either">${esc(tmEitherLine(r, e.si, false))}</p>`; }).join("");
+    return `<aside class="tm-about" aria-labelledby="tmrsab"><h2 id="tmrsab">About this attempt</h2>
+      <h3 class="k">Sections</h3><ul class="tm-rsecl">${a.sections.map(si => `<li>${esc(ATT.sectionName(secs[si], si))}</li>`).join("")}</ul>
+      <p class="tm-p tm-rsm">${whole ? "The whole paper. Sections are fixed once an attempt starts." : esc(tmList(a.sections.map(si => ATT.sectionShort(secs[si], si)))) + " only. Sections not chosen were not part of this attempt and are not counted."}</p>
+      ${either}
+      <h3 class="k">Closed</h3><p class="tm-p">${closedLine}</p>
+      <h3 class="k">Dates</h3><p class="tm-p">${dates}</p>${ver}
+      <h3 class="k">Kept</h3><p class="tm-p">${kept}</p></aside>`;
+  }
+
+  // ---- Review: one question of the completed attempt (state 3) ----------------------------
+  function tmRvTags(v) {
+    const x = v.item;
+    const main = x.status === "marked" ? `<span class="tm-rvtag m"><b>${x.score} / ${x.max}</b><span class="tm-sr"> marks${v.later != null ? ", for the version that was marked" : ""}</span></span>`
+      : x.status === "not_marked" ? `<span class="tm-rvtag nm">Not marked · ${tmPlural(x.marks, "mark")}</span>`
+      : `<span class="tm-rvtag na">${x.eitherSlot ? "Not chosen" : "Not answered"} · ${tmPlural(x.marks, "mark")}</span>`;
+    return `<span class="tm-rvst">${main}${v.later != null ? `<button type="button" class="tm-rvtag ch" id="tmrvlaterjump">Changed after marking</button>` : ""}${x.flagged ? `<span class="tm-rvfl">⚑ Flagged</span>` : ""}</span>`;
+  }
+  function tmRvParent(e, seq, R) {
+    const sibs = seq.filter(x => x.paper === e.paper && x.si === e.si && x.qi === e.qi && x.parent);
+    const caption = PAPER.resourcesOf(e.parent).map(r => r && typeof r === "object" ? r.caption : "").filter(Boolean)[0] || "";
+    const st = x => R.items.find(y => y.key === x.key);
+    const done = sibs.filter(x => st(x).status === "marked").length;
+    const chips = sibs.length > 1 ? `<div class="pprog"><span class="pdone">${done} of ${tmPlural(sibs.length, "part")} marked</span>
+      <div class="parts" role="group" aria-label="Parts of Question ${esc(PAPER.numberOf(e.parent) || "")}">${sibs.map(x => {
+        const s = st(x), lab = PAPER.labelOf(x.q, x.pi), here = x.key === e.key;
+        const cls = ["pt", s.status === "marked" ? "done" : "", s.flagged ? "flag" : "", here ? "here" : "", s.status === "not_marked" && !here ? "nm" : "", s.status === "not_answered" && !here ? "todo" : ""].filter(Boolean).join(" ");
+        const title = x.display + " · " + tmPlural(s.marks, "mark") + " · " + (s.status === "marked" ? s.score + " of " + s.max : s.status === "not_marked" ? "not marked" : "not answered") + (s.flagged ? " · flagged" : "") + (here ? " · you are here" : "");
+        return `<button type="button" class="${cls}" data-tmrv="${esc(x.key)}" title="${esc(title)}"${here ? ' aria-current="true"' : ""}>${s.status === "marked" ? '<span class="g">✓</span>' : ""}${s.flagged ? '<span class="g fg">⚑</span>' : ""}${esc(lab)}</button>`;
+      }).join("")}</div></div>` : "";
+    return `<div class="tm-parent"><div class="prow"><span class="pnum">Question ${esc(PAPER.numberOf(e.parent) || "")}</span>
+      <span class="pmeta">${esc([caption, tmPlural(PAPER.marksOf(e.parent), "mark")].filter(Boolean).join(" · "))}</span></div>${chips}</div>
+      ${e.parent.instructions ? `<p class="tm-instr">${esc(e.parent.instructions)}</p>` : ""}`;
+  }
+  // The answer as it was submitted, in the frozen box's look, read only (decision 26).
+  function tmRvAnswer(e, v, f) {
+    const x = v.item, q = e.q;
+    if (v.answer == null) return "";
+    if (f === "multiple_choice") {
+      const chosen = Number(v.answer), shown = x.status === "marked";
+      return `<div class="tm-mc" role="list" aria-label="Options">${(q.choices || []).map((c, i) => {
+        const cls = ["choice", chosen === i ? "sel" : "", shown && c.ok ? "right" : "", shown && chosen === i && !c.ok ? "wrong" : ""].filter(Boolean).join(" ");
+        return `<div class="${cls}" role="listitem"><span class="ltr">${"ABCDEFGH"[i] || i + 1}</span><span class="t">${esc(c.t)}</span>${chosen === i ? '<span class="tm-sr"> (your answer)</span>' : ""}${shown && c.ok ? '<span class="ok">✓ Answer</span>' : ""}</div>`;
+      }).join("")}</div>`;
+    }
+    const lbl = v.later != null ? "The version that was marked" : x.status === "not_marked" ? "Your submitted answer, not marked" : "Your submitted answer";
+    if (f === "extended_response" || f === "business_report") {
+      const n = String(v.answer).trim() ? String(v.answer).trim().split(/\s+/).length : 0;
+      return `<details class="tm-submitted"><summary><span class="nm">${v.later != null ? "The version that was marked" : "Your submitted response"}</span><span>· ${tmPlural(n, "word")}</span></summary>
+        <div class="response">${String(v.answer).split(/\n\s*\n/).map(p => `<p>${esc(p)}</p>`).join("")}</div></details>`;
+    }
+    const g = v.result, calc = f === "calculation";
+    return `<div class="tm-rvlbl" id="tmrvlbl">${lbl}</div><div class="tm-answerbox ro${calc ? " short" + (x.status === "marked" ? (g.correct ? " ok" : " no") : "") : ""}" id="tmrvans" role="textbox" aria-readonly="true" aria-multiline="${calc ? "false" : "true"}" aria-labelledby="tmrvlbl" tabindex="0">${esc(v.answer)}</div>`;
+  }
+  function tmRvResult(e, v, f, total) {
+    const x = v.item;
+    if (x.status === "not_marked") {
+      return `<div class="tm-result nm"><span class="badge">Not marked</span><span class="pair"><span class="k">Marks</span><span class="v">None</span></span></div>
+        <p class="tm-mnote"><span class="who">Reason at the time</span>${esc(x.cause || "No reason was recorded.")}</p>
+        <p class="tm-whynot">This ${RV.what} is closed, so it stays not marked. Nothing was recorded against your answer, and its ${tmPlural(x.marks, "mark")} still count in the ${total}.</p>`;
+    }
+    if (x.status === "not_answered") {
+      const why = x.eitherSlot ? (x.options.length === 2 ? `Neither Question ${x.options[0]} nor Question ${x.options[1]} was chosen.` : "None of these questions was chosen.") + ` The section counted as ${x.weight === 1 ? "one question" : x.weight + " questions"} and earned nothing.`
+        : "Nothing was submitted for marking for this question, so it earned nothing.";
+      return `<div class="tm-result na"><span class="badge">${x.eitherSlot ? "Not chosen" : "Not answered"}</span><span class="pair"><span class="k">Marks</span><span class="v">None</span></span></div>
+        <p class="tm-whynot">${esc(why)} Its ${tmPlural(x.marks, "mark")} still count in the ${total}.</p>`;
+    }
+    return tmResultHTML(e, null, f, v.result, v);
+  }
+  function tmReviewQ(key, k) {
+    const rec = tmRec(key), a = rec.last;
+    if (!a) return tmLibrary();
+    if (gated()) return authScreen();
+    const v = ATT.reviewAt(a, state.exams, k == null ? null : k);
+    if (!v) return tmResults(key);
+    view = "test"; session = null; currentTopic = null; EXAM.gen++;
+    if (RV.key !== key) RV.soln = {};
+    RV.key = key; RV.k = v.entry.key; RV.what = a.scope === "type" ? "practice" : "attempt";
+    const seq = ATT.sequence(a, state.exams), R = ATT.results(a, state.exams);
+    const e = seq[v.index];
+    tmUnit(tmSubjectOf(e.paper));
+    document.body.classList.add("tm-sitting");
+    const f = e.eitherSlot ? "either" : drawFormat(e.q);
+    const big = f === "extended_response" || f === "business_report";
+    const single = big || f === "either";
+    const hs = e.eitherSlot ? [] : tmHolders(e);
+    const type = a.scope === "type";
+    const name = type ? tmTypeName(a.format) + " practice" : (e.paper.name || "Paper");
+    const secline = type ? (new Set(seq.map(x => x.paper.id)).size === 1 ? "From " + (e.paper.name || "Untitled paper") : "From " + tmPlural(new Set(seq.map(x => x.paper.id)).size, "paper") + " in your library")
+      : ATT.sectionName(e.sec, e.si) + " · " + tmPlural(PAPER.totals({ sections: [e.sec] }).marks, "mark");
+    let card;
+    if (e.eitherSlot) {
+      const ins = String(e.sec.instructions || "").trim();
+      card = `<div class="exam-qhead"><span>${esc(ATT.sectionName(e.sec, e.si))}</span><span class="marks">· ${tmPlural(PAPER.marksOf(e.q), "mark")}</span>${tmRvTags(v)}</div>
+        ${ins ? `<blockquote class="tm-ins"><p>${esc(ins)}</p><cite>Original paper instructions</cite></blockquote>` : ""}
+        <div id="sheet">${tmRvResult(e, v, f, R.max)}</div>
+        <h3 class="tm-rvopth">The questions on the paper</h3>
+        <ul class="tm-rvopts">${e.options.map(o => `<li><span class="tm-lbl">Question ${esc(o.number)} · ${tmPlural(PAPER.marksOf(o.q), "mark")}</span><span class="txt">${esc(PAPER.isParent(o.q) ? (o.q.instructions || "") : (o.q.prompt || ""))}</span></li>`).join("")}</ul>`;
+    } else {
+      const q = e.q;
+      const head = `<div class="exam-qhead"><span>Question ${esc(e.display || "")}</span><span class="marks">· ${tmPlural(Number(q.marks) || 0, "mark")}</span>
+        ${tmFmtWords(q) ? `<span class="fmt">${esc(tmFmtWords(q))}</span>` : ""}${tmRvTags(v)}</div>`;
+      const rIns = f === "business_report" && typeof q.instructions === "string" && q.instructions.trim() ? `<p class="tm-instr">${esc(q.instructions)}</p>` : "";
+      // A long response's source sits in the card, collapsed, as in its marked state.
+      const caseBlock = big ? hs.map(h => `<details class="tm-case"><summary><span class="nm">${esc(h.r && h.r.caption ? h.r.caption : h.label)}</span></summary><div class="body">${tmSourceBody(h.r)}</div></details>`).join("") : "";
+      const unsent = v.unsent != null ? `<details class="tm-rvunsent"><summary>${f === "multiple_choice" ? "Show what you selected" : "Show what you wrote"}</summary>
+        <p class="tm-rvwhy">${f === "multiple_choice" ? "You selected this but did not submit it" : "You wrote this but did not submit it"} before the ${RV.what === "practice" ? "session finished" : "attempt closed"}, so it was not marked.</p>
+        <div class="tm-rvtext">${f === "multiple_choice" ? `<p>${esc(((q.choices || [])[Number(v.unsent)] || {}).t || "")}</p>` : String(v.unsent).split(/\n\s*\n/).map(p => `<p>${esc(p)}</p>`).join("")}</div></details>` : "";
+      const later = v.later != null ? `<section class="tm-rvlater" id="tmrvlater" tabindex="-1" aria-labelledby="tmrvlaterh"><h3 id="tmrvlaterh">Changed after marking, never submitted</h3>
+        <p>You changed this answer after it was marked and did not submit the change before the ${RV.what === "practice" ? "session finished" : "attempt closed"}. The change was never marked. The mark above is for the version that was marked, not for this text.</p>
+        <div class="tm-rvtext">${String(v.later).split(/\n\s*\n/).map(p => `<p>${esc(p)}</p>`).join("")}</div></section>` : "";
+      card = `${e.parent ? tmRvParent(e, seq, R) : ""}${head}${rIns}${caseBlock}<p class="exam-prompt">${linkGlossary(q.prompt || "")}</p>${tmRvAnswer(e, v, f)}
+        <div id="sheet">${tmRvResult(e, v, f, R.max)}${unsent}${later}</div>`;
+    }
+    const prev = v.prev ? `<button type="button" class="tm-btn sm ghost" id="tmrvprev" data-tmrv="${esc(v.prev.key)}">← Previous<span class="foot-lbl">&nbsp;·&nbsp;${esc(tmRvShort(v.prev))}</span></button>`
+      : `<button type="button" class="tm-btn sm ghost" id="tmrvprev" disabled>← Previous</button>`;
+    const next = v.next ? `<button type="button" class="tm-btn sm ghost" id="tmrvnext" data-tmrv="${esc(v.next.key)}">Next<span class="foot-lbl">&nbsp;·&nbsp;${esc(tmRvShort(v.next))}</span>&nbsp;→</button>`
+      : `<button type="button" class="tm-btn sm ghost" id="tmrvdone">Back to Results</button>`;
+    app.innerHTML = tmShell(`
+      <div class="tm-bar">
+        <button type="button" class="tm-back" id="tmrvback"><span aria-hidden="true">← </span>Results</button>
+        <div class="paper"><div class="nm">${esc(name)}</div><div class="sec">${esc(secline)}</div></div>
+        <span class="tm-spacer"></span>
+        <span class="tm-rvclosed">${type ? "Finished" : "Completed"} ${tmDay(a.completedAt)} · read only</span>
+        <button type="button" class="tm-navbtn" id="tmrvnav" aria-haspopup="dialog"><span class="grid" aria-hidden="true">${"<i></i>".repeat(9)}</span>Questions</button>
+        <div class="tm-prog"><span class="exam-progress">${R.rows.marked.count ? `Your mark <b>${R.got}</b>/${R.max}` : "Nothing marked"}</span></div>
+      </div>
+      <div class="tm-work${single || !hs.length ? " single" : ""}">
+        <div class="tm-qcard" id="tmrvcard" tabindex="-1" aria-label="${esc(tmRvLabel(v.item))}">${card}</div>
+        ${!single && hs.length ? tmSourcePanel(e, hs) : ""}
+      </div>
+      <div class="tm-footer"><div class="tm-footin">
+        ${prev}
+        <span class="tm-whereitem">Item ${v.index + 1} of ${v.count} · ${esc(ATT.sectionShort(e.sec, e.si))}</span>
+        ${next}
+      </div></div>
+      <div id="tmnavwrap"></div>`, { cls: "tm-sit tm-rv" });
+    wireNav();
+    $("#tmrvback").onclick = () => { document.body.classList.remove("tm-sitting"); tmResults(key, { at: RV.k }); };
+    const dn = $("#tmrvdone"); if (dn) dn.onclick = () => { document.body.classList.remove("tm-sitting"); tmResults(key); };
+    app.querySelectorAll("[data-tmrv]").forEach(b => b.onclick = () => tmReviewQ(key, b.dataset.tmrv));
+    $("#tmrvnav").onclick = () => tmReviewNav(key);
+    const ex = $("#tmexpand"); if (ex) ex.onclick = () => tmReader(e);
+    const lj = $("#tmrvlaterjump"); if (lj) lj.onclick = () => { const s = $("#tmrvlater"); if (s) { s.scrollIntoView(); s.focus(); } };
+    const so = $("#tmsoln"); if (so) so.onclick = () => { RV.soln[RV.k] = !RV.soln[RV.k]; tmReviewQ(key, RV.k); };
+    window.scrollTo(0, 0);
+    $("#tmrvcard").focus({ preventScroll: true });
+  }
+  // The Questions navigator for a completed attempt: the sitting's sheet, with
+  // Results' words, and Back to Results where the sitting has Review & submit.
+  function tmReviewNav(key) {
+    const a = tmRec(key).last; if (!a) return;
+    const seq = ATT.sequence(a, state.exams), R = ATT.results(a, state.exams);
+    const it = k => R.items.find(y => y.key === k);
+    const here = seq.find(e => e.key === RV.k) || seq[0];
+    const chip = (e, label) => {
+      const s = it(e.key), i = seq.indexOf(e);
+      const cls = ["tm-chip", s.status === "marked" ? "done" : "", s.status === "not_marked" ? "nm" : "", s.flagged ? "flag" : "", e === here ? "here" : "", s.status === "not_answered" && e !== here ? "todo" : ""].filter(Boolean).join(" ");
+      const title = label + " · " + (s.status === "marked" ? s.score + " of " + s.max : s.status === "not_marked" ? "not marked" : "not answered") + (s.flagged ? " · flagged" : "") + (e === here ? " · you are here, item " + (i + 1) + " of " + seq.length : "");
+      return `<button type="button" class="${cls}" data-tmrvnav="${esc(e.key)}" title="${esc(title)}"${e === here ? ' aria-current="true"' : ""}>${s.status === "marked" ? "✓ " : ""}${s.flagged ? "⚑ " : ""}${esc(label)}</button>`;
+    };
+    const blocks = R.bands.map(b => {
+      const items = seq.filter(e => e.paper.id === b.paper && e.si === b.si);
+      let html = "", run = [];
+      const flush = () => { if (run.length) html += `<div class="tm-chips">${run.join("")}</div>`; run = []; };
+      items.forEach((e, idx) => {
+        if (e.eitherSlot) { run.push(`<span class="tm-either">${e.options.map(o => chip(e, "Q" + (o.number || o.qi + 1))).join('<span class="or">or</span>')}<span class="tm-muted">Neither chosen</span></span>`); return; }
+        if (e.parent) {
+          if (idx && items[idx - 1].parent === e.parent) return;
+          flush();
+          const sibs = items.filter(y => y.parent === e.parent);
+          const g = b.entries.find(y => y.kind === "parent" && y.qi === e.qi);
+          html += `<div class="tm-pblock"><div class="pbh"><b>Question ${esc(PAPER.numberOf(e.parent) || "")}</b><span>${tmPlural(g ? g.max : PAPER.marksOf(e.parent), "mark")} · ${!g ? "" : g.state === "marked" ? g.got + " / " + g.max : g.state === "nothing_marked" ? "nothing marked" : "not answered"}</span></div>
+            <div class="tm-chips">${sibs.map(y => chip(y, PAPER.labelOf(y.q, y.pi))).join("")}</div></div>`;
+          return;
+        }
+        run.push(chip(e, "Q" + (e.display || "")));
+      });
+      flush();
+      const title = a.scope === "paper" ? b.name : b.paperName + " · " + b.short;
+      return `<section class="tm-navsec"><div class="nsh"><h3>${esc(title)}</h3><span>${b.done} of ${b.total} answered · ${b.state === "marked" ? b.got + "/" + b.max + " marks" : b.state === "nothing_marked" ? "nothing marked" : "not answered"}</span></div>${html}</section>`;
+    }).join("");
+    const i = seq.indexOf(here), hx = it(here.key);
+    const wrap = $("#tmnavwrap");
+    wrap.innerHTML = `<div class="tm-scrim" id="tmscrim"><div class="tm-navsheet" role="dialog" aria-modal="true" aria-labelledby="tmnavh">
+      <div class="tm-navhead"><h2 id="tmnavh">Questions</h2><span class="tm-spacer"></span><button type="button" class="tm-btn sm ghost" id="tmnavx">Close</button></div>
+      <div class="tm-navstats"><span>${R.rows.marked.count ? R.got + " / " + R.max + " marks" : "Nothing marked"}</span><span>${R.rows.marked.count} of ${R.total} answered</span>${R.rows.notMarked.count ? `<span>${R.rows.notMarked.count} not marked</span>` : ""}<span>${R.flagged.length} flagged</span>
+        <span class="pill">You are on item ${i + 1} of ${seq.length} · ${esc(tmRvLabel(hx))} · ${esc(ATT.sectionShort(here.sec, here.si))}</span></div>
+      <div class="tm-navbody">${blocks}</div>
+      <p class="tm-legend"><span class="tm-chip done">✓ marked</span><span class="tm-chip nm">not marked</span><span class="tm-chip todo">not answered</span><span class="tm-chip flag">⚑ flagged</span><span class="tm-chip here">current</span></p>
+      <div class="tm-navfoot"><button type="button" class="tm-btn sm ghost" id="tmnavresults">Back to Results</button></div>
+    </div></div>`;
+    const off = () => document.removeEventListener("keydown", onKey);
+    const shut = () => { wrap.innerHTML = ""; off(); const b = $("#tmrvnav"); if (b) b.focus(); };
+    const onKey = ev => { if (ev.key === "Escape") shut(); };
+    document.addEventListener("keydown", onKey);
+    $("#tmnavx").onclick = shut;
+    $("#tmnavresults").onclick = () => { off(); document.body.classList.remove("tm-sitting"); tmResults(key, { at: RV.k }); };
+    $("#tmscrim").onclick = ev => { if (ev.target.id === "tmscrim") shut(); };
+    wrap.querySelectorAll("[data-tmrvnav]").forEach(b => b.onclick = () => { off(); tmReviewQ(key, b.dataset.tmrvnav); });
+    $("#tmnavx").focus();
   }
 
   // ===================== CREATE (set builder + JSON import/export) =====================

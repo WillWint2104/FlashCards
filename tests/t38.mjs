@@ -422,6 +422,9 @@ console.log('--- one question, for review');
   ok(last.next === null && last.item.eitherSlot && last.entry.eitherSlot && last.prev.display === '14' && last.item.options.join() === '15,16',
      'the unchosen either/or is the last item, one slot naming both options, with nothing after it');
   ok(R('9-9') === null, 'a key not in the attempt has no review');
+  const band = A.results(a, s.exams).bands.find(b => b.si === 1);
+  ok(band.got === 2 && band.state === 'marked' && band.entries.find(g => g.number === '12').state === 'nothing_marked',
+     'a section beside a not-marked answer adds only marks (2), and a group of only that answer reads nothing marked: ' + band.got);
   const sm = A.results(a, s.exams).items.map(x => x.key + x.status).join();
   ok(A.sequence(a, s.exams).map(e => R(e.key)).map(r => r.item.key + r.item.status).join() === sm, 'every review item is the Results item for the same key');
 }

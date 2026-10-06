@@ -276,7 +276,7 @@ const pkg = (page, k) => page.evaluate(key => {
     ["study progress", "if (ok) applyResult(card, g.score, g.max);"],
     // Slice A: the sitting draws its own result, and an attempt's totals are
     // derived in the attempt contract, both through the same gate.
-    ["the exam sheet", "  function tmResultHTML(e, a, f, g) {\n    const q = e.q, key = e.key;\n    if (!isMarked(g)) {"],
+    ["the exam sheet", "    const shown = closed ? RV.soln : SIT.soln;\n    if (!isMarked(g)) {"],
     ["the saved essay mark", "if (!isMarked(g)) {"],
   ];
   scorers.forEach(([what, line]) => ok(app.indexOf(line) >= 0,

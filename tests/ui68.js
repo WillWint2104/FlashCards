@@ -172,15 +172,15 @@ const answer = async (p, text) => {
     await p.click('#examfinish'); await settled(p);
     await p.click('#tmsubmitpaper'); await settled(p);
     const res = await p.evaluate(() => ({
-      big: (document.querySelector('.bigscore') || {}).textContent || '(none)',
-      rows: Array.from(document.querySelectorAll('.exam-resq')).map(e => e.textContent.replace(/\s+/g, ' ').trim()),
-      sec: Array.from(document.querySelectorAll('.exam-ressech')).map(e => e.textContent.replace(/\s+/g, ' ').trim()),
+      big: (document.querySelector('#tmrsscore') || {}).textContent || '(none)',
+      rows: Array.from(document.querySelectorAll('.tm-rs-cell')).map(e => e.textContent.replace(/\s+/g, ' ').trim()),
+      sec: Array.from(document.querySelectorAll('.tm-rs-band h3')).map(e => e.textContent.replace(/\s+/g, ' ').trim()),
     }));
     ok(!/NaN|undefined/.test(JSON.stringify(res)),
       'and the whole results screen is free of NaN and undefined: ' + JSON.stringify(res));
     ok(/^2\s*\/\s*22$/.test(res.big.replace(/\s+/g, '')) || /2\/22/.test(res.big.replace(/\s+/g, '')),
       'the paper totals 2/22, the marks that were actually awarded out of the marks on offer: ' + JSON.stringify(res.big));
-    ok(res.rows.some(r => /not marked/i.test(r)), 'the refused row says so: ' + JSON.stringify(res.rows));
+    ok(res.rows.some(r => /not marked/i.test(r)), 'the refused cell says so: ' + JSON.stringify(res.rows));
     await p.close();
   }
 
@@ -482,7 +482,7 @@ const answer = async (p, text) => {
       // overview, and Start new attempt begins the next one.
       await p.click('#examfinish'); await settled(p);   // Review & submit
       await p.click('#tmsubmitpaper'); await settled(p);
-      await p.click('#exambackhome'); await settled(p);
+      await p.click('#tmback'); await settled(p);
       const rt = await p.$('[data-tmopen="retaken"].tm-btn');
       ok(!!rt, 'the completed card offers Try again');
       if (rt) { await rt.click(); await settled(p); }

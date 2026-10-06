@@ -176,15 +176,15 @@ async function unmarkedYet(p, n, why) {
     await sit(p, '', 'Section III - Business report');
     await submit(p, 'Executive summary\nConsolidate.');
     // Slice B: the last item opens Review & submit, Submit paper closes the
-    // attempt, and the existing results screen reads it.
+    // attempt, and Results reads it.
     await p.click('#examfinish'); await settled(p);
     await p.click('#tmsubmitpaper'); await settled(p);
-    const big = await p.$eval('.bigscore', e => e.textContent.replace(/\s+/g, '')).catch(() => '');
-    const txt = await p.$eval('.summary', e => e.textContent.replace(/\s+/g, ' ')).catch(() => '');
-    ok(big === '0/20', 'the unmarked answer adds nothing, and the paper is still out of 20: ' + big);
-    ok(/1 answer is not marked, so its marks are not in this total/.test(txt) && !/not marked yet/.test(txt),
-       'the total says what it leaves out, and a closed attempt does not promise a mark later (decision 24)');
-    ok(/not marked/.test(await p.$eval('.exam-results', e => e.textContent)), 'its row says not marked');
+    const big = await p.$eval('#tmrsscore', e => e.textContent.replace(/\s+/g, ' ').trim()).catch(() => '');
+    const txt = await p.$eval('.tm-rs-sum', e => e.textContent.replace(/\s+/g, ' ')).catch(() => '');
+    ok(big === 'Nothing marked', 'with no valid mark the attempt has no mark, never 0 / 20 (decision 25): ' + big);
+    ok(/Nothing in this attempt was marked, so it has no mark\. It was out of 20 marks\./.test(txt) && !/not marked yet/.test(txt),
+       'it says why, and a closed attempt does not promise a mark later (decision 24)');
+    ok(/Not marked/.test(await p.$eval('.tm-rs-cell.nm', e => e.textContent).catch(() => '')), 'its cell says Not marked');
     await ctx.close();
   }
 
