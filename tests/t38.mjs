@@ -379,6 +379,20 @@ console.log('--- the results map: bands, parents with their parts, three words f
   ok(r4.version === '1' && r4.libraryVersion === '2' && r4.superseded, 'results say which version the attempt was on, and what the library has now');
 }
 
+console.log('--- a closed attempt keeps the cause, not the advice (decision 25)');
+{
+  const C = A.causeOf;
+  ok(C('This response was not marked: the marker is busy. Wait a minute, then try marking it again.') === 'The marker is busy.', 'the advice after the cause is dropped');
+  ok(C('This response was not marked: the marker could not be reached.') === 'The marker could not be reached.', 'a cause alone is kept, capitalised');
+  ok(C('This answer was not marked: it contains 2 numbers and no rule says which is the answer. Write the final value on its own, or after an equals sign.') === 'It contains 2 numbers and no rule says which is the answer.', 'an unreadable calculation keeps what was wrong, not the instruction');
+  ok(C('This response was not marked: the marker did not accept this class\'s code. Your teacher can check the class code in Settings.') === 'The marker did not accept this class\'s code.', 'and a Settings step is dropped');
+  ok(C('') === '' && C(null) === '' && C('Odd reason') === 'Odd reason.', 'nothing in, nothing out; an unshaped reason is kept whole');
+  const s = store(), p = fresh(); A.addPaper(s, p);
+  const a = A.startPaper(p, null, T(1));
+  A.record(a, '1-1-0', 'x', ASSESS.fail('MARKER_BUSY', 'This response was not marked: the marker is busy. Wait a minute, then try marking it again.', { max: 3, retry: true }), T(2));
+  ok(A.report(a, s.exams, []).items.find(x => x.key === '1-1-0').cause === 'The marker is busy.', 'and the report carries the cause');
+}
+
 console.log('--- a restored store is not trusted');
 {
   const p = fresh();

@@ -598,6 +598,56 @@ it is abandoned on submit, and its late reply is ignored.
 is working in the app. It must make a 90-mark paper readable at a glance
 without flattening nested parts or treating unmarked responses as zero.
 
+## 25. Submit implemented; Results approved in structure; Review is the last state
+
+The Submit and Finish implementation is approved. The Results overview
+(`docs/mockups/05-results*.html`) is approved in structure: the paper as a map
+of its marks, sections and parent questions kept whole, a real zero kept as
+zero, and work with no mark never flattened into one. It is not built alone.
+
+**Results and Individual Question Review are one system.** Review is designed
+next, the two are frozen together, then built together in one slice, followed
+by the final desktop Test Mode end-to-end acceptance. Mobile stays deferred.
+
+**One meaning for a dashed edge: not answered**, everywhere in Test Mode. The
+navigator and Results already use it. Submit's *Not marked* tag becomes a solid
+neutral edge, and its *Not answered* tag becomes dashed.
+
+**Nothing marked.** When an attempt holds no valid mark at all, every surface
+says *Nothing marked*: Results, the library card, Page 3's last-attempt strip
+and Submit's last-result strip. When marks exist and legitimately total zero,
+the real *0 / 90* stands.
+
+**A finished practice session stays reachable.** The question type's practice
+entry shows *Last completed · 5 / 13 · View results*. While another session is
+in progress, *Resume practice* stays primary and *View results* is secondary.
+The completed result is never merged with the attempt in progress.
+
+**Historical reasons are causes, not instructions.** A closed attempt keeps why
+an answer was not marked, labelled *Reason at the time*, as the cause alone
+(*The marker could not be reached.*). Advice that was true while the attempt
+was open (*try marking it again*, *write the final value...*) is not shown as
+something still to do. Completed attempts are immutable.
+
+**Individual Question Review** wraps the frozen per-format marked states in a
+closed-attempt review shell. It does not invent another feedback design.
+
+- A marked question: the question and its sources, the submitted answer, the
+  mark awarded and that format's approved feedback, read-only.
+- Submitted, not marked: the submitted answer, *Not marked*, the historical
+  cause, and no retry.
+- Not answered: the question and *Not answered*; no mark, no feedback.
+- Changed after marking: the exact version that was marked with its mark and
+  feedback, and separately the later edit that was never submitted. The old
+  mark never reads as applying to the later text.
+- An either/or never chosen: the requirement as it was; neither option is
+  presented as attempted.
+- Navigation: *← Results*, Previous and Next through the completed attempt,
+  the Questions navigator; a Results cell opens that item; *Review each
+  question* starts at the first.
+- Never: editing, Try again, Try marking again, a second opinion, rewriting, or
+  any change to the completed total. Flags are shown, not changed.
+
 ## Mockup order — dependency, not numerical
 
 ```

@@ -467,6 +467,17 @@ function itemState(a, key) {
 // read), "settings" (a marker setting the class's teacher controls), or "none"
 // (nothing in the sitting changes it).
 var SETTINGS_FIXES = ["MARKER_NOT_CONNECTED", "MARKER_ACCESS_DENIED"];
+// Why an answer was not marked, as a cause (decision 25). A recorded reason says
+// what happened and, while the attempt was open, what to do next ("Wait a
+// minute, then try marking it again"). On a closed attempt only the cause is
+// still true, so only its first sentence is kept: "The marker is busy."
+function causeOf(why) {
+  if (!why) return "";
+  var s = String(why).trim().replace(/^This (response|answer) was not marked:\s*/i, "");
+  var first = (s.match(/^[\s\S]*?[.!?](?=\s|$)/) || [s])[0].trim();
+  if (!first) return "";
+  return first.charAt(0).toUpperCase() + first.slice(1) + (/[.!?]$/.test(first) ? "" : ".");
+}
 function report(a, exams, pending) {
   var seq = sequence(a, exams), busy = {};
   (pending || []).forEach(function (k) { busy[k] = true; });
@@ -482,6 +493,7 @@ function report(a, exams, pending) {
       marks: marksOf(e), weight: weightOf(e), status: status,
       score: status === "marked" ? r.score : null, max: status === "marked" ? r.max : null,
       code: status === "not_marked" ? (r.code || null) : null, why: status === "not_marked" ? (r.why || null) : null,
+      cause: status === "not_marked" ? causeOf(r.why || r.note || "") : null,
       help: status !== "not_marked" ? null
         : o === "failed" && r.retry !== false ? "retry" : r.code === "CALC_UNREADABLE" ? "change"
         : SETTINGS_FIXES.indexOf(r.code) >= 0 ? "settings" : "none",
@@ -629,5 +641,5 @@ module.exports = {
   sectionName: sectionName, sectionShort: sectionShort, assessable: assessable, bank: bank, bankCounts: bankCounts,
   startPaper: startPaper, startType: startType, begin: begin, discard: discard, complete: complete,
   sequence: sequence, entryAt: entryAt, marksOf: marksOf, setDraft: setDraft, record: record, toggleFlag: toggleFlag, moveTo: moveTo, choose: choose,
-  summary: summary, report: report, results: results, leaveUnmarked: leaveUnmarked, submittedAny: submittedAny, weightOf: weightOf, restorePapers: restorePapers, itemState: itemState, sane: sane, clone: clone,
+  summary: summary, report: report, results: results, causeOf: causeOf, leaveUnmarked: leaveUnmarked, submittedAny: submittedAny, weightOf: weightOf, restorePapers: restorePapers, itemState: itemState, sane: sane, clone: clone,
 };

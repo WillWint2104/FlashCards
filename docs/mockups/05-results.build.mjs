@@ -132,8 +132,8 @@ function details(r, a) {
   const what = type ? "session" : "attempt", R = r.rows;
   let out = "";
   if (nm.length) out += grp("g-nm", "Submitted, not marked", nm.length, false,
-    `${nm.length === 1 ? "It was" : "Each was"} submitted and not marked. This ${what} is closed, so ${nm.length === 1 ? "it stays" : "they stay"} not marked, and any step a reason suggests applies only to a new ${what}. ${nm.length === 1 ? "Its" : "Their"} ${plural(R.notMarked.worth, "mark")} still count in the ${r.max}.`,
-    nm.map(x => `<li>${where(x)}<p class="tagline"><span class="tag nm">Not marked</span></p><p class="why">Reason given at the time: <span class="rsn">${esc(x.why || "No reason was recorded.")}</span></p>${go(x)}</li>`).join(""));
+    `${nm.length === 1 ? "It was" : "Each was"} submitted and not marked. This ${what} is closed, so ${nm.length === 1 ? "it stays" : "they stay"} not marked. ${nm.length === 1 ? "Its" : "Their"} ${plural(R.notMarked.worth, "mark")} still count in the ${r.max}.`,
+    nm.map(x => `<li>${where(x)}<p class="tagline"><span class="tag nm">Not marked</span></p><p class="why">Reason at the time: ${esc(x.cause || "No reason was recorded.")}</p>${go(x)}</li>`).join(""));
   if (na.length) {
     // Three or more neighbours with nothing in them read as one row.
     const runs = [];
@@ -408,9 +408,10 @@ function check(file, { last: a }, html) {
   r.bands.forEach(b => { if (b.entries.reduce((n, g) => n + (g.kind === "parent" ? g.max : g.item.marks), 0) !== b.max) fail(file + ": " + b.name + " does not add up"); });
   if (!a.completedAt) fail(file + ": not a closed attempt");
   // Words for a closed attempt: never yet, so far, retry, or a mood label, outside a quoted reason.
-  const body = html.replace(/<style>[\s\S]*?<\/style>/, "").replace(/<!--[\s\S]*?-->/g, "").replace(/<span class="rsn">[^<]*<\/span>/g, "");
+  // Causes included: a closed attempt shows no advice, quoted or not (decision 25).
+  const body = html.replace(/<style>[\s\S]*?<\/style>/, "").replace(/<!--[\s\S]*?-->/g, "");
   const said = body.replace(/<[^>]+>/g, " ") + " " + [...body.matchAll(/aria-label="([^"]*)"/g)].map(m => m[1]).join(" ");
-  [/—/, /%/, /so far/i, /\byet\b/i, /Try again/, /Try marking again/, /Full marks|Most of it|Partly there|Not yet/, /help/].forEach(re => { if (re.test(said)) fail(file + " says " + re); });
+  [/—/, /%/, /so far/i, /\byet\b/i, /Try again/i, /try marking/i, /Full marks|Most of it|Partly there|Not yet/, /help/, /Wait a minute|Write the final value|check the class code/].forEach(re => { if (re.test(said)) fail(file + " says " + re); });
   // A cell with no mark holds words, never a number for its mark.
   if (/class="rc (nm|na)"[^>]*>(?:(?!<\/a>).)*class="v">\s*\d/s.test(html)) fail(file + ": a cell with no mark shows a number");
   // The option not taken is in no cell.

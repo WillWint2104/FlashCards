@@ -140,7 +140,7 @@ function groups(r, a) {
   if (na.length) out.push(`<section class="grp" id="g-na" tabindex="-1" aria-labelledby="h-na">
     <h3 id="h-na">Not answered <span class="n">${r.rows.notAnswered.count}</span></h3>
     <p class="glede">${na.some(x => x.pending) ? "None of these has a mark yet." : "Nothing has been submitted for marking for these."}</p>
-    <ul>${na.map(x => row(x, `<p class="tagline"><span class="tag${x.pending ? " busy" : ""}">${esc(statusTag(x))}</span></p>
+    <ul>${na.map(x => row(x, `<p class="tagline"><span class="tag${x.pending ? " busy" : " na"}">${esc(statusTag(x))}</span></p>
       ${x.eitherSlot ? `<p class="why">${eitherRule(x.options.length, x.weight)}</p>`
         : x.pending ? `<p class="why">It has been sent for marking. Until its mark arrives it is not answered.</p>`
         : x.draft ? `<p class="why">${a.scope === "type" ? "Finishing" : "Submitting the paper"} does not mark it.</p>` : ""}`,
@@ -158,7 +158,7 @@ function groups(r, a) {
       return !dup ? "" : fl.length === 1 ? " It is also listed above." : dup === fl.length ? " They are also listed above." : dup === 1 ? " One of these is also listed above." : " " + dup + " of these are also listed above.";
     })()}</p>
     <ul>${fl.map(x => `<li class="fl"><div class="where"><span class="flagged">⚑</span> <b>${esc(label(x))}</b> · ${plural(x.marks, "mark")}${a.scope === "paper" ? " · " + esc(shortOf(x.si)) : ""}</div>
-      <p class="tagline"><span class="tag${x.status === "not_marked" ? " nm" : ""}">${esc(statusTag(x))}</span></p>
+      <p class="tagline"><span class="tag${x.status === "not_marked" ? " nm" : x.status === "not_answered" && !x.pending ? " na" : ""}">${esc(statusTag(x))}</span></p>
       <p class="route">${go(x, "")}</p></li>`).join("")}</ul></section>`);
   return out.join("");
 }
@@ -346,7 +346,8 @@ function page(note, { a, r, rec }) {
   .where b{font-family:var(--disp);font-weight:600;font-size:15px;color:var(--ink)}
   .tagline{margin-top:3px}
   .tag{display:inline-block;font-size:12.5px;font-weight:800;color:var(--ink-2);background:#F1F5F5;border:1px solid var(--line);border-radius:8px;padding:1px 8px}
-  .tag.nm{color:var(--ink);background:#FFFFFF;border-color:#C9D3D2;border-style:dashed}
+  .tag.nm{color:var(--ink);background:#FFFFFF;border-color:var(--ink-3)}
+  .tag.na{background:#FFFFFF;border-color:var(--ink-3);border-style:dashed}
   .tag.busy{color:var(--blue-dk);background:var(--blue-soft);border-color:#C4E4FA}
   .why{font-size:14px;font-weight:600;color:var(--ink);margin-top:4px}
   .route{margin-top:2px}

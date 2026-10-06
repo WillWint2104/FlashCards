@@ -162,6 +162,15 @@ Nothing in the app calls `ATT.report` yet. The page is not built.
    least one question before ending this attempt*, offers *Back to questions*,
    and has no Submit button. `ATT.complete` refuses such an attempt too.
 
+## Changed by decision 25
+
+- **Dashed means not answered**, as in the navigator and Results. The *Not
+  marked* tag now has a solid neutral edge, and every *Not answered* tag
+  (in its group and among the flagged) a dashed one. Each tag also says it in
+  words.
+- The last-result strip will read *Nothing marked* for an attempt with no
+  valid mark, never *0 / 90* (built with Results).
+
 ## Not drawn, checked by the build
 
 - A refusal a setting fixes reads *your teacher can fix this in Settings*,
