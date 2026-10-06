@@ -1,0 +1,26 @@
+{
+  "_why": "Which closed attempt each Results page shows. Inputs only. A page either closes a Submit scenario (04-submit.fixture.json) with ATT.complete on the given date, or shows the completed attempt Pages 1 and 3 already show (\"done\"), optionally with a new attempt in progress beside it (\"current\", a Submit scenario left open). One scenario is new here: a whole-paper attempt whose only submission the marker was too busy to mark, so nothing in it was marked. Every status, count, mark and reason on the pages is derived by ATT.results through the shipped contract; reasons are read from app.js.",
+  "scenarios": {
+    "nothing": {
+      "scope": "paper",
+      "sections": [0, 1, 2, 3],
+      "startedAt": "2026-10-04T10:05:00+10:00",
+      "updatedAt": "2026-10-04T10:31:00+10:00",
+      "at": "1-1-0",
+      "answers": { "1-1-0": "completed" },
+      "fail": { "1-1-0": "MARKER_BUSY" },
+      "drafts": {},
+      "flags": [],
+      "choice": {},
+      "pending": []
+    }
+  },
+  "pages": {
+    "05-results.html": { "submit": "primary", "completedAt": "2026-10-02T20:06:00+10:00", "note": "the whole paper, mixed: the primary proposal" },
+    "05-results-complete.html": { "done": true, "note": "everything marked, the completed attempt Pages 1 and 3 show" },
+    "05-results-section.html": { "submit": "section", "completedAt": "2026-10-03T16:30:00+10:00", "note": "Section II only" },
+    "05-results-practice.html": { "submit": "practice", "completedAt": "2026-10-03T09:55:00+10:00", "note": "a short-answer practice session" },
+    "05-results-again.html": { "done": true, "current": "section", "from": "review", "note": "the last result, viewed while a new attempt is in progress" },
+    "05-results-nothing.html": { "own": "nothing", "completedAt": "2026-10-04T10:32:00+10:00", "note": "an attempt in which nothing was marked" }
+  }
+}
