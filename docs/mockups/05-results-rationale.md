@@ -21,15 +21,19 @@ Results cannot disagree with Review & submit.
 ## The page: the paper as a map of its marks
 
 A 90-mark paper is readable at a glance because the whole structure is on the
-first screen at 1280×900 (the build measures it: the last section ends at
-881px):
+first screen at 1280×900. Measured with the page's own fonts: the last section
+ends at 881px on the primary page, 864 on the complete one, and far higher for
+Section II only and practice. Two pages are the exceptions: with the *In
+progress* strip, Sections III and IV fall just below the fold, and on the
+nothing-marked page the last row ends at 902.
 
 1. **The mark and what it is made of.** *Your mark: 28 / 90*, with *13 of 20
    answered · 2 not marked · ⚑ 3 flagged*, beside Submit's own table (Answered
    and marked, Submitted not marked, Not answered, and the total row), and the
    one filled button, *Review each question*.
 2. **The map.** One band per section, in paper order, with its subtotal on one
-   right-hand edge. Parent questions stay groups with their parts beneath them
+   right-hand edge. Two sections of one question each sit side by side, and
+   each question's cell is its section's mark. Parent questions stay groups with their parts beneath them
    and their own subtotal (*Question 11 · 5 / 14*, with the case study's
    caption, verbatim). Every answerable is a cell holding its own mark or the
    words for why it has none. Every cell opens that question's review.
@@ -65,7 +69,7 @@ keys groups by the paper's own id; tested in `tests/t38.mjs`).
 ## The either/or
 
 Once: *Q15 or Q16 · 20 marks · Not answered*, with *Neither question was
-chosen. It counts as one question.* When one was chosen: *You chose Question 15.
+chosen. It counted as one question.* (in the past: the attempt is closed). When one was chosen: *You chose Question 15.
 Question 16 was not part of this attempt.*, and Question 16 has no cell and no
 count. The aside quotes the paper under *Original paper instructions*.
 
@@ -125,6 +129,9 @@ dates, and the version the attempt was on against the library's. Tested in
 - A parent whose marked parts all earned 0 reads *0 / 14*, not *Nothing marked*.
 - A superseded version is named against the library's.
 - An either/or chosen and left empty reads *You chose Question 15 and did not
-  answer it*.
+  answer it*; one whose options have parts reads as answered when any part was,
+  and *It counted as 2 questions* when none was chosen.
+- A practice session from two papers never merges their rows, and every row
+  names its paper.
 - Every band and group adds up to its section and to the attempt, and agrees
   with `ATT.summary`.

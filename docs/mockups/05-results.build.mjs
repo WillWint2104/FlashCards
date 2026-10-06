@@ -19,7 +19,7 @@
 //   05-results-practice.html   a short-answer practice session, 5 / 13
 //   05-results-again.html      the last result, with a new attempt in progress
 //   05-results-nothing.html    nothing marked
-import { ATT, ASSESS, PAPER, paper, exams, SUBJECT, TYPE_NAMES, completedAttempt, scenario as replay, esc, plural, list, day } from "./replay.mjs";
+import { ATT, ASSESS, PAPER, PACKAGES, paper, exams, SUBJECT, TYPE_NAMES, completedAttempt, scenario as replay, esc, plural, list, day } from "./replay.mjs";
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const fs = require("node:fs"), path = require("node:path");
@@ -59,33 +59,34 @@ function cell(x) {
   const top = (x.flagged ? `<span class="fl" aria-hidden="true">⚑</span>` : "") + esc(lab) + (st === "m" ? "" : " · " + plural(x.marks, "mark"));
   const val = st === "m" ? `${x.score} / ${x.max}` : statusWord(x);
   const said = label(x) + ": " + (st === "m" ? x.score + " of " + plural(x.max, "mark") : plural(x.marks, "mark") + ", " + (st === "nm" ? "submitted, not marked" : "not answered")) + (x.flagged ? ", flagged" : "") + ". Review it.";
-  return `<a class="rc ${st}" href="#review-${esc(x.key)}" aria-label="${esc(said)}"><span class="l">${top}</span><span class="v">${esc(val)}</span></a>`;
+  return `<a class="rc ${st}" href="#review-${esc(x.key)}"><span class="l">${top}</span><span class="v">${esc(val)}</span><span class="vh">, ${esc(said)}</span></a>`;
 }
 function eitherLine(r, si, type) {
   if (type) return "";
   const e = r.either.find(y => y.si === si); if (!e) return "";
   const slot = r.items.find(y => y.eitherSlot && y.si === si);
   const others = e.options.filter(o => o.qi !== e.chosen).map(o => "Question " + o.number);
-  if (e.chosen === null) return "Neither question was chosen. " + (slot && slot.weight > 1 ? "It counts as " + slot.weight + " questions, the parts of the one you choose." : "It counts as one question.");
+  if (e.chosen === null) return (e.options.length === 2 ? "Neither question was chosen." : "None of these questions was chosen.") +
+    (slot && slot.weight > 1 ? " It counted as " + slot.weight + " questions." : " It counted as one question.");
   const chosen = e.options.find(o => o.qi === e.chosen);
-  const item = r.items.find(y => y.si === si);
-  const answered = item && item.status !== "not_answered";
+  const answered = r.items.some(y => y.si === si && y.status !== "not_answered");
   return "You chose Question " + chosen.number + (answered ? "." : " and did not answer it.") + " " + list(others) + (others.length === 1 ? " was" : " were") + " not part of this attempt.";
 }
 function band(b, r, type) {
+  const id = "b-" + r.bands.indexOf(b);
   const title = type ? esc(b.paperName) + " · " + esc(b.short) : esc(b.name);
   const one = b.entries.length === 1 && b.entries[0].kind === "leaf";
   const ei = eitherLine(r, b.si, type);
   if (one) {
     const x = b.entries[0].item;
-    return `<section class="band half" aria-labelledby="b-${b.si}"><div class="bh"><div class="bt"><h3 id="b-${b.si}">${title}</h3>
+    return `<section class="band half" aria-labelledby="${id}"><div class="bh"><div class="bt"><h3 id="${id}">${title}</h3>
       ${ei ? `<p class="bc">${esc(ei)}</p>` : `<p class="bc">${esc(counts(b, "question"))}</p>`}</div>${cell(x)}</div></section>`;
   }
-  return `<section class="band" aria-labelledby="b-${b.si}">
-    <div class="bh"><div class="bt"><h3 id="b-${b.si}">${title}</h3><p class="bc">${esc(counts(b, "question"))}</p></div>
-      <p class="bs" aria-label="${esc(b.name + ": " + subWords(b))}">${sub(b)}</p></div>
+  return `<section class="band" aria-labelledby="${id}">
+    <div class="bh"><div class="bt"><h3 id="${id}">${title}</h3><p class="bc">${esc(counts(b, "question"))}</p></div>
+      <p class="bs"><span class="vh">${esc(b.name)}: ${esc(subWords(b))}</span><span aria-hidden="true">${sub(b)}</span></p></div>
     <div class="ents">${b.entries.map(g => g.kind === "leaf" ? cell(g.item) : `<div class="pg" role="group" aria-labelledby="g-${esc(g.key)}">
-      <div class="pgh"><h4 id="g-${esc(g.key)}">Question ${esc(g.number)}</h4><span class="ps" aria-label="${esc(subWords(g))}">${sub(g)}</span></div>
+      <div class="pgh"><h4 id="g-${esc(g.key)}">Question ${esc(g.number)}</h4><span class="ps"><span class="vh">${esc(subWords(g))}</span><span aria-hidden="true">${sub(g)}</span></span></div>
       ${g.caption || g.items.length < g.parts ? `<p class="cap">${esc(g.caption)}${g.items.length < g.parts ? (g.caption ? " · " : "") + g.items.length + " of its " + g.parts + " parts were in this " + (type ? "practice" : "attempt") : ""}</p>` : ""}
       <div class="cells">${g.items.map(cell).join("")}</div>
       <p class="pc">${esc(counts(g, "part"))}</p></div>`).join("")}${ei ? `<p class="bc either">${esc(ei)}</p>` : ""}</div>
@@ -116,8 +117,14 @@ function tally(r, a) {
     <tfoot><tr><th scope="row">${esc(whole)}</th><td>${r.total}</td><td>${plural(r.max, "mark")}</td><td>${R.marked.count ? `<b>${r.got}</b> / ${r.max}` : `<span class="none">Nothing marked</span>`}</td></tr></tfoot>
   </table>`;
 }
+// One set of words for something not answered, in every list (Submit's statusTag, closed).
+const naTag = x => x.eitherSlot ? "Not chosen" : x.draft === "written" ? "Draft saved · written, not submitted" : x.draft === "selected" ? "Selected, not submitted" : "Not started";
 function details(r, a) {
-  const type = a.scope === "type", where = x => `<div class="where"><b>${esc(label(x))}</b> · ${plural(x.marks, "mark")}${type ? "" : " · " + esc(ATT.sectionShort(paper.sections[x.si], x.si))}${x.flagged ? ` <span class="flagged">⚑ flagged</span>` : ""}</div>`;
+  const type = a.scope === "type";
+  // A practice drawing on more than one paper names the paper on every row.
+  const many = type && new Set(r.bands.map(b => b.paper)).size > 1;
+  const src = x => many ? " · " + esc((r.bands.find(b => b.paper === x.paper) || {}).paperName || "") : "";
+  const where = x => `<div class="where"><b>${esc(label(x))}</b> · ${plural(x.marks, "mark")}${type ? src(x) : " · " + esc(ATT.sectionShort(paper.sections[x.si], x.si))}${x.flagged ? ` <span class="flagged">⚑ flagged</span>` : ""}</div>`;
   const go = (x, extra) => `<p class="route"><a class="link" href="#review-${esc(x.key)}">Review ${esc(label(x))}${extra || ""}</a></p>`;
   const grp = (id, title, n, gold, lede, rows) => `<section class="grp" id="${id}" tabindex="-1" aria-labelledby="${id}h"><h3 id="${id}h">${title} <span class="n${gold ? " gold" : ""}">${n}</span></h3>${lede ? `<p class="glede">${lede}</p>` : ""}<ul>${rows}</ul></section>`;
   const nm = r.items.filter(x => x.status === "not_marked"), na = r.items.filter(x => x.status === "not_answered");
@@ -132,24 +139,24 @@ function details(r, a) {
     const runs = [];
     na.forEach(x => {
       const plain = !x.draft && !x.flagged && !x.eitherSlot, last = runs[runs.length - 1];
-      const same = last && last.plain && plain && last.items[0].si === x.si && (last.items[0].qi === x.qi || (last.items[0].pi == null && x.pi == null)) &&
+      const same = last && last.plain && plain && last.items[0].paper === x.paper && last.items[0].si === x.si && (last.items[0].qi === x.qi || (last.items[0].pi == null && x.pi == null)) &&
         r.items.indexOf(x) === r.items.indexOf(last.items[last.items.length - 1]) + 1;
       if (same) last.items.push(x); else runs.push({ plain, items: [x] });
     });
-    const rows = runs.flatMap(run => run.plain && run.items.length >= 3 ? [`<li><div class="where"><b>Questions ${esc(run.items[0].display)} to ${esc(run.items[run.items.length - 1].display)}</b> · ${plural(run.items.reduce((n, x) => n + x.marks, 0), "mark")}${type ? "" : " · " + esc(ATT.sectionShort(paper.sections[run.items[0].si], run.items[0].si))}</div>
+    const rows = runs.flatMap(run => run.plain && run.items.length >= 3 ? [`<li><div class="where"><b>Questions ${esc(run.items[0].display)} to ${esc(run.items[run.items.length - 1].display)}</b> · ${plural(run.items.reduce((n, x) => n + x.marks, 0), "mark")}${type ? src(run.items[0]) : " · " + esc(ATT.sectionShort(paper.sections[run.items[0].si], run.items[0].si))}</div>
         <p class="tagline"><span class="tag na">Not started</span></p>${go(run.items[0])}</li>`]
-      : run.items.map(x => `<li>${where(x)}<p class="tagline"><span class="tag na">${x.eitherSlot ? "Not chosen" : x.draft === "written" ? "Draft saved · written, not submitted" : x.draft === "selected" ? "Selected, not submitted" : "Not started"}</span></p>
+      : run.items.map(x => `<li>${where(x)}<p class="tagline"><span class="tag na">${naTag(x)}</span></p>
         ${x.eitherSlot ? `<p class="why">${esc(eitherLine(r, x.si, type))}</p>` : x.draft ? `<p class="why">It was never submitted for marking.</p>` : ""}${go(x)}</li>`));
     out += grp("g-na", "Not answered", R.notAnswered.count, false,
       `Nothing was submitted for marking for ${R.notAnswered.count === 1 ? "this, so it" : "these, so they"} earned nothing. ${R.notAnswered.count === 1 ? "Its" : "Their"} ${plural(R.notAnswered.worth, "mark")} still count in the ${r.max}.`, rows.join(""));
   }
   if (ch.length) out += grp("g-ch", "Changed after marking", ch.length, false, "",
-    ch.map(x => `<li>${where(x)}<p class="why">${x.status === "marked" ? "This answer has changed since it was marked, and the new version has no mark. Your mark of " + x.score + " of " + plural(x.max, "mark") + " stands, for the version it was given for." : "This answer has changed since it was sent for marking. It stays not marked."}</p>${go(x, " to see the version that was marked")}</li>`).join(""));
+    ch.map(x => `<li>${where(x)}<p class="why">${x.status === "marked" ? "This answer has changed since it was marked, and the new version has no mark. Your mark of " + x.score + " of " + plural(x.max, "mark") + " stands, for the version it was given for." : "This answer has changed since it was sent for marking. It stays not marked."}</p>${go(x, x.status === "marked" ? " to see the version that was marked" : "")}</li>`).join(""));
   if (fl.length) {
     const dup = fl.filter(x => x.status !== "marked" || x.changed).length;
     out += grp("g-fl", "Flagged", fl.length, true, "You flagged these to come back to. Flags never changed a mark." + (!dup ? "" : fl.length === 1 ? " It is also listed above." : dup === fl.length ? " They are also listed above." : dup === 1 ? " One of these is also listed above." : " " + dup + " of these are also listed above."),
-      fl.map(x => `<li><div class="where"><span class="flagged">⚑</span> <b>${esc(label(x))}</b> · ${plural(x.marks, "mark")}${type ? "" : " · " + esc(ATT.sectionShort(paper.sections[x.si], x.si))}</div>
-        <p class="tagline"><span class="tag${x.status === "not_marked" ? " nm" : x.status === "not_answered" ? " na" : ""}">${x.status === "marked" ? "Answered · " + x.score + " of " + plural(x.max, "mark") : x.status === "not_marked" ? "Not marked" : "Not started"}</span></p>${go(x)}</li>`).join(""));
+      fl.map(x => `<li><div class="where"><span class="flagged">⚑</span> <b>${esc(label(x))}</b> · ${plural(x.marks, "mark")}${type ? src(x) : " · " + esc(ATT.sectionShort(paper.sections[x.si], x.si))}</div>
+        <p class="tagline"><span class="tag${x.status === "not_marked" ? " nm" : x.status === "not_answered" ? " na" : ""}">${x.status === "marked" ? "Answered · " + x.score + " of " + plural(x.max, "mark") : x.status === "not_marked" ? "Not marked" : naTag(x)}</span></p>${go(x)}</li>`).join(""));
   }
   return out || `<p class="clear">Nothing was left not marked or not answered, and nothing was flagged.</p>`;
 }
@@ -376,14 +383,14 @@ function page(note, { last: a, current, from }) {
       ${tally(r, a)}
       <div class="acts">
         <a class="btn" href="#review-${esc(first.key)}">Review each question</a>
-        <p class="hint">Starts at ${esc(label(first))}. You can review your marks but not change them.</p>
+        <p class="hint">Starts at ${esc(label(first))}. You can review your ${R.marked.count ? "marks" : "answers"} but not change them.</p>
         ${current ? "" : `<a class="btn ghost sm" href="#start">${type ? "Start practice" : "Start new attempt"}</a>`}
       </div>
     </div>
     <div class="map"><h2 class="vh">Marks by section and question</h2>${bands(r, type)}</div>
   </section>
   <div class="layout">
-    <section class="panel" aria-label="Questions to look at again">${details(r, a)}</section>
+    <section class="panel" aria-labelledby="lh"><h2 class="vh" id="lh">Questions to look at again</h2>${details(r, a)}</section>
     ${aside(r, a, { current })}
   </div>
 </main>
@@ -434,5 +441,27 @@ for (const [file, spec] of Object.entries(FX.pages)) {
   // The option chosen with nothing written reads as chosen and not answered.
   const c = completedAttempt(); delete c.results["3-0"]; delete c.answers["3-0"];
   if (!/You chose Question 15 and did not answer it\. Question 16 was not part of this attempt\./.test(eitherLine(ATT.results(c, exams), 3, false))) fail("chosen and empty reads wrongly");
+}
+{
+  // A practice drawing on two papers: no run of rows crosses papers, and every row names its paper.
+  const two = Object.assign(JSON.parse(JSON.stringify(paper)), { id: "exam-mockup-b", name: "Second paper", exam: Object.assign({}, paper.exam, { id: "second-paper" }) });
+  const lib = [paper, two];
+  const t = ATT.startType("multiple_choice", ATT.bank("multiple_choice", lib, PACKAGES), "2026-10-03T09:00:00+10:00");
+  const k0 = t.items[0], g = ASSESS.marked({ score: 1, max: 1, kind: "mc" });
+  ATT.record(t, ATT.itemKey(k0), 0, g, "2026-10-03T09:05:00+10:00");
+  const r2 = ATT.results(t, lib), html2 = details(r2, t);
+  const rows = [...html2.matchAll(/<b>Questions ([^<]+)<\/b> · (\d+) marks · ([^<]+)<\/div>/g)].map(m => m[1] + " | " + m[2] + " | " + m[3]);
+  if (rows.length !== 2 || !rows.some(x => /Second paper/.test(x)) || !rows.every(x => /\| 9 \||\| 10 \|/.test(x))) fail("a run of rows crosses papers: " + JSON.stringify(rows));
+  // An either/or whose options have parts: one part answered is a chosen, answered question.
+  const pp = JSON.parse(JSON.stringify(paper)); pp.id = "exam-mockup-parts";
+  pp.sections[3].questions = pp.sections[3].questions.map((q, i) => ({ id: q.id, number: q.number, marks: q.marks, prompt: "Option",
+    parts: [{ id: "a" + i, label: "a", marks: 8, format: "extended_response", prompt: q.prompt }, { id: "b" + i, label: "b", marks: 12, format: "extended_response", prompt: q.prompt }] }));
+  const e = ATT.startPaper(pp, null, "2026-10-03T09:00:00+10:00");
+  ATT.choose(e, 3, 0, "2026-10-03T09:01:00+10:00", pp);
+  ATT.record(e, "3-0-1", "text", ASSESS.marked({ score: 9, max: 12, kind: "written" }), "2026-10-03T09:30:00+10:00");
+  const line = eitherLine(ATT.results(e, [pp]), 3, false);
+  if (line !== "You chose Question 15. Question 16 was not part of this attempt.") fail("an either/or with parts reads wrongly: " + line);
+  const open = ATT.startPaper(pp, null, "2026-10-03T09:00:00+10:00");
+  if (eitherLine(ATT.results(open, [pp]), 3, false) !== "Neither question was chosen. It counted as 2 questions.") fail("an unchosen either/or with parts reads wrongly");
 }
 console.log(JSON.stringify({ subject: SUBJECT, pages: report }, null, 1));
