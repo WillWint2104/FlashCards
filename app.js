@@ -3634,7 +3634,7 @@
         ? `<p class="tm-rtagline"><span class="tm-rtag busy">${esc(tag(x))}</span></p><p class="tm-rwhy">It is being marked again now. Until its mark arrives it stays not marked.</p>`
         : `<p class="tm-rtagline"><span class="tm-rtag nm">Not marked yet · ${TM_REVIEW_HELP[x.help][0]}</span></p><p class="tm-rwhy">${esc(x.why || "No reason was recorded.")}</p>${x.help === "none" ? `<p class="tm-rwhy tm-rsm">Marking it again here will not change this.</p>` : ""}<p class="tm-rroute">${go(x, TM_REVIEW_HELP[x.help][1])}</p>`}</li>`).join(""));
     if (na.length) groups += grp("tmg-na", "Not answered", R.notAnswered.count, false, na.some(x => x.pending) ? "None of these has a mark yet." : "Nothing has been submitted for marking for these.",
-      na.map(x => `<li>${where(x)}<p class="tm-rtagline"><span class="tm-rtag${x.pending ? " busy" : ""}">${esc(tag(x))}</span></p>
+      na.map(x => `<li>${where(x)}<p class="tm-rtagline"><span class="tm-rtag${x.pending ? " busy" : " na"}">${esc(tag(x))}</span></p>
         ${x.eitherSlot ? `<p class="tm-rwhy">${eitherRule(x.options.length, x.weight)}</p>` : x.pending ? `<p class="tm-rwhy">It has been sent for marking. Until its mark arrives it is not answered.</p>`
           : x.draft ? `<p class="tm-rwhy">${type ? "Finishing" : "Submitting the paper"} does not mark it.</p>` : ""}
         ${x.pending ? "" : `<p class="tm-rroute">${go(x, x.draft ? "to submit it for marking" : "")}</p>`}</li>`).join(""));
@@ -3647,7 +3647,7 @@
       groups += grp("tmg-fl", "Flagged", fl.length, true, "You flagged these to come back to." + (!dup ? "" : fl.length === 1 ? " It is also listed above."
         : dup === fl.length ? " They are also listed above." : dup === 1 ? " One of these is also listed above." : " " + dup + " of these are also listed above."),
         fl.map(x => `<li><div class="tm-rwhere"><span class="tm-flagged">⚑</span> <b>${esc(label(x))}</b> · ${tmPlural(x.marks, "mark")}${type ? "" : " · " + esc(shortOf(x))}</div>
-          <p class="tm-rtagline"><span class="tm-rtag${x.status === "not_marked" ? " nm" : ""}">${esc(tag(x))}</span></p><p class="tm-rroute">${go(x, "")}</p></li>`).join(""));
+          <p class="tm-rtagline"><span class="tm-rtag${x.status === "not_marked" ? " nm" : x.status === "not_answered" && !x.pending ? " na" : ""}">${esc(tag(x))}</span></p><p class="tm-rroute">${go(x, "")}</p></li>`).join(""));
     }
     const bysec = r.sections ? `<table class="tm-bysec tm-rbysec"><caption class="k">By section</caption>
       <thead><tr><th scope="col">Section</th><th scope="col">Answered</th><th scope="col">Flagged</th><th scope="col">Marks so far</th></tr></thead>

@@ -1,6 +1,6 @@
 # Slice B, state 3: Individual Question Review. Reading key
 
-**Proposal, for approval with Results (decision 25).** Desktop only, at 1440
+**Approved and frozen for desktop (decision 26), with Results; built with it.** Desktop only, at 1440
 and 1280×900. No new feedback architecture: the question, the answer and the
 result are the frozen marked states the sitting already draws
 (`tmQuestionHTML` and `tmResultHTML` in app.js), set in a review shell that can
@@ -117,15 +117,12 @@ as later text or as the answer. Nothing in the app calls it yet.
 them), so a page can review the feedback. Every earlier page regenerates
 byte-identically.
 
-## For decision
+## Decided (decision 26)
 
-1. **The answer box.** The frozen marked short-answer state is a disabled
-   textarea; Review keeps it. A plain read-only text block would read less like
-   a form. Recommended: keep the frozen box for now, since changing it changes
-   the sitting too.
-2. **The extended response collapsed.** The frozen state collapses *Your
-   submitted response* so the mark sits high; Review keeps that. Recommended:
-   keep.
-3. **The sitting's *Your earlier version* note** (`.tm-earlier`) has a dashed
-   edge. Under decision 25 dashed means not answered, so it should become a
-   solid neutral edge when Results and Review are built.
+1. **The answer box keeps its look and is read only**, not disabled: the
+   generator now draws it as a read-only text box (`role="textbox"`,
+   `aria-readonly`), selectable, with no cursor for typing.
+2. **The extended response stays collapsed** by default; opening it shows the
+   exact submitted text.
+3. **The sitting's earlier-version note takes a solid neutral edge.** Dashed
+   means not answered and nothing else.

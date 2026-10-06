@@ -648,6 +648,42 @@ closed-attempt review shell. It does not invent another feedback design.
 - Never: editing, Try again, Try marking again, a second opinion, rewriting, or
   any change to the completed total. Flags are shown, not changed.
 
+## 26. Review frozen; Results and Review built together
+
+Individual Question Review (`docs/mockups/06-review*.html`) is approved and
+frozen for desktop, all seven states: marked short answer, marked extended
+response, submitted but not marked, changed after marking, not answered, an
+either/or never chosen, and the closed attempt's Questions navigator. Results
+(decision 25) is frozen with it. No further desktop Test Mode mockups.
+
+- **The short-answer response keeps the frozen answer box's look** and is
+  semantically read only in Review: not an editable field and not a disabled
+  one. No cursor, no editing, no retry.
+- **An extended response's *Your submitted response* stays collapsed** by
+  default, so the mark and feedback stay high; opening it shows the exact
+  submitted text, read only.
+- **Dashed is reserved for *Not answered*.** The sitting's note about an
+  earlier marked version takes a solid neutral edge, as does every historical
+  snapshot.
+
+Preserved as drawn: *← Results*, Previous and Next through the completed
+attempt, the Questions navigator, the closed read-only status, the exact graded
+snapshot with the later unsubmitted edit kept apart, *Reason at the time*, and
+no editing, flag changes, Try again, Try marking again, second opinion or
+change to the score.
+
+**Built as one feature.** Routes: a Results cell opens that exact item; *Review
+each question* opens the first answerable; *← Results* returns to the same
+completed attempt's Results; Previous and Next follow the attempt's order; the
+navigator opens any item. Parent questions keep their parts, and the either/or
+keeps its meaning. A completed attempt is immutable throughout. Decision 25 is
+applied in the same slice.
+
+**Tests.** Fast is at capacity (39.3 of 40 s). No browser work is added to Fast
+or Checkpoint; Results and Review interaction coverage and the final desktop
+journey are Full only. Cheap contract assertions may join existing Node suites.
+Budgets are unchanged. Mobile stays deferred.
+
 ## Mockup order — dependency, not numerical
 
 ```

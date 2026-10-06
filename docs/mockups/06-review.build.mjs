@@ -171,7 +171,7 @@ function questionHTML(e, a, v, seq, total, file) {
     body = big
       ? `<details class="tm-submitted"><summary><span class="nm">${v.later ? "The version that was marked" : "Your submitted response"}</span><span>· ${plural(words(v.answer), "word")}</span></summary>
           <div class="response">${paras(v.answer)}</div></details>`
-      : `<div class="tm-rvlbl" id="rvlbl">${lbl}</div><textarea class="tm-answerbox" rows="5" aria-labelledby="rvlbl" disabled>${esc(v.answer)}</textarea>`;
+      : `<div class="tm-rvlbl" id="rvlbl">${lbl}</div><div class="tm-answerbox ro" role="textbox" aria-readonly="true" aria-multiline="true" aria-labelledby="rvlbl" tabindex="0">${esc(v.answer)}</div>`;
   }
   const unsent = v.unsent != null ? `<details class="tm-rvunsent"><summary>Show what you wrote</summary>
       <p class="tm-rvwhy">You wrote this but did not submit it before the attempt closed, so it was not marked.</p><div class="tm-rvtext">${paras(v.unsent)}</div></details>` : "";
@@ -370,11 +370,11 @@ const report = [];
 function check(file, spec, { html, a, v }) {
   const x = v.item, body = html.replace(/<style>[\s\S]*?<\/style>/, "").replace(/<!--[\s\S]*?-->/g, "");
   // The page's own words: the student's text, the paper's and the marker's are quoted, not said.
-  const own = body.replace(/<textarea[\s\S]*?<\/textarea>|<div class="(response|tm-rvtext|tm-srcbody)">[\s\S]*?<\/div>|<q>[\s\S]*?<\/q>/g, " ");
+  const own = body.replace(/<textarea[\s\S]*?<\/textarea>|<div class="tm-answerbox ro"[^>]*>[\s\S]*?<\/div>|<div class="(response|tm-rvtext|tm-srcbody)">[\s\S]*?<\/div>|<q>[\s\S]*?<\/q>/g, " ");
   const said = own.replace(/<[^>]+>/g, " ") + " " + [...own.matchAll(/(?:title|aria-label)="([^"]*)"/g)].map(m => m[1]).join(" ");
   if (!a.completedAt) fail(file + ": not a closed attempt");
   // Read only: nothing that could change, mark or re-mark an answer.
-  [/<textarea(?![^>]*\bdisabled\b)/, /<input/, /id="(check|examretry|examremark|examreview|tmswitch|examflag|examfinish)"/, /data-examchoose/].forEach(re => { if (re.test(body)) fail(file + " has a control that changes the attempt: " + re); });
+  [/<textarea/, /<input/, /\bdisabled\b(?![^<]*Previous)/, /id="(check|examretry|examremark|examreview|tmswitch|examflag|examfinish)"/, /data-examchoose/].forEach(re => { if (re.test(body)) fail(file + " has a control that changes the attempt: " + re); });
   // Words a closed attempt never says, and advice that was only true while it was open.
   [/—/, /%/, /\byet\b/i, /so far/i, /Try again/i, /try marking/i, /second opinion/i, /make this stronger/i, /Submit for marking|Check answer|Review &amp; submit|Review & submit/,
    /Wait a minute|Write the final value|check the class code|You can leave and come back/].forEach(re => { if (re.test(said)) fail(file + " says " + re); });

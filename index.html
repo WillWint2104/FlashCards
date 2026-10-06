@@ -3100,6 +3100,9 @@
                 border:2px solid var(--line);border-radius:16px;padding:14px 16px;resize:vertical}
   .tm-answerbox:focus{outline:none;border-color:var(--green-dk);box-shadow:0 0 0 3px var(--green-soft)}
   .tm-answerbox:disabled{background:#FAFCFC;color:var(--ink)}
+  /* Review: the same box, read only (decision 26). Selectable, not a form control. */
+  .tm-answerbox.ro{display:block;white-space:pre-wrap;overflow-wrap:anywhere;min-height:7.6em;cursor:default;resize:none}
+  .tm-answerbox.ro:focus-visible{outline:2px solid var(--green-dk);outline-offset:3px}
   .tm-answerbox.short{width:min(100%,22rem);resize:none}
   .tm-answerbox.short.ok{border-color:#9FE3C4} .tm-answerbox.short.no{border-color:#FFC7BE}
   .tm-answerbox.big{max-width:62ch;font-weight:400;font-size:15px;line-height:1.75;min-height:320px;border-radius:14px;padding:14px 18px}
@@ -3293,7 +3296,9 @@
   .tm-rwhere b{font-family:var(--disp);font-weight:600;font-size:15px;color:var(--ink)}
   .tm-rtagline{margin-top:3px}
   .tm-rtag{display:inline-block;font-size:12.5px;font-weight:800;color:var(--ink-2);background:#F1F5F5;border:1px solid var(--line);border-radius:8px;padding:1px 8px}
-  .tm-rtag.nm{color:var(--ink);background:#FFFFFF;border-color:#C9D3D2;border-style:dashed}
+  /* Dashed means not answered and nothing else (decision 25): not marked is a solid dark edge. */
+  .tm-rtag.nm{color:var(--ink);background:#FFFFFF;border-color:var(--ink-3)}
+  .tm-rtag.na{background:#FFFFFF;border-color:var(--ink-3);border-style:dashed}
   .tm-rtag.busy{color:var(--blue-dk);background:var(--blue-soft);border-color:#C4E4FA}
   .tm-rwhy{font-size:14px;font-weight:600;color:var(--ink);margin-top:4px}
   .tm-rroute{margin-top:2px}
@@ -3306,7 +3311,7 @@
   .tm-about .tm-rsm{color:var(--ink-2);margin-top:6px}
   blockquote.tm-ins cite{display:block;font-style:normal;font-size:12.5px;color:var(--ink-2);font-weight:700;margin-top:4px}
   /* A mark beside newer text says which version it was given for (decision 24). */
-  .tm-earlier{margin-top:12px;border:1.5px dashed #C9D3D2;border-radius:12px;padding:10px 14px;background:#FAFCFC}
+  .tm-earlier{margin-top:12px;border:1.5px solid #C9D3D2;border-radius:12px;padding:10px 14px;background:#FAFCFC}
   .tm-earlier p{font-size:14px;font-weight:600;color:var(--ink)}
   .tm-earlierv{margin-top:6px}
   .tm-earlierv summary{cursor:pointer;font-family:var(--disp);font-weight:600;font-size:13.5px;color:var(--green-dk)}
