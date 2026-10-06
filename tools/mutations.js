@@ -1773,7 +1773,7 @@ module.exports = [
     find: "    delete tmPending(a)[k];\n    const e = ATT.sequence(a, state.exams).find(x => x.key === k);",
     replace: "    const e = ATT.sequence(a, state.exams).find(x => x.key === k);",
     owner: "ui74",
-    why: "after Leave it unmarked, the abandoned request's late reply still landed and changed the answer's status",
+    why: "Leave it unmarked did not stop waiting for the reply, so the page kept blocking Submit and the abandoned request's late reply could still land",
   },
   {
     id: "sliceB-stale-mark-under-new-text",
