@@ -105,12 +105,20 @@ const text = (p, sel) => p.$eval(sel, e => e.textContent.replace(/\s+/g, ' ').tr
     const { p, ctx, seen } = await open(b, base, { cloudOff: true });
     const tabs = await p.$$eval('.navtab', es => es.map(e => e.textContent.trim()));
     ok(['Study', 'Create', 'Test mode', 'Essay practice'].every(t => tabs.some(x => new RegExp(t, 'i').test(x))), 'the navigation renders: ' + JSON.stringify(tabs));
-    for (const [tab, re] of [['Create', /Create a flashcard set/], ['Test mode', /Test mode/], ['Essay practice', /./], ['Study', /./]]) {
-      await p.$$eval('.navtab', (es, t) => { const x = es.find(e => new RegExp(t, 'i').test(e.textContent)); x && x.click(); }, tab);
-      await settled(p);
-      const body = await text(p, '#app');
-      ok(body.length > 40 && re.test(body), tab + ' renders: ' + body.slice(0, 70));
+    // Each surface is identified by what only it renders, and the tab it lit, so a
+    // click that fails to switch views cannot pass on the previous view's text.
+    // Study comes after Test mode so that it, too, is a real switch.
+    const click = t => p.$$eval('.navtab', (es, t) => { const x = es.find(e => new RegExp(t, 'i').test(e.textContent)); x && x.click(); }, t).then(() => settled(p));
+    for (const [tab, re] of [['Create', /Create a flashcard set/], ['Test mode', /Practise individual question types/], ['Study', /What are we studying\?/]]) {
+      await click(tab);
+      const body = await text(p, '#app'), on = await text(p, '.navtab.on');
+      ok(on === tab && re.test(body), tab + ' renders: [' + on + '] ' + body.slice(0, 90));
     }
+    // Essay practice is a full-screen overlay over the view, not a view of its own.
+    await click('Essay practice');
+    const essay = await text(p, '#eshost');
+    ok(/Your essay question/.test(essay) && await p.evaluate(() => document.body.classList.contains('es-lock')),
+       'Essay practice renders: ' + essay.slice(0, 90));
     ok(!seen.errors.length, 'no page errors across the four surfaces: ' + JSON.stringify(seen.errors));
     await ctx.close();
   }
