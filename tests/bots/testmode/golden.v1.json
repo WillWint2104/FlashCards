@@ -1,0 +1,10 @@
+{
+  "_why": "The first live run: twelve diagnostic answers from corpus.v1.json, chosen to show whether the real marker separates what it should before credits are spent on all 31. Run with `npm run testmode-bots:golden` (live). Read the marks and the feedback together, not the numbers alone.",
+  "corpus": "corpus.v1.json",
+  "answers": [
+    "sa11b-irrelevant", "sa11b-partial", "sa11b-unusual", "sa11a-keywords",
+    "er15-weak", "er15-strong", "er15-no-evidence",
+    "br14-report", "br14-essay",
+    "sa11b-misconception", "sa11b-verbose", "er15-unfinished"
+  ]
+}

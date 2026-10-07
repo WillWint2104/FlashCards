@@ -23,6 +23,18 @@
 // marking requests per address in 10 minutes, so live mode paces itself.
 // MARGINAL_BOTS_ONLY=id,id,... limits a run to some answers.
 //
+// TWO JOBS, TWO SIZES. Run as it is (the Full tier does), this is the CORE bot
+// regression: the few answers and the one writing journey that catch every
+// application fault the mutations name (an invented quote shown as the
+// student's, an outage scored zero, a graded version that is not the one
+// submitted, typing not saved, typing that redraws the box, a report marked as
+// an essay): one extended response and one business report through the real
+// worker, and the paper journey with the writing bot and an outage. With --all it is the STUDENT BENCHMARK: all 31 corpus answers, the
+// deterministic formats, the learning loop across two sessions. That is a
+// release and marking-quality run (npm run testmode-bots), not an every-commit
+// one. --golden runs the 12 diagnostic answers in golden.v1.json, the first
+// thing to spend live marking credits on. Live mode is always a benchmark run.
+//
 // The report is written to tests/out/bots/testmode-report.md, with a screenshot
 // beside it for every check that failed.
 const { chromium, T, OUT } = require('./env');
@@ -31,7 +43,11 @@ const CORPUS = require('./bots/testmode/corpus.v1.json');
 const PAPER = require('./fixtures/bus-practice-paper.json');
 const LIVE = process.env.MARGINAL_LIVE === '1';
 const SITE = process.env.MARGINAL_SITE || T;
-const ONLY = (process.env.MARGINAL_BOTS_ONLY || '').split(',').map(s => s.trim()).filter(Boolean);
+const GOLDEN = process.argv.includes('--golden');
+const BENCH = process.argv.includes('--all') || GOLDEN || LIVE;
+const ONLY = (process.env.MARGINAL_BOTS_ONLY || (GOLDEN ? require('./bots/testmode/golden.v1.json').answers.join(',') : '')).split(',').map(s => s.trim()).filter(Boolean);
+// The core regression's answers: one of each kind of request the faults live in.
+const CORE = new Set(['er11d-partial', 'br14-weak']);
 const DIR = path.join(OUT, 'bots');
 fs.mkdirSync(DIR, { recursive: true });
 
@@ -49,7 +65,7 @@ const has = (p, sel) => p.$(sel).then(Boolean);
 const text = (p, sel) => p.$eval(sel, e => e.textContent.replace(/\s+/g, ' ').trim()).catch(() => '');
 const qhead = p => text(p, '.exam-qhead');
 const store = p => p.evaluate(() => JSON.parse(localStorage.getItem('marginal.trial.v1') || '{}'));
-const want = a => !ONLY.length || ONLY.includes(a.id);
+const want = a => (!ONLY.length || ONLY.includes(a.id)) && (BENCH || CORE.has(a.id));
 const ANSWERS = {}; CORPUS.items.forEach(it => it.answers.forEach(a => { ANSWERS[a.id] = Object.assign({ item: it }, a); }));
 
 // ---- the profile report ---------------------------------------------------------------------
@@ -296,26 +312,29 @@ async function resultsAgree(p, attemptKey, where) {
 (async () => {
   const b = await chromium.launch();
 
+  // Benchmark only: the core proves an outage is never a zero in the paper attempt (section 4).
+  if (BENCH) {
   console.log('--- 1. short answer practice: the logic bots');
-  {
     const { p, ctx, rec } = await open(b);
     await toTest(p);
-    await importLocalPaper(p);
-    ok(await p.evaluate(n => [...document.querySelectorAll('.tm-paper h2')].some(h => h.textContent.trim() === n), CORPUS.localPoints.name), 'the bots paper is imported through the Import page');
-    const paperBefore = JSON.stringify(((await store(p)).attempts || {})['paper:' + PAPER.exam.id] || null);
-    await practise(p, 'short_answer', [[CORPUS.localPoints.name, '11(a)'], [PAPER.name, '11(b)']]);
     const TK = 'type:short_answer';
-    ok(/Question 11\([ab]\)/.test(await qhead(p)), 'the session opens on one of the chosen questions: ' + await qhead(p));
-    await goTo(p, '11(a)');
-    ok(/Question 11\(a\)/.test(await qhead(p)), 'the navigator opens 11(a)');
-    // 11(a), marked from authored phrasings: exact marks.
-    const local = CORPUS.items.find(x => x.paperVariant === 'local');
-    for (const id of ['sa11a-blank', 'sa11a-irrelevant', 'sa11a-one-point', 'sa11a-unusual', 'sa11a-keywords', 'sa11a-two-points']) {
-      const a = ANSWERS[id]; if (!want(a)) continue;
-      const got = await attemptOne(p, TK, a, id);
-      if (id === 'sa11a-blank') ok(got.status === 'none' && rec.calls.length === 0, id + ': nothing was sent to the marker for a blank answer');
+    const paperBefore = JSON.stringify(((await store(p)).attempts || {})['paper:' + PAPER.exam.id] || null);
+    const local = ['sa11a-blank', 'sa11a-irrelevant', 'sa11a-one-point', 'sa11a-unusual', 'sa11a-keywords', 'sa11a-two-points'].filter(id => want(ANSWERS[id]));
+    if (local.length) {
+      // Benchmark only: the deterministic phrase matcher, on the bots' own paper.
+      await importLocalPaper(p);
+      ok(await p.evaluate(n => [...document.querySelectorAll('.tm-paper h2')].some(h => h.textContent.trim() === n), CORPUS.localPoints.name), 'the bots paper is imported through the Import page');
+      await practise(p, 'short_answer', [[CORPUS.localPoints.name, '11(a)'], [PAPER.name, '11(b)']]);
+      await goTo(p, '11(a)');
+      ok(/Question 11\(a\)/.test(await qhead(p)), 'the navigator opens 11(a)');
+      for (const id of local) {
+        const got = await attemptOne(p, TK, ANSWERS[id], id);
+        if (id === 'sa11a-blank') ok(got.status === 'none' && rec.calls.length === 0, id + ': nothing was sent to the marker for a blank answer');
+      }
+      ok(rec.calls.length === 0, 'a locally marked question never calls the marker: ' + rec.calls.length);
+    } else {
+      await practise(p, 'short_answer', [[PAPER.name, '11(b)']]);
     }
-    ok(rec.calls.length === 0, 'a locally marked question never calls the marker: ' + rec.calls.length);
     await goTo(p, '11(b)');
     ok(/Question 11\(b\)/.test(await qhead(p)), 'the navigator opens 11(b)');
     // 11(b), marked by the marker: what it says reaches the student unchanged and grounded.
@@ -342,16 +361,18 @@ async function resultsAgree(p, attemptKey, where) {
       'every 11(b) request was a short answer and the worker answered it: ' + JSON.stringify(rec.calls.map(c => [c.answer, c.body.format, c.status])));
     // The learning loop, part 1: the session ends on the weak version.
     const weak = ANSWERS[CORPUS.progression.from];
-    await attemptOne(p, TK, weak, CORPUS.progression.from + ' (last in session 1)');
+    if (want(weak)) await attemptOne(p, TK, weak, CORPUS.progression.from + ' (last in session 1)');
     await finish(p);
     ok(/Results/.test(await text(p, '.tm-top h1')), 'Finish practice opens Results');
     await resultsAgree(p, TK, 'short answer session 1');
     const r1 = await p.$eval('.tm-rs-cell[data-tmrv$="#1-0-1"] .v', e => e.textContent.trim()).catch(() => '');
     // Review shows the graded version, read only.
     await p.click('.tm-rs-cell[data-tmrv$="#1-0-1"]'); await settled(p);
-    ok((await text(p, '#tmrvans')) === weak.text && !(await has(p, '#app textarea')), 'Review shows exactly the version graded, read only');
+    const graded1 = (await store(p)).attempts[TK].last.answers;
+    ok((await text(p, '#tmrvans')) === String(Object.entries(graded1).find(([k]) => k.endsWith('#1-0-1'))[1]).replace(/\s+/g, ' ') && !(await has(p, '#app textarea')), 'Review shows exactly the version graded, read only');
     await p.click('#tmrvback'); await settled(p);
-    // Part 2: a new session, the improved answer, the old result untouched until it is finished.
+    // Part 2 (benchmark): a new session, the improved answer, the old result untouched until it is finished.
+    if (BENCH && want(ANSWERS[CORPUS.progression.to])) {
     await p.click('#tmback'); await settled(p);
     await practise(p, 'short_answer', [[PAPER.name, '11(b)']]);
     const lastBefore = JSON.stringify((await store(p)).attempts[TK].last);
@@ -361,13 +382,14 @@ async function resultsAgree(p, attemptKey, where) {
     await p.click('#examquit'); await settled(p);
     await p.click('[data-tmtyperesults="short_answer"]'); await settled(p);
     ok((await p.$eval('.tm-rs-cell[data-tmrv$="#1-0-1"] .v', e => e.textContent.trim()).catch(() => '')) === r1, 'and its Results still read ' + r1);
+    }
     ok(JSON.stringify(((await store(p)).attempts || {})['paper:' + PAPER.exam.id] || null) === paperBefore, 'question-type practice never touched the paper attempt');
     ok(!rec.errs.length, 'no page errors ' + JSON.stringify(rec.errs));
     await ctx.close();
   }
 
+  if (BENCH && ['mc1-wrong', 'mc1-right', 'calc-inverted', 'calc-two-numbers', 'calc-working'].some(id => want(ANSWERS[id]))) {
   console.log('--- 2. multiple choice and calculation: exact marks from the key');
-  {
     const { p, ctx, rec } = await open(b);
     await practise(p, 'multiple_choice', [[PAPER.name, '1']]);
     for (const id of ['mc1-wrong', 'mc1-right']) if (want(ANSWERS[id])) await attemptOne(p, 'type:multiple_choice', ANSWERS[id], id);
@@ -382,14 +404,20 @@ async function resultsAgree(p, attemptKey, where) {
   console.log('--- 3. extended response and business report: grounding and the format the marker is told');
   {
     const { p, ctx, rec } = await open(b);
-    await practise(p, 'extended_response', [[PAPER.name, '11(d)'], [PAPER.name, '15']]);
-    for (const id of ['er11d-minimal', 'er11d-misconception', 'er11d-partial', 'er11d-strong']) if (want(ANSWERS[id])) await attemptOne(p, 'type:extended_response', ANSWERS[id], id);
-    await goTo(p, '15');
-    for (const id of ['er15-weak', 'er15-unfinished', 'er15-no-evidence', 'er15-middle', 'er15-strong']) if (want(ANSWERS[id])) await attemptOne(p, 'type:extended_response', ANSWERS[id], id);
-    await p.click('#examquit'); await settled(p);
+    const e11 = ['er11d-minimal', 'er11d-misconception', 'er11d-partial', 'er11d-strong'].filter(id => want(ANSWERS[id]));
+    const e15 = ['er15-weak', 'er15-unfinished', 'er15-no-evidence', 'er15-middle', 'er15-strong'].filter(id => want(ANSWERS[id]));
+    const brs = ['br14-essay', 'br14-weak', 'br14-report'].filter(id => want(ANSWERS[id]));
+    if (e11.length || e15.length) {
+      await practise(p, 'extended_response', [e11.length ? [PAPER.name, '11(d)'] : null, e15.length ? [PAPER.name, '15'] : null].filter(Boolean));
+      if (e11.length) { await goTo(p, '11(d)'); for (const id of e11) await attemptOne(p, 'type:extended_response', ANSWERS[id], id); }
+      if (e15.length) { await goTo(p, '15'); for (const id of e15) await attemptOne(p, 'type:extended_response', ANSWERS[id], id); }
+      await p.click('#examquit'); await settled(p);
+    }
+    if (brs.length) {
     await practise(p, 'business_report', []);
-    for (const id of ['br14-essay', 'br14-weak', 'br14-report']) if (want(ANSWERS[id])) await attemptOne(p, 'type:business_report', ANSWERS[id], id);
-    if (!LIVE) {
+    for (const id of brs) await attemptOne(p, 'type:business_report', ANSWERS[id], id);
+    }
+    if (!LIVE && (e11.length || e15.length) && brs.length) {
       const told = c => c.model.map(m => JSON.stringify(m.messages || [])).join(' ');
       const er = rec.calls.filter(c => /^er/.test(c.answer || '')), br = rec.calls.filter(c => /^br/.test(c.answer || ''));
       ok(er.length && er.every(c => c.body.format === 'extended_response' && /Mark it as an extended response/.test(told(c)) && !/Mark it as a business report/.test(told(c))),
@@ -398,8 +426,7 @@ async function resultsAgree(p, attemptKey, where) {
          'a business report is sent as one, and the marker is told to mark it as a report, whichever shape the student gave it');
       ok(br.every(c => /business report with a clear structure/i.test(told(c))), 'the question\'s own report instructions reach the marker');
     }
-    await finish(p);
-    await resultsAgree(p, 'type:business_report', 'business report session');
+    if (brs.length) { await finish(p); await resultsAgree(p, 'type:business_report', 'business report session'); }
     ok(!rec.errs.length, 'no page errors ' + JSON.stringify(rec.errs));
     await ctx.close();
   }
