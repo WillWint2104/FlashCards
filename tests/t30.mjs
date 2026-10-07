@@ -72,15 +72,31 @@ console.log("2. a package authored the modern way imports");
   // question does not have one.
   const modern = good({}, { type: undefined, format: "business_report", directive: "recommend", marks: 20 });
   const v = E.examine(modern);
-  ok(v.state === "publishable", "a declared business_report with a directive is accepted: " +
+  // ADMITTED IS THE POINT, and `publishable` was standing in for it. Since state
+  // 13 a business report with no instructions and no marking points carries one
+  // thin note, REPORT_GUIDANCE_ABSENT, because it genuinely sends its marker none
+  // of its own guidance. Thin is sittable (section 1 asserts it). What this
+  // regression guards - the door refusing a question that declares its format
+  // the modern way - is asserted exactly: sittable, and that one note and no other.
+  ok(E.isSittable(v.state) && JSON.stringify(codes(v)) === JSON.stringify(["REPORT_GUIDANCE_ABSENT"]),
+    "a declared business_report with a directive is admitted, with only the report-guidance note: " +
     v.state + " " + JSON.stringify(codes(v)));
+  const worded = good({}, { type: undefined, format: "business_report", directive: "recommend", marks: 20,
+    instructions: "Present your answer as a business report." });
+  ok(E.examine(worded).state === "publishable",
+    "and the same report with its own instructions is publishable, clean: " + E.examine(worded).state +
+    " " + JSON.stringify(codes(E.examine(worded))));
 
   A.FORMATS.forEach(f => {
     const q = { type: undefined, format: f, marks: 4, prompt: "Do the thing.", model: "m" };
     if (f === "multiple_choice") { q.choices = [{ t: "a", ok: true }, { t: "b" }]; }
-    if (f === "calculation") { q.expected = 12; }
+    if (f === "calculation") { q.expected = 12; q.tolerance = 0; }   // both required since UX-TEST-24
     const r = E.examine(good({}, q));
-    ok(r.state === "publishable", "every canonical format is admitted at the door — " + f + ": " +
+    // The same exception, for the same reason, and only for the report.
+    const expect = f === "business_report" ? ["REPORT_GUIDANCE_ABSENT"] : [];
+    ok(E.isSittable(r.state) && JSON.stringify(codes(r)) === JSON.stringify(expect) &&
+       (f === "business_report" || r.state === "publishable"),
+      "every canonical format is admitted at the door — " + f + ": " +
       r.state + " " + JSON.stringify(codes(r)));
   });
 
@@ -88,7 +104,7 @@ console.log("2. a package authored the modern way imports");
   ["mc", "calc", "short", "define", "essay"].forEach(t => {
     const q = { type: t, marks: 3, prompt: "p", model: "m" };
     if (t === "mc") q.choices = [{ t: "a", ok: true }, { t: "b" }];
-    if (t === "calc") q.expected = 7;
+    if (t === "calc") { q.expected = 7; q.tolerance = 0; }
     ok(E.examine(good({}, q)).state === "publishable", "the legacy type " + JSON.stringify(t) + " still imports");
   });
 }
@@ -282,7 +298,11 @@ console.log("10. a question can hang more than one thing above itself");
   ok(E.resourcesOf({}).length === 0 && E.resourcesOf(null).length === 0, "nothing is none rather than a crash");
 
   const two = good({}, { stimulus: [{ caption: "Table 1", text: "rows" }, { caption: "Figure 1", img: "data:image/png;base64,iVBOR" }] });
-  ok(E.examine(two).state === "publishable", "a question built on a table AND a figure no longer has to choose: " + E.examine(two).state);
+  // Sittable with ONE note and no other: the PNG figure cannot be sent to the
+  // marker as text, and since UX-TEST-11 the author is told so. What this line is
+  // for - two resources on one question are accepted - is unchanged.
+  ok(E.isSittable(E.examine(two).state) && JSON.stringify(codes(E.examine(two))) === '["SOURCE_NOT_REPRESENTED"]',
+    "a question built on a table AND a figure no longer has to choose: " + E.examine(two).state + " " + JSON.stringify(codes(E.examine(two))));
 
   // A caption with nothing under it is a label for a resource never attached.
   const empty = E.examine(good({}, { stimulus: { caption: "Source 1" } }));
@@ -297,7 +317,10 @@ console.log("10. a question can hang more than one thing above itself");
   ok(!A.LEGACY_TYPE.lorenz && !A.LEGACY_TYPE.incomeSource,
     "chart kinds stay out of the format table");
   const charted = E.examine(good({}, { stimulus: { caption: "Fig", charts: [{ kind: "lorenz" }] } }));
-  ok(charted.state === "publishable", "and a question whose stimulus holds one is unremarkable: " + charted.state);
+  // Unremarkable as a FORMAT: the only note is that this version cannot send a
+  // chart of that kind to the marker as text, which the author is now told.
+  ok(E.isSittable(charted.state) && JSON.stringify(codes(charted)) === '["SOURCE_NOT_REPRESENTED"]',
+    "and a question whose stimulus holds one is unremarkable as a format: " + charted.state + " " + JSON.stringify(codes(charted)));
 }
 
 console.log("11. a question may point outside the paper, and pointing is checked for shape only");
@@ -494,6 +517,75 @@ console.log("13. the paper the product actually ships, which is now synthetic");
   ok(v.counts.malformed === 0 && v.counts.unsupported === 0 && v.counts.blocked === 0 && v.counts.thin === 0,
     "with nothing outstanding at all: " + JSON.stringify(v.counts));
 
+  // UX-TEST-20. Every key in the paper used to be option 1 and the app does not
+  // shuffle, so clicking the first option scored 10/10 and any walk that did so
+  // proved nothing about marking. The keys are spread across positions, and
+  // stay spread: no position holds more than half, and at least three are used.
+  const keyAt = paper.sections.flatMap(sec => sec.questions)
+    .filter(q => Array.isArray(q.choices))
+    .map(q => q.choices.findIndex(c => c && c.ok === true));
+  const byPos = keyAt.reduce((m, i) => (m[i] = (m[i] || 0) + 1, m), {});
+  ok(keyAt.length >= 10 && keyAt.every(i => i >= 0), "every multiple-choice question has exactly one key to find");
+  ok(Object.keys(byPos).length >= 3 && Math.max(...Object.values(byPos)) <= keyAt.length / 2,
+    "the keys are spread across option positions, not all authored first: " + JSON.stringify(byPos));
+
+  // ---- UX-TEST-24: a calculation the runtime cannot mark does not import ------
+  const calcAt = pp => pp.sections[1].questions[0].parts[2];
+  const tol = edit => { const pp = JSON.parse(JSON.stringify(paper)); edit(calcAt(pp)); return E.examine(pp); };
+  ok(calcAt(paper).tolerance === 0.05 && !codes(v).includes("CALC_TOLERANCE_MISSING"), "the fixture's calculation carries its tolerance");
+  [["missing", c => { delete c.tolerance; }], ["null", c => { c.tolerance = null; }], ["a string", c => { c.tolerance = "0.05"; }],
+   ["negative", c => { c.tolerance = -1; }]].forEach(([n, edit]) => {
+    const r = tol(edit);
+    ok(r.state === "malformed" && !r.sittable && codes(r).includes("CALC_TOLERANCE_MISSING"),
+      "a calculation whose tolerance is " + n + " is an invalid file, not a paper every answer of which is marked wrong: " + r.state);
+  });
+  ok(tol(c => { c.tolerance = 0; }).state === "publishable", "a tolerance of 0 is an exact answer, and is valid");
+
+  // ---- UX-TEST-23 at the assessment path (decision 21) ---------------------
+  // The packages are the ones the app registers, read the way the app reads them.
+  const sandbox = { window: {} }; sandbox.window.window = sandbox.window;
+  new Function("window", read("essay-content.js"))(sandbox.window);
+  const PK = { packages: sandbox.window.ESSAY.subjects };
+  const legal = pp => { pp.curriculum.subjectKey = "legal_studies"; pp.curriculum.course = "Legal Studies"; return pp; };
+  const copy = () => JSON.parse(JSON.stringify(paper));
+  ok(E.examine(paper, PK).state === "publishable", "the synthetic paper, against the registered packages, is still publishable");
+  const lw = E.examine(legal(copy()), PK);
+  ok(lw.state === "blocked" && !lw.sittable && codes(lw).includes("SUBJECT_UNREGISTERED"),
+    "a paper for a subject Marginal cannot mark, with questions that need its marker, is blocked: " + lw.state);
+  // Section I alone, with no declared totals, so questions can be added to it.
+  const objectiveOnly = () => { const pp = legal(copy()); pp.sections = [pp.sections[0]]; delete pp.marks; delete pp.sections[0].marks; return pp; };
+  const lo = E.examine(objectiveOnly(), PK);
+  ok(lo.state === "thin" && lo.sittable && codes(lo).includes("SUBJECT_MARKING_UNAVAILABLE") && !codes(lo).includes("SUBJECT_UNREGISTERED"),
+    "the same subject on a paper of multiple choice only can be sat, with limited support: " + lo.state + " " + JSON.stringify(codes(lo)));
+  const withCalc = objectiveOnly(); withCalc.sections[0].questions.push(JSON.parse(JSON.stringify(calcAt(paper))));
+  ok(E.examine(withCalc, PK).sittable, "a calculation with its expected value and tolerance is objective too");
+  const withLocal = objectiveOnly(); withLocal.sections[0].questions.push({ format: "short_answer", prompt: "Name one current asset.", marks: 1,
+    points: [{ text: "names a current asset", need: ["inventory", "cash"], marks: 1 }] });
+  ok(E.examine(withLocal, PK).sittable, "so is a short answer whose every point authors phrasings to match");
+  const withMarker = objectiveOnly(); withMarker.sections[0].questions.push({ format: "short_answer", prompt: "Explain one role of the courts.", marks: 3,
+    points: ["identifies a role", "explains it", "gives an example"] });
+  const wm = E.examine(withMarker, PK);
+  ok(wm.state === "blocked" && codes(wm).includes("SUBJECT_UNREGISTERED"),
+    "one question that needs the marker makes the unregistered subject blocking again: " + wm.state);
+  ok(E.examine(legal(copy())).state === "publishable",
+    "without packages, examine() says nothing about registration, as before (callers that know the packages pass them)");
+  const noCriteria = { packages: Object.assign({}, PK.packages, { legal_studies: { label: "Legal Studies", markingCriteria: [] } }) };
+  ok(codes(E.examine(legal(copy()), noCriteria)).includes("CRITERIA_ABSENT"), "a package with no criteria is treated the same way");
+  ok(/IR\.read\(text, ATT\.library\(state\.exams\), tmPackages\(\)\)/.test(read("app.js")) &&
+     /function tmPackages\(\) \{ return esAllSubjects\(\)\.subjects/.test(read("app.js")),
+    "the app's import door (Test mode, Slice A) passes the packages it registers");
+
+  // ---- decision 21: the same paper is the same exam.id, never the same title --
+  const bump = (pp, ver) => Object.assign(JSON.parse(JSON.stringify(pp)), { exam: Object.assign({}, pp.exam, { version: ver }) });
+  ok(E.libraryMatch([paper], paper).kind === "same", "the same id and version is already in the library");
+  ok(E.libraryMatch([paper], bump(paper, "2")).kind === "newer", "a higher version is newer");
+  ok(E.libraryMatch([bump(paper, "2")], paper).kind === "older", "a lower version is older");
+  ok(E.libraryMatch([bump(paper, "1.10")], bump(paper, "1.9")).kind === "older", "versions compare as numbers, part by part");
+  ok(E.libraryMatch([bump(paper, "draft")], bump(paper, "final")).kind === "different", "versions that are not numbers are only different");
+  const renamed = Object.assign(JSON.parse(JSON.stringify(paper)), { exam: Object.assign({}, paper.exam, { id: "another-paper" }) });
+  ok(E.libraryMatch([paper], renamed).kind === "new", "the same title under another id is a different paper");
+  ok(E.libraryMatch([paper], Object.assign(copy(), { exam: undefined })).kind === "new", "a paper with no id matches nothing");
+
   // It has to exercise the whole contract or it is not a regression fixture.
   const walk = E.answerables(paper);
   const seen = {};
@@ -550,7 +642,8 @@ console.log("14. the app asks the contract rather than keeping its own copy");
   ok(!/function validateExam\(/.test(app), "validateExam is gone from app.js rather than wrapped");
   ok(!/\["mc", "calc", "short", "define", "essay"\]\.includes\(q\.type\)/.test(app),
     "and so is the hardcoded legacy type list it gated on");
-  ok(/PAPER\.examine/.test(app), "the importer asks the paper contract");
+  ok(/IR\.read\(/.test(app) && /PAPER\.examine\(data, \{ packages: packages \|\| \{\} \}\)/.test(read("tools/contract/importread.js")),
+    "the importer (Test mode's import page, through importread.js) asks the paper contract");
   ok(/window\.MarginalExam/.test(app), "which reaches the page through the student bundle");
 
   const bundle = read("tools/contract/bundle.js");
@@ -559,12 +652,16 @@ console.log("14. the app asks the contract rather than keeping its own copy");
   ok(/window\.MarginalExam =/.test(built), "and the built page carries it: the student runs this file, not a copy");
 
   // The display number is the paper's, where the paper says.
-  ok(/PAPER\.numberOf\(q\)/.test(app), "the question header asks the paper what this question is called");
+  // Slice A: the sitting reads every answerable from the attempt contract,
+  // which names it from the paper, and the header prints that name.
+  const attemptsSrc = read("tools/contract/attempts.js");
+  ok(/PAPER\.numberOf\(q\)/.test(attemptsSrc) && /Question \$\{esc\(e\.display/.test(app),
+    "the question header asks the paper what this question is called");
   ok(!/const num = EXAM\.seq\.slice\(0, EXAM\.pos \+ 1\)\.filter\(x => x\.kind === "q"\)\.length;/.test(app),
     "and no longer calls the student's position a question number");
 
   // The round trip stops discarding what it does not recognise.
-  ok(/Object\.assign\(\{\}, data, \{/.test(app),
+  ok(/Object\.assign\(\{\}, r\.paper, \{/.test(app),
     "the importer carries the package whole rather than rebuilding it from a whitelist");
   ok(!/const paper = \{ id: "exam-" \+ Date\.now\(\), name: data\.name/.test(app),
     "the eight-field whitelist is gone");
@@ -575,11 +672,11 @@ console.log("14. the app asks the contract rather than keeping its own copy");
   ok(!/q\.stimulus \? examSourceHTML/.test(app), "and no call site still assumes exactly one");
 
   // Two levels reach the runtime, not just the contract.
-  ok(/PAPER\.partsOf\(q\)\.forEach\(\(part, pi\)/.test(app), "sequencing expands a parent into its parts");
-  ok(/function examKey\(it\)/.test(app) && !/si \+ "-" \+ qi/.test(app),
+  ok(/PAPER\.answerables\(/.test(attemptsSrc) && /PAPER\.partsOf\(q\)\[pi\]/.test(attemptsSrc), "sequencing expands a parent into its parts");
+  ok(/function keyOf\(a\)/.test(attemptsSrc) && !/si \+ "-" \+ qi/.test(app),
     "one key names one answerable, and no caller builds its own");
-  ok(/PAPER\.answerables\(EXAM\.paper, EXAM\.choice\)/.test(app),
-    "and the totals, the results and the picker read the same walk");
+  ok(/ATT\.sequence\(a, state\.exams\)/.test(app) && /ATT\.summary\(/.test(app),
+    "and the totals, the results and the navigator read the same walk");
   ok(/PAPER\.partsOf\(q\)\.indexOf\(card\) >= 0/.test(app),
     "a part belongs to its paper for marking, which is Gate 3A one level down");
 
@@ -587,9 +684,19 @@ console.log("14. the app asks the contract rather than keeping its own copy");
   // was counting the array: "3 questions" before a section answered eight times,
   // and a parent with no authored aggregate announced as worth nothing.
   ok(!/const mk = pick \? \(qs\[0\] \? qs\[0\]\.marks \|\| 0 : 0\)/.test(app),
-    "the section intro no longer adds up a parent's own marks field");
+    "the section choice no longer adds up a parent's own marks field");
   ok(/const t = PAPER\.totals\(\{ sections: \[sec\] \}\);/.test(app),
     "it asks the contract what the section holds");
+
+  // UX-TEST-02. An exact version match at the door meant the exam validator
+  // never saw a package it could have refused correctly.
+  // Matched on the ROUTING LINE, not the phrase: the comment above it quotes the
+  // old expression to explain what went wrong, and an assertion that cannot tell
+  // code from the comment describing it is not an assertion about behaviour.
+  ok(!/if \(data && data\.format === EXAM_FORMAT\) return importExamFromBox/.test(app),
+    "the import door no longer routes on an exact version match");
+  ok(/EXAM_FAMILY = \/\^marginal-exam/.test(app) && /looksLikeExam\(data\)/.test(app),
+    "it recognises the schema family and lets the exam validator rule on the version");
 }
 
 console.log("\n" + pass + " passed, " + fail + " failed");

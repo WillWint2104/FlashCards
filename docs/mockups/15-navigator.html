@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Marginal — Navigator</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* Marginal's own tokens, lifted unchanged from index.html. Nothing here
+     invents a palette: this is the same product with more in it. */
+  :root{
+    --bg:#EEF3F5; --card:#FFFFFF;
+    --ink:#3C4A4A; --ink-2:#7A8A88; --ink-3:#AEBAB8;
+    --green:#1CC47D; --green-dk:#14A368; --green-soft:#E4F9EF;
+    --blue:#1CA0F2; --blue-dk:#1487D6; --blue-soft:#E2F3FE;
+    --gold:#FFB323; --gold-dk:#E89400; --gold-soft:#FFF3D8;
+    --coral:#FF7C6B; --coral-dk:#EE5946; --coral-soft:#FFE8E4;
+    --line:#E7EDED;
+    --disp:'Fredoka',system-ui,sans-serif; --body:'Nunito',system-ui,sans-serif;
+    /* The sticky bar overlays the end of the page, so the content region
+       reserves its height plus the normal page gap underneath. */
+    --footh:68px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  /* The page is a column so the sticky footer has somewhere to sit when the
+     content is shorter than the viewport. */
+  body{font-family:var(--body);background:var(--bg);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased;
+       min-height:100vh;display:flex;flex-direction:column}
+  button{font:inherit;cursor:pointer}
+  h1,h2,h3,.disp{font-family:var(--disp);letter-spacing:-.01em}
+
+  /* Chrome belongs to the ACTIVE EXAM, not to whatever Study was last on. */
+  header{display:flex;align-items:center;gap:12px;padding:16px clamp(16px,4vw,32px);background:var(--card);
+         border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--disp);font-weight:600;font-size:20px}
+  .mk{width:28px;height:28px;border-radius:9px;background:var(--green);position:relative;flex:none;box-shadow:0 3px 0 var(--green-dk)}
+  .mk::after{content:"";position:absolute;left:7px;right:7px;bottom:6px;height:3px;border-radius:2px;background:#fff}
+  .mk::before{content:"";position:absolute;left:7px;bottom:6px;width:3px;height:14px;border-radius:2px;background:rgba(255,255,255,.9)}
+  .unit{font-size:13px;color:var(--ink-2);font-weight:700;margin-left:auto;text-align:right}
+  .unit b{display:block;color:var(--ink);font-size:13.5px}
+
+  main{max-width:1180px;width:100%;margin:0 auto;
+       padding:20px clamp(16px,4vw,40px) calc(26px + var(--footh));flex:1 0 auto}
+
+  /* The paper bar: where you are, how you are sitting, how far in you are. */
+  .exam-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 16px;background:var(--card);
+            border:1.5px solid var(--line);border-radius:16px;margin-bottom:14px}
+  .exam-bar .x{background:none;border:none;font-size:19px;color:var(--ink-2);line-height:1;padding:0 2px}
+  .paper{min-width:0}
+  .paper .nm{font-family:var(--disp);font-weight:600;font-size:15px;line-height:1.25}
+  .paper .sec{font-size:12px;color:var(--ink-2);font-weight:700}
+  .spacer{flex:1}
+  .policy{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;color:var(--green-dk);
+          background:var(--green-soft);border:1px solid #BFEFD9;border-radius:99px;padding:4px 11px}
+  .policy .dot{width:6px;height:6px;border-radius:99px;background:var(--green)}
+  .navbtn{font-family:var(--disp);font-weight:700;font-size:13px;color:var(--ink);background:var(--card);
+          border:1.5px solid var(--line);border-radius:12px;padding:8px 13px;display:flex;align-items:center;gap:7px}
+  .navbtn:hover{border-color:var(--green)}
+  /* This is the control the navigator opens from, so it reads as held open. */
+  .navbtn.open{border-color:var(--green);background:var(--green-soft);color:var(--green-dk)}
+  .navbtn .grid{display:grid;grid-template-columns:repeat(3,4px);gap:2px}
+  .navbtn .grid i{width:4px;height:4px;border-radius:1px;background:var(--ink-3)}
+  .navbtn .grid i.on{background:var(--green)}
+  .prog{text-align:right;font-size:12px;color:var(--ink-2);font-weight:800;white-space:nowrap}
+  .prog b{color:var(--ink);font-size:13px}
+  /* `.score` is a POLICY SLOT. Practice shows a live score; exam conditions
+     drops this span and keeps the answered count on its own. */
+  .prog .score{}
+  .pbar{height:7px;width:190px;border-radius:99px;background:#EDF2F2;overflow:hidden;margin-top:5px}
+  .pbar i{display:block;height:100%;width:60%;background:var(--green);border-radius:99px}
+
+  /* Two columns. The source sits BESIDE the response, not above it. */
+  /* Roughly 62/38. A calculation and its working do not need 70% of a
+     desktop, and a case study read four words at a time is not a source.
+     Proportional, with a floor so the source never collapses. */
+  .work{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(300px,1fr);gap:18px;align-items:start}
+
+  .qcard{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:20px 22px}
+  .parent{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding-bottom:12px;margin-bottom:14px;border-bottom:1px dashed var(--line)}
+  .pnum{font-family:var(--disp);font-weight:600;font-size:15px;color:var(--ink)}
+  .pmeta{font-size:12px;color:var(--ink-2);font-weight:700}
+  /* Row one is IDENTITY, row two is PROGRESS. The completion count and the
+     part rail describe the same thing, so they share a line: the count at the
+     left, the rail flush right. Still one strip and still no second progress
+     system; the parent simply stopped being a single run-on line once the
+     source took its proper share of the desktop. */
+  .pprog{flex-basis:100%;display:flex;align-items:center;gap:12px;margin-top:1px}
+  .pdone{font-size:12px;color:var(--ink-3);font-weight:800}
+
+  /* The chip vocabulary is ONE vocabulary. The part rail in the question card
+     and every chip in the navigator are the same component in the same states:
+     a tick, a filled ring, a flag, a dashed outline. Nothing is colour-only. */
+  .parts{display:flex;gap:5px;flex-wrap:wrap;margin-left:auto}
+  .pt{min-width:32px;height:28px;padding:0 7px;border-radius:9px;display:inline-flex;align-items:center;
+      justify-content:center;gap:3px;font-family:var(--disp);font-weight:700;font-size:12.5px;
+      border:1.5px solid var(--line);background:#fff;color:var(--ink-3)}
+  .pt .g{font-size:10.5px;line-height:1}
+  .pt.done{background:var(--green-soft);border-color:#9FE3C4;color:var(--green-dk)}
+  .pt.here{background:var(--ink);border-color:var(--ink);color:#fff;box-shadow:0 0 0 3px rgba(60,74,74,.14)}
+  .pt.flag{background:var(--gold-soft);border-color:var(--gold);color:var(--gold-dk)}
+  .pt.todo{border-style:dashed;border-color:var(--ink-3)}
+  .pt.done.flag{background:var(--green-soft);border-color:var(--gold);color:var(--green-dk)}
+  .pt.done.flag .fg{color:var(--gold-dk)}
+  /* Current AND answered is likewise two facts, so the current chip keeps its
+     tick. Same rule as done+flag: a composition, never a replacement. */
+  .pt.here.done{background:var(--ink);border-color:var(--ink);color:#fff}
+  .pt:not(.here):hover{border-color:var(--green)}
+
+  .exam-qhead{font-family:var(--disp);font-weight:700;font-size:12.5px;color:var(--ink-3);margin-bottom:8px;
+              display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .marks{color:var(--ink-2)}
+  .fmt{background:var(--blue-soft);color:var(--blue-dk);border-radius:6px;padding:1px 7px;font-size:10.5px;letter-spacing:.02em}
+  .exam-prompt{font-size:17px;font-weight:600;color:var(--ink);line-height:1.5;margin-bottom:16px}
+
+  .answerbox{width:100%;font:inherit;font-weight:600;font-size:15.5px;line-height:1.65;color:var(--ink);
+             background:var(--card);border:2px solid var(--line);border-radius:16px;padding:14px 16px;resize:vertical}
+  .answerbox:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
+  .answerbox.short{max-width:260px}
+  .saved{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-3);font-weight:800;margin-top:7px}
+  .saved .tick{color:var(--green-dk)}
+
+  .submitrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:18px}
+  .btn{font-family:var(--disp);font-weight:600;font-size:15px;color:#fff;background:var(--green);border:none;
+       border-radius:14px;padding:12px 24px;box-shadow:0 4px 0 var(--green-dk)}
+  .btn:active{transform:translateY(2px);box-shadow:0 2px 0 var(--green-dk)}
+  .btn.ghost{background:var(--card);color:var(--ink);box-shadow:0 0 0 2px var(--line) inset}
+  .btn.sm{padding:9px 17px;font-size:14px;border-radius:12px;box-shadow:0 3px 0 var(--green-dk)}
+  .btn.sm.ghost{box-shadow:0 0 0 2px var(--line) inset}
+  .hint{font-size:12.5px;color:var(--ink-3);font-weight:700}
+
+  .srcpanel{background:var(--card);border:1.5px solid var(--line);border-radius:18px;overflow:hidden;position:sticky;top:86px}
+  .srchead{display:flex;align-items:center;gap:9px;padding:12px 14px;border-bottom:1px solid var(--line);background:#FAFCFC}
+  .srchead .ic{font-size:15px}
+  .srchead .t{font-family:var(--disp);font-weight:600;font-size:13.5px;line-height:1.2}
+  .srchead .t small{display:block;color:var(--ink-2);font-size:11px;font-weight:700}
+  /* Expand, not collapse. The default pane is now comfortable for an
+     ordinary stimulus; what a long case study, a table or a graph needs is
+     more room, and on a narrow layout this same control opens the sheet. */
+  .srchead .expand{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-family:var(--disp);
+                   font-weight:700;font-size:12px;color:var(--ink-2);background:#fff;
+                   border:1.5px solid var(--line);border-radius:10px;padding:5px 10px}
+  .srchead .expand:hover{border-color:var(--green);color:var(--green-dk)}
+  /* Reading weight. 600 is Nunito SemiBold, which is the weight this design
+     uses for headings and labels; a source read for several minutes needs
+     Medium. Width and size are unchanged. */
+  .srcbody{padding:16px 18px 20px;font-size:14.5px;font-weight:500;color:var(--ink);line-height:1.75}
+  .srcbody p+p{margin-top:12px}
+
+  /* THE SHARED SITTING-SHELL FOOTER. Navigation is always available, so a
+     question may be left and returned to.
+
+     This block is byte-identical in every Test Mode mockup and in every generator
+     that emits one, and tests/t34.mjs holds it that way. It had already drifted:
+     the state 12 pages were missing the hover state and the note below it. */
+  .footer{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--line);z-index:9;
+          box-shadow:0 -6px 18px rgba(60,74,74,.05)}
+  .footin{max-width:1180px;margin:0 auto;padding:11px clamp(16px,4vw,40px);display:flex;align-items:center;gap:12px}
+  /* gap:0, and the space before "for revisit" is a non-breaking one, for a
+     reason worth writing down.
+
+     This rule said gap:7px and never applied it: the label was a single text
+     node, a flex gap needs two items, and the space between the flag and its
+     word was just the space in the text. Splitting the label so a narrow screen
+     can drop its tail gave the rule a second item, the 7px woke up, and the
+     button silently grew from 152.22px to 155px. A flex container also STRIPS
+     whitespace at the edges of its items, so moving the ordinary space to
+     either side of the span does not help: that measures 148px. gap:4px gets to
+     151.70, which is half a pixel short and pins a layout to one font's space
+     width. A non-breaking space is not whitespace to collapse, so it survives
+     inside the item and renders the run the button always rendered: 152.23px
+     wide, and 76px when the tail is dropped. */
+  .flag{display:flex;align-items:center;gap:0;font-family:var(--disp);font-weight:700;font-size:13px;color:var(--ink-2);
+        background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:8px 13px}
+  .flag:hover{border-color:var(--gold);color:var(--gold-dk)}
+  /* "Item" is SEQUENCE POSITION. It is deliberately not the word "question",
+     because the question on screen may be a part - 11(c) - while the item it
+     occupies in the paper is 13. */
+  .where{font-size:12px;color:var(--ink-3);font-weight:800;text-align:center;flex:1}
+
+  /* NARROW MOBILE: ONE COMPACT ROW (UX-TEST-06).
+
+     Measured rather than guessed, with the page's own fonts loaded. The
+     four-column footer wraps at every width below 660px and stands 119px tall at
+     390px against 63px at desktop, which is 14% of an 844px screen, starting at
+     y=725. On the extended response that put it over the marker's judgement, the
+     paragraph directly under the mark. (An earlier measurement with the web fonts
+     blocked put the mark itself under it; with Fredoka and Nunito loaded the mark
+     clears and the judgement does not.) It is a shared-shell fault and it
+     affected every marked format. The breakpoint is 640 because that is where the
+     wrapping stops, not because it looks like a phone.
+
+     WHAT GOES. The item counter, and the trailing half of each label. Neither
+     leaves the page: the paper bar above carries the section and the completion
+     count, and the Questions navigator carries the sequence position on the
+     current item, with aria-current and "you are here - item 13 of 20" on it.
+     The counter is hidden at this width, not deleted, so the vocabularies stay
+     distinct - completion in the bar, sequence position in the navigator.
+
+     WHAT STAYS. All three actions, 44px tall at this width. At desktop they are
+     40px and the flag 39px, under the 44px touch target; a narrow screen is where
+     a thumb uses them, so that is where they reach it.
+
+     HOW TALL IT IS. 1.5px above and below the 44px targets, plus the 1px top
+     border: 48px. It was 9px each side, 63px, and at 390x844 that put the footer
+     14px over "15 of 20" on the business report, measured with the real fonts.
+     At 48px the score's line ends at 794.94 and the footer starts at 796; at 49px
+     the margin was 0.06px, which is not a margin. The targets did not shrink;
+     only the chrome around them did. */
+  @media(max-width:640px){
+    .footin{gap:8px;padding:1.5px 12px;justify-content:space-between}
+    .footin .where{display:none}
+    .foot-lbl{display:none}
+    .footin .btn.sm,.footin .flag{min-height:44px;padding-left:14px;padding-right:14px;
+                                  display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
+  }
+
+  /* ─────────────── the navigator ─────────────── */
+
+  .scrim{position:fixed;inset:0;background:rgba(60,74,74,.44);z-index:20}
+  .nav{position:fixed;z-index:21;left:50%;top:50%;transform:translate(-50%,-50%);
+       width:min(940px,calc(100vw - 48px));max-height:88vh;display:flex;flex-direction:column;
+       background:var(--card);border-radius:22px;box-shadow:0 26px 64px rgba(60,74,74,.3);overflow:hidden}
+
+  .navhead{display:flex;align-items:flex-start;gap:14px;padding:18px 22px 0}
+  .navhead h2{font-size:20px;font-weight:600;line-height:1.2}
+  .navhead .sub{font-size:12.5px;color:var(--ink-2);font-weight:700}
+  .navhead .close{margin-left:auto;background:none;border:none;font-size:22px;line-height:1;color:var(--ink-3);padding:0 2px}
+  .navhead .close:hover{color:var(--ink)}
+
+  /* Three different facts, each named in words, sitting side by side so they
+     cannot be mistaken for one another. */
+  .stats{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:13px 22px 0}
+  .stat{font-size:12px;font-weight:800;color:var(--ink-2);background:#F4F8F8;border:1px solid var(--line);
+        border-radius:99px;padding:5px 12px}
+  .stat b{color:var(--ink);font-size:13px}
+  .stat.fl{background:var(--gold-soft);border-color:#FFE0A6;color:var(--gold-dk)}
+  .stat.fl b{color:var(--gold-dk)}
+  .youare{font-size:12px;font-weight:800;color:#fff;background:var(--ink);border-radius:99px;padding:5px 13px}
+  .youare b{font-weight:800}
+  .youare .q{opacity:.72}
+
+  .navbody{overflow:auto;padding:6px 22px 4px;margin-top:10px}
+
+  .sect{padding:14px 0;border-top:1px solid var(--line)}
+  .sect:first-child{border-top:none}
+  .secthead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .secthead .n{font-family:var(--disp);font-weight:600;font-size:14.5px}
+  .secthead .m{font-size:11.5px;color:var(--ink-3);font-weight:800;margin-left:auto}
+  .secthead .note{font-size:11.5px;color:var(--ink-2);font-weight:700;flex-basis:100%}
+
+  /* Leaf questions are chips carrying their AUTHORED number, prefixed Q so a
+     chip can never be read as a sequence position. Question 13 is item 18. */
+  .row{display:flex;gap:5px;flex-wrap:wrap}
+
+  /* A parent is a block, not a chip: its own identity, its own completion,
+     its own rail. Completion counts ANSWERED CHILDREN and is not inferred
+     from where the student happens to be standing. */
+  .par{background:#FAFCFC;border:1px solid var(--line);border-left:3px solid var(--ink-3);
+       border-radius:12px;padding:10px 13px;margin-bottom:7px}
+  .par.active{border-left-color:var(--ink)}
+  .parhead{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:8px}
+  .parhead .n{font-family:var(--disp);font-weight:600;font-size:13.5px}
+  .parhead .m{font-size:11.5px;color:var(--ink-2);font-weight:700}
+  .parhead .c{font-size:11.5px;color:var(--ink-3);font-weight:800;margin-left:auto}
+
+  /* Either/or. One item of the paper, two questions competing for it. */
+  .orwrap{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .orwrap .or{font-family:var(--disp);font-weight:600;font-size:11.5px;color:var(--ink-3)}
+  .orwrap .unchosen{font-size:11.5px;color:var(--ink-3);font-weight:800}
+
+  .navfoot{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 22px;
+           border-top:1px solid var(--line);background:#FAFCFC}
+  .legend{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--ink-2);font-weight:800}
+  .legend span.k{display:flex;align-items:center;gap:6px}
+  .legend .pt{pointer-events:none}
+
+  @media(max-width:900px){
+    .work{grid-template-columns:1fr}
+    .srcpanel{position:static}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand"><span class="mk"></span>Marginal</div>
+  <div class="unit"><b>Business Studies</b>Test mode</div>
+</header>
+
+<main>
+  <div class="exam-bar">
+    <button class="x" title="Leave">←</button>
+    <div class="paper">
+      <div class="nm">Business Studies practice paper</div>
+      <div class="sec">Section II — Short answer · Q11–13 · 40 marks</div>
+    </div>
+    <div class="spacer"></div>
+    <span class="policy"><span class="dot"></span>Practice · marked as you go</span>
+    <button class="navbtn open">
+      <span class="grid"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></span>
+      Questions
+    </button>
+    <div class="prog">
+      <b>12</b> of 20 answered<span class="score"> · <b>21</b>/90 marks</span>
+      <div class="pbar"><i></i></div>
+    </div>
+  </div>
+
+  <div class="work">
+    <div class="qcard">
+      <div class="parent">
+        <span class="pnum">Question 11</span>
+        <span class="pmeta">Kerbside Coffee · 14 marks</span>
+        <div class="pprog">
+          <span class="pdone">2 of 4 parts answered</span>
+          <div class="parts" role="group" aria-label="Parts of Question 11">
+            <button class="pt done" title="11(a) · 2 marks · answered"><span class="g">✓</span>a</button>
+            <button class="pt done flag" title="11(b) · 3 marks · answered · flagged for revisit"><span class="g">✓</span><span class="g fg">⚑</span>b</button>
+            <button class="pt here" title="11(c) · 4 marks · you are here" aria-current="true">c</button>
+            <button class="pt todo" title="11(d) · 5 marks · not answered yet">d</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="exam-qhead">
+        <span>Question 11(c)</span><span class="marks">· 4 marks</span>
+        <span class="fmt">calculation</span>
+      </div>
+      <p class="exam-prompt">Kerbside Coffee holds current assets of $60 000 and current liabilities of $40 000. Calculate its current ratio, correct to one decimal place.</p>
+
+      <input type="text" class="answerbox short" placeholder="Enter your answer.">
+      <div class="saved"><span class="tick">✓</span> Saved. Moving to another part keeps this answer.</div>
+
+      <div class="submitrow">
+        <button class="btn">Check answer</button>
+        <button class="btn sm ghost">View worked solution</button>
+        <span class="hint">Checked against the expected answer.</span>
+      </div>
+    </div>
+
+    <aside class="srcpanel">
+      <div class="srchead">
+        <span class="ic">📄</span>
+        <span class="t">Kerbside Coffee<small>Shared source · Question 11</small></span>
+        <button class="expand" title="Open the source in a larger reading view">⤡ Expand</button>
+      </div>
+      <div class="srcbody">
+        <p>Kerbside Coffee roasts and sells coffee from one site and four vans. Demand at the vans peaks between 7am and 9am, and the owners have had complaints about waiting times.</p>
+        <p>Last year the business bought a second roaster using a three-year loan. Staff turnover among van operators is high, and most operators are employed casually.</p>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<div class="footer">
+  <div class="footin">
+    <button class="btn sm ghost">← Previous<span class="foot-lbl"> · 11(b)</span></button>
+    <button class="flag">⚑ Flag<span class="foot-lbl">&nbsp;for revisit</span></button>
+    <span class="where">Item 13 of 20 · Section II</span>
+    <button class="btn sm ghost">Next<span class="foot-lbl"> · 11(d)</span> →</button>
+  </div>
+</div>
+
+<div class="scrim"></div>
+
+<div class="nav" role="dialog" aria-modal="true" aria-label="Questions">
+  <div class="navhead">
+    <div>
+      <h2>Questions</h2>
+      <div class="sub">Business Studies practice paper · 20 items · 90 marks</div>
+    </div>
+    <button class="close" title="Close">×</button>
+  </div>
+
+  <div class="stats">
+    <span class="stat"><b>12</b> of 20 answered</span>
+    <span class="stat"><b>8</b> not answered</span>
+    <span class="stat fl"><b>2</b> flagged</span>
+    <span class="youare">You are on <b>item 13 of 20</b><span class="q"> · Question 11(c) · Section II</span></span>
+  </div>
+
+  <div class="navbody">
+
+    <div class="sect">
+      <div class="secthead">
+        <span class="n">Section I — Multiple choice</span>
+        <span class="m">10 of 10 answered · 10 marks</span>
+      </div>
+      <div class="row">
+        <button class="pt done" title="Question 1 · 1 mark · answered"><span class="g">✓</span>Q1</button>
+        <button class="pt done" title="Question 2 · 1 mark · answered"><span class="g">✓</span>Q2</button>
+        <button class="pt done" title="Question 3 · 1 mark · answered"><span class="g">✓</span>Q3</button>
+        <button class="pt done" title="Question 4 · 1 mark · answered"><span class="g">✓</span>Q4</button>
+        <button class="pt done" title="Question 5 · 1 mark · answered"><span class="g">✓</span>Q5</button>
+        <button class="pt done" title="Question 6 · 1 mark · answered"><span class="g">✓</span>Q6</button>
+        <button class="pt done flag" title="Question 7 · 1 mark · answered · flagged for revisit"><span class="g">✓</span><span class="g fg">⚑</span>Q7</button>
+        <button class="pt done" title="Question 8 · 1 mark · answered"><span class="g">✓</span>Q8</button>
+        <button class="pt done" title="Question 9 · 1 mark · answered"><span class="g">✓</span>Q9</button>
+        <button class="pt done" title="Question 10 · 1 mark · answered"><span class="g">✓</span>Q10</button>
+      </div>
+    </div>
+
+    <div class="sect">
+      <div class="secthead">
+        <span class="n">Section II — Short answer</span>
+        <span class="m">2 of 8 answered · 40 marks</span>
+      </div>
+
+      <div class="par active">
+        <div class="parhead">
+          <span class="n">Question 11</span>
+          <span class="m">Kerbside Coffee · 14 marks</span>
+          <span class="c">2 of 4 parts answered</span>
+        </div>
+        <div class="row">
+          <button class="pt done" title="11(a) · 2 marks · answered"><span class="g">✓</span>a</button>
+          <button class="pt done flag" title="11(b) · 3 marks · answered · flagged for revisit"><span class="g">✓</span><span class="g fg">⚑</span>b</button>
+          <button class="pt here" title="11(c) · 4 marks · you are here · item 13 of 20" aria-current="true">c</button>
+          <button class="pt todo" title="11(d) · 5 marks · not answered yet">d</button>
+        </div>
+      </div>
+
+      <div class="par">
+        <div class="parhead">
+          <span class="n">Question 12</span>
+          <span class="m">Harbourline Cycles · 14 marks</span>
+          <span class="c">0 of 3 parts answered</span>
+        </div>
+        <div class="row">
+          <button class="pt todo" title="12(a) · 3 marks · not answered yet">a</button>
+          <button class="pt todo" title="12(b) · 5 marks · not answered yet">b</button>
+          <button class="pt todo" title="12(c) · 6 marks · not answered yet">c</button>
+        </div>
+      </div>
+
+      <div class="row">
+        <button class="pt todo" title="Question 13 · 12 marks · extended response · not answered yet">Q13</button>
+      </div>
+    </div>
+
+    <div class="sect">
+      <div class="secthead">
+        <span class="n">Section III — Business report</span>
+        <span class="m">0 of 1 answered · 20 marks</span>
+      </div>
+      <div class="row">
+        <button class="pt todo" title="Question 14 · 20 marks · business report · Tidewater Outfitters · not answered yet">Q14</button>
+      </div>
+    </div>
+
+    <div class="sect">
+      <div class="secthead">
+        <span class="n">Section IV — Extended response</span>
+        <span class="m">0 of 1 answered · 20 marks</span>
+        <span class="note">Attempt either Question 15 or Question 16. One counts towards the paper.</span>
+      </div>
+      <div class="orwrap">
+        <button class="pt todo" title="Question 15 · 20 marks · extended response · not answered yet">Q15</button>
+        <span class="or">or</span>
+        <button class="pt todo" title="Question 16 · 20 marks · extended response · not answered yet">Q16</button>
+        <span class="unchosen">Not chosen yet</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="navfoot">
+    <div class="legend">
+      <span class="k"><span class="pt done"><span class="g">✓</span>Q1</span> answered</span>
+      <span class="k"><span class="pt done flag"><span class="g">✓</span><span class="g fg">⚑</span>Q7</span> flagged</span>
+      <span class="k"><span class="pt here">c</span> you are here</span>
+      <span class="k"><span class="pt todo">d</span> not answered</span>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn sm ghost">Close</button>
+  </div>
+</div>
+
+</body>
+</html>

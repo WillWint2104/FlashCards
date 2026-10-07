@@ -22,6 +22,11 @@ const require = createRequire(import.meta.url);
 const fs = require("node:fs");
 const path = require("node:path");
 const { execFileSync } = require("node:child_process");
+// Whether a lock was ALREADY there, looked at before requiring the runner. The
+// check below used to assert that no lock existed at all, which is false for the
+// whole of a real mutation run - the run holds it - so every mutation this suite
+// owns was "killed" by that line whatever the mutation did.
+const LOCK_BEFORE = fs.existsSync(new URL("../tests/out/.mutation-in-flight", import.meta.url).pathname);
 const mutate = require("../tools/mutate.js");
 
 let pass = 0, fail = 0;
@@ -41,8 +46,8 @@ ok(typeof mutate.trackedDirty === "function", "the tree guard is exported");
 ok(typeof mutate.dirtyRefusal === "function", "and so are the words it refuses with");
 ok(Array.isArray(mutate.MUTATIONS) && mutate.MUTATIONS.length > 0,
   "the catalogue came with it: " + (mutate.MUTATIONS || []).length + " mutations");
-ok(!fs.existsSync(path.join(ROOT, "tests/out/.mutation-in-flight")),
-  "and requiring it left no lock behind");
+ok(fs.existsSync(path.join(ROOT, "tests/out/.mutation-in-flight")) === LOCK_BEFORE,
+  "and requiring it neither created a lock nor removed one belonging to a run in progress");
 {
   const src = fs.readFileSync(path.join(ROOT, "tools/mutate.js"), "utf8");
   ok(/const IS_RUN = require\.main === module;/.test(src), "the file knows whether it IS the run");
@@ -133,6 +138,26 @@ console.log("--- 3. no flag, and a check after every mutant");
   ok(/const THIS_RUN = \{\};/.test(src), "results are kept as the run makes them");
   ok(/summarise\(list, Object\.assign\(\{\}, priorResults\(\), THIS_RUN\)\);/.test(src),
     "and the summary reads them, not only what was on disk before it started");
+
+  // A RECORDED RESULT IS REUSED ONLY FOR THE MUTATION IT WAS RECORDED FOR, and only
+  // while that mutation can still be applied. Exercised, not grepped.
+  {
+    const m = { id: "x", file: "f.js", find: "alpha", replace: "beta", owner: "t0" };
+    const good = { id: "x", sig: mutate.sigOf(m), verdict: "KILLED" };
+    const once = () => "one alpha here", gone = () => "nothing to find", twice = () => "alpha alpha";
+    ok(mutate.reusable(m, good, once) === true, "an unchanged entry whose target is still there reuses its result");
+    ok(mutate.reusable(Object.assign({}, m, { replace: "gamma" }), good, once) === false,
+      "an EDITED entry does not reuse the verdict of the mutation it used to be");
+    ok(mutate.reusable(m, good, gone) === false,
+      "an entry whose target has left the file re-runs, and so is reported STALE rather than KILLED");
+    ok(mutate.reusable(m, good, twice) === false, "and so does one whose target is no longer unique");
+    ok(mutate.reusable(m, { id: "x", verdict: "KILLED" }, once) === false,
+      "a result recorded before signatures existed is not trusted");
+    ok(mutate.reusable(m, good, () => { throw new Error("ENOENT"); }) === false,
+      "and a target file that is missing is not a reason to reuse anything");
+    ok(/const todo = list\.filter\(m => !reusable\(m, done\[m\.id\]/.test(src),
+      "and the run decides what to skip with this, not with the id alone");
+  }
 
   // A mutation in a file the page is BUILT from, with no rebuild, tests the
   // previous fixture: the suite passes and the fault is filed as one nothing

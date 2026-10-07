@@ -1,0 +1,338 @@
+# Calculation: deterministic checking and the worked solution
+
+Companion to four canonical screens. Nothing in this file appears on the
+student's screen.
+
+| screen | file |
+| --- | --- |
+| before checking (state 14) | `14-nested-multipart.html` |
+| checked — correct | `14-calculation-checked-correct.html` |
+| checked — not quite | `14-calculation-checked-notquite.html` |
+| not quite, solution expanded | `14-worked-solution.html` |
+
+All four are question 11(c) of the synthetic Business Studies paper, Practice
+policy, inside the approved multipart shell. The parent strip, part rail, source
+panel, paper bar and footer are untouched as layout.
+
+## Why a calculation does not go through the marker
+
+The contract authors everything the check needs:
+
+```json
+{ "id": "q11c", "label": "c", "marks": 4, "format": "calculation",
+  "expected": 1.5, "tolerance": 0.05,
+  "prompt": "... Calculate its current ratio, correct to one decimal place.",
+  "model": "Current ratio = current assets divided by current liabilities
+            = 60 000 / 40 000 = 1.5 to 1." }
+```
+
+`expected` and `tolerance` make the judgement deterministic and local. Sending
+`1.3` to a language model to be told it is not `1.5` adds latency, cost and a
+failure mode in exchange for nothing. So there is no pending state, no
+*"Checking…"*, and no spinner to design.
+
+**Before:** `Submit for marking` · *"Marked against Business Studies criteria."*
+**After:** `Check answer` · `View worked solution` · *"Checked against the
+expected answer."*
+
+The old hint was also untrue here. There are no Business Studies criteria being
+applied to `1.5`; there is a number and a tolerance.
+
+## The response field
+
+`width: min(100%, 22rem)`. On desktop it settles at 352px — compact, because a
+calculation answer is short: `1.5 : 1`, `$42 000`, `23.4%`, `125 units`. Below
+about 400px of column it becomes fluid and fills the width. Measured: 352px at
+1280, 1024, 760 and 560; 312px at 390.
+
+Height, padding, border and focus ring are `.answerbox` unchanged, so it still
+reads as a response control rather than a form field. It does **not** resize
+around what is typed: a field that moves while you use it is worse than one that
+is slightly too wide.
+
+## The four states
+
+| | primary | secondary | explanatory copy |
+| --- | --- | --- | --- |
+| before checking | **Check answer** | View worked solution | *Checked against the expected answer.* |
+| correct | *none* | View worked solution | — |
+| not quite | **Try again** | View worked solution | — |
+| solution expanded | **Try again** | Hide worked solution ▴ | — |
+
+The helper line is **pre-check explanatory text, not furniture**. Before
+checking it tells the student what `Check answer` will do. Afterwards the result
+itself has proved it, and *"The worked solution shows the expected answer"* was
+doing work the button label already does. Both are gone, and the card is
+noticeably cleaner for it.
+
+When the answer is correct the card offers no primary action and the footer's
+`Next · 11(d)` carries the student on. **The footer is unchanged in every
+state**: whether a numeric answer is right does not alter how the paper is
+navigated, and promoting Next to primary here would raise the same question for
+every other format, which belongs to state 16.
+
+## The expected answer is withheld on "not quite"
+
+Showing it automatically would dissolve the distinction this design exists to
+protect. If the expected answer appears on a wrong attempt, `Try again` is a
+copy exercise and *correct after retry* stops meaning anything — every retry is
+correct, and none of them is the student's. It is one click away in the worked
+solution, whose opening is recorded. So the three attempt states stay separable:
+
+| state | how it is reached |
+| --- | --- |
+| correct independently | checked correct, solution never opened |
+| correct after retry | checked wrong, retried correctly, solution never opened |
+| solution viewed | solution opened at any point, before or after any check |
+
+On the **correct** screen the expected answer *is* shown, beside the student's
+own, because there it confirms rather than supplies.
+
+No scoring is proposed for these three. They are recorded, not weighted. What
+results make of them belongs to state 17.
+
+## The worked solution expands in place
+
+It is an inline disclosure inside the question card, directly under the result
+and the actions. Not a drawer, not an overlay.
+
+The task is local — *my answer, the check, the explanation, perhaps a retry* —
+and inline keeps all of it in one field of view. The student reads **I wrote
+1.3** and **$60 000 ÷ $40 000 = 1.5** without carrying anything between two
+surfaces. It also removes a list of problems rather than solving them: no
+backdrop, no focus trap, no separate close control, no question text obscured,
+no source panel hidden, no drawer sizing, no desktop-versus-mobile
+transformation, and nothing that will later compete with the source sheet on a
+phone. On a narrow screen it simply stacks.
+
+`View worked solution` and `Hide worked solution ▴` are the same button in the
+same place, so the disclosure has one control rather than an opener and a
+separate closer.
+
+### Every word comes from the authored `model`
+
+The four steps are a decomposition of one authored sentence, not an expansion:
+
+| step | on screen | authored source |
+| --- | --- | --- |
+| 1 · Use the formula | `Current ratio = current assets ÷ current liabilities` | "Current ratio = current assets divided by current liabilities" |
+| 2 · Substitute the values | `= $60 000 ÷ $40 000` | "= 60 000 / 40 000" |
+| 3 · Calculate | `= 1.5` | "= 1.5" |
+| 4 · Answer | `Current ratio = 1.5 : 1` | "1.5 to 1" |
+
+Three notation substitutions and nothing else: `divided by` and `/` both render
+as `÷`; `to` renders as `:`; the dollar signs and spaced thousands come from the
+question's own prompt, which writes `$60 000`. No step was invented and no
+interpretation was added. The disclosure carries **no title for the part**
+because the fixture authors none.
+
+Where a paper authors a fuller solution the same four slots take more text.
+Where it authors less, steps are withheld exactly as the help region is: this is
+a renderer, not a generator. An authored interpretation would sit below step 4;
+11(c) has none, so there is none.
+
+### It is set as a mathematical process
+
+Four drafts got here, and recording them saves the next component the same walk:
+
+| draft | what it was | why it failed |
+| --- | --- | --- |
+| 1 | label stacked above a boxed expression | 460px tall; every step below the fold |
+| 2 | fixed label column beside a boxed expression | 339px, but read as a settings table |
+| 3 | title line, unboxed working beneath, rule between steps | four separate rows rather than one process |
+| 4 | numbered stepper, joined markers, one rule | a process, but the mathematics sat on the same white as the interface |
+| 5 | stepper on a dedicated working surface, in its own card | right material, but four nested surfaces deep |
+| 6 | a section of the question card, one working surface | **on screen now** |
+
+What the stepper does that draft 3 did not: the numbers carry the sequence, a
+hairline guide runs between the markers so the steps read as consecutive, and
+the marker column plus whitespace do the separating that four full-width rules
+were doing badly. **One rule survives on the whole card**, under the header.
+
+### One surface, not a stack of cards
+
+Draft 4's fault was material: the working was dark text on the same white as
+every control around it. Draft 5 fixed that with an inset panel and introduced a
+worse one — four nested surfaces between the question and the mathematics:
+
+```
+draft 5                              now
+question card       white            question card       white
+└ solution card     white            └ solution SECTION  a rule and space
+  ├ working card    #F4F9F8            └ working surface #F4F9F8
+  └ answer card     mint                 └ answer row    mint, its last row
+```
+
+The solution is no longer a card. It is a **section of the question card**:
+24px of space, a hairline rule, the heading, and then the working. No second
+white surface, no second border, no second radius. Marginal is explaining the
+question rather than opening a widget on top of it.
+
+**One inset surface carries the whole calculation.** `#F4F9F8` — the page
+background's family, lifted and warmed — with a 1px border, **9px radius**
+rather than the 14–18px of the cards around it, because this is working paper
+embedded in the response and not another card in the stack. No shadow. Not one
+box per step: that was draft 2.
+
+**The answer is the last row of the same surface.** Same stepper geometry, same
+marker column, bleeding to the surface's edges and clipped by its radius, with
+the rule above it as the break between working and result. It reads as the
+conclusion of one process rather than as a fourth container. Mint says resolved;
+there is no shadow and nothing to press.
+
+Only that row is tinted. Green across the intermediate working would claim every
+expression on the way was a success state, so the guide line ends at step 3 and
+the flow reads *working → answer*.
+
+**Provenance is muted.** `✓ Solution viewed` is neutral text with a gold tick on
+a very faint ground, at the far right of the heading. The gold capsule it
+replaces competed with the heading for a fact that is metadata, not a warning.
+The eye should go: worked solution → the mathematics → the answer.
+
+### A general working surface, not a treatment for this question
+
+The type is 19.5px, measured: that is the largest size at which this question's
+longest authored line still sets on one line in the 490px working column, taken
+in the fallback face, which is wider than Nunito, so it holds with the real font
+too. Longer formulas will wrap, and two mechanisms are built for what comes
+next:
+
+**Multi-line working aligns on the operator**, with no magic indents, by setting
+the left-hand side and the rest as two columns:
+
+```html
+<div class="math rows">
+  <span class="lhs">Revenue</span><span class="rhs">= price × quantity</span>
+  <span class="lhs"></span>       <span class="rhs">= $25 × 2 000</span>
+  <span class="lhs"></span>       <span class="rhs">= $50 000</span>
+</div>
+```
+
+**A fraction is a real fraction**, `.frac` with a `.num` over a rule over a
+`.den`, for the day a paper authors one.
+
+Both are defined and neither is used here, because 11(c) authors `÷` and
+substituting a fraction bar would be a fourth notation change on top of the
+three already recorded. They exist so the next calculation does not need a sixth
+draft of this component.
+
+### Provenance is not part of the mathematics
+
+**Solution viewed** moved to the top right of the `Worked solution` header. At
+the foot of step 4 it looked like a conclusion of the working, which it is not:
+it is attempt state. The explanation is now unmixed, and the chip is on the
+header that owns it.
+
+### Opening it is recorded, and the student is told
+
+A gold **Solution viewed** chip appears at the foot of the disclosure, next to
+nothing else, as a plain statement rather than a warning. The student may still
+enter and check an answer afterwards — the field and `Try again` stay live — but
+the attempt is not represented as independently solved.
+
+## Practice versus exam conditions
+
+One component, one policy slot, consistent with the state 8 policy table:
+
+| | Practice | Exam conditions |
+| --- | --- | --- |
+| `Check answer` | immediate, in place | answer is saved; checking follows submission |
+| `View worked solution` | available at any time | **not available before the paper is submitted** |
+| after submission | n/a | the same disclosure is reused in question review (state 18) |
+
+Exam conditions removes the entry point. It does not need a different solution
+surface, and now that the solution is inline there is no overlay to re-home.
+
+## Written formats are untouched
+
+Short answer, extended response and business report keep `Submit for marking`.
+Prose cannot be judged by comparison against a model, so the marker stays, and a
+`View model response` support action after marking is a separate question for
+state 16. This pattern applies only where the contract authors an `expected`
+value — that is, only to `calculation`.
+
+## Shared shell changes in this pass
+
+Three changes below the calculation itself. All are shell-level and now
+identical across states 8, 14 and 15.
+
+**1. The workspace rebalances to 62/38.** `minmax(0,1.6fr) minmax(300px,1fr)`
+in place of `minmax(0,1fr) 340px`. Measured at 1280: the question column is
+666px and the source 416px, against 760/340 before. A calculation, a 22rem
+answer field and a worked solution do not need 70% of a desktop, and a case
+study read four words at a time is not a source. The floor stops the panel
+collapsing before the layout stacks at 900px.
+
+**2. The source gets a reading measure.** 14.5px from 13.5px, line-height 1.75
+from 1.6, padding 16/18/20 from 13/14/16, paragraph spacing 12px from 9px, and
+**weight 500 from 600**. Nunito 600 is SemiBold, the weight this design uses for
+headings and labels; a passage read for several minutes wants Medium, and 400
+and 500 were added to the font request to make it available. The source title
+stays at 600, so the panel still has a hierarchy. Width and size unchanged.
+
+Rendered weight could not be confirmed visually here — this container's proxy
+blocks Google Fonts, so every screenshot uses a fallback face. What was verified
+is that the request now includes the weights and that the computed weight is 500
+on the prose and 600 on the title.
+
+**3. Expand replaces collapse in the source header.** `⤢ Expand` opens the
+source in a larger reading view for the stimuli the panel cannot serve well — a
+long case study, a financial table, a graph, several documents at once. It is a
+reading view: the student's answer is untouched by opening it. It does not open
+by default, because the 62/38 pane now handles ordinary sources, and on a narrow
+layout this same control becomes the bottom sheet decision 6 already sketched.
+The chevron it replaces collapsed the source, which was the less useful of the
+two and hid the question's own stimulus.
+
+## The sticky footer no longer overlays the end of the page
+
+`position:sticky; bottom:0` puts the bar over whatever is beneath it, so the
+last thing on the page could not be scrolled clear. The content region now
+reserves its height: a `--footh:68px` token, and `main` padding-bottom of
+`calc(26px + var(--footh))`. The footer stays sticky; it is the content that
+makes room.
+
+Verified with the solution expanded and the page scrolled to the end:
+
+```
+1280x700   whole solution above the footer, 134px clear
+1280x900   whole solution above the footer, 134px clear
+1512x982   whole solution above the footer, 134px clear
+ 390x844   whole solution above the footer, 512px clear
+```
+
+## The parent strip becomes two rows
+
+At 666px the strip no longer fit on one line — measured 27px over. Rather than
+shorten *"3 of 4 parts answered"* to make the layout work, the strip now reads:
+
+```
+Question 11   Kerbside Coffee · 14 marks
+3 of 4 parts answered                        [✓a] [✓⚑b] [✓c] [d]
+```
+
+Row one is identity, row two is progress. The completion count and the part rail
+describe the same thing, so they belong on the same line, and this is a better
+structure than the run-on line it replaces rather than a concession to width. It
+also scales: a question with eight parts wraps within row two instead of pushing
+the identity around. State 8 carries no completion count, so its strip is still
+one row and is unchanged.
+
+## The rail gains its second composition
+
+After a successful check, 11(c) is both **current** and **answered**. Following
+the rule already set by `done + flag`, the chip carries both facts: the dark
+current chip keeps its tick, `✓ c`. Three counters move with it — the parent
+reads *3 of 4 parts answered*, the paper bar *13 of 20 answered*, and on the
+correct screen the live score rises by the part's 4 marks to *25/90*.
+
+On the "not quite" screens the part is still **answered** — a response exists —
+and the score does not move. Answered means a response exists, not a response
+that earned marks.
+
+### A coincidence worth noticing
+
+On the checked screens the paper bar reads *13 of 20 answered* while the footer
+reads *Item 13 of 20*. Two different facts that happen, at this moment, to be
+the same number. They are only distinguishable because of the word **Item**
+settled in state 15. Without it the two strings would be identical.

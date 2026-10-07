@@ -6,7 +6,7 @@
     "id": "marginal-synthetic-bus-practice-1",
     "title": "Business Studies practice paper",
     "kind": "practice",
-    "source": "Marginal (original material written for regression coverage)",
+    "source": "Marginal (original practice material, not a past HSC paper)",
     "version": "1"
   },
   "curriculum": {
@@ -17,7 +17,7 @@
     "stage": "Stage 6"
   },
   "time": "3 hours (plus 5 minutes reading time)",
-  "instructions": "Attempt all questions. This paper is original material written to exercise the exam contract. It is not a past examination and its questions are not drawn from one.",
+  "instructions": "Attempt all questions in Sections I to III, and one question in Section IV. This is an original practice paper. It is not a past HSC examination, and none of its questions are taken from one.",
   "marks": 90,
   "sections": [
     {
@@ -33,6 +33,11 @@
           "prompt": "A bakery reduces the flour it throws away each week. Which operations performance objective is it pursuing?",
           "choices": [
             {
+              "t": "Flexibility",
+              "ok": false,
+              "why": "Flexibility concerns how readily the process changes what or how much it makes."
+            },
+            {
               "t": "Cost",
               "ok": true,
               "why": "Reducing waste lowers the cost of inputs per unit produced, which is the cost objective."
@@ -46,11 +51,6 @@
               "t": "Quality",
               "ok": false,
               "why": "Quality concerns whether the output meets its specification."
-            },
-            {
-              "t": "Flexibility",
-              "ok": false,
-              "why": "Flexibility concerns how readily the process changes what or how much it makes."
             }
           ]
         },
@@ -61,11 +61,6 @@
           "marks": 1,
           "prompt": "A courier firm lets customers choose a delivery window. Which objective is this most directly serving?",
           "choices": [
-            {
-              "t": "Flexibility",
-              "ok": true,
-              "why": "Offering a choice of windows means the process adapts to the customer, which is the flexibility objective."
-            },
             {
               "t": "Cost",
               "ok": false,
@@ -80,6 +75,11 @@
               "t": "Dependability",
               "ok": false,
               "why": "Dependability is keeping the promise once made, not offering the choice."
+            },
+            {
+              "t": "Flexibility",
+              "ok": true,
+              "why": "Offering a choice of windows means the process adapts to the customer, which is the flexibility objective."
             }
           ]
         },
@@ -120,16 +120,6 @@
           "prompt": "A business funds a new oven using retained profits. This is an example of:",
           "choices": [
             {
-              "t": "Internal equity finance",
-              "ok": true,
-              "why": "Retained profits are generated inside the business and are not repaid to a lender, so they are internal equity."
-            },
-            {
-              "t": "External debt finance",
-              "ok": false,
-              "why": "Debt finance is borrowed and repaid with interest."
-            },
-            {
               "t": "External equity finance",
               "ok": false,
               "why": "External equity comes from new owners outside the business."
@@ -138,6 +128,16 @@
               "t": "A financial institution",
               "ok": false,
               "why": "A financial institution is a source, not a type of finance."
+            },
+            {
+              "t": "Internal equity finance",
+              "ok": true,
+              "why": "Retained profits are generated inside the business and are not repaid to a lender, so they are internal equity."
+            },
+            {
+              "t": "External debt finance",
+              "ok": false,
+              "why": "Debt finance is borrowed and repaid with interest."
             }
           ]
         },
@@ -148,11 +148,6 @@
           "marks": 1,
           "prompt": "Which is a leading indicator of a firm's likely future labour needs?",
           "choices": [
-            {
-              "t": "Planned store openings",
-              "ok": true,
-              "why": "Planned openings tell a business what staffing it will need before the need arrives."
-            },
             {
               "t": "Last year's turnover rate",
               "ok": false,
@@ -167,6 +162,11 @@
               "t": "Historical wage costs",
               "ok": false,
               "why": "Historical costs describe the past."
+            },
+            {
+              "t": "Planned store openings",
+              "ok": true,
+              "why": "Planned openings tell a business what staffing it will need before the need arrives."
             }
           ]
         },
@@ -177,6 +177,11 @@
           "marks": 1,
           "prompt": "A firm's current ratio falls from 2.1 to 0.9 in one year. This most directly suggests a problem with:",
           "choices": [
+            {
+              "t": "Solvency",
+              "ok": false,
+              "why": "Solvency concerns long-term obligations rather than short-term ones."
+            },
             {
               "t": "Liquidity",
               "ok": true,
@@ -191,11 +196,6 @@
               "t": "Efficiency",
               "ok": false,
               "why": "Efficiency is measured by turnover and expense ratios."
-            },
-            {
-              "t": "Solvency",
-              "ok": false,
-              "why": "Solvency concerns long-term obligations rather than short-term ones."
             }
           ]
         },
@@ -207,16 +207,6 @@
           "prompt": "Which pricing method sets price by adding a percentage to unit cost?",
           "choices": [
             {
-              "t": "Cost-plus pricing",
-              "ok": true,
-              "why": "Cost-plus adds a fixed margin to the cost of producing each unit."
-            },
-            {
-              "t": "Market pricing",
-              "ok": false,
-              "why": "Market pricing sets price by what buyers and competitors will bear."
-            },
-            {
               "t": "Competition-based pricing",
               "ok": false,
               "why": "Competition-based pricing references rivals' prices."
@@ -225,6 +215,16 @@
               "t": "Loss leader pricing",
               "ok": false,
               "why": "A loss leader is priced below cost deliberately."
+            },
+            {
+              "t": "Cost-plus pricing",
+              "ok": true,
+              "why": "Cost-plus adds a fixed margin to the cost of producing each unit."
+            },
+            {
+              "t": "Market pricing",
+              "ok": false,
+              "why": "Market pricing sets price by what buyers and competitors will bear."
             }
           ]
         },
@@ -265,6 +265,11 @@
           "prompt": "Which is a non-financial reward?",
           "choices": [
             {
+              "t": "A salary increase",
+              "ok": false,
+              "why": "A salary increase is a payment."
+            },
+            {
               "t": "Flexible working hours",
               "ok": true,
               "why": "Flexible hours have value to an employee without being a payment."
@@ -278,11 +283,6 @@
               "t": "Share options",
               "ok": false,
               "why": "Share options are financial."
-            },
-            {
-              "t": "A salary increase",
-              "ok": false,
-              "why": "A salary increase is a payment."
             }
           ]
         },
@@ -293,11 +293,6 @@
           "marks": 1,
           "prompt": "The main purpose of a cash flow statement is to show:",
           "choices": [
-            {
-              "t": "Movements of cash in and out over a period",
-              "ok": true,
-              "why": "It reports cash received and cash paid across the period."
-            },
             {
               "t": "What the business owns and owes at a date",
               "ok": false,
@@ -312,6 +307,11 @@
               "t": "The market value of the business",
               "ok": false,
               "why": "No standard statement reports market value."
+            },
+            {
+              "t": "Movements of cash in and out over a period",
+              "ok": true,
+              "why": "It reports cash received and cash paid across the period."
             }
           ]
         }
@@ -340,8 +340,14 @@
               "directive": "outline",
               "prompt": "Outline ONE operations performance objective Kerbside Coffee is failing to meet at its vans.",
               "points": [
-                "Names speed, or dependability, as the objective",
-                "Links it to the morning waiting times described in the case study"
+                {
+                  "text": "Names speed, or dependability, as the objective",
+                  "marks": 1
+                },
+                {
+                  "text": "Links it to the morning waiting times described in the case study",
+                  "marks": 1
+                }
               ]
             },
             {
@@ -352,9 +358,18 @@
               "directive": "explain",
               "prompt": "Explain how the business's casual employment of van operators could be contributing to its turnover.",
               "points": [
-                "Explains that casual work carries no guaranteed hours or leave entitlements",
-                "Links that insecurity to an operator's decision to leave",
-                "Connects turnover to the cost of recruiting and training replacements"
+                {
+                  "text": "Explains that casual work carries no guaranteed hours or leave entitlements",
+                  "marks": 1
+                },
+                {
+                  "text": "Links that insecurity to an operator's decision to leave",
+                  "marks": 1
+                },
+                {
+                  "text": "Connects turnover to the cost of recruiting and training replacements",
+                  "marks": 1
+                }
               ]
             },
             {
@@ -407,9 +422,18 @@
               "directive": "describe",
               "prompt": "Describe what has happened to Harbourline Cycles' gross profit ratio between 2024 and 2025.",
               "points": [
-                "Identifies that the ratio has fallen",
-                "Refers to gross profit relative to sales rather than the dollar figure alone",
-                "Uses the data in Table 1 to support the statement"
+                {
+                  "text": "Identifies that the ratio has fallen",
+                  "marks": 1
+                },
+                {
+                  "text": "Refers to gross profit relative to sales rather than the dollar figure alone",
+                  "marks": 1
+                },
+                {
+                  "text": "Uses the data in Table 1 to support the statement",
+                  "marks": 1
+                }
               ]
             },
             {

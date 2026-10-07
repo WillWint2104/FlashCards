@@ -27,7 +27,18 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  FAIL:', 
 const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
 
 // One question, twenty marks, and whatever curriculum the case is about.
+// Its points carry their own marks, and that is the whole reason this question
+// can be marked at all without a subject authority: the PAPER says what each
+// point is worth, so nothing has to be inferred from the coincidence that it
+// happens to have as many points as marks.
 const SHORT_Q = { type: 'short', prompt: 'State one feature of a reed.', marks: 2,
+  points: [{ text: 'reeds are flexible', need: ['flexible'], marks: 1 },
+           { text: 'reeds are hollow', need: ['hollow'], marks: 1 }] };
+// The same question with the weighting taken away. Its points are then
+// considerations rather than an allocation, so nothing local can put a number on
+// it, and with no subject to mark it against it is NOT MARKED rather than marked
+// generously. Scenario 9.
+const UNWEIGHTED_Q = { type: 'short', prompt: 'State one feature of a reed.', marks: 2,
   points: [{ text: 'reeds are flexible', need: ['flexible'] },
            { text: 'reeds are hollow', need: ['hollow'] }] };
 const ESSAY_Q = { type: 'essay', prompt: 'Evaluate the effectiveness of two strategies.', marks: 20, model: 'a model answer' };
@@ -66,32 +77,61 @@ async function openWith(b, state) {
 const withPaper = pk => ({ cards: {}, endpoint: '', code: '12Ec126', log: [],
   customSets: [], lessons: {}, exams: [pk] });
 
-// Test mode -> this paper -> past the pickers -> the question at `n`.
-async function sit(p, id, n) {
+// Test mode -> this paper's overview -> a fresh attempt -> the question at `n`.
+// Slice A: attempts persist, so a paper with one in progress is started afresh
+// with Start again (the dialog is accepted), which is what "sitting it again" is.
+async function openTest(p) {
   await p.evaluate(() => {
-    const b = Array.from(document.querySelectorAll('button,a')).find(e => /test mode/i.test(e.textContent));
+    const b = Array.from(document.querySelectorAll('.navtab')).find(e => /test mode/i.test(e.textContent));
     b && b.click();
   });
   await settled(p);
-  await p.evaluate(x => { const b = document.querySelector('[data-examsit="' + x + '"]'); b && b.click(); }, id);
+}
+async function sit(p, id, n) {
+  p.removeAllListeners('dialog'); p.on('dialog', d => d.accept());
+  await openTest(p);
+  await p.evaluate(x => { const b = document.querySelector('[data-tmopen="' + x + '"]'); b && b.click(); }, id);
   await settled(p);
+  if (await p.$('#tmstartagain')) { await p.click('#tmstartagain'); await settled(p); }
   const go = await p.$('#exampickgo'); if (go) { await go.click(); await settled(p); }
-  const bg = await p.$('#exambegin'); if (bg) { await bg.click(); await settled(p); }
   for (let i = 1; i < (n || 1); i++) { const nx = await p.$('#examnext'); if (nx) { await nx.click(); await settled(p); } }
+}
+// Page 2, through its own page: paste, check, and add when the verdict allows.
+// Returns 'Imported' when the paper went in, otherwise everything the page says
+// about the file, including the details for whoever made it.
+async function importViaTestMode(p, json) {
+  await openTest(p);
+  await p.click('#tmimport'); await settled(p);
+  await p.click('.tm-paste summary'); await settled(p);
+  await p.fill('#tmpaste', JSON.stringify(json));
+  await p.click('#tmcheck'); await settled(p);
+  const add = await p.$('#tmadd');
+  if (add) { await add.click(); await settled(p); return 'Imported'; }
+  return p.$eval('#tmimportbody', e => e.textContent.replace(/\s+/g, ' ').trim()).catch(() => '(no message)');
 }
 const sheet = p => p.evaluate(() => {
   const s = document.querySelector('#sheet');
   return {
     text: s ? s.textContent.replace(/\s+/g, ' ').trim() : '(no sheet)',
-    score: (document.querySelector('.sheet .score') || {}).textContent || '(none)',
-    unmarked: !!document.querySelector('.sheet.unmarked'),
+    // The result row (states 11 to 14): an unmarked answer's badge, or the mark.
+    score: (() => {
+      const r = document.querySelector('#sheet .tm-result');
+      if (!r) return (document.querySelector('.sheet .score') || {}).textContent || '(none)';   // Study's sheet
+      if (r.classList.contains('nm')) return (r.querySelector('.badge') || {}).textContent || '';
+      return ((r.querySelector('.pair:last-child .v') || {}).textContent || '').replace(' of ', '/');
+    })(),
+    unmarked: !!document.querySelector('#sheet .tm-result.nm, .sheet.unmarked'),
     check: document.querySelector('#check') ? {
       label: document.querySelector('#check').textContent,
       disabled: document.querySelector('#check').disabled,
     } : null,
   };
 });
-const answer = async (p, text) => { await p.fill('#ans', text); await p.click('#check'); await p.waitForTimeout(650); };
+const answer = async (p, text) => {
+  await p.fill('#ans', text); await p.click('#check');
+  await p.waitForFunction(() => !!document.querySelector('#sheet .tm-result'), null, { timeout: 8000 }).catch(() => {});
+  await settled(p);
+};
 
 (async () => {
   const b = await chromium.launch();
@@ -124,20 +164,23 @@ const answer = async (p, text) => { await p.fill('#ans', text); await p.click('#
 
     const bar = await p.$eval('.exam-progress', e => e.textContent.trim());
     ok(!/NaN/.test(bar), 'the progress bar is arithmetic: ' + JSON.stringify(bar));
-    ok(/1\/2 answered/.test(bar), 'the refused question is not counted as answered: ' + JSON.stringify(bar));
+    ok(/1 of 2 answered/.test(bar), 'the refused question is not counted as answered: ' + JSON.stringify(bar));
     ok(/1 not marked/.test(bar), 'and is counted as what it is: ' + JSON.stringify(bar));
 
-    await p.click('#examnext'); await settled(p);
+    // Slice B: the last item opens Review & submit; Submit paper closes the attempt
+    // and the results screen reads it.
+    await p.click('#examfinish'); await settled(p);
+    await p.click('#tmsubmitpaper'); await settled(p);
     const res = await p.evaluate(() => ({
-      big: (document.querySelector('.bigscore') || {}).textContent || '(none)',
-      rows: Array.from(document.querySelectorAll('.exam-resq')).map(e => e.textContent.replace(/\s+/g, ' ').trim()),
-      sec: Array.from(document.querySelectorAll('.exam-ressech')).map(e => e.textContent.replace(/\s+/g, ' ').trim()),
+      big: (document.querySelector('#tmrsscore') || {}).textContent || '(none)',
+      rows: Array.from(document.querySelectorAll('.tm-rs-cell')).map(e => e.textContent.replace(/\s+/g, ' ').trim()),
+      sec: Array.from(document.querySelectorAll('.tm-rs-band h3')).map(e => e.textContent.replace(/\s+/g, ' ').trim()),
     }));
     ok(!/NaN|undefined/.test(JSON.stringify(res)),
       'and the whole results screen is free of NaN and undefined: ' + JSON.stringify(res));
     ok(/^2\s*\/\s*22$/.test(res.big.replace(/\s+/g, '')) || /2\/22/.test(res.big.replace(/\s+/g, '')),
       'the paper totals 2/22, the marks that were actually awarded out of the marks on offer: ' + JSON.stringify(res.big));
-    ok(res.rows.some(r => /not marked/i.test(r)), 'the refused row says so: ' + JSON.stringify(res.rows));
+    ok(res.rows.some(r => /not marked/i.test(r)), 'the refused cell says so: ' + JSON.stringify(res.rows));
     await p.close();
   }
 
@@ -191,7 +234,7 @@ const answer = async (p, text) => { await p.fill('#ans', text); await p.click('#
       const b2 = Array.from(document.querySelectorAll('button,a')).find(e => /test mode/i.test(e.textContent));
       b2 && b2.click();
       return new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() =>
-        r((document.querySelector('.exam-rowmeta') || {}).textContent || '(none)'))));
+        r((document.querySelector('.tm-paper .tm-kicker') || {}).textContent || '(none)'))));
     });
     ok(/no subject key/i.test(row),
       'the list row says the paper has no subject key rather than hiding it: ' + JSON.stringify(row));
@@ -199,7 +242,6 @@ const answer = async (p, text) => { await p.fill('#ans', text); await p.click('#
     await p.evaluate(() => { const x = document.querySelector('[data-examsit="legacy"]'); x && x.click(); });
     await settled(p);
     const go = await p.$('#exampickgo'); if (go) { await go.click(); await settled(p); }
-    const bg = await p.$('#exambegin'); if (bg) { await bg.click(); await settled(p); }
     await answer(p, 'A response about weaving strategies. '.repeat(20));
     const s = await sheet(p);
     ok(s.unmarked, 'a legacy paper is not marked');
@@ -215,28 +257,23 @@ const answer = async (p, text) => { await p.fill('#ans', text); await p.click('#
   {
     const { p } = await openWith(b, { cards: {}, endpoint: '', code: '12Ec126', log: [],
       customSets: [], lessons: {}, exams: [paper('keep', { subjectKey: 'business_studies' })] });
-    const importPaper = async json => {
-      await p.evaluate(() => { const b2 = Array.from(document.querySelectorAll('button,a')).find(e => /^create$/i.test(e.textContent.trim())); b2 && b2.click(); });
-      await settled(p);
-      await p.fill('#importjson', JSON.stringify(json));
-      await p.click('#doimport'); await settled(p);
-      return p.$eval('#importmsg', e => e.textContent.trim()).catch(() => '(no message)');
-    };
+    // Slice A: papers are imported on Page 2, in Test mode.
+    const importPaper = json => importViaTestMode(p, json);
     const body = { format: 'marginal-exam@1', name: 'Imported', sections: paper('x', {}).sections };
 
     const noCurric = await importPaper(body);
-    ok(/curriculum/i.test(noCurric) && !/imported/i.test(noCurric),
+    ok(/curriculum/i.test(noCurric) && noCurric !== 'Imported',
       'a paper with no curriculum block is refused at the door: ' + JSON.stringify(noCurric));
 
     const labelKey = await importPaper(Object.assign({}, body, { curriculum: { subjectKey: 'Business Studies' } }));
-    ok(/subjectKey/i.test(labelKey) && !/imported/i.test(labelKey),
+    ok(/subjectKey/i.test(labelKey) && labelKey !== 'Imported',
       'a display label in the key field is refused rather than matched: ' + JSON.stringify(labelKey));
 
     const crossed = JSON.parse(JSON.stringify(body));
     crossed.curriculum = { subjectKey: 'business_studies' };
     crossed.sections[0].questions[1].subjectKey = 'economics';
     const xmsg = await importPaper(crossed);
-    ok(/subjectKey/i.test(xmsg) && !/imported/i.test(xmsg),
+    ok(/subjectKey/i.test(xmsg) && xmsg !== 'Imported',
       'a question cross-wired to another subject is refused: ' + JSON.stringify(xmsg));
 
     const good = await importPaper(Object.assign({}, body, {
@@ -253,6 +290,22 @@ const answer = async (p, text) => { await p.fill('#ans', text); await p.click('#
       'it is stored, and the key it declared survived rather than being dropped: ' + JSON.stringify(kept));
     ok(kept.filter(x => x.name === 'Imported').length === 1,
       'and only the one that passed got in: ' + JSON.stringify(kept));
+
+    // A SUBJECT MARGINAL CANNOT MARK, AT THE LEVEL OF THE ASSESSMENT PATH
+    // (UX-TEST-23, decision 21). Registration is not universally required: it is
+    // required by any question the subject's marker has to judge.
+    const legal = { jurisdiction: 'NSW', klaKey: 'hsie', subjectKey: 'legal_studies', course: 'Legal Studies' };
+    const written = await importPaper(Object.assign({}, body, { name: 'Legal written', curriculum: legal }));
+    ok(/legal_studies/.test(written) && /marker/.test(written) && written !== 'Imported',
+      'a Legal Studies paper with an essay, which needs the subject\'s marker, is refused at the door: ' + JSON.stringify(written));
+    const MCQ = { type: 'mc', prompt: 'Which of these is a current asset?', marks: 1, choices: [{ t: 'Inventory', ok: true }, { t: 'Land' }] };
+    const objective = await importPaper({ format: 'marginal-exam@1', name: 'Legal objective', curriculum: legal,
+      sections: [{ name: 'Section I', questions: [MCQ, SHORT_Q] }] });
+    ok(!/legal_studies|refused|cannot/i.test(objective),
+      'a Legal Studies paper whose every question marks from its own key is let in: ' + JSON.stringify(objective));
+    const after = await p.evaluate(() => (JSON.parse(localStorage.getItem('marginal.trial.v1') || '{}').exams || []).map(e => e.name));
+    ok(after.includes('Legal objective') && !after.includes('Legal written'),
+      'so the objective paper is stored and the written one is not: ' + JSON.stringify(after));
     await p.close();
   }
 
@@ -375,11 +428,8 @@ const answer = async (p, text) => { await p.fill('#ans', text); await p.click('#
     {
       const { p, sent } = await openWith(b, { cards: {}, endpoint: '', code: '12Ec126', log: [],
         customSets: [], lessons: {}, exams: [] });
-      await p.evaluate(() => { const x = Array.from(document.querySelectorAll('button,a')).find(e => /^create$/i.test(e.textContent.trim())); x && x.click(); });
-      await settled(p);
-      await p.fill('#importjson', JSON.stringify({ format: 'marginal-exam@1', name: 'Fresh import',
-        curriculum: CURRIC, sections: essayPaper('x', {}).sections }));
-      await p.click('#doimport'); await settled(p);
+      await importViaTestMode(p, { format: 'marginal-exam@1', name: 'Fresh import',
+        curriculum: CURRIC, sections: essayPaper('x', {}).sections });
       const id = await p.evaluate(() => (JSON.parse(localStorage.getItem('marginal.trial.v1') || '{}').exams || [])
         .filter(e => e.name === 'Fresh import').map(e => e.id)[0]);
       ok(!!id, 'the imported paper is there to sit: ' + JSON.stringify(id));
@@ -428,11 +478,16 @@ const answer = async (p, text) => { await p.fill('#ans', text); await p.click('#
       const { p } = await openWith(b, withPaper(essayPaper('retaken', CURRIC)));
       await sit(p, 'retaken', 1);
       await answer(p, 'A response about weaving strategies. '.repeat(20));
-      await p.click('#examnext'); await settled(p);
-      const rt = await p.$('#examretake');
-      ok(!!rt, 'the results screen offers a retake');
+      // Slice A: finishing completes the attempt; Try again on the card opens the
+      // overview, and Start new attempt begins the next one.
+      await p.click('#examfinish'); await settled(p);   // Review & submit
+      await p.click('#tmsubmitpaper'); await settled(p);
+      await p.click('#tmback'); await settled(p);
+      const rt = await p.$('[data-tmopen="retaken"].tm-btn');
+      ok(!!rt, 'the completed card offers Try again');
       if (rt) { await rt.click(); await settled(p); }
-      const bg = await p.$('#exambegin'); if (bg) { await bg.click(); await settled(p); }
+      ok(/Start new attempt/.test(await p.$eval('#exampickgo', e => e.textContent).catch(() => '')), 'whose action reads Start new attempt (decision 22)');
+      await p.click('#exampickgo'); await settled(p);
       holds(await own(p), 'after a retake');
       await p.close();
     }
@@ -443,13 +498,11 @@ const answer = async (p, text) => { await p.fill('#ans', text); await p.click('#
         { name: 'Section I', questions: [SHORT_Q] },
         { name: 'Section II', questions: [ESSAY_Q] }] };
       const { p, sent } = await openWith(b, withPaper(two));
-      await p.evaluate(() => { const x = Array.from(document.querySelectorAll('button,a')).find(e => /test mode/i.test(e.textContent)); x && x.click(); });
-      await settled(p);
+      await openTest(p);
       await p.evaluate(() => { const x = document.querySelector('[data-examsit="subset"]'); x && x.click(); });
       await settled(p);
       await p.$$eval('[data-exampick]', es => es.forEach((e, i) => { e.checked = i === 1; e.dispatchEvent(new Event('change')); }));
       await p.click('#exampickgo'); await settled(p);
-      const bg = await p.$('#exambegin'); if (bg) { await bg.click(); await settled(p); }
       const o = await own(p);
       ok(o.questions.length === 1, 'only the chosen section is sequenced: ' + o.questions.length);
       holds(o, 'sitting one section of two');
@@ -531,17 +584,24 @@ const answer = async (p, text) => { await p.fill('#ans', text); await p.click('#
       ],
     };
 
-    const paste = async json => {
-      await p.evaluate(() => { const b2 = Array.from(document.querySelectorAll('button,a')).find(e => /^create$/i.test(e.textContent.trim())); b2 && b2.click(); });
-      await settled(p);
-      await p.fill('#importjson', JSON.stringify(json));
-      await p.click('#doimport'); await settled(p);
-      return p.$eval('#importmsg', e => e.textContent.trim()).catch(() => '(no message)');
-    };
-    const msg = await paste(NESTED);
+    const msg = await importViaTestMode(p, NESTED);
     ok(/imported/i.test(msg), 'the nested paper imports: ' + JSON.stringify(msg));
 
     // RELOAD. A cold page in the same context, reading the paper out of storage.
+    // Pages share storage through the browser, asynchronously. A cold page that
+    // read it before the import's write had arrived saw an empty library, and the
+    // walkthrough's boot seeded its own paper over the import: this check's rare
+    // failure (twice in many Full runs, once more in three runs of this suite).
+    // The importing page is closed first, which is also the truer reload.
+    // Wait until storage outside the importing page holds the paper, read from a
+    // page with no scripts (the walkthrough's boot reseeds an empty library, so it
+    // cannot be the page that looks). A write that never lands still fails below.
+    require('fs').writeFileSync(require('./env').OUT + 'probe.html', '<!doctype html><title>probe</title>');
+    const probe = await ctx.newPage(); await probe.goto(require('./env').fileUrl('probe.html'));
+    const landed = await probe.waitForFunction(() => /Round trip paper/.test(localStorage.getItem('marginal.trial.v1') || ''), null, { timeout: 5000 }).then(() => true, () => false);
+    if (!landed) console.log('    the import was not in storage outside its page after 5s');
+    await probe.close();
+    await p.close();
     const p2 = await ctx.newPage();
     p2.on('pageerror', e => errs.push(String(e.message)));
     await p2.route(/workers\.dev/, r => r.abort());
@@ -578,7 +638,21 @@ const answer = async (p, text) => { await p.fill('#ans', text); await p.click('#
       'curriculum ownership survives: ' + after.subjectKey + ' / ' + after.klaKey);
     ok(after.sections.join('|') === 'Section A - Short answer|Section B - Extended response',
       'sections survive in order: ' + after.sections.join(' | '));
-    ok(after.state === 'publishable', 'and it is still publishable on the way out: ' + after.state);
+    // THE VERDICT SURVIVES THE ROUND TRIP, which is what this line is for.
+    //
+    // It asserted 'publishable', and that was the value rather than the point. Since
+    // state 13 a business report with no instructions, no marking points and no
+    // requirements carries one thin note, REPORT_GUIDANCE_ABSENT, because it sends
+    // its marker nothing that says it is a report - and o1 is exactly that report.
+    // So the verdict is compared with what the same validator says of the paper as
+    // pasted, and the one note is named, so a different change to the verdict is
+    // still caught rather than absorbed.
+    const pasted = require('../tools/contract/exam.js').examine(NESTED);
+    ok(after.state === pasted.state, 'and its verdict on the way out is the verdict it went in with: ' +
+      pasted.state + ' -> ' + after.state);
+    ok(pasted.state === 'thin' && JSON.stringify(pasted.findings.map(f => f.code)) === '["REPORT_GUIDANCE_ABSENT"]',
+      'which is thin for exactly one reason, its bare business report: ' +
+      JSON.stringify(pasted.findings.map(f => f.code)));
 
     // AUTHORED NUMBERING AND THE PARENT/PART RELATIONSHIP.
     ok(after.parents === 1, 'the parent is still a parent: ' + after.parents);
@@ -611,27 +685,25 @@ const answer = async (p, text) => { await p.fill('#ans', text); await p.click('#
     await p2.evaluate(() => { const t = Array.from(document.querySelectorAll('.navtab')).find(x => /test mode/i.test(x.textContent)); t && t.click(); });
     await settled(p2);
     await p2.evaluate(() => {
-      const rows = Array.from(document.querySelectorAll('.exam-row'));
+      const rows = Array.from(document.querySelectorAll('.tm-paper'));
       const row = rows.find(r => /Round trip paper/.test(r.textContent));
       const btn = row && row.querySelector('[data-examsit]'); btn && btn.click();
     });
     await settled(p2);
-      const go = await p2.$('#exampickgo'); if (go) { await go.click(); await settled(p2); }
 
-    // The section intro is a promise about what the student is walking into, read
-    // BEFORE they walk in. It counted the array, so a section of one parent with
-    // two parts announced "1 question" ahead of being answered twice.
-    const intro = await p2.$eval('.exam-wrap', e => e.textContent).catch(() => '');
+    // The section choice is a promise about what the student is walking into,
+    // read BEFORE they walk in. It used to count the array, so a section of one
+    // parent with two parts announced "1 question" ahead of being answered twice.
+    const intro = await p2.$eval('.tm-row', e => e.textContent).catch(() => '');
     const counted = (intro.match(/\d+ questions? · \d+ marks?/) || ['(no count found)'])[0];
     ok(/^2 questions · 6 marks$/.test(counted),
-      'the section intro counts the parts a student answers, not the parents: ' + JSON.stringify(counted));
-
-    const begin = await p2.$('#exambegin'); if (begin) { await begin.click(); await settled(p2); }
+      'the section counts the parts a student answers, not the parents: ' + JSON.stringify(counted));
+    const go = await p2.$('#exampickgo'); if (go) { await go.click(); await settled(p2); }
     const head = await p2.$eval('.exam-qhead', e => e.textContent.trim()).catch(() => '(none)');
     ok(/Question 1\(a\)/.test(head), 'the paper starts at the question it calls 1(a): ' + JSON.stringify(head));
     const shown = await p2.$eval('#app', e => e.textContent);
     ok(/Source 1/.test(shown), 'with the shared source on screen above it');
-    await p.close(); await p2.close();
+    await p2.close();
     } finally { await ctx.close(); }
   }
 
@@ -660,39 +732,111 @@ const answer = async (p, text) => { await p.fill('#ans', text); await p.click('#
         sections: [{ name: 'Section A', questions: [
           { id: 'm1', number: '1', marks: 1, format: 'multiple_choice', prompt: 'Which one?',
             choices: [{ t: 'Alpha', ok: true, why: 'Alpha is the one.' }, { t: 'Beta', why: 'Beta is not.' }] },
-          { id: 'm2', number: '2', marks: 3, format: 'calculation', expected: 1.5, prompt: 'Calculate it.', model: 'x' },
+          // A tolerance is required since UX-TEST-24: without one every answer is wrong.
+          { id: 'm2', number: '2', marks: 3, format: 'calculation', expected: 1.5, tolerance: 0.05, prompt: 'Calculate it.', model: 'x' },
         ] }],
       };
       ok(!JSON.stringify(MODERN).includes('"type"'), 'the package carries no legacy type field at all');
 
-      await p.evaluate(() => { const t = Array.from(document.querySelectorAll('button,a')).find(e => /^create$/i.test(e.textContent.trim())); t && t.click(); });
-      await settled(p);
-      await p.fill('#importjson', JSON.stringify(MODERN));
-      await p.click('#doimport'); await settled(p);
-      ok(/imported/i.test(await p.$eval('#importmsg', e => e.textContent.trim())), 'it imports');
+      ok(/Imported/.test(await importViaTestMode(p, MODERN)), 'it imports');
 
-      await p.evaluate(() => { const t = Array.from(document.querySelectorAll('.navtab')).find(x => /test mode/i.test(x.textContent)); t && t.click(); });
-      await settled(p);
+      await openTest(p);
       await p.evaluate(() => {
-        const r = Array.from(document.querySelectorAll('.exam-row')).find(x => /Modern only/.test(x.textContent));
+        const r = Array.from(document.querySelectorAll('.tm-paper')).find(x => /Modern only/.test(x.textContent));
         const btn = r && r.querySelector('[data-examsit]'); btn && btn.click();
       });
       await settled(p);
       const go = await p.$('#exampickgo'); if (go) { await go.click(); await settled(p); }
-      const bg = await p.$('#exambegin'); if (bg) { await bg.click(); await settled(p); }
 
       const choices = await p.$$eval('.choice', es => es.map(e => e.textContent.trim()));
       ok(choices.length === 2, 'a declared multiple choice draws its choices rather than a textarea: ' + JSON.stringify(choices));
       ok(!(await p.$('#ans')), 'and there is no answer box on that screen at all');
+      // Practice: choose, then Submit for marking (state 8's one primary action).
       await p.click('.choice'); await settled(p);
-      const sheet = await p.$eval('#sheet', e => e.textContent.trim()).catch(() => '');
-      ok(/1\/1/.test(sheet), 'clicking the right choice marks it against the key: ' + JSON.stringify(sheet.slice(0, 40)));
+      await p.click('#check'); await settled(p);
+      const sheet = await p.$eval('#sheet', e => e.textContent.replace(/\s+/g, ' ').trim()).catch(() => '');
+      ok(/Marks\s*1 of 1/.test(sheet), 'choosing the right choice and submitting marks it against the key: ' + JSON.stringify(sheet.slice(0, 40)));
 
       await p.click('#examnext'); await settled(p);
-      ok(!!(await p.$('.calcin')), 'a declared calculation gets a numeric input');
-      ok(!(await p.$('.choices')), 'and not a set of choices');
+      ok(!!(await p.$('#ans.tm-answerbox.short')), 'a declared calculation gets the short answer field (state 14)');
+      ok(!(await p.$('.tm-mc')), 'and not a set of choices');
       await p.close();
     } finally { await ctx.close(); }
+  }
+
+  // ---------------------------------------------------------------- UX-TEST-02
+  // WHICH DOOR A PASTED FILE GOES THROUGH.
+  //
+  // The routing was an exact version match, so a package declaring
+  // marginal-exam@2 failed it, fell through to the flashcard-set validator, and
+  // the person holding an exam file was told "The set has no cards array." The
+  // exam contract has had the right answer all along - it names the version this
+  // release runs - and nothing ever handed it the file. Recognising the family is
+  // not accepting the version: it only decides who gets to refuse it.
+  {
+    console.log('--- UX-TEST-02: an unsupported exam version is refused BY THE EXAM VALIDATOR ---');
+    const ctx = await b.newContext();
+    try {
+      const p = await ctx.newPage();
+      p.on('pageerror', e => errs.push(String(e.message)));
+      await p.addInitScript(new Function(seed({ cards: {}, endpoint: '', code: '12Ec126', log: [],
+        customSets: [], lessons: {}, exams: [] })));
+      await p.route(/workers\.dev/, r => r.abort());
+      await p.goto(T); await settled(p);
+      const paste = async doc => {
+        await p.evaluate(() => { const t = Array.from(document.querySelectorAll('button,a')).find(e => /^create$/i.test(e.textContent.trim())); t && t.click(); });
+        await settled(p);
+        await p.fill('#importjson', JSON.stringify(doc));
+        await p.click('#doimport'); await settled(p);
+        return p.$eval('#importmsg', e => e.textContent.trim()).catch(() => '');
+      };
+      const body = paper('ver', { subjectKey: 'business_studies' });
+
+      // Slice A: the Create box recognises the family and sends it to Test mode,
+      // where the exam validator is the one that refuses it.
+      const inCreate = await paste(Object.assign({}, body, { format: 'marginal-exam@2' }));
+      ok(/Papers are imported in Test mode/.test(inCreate) && !/cards array/i.test(inCreate),
+        'marginal-exam@2 pasted in Create is sent to the paper importer, NOT read as a flashcard set: ' + JSON.stringify(inCreate));
+      const v2 = await importViaTestMode(p, Object.assign({}, body, { format: 'marginal-exam@2' }));
+      ok(/Unsupported/.test(v2) && /not a package version this release can run/i.test(v2),
+        'marginal-exam@2 is refused as an unsupported VERSION: ' + JSON.stringify(v2.slice(0, 200)));
+      ok(/marginal-exam@1/.test(v2), 'and the refusal names the version this release does run');
+
+      const v1 = await importViaTestMode(p, Object.assign({}, body, { format: 'marginal-exam@1', name: 'Good version' }));
+      ok(/Imported/.test(v1), 'the supported version still imports: ' + JSON.stringify(v1));
+
+      // Recognising the family must not swallow genuine flashcard sets.
+      const set = await paste({ name: 'A real set', cards: [{ front: 'a', back: 'b' }] });
+      ok(!/package version/i.test(set), 'a real flashcard set still goes to the flashcard importer: ' + JSON.stringify(set));
+      const junk = await paste({ format: 'something-else' });
+      ok(/cards array/i.test(junk), 'and something that is not an exam at all is not routed to the exam validator');
+      await p.close();
+    } finally { await ctx.close(); }
+  }
+
+  // ==========================================================================
+  console.log('9. unweighted marking points do not manufacture a mark');
+  // ==========================================================================
+  // The counterpart to scenario 1. There the paper authored what each point was
+  // worth, so the short answer was marked locally and the unresolvable subject
+  // never came into it. Here the same question authors points with no weighting.
+  // They are considerations, the mark can only come from the subject's criteria,
+  // and the subject does not resolve - so the honest outcome is not a mark.
+  {
+    const { p } = await openWith(b, withPaper({
+      id: 'unweighted-points', name: 'Paper unweighted-points',
+      curriculum: { jurisdiction: 'NSW', klaKey: 'hsie', subjectKey: 'underwater_basket_weaving' },
+      sections: [{ name: 'Section I', questions: [UNWEIGHTED_Q] }],
+    }));
+    await sit(p, 'unweighted-points', 1);
+    await answer(p, 'Reeds are flexible and hollow.');
+    const sh = await sheet(p);
+    ok(sh.unmarked, 'an unweighted short answer with no resolvable subject is NOT marked: ' + JSON.stringify(sh.score));
+    ok(!/2\s*\/\s*2/.test(sh.score),
+      'and above all it is not full marks, which is what the old grader gave it: ' + JSON.stringify(sh.score));
+    const bar = await p.$eval('.exam-progress', e => e.textContent.trim()).catch(() => '(none)');
+    ok(/not marked/i.test(bar), 'the bar counts it as not marked rather than as answered: ' + JSON.stringify(bar));
+    await p.close();
   }
 
   ok(errs.length === 0, 'no page errors: ' + JSON.stringify(errs.slice(0, 3)));

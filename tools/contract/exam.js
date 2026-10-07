@@ -305,6 +305,15 @@ function questionFindings(q, path) {
   if (fx.format === "calculation" && typeof q.expected !== "number")
     add(STATE.malformed, "CALC_EXPECTED_MISSING",
       "a calculation is marked against a number, and this question does not carry one");
+  // HOW CLOSE AN ANSWER HAS TO BE (UX-TEST-24). The runtime marks a calculation
+  // correct when it is within `tolerance` of `expected`, and with no tolerance
+  // that comparison is never true: every answer, the right one included, would be
+  // marked wrong. So it is required here, at the door, rather than discovered by
+  // the first student who gets it right. 0 means an exact answer.
+  if (fx.format === "calculation" && !(typeof q.tolerance === "number" && isFinite(q.tolerance) && q.tolerance >= 0))
+    add(STATE.malformed, "CALC_TOLERANCE_MISSING", q.tolerance == null || q.tolerance === ""
+      ? "a calculation says how close an answer has to be to count as correct (0 for an exact answer), and this one does not, so every answer would be marked wrong"
+      : JSON.stringify(q.tolerance) + " is not a tolerance. A tolerance is how far an answer may be from the expected value, a number of 0 or more");
 
   // A WRITTEN QUESTION WITH NO MODEL ANSWER IS THIN, NOT BROKEN.
   //
@@ -321,6 +330,24 @@ function questionFindings(q, path) {
       "no model answer and no marking points. This question is marked from the subject's criteria alone, which is " +
       "allowed and is less specific than a paper that carries them");
 
+  // WHAT A WRITTEN QUESTION CAN TELL ITS MARKER, CHECKED BEFORE A STUDENT MEETS IT.
+  //
+  // The guidance is ASSESS.markerGuidance over ASSESS.accomplishOf - the same two
+  // functions the app sends with - so the validator cannot pass a paper the
+  // runtime refuses. A refusal is filed under what it IS, by this file's own
+  // taxonomy: unreadable data is malformed; guidance this version cannot send
+  // whole is unsupported. Neither is `blocked`, which means a dependency that does
+  // not resolve. All three stop a sitting.
+  if (ASSESS.writtenModeOf(fx.format)) {
+    var rg = ASSESS.markerGuidance(q, ASSESS.accomplishOf(q));
+    if (rg.ok !== true)
+      add(rg.code === "MARKING_GUIDANCE_OVER_BUDGET" ? STATE.unsupported : STATE.malformed, rg.code, rg.why +
+        ". The response would be refused when submitted, so the paper cannot be sat as it stands");
+    else if (fx.format === "business_report" && !rg.items.length)
+      add(STATE.thin, "REPORT_GUIDANCE_ABSENT",
+        "a business report with no instructions, no marking points and no requirements sends its marker nothing " +
+        "that says what the report must do. It is still marked as a business report, against the subject's criteria alone");
+  }
   return out;
 }
 
@@ -344,8 +371,137 @@ function resourcesOf(holder) {
   return Array.isArray(s) ? s.filter(function (x) { return x != null; }) : [s];
 }
 
+// ---------------------------------------------------------------------------
+// WHAT THE MARKER IS SHOWN OF THE SOURCE MATERIAL THE STUDENT WAS GIVEN.
+//
+// A business report is told to "use the case study below" and marked on whether
+// its recommendations are justified "against the evidence in the case study", and
+// until this the marker was sent `stimulus: true` and nothing else (UX-TEST-11).
+// This builds the marker's copy of the source, deterministically, from what was
+// authored: no model summarises or reinterprets it first.
+//
+//   - text and captions travel verbatim;
+//   - an SVG bar chart travels as its title and one value per bar, read by a
+//     strict reader that accepts only a fully labelled axis and bars that read to
+//     whole values, and says in the text how the values were read;
+//   - anything else - a photograph, a chart kind this reader does not read - is
+//     NOT represented, the marker is told in words that something it cannot see
+//     was shown to the student, and the paper validator reports it to the author.
+//
+// Bounded by SOURCE_MAX_CHARS, which is the worker's own cap, and refused whole
+// over it rather than cut.
+var SOURCE_MAX_CHARS = 4000;
+
+function svgOf(img) {
+  if (typeof img !== "string") return null;
+  var m = img.match(/^data:image\/svg\+xml(;base64)?,(.*)$/);
+  if (!m) return null;
+  try {
+    if (m[1]) return typeof Buffer !== "undefined" ? Buffer.from(m[2], "base64").toString("utf8") : decodeURIComponent(escape(atob(m[2])));
+    return decodeURIComponent(m[2]);
+  } catch (e) { return null; }
+}
+function attrOf(tag, a) {
+  var m = tag.match(new RegExp("\\s" + a + '="(-?[\\d.]+)"'));
+  return m ? Number(m[1]) : null;
+}
+// A bar chart, or null with the reason it is not one this reader will vouch for.
+function readBarChart(svg) {
+  var why = function (r) { return { ok: false, why: r }; };
+  if (/<(path|polyline|polygon|circle|ellipse|image|use)\b/i.test(svg)) return why("it draws shapes other than bars, axes and labels");
+  var size = svg.match(/<svg\b[^>]*\swidth="([\d.]+)"[^>]*\sheight="([\d.]+)"/);
+  var rects = (svg.match(/<rect\b[^>]*>/g) || []).map(function (t) {
+    return { x: attrOf(t, "x") || 0, y: attrOf(t, "y") || 0, w: attrOf(t, "width"), h: attrOf(t, "height") };
+  }).filter(function (r) { return !(size && r.w === Number(size[1]) && r.h === Number(size[2])); });
+  var lines = (svg.match(/<line\b[^>]*>/g) || []).map(function (t) {
+    return { x1: attrOf(t, "x1"), y1: attrOf(t, "y1"), x2: attrOf(t, "x2"), y2: attrOf(t, "y2") };
+  });
+  var texts = [];
+  svg.replace(/<text\b([^>]*)>([^<]*)<\/text>/g, function (_, at, body) {
+    texts.push({ x: attrOf(at, "x"), y: attrOf(at, "y"), t: body.trim() }); return _;
+  });
+  var hz = lines.filter(function (l) { return l.y1 === l.y2; }), vt = lines.filter(function (l) { return l.x1 === l.x2; });
+  if (hz.length !== 1 || vt.length !== 1) return why("it does not have exactly one baseline and one value axis");
+  var B = hz[0].y1, axisX = vt[0].x1, top = Math.min(vt[0].y1, vt[0].y2);
+  if (Math.max(vt[0].y1, vt[0].y2) !== B || !(B > top)) return why("its value axis does not stand on its baseline");
+  var ticks = texts.filter(function (x) { return x.x < axisX && /^\d+(\.\d+)?$/.test(x.t); });
+  if (ticks.length !== 2) return why("its value axis is not labelled at exactly its two ends");
+  ticks.sort(function (a, b) { return b.y - a.y; });
+  var lo = ticks[0], hi = ticks[1];
+  if (Math.abs(lo.y - B) > 8 || Math.abs(hi.y - top) > 8) return why("its axis labels do not sit at the ends of the axis");
+  var vLo = Number(lo.t), vHi = Number(hi.t);
+  var cats = texts.filter(function (x) { return x.y > B && ticks.indexOf(x) < 0; });
+  var title = texts.filter(function (x) { return x.y < top && ticks.indexOf(x) < 0; }).map(function (x) { return x.t; }).join(" ");
+  var used = texts.filter(function (x) { return ticks.indexOf(x) >= 0 || cats.indexOf(x) >= 0 || x.y < top; });
+  if (used.length !== texts.length) return why("it carries labels this reader cannot place");
+  if (!rects.length || rects.length !== cats.length) return why("its bars and its category labels do not pair one to one");
+  var bars = [];
+  for (var i = 0; i < rects.length; i++) {
+    var r = rects[i];
+    if (Math.abs(r.y + r.h - B) > 0.5) return why("a bar does not stand on the baseline");
+    var cat = cats.filter(function (c) { return c.x >= r.x && c.x <= r.x + r.w; });
+    if (cat.length !== 1) return why("a bar has no single category label under it");
+    var v = vLo + (r.h / (B - top)) * (vHi - vLo);
+    if (Math.abs(v - Math.round(v)) > 0.01) return why("its bars do not read to whole values on the labelled axis");
+    bars.push({ label: cat[0].t, value: Math.round(v), x: r.x });
+  }
+  bars.sort(function (a, b) { return a.x - b.x; });
+  return { ok: true, title: title, lo: vLo, hi: vHi, bars: bars };
+}
+
+// Every holder the student was shown source material on, outermost first: the
+// section, then a part's parent, then the question itself.
+function sourceContext(holders) {
+  var blocks = [], unrepresented = [], n = 0;
+  (holders || []).forEach(function (h) {
+    resourcesOf(h).forEach(function (r) {
+      n++;
+      var lines = [];
+      if (typeof r === "string") { lines.push(r.trim()); }
+      else if (r && typeof r === "object") {
+        if (!blank(r.caption)) lines.push(String(r.caption).trim());
+        if (!blank(r.text)) lines.push(String(r.text).trim());
+        if (r.img != null) {
+          var svg = svgOf(r.img), chart = svg ? readBarChart(svg) : { ok: false, why: "it is an image, not a chart this reader can read" };
+          if (chart.ok) {
+            lines.push("Bar chart" + (chart.title ? ": " + chart.title : "") + ". Values read from the bar heights against the labelled axis (" +
+              chart.lo + " to " + chart.hi + "):\n" + chart.bars.map(function (b) { return "  " + b.label + ": " + b.value; }).join("\n"));
+          } else {
+            lines.push("[An image was shown to the student here. It is not included, because " + chart.why + ".]");
+            unrepresented.push({ source: n, kind: "image", why: chart.why });
+          }
+        }
+        if (Array.isArray(r.charts)) r.charts.forEach(function (c) {
+          var kind = (c && c.type) || "chart";
+          lines.push("[A " + kind + " chart was shown to the student here. It is not included, because this version cannot represent it as text.]");
+          unrepresented.push({ source: n, kind: kind, why: "this version cannot represent a " + kind + " chart as text" });
+        });
+      }
+      if (lines.length) blocks.push("SOURCE " + n + ":\n" + lines.join("\n"));
+    });
+  });
+  var text = blocks.join("\n\n");
+  if (text.length > SOURCE_MAX_CHARS)
+    return ASSESS.refuse("SOURCE_OVER_BUDGET",
+      "the source material for this question is " + text.length + " characters and the marker can read " + SOURCE_MAX_CHARS +
+      ", so it would be marked against part of the source without anyone being told which part",
+      { chars: text.length, limit: SOURCE_MAX_CHARS });
+  return { ok: true, text: text, sources: n, unrepresented: unrepresented };
+}
+
 function resourceFindings(holder, path) {
   var out = [];
+  // Source material the marker cannot be sent as text is reported here, where
+  // the author can still add a text or table equivalent, rather than discovered
+  // when a marker judges use of a chart it never saw.
+  var sc = sourceContext([holder]);
+  if (sc.ok !== true)
+    out.push(finding(STATE.unsupported, sc.code, path + ".stimulus", sc.why));
+  else sc.unrepresented.forEach(function (u) {
+    out.push(finding(STATE.thin, "SOURCE_NOT_REPRESENTED", path + ".stimulus",
+      "a " + u.kind + " in this source is shown to the student but cannot be sent to the marker as text, because " + u.why +
+      ". The marker is told it was there and cannot see it. Add a text or table equivalent to the source"));
+  });
   resourcesOf(holder).forEach(function (r, i) {
     var at = path + ".stimulus" + (Array.isArray(holder.stimulus) ? "[" + i + "]" : "");
     if (typeof r === "string") return;
@@ -535,7 +691,45 @@ function duplicateFindings(paper) {
 // ---------------------------------------------------------------------------
 // The paper
 // ---------------------------------------------------------------------------
-function examine(paper) {
+// WHICH QUESTIONS NEED THE SUBJECT'S MARKER (UX-TEST-23).
+//
+// A subject package matters only to an answer the marker judges. Multiple choice
+// is marked from its key, a calculation from its expected value and tolerance,
+// and a short answer whose every point authors phrasings from those phrasings
+// (ASSESS.scorePoints, `local`). Everything else written is judged by the marker
+// against the subject's criteria, and cannot be marked without them.
+function markerDependent(paper) {
+  var out = [];
+  (paper && Array.isArray(paper.sections) ? paper.sections : []).forEach(function (sec, si) {
+    (sec && Array.isArray(sec.questions) ? sec.questions : []).forEach(function (q, qi) {
+      (isParent(q) ? partsOf(q) : [q]).forEach(function (leaf, pi) {
+        var fx = ASSESS.normaliseFormat(leaf || {});
+        if (!fx.ok || !ASSESS.writtenModeOf(fx.format)) return;
+        var sp = ASSESS.scorePoints(leaf, "");
+        if (sp.ok === true && sp.local) return;
+        out.push("sections[" + si + "].questions[" + qi + "]" + (isParent(q) ? ".parts[" + pi + "]" : ""));
+      });
+    });
+  });
+  return out;
+}
+// Whether the paper's subject resolves, and whether that matters. Run only when
+// the caller says which packages exist (opts.packages), which an importer does.
+// A malformed or missing key is already reported by curriculumFindings.
+function authorityFindings(paper, packages) {
+  var c = ASSESS.curriculumOf(paper);
+  if (!c || blank(c.subjectKey) || !ASSESS.isSubjectKey(c.subjectKey)) return [];
+  var auth = ASSESS.resolveAuthority({ curriculum: c, packages: packages });
+  if (auth.ok || (auth.code !== "SUBJECT_UNREGISTERED" && auth.code !== "CRITERIA_ABSENT")) return [];
+  var needs = markerDependent(paper);
+  if (needs.length)
+    return [finding(STATE.blocked, auth.code, "curriculum.subjectKey", auth.why + ". " + needs.length +
+      " question" + (needs.length === 1 ? " needs" : "s need") + " the subject's marker, so the paper cannot be sat as it stands")];
+  return [finding(STATE.thin, "SUBJECT_MARKING_UNAVAILABLE", "curriculum.subjectKey", auth.why +
+    ". Every question in this paper is marked from its own answer key, so it can be sat and marked; marking that needs the subject is not available")];
+}
+
+function examine(paper, opts) {
   var out = [];
 
   if (!paper || typeof paper !== "object")
@@ -584,7 +778,38 @@ function examine(paper) {
   if (Array.isArray(paper.sections) && paper.sections.length && !questions)
     out.push(finding(STATE.malformed, "NO_QUESTIONS", "sections", "this paper has sections and no questions in any of them"));
 
+  if (opts && opts.packages) out = out.concat(authorityFindings(paper, opts.packages));
+
   return verdict(out, paper);
+}
+
+// ---------------------------------------------------------------------------
+// A paper already in the library
+// ---------------------------------------------------------------------------
+// The same paper is the same exam.id, never the same title. Its version says
+// whether a file is that paper again, a newer one, or an older one. A newer
+// version replaces the library's copy for new starts; an attempt already begun
+// stays pinned to the version it began on (docs/testmode-attempt-state.md).
+function compareVersions(a, b) {
+  var num = /^\d+(\.\d+)*$/;
+  if (!num.test(a) || !num.test(b)) return a === b ? 0 : null;
+  var x = a.split(".").map(Number), y = b.split(".").map(Number);
+  for (var i = 0; i < Math.max(x.length, y.length); i++) {
+    var d = (x[i] || 0) - (y[i] || 0);
+    if (d) return d > 0 ? 1 : -1;
+  }
+  return 0;
+}
+function libraryMatch(library, paper) {
+  var id = paper && paper.exam && paper.exam.id;
+  if (blank(id)) return { kind: "new" };
+  var existing = (library || []).filter(function (p) { return p && p.exam && p.exam.id === id; })[0];
+  if (!existing) return { kind: "new" };
+  var from = blank(existing.exam.version) ? "" : String(existing.exam.version);
+  var to = blank(paper.exam.version) ? "" : String(paper.exam.version);
+  var cmp = compareVersions(to, from);
+  return { kind: cmp === 0 ? "same" : cmp === 1 ? "newer" : cmp === -1 ? "older" : "different",
+           existing: existing, from: from, to: to };
 }
 
 function verdict(findings, paper) {
@@ -619,8 +844,11 @@ module.exports = {
   isSittable: isSittable, examine: examine,
   numberOf: numberOf, sectionMarks: sectionMarks, totals: totals,
   resourcesOf: resourcesOf, resourcesFor: resourcesFor, REFERENCE_KEYS: REFERENCE_KEYS,
+  sourceContext: sourceContext, readBarChart: readBarChart, SOURCE_MAX_CHARS: SOURCE_MAX_CHARS,
   isParent: isParent, partsOf: partsOf, labelOf: labelOf, displayNumber: displayNumber,
   marksOf: marksOf, answerables: answerables,
   totalFindings: totalFindings, duplicateFindings: duplicateFindings,
   questionFindings: questionFindings, curriculumFindings: curriculumFindings,
+  markerDependent: markerDependent, authorityFindings: authorityFindings,
+  libraryMatch: libraryMatch, compareVersions: compareVersions,
 };

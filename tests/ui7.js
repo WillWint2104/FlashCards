@@ -8,9 +8,11 @@ const here = (p, sel) => p.waitForSelector(sel, { timeout: 8000 });
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 
 // A SHORT-ANSWER review: one paragraph, NO rubric, focus pointing at a real line.
-const SHORT = ans => ({
+// The worker's reply is on the question's own mark scale; a reply out of 4 for
+// a 2-mark question is not a mark and Test Mode refuses it (UX-TEST-22).
+const SHORT = (ans, marks) => ({
   summary:"You name the strategy but do not say what it does for the objective.",
-  total:2,max:4,score:2,
+  total:Math.min(2, marks),max:marks,score:Math.min(2, marks),
   paragraphs:[{name:"Your answer",score:2,max:4,reasons:[{kind:'weak',text:'Names it without explaining it'}],sentences:[
     {text:"McDonalds uses mobile ordering.",issues:[
       {kind:'fix',severity:'critical',head:'Say what it achieves',why:'You name mobile ordering but do not say what it does for the objective the question asks about.',
@@ -30,59 +32,73 @@ const SHORT = ans => ({
     const s=JSON.parse(r.request().postData()||'{}');
     if (s.action==='coach') return r.fulfill({status:200,contentType:'application/json',body:'{"nudges":[]}'});
     sent=s;
-    await r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(SHORT(s.answer))});
+    await r.fulfill({status:200,contentType:'application/json',body:JSON.stringify(SHORT(s.answer, Math.round(Number(s.marks)) || 4))});
   });
   await p.goto(T+'?review=1'); await settled(p);
 
   console.log('--- sit only the short-answer section ---');
   await p.$$eval('.navtab',es=>{const t=es.find(x=>/Test mode/i.test(x.textContent)); t&&t.click();});
   await settled(p);
-  await p.$$eval('button, .area',es=>{const t=es.find(x=>/^Sit\b|Sit /i.test(x.textContent.trim())); t&&t.click();});
+  // Slice A: the paper's card opens its overview (Page 3), where sections are chosen.
+  await p.click('[data-examsit]');
   await settled(p);
   await p.click('text=Clear'); await settled(p);
   await p.$$eval('.exam-pick, [data-exampick], label, button',es=>{
     const t=es.find(x=>/Short answer/i.test(x.textContent)); t&&t.click();
   });
   await settled(p);
-  await p.click('text=Start'); await settled(p);
+  await p.click('#exampickgo'); await settled(p);
   // walk past the section intro
   const begin = await p.$('#exambegin'); if (begin) { await begin.click(); await settled(p); }
   ok(!!(await p.$('#ans')),'a short-answer question is on screen');
   const marks = await p.$eval('.exam-qhead',e=>e.textContent.trim());
   console.log('    question:', marks);
 
-  console.log('--- answer it: the checklist gives the mark ---');
+  // THE MARKER GIVES THE MARK, ON THE FIRST SUBMIT (UX-TEST-18). This half used
+  // to assert a local checklist mark, then a second door ("What would make this
+  // stronger") that asked the marker for its view. The checklist mark searched
+  // the answer for each point's own description, which scored correct answers
+  // zero. A point with no authored phrasings is now a marking requirement sent
+  // straight to the marker, so its judgement is what comes back, and a second
+  // request for the same judgement would be furniture.
+  console.log('--- answer it: marked AS a short answer, by the marker ---');
   await p.fill('#ans','McDonalds uses mobile ordering.');
   await p.click('#check'); await settled(p);
-  ok(!!(await p.$('.sheet')),'it grades');
-  const kind = await p.$eval('#sheet',e=>e.textContent);
-  ok(/✓|✗/.test(kind) || /\d+\s*\/\s*\d+/.test(kind),'a mark is shown');
-  const btn = await p.$eval('#examreview',e=>e.textContent.trim()).catch(()=>'none');
-  ok(/mark this properly/i.test(btn),'the same review is offered on a short answer: '+btn);
-  await p.screenshot({path:OUT+'shot-short-sheet.png'});
-
-  console.log('--- ask for it: marked AS a short answer ---');
-  await p.click('#examreview'); await settled(p);
+  await p.waitForFunction(() => !!(document.querySelector('#sheet') || {}).textContent, null, { timeout: 8000 }).catch(() => {});
+  ok(!!(await p.$('.tm-result')),'it grades');
   ok(sent && sent.responseType==='short','the request says it is a short answer: '+(sent&&sent.responseType));
   ok(sent && sent.marks>0 && sent.marks<=10,'with its own mark value: '+(sent&&sent.marks));
   ok(sent && typeof sent.command==='string','the directive verb travels: '+JSON.stringify(sent&&sent.command));
-  ok(!!(await p.$('.rv-scrim')),'the review opens');
-  ok(!(await p.$('#rvtab-rubric')),'no band rubric tab on a short answer');
-  ok(!(await p.$('.rv-scorehint')),'and no tap-the-score hint pointing at one');
-  const tab = await p.$eval('#rvtab-paragraphs',e=>e.textContent.trim());
-  ok(/your answer/i.test(tab),'the tab reads as one answer, not paragraphs: '+tab);
-  ok(!!(await p.$('.rv-focus')),'the start-here strip is there');
-  const go = await p.$eval('#rvfocusgo',e=>e.textContent.trim());
-  ok(/revise/i.test(go),'and it offers to revise, because the box is reachable: '+go);
-  await p.screenshot({path:OUT+'shot-short-review.png'});
+  const acc = ((sent && sent.requirements) || {}).accomplish || [];
+  ok(acc.length > 0 && acc.every(x => / \(\d+ marks?\)$/.test(x)),
+     'its weighted points travel as requirements with their weights: ' + JSON.stringify(acc));
+  const kind = await p.$eval('#sheet',e=>e.textContent);
+  ok(/Marks\s*\d+ of \d+/.test(kind),'a mark is shown: '+kind.replace(/\s+/g,' ').slice(0,80));
+  ok(!/key points addressed/.test(kind),'no tick or miss inferred from a point\'s description');
+  ok(!(await p.$('#examreview')),'no second door asking the marker for the judgement it just gave');
+  await p.screenshot({path:OUT+'shot-short-sheet.png'});
 
-  console.log('--- revise returns to the answer box with the line selected ---');
-  await p.click('#rvfocusgo'); await settled(p);
-  ok(!(await p.$('.rv-scrim')),'the review closes');
-  ok(!!(await p.$('#ans')),'the question is back');
-  const box = await p.$eval('#ans',e=>({v:e.value,s:e.selectionStart,e:e.selectionEnd}));
-  ok(box.v==='McDonalds uses mobile ordering.','the answer is restored: '+JSON.stringify(box.v));
-  ok(box.e>box.s,'and the marker\'s line is selected: '+JSON.stringify([box.s,box.e]));
+  // TEST MODE DOES NOT OPEN THE REWRITE WORKSPACE, AND THIS IS WHERE IT USED TO.
+  //
+  // What this half of the suite asserted until now: clicking through from a
+  // marked short answer opened `.rv-scrim` - the Essay Practice review - with a
+  // "revise" action that reopened the answer box with the marker's line
+  // selected, "ready to be rewritten". That workspace renders the Clear /
+  // Better / Band 6 rungs as pickable model sentences, a rewrite box, and, on an
+  // extended response, criterion score pills and band descriptors. Every one of
+  // those is on the list of things a marked paper must not show.
+  //
+  // The workspace is not gone. It is Essay Practice's and it is where revision
+  // is taught. What is gone is the door out of an exam into it. The marker's
+  // words now come back into the sheet the student is already looking at.
+  ok(!(await p.$('.rv-scrim')),'NO review workspace opens from a marked paper');
+  ok(!(await p.$('#rvtab-paragraphs')) && !(await p.$('#rvtab-rubric')),'no review tabs');
+  ok(!(await p.$('.rv-focus')),'no start-here strip, and so no revise action');
+  const sheet2 = await p.$eval('#sheet',e=>e.textContent);
+  ok(/do not say what it does for the objective/.test(sheet2),
+     "the marker's own summary renders into the sheet instead");
+  ok(/try again/i.test(sheet2),'and Try again is still the way back to the answer');
+  await p.screenshot({path:OUT+'shot-short-sheet-marked.png'});
 
   console.log('pageerrors:', errs.join(' | ')||'none');
   ok(errs.length===0,'no page errors');

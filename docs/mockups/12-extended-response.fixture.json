@@ -1,0 +1,61 @@
+{
+  "_why": "Draft 1's marker copy asserted 'Figures appear once' about a response containing no digit. Content cannot drift from the thing it describes if the page is RENDERED FROM the pipeline's own output, so this fixture is fed to the shipped finalize() and the mockup is generated from what comes back. Every quotation on the page is a sentence snapSentences located; every 'Across your response' item is one it did not. All original material.",
+  "question": { "number": "15", "marks": 20, "format": "extended_response", "directive": "evaluate",
+    "prompt": "Evaluate the effectiveness of marketing strategies in achieving the marketing objectives of a business you have studied." },
+  "criteria": [
+    "knowledge and understanding of course content",
+    "application of business case studies and contemporary business issues",
+    "business terminology and concepts",
+    "sustained, logical and cohesive response"
+  ],
+  "answer": "Northline Sportswear set a marketing objective of increasing its share of the teenage market, and most of its strategies were chosen to serve that objective. The business moved from print advertising to short video content on social platforms, which reached the age group it was targeting at a lower cost per view than its previous campaigns.\n\nIts second strategy was a loyalty app that gave members early access to new releases. This was effective because it turned occasional buyers into repeat customers, and repeat customers are cheaper to keep than new ones are to find.\n\nHowever, the business also cut its prices across the range at the same time, which worked against the premium position its advertising was building. A customer who sees the brand as aspirational and then finds it discounted every month will stop believing the first message.\n\nOverall the marketing strategies were effective in achieving the objective they were set, because the business gained share in the group it targeted, but the pricing decision limited how much of that gain it could hold.",
+  "review": {
+    "summary": "You answer the question that was asked and you reach a judgement about effectiveness rather than listing what the business did. What holds the response back is evidence. No figure is given anywhere for the share, the cost per view or the sales growth, so each strategy is asserted to have worked rather than shown to have worked, and the judgement itself only arrives in the final paragraph.",
+    "rubric": [
+      { "name": "knowledge and understanding of course content", "score": 4, "max": 5,
+        "descriptor": "Rewards accurate course content, used to answer the question rather than to display it.", "bands": [] },
+      { "name": "application of business case studies and contemporary business issues", "score": 3, "max": 5,
+        "descriptor": "Rewards a business used as evidence for the argument, not described alongside it.", "bands": [] },
+      { "name": "business terminology and concepts", "score": 4, "max": 5,
+        "descriptor": "Rewards terminology that carries the reasoning rather than decorating it.", "bands": [] },
+      { "name": "sustained, logical and cohesive response", "score": 3, "max": 5,
+        "descriptor": "Rewards one judgement held from the first paragraph to the last.", "bands": [] }
+    ],
+    "focus": { "paragraph": 3, "area": "", "why": "", "quote": "" },
+    "paragraphs": [
+      { "name": "Objective and first strategy", "score": 4, "max": 5, "reasons": [],
+        "sentences": [
+          { "text": "The business moved from print advertising to short video content on social platforms, which reached the age group it was targeting at a lower cost per view than its previous campaigns.",
+            "issues": [ { "kind": "fix", "severity": "should",
+              "head": "The comparison is stated but never quantified",
+              "why": "You say the cost per view was lower than the previous campaigns. Lower by how much, and over what period? A figure here would turn the claim into evidence.",
+              "ladder": [] } ] } ] },
+      { "name": "Second strategy", "score": 3, "max": 5, "reasons": [],
+        "sentences": [
+          { "text": "This was effective because it turned occasional buyers into repeat customers, and repeat customers are cheaper to keep than new ones are to find.",
+            "issues": [ { "kind": "fix", "severity": "critical",
+              "head": "Effectiveness is asserted, and the reason given is general rather than about this business",
+              "why": "Retention being cheaper than acquisition is true of businesses generally. What would make it evidence is what happened at Northline after the app launched.",
+              "ladder": [] } ] } ] },
+      { "name": "Pricing tension", "score": 4, "max": 5, "reasons": [],
+        "sentences": [
+          { "text": "However, the business also cut its prices across the range at the same time, which worked against the premium position its advertising was building.",
+            "issues": [ { "kind": "term", "severity": "should",
+              "head": "The strongest paragraph, and the one closest to an evaluation",
+              "why": "You set two strategies against each other and say why they conflict. This is the reasoning the rest of the response needs more of.",
+              "ladder": [] } ] } ] },
+      { "name": "Judgement", "score": 3, "max": 5, "reasons": [],
+        "sentences": [
+          { "text": "The response names market share as the objective and then measures success against it consistently throughout.",
+            "issues": [ { "kind": "fix", "severity": "critical",
+              "head": "The judgement arrives only at the end",
+              "why": "Each paragraph reaches its own small verdict and the position that ties them together appears in the last three lines. Stating it first would make the response read as one argument rather than four.",
+              "ladder": [] } ] },
+          { "text": "Market share is named as the objective and never returned to with a figure, so the claim that share was gained rests on assertion.",
+            "issues": [ { "kind": "fix", "severity": "should",
+              "head": "The objective is set but never measured",
+              "why": "The response is judged against achieving a marketing objective, so the one number that would settle it is the change in share.",
+              "ladder": [] } ] } ] }
+    ]
+  }
+}

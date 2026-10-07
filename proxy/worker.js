@@ -76,7 +76,7 @@ function markCriteria(raw) {
 // guarantee behind "the plan is context, not marks": it holds even if this prompt
 // is edited, and the only way to break it is to add a field to PASS2_FIELDS.
 // =============================================================================
-const DIAG_SYSTEM = `You are reading one student's extended response and describing exactly what is on the page. You are not the marker. You give no marks, no band, no grade and no overall verdict, and you never say whether the response is good.
+const DIAG_SYSTEM = `You are reading one student's written response and describing exactly what is on the page. You are not the marker. You give no marks, no band, no grade and no overall verdict, and you never say whether the response is good.
 
 Report only what the student actually wrote, and quote them. Every observation must carry a short verbatim quote copied exactly from the response, because an observation you cannot quote is discarded before the marker sees it. Copy the words as they appear. Never quote the question, the plan, the scaffold or your own paraphrase.
 
@@ -247,7 +247,7 @@ catch (e) { DIAG_SAFE = false; DIAG_UNSAFE_WHY = String(e.message || e); }
 // The grading prompt. Every model sentence, starter, reason, descriptor and
 // explanation must be in writable Year 12 English with NO em-dashes, so it
 // reads as something a student could actually write.
-const SYSTEM = `You are an experienced HSC marker for the SUBJECT named in the request, building a paragraph-by-paragraph review that teaches a student to improve their extended response. Mark as a specialist in that subject: use its terminology, its conventions and the kind of evidence it expects, never another subject's.
+const SYSTEM = `You are an experienced HSC marker for the SUBJECT named in the request, building a paragraph-by-paragraph review that teaches a student to improve their written response. Mark as a specialist in that subject: use its terminology, its conventions and the kind of evidence it expects, never another subject's.
 
 Mark honestly. Flag every real fault, even if that means most of a paragraph is marked, because leniency teaches a student that a flawed answer is nearly perfect. The marks must be consistent with what you flag: a paragraph with several weak sentences cannot score near full marks, and the total is the sum of the paragraph marks.
 
@@ -261,7 +261,7 @@ Each issue carries a three-rung ladder: Clear, Better, Band 6. Every rung must b
 
 Build every rung out of what is already in this student's response and in the question. Never lift a sentence from the reference answer, the scaffold or any material supplied with the request. A rung is a better version of what THEY wrote, not a model answer for them to memorise.
 
-Return the rubric exactly as the RESPONSE TYPE in the request directs. For an extended response that means one entry per MARKING CRITERION named in the request, in the order given, using those exact criterion names, each with marks, a one-line descriptor and band descriptors, setting here to true on the band the response sits in, and the rubric marks consistent with the paragraph marks. For a short answer it means an empty rubric, because band criteria describe an extended response and say nothing useful about a three-mark answer.
+Return the rubric exactly as the RESPONSE TYPE in the request directs. For an extended response or a business report that means one entry per MARKING CRITERION named in the request, in the order given, using those exact criterion names, each with marks, a one-line descriptor and band descriptors, setting here to true on the band the response sits in, and the rubric marks consistent with the paragraph marks. For a short answer it means an empty rubric, because band criteria describe extended writing and say nothing useful about a three-mark answer.
 
 A DIAGNOSIS of this response comes with the request. It lists what the student actually wrote, quoted from their own page, and every quote in it has already been checked against their response. Use it as your evidence. It carries no marks and no verdict, so the judgement is entirely yours, but do not contradict a quoted observation without saying why.
 
@@ -366,7 +366,7 @@ const REVIEW_TOOL = {
       rubric: {
         type: "array",
         maxItems: 4,
-        description: "For an extended response, one entry per marking criterion named in the request, in that order, using those exact names. For a short answer, an empty array.",
+        description: "For an extended response or a business report, one entry per marking criterion named in the request, in that order, using those exact names. For a short answer, an empty array.",
         items: {
           type: "object",
           properties: {
@@ -863,6 +863,7 @@ export default {
     // ---- PASS 1: diagnose what is actually on the page (no marks) -----------
     const diagnosis = await diagnose({
       subject: markSubject, prompt, command, marks, topic: ctx.topic, responseType: ctx.responseType,
+      format: ctx.format, stimulusContext: ctx.stimulusContext,
       requirements: ctx.requirements, validContent: ctx.validContent, plan: ctx.plan,
       response: paras, answer,
     }, env);
@@ -873,7 +874,8 @@ export default {
       userMessage = pass2Message({
         subject: markSubject, criteria, bands: ctx.bands, bandsSource: ctx.bandsSource,
         command, marks, prompt, topic: ctx.topic, requirements: ctx.requirements,
-        responseType: ctx.responseType, stimulus: ctx.stimulus, blocks: ctx.blocks,
+        responseType: ctx.responseType, format: ctx.format, stimulus: ctx.stimulus,
+        stimulusContext: ctx.stimulusContext, blocks: ctx.blocks,
         reference: String(model_answer || "").slice(0, 1600), vocab, scaffold: scaffoldText, faults: faultsText, rubric: ctx.rubric,
         diagnosis: diagnosisText(diagnosis),
         offPathway: offPathwayCount(diagnosis, ctx.validContent.pathways.length > 0),
@@ -913,13 +915,30 @@ export default {
       return json({ error: "grader returned no review", stop_reason: data.stop_reason || null }, 502, cors);
     }
     // A review cut off part way through is worse than no review: finalize() sums the
-    // paragraph marks, so a response truncated after paragraph four of six would
-    // report a total several marks below what was actually awarded, and the student
-    // would read it as their grade. Fail loudly instead. The app already falls back
-    // to a labelled demo grade on a non-ok response, so nothing silently understates.
-    const chunkCount = String(answer).split(/\n\s*\n/).filter(x => x.trim()).length;
-    if (data.stop_reason === "max_tokens" && r.paragraphs.length < chunkCount) {
-      return json({ error: "grading ran long and was cut off before it finished. Try again.", stop_reason: "max_tokens" }, 502, cors);
+    // paragraph marks, so a truncated review reports a total below what was actually
+    // awarded, and the student would read it as their grade. This used to fail only
+    // when the review had fewer paragraphs than the answer had blank-line blocks, so
+    // a one-block short answer, or a model that split an essay more finely, let a
+    // truncated review through. Any truncation now fails, whatever its length.
+    //
+    // Test Mode leaves a non-ok reply unmarked (UX-TEST-22); Study falls back to a
+    // labelled demo grade. Either way nothing silently understates.
+    if (data.stop_reason === "max_tokens") {
+      return json({ error: "grading ran long and was cut off before it finished. Try again.", stop_reason: "max_tokens", retryable: true }, 502, cors);
+    }
+    // A paragraph without a mark is not a mark of zero. reconcileParagraphs reads a
+    // missing or non-numeric score as 0, which turned an unusable reply into a
+    // fabricated low grade. Only a review whose every paragraph carries a real score
+    // and scale reaches finalize.
+    // A paragraph worth nothing (a heading on its own line) is a real reply, and
+    // reconcileParagraphs shares the marks out around it; only a review with no
+    // scale at all, or a mark that is not a number, is unusable.
+    const unusable = r.paragraphs.some(p => !p || typeof p !== "object" ||
+      typeof p.score !== "number" || !Number.isFinite(p.score) || p.score < 0 ||
+      typeof p.max !== "number" || !Number.isFinite(p.max) || p.max < 0) ||
+      r.paragraphs.every(p => p.max === 0);
+    if (unusable) {
+      return json({ error: "grader returned an unusable mark", retryable: true }, 502, cors);
     }
     return json(finalize(r, markTotal, String(answer), diagnosis, criteria, ctx.validContent.pathways.length > 0, ctx.responseType, ctx.blocks), 200, cors);
   },
@@ -1184,6 +1203,19 @@ function diagnosisText(d) {
 
 // Pass 1's message. This is the ONLY place the student's plan and our authored
 // argument pathways appear. Pass 1 cannot award a mark, so nothing here can.
+// What the response IS, in words, for both passes. The format decides the name;
+// the response type decides only how it is marked. Nothing here is a directive:
+// the directive travels separately, in the QUESTION line, as the author wrote it.
+function responseKindWords(f) {
+  if (f.format === "business_report") return "business report";
+  return f.responseType === "short" ? "short answer" : "extended response";
+}
+// The source block, identical in both passes, or nothing when there is none.
+function sourceBlock(f) {
+  return f.stimulusContext
+    ? `SOURCE MATERIAL THE STUDENT WAS GIVEN (authored, exactly as the student saw it, except where a note says something could not be included. Judge whether the response uses it, and whether its claims are supported by it, against this text and nothing else):\n${f.stimulusContext}`
+    : "";
+}
 function diagMessage(f) {
   const req = f.requirements || {};
   const listOr = (a, none) => (Array.isArray(a) && a.length ? a.map((x, i) => `${i + 1}. ${x}`).join("\n") : none);
@@ -1199,15 +1231,16 @@ function diagMessage(f) {
   const evidence = (vc.evidence || []).map(x => `- ${x.label}: ${x.fact}`).join("\n");
   return [
     `SUBJECT: ${f.subject || "(unspecified)"}`,
-    `RESPONSE TYPE: ${f.responseType === "short" ? "short answer" : "extended response"}, worth ${f.marks} marks. Describe it as what it is. A short answer has no introduction or conclusion to be missing.`,
+    `RESPONSE TYPE: ${responseKindWords(f)}, worth ${f.marks} marks. Describe it as what it is. A short answer has no introduction or conclusion to be missing.`,
     `QUESTION${f.command ? " (" + f.command + ")" : ""} (${f.marks} marks)${f.topic ? " [" + f.topic + "]" : ""}:\n${f.prompt}`,
+    sourceBlock(f), // pass 1 reads the same source the judgement will, or the two passes weigh different evidence
     `WHAT THIS QUESTION REQUIRES:\nconcepts: ${listOr(req.concepts, "(not specified)")}\nrelationships to demonstrate: ${listOr(req.relationships, "(not specified)")}\nwhat a strong response accomplishes: ${listOr(req.accomplish, "(not specified)")}${req.syllabus ? "\nsyllabus scope: " + req.syllabus : ""}`,
     `ARGUMENT PATHWAYS WE ANTICIPATED (a menu, NOT the correct answers. A different defensible argument is valid and you must record it as valid):\n${pathways || "(none provided)"}`,
     `CONCEPTS:\n${concepts || "(none provided)"}`,
     `VERIFIED EVIDENCE AVAILABLE TO THE STUDENT:\n${evidence || "(none provided)"}`,
     `THE STUDENT'S PLAN (what they intended. It is NOT proof they wrote it. Only the response can show that):\n${planText}`,
     `STUDENT RESPONSE (numbered paragraphs):\n${f.response}`,
-  ].join("\n\n");
+  ].filter(Boolean).join("\n\n");
 }
 
 // Everything the plan says, as one string, so its phrases can be kept out of pass 2.
@@ -1266,7 +1299,7 @@ async function diagnose(f, env) {
 // authored argument pathways are absent by construction, so no prompt edit can let
 // them score. Adding a key here is the only way to change that, and it throws
 // loudly rather than leaking quietly.
-const PASS2_FIELDS = ["subject", "criteria", "bands", "bandsSource", "rubric", "command", "marks", "prompt", "topic", "requirements", "reference", "vocab", "scaffold", "faults", "diagnosis", "offPathway", "responseType", "stimulus", "blocks", "response"];
+const PASS2_FIELDS = ["subject", "criteria", "bands", "bandsSource", "rubric", "command", "marks", "prompt", "topic", "requirements", "reference", "vocab", "scaffold", "faults", "diagnosis", "offPathway", "responseType", "format", "stimulus", "stimulusContext", "blocks", "response"];
 
 // How to mark THIS kind of response. A short answer is not a miniature essay: it
 // earns its marks by doing what the directive verb asks at the depth the mark
@@ -1276,7 +1309,7 @@ const PASS2_FIELDS = ["subject", "criteria", "bands", "bandsSource", "rubric", "
 function responseTypeRule(f) {
   const marks = Math.max(1, Math.round(Number(f.marks) || 1));
   if (f.responseType !== "short") {
-    return `RESPONSE TYPE: extended response, worth ${marks} marks. Mark it against the marking criteria and the band expectations above, and return one rubric entry per criterion.`;
+    return `RESPONSE TYPE: ${responseKindWords(f)}, worth ${marks} marks. Mark it as ${f.format === "business_report" ? "a business report" : "an extended response"} against the marking criteria and the band expectations above, and return one rubric entry per criterion.`;
   }
   const verb = f.command ? `The directive verb is "${f.command}", so mark whether the response does THAT.` : "Mark whether the response does what the question actually asks.";
   return [
@@ -1312,6 +1345,7 @@ function pass2Message(bag) {
       `BAND EXPECTATIONS (${f.bandsSource || "general HSC band expectations"}):\n${(f.bands || []).map(b => `${b.range}: ${b.text}`).join("\n") || "(none provided)"}`,
     f.rubric ? `THE MARKING GUIDE THE STUDENT SUPPLIED (aim the judgement at this where it differs from the general expectations):\n${f.rubric}` : "",
     `QUESTION${f.command ? " (" + f.command + ")" : ""} (${f.marks} marks)${f.topic ? " [" + f.topic + "]" : ""}:\n${f.prompt}`,
+    sourceBlock(f),
     `WHAT THIS QUESTION REQUIRES:\nconcepts: ${listOr(req.concepts, "(not specified)")}\nrelationships to demonstrate: ${listOr(req.relationships, "(not specified)")}\nwhat a strong response accomplishes: ${listOr(req.accomplish, "(not specified)")}${req.syllabus ? "\nsyllabus scope: " + req.syllabus : ""}`,
     responseTypeRule(f),
     `REFERENCE, WHAT A TOP ANSWER CAN COVER (a guide, never a checklist, and never the only valid answer):\n${f.reference || "(none provided)"}`,
@@ -1342,16 +1376,31 @@ function offPathwayCount(d, pathwaysSupplied) {
 // to a student as their own line.
 function snapSentences(r, idx) {
   let total = 0, snapped = 0, unplaced = 0;
-  (r.paragraphs || []).forEach(p => (p.sentences || []).forEach(sn => {
+  (r.paragraphs || []).forEach((p, pi) => (p.sentences || []).forEach(sn => {
     if (typeof sn.text !== "string" || !sn.text.trim()) return;   // a missing-sentence slot
     total++;
+    // LOCATE THE SENTENCE INSIDE ITS OWN PARAGRAPH.
+    //
+    // Against the whole response, a model "sentence" welding the end of one
+    // paragraph to the start of the next VERIFIES, and the student is handed a
+    // run of their own characters that they never wrote as one sentence -
+    // counted as grounded and quotable back at them. answerIndex has built a
+    // per-paragraph index since it was written, for exactly this reason, and
+    // normalizeDiagnosis already uses it. This did not.
+    //
     // A sentence is not a pointer, it is the student's own line, and a run-on can
     // be long. The 60-word cap that keeps a "quote" useful would drop those, so
     // locating a sentence gets a wider limit.
-    const at = quoteSpan(idx, sn.text, 250);
+    const scope = scopeFor(idx, pi + 1);
+    const at = quoteSpan(scope, sn.text, 250);
     if (!at) { unplaced++; sn.unplaced = true; return; }
-    const exact = spanText(idx, at);
-    if (exact && exact !== sn.text) { sn.text = exact; snapped++; } else snapped++;
+    const exact = spanText(scope, at);
+    // Fail closed where the model returned more paragraphs than the response has
+    // and scopeFor fell back to the whole index: a located run containing a blank
+    // line spans two paragraphs and is not a sentence.
+    if (!exact || /\n\s*\n/.test(exact)) { unplaced++; sn.unplaced = true; return; }
+    if (exact !== sn.text) sn.text = exact;
+    snapped++;
   }));
   return { total, snapped, unplaced };
 }
@@ -1451,13 +1500,33 @@ function groundProse(r, idx) {
   let quoted = 0, unquoted = 0;
   const fix = t => {
     if (typeof t !== "string" || t.indexOf('"') < 0 && t.indexOf("“") < 0) return t;
-    return t.replace(/["“]([^"“”]{3,240})["”]/g, (m, inner) => {
+    // THE UPPER BOUND USED TO BE 240 CHARACTERS, AND IT FAILED OPEN.
+    //
+    // A quoted run longer than that was not matched at all, so it kept its
+    // quotation marks and was never counted: a fabricated 263-character
+    // "quotation" shipped with its marks on while checks.prose reported the
+    // review clean. The bound is now generous and the DECISION belongs to
+    // verifyQuote - anything it cannot confirm loses its quotation semantics,
+    // however long it is. Fail closed.
+    return t.replace(/["“]([^"“”]{3,2000})["”]/g, (m, inner) => {
       if (verifyQuote(idx, inner)) { quoted++; return '"' + inner + '"'; }
       unquoted++; return inner;
     });
   };
   r.summary = fix(r.summary);
-  if (r.focus) r.focus.why = fix(r.focus.why);
+  if (r.focus) { r.focus.why = fix(r.focus.why); r.focus.area = fix(r.focus.area); }
+  // THE CRITERION NARRATIVE IS STUDENT-FACING MARKER PROSE AND WAS NOT COVERED.
+  //
+  // `descriptor` is the largest block of marker writing a marked extended
+  // response shows, and it escaped this path entirely, so an invented quotation
+  // inside it rendered with its marks on and unrecorded by checks.prose. Same
+  // for the band text. Neither is sentence-grounded - that is stated where they
+  // are classified - but neither may quote a student on something they did not
+  // write.
+  (r.rubric || []).forEach(c => {
+    c.descriptor = fix(c.descriptor);
+    (c.bands || []).forEach(b => { b.text = fix(b.text); });
+  });
   (r.paragraphs || []).forEach(p => {
     (p.reasons || []).forEach(rs => { rs.text = fix(rs.text); });
     (p.sentences || []).forEach(sn => (sn.issues || []).forEach(iss => { iss.why = fix(iss.why); iss.head = fix(iss.head); }));
@@ -1487,13 +1556,21 @@ function groundFocus(r, answer, blocks) {
     let best = null;
     paras.forEach((p, pi) => (p.sentences || []).forEach((sn, si) => (sn.issues || []).forEach(iss => {
       const rank = SEVRANK[iss.severity] != null ? SEVRANK[iss.severity] : 1;
-      if (!best || rank < best.rank) best = { rank, pi, si, iss, text: sn.text };
+      if (!best || rank < best.rank) best = { rank, pi, si, iss, text: sn.text, unplaced: !!sn.unplaced };
     })));
     if (best) {
       if (idx < 0) idx = best.pi;
       if (!area) area = best.iss.head || "Where to start";
       if (!why) why = best.iss.why || "";
-      if (!quote && typeof best.text === "string") quote = best.text;
+      // The fallback used to assign best.text straight through, unverified.
+      // snapSentences has already run, so a sentence that failed to locate still
+      // holds the MODEL's wording with sn.unplaced set - and that wording became
+      // focus.quote while checks.focusQuoted reported true. Verify it, and never
+      // fall back to a sentence that failed to locate.
+      if (!quote && typeof best.text === "string" && !best.unplaced) {
+        const bAt = quoteSpan(words, best.text, 250);
+        if (bAt) quote = spanText(words, bAt);
+      }
     }
   }
   if (idx < 0) idx = 0;
@@ -1542,7 +1619,18 @@ function markingInput(body) {
     // A short answer is marked as a short answer. Anything else is an extended
     // response, which keeps every older client on exactly its current behaviour.
     responseType: b.responseType === "short" ? "short" : "extended",
+    // WHAT KIND OF RESPONSE THIS IS, which is a different question from which of
+    // the two marking behaviours it wants. A business report is marked with the
+    // extended behaviour and is still a business report: the worker used to throw
+    // `format` away at this line and then tell both passes it was an "extended
+    // response". Only the written formats are accepted; anything else is dropped.
+    format: ["short_answer", "extended_response", "business_report"].indexOf(b.format) >= 0 ? b.format : "",
     stimulus: !!b.stimulus,
+    // THE SOURCE MATERIAL THE STUDENT WAS GIVEN, as the app's contract built it
+    // from what was authored (tools/contract/exam.js sourceContext). The cap is the
+    // contract's SOURCE_MAX_CHARS, and the app refuses rather than send more, so
+    // this slice never cuts anything it is given.
+    stimulusContext: str(b.stimulusContext, 4000),
     topic: str(b.topic, 120),
     rubric: str(b.rubric, 3000),
     bandsSource: str(b.bandsSource, 80),
@@ -1645,6 +1733,22 @@ function finalize(r, marks, answer, diagnosis, criteria, creditable, responseTyp
   if (responseType === "short") r.rubric = [];
   else reconcileRubric(r, marks, criteria);
 
+  // ---- grounding: where the student goes back to write, and how we know ----
+  //
+  // THIS RUNS BEFORE THE LEGACY FIELDS ARE DERIVED, AND THE ORDER IS THE POINT.
+  //
+  // It used to run after. `overall.summary` and `next_steps` were string copies
+  // taken from `r.summary` and `issues[].head` BEFORE groundProse had touched
+  // them, and those copies are the only ones the app reads: app.js reads
+  // fb.overall.summary and never fb.summary. So an invented quoted run kept its
+  // quotation marks on the one paragraph a student reads first, while
+  // checks.prose reported the review as cleaned. Deriving afterwards is what
+  // makes the guarantee true rather than merely stated.
+  const idx = answerIndex(answer);
+  const snap = snapSentences(r, idx);
+  r.focus = groundFocus(r, idx, blocks);
+  const prose = groundProse(r, idx);
+
   // ---- legacy fields (derived, not asked of the model) ----
   r.score = r.total;
   r.overall = { summary: r.summary || "" };
@@ -1661,11 +1765,6 @@ function finalize(r, marks, answer, diagnosis, criteria, creditable, responseTyp
     .map(i => i.head);
   r.missing_vocabulary = [];
 
-  // ---- grounding: where the student goes back to write, and how we know ----
-  const idx = answerIndex(answer);
-  const snap = snapSentences(r, idx);
-  r.focus = groundFocus(r, idx, blocks);
-  const prose = groundProse(r, idx);
   if (diagnosis) {
     r.diagnosis = diagnosis;
     // A valid argument that was not one of our pathways is CREDITED, not penalised,
@@ -1684,7 +1783,10 @@ function finalize(r, marks, answer, diagnosis, criteria, creditable, responseTyp
     sentencesVerified: snap.snapped,
     sentencesUnplaced: snap.unplaced,
     grounded: snap.total ? Math.round(100 * snap.snapped / snap.total) / 100 : 1,
-    focusQuoted: !!(r.focus && r.focus.quote),
+    // Non-empty was not verification. A focus quote that never located still
+    // reported true, and this is the one flag a renderer is entitled to trust
+    // when deciding whether it may say "In your response".
+    focusQuoted: !!(r.focus && r.focus.quote && verifyQuote(idx, r.focus.quote)),
     focusBlock: !!(r.focus && r.focus.targetBlockId),
     prose: prose,
     diagnosis: diagnosis ? diagnosis.verified : null,

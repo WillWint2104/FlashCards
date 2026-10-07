@@ -74,25 +74,32 @@ async function atWidth(page, w, h) {
   await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
 }
 
+// Waiting for the state a step produces, not for a guess at how long it takes.
+// The same move the resize helper made: this suite only reads layout, and its
+// fixed sleeps were most of its time on the checkpoint tier.
+const frames = page => page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+const expanded = (page, v) => page.waitForFunction(x => { const m = document.getElementById("esmenu"); return m && m.getAttribute("aria-expanded") === x; }, v, { timeout: 4000 });
+const shown = (page, sel) => page.waitForSelector(sel, { state: "attached", timeout: 8000 });
+
 async function toPicker(page) {
   await page.goto(T);
   await page.waitForSelector(".navtab", { timeout: 8000 });
   await page.$$eval(".navtab", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await page.waitForSelector("#essubject", { timeout: 8000 });
   await page.selectOption("#essubject", "business_studies");
-  await page.waitForTimeout(300);
+  await frames(page);
 }
 async function intoWriting(page) {
-  await chooseQuestion(page, /target markets/i); await page.waitForTimeout(250);
-  await page.click("#esstart"); await page.waitForTimeout(500);
+  await chooseQuestion(page, /target markets/i);
+  await page.click("#esstart"); await shown(page, "#esplanall, .es-plancard");
   await planAll(page);
   await page.$$eval(".es-plancard [data-esplanarea]", es => { const t = es.find(x => /processes/i.test(x.textContent)); t && t.click(); });
-  await page.waitForTimeout(300);
+  await shown(page, "[data-esplanpick]");
   await page.$$eval("[data-esplanpick]", es => { const t = es.find(x => /Convenience-oriented/i.test(x.textContent)); t && t.click(); });
-  await page.waitForTimeout(300);
-  await page.click("#esplango"); await page.waitForTimeout(400);
+  await frames(page);
+  await page.click("#esplango"); await shown(page, "[data-esgo]");
   await page.$$eval("[data-esgo]", es => { const t = es.find(x => /Body 1/.test(x.textContent)); t && t.click(); });
-  await page.waitForTimeout(500);
+  await shown(page, "#esexit"); await frames(page);
 }
 
 (async () => {
@@ -135,7 +142,7 @@ async function intoWriting(page) {
   ok(!!menu, "there is a labelled menu control");
   ok(await p.$eval("#esmenu", e => e.getAttribute("aria-expanded") === "false"), "which starts closed and says so");
   ok(await p.$eval("#esnavpanel", e => getComputedStyle(e).display === "none"), "the panel is not on screen until it is asked for");
-  await menu.click(); await p.waitForTimeout(300);
+  await menu.click(); await expanded(p, "true").catch(() => {}); await frames(p);
   ok(await p.$eval("#esmenu", e => e.getAttribute("aria-expanded") === "true"), "pressing it opens the menu, and it says so");
   const panel = await p.evaluate(() => {
     const el = document.getElementById("esnavpanel"); if (!el) return null;
@@ -157,10 +164,10 @@ async function intoWriting(page) {
   ok(routes.indexOf("back") >= 0, "and so is Essay practice");
 
   console.log("--- 3b. it closes the ways a menu closes");
-  await p.keyboard.press("Escape"); await p.waitForTimeout(250);
+  await p.keyboard.press("Escape"); await expanded(p, "false").catch(() => {});
   ok(await p.$eval("#esmenu", e => e.getAttribute("aria-expanded") === "false"), "Escape closes it");
-  await menu.click(); await p.waitForTimeout(250);
-  await p.mouse.click(180, 620); await p.waitForTimeout(300);
+  await menu.click(); await expanded(p, "true").catch(() => {});
+  await p.mouse.click(180, 620); await expanded(p, "false").catch(() => {});
   ok(await p.$eval("#esmenu", e => e.getAttribute("aria-expanded") === "false"), "and so does pressing away from it");
 
   console.log("--- 4. the writing workspace, where leaving matters most");
@@ -182,7 +189,7 @@ async function intoWriting(page) {
 
   console.log("--- 5. what folded away is still usable");
   await atWidth(p, 390);
-  await p.click("#esmenu"); await p.waitForTimeout(300);
+  await p.click("#esmenu"); await expanded(p, "true").catch(() => {}); await frames(p);
   const inMenu = await p.$$eval("#esnavpanel button", es => es.map(e => e.id || (e.innerText || "").trim().slice(0, 20)));
   console.log("    workspace menu holds:", JSON.stringify(inMenu));
   for (const want of ["esmodeswitch", "esx"]) {
@@ -193,7 +200,7 @@ async function intoWriting(page) {
   const notebook = await p.$('#esnavpanel [data-esnbtoggle]');
   ok(!!notebook, "Notebook is reachable from the menu");
   if (notebook) {
-    await notebook.click(); await p.waitForTimeout(500);
+    await notebook.click(); await shown(p, ".es-nb").catch(() => {}); await expanded(p, "false").catch(() => {});
     ok(!!(await p.$(".es-nb")), "pressing it opens the notebook");
     ok(await p.$eval("#esmenu", e => e.getAttribute("aria-expanded") === "false"), "and the menu gets out of the way");
   }
@@ -227,7 +234,7 @@ async function intoWriting(page) {
   const exit = await p.$("#esexit");
   ok(!!exit, "Exit essay is there");
   if (exit) {
-    await exit.click(); await p.waitForTimeout(500);
+    await exit.click(); await p.waitForFunction(() => !document.getElementById("eshost"), null, { timeout: 4000 }).catch(() => {});
     ok(!(await p.evaluate(() => !!document.getElementById("eshost"))), "and it leaves Essay Practice from a phone");
   }
 

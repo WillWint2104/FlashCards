@@ -366,16 +366,244 @@ function normaliseFormat(q) {
 }
 
 // ---------------------------------------------------------------------------
+// Marking points
+// ---------------------------------------------------------------------------
+// THE ONE PLACE MARKING POINTS ARE READ, AND THE ONE PLACE THEIR RELATIONSHIP
+// TO MARKS IS DECIDED.
+//
+// Two faults made this necessary, and the second is the important one.
+//
+// The grader read every entry as an object - `pt.text`, `pt.need` - while the
+// contract's own fixture authors plain strings. `pt.text` was undefined, the
+// normaliser turned undefined into "", every answer contains "", so every point
+// registered as addressed and an EMPTY ANSWER SCORED FULL MARKS. That is a
+// shape mismatch and it is fixed by reading both shapes here, once.
+//
+// The second fault is that nothing anywhere said a point was worth a mark. The
+// papers prove it is not generally true: the extended responses author four
+// points against twelve and twenty marks. `points[]` is a list of the things a
+// marker looks for - key marking points - and it is guidance, not an
+// allocation.
+//
+// So a mark is derived from points ONLY where the paper authors per-point marks
+// that sum to the question's own marks. `weighted` is that declaration and
+// nothing implies it: a question whose point COUNT happens to equal its mark
+// count has still not said that one point is one mark, and inferring it from
+// the coincidence is the same substitution Gate 3B removed from formats.
+//
+// Malformed points are refused rather than skipped. A point this reader cannot
+// read is not a point that was addressed, and the alternative is awarding marks
+// against something nobody can see.
+function markingPoints(q) {
+  var raw = q && q.points;
+  if (!Array.isArray(raw) || !raw.length)
+    return { ok: true, points: [], count: 0, weighted: false, total: 0 };
+
+  var out = [], sum = 0, allWeighted = true;
+  for (var i = 0; i < raw.length; i++) {
+    var pt = raw[i], where = "marking point " + (i + 1);
+    var text, need = null, hint = "", marks = null;
+
+    if (typeof pt === "string") {
+      text = pt;
+    } else if (pt && typeof pt === "object" && !Array.isArray(pt)) {
+      text = pt.text;
+      need = some(pt.need);
+      hint = blank(pt.hint) ? "" : String(pt.hint);
+      if (pt.marks != null) {
+        if (!finite(pt.marks) || pt.marks < 0)
+          return refuse("POINTS_MALFORMED",
+            where + " carries a mark value that is not a number of marks");
+        marks = pt.marks;
+      }
+    } else {
+      return refuse("POINTS_MALFORMED",
+        where + " is neither text nor a marking point object");
+    }
+
+    if (blank(text))
+      return refuse("POINTS_MALFORMED", where + " has no text, so nothing can be marked against it");
+
+    if (marks == null) allWeighted = false; else sum += marks;
+    out.push({ text: String(text).trim(), need: need, hint: hint, marks: marks });
+  }
+
+  // The declaration is per-point marks that add up to the question. Marks that
+  // do not add up are not a weighting: they are an authoring error that would
+  // otherwise cap or inflate the question silently.
+  var qMarks = finite(q && q.marks) ? q.marks : null;
+  var weighted = allWeighted && qMarks != null && sum === qMarks;
+  return { ok: true, points: out, count: out.length, weighted: weighted, total: allWeighted ? sum : 0 };
+}
+
+// WHICH POINTS AN ANSWER REACHED, AND WHETHER THAT IS A MARK.
+//
+// The matching rule lives here rather than in the app for the same reason the
+// reading rule does: it is the thing that was wrong, and a rule that decides
+// marks should be testable without a browser. `score` is a number ONLY for a
+// question whose paper authored a weighting; otherwise it is null and the
+// caller must get the mark from somewhere that can justify it.
+function scorePoints(q, answer) {
+  var mp = markingPoints(q);
+  if (mp.ok !== true) return mp;
+  var a = normText(answer);
+  var pts = mp.points.map(function (pt) {
+    // WHAT A POINT MAY BE MATCHED AGAINST (UX-TEST-18): the phrasings its author
+    // wrote for matching, and nothing else. A point's text describes what earns
+    // the mark - "Names speed, or dependability, as the objective" - and is not a
+    // sentence the student has to type. Searching the answer for it scored full,
+    // correct answers zero. A point with no phrasings is a marking requirement,
+    // it carries no verdict here (hit: null), and the marker judges it.
+    var matchable = !!(pt.need && pt.need.some(function (al) { return normText(al) !== ""; }));
+    if (!matchable) return { text: pt.text, hit: null, hint: pt.hint, marks: pt.marks, matchable: false };
+    // A phrasing that normalises to nothing matches nothing. Without this the
+    // empty string is a substring of every answer, which is precisely how an
+    // unanswered question came to score full marks.
+    var hit = pt.need.some(function (al) { var n = normText(al); return n !== "" && a.indexOf(n) !== -1; });
+    return { text: pt.text, hit: hit, hint: pt.hint, marks: pt.marks, matchable: true };
+  });
+  var hits = pts.filter(function (p) { return p.hit === true; }).length;
+  // Scored here only when the paper authored BOTH the weighting and a way to
+  // match every point. Anything less goes to the marker with its weights.
+  var local = mp.weighted && pts.length > 0 && pts.every(function (p) { return p.matchable; });
+  var score = null;
+  if (mp.weighted) {
+    var raw = pts.reduce(function (n, p) { return p.hit ? n + p.marks : n; }, 0);
+    if (local) score = Math.min(raw, q.marks);
+  }
+  return { ok: true, points: pts, hits: hits, count: pts.length,
+           weighted: mp.weighted, local: local, score: score, max: finite(q && q.marks) ? q.marks : 0 };
+}
+
+// WHAT A WRITTEN QUESTION TELLS ITS MARKER ABOUT WHAT IT IS ASSESSING.
+//
+// The rule: authored assessment requirements that bear on the marking reach the
+// written marker, whatever the written format. For every written format that is
+// the question's marking points. A business report additionally sends its own
+// instructions first, because they are the sentence that names the genre.
+// Nothing is written for a question: one that authors neither sends what it
+// sent before.
+//
+// This started as business-report-only (state 13), scoped so that state 12's
+// request stayed byte-identical. That kept an extended response's authored
+// points reaching nothing at all (UX-TEST-12), which is a correctness fault, not
+// a design to protect, so the scope is now every written format.
+//
+// The door is `requirements.accomplish`, which both marking passes print as "what
+// a strong response accomplishes". Points travel as their text only: whether they
+// carry marks is the app's business (scorePoints), and a marker told "2 marks"
+// against a point would read it as an allocation the paper may not have made.
+//
+// The worker keeps at most ten items of at most 300 characters and drops the rest
+// without a word (proxy/worker.js, markingInput). Marking against the first half of
+// a question's own guidance is the silent normalisation this contract refuses, so
+// guidance that does not fit is refused here, whole.
+var GUIDANCE_MAX_ITEMS = 10;
+var GUIDANCE_MAX_CHARS = 300;
+
+// WHAT A QUESTION ALREADY SENT AS requirements.accomplish, decided in one place.
+// markingRequirements in app.js and the paper validator both call this, so they
+// cannot derive different lists.
+function accomplishOf(q) {
+  return (q && q.requirements && q.requirements.accomplish) || (q && q.scaffold) || [];
+}
+
+function markerGuidance(q, accomplish) {
+  var fx = normaliseFormat(q);
+  if (!fx.ok || !writtenModeOf(fx.format))
+    return { ok: true, applies: false, items: [], own: 0 };
+  var report = fx.format === "business_report";
+
+  // A report's instructions are text or absent. An object or a list used to be
+  // stringified into "[object Object]" and shown to the student and the marker.
+  if (report && q.instructions != null && typeof q.instructions !== "string")
+    return refuse("INSTRUCTIONS_MALFORMED",
+      "this business report's instructions are not text, so they could not be shown or sent as they were written");
+  var own = [];
+  if (report && !blank(q.instructions)) own.push(q.instructions.trim());
+  var mp = markingPoints(q);
+  if (mp.ok !== true) return mp;
+  // A weighted point travels with its weight, so a marker judging it knows the
+  // author's allocation rather than guessing one (UX-TEST-18).
+  mp.points.forEach(function (p) {
+    own.push(mp.weighted ? p.text + " (" + p.marks + " mark" + (p.marks === 1 ? "" : "s") + ")" : p.text);
+  });
+
+  var rest = Array.isArray(accomplish)
+    ? accomplish.filter(function (x) { return !blank(x); }).map(function (x) { return String(x).trim(); })
+    : [];
+  // Exact duplicates only. Two authored sentences that say nearly the same thing
+  // are the author's to merge, and guessing which one they meant is not ours.
+  var items = [];
+  own.concat(rest).forEach(function (x) { if (items.indexOf(x) < 0) items.push(x); });
+
+  if (items.length > GUIDANCE_MAX_ITEMS)
+    return refuse("MARKING_GUIDANCE_OVER_BUDGET",
+      "this question carries " + items.length + " pieces of marking guidance and the marker can read " +
+      GUIDANCE_MAX_ITEMS + ", so it would be marked against some of them without anyone being told which were left out",
+      { items: items.length, limit: GUIDANCE_MAX_ITEMS });
+  for (var i = 0; i < items.length; i++) {
+    if (items[i].length > GUIDANCE_MAX_CHARS)
+      return refuse("MARKING_GUIDANCE_OVER_BUDGET",
+        "piece " + (i + 1) + " of this question's marking guidance is " + items[i].length +
+        " characters and the marker can read " + GUIDANCE_MAX_CHARS + ", so the end of it would be cut off without anyone seeing",
+        { item: i + 1, chars: items[i].length, limit: GUIDANCE_MAX_CHARS });
+  }
+  return { ok: true, applies: true, items: items, own: own.length, report: report };
+}
+
+// The app's own normaliser, here so the matching rule does not depend on the
+// caller passing an equivalent one.
+function normText(s) {
+  return String(s == null ? "" : s).toLowerCase()
+    .replace(/[^a-z0-9.\-% ]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+// ---------------------------------------------------------------------------
 function assign(a, b) { Object.keys(b).forEach(function (k) { a[k] = b[k]; }); return a; }
 function finite(n) { return typeof n === "number" && isFinite(n); }
 function num(n) { return finite(n) ? n : 0; }
 function clamp(n, lo, hi) { return Math.max(lo, Math.min(finite(hi) ? hi : n, num(n))); }
 function blank(s) { return s == null || String(s).trim() === ""; }
+// WHAT NUMBER A CALCULATION ANSWER STATES, OR THAT IT STATES NONE (UX-TEST-19).
+//
+// The grader stripped every character but digits, "." and "-" and parsed what
+// was left, so "60 000 / 40 000 = 1.5" became 60000400001.5 and "3:2" became
+// 32. "1.5 : 1" scored only because it collapsed to 1.51, inside a 0.05
+// tolerance. The rule now, in order:
+//
+//   working ends in "=": the value is what follows the LAST "=";
+//   a ratio "a : b" and nothing else numeric: the value is a / b;
+//   exactly one number: that number ("$42 000", "23.4%", "125 units");
+//   anything else - no number, or several with no rule to choose - is refused.
+//
+// A refusal leaves the answer unmarked. Guessing which of two numbers a student
+// meant would manufacture the mark this function exists to stop manufacturing.
+var CALC_NUM = /-?(?:\d{1,3}(?:[ ,]\d{3})+|\d+)(?:\.\d+)?|-?\.\d+/g;
+function readCalcAnswer(answer) {
+  var s = String(answer == null ? "" : answer).replace(/\u2212/g, "-").trim();
+  if (s.indexOf("=") !== -1) s = s.slice(s.lastIndexOf("=") + 1).trim();
+  if (!s) return refuse("CALC_UNREADABLE", "there is no value to mark. Write the final value, for example 1.5");
+  var toNum = function (t) { return Number(t.replace(/[ ,]/g, "")); };
+  var nums = s.match(CALC_NUM) || [];
+  var ratio = s.match(new RegExp("^\\D*?(" + CALC_NUM.source + ")\\s*:\\s*(" + CALC_NUM.source + ")\\D*$"));
+  if (ratio && nums.length === 2) {
+    var den = toNum(ratio[2]);
+    if (den === 0) return refuse("CALC_UNREADABLE", "a ratio whose second number is zero has no value");
+    return { ok: true, value: toNum(ratio[1]) / den, read: "ratio" };
+  }
+  if (nums.length === 1) return { ok: true, value: toNum(nums[0]), read: "number" };
+  return refuse("CALC_UNREADABLE", nums.length
+    ? "it contains " + nums.length + " numbers and no rule says which is the answer. Write the final value on its own, or after an equals sign"
+    : "it contains no number. Write the final value, for example 1.5");
+}
+
 function some(c) { return (Array.isArray(c) && c.length) ? c : null; }
 
 module.exports = {
   SUCCESS: SUCCESS, REFUSED: REFUSED, FAILED: FAILED,
   marked: marked, refuse: refuse, fail: fail,
+  readCalcAnswer: readCalcAnswer,
   isMarked: isMarked, outcomeOf: outcomeOf, tally: tally,
   FORMATS: FORMATS, isFormat: isFormat, writtenModeOf: writtenModeOf, isObjective: isObjective,
   formatWords: formatWords,
@@ -383,4 +611,7 @@ module.exports = {
   isSubjectKey: isSubjectKey, curriculumOf: curriculumOf,
   curriculumFindings: curriculumFindings, subjectOverrides: subjectOverrides,
   resolveAuthority: resolveAuthority,
+  markingPoints: markingPoints, scorePoints: scorePoints, normText: normText,
+  markerGuidance: markerGuidance, accomplishOf: accomplishOf,
+  GUIDANCE_MAX_ITEMS: GUIDANCE_MAX_ITEMS, GUIDANCE_MAX_CHARS: GUIDANCE_MAX_CHARS,
 };

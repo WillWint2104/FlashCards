@@ -274,12 +274,16 @@ const pkg = (page, k) => page.evaluate(key => {
     "and there is one gate in front of every piece of scoring in the file");
   const scorers = [
     ["study progress", "if (ok) applyResult(card, g.score, g.max);"],
-    ["the exam sheet", "if (!isMarked(g)) return unmarkedHTML(q, g);"],
-    ["the exam totals", "ASSESS.tally(qs.map("],
+    // Slice A: the sitting draws its own result, and an attempt's totals are
+    // derived in the attempt contract, both through the same gate.
+    ["the exam sheet", "    const shown = closed ? RV.soln : SIT.soln;\n    if (!isMarked(g)) {"],
     ["the saved essay mark", "if (!isMarked(g)) {"],
   ];
   scorers.forEach(([what, line]) => ok(app.indexOf(line) >= 0,
     what + " asks whether the response was marked before it uses the number: " + JSON.stringify(line)));
+  ok(fs.readFileSync(path.join(__dirname, "..", "tools/contract/attempts.js"), "utf8")
+       .indexOf("var t = ASSESS.tally(seq.map(function (e) { return { marks: marksOf(e), result: a.results[e.key] }; }));") >= 0,
+    "the exam totals ask whether each response was marked before using its number (ATT.summary through ASSESS.tally)");
   // the Economics fallthrough is gone from the declared path
   ok(/if \(!declares && !criteria\) criteria = some\(C\.markingCriteria\)/.test(app),
     "C.markingCriteria is reached only when nothing declares a subject, which is flashcard content");

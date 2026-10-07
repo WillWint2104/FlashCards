@@ -1,0 +1,272 @@
+{
+  "_why": "What a student did on the synthetic Business Studies paper, as two alternative attempts: one in progress, one completed. Only the student's inputs and the marker's reviews are authored here. Every status, count and mark a page shows is derived from them by attempt.mjs, through the shipped contract and finalize(). Keys are the app's examKey: section-question[-part]. The in-progress attempt is the one the frozen navigator (state 15) shows: Q1 to Q10, 11(a) and 11(b) answered, Q7 and 11(b) flagged, the student on 11(c). Answers 2-0 and 3-0 are borrowed from the frozen states 13 and 12, with their reviews. Student answers and reviews are original, written for this fixture; the figures in 12(a) and 12(b) are computed from the paper's own Table 1. Since UX-TEST-18, 11(a), 11(b) and 12(a) are marked by the marker too, because their points author no phrasings to match, so they carry reviews here. Since UX-TEST-20 the paper's keys are spread across option positions; the chosen indices here were remapped so each pick is the same option text as before.",
+  "not_started": null,
+  "in_progress": {
+    "sections": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "startedAt": "2026-09-28T16:05:00+10:00",
+    "updatedAt": "2026-09-29T19:42:00+10:00",
+    "at": "1-0-2",
+    "flags": [
+      "0-6",
+      "1-0-1"
+    ],
+    "choice": {},
+    "answers": {
+      "0-0": 1,
+      "0-1": 3,
+      "0-2": 0,
+      "0-3": 3,
+      "0-4": 3,
+      "0-5": 1,
+      "0-6": 0,
+      "0-7": 0,
+      "0-8": 1,
+      "0-9": 3,
+      "1-0-0": "Speed. Customers at the vans wait too long in the 7am to 9am morning peak, so the vans are not serving orders quickly enough.",
+      "1-0-1": "Casual operators have no guaranteed hours or paid leave, so they feel insecure and are more likely to leave for a permanent job. Every operator who leaves has to be replaced, and recruiting and training replacements costs Kerbside money."
+    },
+    "reviews": {
+      "1-0-0": {
+        "review": {
+          "summary": "Names speed as the objective and ties it to the waiting times at the morning peak.",
+          "rubric": [],
+          "focus": {
+            "paragraph": 0,
+            "area": "",
+            "why": "",
+            "quote": ""
+          },
+          "paragraphs": [
+            {
+              "name": "Answer",
+              "score": 2,
+              "max": 2,
+              "reasons": [],
+              "sentences": []
+            }
+          ]
+        }
+      },
+      "1-0-1": {
+        "review": {
+          "summary": "Explains the missing guaranteed hours and leave, links that insecurity to operators leaving, and connects turnover to the cost of replacing them.",
+          "rubric": [],
+          "focus": {
+            "paragraph": 0,
+            "area": "",
+            "why": "",
+            "quote": ""
+          },
+          "paragraphs": [
+            {
+              "name": "Answer",
+              "score": 3,
+              "max": 3,
+              "reasons": [],
+              "sentences": []
+            }
+          ]
+        }
+      }
+    }
+  },
+  "completed": {
+    "sections": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "startedAt": "2026-09-28T16:05:00+10:00",
+    "updatedAt": "2026-09-30T11:18:00+10:00",
+    "completedAt": "2026-09-30T11:18:00+10:00",
+    "at": null,
+    "flags": [],
+    "choice": {
+      "3": 0
+    },
+    "answers": {
+      "0-0": 1,
+      "0-1": 3,
+      "0-2": 0,
+      "0-3": 3,
+      "0-4": 3,
+      "0-5": 1,
+      "0-6": 0,
+      "0-7": 0,
+      "0-8": 1,
+      "0-9": 3,
+      "1-0-0": "Speed. Customers at the vans wait too long in the 7am to 9am morning peak, so the vans are not serving orders quickly enough.",
+      "1-0-1": "Casual operators have no guaranteed hours or paid leave, so they feel insecure and are more likely to leave for a permanent job. Every operator who leaves has to be replaced, and recruiting and training replacements costs Kerbside money.",
+      "1-0-2": "1.5 : 1",
+      "1-0-3": "Kerbside Coffee should roster a second operator on its two busiest vans between 7am and 9am. With two people, one can take orders and payment while the other makes coffee, so each customer spends less time in the queue at exactly the time the complaints are about. The cost is extra wages for two hours a day on two vans. That is a limited cost against the sales lost when customers give up waiting, so the strategy is justified if it is kept to the peak and reviewed after a month.",
+      "1-1-0": "The gross profit ratio has gone down from 40% in 2024 to about 37% in 2025, so the business kept less gross profit from each dollar of sales even though sales rose.",
+      "1-1-1": "The expense ratio rose from about 30.5% of sales in 2024 to about 33.1% in 2025, because expenses grew by $51 000 while sales grew by $90 000 and costs did not keep in line. One factor could be higher wages for the staff who assemble the bikes. A second factor could be rising freight costs for imported frames.",
+      "1-1-2": "Comparing ratios over time shows Harbourline that its gross profit ratio is falling and its expense ratio is rising, which the dollar figures alone hide because sales went up. Comparing against similar firms would show whether this is an industry problem or its own. A limitation is that other firms may treat costs differently in their accounts, so the ratios are not exactly comparable. Ratios also do not explain why something changed, such as import costs rising while Harbourline has kept its prices the same since 2024. Overall comparative ratio analysis is useful as a warning sign but the business still has to investigate the causes.",
+      "1-2": "Two global factors that influence Australian manufacturers are exchange rates and global supply chains. When the Australian dollar falls, imported inputs such as steel and components cost more, which raises the cost of production and can force a manufacturer to change suppliers or hold more stock. Global supply chains also matter because a delay at an overseas supplier stops production here. A manufacturer can respond with more than one supplier or by keeping safety stock, but both add cost. Overall these factors mean operations managers have to plan for costs and delays they cannot control.",
+      "2-0": "fixture:13",
+      "3-0": "fixture:12"
+    },
+    "reviews": {
+      "1-0-0": {
+        "review": {
+          "summary": "Names speed as the objective and ties it to the waiting times at the morning peak.",
+          "rubric": [],
+          "focus": {
+            "paragraph": 0,
+            "area": "",
+            "why": "",
+            "quote": ""
+          },
+          "paragraphs": [
+            {
+              "name": "Answer",
+              "score": 2,
+              "max": 2,
+              "reasons": [],
+              "sentences": []
+            }
+          ]
+        }
+      },
+      "1-0-1": {
+        "review": {
+          "summary": "Explains the missing guaranteed hours and leave, links that insecurity to operators leaving, and connects turnover to the cost of replacing them.",
+          "rubric": [],
+          "focus": {
+            "paragraph": 0,
+            "area": "",
+            "why": "",
+            "quote": ""
+          },
+          "paragraphs": [
+            {
+              "name": "Answer",
+              "score": 3,
+              "max": 3,
+              "reasons": [],
+              "sentences": []
+            }
+          ]
+        }
+      },
+      "1-1-0": {
+        "review": {
+          "summary": "States that the ratio fell, uses gross profit relative to sales, and supports it with the ratios from Table 1.",
+          "rubric": [],
+          "focus": {
+            "paragraph": 0,
+            "area": "",
+            "why": "",
+            "quote": ""
+          },
+          "paragraphs": [
+            {
+              "name": "Answer",
+              "score": 3,
+              "max": 3,
+              "reasons": [],
+              "sentences": []
+            }
+          ]
+        }
+      },
+      "1-0-3": {
+        "review": {
+          "summary": "Names a specific peak-hours strategy and connects it to the queue, then weighs the wage cost and reaches a judgement. The explanation of how two operators shorten the queue is brief.",
+          "rubric": [],
+          "focus": {
+            "paragraph": 0,
+            "area": "",
+            "why": "",
+            "quote": ""
+          },
+          "paragraphs": [
+            {
+              "name": "Strategy and judgement",
+              "score": 4,
+              "max": 5,
+              "reasons": [],
+              "sentences": []
+            }
+          ]
+        }
+      },
+      "1-1-1": {
+        "review": {
+          "summary": "Uses the table accurately to show expenses rising faster than sales. The two causes are plausible but each is stated rather than connected to the figures, and the two are not drawn together.",
+          "rubric": [],
+          "focus": {
+            "paragraph": 0,
+            "area": "",
+            "why": "",
+            "quote": ""
+          },
+          "paragraphs": [
+            {
+              "name": "Analysis",
+              "score": 3,
+              "max": 5,
+              "reasons": [],
+              "sentences": []
+            }
+          ]
+        }
+      },
+      "1-1-2": {
+        "review": {
+          "summary": "Explains what comparison reveals, gives a genuine limitation, applies it to the unchanged prices and reaches a judgement. The comparison against similar firms is asserted rather than applied.",
+          "rubric": [],
+          "focus": {
+            "paragraph": 0,
+            "area": "",
+            "why": "",
+            "quote": ""
+          },
+          "paragraphs": [
+            {
+              "name": "Evaluation",
+              "score": 4,
+              "max": 6,
+              "reasons": [],
+              "sentences": []
+            }
+          ]
+        }
+      },
+      "1-2": {
+        "review": {
+          "summary": "Two distinct global factors, each with an operational effect. The response stays general: it names no manufacturing context and describes responses more than it explains influence.",
+          "rubric": [],
+          "focus": {
+            "paragraph": 0,
+            "area": "",
+            "why": "",
+            "quote": ""
+          },
+          "paragraphs": [
+            {
+              "name": "First factor",
+              "score": 4,
+              "max": 6,
+              "reasons": [],
+              "sentences": []
+            },
+            {
+              "name": "Second factor",
+              "score": 3,
+              "max": 6,
+              "reasons": [],
+              "sentences": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}

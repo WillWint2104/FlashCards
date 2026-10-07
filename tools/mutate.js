@@ -145,6 +145,34 @@ function priorResults() {
 // over three mutations that had just survived. A summary that cannot see the run
 // it is summarising is worse than no summary, because it is green.
 const THIS_RUN = {};
+// WHEN A RECORDED RESULT STILL COUNTS, and the id alone does not say.
+//
+// A restart skipped every id already in the results file. That reused a verdict
+// in two situations where it was not a verdict about anything:
+//
+//   - the ENTRY changed: its find or replace was edited, so the result belonged to
+//     the mutation it used to be. A result carries a signature of what was applied,
+//     and a result whose signature does not match the current entry is not reused.
+//   - the TREE changed: the entry is the same but its target text is gone from the
+//     file, so the mutation can no longer be applied at all. gate-drops-a-suite
+//     follows the tail of tests/run.js, which moves every time a suite is added;
+//     resumed, it reported KILLED for a string that no longer existed. A result is
+//     reused only while its find still occurs exactly once, so this re-runs and is
+//     reported STALE.
+//
+// The first version of this fixed only the first case while its comment claimed
+// the second. tests/t26.mjs now exercises both.
+const crypto = require("crypto");
+function sigOf(m) {
+  return crypto.createHash("sha1")
+    .update(JSON.stringify([m.file, m.find, m.replace, m.owner])).digest("hex").slice(0, 12);
+}
+function reusable(m, r, readFile) {
+  if (!r || r.sig !== sigOf(m)) return false;
+  let text;
+  try { text = readFile(m.file); } catch (e) { return false; }
+  return text.split(m.find).length - 1 === 1;
+}
 function record(r) {
   THIS_RUN[r.id] = r;
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
@@ -261,7 +289,7 @@ function commandFor(owner) {
 
 const secs = ms => (ms / 1000).toFixed(1) + "s";
 
-module.exports = { trackedDirty, dirtyRefusal, MUTATIONS };
+module.exports = { trackedDirty, dirtyRefusal, MUTATIONS, sigOf, reusable };
 
 if (IS_RUN) main();
 
@@ -275,7 +303,7 @@ async function main() {
   if (!only) list = list.filter(m => !m.manualOnly);
   const sample = val("--sample");
   if (sample) list = list.slice(0, Number(sample));
-  const todo = list.filter(m => !done[m.id]);
+  const todo = list.filter(m => !reusable(m, done[m.id], f => fs.readFileSync(path.join(ROOT, f), "utf8")));
   const timeout = Number(val("--timeout") || DEFAULT_TIMEOUT_MS);
 
   console.log("MUTATION RUN — " + list.length + " selected, " +
@@ -314,7 +342,7 @@ async function main() {
     lock(m);
     const a = apply(m);
     if (!a.ok) {
-      const r = { id: m.id, owner: m.owner, verdict: "STALE", ms: Date.now() - t0, why: a.why, at: new Date().toISOString() };
+      const r = { id: m.id, sig: sigOf(m), owner: m.owner, verdict: "STALE", ms: Date.now() - t0, why: a.why, at: new Date().toISOString() };
       record(r); times.push(r.ms);
       console.log(String(n) + "/" + todo.length + " — " + m.id + " — " + secs(r.ms) + " — STALE (" + a.why + ")");
       continue;
@@ -375,7 +403,7 @@ async function main() {
     // processes that were going to go have gone.
     const after = settle(base);
     const leaked = after.browser > base.browser || after.node > base.node + 1;
-    const r = { id: m.id, owner: m.owner, file: m.file, verdict: verdict, ms: ms,
+    const r = { id: m.id, sig: sigOf(m), owner: m.owner, file: m.file, verdict: verdict, ms: ms,
                 detail: detail, why: m.why, at: new Date().toISOString(),
                 processes: after, leaked: leaked };
     record(r); times.push(ms);
