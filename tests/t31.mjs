@@ -133,6 +133,14 @@ ok(authored.every(x => A.scorePoints(x.q, "").score === null),
 const q11a = authored.find(x => x.id === "11(a)");
 ok(q11a && A.scorePoints(q11a.q, "Speed. Customers at the vans wait too long in the 7am to 9am morning peak, so the vans are not serving orders quickly enough.").score === null,
    "11(a)'s correct answer is no longer scored 0 against the text of its own points (UX-TEST-18)");
+// The two answers the student bots found the phrase matcher misjudging, on the
+// bots' own locally marked copy of 11(a): a bare keyword list (2/2 there) and a
+// complete answer in unexpected wording (1/2 there). On the paper as published,
+// neither is judged by matching: both go to the Business Studies marker.
+const C = JSON.parse(fs.readFileSync(path.join(ROOT, "tests/bots/testmode/corpus.v1.json"), "utf8"));
+const bot = id => C.items.flatMap(i => i.answers).find(a => a.id === id).text;
+ok(["sa11a-keywords", "sa11a-unusual"].every(id => { const r = A.scorePoints(q11a.q, bot(id)); return r.local === false && r.score === null; }),
+   "on the published paper, a keyword list and an unusually worded answer to 11(a) both go to the marker, never to phrase matching");
 ok(authored.every(x => A.markingPoints(x.q).points.every(p => p.text && p.text !== "undefined")),
    "every rendered point is the authored text, never the word undefined");
 
