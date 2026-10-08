@@ -951,8 +951,8 @@ module.exports = [
     // Follows the end of the list, which moves every time a suite is added, and
     // t26 is what turns that into a caught failure rather than a mutation that
     // quietly stops mutating anything. ui69 moved it; this is the fix.
-    find: "\"ui75\", \"ui76\"]",
-    replace: "\"ui75\"]",
+    find: "\"ui76\", \"ui77\"]",
+    replace: "\"ui76\"]",
     owner: "t23",
     why: "a maintained regression outside the runner is invisible, which is how twenty-eight suites rotted unnoticed",
   },
@@ -1943,6 +1943,22 @@ module.exports = [
     replace: "Mark it as ${\"an extended response\"}",
     owner: "ui76",
     why: "a business report reached the marker as an extended response, so its format could never count",
+  },
+  {
+    id: "hotfix-page-loads-an-uncommitted-script",
+    file: "index.html",
+    find: "<script src=\"app.js\"></script>",
+    replace: "<script src=\"app-helpers.js\"></script>\n<script src=\"app.js\"></script>",
+    owner: "ui77",
+    why: "index.html loaded a script that was never committed, so the page GitHub Pages serves asked for a file that does not exist, which is how production went blank",
+  },
+  {
+    id: "hotfix-missing-contracts-go-blank",
+    file: "app.js",
+    find: "  if (!ASSESS || !PAPER || !ATT) {",
+    replace: "  if (false) {",
+    owner: "ui77",
+    why: "with the contract bundle missing, startup threw on its first use and left the student a blank page with no explanation",
   },
   {
     id: "sliceB-empty-attempt-closes",
