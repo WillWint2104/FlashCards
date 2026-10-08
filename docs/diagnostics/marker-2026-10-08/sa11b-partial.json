@@ -1,0 +1,282 @@
+{
+ "profile": "sa11b-partial",
+ "kind": "partial",
+ "corpusLiveRange": {
+  "min": 1,
+  "max": 2
+ },
+ "question": "Explain how the business's casual employment of van operators could be contributing to its turnover.",
+ "studentResponse": "Casual operators do not get guaranteed hours, so some of them leave.",
+ "sentByTheApp": {
+  "marks": 3,
+  "command": "explain",
+  "subject": "Business Studies",
+  "criteria": [
+   "knowledge and understanding of course content",
+   "application of business case studies and contemporary business issues",
+   "business terminology and concepts",
+   "sustained, logical and cohesive response"
+  ],
+  "bands": [
+   {
+    "range": "Band 6",
+    "text": "The response answers the exact question asked and holds one judgement from the first paragraph to the last. Evidence is chosen because it proves the point being made, and the writing says what it proves. Subject terms carry the reasoning instead of decorating it. Each paragraph builds on the one before it, so the whole reads as a single line of thought."
+   },
+   {
+    "range": "Band 5",
+    "text": "The response answers the question and keeps its line of argument to the end, with only brief drops into retelling. Evidence is specific and is explained, though one or two examples do less work than the rest. Subject terms are accurate and are used where they matter. The paragraphs are ordered on purpose and the joins between them are easy to follow."
+   },
+   {
+    "range": "Band 4",
+    "text": "The response takes a position, but that position is stated more often than it is proved. Evidence is relevant and mostly accurate, though some of it is dropped in and left to speak for itself. Subject terms appear and are broadly right, with a few used loosely. The paragraphs are organised, but they read more as a list of points than as one argument."
+   },
+   {
+    "range": "Band 3",
+    "text": "An answer to the question is present but it is not held steadily, and parts of the response drift onto a nearby topic instead. Explanation gives way to description for long stretches, and evidence is named without being tied to the point it is meant to support. Subject terms appear, sometimes only as labels. The paragraphs could be reordered without much being lost."
+   },
+   {
+    "range": "Band 2",
+    "text": "The response stays close to the topic rather than to the question, and retells what the student knows instead of arguing a case. Evidence is thin, general or repeated, and its relevance is assumed rather than shown. Only a few subject terms are used and some are used wrongly. The writing moves from one point to the next without connecting them."
+   },
+   {
+    "range": "Band 1",
+    "text": "The response touches the topic but does not take up the question. Statements stay general and are not developed, and there is little evidence beyond what is asserted. Subject terms are mostly absent or are used incorrectly. The writing is fragmentary or circles one idea, so there is no line of argument for a marker to follow."
+   }
+  ],
+  "bandsSource": "general HSC band expectations",
+  "requirements": {
+   "concepts": [],
+   "relationships": [],
+   "syllabus": "",
+   "accomplish": [
+    "Explains that casual work carries no guaranteed hours or leave entitlements (1 mark)",
+    "Links that insecurity to an operator's decision to leave (1 mark)",
+    "Connects turnover to the cost of recruiting and training replacements (1 mark)"
+   ]
+  },
+  "format": "short_answer",
+  "responseType": "short",
+  "stimulus": true,
+  "stimulusContext": "SOURCE 1:\nCase study: Kerbside Coffee\nKerbside Coffee roasts and sells coffee from one site and four vans. Demand at the vans peaks between 7am and 9am, and the owners have had complaints about waiting times. Last year the business bought a second roaster using a three-year loan. Staff turnover among van operators is high, and most operators are employed casually."
+ },
+ "deployedWorker": {
+  "modelRequestUserMessage": "QUESTION (explain) (3 marks):\nExplain how the business's casual employment of van operators could be contributing to its turnover.\n\nREFERENCE, WHAT A TOP ANSWER COVERS:\n(none provided)\n\nREQUIRED METALANGUAGE: (none provided)\n\nSCAFFOLD THE ANSWER SHOULD FOLLOW:\n(none provided)\n\nANTICIPATED FAULTS (grade against the marking scheme; if one appears, flag it at the given severity and base its ladder on the one below, adapted to the student's wording):\n(none provided)\n\nSTUDENT ANSWER (numbered paragraphs):\n[1] Casual operators do not get guaranteed hours, so some of them leave.",
+  "note": "Rebuilt offline by running the deployed-era worker with fetch intercepted. The system prompt and tool schema are in instructions.json.",
+  "reply": {
+   "summary": "The response identifies a relevant cause but stops at a surface level, leaving the explanation incomplete. A three-mark explain question requires a chain of reasoning that connects cause to effect with at least one developed step in between.",
+   "paragraphs": [
+    {
+     "name": "Explanation",
+     "score": 1,
+     "max": 3,
+     "reasons": [
+      {
+       "kind": "weak",
+       "text": "The causal link between casual employment and turnover is identified but not developed beyond a single bare assertion."
+      },
+      {
+       "kind": "weak",
+       "text": "No mechanism is explained: why does the lack of guaranteed hours motivate operators to leave? The middle step of the reasoning chain is absent."
+      },
+      {
+       "kind": "weak",
+       "text": "Turnover is not defined or connected back to the business's situation, so the explanation does not close the loop."
+      }
+     ],
+     "sentences": [
+      {
+       "text": "Casual operators do not get guaranteed hours, so some of them leave.",
+       "issues": [
+        {
+         "kind": "fix",
+         "severity": "critical",
+         "head": "Missing middle step in reasoning",
+         "why": "The answer jumps from 'no guaranteed hours' straight to 'they leave,' skipping the explanation of why that causes departure. A full explanation needs to show the consequence of irregular hours, for example that casual operators face {{income insecurity|uncertainty about future earnings that makes financial planning difficult|0}}, which pushes them to seek more stable work elsewhere.",
+         "ladder": [
+          {
+           "level": "Clear",
+           "text": "Because casual van operators have no guaranteed hours, their income is unpredictable, so they seek more stable employment elsewhere, increasing the business's staff turnover."
+          },
+          {
+           "level": "Better",
+           "text": "Casual van operators receive no guaranteed hours, meaning their income is unreliable, so they are likely to look for permanent roles that offer greater financial security, and when they leave the business must repeatedly recruit and train replacements, raising turnover."
+          },
+          {
+           "level": "Band 6",
+           "text": "Because casual van operators have no guaranteed hours, they face income insecurity and cannot rely on the business for a stable livelihood, which motivates them to accept permanent positions with competitors, and the resulting high turnover forces the business to continuously absorb recruitment and training costs while losing experienced drivers who understand delivery routes and customer expectations."
+          }
+         ]
+        },
+        {
+         "kind": "term",
+         "severity": "should",
+         "head": "Define turnover",
+         "why": "The question uses the word 'turnover' and a strong answer should show it is understood. {{Turnover|the rate at which employees leave an organisation and must be replaced|0}} is the key concept being explained, and naming and defining it signals command of the material.",
+         "ladder": [
+          {
+           "level": "Clear",
+           "text": "This contributes to high staff turnover, meaning a large proportion of van operators leave and must be replaced each year."
+          },
+          {
+           "level": "Better",
+           "text": "This drives high staff turnover because the business constantly loses trained operators and must recruit and induct new ones, adding to costs."
+          },
+          {
+           "level": "Band 6",
+           "text": "This perpetuates a cycle of high turnover, where the business loses skilled operators faster than it can develop them, undermining service consistency and inflating human resource costs."
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "text": null,
+       "missing_label": "Closing impact on the business",
+       "link": false,
+       "issues": [
+        {
+         "kind": "fix",
+         "severity": "critical",
+         "head": "No consequence for the business stated",
+         "why": "An explain question requires the answer to arrive at a clear consequence. Here, the response does not state what high turnover actually costs the business, such as ongoing recruitment expenses or loss of trained operators, so the explanation is left open-ended.",
+         "ladder": [
+          {
+           "level": "Clear",
+           "text": "This means the business must spend time and money repeatedly hiring and training new van operators."
+          },
+          {
+           "level": "Better",
+           "text": "As a result, the business faces ongoing recruitment and training costs, and may experience service disruptions while new operators are brought up to speed."
+          },
+          {
+           "level": "Band 6",
+           "text": "Consequently, the business bears recurring recruitment, induction and training costs, while also risking declines in delivery reliability as inexperienced operators replace those who have left, further undermining its competitive position."
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "rubric": [
+    {
+     "name": "Thesis and sustained judgement",
+     "score": 0,
+     "max": 1,
+     "descriptor": "Rewards a clear, maintained line of argument that answers the question directly.",
+     "bands": [
+      {
+       "range": "0",
+       "text": "No sustained argument; the response is a single incomplete assertion without a developed or closed explanation.",
+       "here": true
+      },
+      {
+       "range": "1",
+       "text": "A clear line of reasoning connects casual employment to turnover through at least one developed intermediate step and a stated consequence for the business.",
+       "here": false
+      }
+     ]
+    },
+    {
+     "name": "Use of evidence and data",
+     "score": 0,
+     "max": 1,
+     "descriptor": "Rewards use of specific details from the stimulus or relevant examples to support the explanation.",
+     "bands": [
+      {
+       "range": "0",
+       "text": "No stimulus detail or example is used to illustrate the explanation.",
+       "here": true
+      },
+      {
+       "range": "1",
+       "text": "At least one specific detail from the stimulus, such as the nature of van operator work or the business context, is used to ground the explanation.",
+       "here": false
+      }
+     ]
+    },
+    {
+     "name": "Economic and business terminology",
+     "score": 1,
+     "max": 1,
+     "descriptor": "Rewards accurate use of relevant business and HR terms.",
+     "bands": [
+      {
+       "range": "0",
+       "text": "No relevant terminology is used, or terms are used incorrectly.",
+       "here": false
+      },
+      {
+       "range": "1",
+       "text": "Key terms such as casual employment and turnover are used, even if not formally defined.",
+       "here": true
+      }
+     ]
+    },
+    {
+     "name": "Cohesion",
+     "score": 0,
+     "max": 1,
+     "descriptor": "Rewards a logically sequenced explanation that flows from cause to effect.",
+     "bands": [
+      {
+       "range": "0",
+       "text": "The explanation is too brief and incomplete to demonstrate logical sequencing from cause through mechanism to consequence.",
+       "here": true
+      },
+      {
+       "range": "1",
+       "text": "The response moves coherently from the feature of casual employment through its effect on workers to the consequence for business turnover.",
+       "here": false
+      }
+     ]
+    }
+   ],
+   "total": 1,
+   "max": 3,
+   "score": 1,
+   "overall": {
+    "summary": "The response identifies a relevant cause but stops at a surface level, leaving the explanation incomplete. A three-mark explain question requires a chain of reasoning that connects cause to effect with at least one developed step in between."
+   },
+   "criteria": [
+    {
+     "name": "Thesis and sustained judgement",
+     "status": "missing",
+     "comment": "Rewards a clear, maintained line of argument that answers the question directly."
+    },
+    {
+     "name": "Use of evidence and data",
+     "status": "missing",
+     "comment": "Rewards use of specific details from the stimulus or relevant examples to support the explanation."
+    },
+    {
+     "name": "Economic and business terminology",
+     "status": "met",
+     "comment": "Rewards accurate use of relevant business and HR terms."
+    },
+    {
+     "name": "Cohesion",
+     "status": "missing",
+     "comment": "Rewards a logically sequenced explanation that flows from cause to effect."
+    }
+   ],
+   "next_steps": [
+    "Missing middle step in reasoning",
+    "No consequence for the business stated",
+    "Define turnover"
+   ],
+   "missing_vocabulary": []
+  },
+  "finalMark": "1/3",
+  "totalSeconds": 33.547492,
+  "passSeconds": {
+   "single pass (all of it)": 33.547492
+  }
+ },
+ "repoWorker69c9fd2": {
+  "pass1UserMessage": "SUBJECT: Business Studies\n\nRESPONSE TYPE: short answer, worth 3 marks. Describe it as what it is. A short answer has no introduction or conclusion to be missing.\n\nQUESTION (explain) (3 marks):\nExplain how the business's casual employment of van operators could be contributing to its turnover.\n\nSOURCE MATERIAL THE STUDENT WAS GIVEN (authored, exactly as the student saw it, except where a note says something could not be included. Judge whether the response uses it, and whether its claims are supported by it, against this text and nothing else):\nSOURCE 1:\nCase study: Kerbside Coffee\nKerbside Coffee roasts and sells coffee from one site and four vans. Demand at the vans peaks between 7am and 9am, and the owners have had complaints about waiting times. Last year the business bought a second roaster using a three-year loan. Staff turnover among van operators is high, and most operators are employed casually.\n\nWHAT THIS QUESTION REQUIRES:\nconcepts: (not specified)\nrelationships to demonstrate: (not specified)\nwhat a strong response accomplishes: 1. Explains that casual work carries no guaranteed hours or leave entitlements (1 mark)\n2. Links that insecurity to an operator's decision to leave (1 mark)\n3. Connects turnover to the cost of recruiting and training replacements (1 mark)\n\nARGUMENT PATHWAYS WE ANTICIPATED (a menu, NOT the correct answers. A different defensible argument is valid and you must record it as valid):\n(none provided)\n\nCONCEPTS:\n(none provided)\n\nVERIFIED EVIDENCE AVAILABLE TO THE STUDENT:\n(none provided)\n\nTHE STUDENT'S PLAN (what they intended. It is NOT proof they wrote it. Only the response can show that):\n(the student did not record a plan)\n\nSTUDENT RESPONSE (numbered paragraphs):\n[1] Casual operators do not get guaranteed hours, so some of them leave.",
+  "pass2UserMessage": "SUBJECT: Business Studies\n\nQUESTION (explain) (3 marks):\nExplain how the business's casual employment of van operators could be contributing to its turnover.\n\nSOURCE MATERIAL THE STUDENT WAS GIVEN (authored, exactly as the student saw it, except where a note says something could not be included. Judge whether the response uses it, and whether its claims are supported by it, against this text and nothing else):\nSOURCE 1:\nCase study: Kerbside Coffee\nKerbside Coffee roasts and sells coffee from one site and four vans. Demand at the vans peaks between 7am and 9am, and the owners have had complaints about waiting times. Last year the business bought a second roaster using a three-year loan. Staff turnover among van operators is high, and most operators are employed casually.\n\nWHAT THIS QUESTION REQUIRES:\nconcepts: (not specified)\nrelationships to demonstrate: (not specified)\nwhat a strong response accomplishes: 1. Explains that casual work carries no guaranteed hours or leave entitlements (1 mark)\n2. Links that insecurity to an operator's decision to leave (1 mark)\n3. Connects turnover to the cost of recruiting and training replacements (1 mark)\n\nRESPONSE TYPE: short answer, worth 3 marks. Mark it as a short answer, not a miniature essay. The directive verb is \"explain\", so mark whether the response does THAT. Do not ask for an introduction, a thesis, a signposted structure or a conclusion unless the directive verb asks for one, and do not penalise their absence. At this mark value there are roughly 3 distinct creditworthy things to do, so look for about that many and no more. Depth is set by the marks, not by how much could be said. A stimulus was provided with the question. Judge whether the response actually uses it, rather than answering from general knowledge alongside it. Return an EMPTY rubric. Keep the whole review short: flag only what actually costs a mark here, at most three issues in total.\n\nREFERENCE, WHAT A TOP ANSWER CAN COVER (a guide, never a checklist, and never the only valid answer):\n(none provided)\n\nREQUIRED METALANGUAGE: (none provided)\n\nSCAFFOLD THE ANSWER CAN FOLLOW (a shape, not a requirement: credit a different valid structure):\n(none provided)\n\nANTICIPATED FAULTS (if one appears, flag it at the given severity and base its ladder on the one below, adapted to the student's wording):\n(none provided)\n\nDIAGNOSIS OF THIS RESPONSE (already checked against the student's own words, carries no marks):\n(not available for this response, mark from the writing alone)\n\nHOW TO READ THE DIAGNOSIS:\nThe reader who wrote it was not told the marks, the criteria or the bands, and awarded nothing. Every quote in it has been checked and does appear in the response. Where it is silent, read the response yourself: silence is not a fault. Nothing in it tells you what the student meant to write, so judge only what they wrote.\n\nSTUDENT RESPONSE (numbered paragraphs):\n[1] Casual operators do not get guaranteed hours, so some of them leave.",
+  "note": "Rebuilt offline. Pass 1 was answered with an error, so pass 2 shows the no-diagnosis path; the real pass-2 message carries the diagnosis text. No model response: this worker is not deployed and no API key is available here."
+ }
+}
