@@ -14,13 +14,19 @@
 //       is ignored;
 //       a resubmission keeps its earlier mark, for the version it was given for,
 //       and the sitting says the mark is for that earlier version;
-//   - a pending second opinion does not block, and its late reply is ignored;
+//   - a phrase-matched mark closes as it was given, with no AI second opinion
+//     (decision 27);
 //   - a closed attempt's unmarked answers stay unmarked: no Try marking again;
 //   - a practice session closes through the same page, with its own verbs.
 //
 // Full tier only (decision 23: no new browser coverage on checkpoint).
 const { chromium, T } = require('./env');
 const paper = require('./fixtures/bus-practice-paper.json');
+// A genuinely closed short answer that declares phrase matching (decision 27).
+// Phrasings grafted onto the published 11(a), an "outline" question, would now
+// go to the marker; this is the shape a paper has to take to be scored from them.
+const CLOSED_11A = { directive: 'identify', marking: { mode: 'phrase_match' },
+  prompt: 'Identify the operations performance objective Kerbside Coffee is failing to meet at its vans, and the customer complaint it causes.' };
 
 const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
 let pass = 0, fail = 0;
@@ -216,29 +222,27 @@ const rows = p => p.$$eval('.tm-tally tbody tr, .tm-tally tfoot tr', es => es.ma
     await ctx.close();
   }
 
-  console.log('--- 5. a second opinion still out does not block, and its late reply is ignored');
+  console.log('--- 5. a phrase-matched mark closes as it was given');
   {
+    // Decision 27: no AI second opinion on a phrase-matched mark, so nothing can be
+    // still out for it; Review & submit closes the attempt on the mark as given.
     const keyed = JSON.parse(JSON.stringify(paper));
     keyed.name = 'Phrased points paper';
     keyed.sections[1].questions[0].parts[0].points = [{ text: 'Names speed as the objective', marks: 1, need: ['speed'] },
                                                       { text: 'Links it to the waiting times', marks: 1, need: ['wait'] }];
+    Object.assign(keyed.sections[1].questions[0].parts[0], CLOSED_11A);
     const seed = { cards: {}, endpoint: '', code: '12Ec126', log: [], customSets: [], lessons: {}, exams: [Object.assign({}, keyed, { id: 'phrased' })] };
     const { p, ctx, mode, errs } = await open(b, seed);
     await sit(p, 'Phrased points paper', ['Section II']);
     await submit(p, 'Speed, because customers wait too long.');
-    mode.reply = () => Object.assign(REVIEW(1, 2), { delay: 3000 });
-    await p.click('#examreview'); await settled(p);
+    ok(!(await has(p, '#examreview')), 'no second-opinion door on the phrase-matched mark');
     await review(p);
-    ok(!(await has(p, '#tmbusy')) && !(await p.$eval('#tmsubmitpaper', e => e.disabled)), 'a second opinion does not block');
-    const before = await text(p, '#tmrsum');
-    await p.waitForTimeout(3500); await settled(p);              // it lands while the page is open
-    ok((await text(p, '#tmrsum')) === before && (await current(p)).a.results['1-0-0'].score === 2,
-       'landing while the page is open, it is abandoned: the total shown is the one Submit closes at');
+    ok(!(await has(p, '#tmbusy')) && !(await p.$eval('#tmsubmitpaper', e => e.disabled)), 'nothing is out, so nothing blocks Submit');
     await p.click('#tmsubmitpaper'); await settled(p);
     const at = await stored(p), rec = at[Object.keys(at)[0]];
     ok(!rec.current && rec.last.results['1-0-0'].score === 2 && rec.last.results['1-0-0'].kind === 'points',
-       'it was abandoned on submit, and its late reply did not touch the closed attempt: ' + JSON.stringify(rec.last.results['1-0-0'] && rec.last.results['1-0-0'].score));
-    ok(mode.sent.length === 1 && !errs.length, 'one request, no page errors ' + JSON.stringify(errs));
+       'the attempt closes on the phrase-matched mark as it was given: ' + JSON.stringify(rec.last.results['1-0-0'] && rec.last.results['1-0-0'].score));
+    ok(mode.sent.length === 0 && !errs.length, 'no request to any marker, no page errors ' + JSON.stringify(errs));
     await ctx.close();
   }
 

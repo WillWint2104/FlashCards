@@ -121,6 +121,27 @@ console.log('--- a paper attempt: fixed scope, derived counts');
   ok(a.drafts['1-0-0'] === undefined, 'submitting clears the draft it came from');
 }
 
+console.log('--- a phrase-matched mark is final for its answer (decision 27)');
+{
+  // The question was authored to be marked deterministically: no other authority,
+  // an AI review above all, replaces that mark while the answer is the same.
+  const s = store(), p = fresh(); A.addPaper(s, p);
+  const a = A.begin(s, A.paperKey(p), A.startPaper(p, [1], T(1)));
+  const llm = (score, max) => ASSESS.marked({ score, max, kind: 'llm' });
+  const failed = max => ASSESS.fail('MARKER_UNREACHABLE', 'Not marked.', { max });
+  A.record(a, '1-0-0', 'Speed.', marked(2, 2), T(2));
+  A.record(a, '1-0-0', 'Speed.', llm(1, 2), T(3));
+  ok(a.results['1-0-0'].kind === 'points' && a.results['1-0-0'].score === 2,
+     'an AI mark for the same answer does not replace a phrase-matched mark: ' + JSON.stringify(a.results['1-0-0']));
+  A.record(a, '1-0-0', 'Speed.', refused(2), T(3)); A.record(a, '1-0-0', 'Speed.', failed(2), T(3));
+  ok(a.results['1-0-0'].score === 2 && ASSESS.isMarked(a.results['1-0-0']), 'nor does a refusal or a failure for the same answer');
+  ok(a.updatedAt === T(2), 'and the attempt is left exactly as it was, not even touched');
+  A.record(a, '1-0-0', 'Wait times.', marked(1, 2), T(4));
+  ok(a.results['1-0-0'].score === 1 && a.answers['1-0-0'] === 'Wait times.', 'a changed answer is marked afresh, by phrase matching again');
+  A.record(a, '1-0-1', 'Hours.', llm(1, 3), T(5)); A.record(a, '1-0-1', 'Hours.', llm(2, 3), T(6));
+  ok(a.results['1-0-1'].score === 2, 'a marker\'s mark is not frozen by this: it is only for phrase-matched marks');
+}
+
 console.log('--- the either/or is one slot until chosen');
 {
   const s = store(), p = fresh(); A.addPaper(s, p);

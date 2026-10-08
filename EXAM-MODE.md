@@ -28,35 +28,50 @@ one") when papers exist, so there is only ever one place to manage them.
 - `mc` — multiple choice: `choices: [{ t, ok, why }]`, exactly one `ok`.
 - `calc` — numeric: `expected` (number), `tolerance`, `working`, `model`.
 - `short` / `define` — short answer / interpret the source. Give a `model` and,
-  for line-by-line feedback, a `points` rubric (below).
+  for what the marker marks for, `points` (below). Points give the mark only on a
+  closed question that declares phrase matching.
 - `essay` — extended response: `model`, `vocab`, optional `command`, `scaffold`.
   Graded by the worker when marking is connected (demo grade otherwise), with the
   sentence-by-sentence review overlay offered on the grade screen.
 
-## Line-by-line short answers: the `points` rubric
+## Marking points, and the one switch for phrase matching
 
-Each short/interpret question can carry a marking-POINTS rubric. One mark per point
-addressed; the student sees which points they hit or missed, with a hint for each
-miss. Deterministic, offline, and exam-authentic (1 mark = 1 point).
+A written question can carry `points`: what earns its marks, with the marks each
+is worth where the paper gives them. By default the points go to the subject's
+marker as what it is marking for, with their weights, and the marker gives the
+mark. Accepted phrasings (`need`) on their own change nothing.
+
+A question is marked here, by matching the paper's own phrasings, only when it
+declares it, and only when it is a genuinely closed short answer (decision 27):
 
 ```json
-{ "type": "short", "marks": 3, "prompt": "...",
-  "model": "A full-marks answer ...",
+{ "format": "short_answer", "directive": "identify", "marks": 2,
+  "prompt": "Identify the operations performance objective Kerbside Coffee is failing to meet at its vans, and the period when demand at the vans peaks.",
+  "marking": { "mode": "phrase_match" },
   "points": [
-    { "text": "Identifies a cash flow strategy", "need": ["factoring", "early payment"], "hint": "Name a specific strategy." },
-    { "text": "Explains the mechanism", "need": ["timing", "availability"], "hint": "How does it change the cash?" },
-    { "text": "Links to liquidity", "need": ["liquidity", "short-term"], "hint": "Tie it back to short-term obligations." }
+    { "text": "Identifies speed as the objective", "marks": 1, "need": ["speed", "quick service", "too slow"] },
+    { "text": "Identifies the 7am to 9am morning peak", "marks": 1, "need": ["7am", "morning peak", "breakfast"] }
   ] }
 ```
 
-- `need` is the list of accepted phrasings (case-insensitive substring match). If
-  omitted, the point's `text` is used. Choose stems deliberately.
-- `marks` per point defaults to 1; the question score is capped at the question's
-  `marks`.
-- Without a `points` rubric, short answers fall back to the standard keyword +
-  model-overlap grade.
-- When marking is connected, each short answer also offers an optional **Deeper AI
-  review** (the worker's sentence-by-sentence pass).
+- `marking.mode` has one value, `phrase_match`. Any other value, or a `marking`
+  that is not `{ "mode": ... }`, is refused at import rather than ignored.
+- It is set on the question that is answered. On a question with parts, a
+  section or the whole paper it is refused, because nothing passes it down.
+- It is accepted only on a `short_answer` whose directive is `identify`,
+  `list`, `name` or `state`, whose prompt begins by asking exactly that, and
+  whose prompt asks for nothing open as well (explain, outline, describe,
+  analyse, assess, evaluate, discuss, justify, recommend, compare and the rest).
+  An open question needs judging, which phrase matching cannot do, so it goes to
+  the marker.
+- Every point needs whole marks of its own that add up to the question's
+  `marks`, and phrasings of its own. A phrasing is matched as a case-insensitive
+  substring after punctuation is set aside; one that is blank or only
+  punctuation matches nothing and is refused.
+- Even on a closed question, matching cannot tell a choice from a list of every
+  candidate, and does not read negation. Choose phrasings deliberately.
+- A short answer with no `points` is marked by the marker against the subject's
+  criteria alone. There is no keyword estimate in Test Mode.
 
 ## The import format (`marginal-exam@1`)
 
@@ -94,6 +109,8 @@ miss. Deterministic, offline, and exam-authentic (1 mark = 1 point).
   `prompt`, `marks >= 1`, a known `type`; MC has 2+ choices with exactly one `ok`;
   calc has a numeric `expected`; short/define/essay has a `model` or a `points`
   rubric.
+- A `marking` setting is valid only as described above: `phrase_match` on a closed
+  short answer, on the question that is answered.
 
 ## Notes
 
