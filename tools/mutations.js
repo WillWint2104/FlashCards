@@ -1992,4 +1992,13 @@ module.exports = [
     owner: "ui74",
     why: "a tab showing an out-of-date attempt closed it, on stale numbers, and wrote over what another tab had saved",
   },
+  // ---- the grader reports how long each pass took ----------------------------
+  {
+    id: "worker-pass-times-dropped",
+    file: "proxy/worker.js",
+    find: "    out.checks.ms = { diagnosis: t1 - t0, judgement: t2 - t1 };",
+    replace: "",
+    owner: "t8",
+    why: "the reply stopped saying how long each marking pass took, so latency could only be read as one number",
+  },
 ];

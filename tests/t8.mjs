@@ -113,5 +113,25 @@ const bad = new Request('https://w/',{method:'POST',headers:{'content-type':'app
 const res4 = await worker.fetch(bad,{ANTHROPIC_API_KEY:'k'},{});
 ok(res4.status===400,'non-numeric marks rejected: '+res4.status);
 
+console.log('--- each pass is timed, and the times are reported ---');
+{
+  // A model that takes a known time for each pass: the reply says how long each took.
+  const was = globalThis.fetch;
+  globalThis.fetch = async (url, init) => {
+    const body = JSON.parse(init.body); const name = body.tools[0].name;
+    await new Promise(r => setTimeout(r, name === 'submit_diagnosis' ? 40 : 300));
+    const input = name === 'submit_diagnosis' ? DIAG : JSON.parse(JSON.stringify(REVIEW));
+    return new Response(JSON.stringify({ content: [{ type: 'tool_use', name, input }], stop_reason: 'tool_use' }), { status: 200 });
+  };
+  const timed = await (await worker.fetch(mkReq(), { ANTHROPIC_API_KEY: 'k' }, {})).json();
+  globalThis.fetch = was;
+  const ms = timed.checks && timed.checks.ms;
+  ok(ms && Number.isFinite(ms.diagnosis) && Number.isFinite(ms.judgement), 'the reply carries both pass times: ' + JSON.stringify(ms));
+  // A timer is a minimum, and a busy runner adds to it, so the ceiling on the
+  // first pass leaves room: 250 ms is far above its 40 ms, yet below the 300 ms
+  // judgement alone and the 340 ms or more of the two together.
+  ok(ms && ms.diagnosis >= 35 && ms.diagnosis < 250 && ms.judgement >= 295, 'each time is its own pass, not the other or the whole: ' + JSON.stringify(ms));
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail?1:0);
