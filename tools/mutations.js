@@ -81,8 +81,8 @@ module.exports = [
   {
     id: "testmode-reaches-rewrite-workspace",
     file: "app.js",
-    find: "    const rv = $(\"#examreview\"); if (rv) rv.onclick = () => tmSecondOpinion(e);",
-    replace: "    const rv = $(\"#examreview\"); if (rv) rv.onclick = () => openReview(g.fb, () => tmDraw());",
+    find: "    const rt = $(\"#examretry\"); if (rt) rt.onclick = () => {",
+    replace: "    const rv = $(\"#examretry\"); if (rv) rv.addEventListener(\"contextmenu\", () => openReview(g.fb, () => tmDraw()));\n    const rt = $(\"#examretry\"); if (rt) rt.onclick = () => {",
     owner: "t32",
     why: "a marked paper was one click from the Clear/Better/Band 6 rungs, a rewrite box and criterion score pills",
   },
@@ -256,14 +256,6 @@ module.exports = [
     why: "a question key is only a position, so a reply stored by key in whatever attempt is current landed a mark in the attempt that replaced the one it was asked for",
   },
   {
-    id: "tm-second-opinion-demo",
-    file: "app.js",
-    find: "    try { g = examOnlyMarks(await gradeWritten(e.q, ans, { noDemo: true }), e.q); }",
-    replace: "    try { g = await gradeWritten(e.q, ans); }",
-    owner: "ui72",
-    why: "'What would make this stronger' replaced an answer-key mark with a demo grade when the marker was unreachable",
-  },
-  {
     id: "tm-short-answer-keyword-estimate",
     file: "app.js",
     find: "    return gradeWritten(q, answer, { noDemo: true });",
@@ -278,14 +270,6 @@ module.exports = [
     replace: "    return tmAttempt() === a",
     owner: "ui72",
     why: "a reply that landed after the student left drew itself into the Test mode home or a Study card",
-  },
-  {
-    id: "tm-second-opinion-late-reply",
-    file: "app.js",
-    find: "    if (!rec || rec.current !== a || a.answers[key] !== ans) return;\n    // Nor over anything since: a new mark, a resubmission, or an answer being rewritten.\n    if (a.results[key] !== was || tmPending(a)[key] != null || a.drafts[key] != null) return;\n    // Never a demo grade, and never over the mark already here: a failure keeps\n    // the answer-key mark and says why.\n    if (!isMarked(g)) { if (here) toast(SECOND_OPINION_FAILED, 4000); return; }\n    // Once Review & submit is open, the total it shows is the one Submit closes\n    // at (decision 24): a second opinion landing then is abandoned, not recorded.\n    if (tmReviewShowing(a)) return;\n    ATT.record(a, key, ans, g, tmNow());",
-    replace: "    if (!rec) return;\n    // Nor over anything since: a new mark, a resubmission, or an answer being rewritten.\n    if (a.results[key] !== was || tmPending(a)[key] != null || a.drafts[key] != null) return;\n    // Never a demo grade, and never over the mark already here: a failure keeps\n    // the answer-key mark and says why.\n    if (!isMarked(g)) { if (here) toast(SECOND_OPINION_FAILED, 4000); return; }\n    // Once Review & submit is open, the total it shows is the one Submit closes\n    // at (decision 24): a second opinion landing then is abandoned, not recorded.\n    ATT.record(rec.current || a, key, ans, g, tmNow());",
-    owner: "ui72",
-    why: "a second opinion that arrived after Start again replaced a mark in the attempt that replaced the one it was asked for",
   },
   {
     id: "tm-stalled-body-unbounded",
@@ -1689,14 +1673,6 @@ module.exports = [
     why: "a file holding only null threw on the import page, so no verdict was shown",
   },
   {
-    id: "sliceA-second-opinion-over-a-rewrite",
-    file: "app.js",
-    find: "    if (a.results[key] !== was || tmPending(a)[key] != null || a.drafts[key] != null) return;",
-    replace: "",
-    owner: "ui72",
-    why: "a second opinion that landed while the student was rewriting replaced their mark and deleted the rewrite",
-  },
-  {
     id: "sliceA-practice-resume-through-setup",
     file: "app.js",
     find: "      return tmRec(ATT.typeKey(f)).current ? tmSit(ATT.typeKey(f)) : tmTypeOverview(f);",
@@ -2068,6 +2044,31 @@ module.exports = [
     owner: "t30",
     why: "a marking setting on a question with parts was ignored in silence, and its parts were marked as if it were not there (found by review)",
   },
+  // ---- a phrase-matched mark is final for its answer (decision 27) -----------------
+  //
+  // RETIRED with the action they guarded: tm-second-opinion-demo,
+  // tm-second-opinion-late-reply, sliceA-second-opinion-over-a-rewrite and
+  // sliceB-second-opinion-under-review all broke "What would make this stronger",
+  // which existed in Test Mode only for phrase-matched marks. The owner decided
+  // that such a mark is final, so the action and its code are gone; what those
+  // four protected (an AI reply never replacing the mark) is now held by
+  // ATT.record for every caller, and by the absence of the door.
+  {
+    id: "phrase-match-mark-replaced-by-ai",
+    file: "tools/contract/attempts.js",
+    find: "  if (prev && prev.kind === \"points\" && ASSESS.isMarked(prev) && a.answers[key] === answer &&",
+    replace: "  if (false && prev && prev.kind === \"points\" && ASSESS.isMarked(prev) && a.answers[key] === answer &&",
+    owner: "t38",
+    why: "an AI mark for the same answer replaced a phrase-matched mark, the second scoring authority the owner ruled out",
+  },
+  {
+    id: "phrase-match-offers-ai-remark",
+    file: "app.js",
+    find: "    const actions = closed ? \"\" : `<div class=\"tm-submitrow\"><button type=\"button\" class=\"tm-btn\" id=\"examretry\">Try again</button></div>`;",
+    replace: "    const actions = closed ? \"\" : `<div class=\"tm-submitrow\"><button type=\"button\" class=\"tm-btn\" id=\"examretry\">Try again</button>${g.kind === \"points\" ? `<button type=\"button\" class=\"tm-btn sm ghost\" id=\"examreview\">What would make this stronger →</button>` : \"\"}</div>`;",
+    owner: "ui72",
+    why: "a phrase-matched mark was offered an AI re-mark, inviting a second authority to replace a mark the paper made final",
+  },
   // ---- a missing mark never passes a mark check (Run 1) ------------------------
   //
   // Run 1 spent real marking credits and reported two unmarked answers "ok",
@@ -2176,14 +2177,6 @@ module.exports = [
     replace: "    if (!rec || rec.current !== a || !tmPending(a)[key] || tmPending(a)[key].ans !== ans) return;",
     owner: "ui74",
     why: "a reply was matched to its request by the answer's text, so after Leave it unmarked a retry of the same words took the abandoned request's failure and dropped its own mark",
-  },
-  {
-    id: "sliceB-second-opinion-under-review",
-    file: "app.js",
-    find: "    if (tmReviewShowing(a)) return;\n    ATT.record(a, key, ans, g, tmNow()); save();",
-    replace: "    ATT.record(a, key, ans, g, tmNow()); save();",
-    owner: "ui74",
-    why: "a second opinion landing while Review & submit was open changed the score after the page had shown it, so Submit closed at a total the student never saw",
   },
   {
     id: "sliceB-focus-lost-on-redraw",

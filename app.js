@@ -3379,8 +3379,10 @@
     const fromMarker = g.kind === "llm";
     const summary = fromMarker ? fbSummary(g.fb || {}) : "";
     const mnote = fromMarker && summary ? `<p class="tm-mnote"><span class="who">Marked against ${esc(subj || "the subject's")} criteria</span>${esc(summary)}</p>` : "";
-    const askable = ["points", "local"].includes(g.kind) && !!state.endpoint;
-    const actions = closed ? "" : `<div class="tm-submitrow"><button type="button" class="tm-btn" id="examretry">Try again</button>${askable ? `<button type="button" class="tm-btn sm ghost" id="examreview">What would make this stronger →</button>` : ""}</div>`;
+    // No AI second opinion on a phrase-matched mark (decision 27): the question was
+    // authored to be marked deterministically, and that mark is final for its
+    // answer (ATT.record keeps it). A marker-marked answer already has its review.
+    const actions = closed ? "" : `<div class="tm-submitrow"><button type="button" class="tm-btn" id="examretry">Try again</button></div>`;
     const result = `<div class="tm-result"><span class="badge">${esc(tmMood(g))}</span>${pair}</div>`;
     if (f === "short_answer" || !(f === "extended_response" || f === "business_report")) {
       const pts = Array.isArray(g.points) && g.points.length ? g.points : null;
@@ -3464,7 +3466,6 @@
       if (SIT.soln[e.key]) { a.viewed = a.viewed || {}; a.viewed[e.key] = true; ATT.moveTo(a, e.key, tmNow()); save(); }
       tmDraw();
     };
-    const rv = $("#examreview"); if (rv) rv.onclick = () => tmSecondOpinion(e);
     examWireSources({ stimulus: e.sec.source }); if (e.parent) examWireSources(e.parent); if (!e.eitherSlot) examWireSources(e.q);
     wireGlossary(); examWireLightbox();
   }
@@ -3526,32 +3527,6 @@
     if (!tmShowing(a, key)) { if (tmReviewShowing(a)) tmReview(recKey, { settled: true }); return; }
     tmDraw();
     const sh = $("#sheet"); if (sh && sh.scrollIntoView) sh.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }
-  const SECOND_OPINION_FAILED = "Your mark stands. The marker could not give a second opinion just now.";
-  async function tmSecondOpinion(e) {
-    const a = tmAttempt(); if (!a) return;
-    const key = e.key, ans = a.answers[key], was = a.results[key], recKey = SIT.key;
-    const btn = $("#examreview"); if (btn) { btn.disabled = true; btn.textContent = "Marking…"; }
-    const rt = $("#examretry"); if (rt) rt.disabled = true;
-    EXAM.paper = e.paper;
-    let g;
-    try { g = examOnlyMarks(await gradeWritten(e.q, ans, { noDemo: true }), e.q); }
-    catch (err) { g = ASSESS.fail("MARKING_STOPPED", "Marking stopped before it finished.", { retry: true }); }
-    const rec = state.attempts[recKey];
-    const here = tmShowing(a, key);
-    if (btn && document.contains(btn)) { btn.disabled = false; btn.textContent = "What would make this stronger →"; }
-    if (rt && document.contains(rt)) rt.disabled = false;
-    if (!rec || rec.current !== a || a.answers[key] !== ans) return;
-    // Nor over anything since: a new mark, a resubmission, or an answer being rewritten.
-    if (a.results[key] !== was || tmPending(a)[key] != null || a.drafts[key] != null) return;
-    // Never a demo grade, and never over the mark already here: a failure keeps
-    // the answer-key mark and says why.
-    if (!isMarked(g)) { if (here) toast(SECOND_OPINION_FAILED, 4000); return; }
-    // Once Review & submit is open, the total it shows is the one Submit closes
-    // at (decision 24): a second opinion landing then is abandoned, not recorded.
-    if (tmReviewShowing(a)) return;
-    ATT.record(a, key, ans, g, tmNow()); save();
-    if (here) tmDraw();
   }
   // ---- Review & submit (Slice B, state 1; decisions 23 and 24) ----------------------------
   // The last question and the navigator open this page; nothing is submitted
@@ -3802,8 +3777,6 @@
       return;
     }
     if (tmPendingKeys(a).length || !ATT.submittedAny(a)) return tmReview(key);
-    // A second opinion still out cannot change the score: it is abandoned here,
-    // and its late reply finds the attempt closed and is dropped.
     ATT.complete(state, key, tmNow()); save();
     REVIEW.key = null; REVIEW.a = null;
     tmResults(key);

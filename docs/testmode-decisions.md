@@ -740,10 +740,14 @@ paper imports exactly as before.
   marked in a way that does not suit it and that their teacher needs to correct
   the paper; the contract's reason travels with the refusal as its detail.
 
-**Left for the owner.** "What would make this stronger" is still offered on a
-phrase-matched answer and can replace the deterministic mark with the marker's.
-Attempts already recorded under the old rule keep their marks. Neither was
-changed here.
+**Decided by the owner, after the first report.** A phrase-matched mark is
+deterministic and final for that attempt. "What would make this stronger" is not
+offered on it: no AI re-mark, no second scoring authority. In Test Mode that action
+existed only for phrase-matched marks, so it is removed with its code, and
+ATT.record keeps a phrase-matched mark against any other result for the same
+answer, so no caller can bring the overwrite back. A changed answer is marked
+afresh. Subject-marker questions keep the normal marking pathway. Attempts already
+completed keep their historical marks; nothing is re-marked.
 
 **Tests.** t30 and t31 hold the rule and its refusals; ui68, ui72 and ui74 seed
 closed questions that declare it, and ui72 checks the refusal at submit; the bots
