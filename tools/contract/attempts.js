@@ -367,6 +367,15 @@ function setDraft(a, key, text, t) {
 // A submitted answer and what marking made of it. `result` may be refused or
 // failed; it is stored as such and counts as not marked (UX-TEST-22).
 function record(a, key, answer, result, t) {
+  // A PHRASE-MATCHED MARK IS FINAL FOR THE ANSWER IT WAS GIVEN FOR (decision 27).
+  // The question was authored to be marked deterministically, so no other
+  // authority, an AI review above all, replaces that mark while the answer is
+  // the same: the attempt is returned unchanged. A changed answer is marked
+  // afresh, and by phrase matching again.
+  var prev = a.results[key];
+  if (prev && prev.kind === "points" && ASSESS.isMarked(prev) && a.answers[key] === answer &&
+      !(result && result.kind === "points"))
+    return a;
   a.answers[key] = answer;
   a.results[key] = result;
   delete a.drafts[key];
