@@ -290,7 +290,8 @@ async function unmarkedYet(p, n, why) {
     const s = await sheet(p);
     ok(mode.sent.length === 0, 'nothing was sent to the marker: ' + mode.sent.length);
     ok(!/Marks\s*2 of 2/.test(s) && /not marked/i.test(s), 'the answer is not scored from the phrasings: ' + s.slice(0, 80));
-    ok(/cannot judge one/.test(s) && /outline/.test(s), 'and it says why, in the contract\'s words: ' + s.slice(0, 200));
+    ok(/set up to be marked in a way that does not suit it/.test(s) && /teacher needs to correct the paper/.test(s) && !/goes? to the marker/.test(s),
+       'and it tells the student what happened and who can fix it, without claiming the marker has it: ' + s.slice(0, 200));
     await ctx.close();
   }
 

@@ -28,7 +28,8 @@ one") when papers exist, so there is only ever one place to manage them.
 - `mc` — multiple choice: `choices: [{ t, ok, why }]`, exactly one `ok`.
 - `calc` — numeric: `expected` (number), `tolerance`, `working`, `model`.
 - `short` / `define` — short answer / interpret the source. Give a `model` and,
-  for line-by-line feedback, a `points` rubric (below).
+  for what the marker marks for, `points` (below). Points give the mark only on a
+  closed question that declares phrase matching.
 - `essay` — extended response: `model`, `vocab`, optional `command`, `scaffold`.
   Graded by the worker when marking is connected (demo grade otherwise), with the
   sentence-by-sentence review overlay offered on the grade screen.

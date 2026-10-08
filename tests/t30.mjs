@@ -592,6 +592,15 @@ console.log("13. the paper the product actually ships, which is now synthetic");
   const onPaper = objectiveOnly(); onPaper.marking = { mode: "phrase_match" };
   ok([onSection, onPaper].every(pp => codes(E.examine(pp, PK)).includes("MARKING_NOT_ON_A_QUESTION") && !E.examine(pp, PK).sittable),
     "a marking setting on a section or a whole paper is refused rather than ignored");
+  const onParent = copy(); onParent.sections[1].questions[0].marking = { mode: "phrase_match" };
+  const op = E.examine(onParent, PK);
+  ok(!op.sittable && op.findings.some(f => f.code === "MARKING_NOT_ON_A_QUESTION" && /^sections\[1\]\.questions\[0\]$/.test(f.path)),
+    "a marking setting on a question with parts is refused, at that question: " + JSON.stringify(op.findings.filter(f => f.code === "MARKING_NOT_ON_A_QUESTION").map(f => f.path)));
+  const stringy = objectiveOnly(); stringy.marking = "phrase_match";
+  ok(codes(E.examine(stringy, PK)).includes("MARKING_NOT_ON_A_QUESTION"), "a paper-wide marking setting written as a word is refused too");
+  const pkgShaped = objectiveOnly(); pkgShaped.marking = { source: "authored", bands: [], bandSource: "x" };
+  ok(!codes(E.examine(pkgShaped, PK)).includes("MARKING_NOT_ON_A_QUESTION"),
+    "a question package's own top-level marking (band descriptors, no mode) is not mistaken for this setting");
   ok(!codes(E.examine(paper, PK)).some(c => /^(PHRASE_MATCH_|MARKING_)/.test(c)),
     "and the published paper, which declares no marking setting, draws none of these findings");
   const withMarker = objectiveOnly(); withMarker.sections[0].questions.push({ format: "short_answer", prompt: "Explain one role of the courts.", marks: 3,

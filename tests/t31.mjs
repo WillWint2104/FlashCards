@@ -146,6 +146,24 @@ ok(refusedAs({ points: [ph("alpha one"), ph("beta two"), { text: "c", marks: 1 }
 ok(refusedAs({ points: [ph("alpha one"), ph("beta two"), { text: "c", marks: 1, need: [3] }] }, "PHRASE_MATCH_POINTS_INCOMPLETE"), "a phrasing that is not text is refused");
 ok(A.phraseMatch(Object.assign({}, W, { prompt: "Question 11 (a) Identify the three items." })).ok === true,
    "a question label before the prompt does not hide its directive");
+// Found by review: open directives asked in other forms, or not in the first list.
+for (const prompt of ["Identify the three items, explaining why each matters.", "Identify the three items, justifying your choice.",
+  "Identify the three items, describing each.", "Identify the three items, outlining each.", "Identify the three items and give an explanation of each.",
+  "Identify the three items and predict their effect.", "Identify the three items. Interpret the data in Table 1.",
+  "Identify the three items and apply them to the case study.", "Identify the three items and suggest one improvement.",
+  "Identify the three items, evaluating each.", "Identify the three items and analyse each.", "Identify the three items and assess each."])
+  ok(refusedAs({ prompt }, "PHRASE_MATCH_NOT_CLOSED"), "an open task asked in any form makes the question open: " + JSON.stringify(prompt));
+ok(A.phraseMatch(Object.assign({}, W, { prompt: "Identify the three items described in Source 1." })).ok === true &&
+   A.phraseMatch(Object.assign({}, W, { prompt: "Identify the three items that explains the fall in sales." })).ok === true,
+   "a past or third-person form asks for nothing: 'described in Source 1' stays closed");
+for (const label of ["(a)(i) ", "11a ", "Question 11a ", "a. ", "Q11a ", "Q11 ", "11(a)(i) ", "Question 11 (a)(i) ", "(a) ", "a) ", "11(a) ", "11. ", "(i) "])
+  ok(A.phraseMatch(Object.assign({}, W, { prompt: label + "Identify the three items." })).ok === true,
+     "the label " + JSON.stringify(label) + " before the prompt does not hide its directive");
+ok(A.phraseMatch(Object.assign({}, W, { prompt: "Kerbside Coffee runs three vans. Identify the three items." })).ok === true,
+   "a prompt may open with a sentence of context before it asks");
+for (const bad of [".", "-", "%", "...", "?."])
+  ok(refusedAs({ points: [ph("alpha one"), ph("beta two"), { text: "c", marks: 1, need: [bad] }] }, "PHRASE_MATCH_POINTS_INCOMPLETE"),
+     "a phrasing that is only punctuation (" + JSON.stringify(bad) + ") would match any answer containing it, so it is refused");
 ok(A.phraseMatch({ type: "short", directive: "state", prompt: "State TWO features.", marks: 2, points: [ph("flexible"), ph("hollow")], marking: { mode: "phrase_match" } }).ok === true,
    "a legacy short answer that states its closed directive qualifies");
 ok(A.phraseMatch(Object.assign({}, W, { directive: " IDENTIFY " })).ok === true, "the directive is read without case or spacing");
