@@ -15,6 +15,11 @@
 // Full tier only. Nothing here is added to fast or checkpoint (decision 20).
 const { chromium, T } = require('./env');
 const paper = require('./fixtures/bus-practice-paper.json');
+// A genuinely closed short answer that declares phrase matching (decision 27).
+// Phrasings grafted onto the published 11(a), an "outline" question, would now
+// go to the marker; this is the shape a paper has to take to be scored from them.
+const CLOSED_11A = { directive: 'identify', marking: { mode: 'phrase_match' },
+  prompt: 'Identify the operations performance objective Kerbside Coffee is failing to meet at its vans, and the customer complaint it causes.' };
 
 const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
 let pass = 0, fail = 0;
@@ -244,6 +249,7 @@ async function unmarkedYet(p, n, why) {
     const part = keyed.sections[1].questions[0].parts[0];
     part.points = [{ text: 'Names speed as the objective', marks: 1, need: ['speed'] },
                    { text: 'Links it to the waiting times', marks: 1, need: ['wait'] }];
+    Object.assign(part, CLOSED_11A);
     const seed = { cards: {}, endpoint: '', code: '12Ec126', log: [], customSets: [], lessons: {},
       exams: [Object.assign({}, keyed, { id: 'phrased' })] };
     const { p, ctx, mode } = await open(b, seed);
@@ -261,6 +267,30 @@ async function unmarkedYet(p, n, why) {
     const s = await sheet(p);
     ok(/Marks\s*2 of 2/.test(s) && !/demo grade/i.test(s), 'the unreachable marker leaves the 2/2 in place, with no demo grade over it: ' + s.slice(0, 60));
     ok(await bar(p) === '1 of 8 answered · 2/40 marks', 'and the bar is unchanged: ' + await bar(p));
+    await ctx.close();
+  }
+
+  // ---- 7b. a stored paper whose declared marking cannot be honoured ----------
+  // Decision 27. The import door refuses phrase matching on an open question, but a
+  // paper already in the library, or restored from a backup, is never examined
+  // again. At submit the answer is refused with the reason: not scored from the
+  // phrasings, and not quietly sent to the marker instead.
+  console.log('--- 7b. phrase matching declared on an open question is refused at submit');
+  {
+    const open11a = JSON.parse(JSON.stringify(paper));
+    open11a.name = 'Refused points paper';
+    Object.assign(open11a.sections[1].questions[0].parts[0], { marking: { mode: 'phrase_match' },
+      points: [{ text: 'Names speed as the objective', marks: 1, need: ['speed'] },
+               { text: 'Links it to the waiting times', marks: 1, need: ['wait'] }] });
+    const seed = { cards: {}, endpoint: '', code: '12Ec126', log: [], customSets: [], lessons: {},
+      exams: [Object.assign({}, open11a, { id: 'refused-points' })] };
+    const { p, ctx, mode } = await open(b, seed);
+    await sit(p, 'Refused points paper', 'Section II - Short answer');
+    await submit(p, 'Speed, because customers wait too long.');
+    const s = await sheet(p);
+    ok(mode.sent.length === 0, 'nothing was sent to the marker: ' + mode.sent.length);
+    ok(!/Marks\s*2 of 2/.test(s) && /not marked/i.test(s), 'the answer is not scored from the phrasings: ' + s.slice(0, 80));
+    ok(/cannot judge one/.test(s) && /outline/.test(s), 'and it says why, in the contract\'s words: ' + s.slice(0, 200));
     await ctx.close();
   }
 
@@ -347,6 +377,7 @@ async function unmarkedYet(p, n, why) {
     keyed.name = 'Phrased points paper';
     keyed.sections[1].questions[0].parts[0].points = [{ text: 'Names speed as the objective', marks: 1, need: ['speed'] },
                                                       { text: 'Links it to the waiting times', marks: 1, need: ['wait'] }];
+    Object.assign(keyed.sections[1].questions[0].parts[0], CLOSED_11A);
     const seed = { cards: {}, endpoint: '', code: '12Ec126', log: [], customSets: [], lessons: {},
       exams: [Object.assign({}, keyed, { id: 'phrased' })] };
     const { p, ctx, mode } = await open(b, seed);
@@ -492,6 +523,7 @@ async function unmarkedYet(p, n, why) {
     keyed.name = 'Phrased points paper';
     keyed.sections[1].questions[0].parts[0].points = [{ text: 'Names speed as the objective', marks: 1, need: ['speed'] },
                                                       { text: 'Links it to the waiting times', marks: 1, need: ['wait'] }];
+    Object.assign(keyed.sections[1].questions[0].parts[0], CLOSED_11A);
     const seed = { cards: {}, endpoint: '', code: '12Ec126', log: [], customSets: [], lessons: {},
       exams: [Object.assign({}, keyed, { id: 'phrased' })] };
     const { p, ctx, mode } = await open(b, seed);

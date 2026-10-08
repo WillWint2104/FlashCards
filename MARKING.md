@@ -255,8 +255,10 @@ offers a student an empty pane.
 
 ### The mark stays where it belongs
 
-Inside a paper the **marking-points checklist still gives the mark**: one point is
-one mark, and that is how the paper is actually marked. What a checklist cannot do
+Inside a paper the **marking-points checklist gives the mark only on a closed
+question that declares phrase matching** (`"marking": { "mode": "phrase_match" }`,
+decision 27 in docs/testmode-decisions.md). Every other written answer in a paper,
+phrasings or not, is marked by the subject's marker. What a checklist cannot do
 is say why a point was missed, or hand the student back to the sentence. So the
 review is offered alongside it, on request, as **Mark this properly**. A locally
 graded short answer in a study session gets the same offer. Marking is never spent

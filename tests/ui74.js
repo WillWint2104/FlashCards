@@ -21,6 +21,11 @@
 // Full tier only (decision 23: no new browser coverage on checkpoint).
 const { chromium, T } = require('./env');
 const paper = require('./fixtures/bus-practice-paper.json');
+// A genuinely closed short answer that declares phrase matching (decision 27).
+// Phrasings grafted onto the published 11(a), an "outline" question, would now
+// go to the marker; this is the shape a paper has to take to be scored from them.
+const CLOSED_11A = { directive: 'identify', marking: { mode: 'phrase_match' },
+  prompt: 'Identify the operations performance objective Kerbside Coffee is failing to meet at its vans, and the customer complaint it causes.' };
 
 const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
 let pass = 0, fail = 0;
@@ -222,6 +227,7 @@ const rows = p => p.$$eval('.tm-tally tbody tr, .tm-tally tfoot tr', es => es.ma
     keyed.name = 'Phrased points paper';
     keyed.sections[1].questions[0].parts[0].points = [{ text: 'Names speed as the objective', marks: 1, need: ['speed'] },
                                                       { text: 'Links it to the waiting times', marks: 1, need: ['wait'] }];
+    Object.assign(keyed.sections[1].questions[0].parts[0], CLOSED_11A);
     const seed = { cards: {}, endpoint: '', code: '12Ec126', log: [], customSets: [], lessons: {}, exams: [Object.assign({}, keyed, { id: 'phrased' })] };
     const { p, ctx, mode, errs } = await open(b, seed);
     await sit(p, 'Phrased points paper', ['Section II']);

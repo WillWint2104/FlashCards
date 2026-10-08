@@ -206,6 +206,11 @@ function parentFindings(q, path) {
       "this question has parts, so it is not answered itself, but it also declares a response format. " +
       "One of the two is wrong and nothing here can tell which");
 
+  if (q.marking !== undefined)
+    add(STATE.malformed, "MARKING_NOT_ON_A_QUESTION",
+      "how a question is marked is set on the part that is answered. A question with parts is not answered itself, " +
+      "and its setting is not passed down to its parts, so it would be ignored");
+
   if (blank(numberOf(q)))
     add(STATE.thin, "PARENT_NUMBER_ABSENT",
       "a question with parts is referred to by number, and this one has none, so its parts are named by position");
@@ -348,6 +353,12 @@ function questionFindings(q, path) {
         "a business report with no instructions, no marking points and no requirements sends its marker nothing " +
         "that says what the report must do. It is still marked as a business report, against the subject's criteria alone");
   }
+  // HOW THE QUESTION ASKS TO BE MARKED (decision 27). Silent unless the question
+  // carries `marking`: a question that says nothing is marked as it always was,
+  // and a published paper with no marking settings imports exactly as before.
+  // The findings are ASSESS.phraseMatchFindings, the rule scorePoints and the app
+  // apply at marking time, so the door and the marking cannot disagree.
+  ASSESS.phraseMatchFindings(q).forEach(function (f) { add(STATE[f.state], f.code, capitalise(f.why)); });
   return out;
 }
 
@@ -695,8 +706,9 @@ function duplicateFindings(paper) {
 //
 // A subject package matters only to an answer the marker judges. Multiple choice
 // is marked from its key, a calculation from its expected value and tolerance,
-// and a short answer whose every point authors phrasings from those phrasings
-// (ASSESS.scorePoints, `local`). Everything else written is judged by the marker
+// and a closed short answer that declares phrase matching from its phrasings
+// (ASSESS.scorePoints, `local`, decision 27). Phrasings alone do not make a
+// question locally markable. Everything else written is judged by the marker
 // against the subject's criteria, and cannot be marked without them.
 function markerDependent(paper) {
   var out = [];
@@ -747,6 +759,13 @@ function examine(paper, opts) {
     out.push(finding(STATE.malformed, "SECTIONS_MISSING", "sections",
       "a paper is a list of sections and this one has none"));
 
+  // How a question is marked is set on the question that is answered, never as a
+  // default for a whole paper or section (decision 27). Nothing passes it down,
+  // so a setting here would be ignored in silence.
+  if (paper.marking !== undefined)
+    out.push(finding(STATE.malformed, "MARKING_NOT_ON_A_QUESTION", "marking",
+      "how a question is marked is set on each question that is answered. A setting for the whole paper is not passed down, so it would be ignored"));
+
   out = out.concat(curriculumFindings(paper));
   out = out.concat(totalFindings(paper));
   out = out.concat(duplicateFindings(paper));
@@ -763,6 +782,9 @@ function examine(paper, opts) {
         "a section with no questions cannot be sat" + (blank(sec.name) ? "" : " (" + String(sec.name) + ")")));
       return;
     }
+    if (sec.marking !== undefined)
+      out.push(finding(STATE.malformed, "MARKING_NOT_ON_A_QUESTION", at + ".marking",
+        "how a question is marked is set on each question that is answered. A setting for a whole section is not passed down, so it would be ignored"));
     if (blank(sec.name))
       out.push(finding(STATE.thin, "SECTION_NAME_ABSENT", at + ".name",
         "this section has no name, so it is shown to the student as a number"));

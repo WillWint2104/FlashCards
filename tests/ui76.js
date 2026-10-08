@@ -1,6 +1,6 @@
 // TEST MODE STUDENT BOTS: fixed answers through the real app and the real worker.
 //
-// Every answer comes from tests/bots/testmode/corpus.v1.json and is the same in
+// Every answer comes from tests/bots/testmode/corpus.v2.json and is the same in
 // every run, so a change in what comes back is a change in Marginal. The bots
 // drive the browser the way a student does (Library, setup, typing, editing,
 // moving about, marking, flagging, leaving, reloading, resuming, finishing,
@@ -32,21 +32,21 @@
 // worker, and the paper journey with the writing bot and an outage. With --all it is the STUDENT BENCHMARK: all 31 corpus answers, the
 // deterministic formats, the learning loop across two sessions. That is a
 // release and marking-quality run (npm run testmode-bots), not an every-commit
-// one. --golden runs the 12 diagnostic answers in golden.v1.json, the first
+// one. --golden runs the 12 diagnostic answers in golden.v2.json, the first
 // thing to spend live marking credits on. Live mode is always a benchmark run.
 //
 // The report is written to tests/out/bots/testmode-report.md, with a screenshot
 // beside it for every check that failed.
 const { chromium, T, OUT } = require('./env');
 const fs = require('fs'), path = require('path');
-const CORPUS = require('./bots/testmode/corpus.v1.json');
+const CORPUS = require('./bots/testmode/corpus.v2.json');
 const X = require('./bots/testmode/expect.js');
 const PAPER = require('./fixtures/bus-practice-paper.json');
 const LIVE = process.env.MARGINAL_LIVE === '1';
 const SITE = process.env.MARGINAL_SITE || T;
 const GOLDEN = process.argv.includes('--golden');
 const BENCH = process.argv.includes('--all') || GOLDEN || LIVE;
-const ONLY = (process.env.MARGINAL_BOTS_ONLY || (GOLDEN ? require('./bots/testmode/golden.v1.json').answers.join(',') : '')).split(',').map(s => s.trim()).filter(Boolean);
+const ONLY = (process.env.MARGINAL_BOTS_ONLY || (GOLDEN ? require('./bots/testmode/golden.v2.json').answers.join(',') : '')).split(',').map(s => s.trim()).filter(Boolean);
 // The core regression's answers: one of each kind of request the faults live in.
 const CORE = new Set(['er11d-partial', 'br14-weak']);
 const DIR = path.join(OUT, 'bots');
@@ -169,7 +169,10 @@ async function importLocalPaper(p) {
   P.exam = Object.assign({}, P.exam, { id: L.examId, title: L.name }); P.name = L.name;
   const [si, qi, pi] = L.key.split('-').map(Number);
   const q = P.sections[si].questions[qi].parts[pi];
-  q.points = q.points.map((pt, i) => Object.assign({}, typeof pt === 'string' ? { text: pt } : pt, { need: L.need[i] }));
+  // The closed question that declares phrase matching (decision 27) replaces 11(a)
+  // whole: its prompt, directive, marking setting and points, never phrasings
+  // grafted onto the open 'outline' question, which the import page now refuses.
+  delete q.command; Object.assign(q, JSON.parse(JSON.stringify(L.leaf)));
   const f = path.join(DIR, 'local-points-paper.json'); fs.writeFileSync(f, JSON.stringify(P));
   await p.click('#tmimport'); await settled(p);
   await p.setInputFiles('#tmfile', f); await settled(p);
@@ -322,7 +325,7 @@ async function resultsAgree(p, attemptKey, where) {
     await toTest(p);
     const TK = 'type:short_answer';
     const paperBefore = JSON.stringify(((await store(p)).attempts || {})['paper:' + PAPER.exam.id] || null);
-    const local = ['sa11a-blank', 'sa11a-irrelevant', 'sa11a-one-point', 'sa11a-unusual', 'sa11a-keywords', 'sa11a-two-points'].filter(id => want(ANSWERS[id]));
+    const local = ['cl11a-blank', 'cl11a-irrelevant', 'cl11a-one-point', 'cl11a-unusual', 'cl11a-shotgun', 'cl11a-negation', 'cl11a-two-points'].filter(id => want(ANSWERS[id]));
     if (local.length) {
       // Benchmark only: the deterministic phrase matcher, on the bots' own paper.
       await importLocalPaper(p);
@@ -332,7 +335,7 @@ async function resultsAgree(p, attemptKey, where) {
       ok(/Question 11\(a\)/.test(await qhead(p)), 'the navigator opens 11(a)');
       for (const id of local) {
         const got = await attemptOne(p, TK, ANSWERS[id], id);
-        if (id === 'sa11a-blank') ok(got.status === 'none' && rec.calls.length === 0, id + ': nothing was sent to the marker for a blank answer');
+        if (id === 'cl11a-blank') ok(got.status === 'none' && rec.calls.length === 0, id + ': nothing was sent to the marker for a blank answer');
       }
       ok(rec.calls.length === 0, 'a locally marked question never calls the marker: ' + rec.calls.length);
     } else {
