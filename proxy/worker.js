@@ -861,6 +861,10 @@ export default {
       : "(none provided)";
 
     // ---- PASS 1: diagnose what is actually on the page (no marks) -----------
+    // Each pass is timed and the times reported under checks.ms, so how long
+    // marking takes can be read pass by pass from a real reply. Timing only: it
+    // changes nothing about what either pass is asked or returns.
+    const t0 = Date.now();
     const diagnosis = await diagnose({
       subject: markSubject, prompt, command, marks, topic: ctx.topic, responseType: ctx.responseType,
       format: ctx.format, stimulusContext: ctx.stimulusContext,
@@ -868,6 +872,7 @@ export default {
       response: paras, answer,
     }, env);
 
+    const t1 = Date.now();
     // ---- PASS 2: judge, from the verified diagnosis and the response ---------
     let userMessage;
     try {
@@ -908,6 +913,7 @@ export default {
 
     if (!res.ok) return json({ error: "upstream " + res.status }, 502, cors);
     const data = await res.json();
+    const t2 = Date.now();
     const block = (data.content || []).find(b => b.type === "tool_use");
     const r = block?.input;
     if (!r || !Array.isArray(r.paragraphs) || !r.paragraphs.length) {
@@ -940,7 +946,9 @@ export default {
     if (unusable) {
       return json({ error: "grader returned an unusable mark", retryable: true }, 502, cors);
     }
-    return json(finalize(r, markTotal, String(answer), diagnosis, criteria, ctx.validContent.pathways.length > 0, ctx.responseType, ctx.blocks), 200, cors);
+    const out = finalize(r, markTotal, String(answer), diagnosis, criteria, ctx.validContent.pathways.length > 0, ctx.responseType, ctx.blocks);
+    out.checks.ms = { diagnosis: t1 - t0, judgement: t2 - t1 };
+    return json(out, 200, cors);
   },
 };
 
