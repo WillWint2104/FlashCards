@@ -119,7 +119,7 @@ console.log('--- each pass is timed, and the times are reported ---');
   const was = globalThis.fetch;
   globalThis.fetch = async (url, init) => {
     const body = JSON.parse(init.body); const name = body.tools[0].name;
-    await new Promise(r => setTimeout(r, name === 'submit_diagnosis' ? 40 : 90));
+    await new Promise(r => setTimeout(r, name === 'submit_diagnosis' ? 40 : 300));
     const input = name === 'submit_diagnosis' ? DIAG : JSON.parse(JSON.stringify(REVIEW));
     return new Response(JSON.stringify({ content: [{ type: 'tool_use', name, input }], stop_reason: 'tool_use' }), { status: 200 });
   };
@@ -127,7 +127,10 @@ console.log('--- each pass is timed, and the times are reported ---');
   globalThis.fetch = was;
   const ms = timed.checks && timed.checks.ms;
   ok(ms && Number.isFinite(ms.diagnosis) && Number.isFinite(ms.judgement), 'the reply carries both pass times: ' + JSON.stringify(ms));
-  ok(ms && ms.diagnosis >= 35 && ms.diagnosis < 85 && ms.judgement >= 85, 'each time is its own pass, not the other or the whole: ' + JSON.stringify(ms));
+  // A timer is a minimum, and a busy runner adds to it, so the ceiling on the
+  // first pass leaves room: 250 ms is far above its 40 ms, yet below the 300 ms
+  // judgement alone and the 340 ms or more of the two together.
+  ok(ms && ms.diagnosis >= 35 && ms.diagnosis < 250 && ms.judgement >= 295, 'each time is its own pass, not the other or the whole: ' + JSON.stringify(ms));
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);
