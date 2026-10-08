@@ -6,24 +6,39 @@ comes back changes, Marginal changed, not the student.
 
 ## The corpus
 
-`corpus.v1.json` holds 31 original answers on the synthetic Business Studies
-paper (`tests/fixtures/bus-practice-paper.json`): multiple choice, calculation,
-short answer (one question marked from authored phrasings, one by the marker),
-extended response and business report. Written answers cover blank, irrelevant,
-partial, unusual wording, strong, misconception, verbose, unfinished, and a
-business report written as a report and as an essay with the same content.
+`corpus.v2.json` is the corpus the suite runs: 32 original answers on the
+synthetic Business Studies paper (`tests/fixtures/bus-practice-paper.json`):
+multiple choice, calculation, short answer, extended response and business
+report. Written answers cover blank, irrelevant, partial, unusual wording,
+strong, misconception, verbose, unfinished, and a business report written as a
+report and as an essay with the same content.
+
+One short answer is marked here from authored phrasings, the rest by the marker.
+The phrase-matched one is a derived, genuinely closed question that declares
+`"marking": { "mode": "phrase_match" }` (decision 27): "Identify the operations
+performance objective ... and the period when demand at the vans peaks." Its
+answers include the matcher's known limits on purpose, recorded as observations:
+a correct answer in other words earns nothing, a list of every candidate earns
+full marks, and a negation earns full marks. Phrasings alone no longer score
+anything, so the open "outline" 11(a) that version 1 grafted phrasings onto is
+gone from the run.
+
+`corpus.v1.json` is frozen as it was for Run 1 and is not run. `t31` still reads
+two of its answers to check that the published 11(a) sends them to the marker.
+`golden.v2.json` is the live diagnostic set; it swaps v1's keyword list for the
+closed question's shotgun list.
 
 Each answer carries:
 
 - `expect`: what is asserted offline. Exact marks only where the paper's own key
-  decides (multiple choice, calculation, locally matched points).
+  decides (multiple choice, calculation, the phrase-matched closed question).
 - `stub`: the marker's reply used offline, fed to the real worker code in place
   of the model. A stand-in, not a claim about marking quality.
 - `live`: what live mode asserts against the real marker: a range, never one
   exact number. `liveOrder` on an item says which answers must not score below
   which.
 - `observe`: a known characteristic the run reports rather than fails, such as
-  local matching under-crediting unusual wording.
+  phrase matching earning full marks for a list of every candidate.
 
 **Versioning.** Never edit an answer's text in place: a benchmark is only useful
 if the same words go in every time. To change answers, add `corpus.v2.json` and

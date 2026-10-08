@@ -927,9 +927,11 @@ function scorePoints(q, answer) {
     return { text: pt.text, hit: hit, hint: pt.hint, marks: pt.marks, matchable: true };
   });
   var hits = pts.filter(function (p) { return p.hit === true; }).length;
-  // Scored here only when the paper authored BOTH the weighting and a way to
-  // match every point. Anything less goes to the marker with its weights.
-  var local = mp.weighted && pts.length > 0 && pts.every(function (p) { return p.matchable; });
+  // Scored here only when the question DECLARES phrase matching and is a closed
+  // short answer that qualifies for it (phraseMatch, decision 27), with the
+  // weighting and a way to match every point. Phrasings on their own decide
+  // nothing: anything else goes to the marker with its weights.
+  var local = phraseMatch(q).ok === true && mp.weighted && pts.length > 0 && pts.every(function (p) { return p.matchable; });
   var score = null;
   if (mp.weighted) {
     var raw = pts.reduce(function (n, p) { return p.hit ? n + p.marks : n; }, 0);
@@ -937,6 +939,130 @@ function scorePoints(q, answer) {
   }
   return { ok: true, points: pts, hits: hits, count: pts.length,
            weighted: mp.weighted, local: local, score: score, max: finite(q && q.marks) ? q.marks : 0 };
+}
+
+// THE ONE SWITCH FOR SCORING A WRITTEN ANSWER FROM PHRASINGS (decision 27).
+//
+// A written answer is scored here, by matching the paper's own phrasings, only
+// when its question says so in as many words:
+//
+//     "marking": { "mode": "phrase_match" }
+//
+// and only when the question is genuinely closed: a short answer whose directive
+// asks for something that can be recognised rather than judged (identify, list,
+// name, state), whose prompt asks for nothing more than that, and whose every
+// point is worth whole marks and carries phrasings of its own.
+//
+// Phrasings alone used to be the switch. A weighted question whose every point
+// authored phrasings was scored here whatever it asked, so an "explain" or an
+// "outline" could be marked by substring: a list of the right words earned what
+// an explanation is worth, and a correct answer in other words lost marks. An
+// open question goes to the subject's marker, which can judge it, phrasings or
+// not.
+//
+// One rule, read twice: by the import validator (tools/contract/exam.js), which
+// refuses a paper that declares phrase matching on anything else, and by
+// scorePoints and the app at marking time, because a paper restored from a backup
+// or already in the library is never examined again.
+var MARKING_MODES = ["phrase_match"];
+var CLOSED_DIRECTIVES = ["identify", "list", "name", "state"];
+// A prompt that asks for any of these is open, wherever in the prompt it asks.
+var OPEN_DIRECTIVES = ["account for", "analyse", "analyze", "assess", "compare", "contrast", "critically",
+  "demonstrate", "describe", "discuss", "distinguish", "evaluate", "examine", "explain", "justify",
+  "outline", "propose", "recommend", "to what extent"];
+
+// The words a prompt asks with: its first word once a question label such as
+// "Question 11 (a)" is set aside, and every open directive it uses as a word.
+function promptAsks(prompt) {
+  var s = String(prompt == null ? "" : prompt).trim()
+    .replace(/^question\s+\d+\s*(\(\s*[a-z]{1,4}\s*\)|[a-z]{1,4}\))?\s*[.:]?\s*/i, "")
+    .replace(/^\d+\s*\(\s*[a-z]{1,4}\s*\)\s*[.:]?\s*/i, "")
+    .replace(/^\(?\s*[a-z]{1,4}\s*\)\s*/i, "");
+  var words = " " + s.toLowerCase().replace(/[^a-z]+/g, " ").trim() + " ";
+  var lead = words.trim().split(" ")[0] || "";
+  return { lead: lead, open: OPEN_DIRECTIVES.filter(function (d) { return words.indexOf(" " + d + " ") !== -1; }) };
+}
+
+// Every reason a question's `marking` cannot be honoured, as { state, code, why }.
+// Empty when the question declares nothing (it is marked as it always was) or when
+// it declares phrase matching and qualifies.
+function phraseMatchFindings(q) {
+  q = q || {};
+  if (q.marking === undefined) return [];
+  var out = [];
+  var no = function (state, code, why) { out.push({ state: state, code: code, why: why }); };
+  var m = q.marking;
+  if (!m || typeof m !== "object" || Array.isArray(m) || blank(m.mode)) {
+    no("malformed", "MARKING_MALFORMED",
+      "this question has a marking setting that does not say how it is marked. It reads { \"mode\": \"phrase_match\" } or is left out");
+    return out;
+  }
+  if (MARKING_MODES.indexOf(m.mode) < 0) {
+    no("unsupported", "MARKING_MODE_UNSUPPORTED",
+      "this question asks to be marked by " + JSON.stringify(String(m.mode)) +
+      ", which this version does not do. It is not marked some other way instead");
+    return out;
+  }
+  var fx = normaliseFormat(q);
+  if (!fx.ok || fx.format !== "short_answer") {
+    no("unsupported", "PHRASE_MATCH_NOT_SHORT_ANSWER",
+      "phrase matching marks short answers only, and this question is " + (fx.ok ? formatWords(fx.format) : "not a short answer"));
+    return out;
+  }
+  var dir = blank(q.directive) ? null : String(q.directive).trim().toLowerCase();
+  var cmd = blank(q.command) ? null : String(q.command).trim().toLowerCase();
+  var said = dir || cmd;
+  if (!said) {
+    no("malformed", "PHRASE_MATCH_DIRECTIVE_ABSENT",
+      "phrase matching needs the question to name its directive (identify, list, name or state), and this one names none");
+  } else if (CLOSED_DIRECTIVES.indexOf(said) < 0) {
+    no("unsupported", "PHRASE_MATCH_NOT_CLOSED",
+      "phrase matching can recognise an answer but cannot judge one, so it is only for questions that ask the student to " +
+      "identify, list, name or state. This question asks them to " + said + ", so its answers go to the marker");
+  } else if (dir && cmd && dir !== cmd) {
+    no("unsupported", "PHRASE_MATCH_NOT_CLOSED",
+      "this question's directive says " + dir + " and its command says " + cmd + ". Phrase matching is only for a question that asks one closed thing");
+  } else {
+    var ask = promptAsks(q.prompt);
+    if (ask.lead !== said)
+      no("unsupported", "PHRASE_MATCH_NOT_CLOSED",
+        "the prompt does not begin by asking the student to " + said + ", as its directive says. Phrase matching is only for a prompt that asks exactly that");
+    else if (ask.open.length)
+      no("unsupported", "PHRASE_MATCH_NOT_CLOSED",
+        "the prompt also asks the student to " + ask.open.join(" and ") + ", which phrase matching cannot judge");
+  }
+  var why = phraseMatchPointsGap(q);
+  if (why)
+    no("malformed", "PHRASE_MATCH_POINTS_INCOMPLETE",
+      "phrase matching scores each point from the phrasings written for it, so every point needs whole marks of its own and phrasings of its own, and " + why);
+  return out;
+}
+
+function phraseMatchPointsGap(q) {
+  var mp = markingPoints(q);
+  if (mp.ok !== true) return "its marking points cannot be read";
+  if (!mp.count) return "it has no marking points";
+  if (!mp.weighted) return "its points' marks do not add up to what the question is worth";
+  var whole = function (n) { return typeof n === "number" && isFinite(n) && Math.floor(n) === n; };
+  if (!whole(q.marks) || mp.points.some(function (p) { return !whole(p.marks) || p.marks <= 0; }))
+    return "a point here is worth part of a mark, or none";
+  for (var i = 0; i < q.points.length; i++) {
+    var need = q.points[i] && q.points[i].need;
+    // Every phrasing has to be one that can match something: a blank one, or one
+    // that is only punctuation, matches nothing, and a number is not a phrasing.
+    if (!Array.isArray(need) || !need.length ||
+        !need.every(function (al) { return typeof al === "string" && normText(al) !== ""; }))
+      return "marking point " + (i + 1) + " has no usable phrasings";
+  }
+  return null;
+}
+
+// What a question's marking setting means at marking time: nothing declared, or
+// declared and honoured, or declared and refused with the first reason.
+function phraseMatch(q) {
+  if (!q || q.marking === undefined) return { declared: false, ok: false };
+  var f = phraseMatchFindings(q);
+  return f.length ? { declared: true, ok: false, code: f[0].code, why: f[0].why, findings: f } : { declared: true, ok: true };
 }
 
 // WHAT A WRITTEN QUESTION TELLS ITS MARKER ABOUT WHAT IT IS ASSESSING.
@@ -1076,6 +1202,8 @@ module.exports = {
   curriculumFindings: curriculumFindings, subjectOverrides: subjectOverrides,
   resolveAuthority: resolveAuthority,
   markingPoints: markingPoints, scorePoints: scorePoints, normText: normText,
+  phraseMatch: phraseMatch, phraseMatchFindings: phraseMatchFindings, promptAsks: promptAsks,
+  MARKING_MODES: MARKING_MODES, CLOSED_DIRECTIVES: CLOSED_DIRECTIVES, OPEN_DIRECTIVES: OPEN_DIRECTIVES,
   markerGuidance: markerGuidance, accomplishOf: accomplishOf,
   GUIDANCE_MAX_ITEMS: GUIDANCE_MAX_ITEMS, GUIDANCE_MAX_CHARS: GUIDANCE_MAX_CHARS,
 };
@@ -1290,6 +1418,11 @@ function parentFindings(q, path) {
       "this question has parts, so it is not answered itself, but it also declares a response format. " +
       "One of the two is wrong and nothing here can tell which");
 
+  if (q.marking !== undefined)
+    add(STATE.malformed, "MARKING_NOT_ON_A_QUESTION",
+      "how a question is marked is set on the part that is answered. A question with parts is not answered itself, " +
+      "and its setting is not passed down to its parts, so it would be ignored");
+
   if (blank(numberOf(q)))
     add(STATE.thin, "PARENT_NUMBER_ABSENT",
       "a question with parts is referred to by number, and this one has none, so its parts are named by position");
@@ -1432,6 +1565,12 @@ function questionFindings(q, path) {
         "a business report with no instructions, no marking points and no requirements sends its marker nothing " +
         "that says what the report must do. It is still marked as a business report, against the subject's criteria alone");
   }
+  // HOW THE QUESTION ASKS TO BE MARKED (decision 27). Silent unless the question
+  // carries `marking`: a question that says nothing is marked as it always was,
+  // and a published paper with no marking settings imports exactly as before.
+  // The findings are ASSESS.phraseMatchFindings, the rule scorePoints and the app
+  // apply at marking time, so the door and the marking cannot disagree.
+  ASSESS.phraseMatchFindings(q).forEach(function (f) { add(STATE[f.state], f.code, capitalise(f.why)); });
   return out;
 }
 
@@ -1779,8 +1918,9 @@ function duplicateFindings(paper) {
 //
 // A subject package matters only to an answer the marker judges. Multiple choice
 // is marked from its key, a calculation from its expected value and tolerance,
-// and a short answer whose every point authors phrasings from those phrasings
-// (ASSESS.scorePoints, `local`). Everything else written is judged by the marker
+// and a closed short answer that declares phrase matching from its phrasings
+// (ASSESS.scorePoints, `local`, decision 27). Phrasings alone do not make a
+// question locally markable. Everything else written is judged by the marker
 // against the subject's criteria, and cannot be marked without them.
 function markerDependent(paper) {
   var out = [];
@@ -1831,6 +1971,13 @@ function examine(paper, opts) {
     out.push(finding(STATE.malformed, "SECTIONS_MISSING", "sections",
       "a paper is a list of sections and this one has none"));
 
+  // How a question is marked is set on the question that is answered, never as a
+  // default for a whole paper or section (decision 27). Nothing passes it down,
+  // so a setting here would be ignored in silence.
+  if (paper.marking !== undefined)
+    out.push(finding(STATE.malformed, "MARKING_NOT_ON_A_QUESTION", "marking",
+      "how a question is marked is set on each question that is answered. A setting for the whole paper is not passed down, so it would be ignored"));
+
   out = out.concat(curriculumFindings(paper));
   out = out.concat(totalFindings(paper));
   out = out.concat(duplicateFindings(paper));
@@ -1847,6 +1994,9 @@ function examine(paper, opts) {
         "a section with no questions cannot be sat" + (blank(sec.name) ? "" : " (" + String(sec.name) + ")")));
       return;
     }
+    if (sec.marking !== undefined)
+      out.push(finding(STATE.malformed, "MARKING_NOT_ON_A_QUESTION", at + ".marking",
+        "how a question is marked is set on each question that is answered. A setting for a whole section is not passed down, so it would be ignored"));
     if (blank(sec.name))
       out.push(finding(STATE.thin, "SECTION_NAME_ABSENT", at + ".name",
         "this section has no name, so it is shown to the student as a number"));
@@ -2677,6 +2827,14 @@ var SAY = {
   CALC_TOLERANCE_MISSING: function () { return "This calculation does not say how close an answer has to be to count as correct, so every answer would be marked wrong. " + WHO + " add one (0 for an exact answer)."; },
   FORMAT_ABSENT: function () { return "This question does not say what kind of answer it takes."; },
   POINTS_MALFORMED: function () { return "This question's marking points could not be read."; },
+  // how a question asks to be marked (decision 27)
+  MARKING_MALFORMED: function () { return "This question has a marking setting that does not say how it is marked. " + WHO + " write it as phrase_match or remove it."; },
+  MARKING_MODE_UNSUPPORTED: function () { return "This question asks to be marked in a way Marginal does not offer. The only setting is phrase_match. " + WHO + " correct it or remove it."; },
+  MARKING_NOT_ON_A_QUESTION: function () { return "A marking setting is given for a whole paper, section or question with parts. It belongs on each question that is answered, so here it would be ignored. " + WHO + " move it."; },
+  PHRASE_MATCH_NOT_SHORT_ANSWER: function () { return "This question asks to be marked by matching phrases, which works only for short answers. " + WHO + " remove the setting so the marker marks it."; },
+  PHRASE_MATCH_DIRECTIVE_ABSENT: function () { return "This question asks to be marked by matching phrases but does not name its directive. Matching phrases works only for questions that ask students to identify, list, name or state. " + WHO + " add the directive."; },
+  PHRASE_MATCH_NOT_CLOSED: function () { return "This question asks to be marked by matching phrases, but it asks for more than a short fact, such as an explanation. Matching phrases cannot judge that, so the marker has to. " + WHO + " remove the setting, or rewrite the question to ask students to identify, list, name or state."; },
+  PHRASE_MATCH_POINTS_INCOMPLETE: function () { return "This question asks to be marked by matching phrases, but a marking point is missing its whole marks or its phrasings to match. " + WHO + " complete every point."; },
   INSTRUCTIONS_MALFORMED: function () { return "This business report's instructions are not written as text, so they cannot be shown."; },
   RESOURCE_MALFORMED: function () { return "Source material for this question could not be read."; },
   RESOURCE_EMPTY: function () { return "Source material for this question is empty, so there is nothing for students to read."; },

@@ -684,6 +684,63 @@ or Checkpoint; Results and Review interaction coverage and the final desktop
 journey are Full only. Cheap contract assertions may join existing Node suites.
 Budgets are unchanged. Mobile stays deferred.
 
+## 27. Phrase matching only where a closed question declares it
+
+**Decided by the owner after bots Run 1.** A written answer is scored from
+phrasings only when its question says so:
+
+```json
+"marking": { "mode": "phrase_match" }
+```
+
+Accepted phrasings alone no longer activate deterministic written scoring.
+`phrase_match` is valid only for a genuinely closed written response and is
+refused for open directives (explain, outline, describe, analyse, assess,
+evaluate, discuss, justify, recommend and the like). The published Business
+Studies prose questions keep the subject-aware marker. This supersedes the rule
+in decision 19 (UX-TEST-18 option A) that a weighted question whose every point
+authors phrasings is scored locally, and the "locally markable" wording in
+decision 21.
+
+**The rule, in one place.** `ASSESS.phraseMatchFindings` and `ASSESS.phraseMatch`
+(tools/contract/assessment.js). The import validator (exam.js) reports its
+findings, `scorePoints` scores locally only when it holds, and the app refuses at
+submit a stored question that declares `marking` and cannot be honoured, because
+papers already in the library, restored from a backup or seeded are never
+examined again. A question with no `marking` draws no finding: the published
+paper imports exactly as before.
+
+**Choices made where the instruction left one open** (flagged for review):
+
+- Closed means a `short_answer` whose directive is exactly `identify`, `list`,
+  `name` or `state`, whose prompt begins with that word once a question label is
+  set aside, and whose prompt contains no open directive. Compound directives,
+  unknown verbs (define, calculate), a `command` that contradicts the directive
+  and a missing directive are refused.
+- Every point needs whole, positive marks that add up to the question and its own
+  phrasings, each a string that can match something.
+- `marking` on a parent question, a section or the paper is refused
+  (MARKING_NOT_ON_A_QUESTION), not inherited.
+- Without a declared mode, phrasings are inert in the app: no hit or miss
+  checklist beside the marker's mark, since a verdict made by substring next to
+  the marker's could contradict it. The contract still reads them, as data.
+- New finding codes: MARKING_MALFORMED and the three PHRASE_MATCH_* refusals for
+  an incomplete or contradictory question are malformed; MARKING_MODE_UNSUPPORTED,
+  PHRASE_MATCH_NOT_SHORT_ANSWER and PHRASE_MATCH_NOT_CLOSED are unsupported. All
+  stop a sitting.
+
+**Left for the owner.** "What would make this stronger" is still offered on a
+phrase-matched answer and can replace the deterministic mark with the marker's.
+Attempts already recorded under the old rule keep their marks. Neither was
+changed here.
+
+**Tests.** t30 and t31 hold the rule and its refusals; ui68, ui72 and ui74 seed
+closed questions that declare it, and ui72 checks the refusal at submit; the bots
+move to corpus v2, whose 11(a) is a closed question with its known limits
+(other wording, a shotgun list, negation) recorded as observations. Corpus v1
+stays frozen. Eleven new mutations. Full tier for the browser suites; budgets
+unchanged.
+
 ## Mockup order — dependency, not numerical
 
 ```

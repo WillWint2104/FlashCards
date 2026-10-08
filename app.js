@@ -2317,9 +2317,10 @@
   // Marking-POINTS grading, and the decision about when it may put a number on a
   // response at all.
   //
-  // A point is "hit" when the answer contains any of its accepted phrasings
-  // (need[]), else the point's own text. That much is unchanged. What changed is
-  // everything around it, because two faults met here:
+  // A point is "hit" when the answer contains one of its accepted phrasings
+  // (need[]), never its own text (UX-TEST-18), and the points give the mark only
+  // on a closed question that declares phrase matching (decision 27). Before
+  // either rule, two faults met here:
   //
   //   the reader took every entry as an object while papers author strings, so
   //   `pt.text` was undefined, norm(undefined) was "", every answer contains ""
@@ -2329,12 +2330,12 @@
   //   and nothing anywhere said a point was worth a mark. It generally is not:
   //   the extended responses author four points against twelve and twenty.
   //
-  // Both are now settled in ASSESS.markingPoints. Here that leaves three routes,
-  // and the middle one is the point of the exercise: a question whose points
-  // carry no authored weighting is NOT scored from them. Its points are shown as
-  // what they are - the key points a marker looks for - and the mark comes from
-  // the marker, which is the only thing that can say what the remaining marks
-  // were for.
+  // Both are now settled in ASSESS.markingPoints. Here that leaves three routes.
+  // A closed short answer that declares phrase matching is scored from its
+  // points. A question with points that does not is marked by the marker, which
+  // receives the points as what it is marking for, with their weights where
+  // authored: phrasings alone never give the mark. A question with no points is
+  // marked by the marker against the subject's criteria alone.
   async function gradeShort(q, answer) {
     const sp = ASSESS.scorePoints(q, answer);
     // A point nobody can read is not a point that was addressed. Refuse rather
@@ -2348,17 +2349,18 @@
       return MARKED({ score: sp.score, max: sp.max, kind: "points",
                points: sp.points, weighted: true, model: q.model || "" });
     if (sp.count) {
-      // THE MARKER JUDGES EVERY POINT THE PAPER DID NOT AUTHOR A WAY TO MATCH
-      // (UX-TEST-18), weighted or not. The points reach it as marking
-      // requirements, with their weights where authored. If it cannot be reached
-      // or refuses, the answer stays unmarked: no demo grade and no zero stands
-      // in for a judgement nobody made.
+      // THE MARKER JUDGES EVERY QUESTION THAT DOES NOT DECLARE PHRASE MATCHING
+      // (UX-TEST-18, decision 27), weighted or not, phrasings or not. The points
+      // reach it as marking requirements, with their weights where authored. If
+      // it cannot be reached or refuses, the answer stays unmarked: no demo grade
+      // and no zero stands in for a judgement nobody made.
+      //
+      // No checklist beside the marker's mark. Phrasings on a question that does
+      // not declare phrase matching are not part of how it is marked, so a tick
+      // or a "not addressed" drawn from them would put a second verdict, made by
+      // substring, next to the marker's, and could contradict it.
       const g = await gradeWritten(q, answer, { noDemo: true });
-      // The checklist only where every point could be matched, so a tick or a
-      // miss is never inferred from a point's own description. It carries
-      // `weighted: false` because the mark came from the marker, not the points.
-      return (isMarked(g) && sp.points.every(p => p.matchable))
-        ? Object.assign({}, g, { points: sp.points, weighted: false }) : g;
+      return g;
     }
     // A short answer with no marking points is marked from the subject's criteria
     // alone, which means by the marker (tools/contract/exam.js). This used to fall
@@ -3492,8 +3494,14 @@
     if (slow) tmDraw();
     EXAM.paper = e.paper;
     let g;
+    // A question that declares how it is marked and cannot be marked that way is
+    // refused with the reason, never marked another way in silence (decision 27).
+    // The import validator refuses such a paper; this is for one that never went
+    // through it: restored from a backup, or already in the library.
+    const pm = ASSESS.phraseMatch(e.q);
     try {
-      if (f === "multiple_choice") g = gradeMC(e.q, Number(ans));
+      if (pm.declared && !pm.ok) g = ASSESS.refuse(pm.code, "This response was not marked: " + pm.why + ".", { max: Number(e.q.marks) || 0 });
+      else if (f === "multiple_choice") g = gradeMC(e.q, Number(ans));
       else if (f === "calculation") g = gradeCalc(e.q, ans);
       else if (ASSESS.writtenModeOf(f) === "extended") g = await gradeWritten(e.q, ans, { noDemo: true });
       else g = await gradeShort(e.q, ans);
