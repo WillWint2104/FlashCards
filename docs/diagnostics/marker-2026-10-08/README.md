@@ -62,6 +62,31 @@ empty rubric.
   repository worker is not deployed, and no model key is available to this
   environment.
 
+## Redeploying the current worker
+
+The worker is deployed by pasting the file, and it reads the same two settings as
+the stale one (`ANTHROPIC_API_KEY` and `CLASS_CODE`), so a redeploy changes the
+code only. Nothing is printed, replaced or rotated.
+
+1. Take `proxy/worker.js` from `main` (the raw file on GitHub, or a checkout of
+   `main`).
+2. Cloudflare dashboard: Workers & Pages, then `marginal-grader`, then Edit code.
+3. Replace the whole of the editor's worker file with that file, then Deploy.
+   Leave Settings, Variables and Secrets untouched.
+
+Wrangler, for whoever prefers the command line, from a checkout of `main`:
+
+```
+npx wrangler@latest deploy proxy/worker.js --name marginal-grader --keep-vars --compatibility-date <the date the worker already uses>
+```
+
+`--keep-vars` keeps settings made in the dashboard. Secrets are kept by any
+deploy. Do not run `wrangler secret put`.
+
+To check it took: a marking reply from the current worker always carries a
+`checks` object, which the stale one never returns, and on a Business Studies
+short answer its rubric is empty and it never says Economics.
+
 ## Repeating it after a redeploy
 
 Send the three request bodies again (they are in each profile file, add the
