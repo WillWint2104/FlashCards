@@ -41,9 +41,9 @@ Each answer carries:
   phrase matching earning full marks for a list of every candidate.
 
 **Versioning.** Never edit an answer's text in place: a benchmark is only useful
-if the same words go in every time. To change answers, add `corpus.v2.json` and
-point the suite at it, so results across versions are never compared as if
-they were the same run.
+if the same words go in every time. To change answers, add the next version
+(`corpus.v3.json`) and point the suite at it, so results across versions are
+never compared as if they were the same run.
 
 ## Running it
 
