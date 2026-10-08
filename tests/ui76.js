@@ -29,7 +29,7 @@
 // student's, an outage scored zero, a graded version that is not the one
 // submitted, typing not saved, typing that redraws the box, a report marked as
 // an essay): one extended response and one business report through the real
-// worker, and the paper journey with the writing bot and an outage. With --all it is the STUDENT BENCHMARK: all 31 corpus answers, the
+// worker, and the paper journey with the writing bot and an outage. With --all it is the STUDENT BENCHMARK: all 32 corpus answers, the
 // deterministic formats, the learning loop across two sessions. That is a
 // release and marking-quality run (npm run testmode-bots), not an every-commit
 // one. --golden runs the 12 diagnostic answers in golden.v2.json, the first

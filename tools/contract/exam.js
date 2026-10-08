@@ -354,8 +354,10 @@ function questionFindings(q, path) {
         "that says what the report must do. It is still marked as a business report, against the subject's criteria alone");
   }
   // HOW THE QUESTION ASKS TO BE MARKED (decision 27). Silent unless the question
-  // carries `marking`: a question that says nothing is marked as it always was,
-  // and a published paper with no marking settings imports exactly as before.
+  // carries `marking`: a question that says nothing draws no finding here. (If it
+  // is written, it is the marker's to mark, phrasings or not, so a paper that
+  // relied on phrasings alone can now need its subject's marker; markerDependent
+  // says so.)
   // The findings are ASSESS.phraseMatchFindings, the rule scorePoints and the app
   // apply at marking time, so the door and the marking cannot disagree.
   ASSESS.phraseMatchFindings(q).forEach(function (f) { add(STATE[f.state], f.code, capitalise(f.why)); });
@@ -762,7 +764,11 @@ function examine(paper, opts) {
   // How a question is marked is set on the question that is answered, never as a
   // default for a whole paper or section (decision 27). Nothing passes it down,
   // so a setting here would be ignored in silence.
-  if (paper.marking !== undefined)
+  // A question package (marginal.question-package) has a top-level `marking` of
+  // its own, holding band descriptors and no `mode`; it is not this setting, and
+  // is turned away for what it is, not for this.
+  var pm = paper.marking;
+  if (pm !== undefined && !(pm && typeof pm === "object" && !Array.isArray(pm) && pm.mode === undefined))
     out.push(finding(STATE.malformed, "MARKING_NOT_ON_A_QUESTION", "marking",
       "how a question is marked is set on each question that is answered. A setting for the whole paper is not passed down, so it would be ignored"));
 

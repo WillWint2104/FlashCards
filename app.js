@@ -3495,12 +3495,16 @@
     EXAM.paper = e.paper;
     let g;
     // A question that declares how it is marked and cannot be marked that way is
-    // refused with the reason, never marked another way in silence (decision 27).
-    // The import validator refuses such a paper; this is for one that never went
-    // through it: restored from a backup, or already in the library.
+    // refused, never marked another way in silence (decision 27). The import
+    // validator refuses such a paper; this is for one that never went through it:
+    // restored from a backup, or already in the library. The student is told what
+    // happened and who can fix it. The contract's reason, written for whoever made
+    // the paper, travels with the refusal as its code and `detail`.
     const pm = ASSESS.phraseMatch(e.q);
     try {
-      if (pm.declared && !pm.ok) g = ASSESS.refuse(pm.code, "This response was not marked: " + pm.why + ".", { max: Number(e.q.marks) || 0 });
+      if (pm.declared && !pm.ok) g = ASSESS.refuse(pm.code,
+        "This response was not marked: this question is set up to be marked in a way that does not suit it. Your teacher needs to correct the paper.",
+        { max: Number(e.q.marks) || 0, detail: pm.why });
       else if (f === "multiple_choice") g = gradeMC(e.q, Number(ans));
       else if (f === "calculation") g = gradeCalc(e.q, ans);
       else if (ASSESS.writtenModeOf(f) === "extended") g = await gradeWritten(e.q, ans, { noDemo: true });

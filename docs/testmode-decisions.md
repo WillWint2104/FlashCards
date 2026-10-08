@@ -724,10 +724,21 @@ paper imports exactly as before.
 - Without a declared mode, phrasings are inert in the app: no hit or miss
   checklist beside the marker's mark, since a verdict made by substring next to
   the marker's could contradict it. The contract still reads them, as data.
-- New finding codes: MARKING_MALFORMED and the three PHRASE_MATCH_* refusals for
-  an incomplete or contradictory question are malformed; MARKING_MODE_UNSUPPORTED,
-  PHRASE_MATCH_NOT_SHORT_ANSWER and PHRASE_MATCH_NOT_CLOSED are unsupported. All
-  stop a sitting.
+- New finding codes. Malformed (the setting or the question is incomplete or
+  misplaced): MARKING_MALFORMED, MARKING_NOT_ON_A_QUESTION,
+  PHRASE_MATCH_DIRECTIVE_ABSENT and PHRASE_MATCH_POINTS_INCOMPLETE. Unsupported
+  (asks for something this version will not do): MARKING_MODE_UNSUPPORTED,
+  PHRASE_MATCH_NOT_SHORT_ANSWER and PHRASE_MATCH_NOT_CLOSED, which also covers a
+  command that contradicts the directive. All stop a sitting.
+- An open task counts in any form a prompt asks it in: the bare verb, its -ing
+  form ("explaining why"), or a noun that only names the task ("give an
+  explanation"). Past and -s forms ("the product described in Source 1") ask for
+  nothing and do not count. The directive may lead any sentence of the prompt, so
+  a sentence of context may come first. A phrasing must contain a letter or a
+  digit.
+- A student whose stored question is refused at submit is told it is set up to be
+  marked in a way that does not suit it and that their teacher needs to correct
+  the paper; the contract's reason travels with the refusal as its detail.
 
 **Left for the owner.** "What would make this stronger" is still offered on a
 phrase-matched answer and can replace the deterministic mark with the marker's.
@@ -738,7 +749,8 @@ changed here.
 closed questions that declare it, and ui72 checks the refusal at submit; the bots
 move to corpus v2, whose 11(a) is a closed question with its known limits
 (other wording, a shotgun list, negation) recorded as observations. Corpus v1
-stays frozen. Eleven new mutations. Full tier for the browser suites; budgets
+stays frozen. Fifteen new mutations, four of them for what an adversarial review
+of the first version found. Full tier for the browser suites; budgets
 unchanged.
 
 ## Mockup order — dependency, not numerical

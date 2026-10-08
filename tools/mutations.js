@@ -1975,7 +1975,7 @@ module.exports = [
   {
     id: "phrase-match-prompt-lead-ignored",
     file: "tools/contract/assessment.js",
-    find: "    if (ask.lead !== said)",
+    find: "    if (ask.leads.indexOf(said) < 0)",
     replace: "    if (false)",
     owner: "t31",
     why: "a prompt that does not ask what its directive says was phrase-matched on the directive's word alone",
@@ -1991,7 +1991,7 @@ module.exports = [
   {
     id: "phrase-match-unusable-phrasing-accepted",
     file: "tools/contract/assessment.js",
-    find: "        !need.every(function (al) { return typeof al === \"string\" && normText(al) !== \"\"; }))",
+    find: "        !need.every(function (al) { return typeof al === \"string\" && /[a-z0-9]/.test(normText(al)); }))",
     replace: "        false)",
     owner: "t31",
     why: "a phrasing that can match nothing, or is not text, was accepted for phrase matching",
@@ -2035,6 +2035,38 @@ module.exports = [
     replace: "      const g = await gradeWritten(q, answer, { noDemo: true });\n      return (isMarked(g) && sp.points.every(p => p.matchable)) ? Object.assign({}, g, { points: sp.points, weighted: false }) : g;",
     owner: "t31",
     why: "a substring checklist was put beside the marker's mark on a question that never declared phrase matching, a second verdict that could contradict the first",
+  },
+  {
+    id: "open-directive-forms-ignored",
+    file: "tools/contract/assessment.js",
+    find: "  var open = OPEN_WORDS.filter(function (d) { return words.indexOf(\" \" + d + \" \") !== -1; });",
+    replace: "  var open = OPEN_DIRECTIVES.filter(function (d) { return words.indexOf(\" \" + d + \" \") !== -1; });",
+    owner: "t31",
+    why: "an open task asked as \"explaining why\" or \"give an explanation\" was not seen, so a question asking for an explanation was phrase-matched (found by review)",
+  },
+  {
+    id: "punctuation-phrasing-accepted",
+    file: "tools/contract/assessment.js",
+    find: "/[a-z0-9]/.test(normText(al)); }))",
+    replace: "normText(al) !== \"\"; }))",
+    owner: "t31",
+    why: "a phrasing of only \".\" passed the gate, so an answer ending in a full stop earned a mark (found by review)",
+  },
+  {
+    id: "prompt-label-stripped-once",
+    file: "tools/contract/assessment.js",
+    find: "  while (s !== was) { was = s; PROMPT_LABELS.forEach(function (re) { s = s.replace(re, \"\"); }); s = s.trim(); }",
+    replace: "  PROMPT_LABELS.forEach(function (re) { s = s.replace(re, \"\"); }); s = s.trim();",
+    owner: "t31",
+    why: "a label written as \"(a)(i)\" left its second half in front of the directive, so a closed question was refused (found by review)",
+  },
+  {
+    id: "marking-on-a-parent-ignored",
+    file: "tools/contract/exam.js",
+    find: "  if (q.marking !== undefined)\n    add(STATE.malformed, \"MARKING_NOT_ON_A_QUESTION\",",
+    replace: "  if (false)\n    add(STATE.malformed, \"MARKING_NOT_ON_A_QUESTION\",",
+    owner: "t30",
+    why: "a marking setting on a question with parts was ignored in silence, and its parts were marked as if it were not there (found by review)",
   },
   // ---- a missing mark never passes a mark check (Run 1) ------------------------
   //

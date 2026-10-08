@@ -966,26 +966,51 @@ function scorePoints(q, answer) {
 // or already in the library is never examined again.
 var MARKING_MODES = ["phrase_match"];
 var CLOSED_DIRECTIVES = ["identify", "list", "name", "state"];
-// A prompt that asks for any of these is open, wherever in the prompt it asks.
-var OPEN_DIRECTIVES = ["account for", "analyse", "analyze", "assess", "compare", "contrast", "critically",
-  "demonstrate", "describe", "discuss", "distinguish", "evaluate", "examine", "explain", "justify",
-  "outline", "propose", "recommend", "to what extent"];
+// The directives that ask for judgement, explanation or construction: the open
+// verbs of the NESA glossary, and suggest.
+var OPEN_DIRECTIVES = ["account for", "analyse", "analyze", "apply", "appreciate", "assess", "clarify", "compare",
+  "construct", "contrast", "critically", "deduce", "demonstrate", "describe", "discuss", "distinguish", "evaluate",
+  "examine", "explain", "extrapolate", "interpret", "investigate", "justify", "outline", "predict", "propose",
+  "recommend", "suggest", "summarise", "summarize", "synthesise", "synthesize", "to what extent", "how far"];
+// A prompt asks with them in more than the bare verb: "explaining why", "justifying
+// your choice", "give an explanation". Each -ing form counts, and the nouns that
+// only ever name the task. Past forms and -s forms do not: "the product described
+// in Source 1" and "the factor that explains" ask for nothing. Nouns that are also
+// everyday terms in a closed question (ratio analysis, a job description, a job
+// application, an assessment) are left out on purpose.
+var OPEN_NOUNS = ["explanation", "justification", "evaluation", "recommendation", "prediction", "interpretation",
+  "comparison", "discussion"];
+function openForms(d) {
+  if (/ /.test(d)) return [d, d.replace(/^account /, "accounting ")];
+  var ing = /ie$/.test(d) ? d.slice(0, -2) + "ying" : /e$/.test(d) && !/ee$/.test(d) ? d.slice(0, -1) + "ing" : d + "ing";
+  return [d, ing];
+}
+var OPEN_WORDS = OPEN_DIRECTIVES.reduce(function (all, d) { return all.concat(openForms(d)); }, [])
+  .concat(OPEN_NOUNS, OPEN_NOUNS.map(function (n) { return n + "s"; }));
 
-// The words a prompt asks with: its first word once a question label such as
-// "Question 11 (a)" is set aside, and every open directive it uses as a word.
+// A question label before a prompt, in the forms papers write it: "Question 11
+// (a)", "Q11a", "11(a)(i)", "(a)(i)", "a)", "a.", "11.". Set aside in a loop, so
+// labels written one after another all come off.
+var PROMPT_LABELS = [/^question\s+\d+[a-z]{0,2}\b/i, /^q\s*\d+[a-z]{0,2}\b/i, /^\d+[a-z]{0,2}\b/i,
+  /^\(\s*[a-z0-9]{1,4}\s*\)/i, /^[a-z]{1,4}\)/i, /^([a-z]{1,2}|[ivx]{1,4}|\d{1,3})\.(?=\s)/i, /^[\s.:,;-]+/];
+
+// The words a prompt asks with: the first word of each of its sentences once a
+// question label is set aside (a prompt may open with a sentence of context), and
+// every open directive it uses, in any of the forms above.
 function promptAsks(prompt) {
-  var s = String(prompt == null ? "" : prompt).trim()
-    .replace(/^question\s+\d+\s*(\(\s*[a-z]{1,4}\s*\)|[a-z]{1,4}\))?\s*[.:]?\s*/i, "")
-    .replace(/^\d+\s*\(\s*[a-z]{1,4}\s*\)\s*[.:]?\s*/i, "")
-    .replace(/^\(?\s*[a-z]{1,4}\s*\)\s*/i, "");
+  var s = String(prompt == null ? "" : prompt).trim(), was = null;
+  while (s !== was) { was = s; PROMPT_LABELS.forEach(function (re) { s = s.replace(re, ""); }); s = s.trim(); }
+  var leads = s.split(/[.?!;:]\s+|\n+/).map(function (sentence) {
+    return sentence.toLowerCase().replace(/[^a-z]+/g, " ").trim().split(" ")[0] || "";
+  }).filter(Boolean);
   var words = " " + s.toLowerCase().replace(/[^a-z]+/g, " ").trim() + " ";
-  var lead = words.trim().split(" ")[0] || "";
-  return { lead: lead, open: OPEN_DIRECTIVES.filter(function (d) { return words.indexOf(" " + d + " ") !== -1; }) };
+  var open = OPEN_WORDS.filter(function (d) { return words.indexOf(" " + d + " ") !== -1; });
+  return { lead: leads[0] || "", leads: leads, open: open };
 }
 
 // Every reason a question's `marking` cannot be honoured, as { state, code, why }.
-// Empty when the question declares nothing (it is marked as it always was) or when
-// it declares phrase matching and qualifies.
+// Empty when the question declares nothing (it draws no finding, and goes to the
+// marker if it is written) or when it declares phrase matching and qualifies.
 function phraseMatchFindings(q) {
   q = q || {};
   if (q.marking === undefined) return [];
@@ -1018,15 +1043,15 @@ function phraseMatchFindings(q) {
   } else if (CLOSED_DIRECTIVES.indexOf(said) < 0) {
     no("unsupported", "PHRASE_MATCH_NOT_CLOSED",
       "phrase matching can recognise an answer but cannot judge one, so it is only for questions that ask the student to " +
-      "identify, list, name or state. This question asks them to " + said + ", so its answers go to the marker");
+      "identify, list, name or state. This question asks them to " + said);
   } else if (dir && cmd && dir !== cmd) {
     no("unsupported", "PHRASE_MATCH_NOT_CLOSED",
       "this question's directive says " + dir + " and its command says " + cmd + ". Phrase matching is only for a question that asks one closed thing");
   } else {
     var ask = promptAsks(q.prompt);
-    if (ask.lead !== said)
+    if (ask.leads.indexOf(said) < 0)
       no("unsupported", "PHRASE_MATCH_NOT_CLOSED",
-        "the prompt does not begin by asking the student to " + said + ", as its directive says. Phrase matching is only for a prompt that asks exactly that");
+        "no sentence of the prompt asks the student to " + said + ", as its directive says. Phrase matching is only for a prompt that asks exactly that");
     else if (ask.open.length)
       no("unsupported", "PHRASE_MATCH_NOT_CLOSED",
         "the prompt also asks the student to " + ask.open.join(" and ") + ", which phrase matching cannot judge");
@@ -1048,10 +1073,11 @@ function phraseMatchPointsGap(q) {
     return "a point here is worth part of a mark, or none";
   for (var i = 0; i < q.points.length; i++) {
     var need = q.points[i] && q.points[i].need;
-    // Every phrasing has to be one that can match something: a blank one, or one
-    // that is only punctuation, matches nothing, and a number is not a phrasing.
+    // Every phrasing has to be one that can match something meant: a blank one
+    // matches nothing, one that is only punctuation (".", "-", "%") would match any
+    // answer that happens to contain it, and a number is not a phrasing.
     if (!Array.isArray(need) || !need.length ||
-        !need.every(function (al) { return typeof al === "string" && normText(al) !== ""; }))
+        !need.every(function (al) { return typeof al === "string" && /[a-z0-9]/.test(normText(al)); }))
       return "marking point " + (i + 1) + " has no usable phrasings";
   }
   return null;
@@ -1203,7 +1229,7 @@ module.exports = {
   resolveAuthority: resolveAuthority,
   markingPoints: markingPoints, scorePoints: scorePoints, normText: normText,
   phraseMatch: phraseMatch, phraseMatchFindings: phraseMatchFindings, promptAsks: promptAsks,
-  MARKING_MODES: MARKING_MODES, CLOSED_DIRECTIVES: CLOSED_DIRECTIVES, OPEN_DIRECTIVES: OPEN_DIRECTIVES,
+  MARKING_MODES: MARKING_MODES, CLOSED_DIRECTIVES: CLOSED_DIRECTIVES, OPEN_DIRECTIVES: OPEN_DIRECTIVES, OPEN_WORDS: OPEN_WORDS,
   markerGuidance: markerGuidance, accomplishOf: accomplishOf,
   GUIDANCE_MAX_ITEMS: GUIDANCE_MAX_ITEMS, GUIDANCE_MAX_CHARS: GUIDANCE_MAX_CHARS,
 };
@@ -1566,8 +1592,10 @@ function questionFindings(q, path) {
         "that says what the report must do. It is still marked as a business report, against the subject's criteria alone");
   }
   // HOW THE QUESTION ASKS TO BE MARKED (decision 27). Silent unless the question
-  // carries `marking`: a question that says nothing is marked as it always was,
-  // and a published paper with no marking settings imports exactly as before.
+  // carries `marking`: a question that says nothing draws no finding here. (If it
+  // is written, it is the marker's to mark, phrasings or not, so a paper that
+  // relied on phrasings alone can now need its subject's marker; markerDependent
+  // says so.)
   // The findings are ASSESS.phraseMatchFindings, the rule scorePoints and the app
   // apply at marking time, so the door and the marking cannot disagree.
   ASSESS.phraseMatchFindings(q).forEach(function (f) { add(STATE[f.state], f.code, capitalise(f.why)); });
@@ -1974,7 +2002,11 @@ function examine(paper, opts) {
   // How a question is marked is set on the question that is answered, never as a
   // default for a whole paper or section (decision 27). Nothing passes it down,
   // so a setting here would be ignored in silence.
-  if (paper.marking !== undefined)
+  // A question package (marginal.question-package) has a top-level `marking` of
+  // its own, holding band descriptors and no `mode`; it is not this setting, and
+  // is turned away for what it is, not for this.
+  var pm = paper.marking;
+  if (pm !== undefined && !(pm && typeof pm === "object" && !Array.isArray(pm) && pm.mode === undefined))
     out.push(finding(STATE.malformed, "MARKING_NOT_ON_A_QUESTION", "marking",
       "how a question is marked is set on each question that is answered. A setting for the whole paper is not passed down, so it would be ignored"));
 
@@ -2831,10 +2863,10 @@ var SAY = {
   MARKING_MALFORMED: function () { return "This question has a marking setting that does not say how it is marked. " + WHO + " write it as phrase_match or remove it."; },
   MARKING_MODE_UNSUPPORTED: function () { return "This question asks to be marked in a way Marginal does not offer. The only setting is phrase_match. " + WHO + " correct it or remove it."; },
   MARKING_NOT_ON_A_QUESTION: function () { return "A marking setting is given for a whole paper, section or question with parts. It belongs on each question that is answered, so here it would be ignored. " + WHO + " move it."; },
-  PHRASE_MATCH_NOT_SHORT_ANSWER: function () { return "This question asks to be marked by matching phrases, which works only for short answers. " + WHO + " remove the setting so the marker marks it."; },
+  PHRASE_MATCH_NOT_SHORT_ANSWER: function () { return "This question asks to be marked by matching phrases, which works only for short answers, and this question is not one. " + WHO + " remove the setting."; },
   PHRASE_MATCH_DIRECTIVE_ABSENT: function () { return "This question asks to be marked by matching phrases but does not name its directive. Matching phrases works only for questions that ask students to identify, list, name or state. " + WHO + " add the directive."; },
-  PHRASE_MATCH_NOT_CLOSED: function () { return "This question asks to be marked by matching phrases, but it asks for more than a short fact, such as an explanation. Matching phrases cannot judge that, so the marker has to. " + WHO + " remove the setting, or rewrite the question to ask students to identify, list, name or state."; },
-  PHRASE_MATCH_POINTS_INCOMPLETE: function () { return "This question asks to be marked by matching phrases, but a marking point is missing its whole marks or its phrasings to match. " + WHO + " complete every point."; },
+  PHRASE_MATCH_NOT_CLOSED: function () { return "This question asks to be marked by matching phrases, but it is not a closed question that matching can mark. Its directive must be identify, list, name or state, a sentence of the question must ask exactly that, and the question must not also ask for an explanation or a judgement. " + WHO + " rewrite it, or remove the setting so the marker marks it."; },
+  PHRASE_MATCH_POINTS_INCOMPLETE: function () { return "This question asks to be marked by matching phrases, but its marking points are not complete for it. Each point needs its own whole marks, the points' marks need to add up to the question's, and each point needs phrasings that can be matched. " + WHO + " correct the points."; },
   INSTRUCTIONS_MALFORMED: function () { return "This business report's instructions are not written as text, so they cannot be shown."; },
   RESOURCE_MALFORMED: function () { return "Source material for this question could not be read."; },
   RESOURCE_EMPTY: function () { return "Source material for this question is empty, so there is nothing for students to read."; },

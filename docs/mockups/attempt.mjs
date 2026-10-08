@@ -18,8 +18,8 @@
 // Multiple choice and calculation are read against the paper's own key (a
 // choice's `ok`, a calculation's `expected` and `tolerance`), which is all the
 // app's gradeMC and gradeCalc do, through the same ASSESS.readCalcAnswer. Written answers go where the app sends them:
-// points the paper authored a way to match to ASSESS.scorePoints (sp.local),
-// everything else to the marker (UX-TEST-18), which
+// a closed question that declares phrase matching to ASSESS.scorePoints
+// (sp.local, decision 27), everything else to the marker (UX-TEST-18), which
 // here is the fixture's review run through the shipped finalize().
 import { createRequire } from "node:module";
 import { finalize } from "../../tests/worker.mjs";
@@ -63,7 +63,8 @@ export function mark(a, input, review) {
   const r = finalize(JSON.parse(JSON.stringify(review.review || review)), q.marks, input, null,
                      (review.criteria || S13.criteria), false, mode, null);
   const g = ASSESS.marked({ score: Math.min(Number(r.score) || 0, Number(q.marks) || 0), max: Number(q.marks) || 0, kind: "llm", fb: r });
-  return sp.ok === true && sp.count && sp.points.every(p => p.matchable) ? Object.assign({}, g, { points: sp.points, weighted: false }) : g;
+  // No phrasings checklist beside the marker's mark (decision 27), as in the app.
+  return g;
 }
 
 // The facts every page reads, and nothing else. `status` is one of three words.
