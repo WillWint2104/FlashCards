@@ -14,6 +14,17 @@
   const ASSESS = window.MarginalAssessment;
   const PAPER = window.MarginalExam;
   const ATT = window.MarginalAttempts;
+  // FAIL CLOSED, READABLY. Everything below depends on these contracts, which
+  // index.html loads from student-imports.js. Without them the first startup line
+  // that uses one throws, and the student is left looking at a blank page with no
+  // idea why (which is how production broke once). Say so instead, and stop.
+  if (!ASSESS || !PAPER || !ATT) {
+    const host = document.getElementById("app");
+    if (host) host.innerHTML = '<div role="alert" id="bootfail"><div class="hi">Marginal could not start</div>' +
+      '<p class="hi-s">Part of the app did not load. Reload the page. If this keeps happening, tell your teacher that student-imports.js did not load on this site.</p></div>';
+    console.error("Marginal could not start: the assessment contracts (student-imports.js) did not load.");
+    return;
+  }
   const MARKED = r => ASSESS.marked(r);
   // The one gate in front of every piece of arithmetic, scheduling and progress
   // state in this file. A refusal and a failure both answer false.
