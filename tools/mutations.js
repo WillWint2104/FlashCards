@@ -1944,6 +1944,43 @@ module.exports = [
     owner: "ui76",
     why: "a business report reached the marker as an extended response, so its format could never count",
   },
+  // ---- a missing mark never passes a mark check (Run 1) ------------------------
+  //
+  // Run 1 spent real marking credits and reported two unmarked answers "ok",
+  // because "at most 2" accepted no mark at all. These put each form of that
+  // hole back; t40 holds the rule.
+  {
+    id: "bots-unmarked-passes-at-most",
+    file: "tests/bots/testmode/expect.js",
+    find: "  if (!validMark(got)) return false;\n  const r = range || {};",
+    replace: "  if (!validMark(got)) return !(range && range.min != null);\n  const r = range || {};",
+    owner: "t40",
+    why: "an answer the marker never marked passed \"at most 2\", so a live run reported ok for a mark nobody gave (Run 1, sa11b-misconception and sa11b-verbose)",
+  },
+  {
+    id: "bots-ordering-skips-unmarked",
+    file: "tests/bots/testmode/expect.js",
+    find: "  return validMark(hi) && validMark(lo) && hi.score >= lo.score;",
+    replace: "  return !validMark(hi) || !validMark(lo) || hi.score >= lo.score;",
+    owner: "t40",
+    why: "a live ordering with an unmarked side passed, so \"strong is not below verbose\" was reported as shown when verbose was never marked",
+  },
+  {
+    id: "bots-sent-unmarked-counts-as-never-full",
+    file: "tests/bots/testmode/expect.js",
+    find: "  return validMark(got) && got.score < got.max;",
+    replace: "  return !validMark(got) || got.score < got.max;",
+    owner: "t40",
+    why: "an answer that was sent and came back unmarked counted as never given full marks, which says nothing about how it would be marked",
+  },
+  {
+    id: "bots-inline-range-check-returns",
+    file: "tests/ui76.js",
+    find: "    ok(X.inRange(got, a.live), ",
+    replace: "    ok(got.status !== 'marked' || got.score <= (a.live.max == null ? Infinity : a.live.max), ",
+    owner: "t40",
+    why: "ui76 went back to its own range check, the one that read no mark as a mark within range",
+  },
   {
     id: "hotfix-page-loads-an-uncommitted-script",
     file: "index.html",

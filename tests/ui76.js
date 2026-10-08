@@ -40,6 +40,7 @@
 const { chromium, T, OUT } = require('./env');
 const fs = require('fs'), path = require('path');
 const CORPUS = require('./bots/testmode/corpus.v1.json');
+const X = require('./bots/testmode/expect.js');
 const PAPER = require('./fixtures/bus-practice-paper.json');
 const LIVE = process.env.MARGINAL_LIVE === '1';
 const SITE = process.env.MARGINAL_SITE || T;
@@ -262,19 +263,19 @@ function invariants(a, got, where) {
 }
 function expectOf(a, got, where) {
   const e = a.expect || {};
-  if (e.exact != null) ok(got.status === 'marked' && got.score === e.exact, where + ': exactly ' + e.exact + ': got ' + got.status + ' ' + got.score);
+  if (e.exact != null) ok(X.exactly(got, e.exact), where + ': exactly ' + e.exact + ': got ' + X.describe(got));
   if (e.status) ok(got.status === e.status, where + ': ' + e.status + ': got ' + got.status);
-  if (e.neverFull) ok(got.status === 'none' || got.score < got.max, where + ': never full marks: ' + got.status + ' ' + got.score + '/' + got.max);
+  if (e.neverFull) ok(X.neverFull(got), where + ': never full marks: ' + X.describe(got));
   if (!LIVE && a.stub) {
     ok(got.status === 'marked' && got.score === a.stub.score, where + ': the marker\'s ' + a.stub.score + ' reaches the student unchanged: ' + got.status + ' ' + got.score);
     ok(got.summary.includes(a.stub.summary), where + ': and so does its summary');
   }
-  if (LIVE && a.live) {
-    if (a.live.min != null) ok(got.status === 'marked' && got.score >= a.live.min, where + ': at least ' + a.live.min + ': ' + got.score);
-    if (a.live.max != null) ok(got.status !== 'marked' || got.score <= a.live.max, where + ': at most ' + a.live.max + ': ' + got.score);
-  }
+  // A range is about a mark: an answer that came back without one fails it, so
+  // "not marked" can never pass as "at most 2" (Run 1).
+  if (LIVE && a.live && (a.live.min != null || a.live.max != null))
+    ok(X.inRange(got, a.live), where + ': ' + [a.live.min != null ? 'at least ' + a.live.min : '', a.live.max != null ? 'at most ' + a.live.max : ''].filter(Boolean).join(' and ') + ': got ' + X.describe(got));
 }
-const LIVE_SCORES = {};
+const LIVE_GOT = {};   // every answer attempted, marked or not: an ordering needs both sides
 async function attemptOne(p, attemptKey, a, where) {
   const before = fail;
   await submitText(p, a.text, a.choice != null ? { choice: a.choice } : null);
@@ -286,15 +287,17 @@ async function attemptOne(p, attemptKey, a, where) {
     ok(got.graded === sentText, where + ': the version graded is exactly what was submitted');
   }
   expectOf(a, got, where); invariants(a, got, where);
-  if (got.status === 'marked') LIVE_SCORES[a.id] = got.score;
+  LIVE_GOT[a.id] = got;
   row(a, got, fail === before ? 'ok' : 'FAIL');
   return got;
 }
 function orderings() {
   if (!LIVE) return;
   CORPUS.items.forEach(it => (it.liveOrder || []).forEach(([hi, lo]) => {
-    if (LIVE_SCORES[hi] == null || LIVE_SCORES[lo] == null) return;
-    ok(LIVE_SCORES[hi] >= LIVE_SCORES[lo], 'live ordering: ' + hi + ' (' + LIVE_SCORES[hi] + ') is not below ' + lo + ' (' + LIVE_SCORES[lo] + ')');
+    // Skipped only when the run did not attempt both answers. Attempted but
+    // unmarked is a failure: the ordering was never shown.
+    if (!(hi in LIVE_GOT) || !(lo in LIVE_GOT)) return;
+    ok(X.ordered(LIVE_GOT[hi], LIVE_GOT[lo]), 'live ordering: ' + hi + ' (' + X.describe(LIVE_GOT[hi]) + ') is not below ' + lo + ' (' + X.describe(LIVE_GOT[lo]) + ')');
   }));
 }
 async function finish(p) {
