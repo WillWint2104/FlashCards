@@ -112,7 +112,8 @@ verdict is read the moment it exists. There is no live region.
    - How attempts are pinned is in `docs/testmode-attempt-state.md`.
 2. **An unregistered subject is allowed when every question is locally
    markable.** That means multiple choice, a calculation with a complete answer
-   and tolerance, or a short answer whose every point authors its phrasings.
+   and tolerance, or a closed short answer that declares phrase matching
+   (decision 27; phrasings alone no longer make a question locally markable).
    - Such a paper is *Ready with limited support*, and says Marginal does not
      have written-response marking for the subject. The subject panel is
      neutral, neither ticked nor red: *Named by the file. Marginal has no

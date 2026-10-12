@@ -1,0 +1,626 @@
+{
+  "version": 2,
+  "_why": "The fixed answers the Test Mode student bots write, on the synthetic Business Studies paper (tests/fixtures/bus-practice-paper.json). Deterministic on purpose: the same words go in every run, so a change in what comes back is a change in Marginal, not in the student. Every answer is original text written for this corpus. `expect` is what the offline suite asserts: exact marks where the paper's own key decides (multiple choice, calculation, locally matched marking points), and invariants elsewhere. `stub` is the marker's reply the offline suite feeds the REAL worker code in place of the model, so grounding, reconciliation and refusal run for real; a stub is a stand-in, never a claim about marking quality, and live mode ignores it. `live` is what live mode asserts against the real marker: ranges and orderings, never one exact judgement-based number. `invent` puts a sentence the student did not write into the stubbed review, to prove it never reaches the student as their own words. Version 2 (decision 27): the phrase-matching fixture is a genuinely closed question that declares marking.mode phrase_match, because phrasings alone no longer score anything and phrase matching is refused on an open directive. Every other answer is unchanged from version 1, which stays as it was.",
+  "paper": "tests/fixtures/bus-practice-paper.json",
+  "localPoints": {
+    "_why": "The synthetic paper's written questions are all open and all go to the marker. This derived paper replaces Question 11(a) with a genuinely CLOSED short answer that declares phrase matching (decision 27), so its marks are decided here, exactly, and the bots keep testing the matcher: an empty answer never scores, a point's description is never a search string, and the matcher's known limits are recorded rather than hidden. It stays at 2 marks so the paper's totals hold.",
+    "key": "1-0-0",
+    "examId": "marginal-bots-closed-points-1",
+    "name": "Bots paper: a closed short answer",
+    "leaf": {
+      "format": "short_answer",
+      "directive": "identify",
+      "marks": 2,
+      "marking": {
+        "mode": "phrase_match"
+      },
+      "prompt": "Identify the operations performance objective Kerbside Coffee is failing to meet at its vans, and the period when demand at the vans peaks.",
+      "points": [
+        {
+          "text": "Identifies speed as the objective",
+          "marks": 1,
+          "need": [
+            "speed",
+            "speedy",
+            "quick service",
+            "quicker service",
+            "too slow",
+            "slow service"
+          ]
+        },
+        {
+          "text": "Identifies the 7am to 9am morning peak",
+          "marks": 1,
+          "need": [
+            "7am",
+            "7 am",
+            "7.00",
+            "9am",
+            "9 am",
+            "morning peak",
+            "morning rush",
+            "breakfast"
+          ]
+        }
+      ]
+    }
+  },
+  "items": [
+    {
+      "key": "0-0",
+      "format": "multiple_choice",
+      "question": "1",
+      "answers": [
+        {
+          "id": "mc1-right",
+          "kind": "correct",
+          "choice": 1,
+          "expect": {
+            "exact": 1
+          }
+        },
+        {
+          "id": "mc1-wrong",
+          "kind": "wrong",
+          "choice": 0,
+          "expect": {
+            "exact": 0
+          }
+        }
+      ]
+    },
+    {
+      "key": "1-0-2",
+      "format": "calculation",
+      "question": "11(c)",
+      "answers": [
+        {
+          "id": "calc-right",
+          "kind": "correct",
+          "text": "1.5",
+          "expect": {
+            "exact": 4
+          }
+        },
+        {
+          "id": "calc-working",
+          "kind": "correct with working",
+          "text": "Current ratio = 60 000 / 40 000 = 1.5",
+          "expect": {
+            "exact": 4
+          }
+        },
+        {
+          "id": "calc-inverted",
+          "kind": "misconception",
+          "text": "0.67",
+          "expect": {
+            "exact": 0
+          }
+        },
+        {
+          "id": "calc-two-numbers",
+          "kind": "unreadable",
+          "text": "60000 40000",
+          "expect": {
+            "status": "not_marked"
+          }
+        }
+      ]
+    },
+    {
+      "key": "1-0-0",
+      "paperVariant": "closed",
+      "format": "short_answer",
+      "question": "11(a)",
+      "answers": [
+        {
+          "id": "cl11a-blank",
+          "kind": "blank",
+          "text": "",
+          "expect": {
+            "neverFull": true
+          }
+        },
+        {
+          "id": "cl11a-irrelevant",
+          "kind": "irrelevant",
+          "text": "The vans should sell muffins as well as coffee.",
+          "expect": {
+            "exact": 0
+          }
+        },
+        {
+          "id": "cl11a-one-point",
+          "kind": "partial",
+          "text": "Speed.",
+          "expect": {
+            "exact": 1
+          }
+        },
+        {
+          "id": "cl11a-two-points",
+          "kind": "strong",
+          "text": "Speed, in the 7am to 9am morning peak.",
+          "expect": {
+            "exact": 2
+          }
+        },
+        {
+          "id": "cl11a-unusual",
+          "kind": "unusual wording",
+          "text": "Customers are not served quickly enough at the start of the working day.",
+          "expect": {
+            "exact": 0
+          },
+          "observe": "A correct answer in words nobody wrote a phrasing for earns nothing: 'not served quickly enough' and 'the start of the working day' match neither point. Matching is only as good as the phrasings written for it."
+        },
+        {
+          "id": "cl11a-shotgun",
+          "kind": "shotgun list",
+          "text": "Quality, speed, dependability, flexibility, cost. 7am, noon, 5pm.",
+          "expect": {
+            "exact": 2
+          },
+          "observe": "Listing every candidate earns full marks: matching cannot tell a choice from a shotgun. A closed question is safer than an open one, not safe."
+        },
+        {
+          "id": "cl11a-negation",
+          "kind": "negation",
+          "text": "Not speed, and not the 7am to 9am peak.",
+          "expect": {
+            "exact": 2
+          },
+          "observe": "Matching does not read negation: an answer that rules both points out earns both."
+        }
+      ]
+    },
+    {
+      "key": "1-0-1",
+      "format": "short_answer",
+      "question": "11(b)",
+      "answers": [
+        {
+          "id": "sa11b-blank",
+          "kind": "blank",
+          "text": "",
+          "expect": {
+            "neverFull": true
+          }
+        },
+        {
+          "id": "sa11b-irrelevant",
+          "kind": "irrelevant",
+          "text": "Kerbside Coffee should buy a third roaster so that it can sell more coffee to cafes around the city.",
+          "stub": {
+            "score": 0,
+            "summary": "The answer is about buying equipment and does not address casual employment or staff turnover."
+          },
+          "live": {
+            "max": 1
+          }
+        },
+        {
+          "id": "sa11b-partial",
+          "kind": "partial",
+          "text": "Casual operators do not get guaranteed hours, so some of them leave.",
+          "stub": {
+            "score": 1,
+            "summary": "Identifies the missing guaranteed hours but does not explain why that leads to leaving or what turnover costs the business.",
+            "notices": [
+              {
+                "quote": "Casual operators do not get guaranteed hours",
+                "head": "A cause is named but not explained",
+                "why": "Say why a lack of guaranteed hours makes an operator more likely to leave."
+              }
+            ],
+            "invent": {
+              "text": "Casual workers are always the first to resign.",
+              "head": "An overgeneralisation",
+              "why": "Not every casual worker resigns."
+            }
+          },
+          "live": {
+            "min": 1,
+            "max": 2
+          }
+        },
+        {
+          "id": "sa11b-strong",
+          "kind": "strong",
+          "text": "Casual van operators have no guaranteed hours and no paid leave, so their income is uncertain from week to week. That insecurity pushes them to leave when a permanent job with steady hours is offered elsewhere. Each departure means Kerbside Coffee has to recruit and train a replacement, which costs money and time, so casual employment keeps turnover high and expensive.",
+          "stub": {
+            "score": 3,
+            "summary": "Explains the insecurity of casual work, links it to operators leaving, and connects turnover to the cost of replacing them.",
+            "notices": [
+              {
+                "quote": "Each departure means Kerbside Coffee has to recruit and train a replacement",
+                "head": "The cost of turnover is made concrete",
+                "why": "This is the step that connects turnover to the business."
+              }
+            ]
+          },
+          "live": {
+            "min": 2
+          }
+        },
+        {
+          "id": "sa11b-unusual",
+          "kind": "unusual wording",
+          "text": "If you never know whether you will get shifts next week, you keep looking for something steadier, and the day something steady turns up you are gone. That is the position of Kerbside's van staff, and every time one walks out the owners pay again to find and train the next person.",
+          "stub": {
+            "score": 3,
+            "summary": "Explains the insecurity of casual shifts in everyday language, links it to leaving, and to the cost of replacement.",
+            "across": [
+              {
+                "head": "Business terminology",
+                "why": "The reasoning is sound; naming it as casual employment and turnover would make it clearer to a marker."
+              }
+            ]
+          },
+          "live": {
+            "min": 2
+          }
+        },
+        {
+          "id": "sa11b-misconception",
+          "kind": "misconception",
+          "text": "Casual employees are paid less per hour than permanent staff, so they leave because their wages are lower than everyone else's.",
+          "stub": {
+            "score": 1,
+            "summary": "Links pay to leaving, but the claim that casual employees earn less per hour is generally the reverse of their position.",
+            "notices": [
+              {
+                "quote": "Casual employees are paid less per hour than permanent staff",
+                "head": "A factual wrong turn",
+                "why": "Casual employees usually receive a loading in place of leave entitlements."
+              }
+            ]
+          },
+          "live": {
+            "max": 2
+          }
+        },
+        {
+          "id": "sa11b-verbose",
+          "kind": "verbose",
+          "text": "There are many different ways that businesses can employ people, and employment is a very important part of every business in Australia and around the world. Some businesses employ people full time and some employ people part time, and some use contractors, and all of these have advantages and disadvantages that businesses have to think about very carefully. In the case of Kerbside Coffee, most operators are casual, and casual staff can leave whenever they like. There are also many other things that affect a business, such as the economy, competitors and government policy.",
+          "stub": {
+            "score": 1,
+            "summary": "Most of the answer is general background; the one relevant idea, that casual staff can leave easily, is not explained.",
+            "notices": [
+              {
+                "quote": "casual staff can leave whenever they like",
+                "head": "The relevant point is buried",
+                "why": "Lead with this and explain it."
+              }
+            ]
+          },
+          "live": {
+            "max": 2
+          }
+        }
+      ],
+      "liveOrder": [
+        [
+          "sa11b-strong",
+          "sa11b-partial"
+        ],
+        [
+          "sa11b-partial",
+          "sa11b-irrelevant"
+        ],
+        [
+          "sa11b-strong",
+          "sa11b-verbose"
+        ]
+      ]
+    },
+    {
+      "key": "1-0-3",
+      "format": "extended_response",
+      "question": "11(d)",
+      "answers": [
+        {
+          "id": "er11d-minimal",
+          "kind": "minimal",
+          "text": "Hire more staff.",
+          "stub": {
+            "score": 0,
+            "summary": "Names a strategy in three words without explaining or justifying it."
+          },
+          "live": {
+            "max": 1
+          }
+        },
+        {
+          "id": "er11d-partial",
+          "kind": "partial",
+          "text": "Kerbside could roster a second operator on its busiest vans. This would make the queue move faster.",
+          "stub": {
+            "score": 2,
+            "summary": "Names a specific strategy and says it would speed the queue, but does not weigh its cost or reach a judgement.",
+            "notices": [
+              {
+                "quote": "This would make the queue move faster.",
+                "head": "The effect is asserted, not explained",
+                "why": "Say when the queue forms and why a second operator shortens it then."
+              }
+            ]
+          },
+          "live": {
+            "min": 1,
+            "max": 3
+          }
+        },
+        {
+          "id": "er11d-strong",
+          "kind": "strong",
+          "text": "Kerbside Coffee should roster a second operator on each van from 7am to 9am, the morning peak when the case study says customers complain about waiting.\n\nWith two operators, one can take orders while the other makes coffee, so each order is filled sooner at exactly the times the queue forms. Shorter waits should also stop customers walking away, which protects sales during the most valuable two hours of the day.\n\nThe strategy adds wage costs, about eight extra casual hours a day across four vans. That cost is limited to the peak, and it is likely to be less than the sales currently lost to the queue, so the second operator is justified.",
+          "stub": {
+            "score": 5,
+            "summary": "Names a specific peak-time strategy, explains how it shortens the queue when it forms, weighs the wage cost and reaches a supported judgement.",
+            "notices": [
+              {
+                "quote": "That cost is limited to the peak",
+                "head": "The cost is weighed, not ignored",
+                "why": "This is what turns a recommendation into a justification."
+              }
+            ]
+          },
+          "live": {
+            "min": 3
+          }
+        },
+        {
+          "id": "er11d-misconception",
+          "kind": "misconception",
+          "text": "Kerbside should replace its van operators with a self-service ordering app. Then it will not need any staff at the vans and waiting times will disappear completely.",
+          "stub": {
+            "score": 1,
+            "summary": "Proposes removing staff rather than a staffing strategy, and claims waiting would disappear without explaining who makes the coffee.",
+            "notices": [
+              {
+                "quote": "waiting times will disappear completely",
+                "head": "An unsupported claim",
+                "why": "Someone still has to make each coffee."
+              }
+            ]
+          },
+          "live": {
+            "max": 3
+          }
+        }
+      ],
+      "liveOrder": [
+        [
+          "er11d-strong",
+          "er11d-partial"
+        ],
+        [
+          "er11d-partial",
+          "er11d-minimal"
+        ]
+      ]
+    },
+    {
+      "key": "2-0",
+      "format": "business_report",
+      "question": "14",
+      "answers": [
+        {
+          "id": "br14-report",
+          "kind": "report structure",
+          "text": "Executive summary\nOnline orders at Tidewater Outfitters have grown for three years while store sales have fallen. This report recommends redesigning the warehouse for single online orders, turning two stores into click-and-collect points, and renegotiating the store leases on shorter terms as they expire.\n\nFindings\nThe warehouse was built to replenish six stores, so it is slow at picking individual online orders, and delivery times have slipped. All six store leases expire within two years, and the owners want to keep every store.\n\nRecommendations\nTidewater should redesign its warehouse layout for single-order picking, which would shorten delivery times for the customers now buying online.\nIt should keep its six stores but convert two of them into click-and-collect points, so the stores become part of the online sale.\nIt should renegotiate each lease on a shorter term as it expires.\n\nConclusion\nBy changing how the warehouse works and giving the stores a role in online sales, Tidewater can respond to where its customers are buying without closing a store.",
+          "stub": {
+            "score": 15,
+            "summary": "A structured report that identifies the warehouse problem and recommends specific strategies that keep all six stores.",
+            "notices": [
+              {
+                "quote": "convert two of them into click-and-collect points",
+                "head": "A recommendation that respects the owners' intention",
+                "why": "It keeps every store while giving it a job in online sales."
+              }
+            ]
+          },
+          "live": {
+            "min": 10
+          }
+        },
+        {
+          "id": "br14-essay",
+          "kind": "essay shape, same content",
+          "text": "Tidewater Outfitters has seen online orders grow for three years while its store sales have fallen, and this shift creates real problems for the business. Its warehouse was built to replenish six stores, so it is slow at picking individual online orders, and delivery times have slipped. At the same time all six store leases expire within two years, although the owners want to keep every store.\n\nThe business should redesign its warehouse layout for single-order picking, which would shorten delivery times for the customers now buying online. It should also keep its six stores but convert two of them into click-and-collect points, so the stores become part of the online sale, and it should renegotiate each lease on a shorter term as it expires.\n\nIn conclusion, by changing how the warehouse works and giving the stores a role in online sales, Tidewater can respond to where its customers are buying without closing a store.",
+          "stub": {
+            "score": 11,
+            "summary": "The same strategies as a report would offer, written as continuous prose with no report structure.",
+            "across": [
+              {
+                "head": "Not presented as a report",
+                "why": "The question asks for a business report; headings would make the findings and recommendations easy to find."
+              }
+            ]
+          },
+          "live": {
+            "min": 5
+          }
+        },
+        {
+          "id": "br14-weak",
+          "kind": "weak",
+          "text": "Report\nTidewater sells camping gear. Online shopping is popular now.\n\nRecommendation\nThey should sell more things online and maybe close some stores.",
+          "stub": {
+            "score": 3,
+            "summary": "Has two headings but describes the situation briefly and recommends closing stores, against the owners' stated intention.",
+            "notices": [
+              {
+                "quote": "maybe close some stores",
+                "head": "Against the owners' intention",
+                "why": "The case study says the owners want to keep all six stores."
+              }
+            ],
+            "invent": {
+              "text": "The warehouse should be sold immediately.",
+              "head": "A drastic step",
+              "why": "Nothing in the response supports selling the warehouse."
+            }
+          },
+          "live": {
+            "max": 8
+          }
+        }
+      ],
+      "liveOrder": [
+        [
+          "br14-report",
+          "br14-weak"
+        ],
+        [
+          "br14-report",
+          "br14-essay"
+        ]
+      ]
+    },
+    {
+      "key": "3-0",
+      "choose": 0,
+      "format": "extended_response",
+      "question": "15",
+      "answers": [
+        {
+          "id": "er15-weak",
+          "kind": "very weak",
+          "text": "Marketing is very important for every business. A business I studied used advertising and social media to sell its products and it worked well.\n\nMarketing strategies help businesses to make more money, so they are effective.",
+          "stub": {
+            "score": 3,
+            "summary": "States that marketing worked without naming an objective, a real business, or evidence.",
+            "across": [
+              {
+                "head": "No objective to judge against",
+                "why": "Effectiveness can only be judged against what the marketing was meant to achieve."
+              }
+            ]
+          },
+          "live": {
+            "max": 8
+          }
+        },
+        {
+          "id": "er15-middle",
+          "kind": "middle band",
+          "text": "Northline Sportswear set a marketing objective of increasing its share of the teenage market, and most of its strategies were chosen to serve that objective. The business moved from print advertising to short video content on social platforms, which reached the age group it was targeting at a lower cost per view than its previous campaigns.\n\nIts second strategy was a loyalty app that gave members early access to new releases. This was effective because it turned occasional buyers into repeat customers, and repeat customers are cheaper to keep than new ones are to find.\n\nHowever, the business also cut its prices across the range at the same time, which worked against the premium position its advertising was building. A customer who sees the brand as aspirational and then finds it discounted every month will stop believing the first message.\n\nOverall the marketing strategies were effective in achieving the objective they were set, because the business gained share in the group it targeted, but the pricing decision limited how much of that gain it could hold.",
+          "stub": {
+            "score": 13,
+            "summary": "Judges strategies against a stated objective and reaches a judgement, but supports effectiveness with assertion rather than evidence.",
+            "notices": [
+              {
+                "quote": "which reached the age group it was targeting at a lower cost per view than its previous campaigns",
+                "head": "The comparison is stated but not quantified",
+                "why": "A figure would turn the claim into evidence."
+              }
+            ]
+          },
+          "live": {
+            "min": 8,
+            "max": 17
+          }
+        },
+        {
+          "id": "er15-strong",
+          "kind": "strong",
+          "text": "Northline Sportswear's marketing objective for 2023 was to lift its share of the 13 to 17 year old market from 8 to 12 per cent, and its strategies are best judged against that number.\n\nThe move from print to short-form video was effective against that objective. The business reported a cost per view of 4 cents against 19 cents for its print campaigns, and site visits from the target age group rose by a third within six months, so the strategy reached the intended buyers more cheaply.\n\nThe loyalty app was also effective, because members bought 2.4 times a year against 1.3 for non-members, which turned reach into repeat purchase. That matters for a share objective, since share held through repeat buying is cheaper to keep than share bought with advertising.\n\nThe weakness was price. Northline cut prices across its range in the same year, and its average sale value fell 11 per cent, which undermined the premium image the video campaign was building.\n\nOverall the strategies were largely effective: share reached 11 per cent, close to the target, but the pricing decision cost margin and probably limited how much of the gain will last.",
+          "stub": {
+            "score": 18,
+            "summary": "Sets a measurable objective, judges each strategy against it with figures, weighs a weakness and sustains one argument to a supported judgement.",
+            "notices": [
+              {
+                "quote": "share reached 11 per cent, close to the target",
+                "head": "The judgement is measured against the objective",
+                "why": "This is what evaluation asks for."
+              }
+            ]
+          },
+          "live": {
+            "min": 14
+          }
+        },
+        {
+          "id": "er15-no-evidence",
+          "kind": "knowledge without a real business",
+          "text": "Effective marketing starts with clear objectives, such as increasing market share, building brand awareness or entering a new market. Strategies are then chosen across the marketing mix of product, price, promotion and place.\n\nPromotion through social media is usually effective for younger markets because it is cheap and targeted. Loyalty programs are effective because they increase repeat purchase. Price cuts can increase sales in the short term but can damage a premium brand.\n\nTherefore marketing strategies are effective when they are aligned with the objectives they are meant to achieve.",
+          "stub": {
+            "score": 8,
+            "summary": "Accurate course knowledge, but no real business and no evidence, so nothing is actually evaluated.",
+            "across": [
+              {
+                "head": "No business studied",
+                "why": "The question asks about a business you have studied; the response stays general throughout."
+              }
+            ]
+          },
+          "live": {
+            "min": 3,
+            "max": 12
+          }
+        },
+        {
+          "id": "er15-unfinished",
+          "kind": "unfinished",
+          "text": "Northline Sportswear set a marketing objective of increasing its share of the teenage market. Its first strategy was to move from print advertising to short video content on social platforms.\n\nThis was effective because",
+          "stub": {
+            "score": 4,
+            "summary": "States an objective and one strategy, then stops before any evaluation.",
+            "notices": [
+              {
+                "quote": "This was effective because",
+                "head": "The response stops mid-sentence",
+                "why": "The evaluation the question asks for never arrives."
+              }
+            ]
+          },
+          "live": {
+            "max": 9
+          }
+        }
+      ],
+      "liveOrder": [
+        [
+          "er15-strong",
+          "er15-middle"
+        ],
+        [
+          "er15-middle",
+          "er15-weak"
+        ],
+        [
+          "er15-middle",
+          "er15-unfinished"
+        ],
+        [
+          "er15-strong",
+          "er15-no-evidence"
+        ]
+      ]
+    }
+  ],
+  "progression": {
+    "_why": "The learning loop: a weak short answer is marked, the student tries again with an improved version of the same idea, and the second mark belongs to the second version while the first is never rewritten.",
+    "key": "1-0-1",
+    "from": "sa11b-partial",
+    "to": "sa11b-strong"
+  },
+  "writing": {
+    "_why": "The writing-experience bot types the strong 11(b) answer key by key, with these edits on the way, and checks nothing is lost, the caret stays where the student put it, and the draft survives navigation and a reload.",
+    "key": "1-0-1",
+    "answer": "sa11b-strong",
+    "typo": {
+      "type": "Casual van operators have no guarnteed hours",
+      "fixAt": "guarnteed",
+      "fixTo": "guaranteed"
+    },
+    "insert": {
+      "after": "no paid leave",
+      "text": " or sick leave"
+    }
+  }
+}

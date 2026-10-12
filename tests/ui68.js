@@ -31,7 +31,11 @@ const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() 
 // can be marked at all without a subject authority: the PAPER says what each
 // point is worth, so nothing has to be inferred from the coincidence that it
 // happens to have as many points as marks.
-const SHORT_Q = { type: 'short', prompt: 'State one feature of a reed.', marks: 2,
+// It is a closed question that DECLARES phrase matching (decision 27): phrasings
+// alone no longer score anything, and "state" is a directive phrase matching can
+// honour. Two features for two marks, so each point is one of them.
+const SHORT_Q = { type: 'short', directive: 'state', prompt: 'State TWO features of a reed.', marks: 2,
+  marking: { mode: 'phrase_match' },
   points: [{ text: 'reeds are flexible', need: ['flexible'], marks: 1 },
            { text: 'reeds are hollow', need: ['hollow'], marks: 1 }] };
 // The same question with the weighting taken away. Its points are then

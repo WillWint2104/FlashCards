@@ -559,9 +559,50 @@ console.log("13. the paper the product actually ships, which is now synthetic");
     "the same subject on a paper of multiple choice only can be sat, with limited support: " + lo.state + " " + JSON.stringify(codes(lo)));
   const withCalc = objectiveOnly(); withCalc.sections[0].questions.push(JSON.parse(JSON.stringify(calcAt(paper))));
   ok(E.examine(withCalc, PK).sittable, "a calculation with its expected value and tolerance is objective too");
-  const withLocal = objectiveOnly(); withLocal.sections[0].questions.push({ format: "short_answer", prompt: "Name one current asset.", marks: 1,
-    points: [{ text: "names a current asset", need: ["inventory", "cash"], marks: 1 }] });
-  ok(E.examine(withLocal, PK).sittable, "so is a short answer whose every point authors phrasings to match");
+  // A short answer is marked from its phrasings only when it DECLARES phrase
+  // matching and is closed (decision 27). Phrasings alone are marker work.
+  const closedQ = extra => Object.assign({ format: "short_answer", directive: "name", prompt: "Name one current asset.", marks: 1,
+    points: [{ text: "names a current asset", need: ["inventory", "cash"], marks: 1 }], marking: { mode: "phrase_match" } }, extra || {});
+  const withQ = q => { const pp = objectiveOnly(); pp.sections[0].questions.push(q); return E.examine(pp, PK); };
+  const withLocal = withQ(closedQ());
+  ok(withLocal.sittable && !codes(withLocal).some(c => /^(PHRASE_MATCH_|MARKING_)/.test(c)),
+    "so is a closed short answer that declares phrase matching: " + JSON.stringify(codes(withLocal)));
+  const unmoded = withQ(closedQ({ marking: undefined }));
+  ok(unmoded.state === "blocked" && codes(unmoded).includes("SUBJECT_UNREGISTERED"),
+    "the same question with phrasings but no marking setting needs the marker, so the unregistered subject blocks: " + unmoded.state);
+  for (const verb of ["explain", "outline", "describe", "analyse", "assess", "evaluate", "discuss", "justify", "recommend"]) {
+    const r = withQ(closedQ({ directive: verb, prompt: verb[0].toUpperCase() + verb.slice(1) + " one current asset." }));
+    ok(!r.sittable && codes(r).includes("PHRASE_MATCH_NOT_CLOSED") && r.findings.find(f => f.code === "PHRASE_MATCH_NOT_CLOSED").state === "unsupported",
+      "phrase matching on an open directive (" + verb + ") is refused at the door: " + JSON.stringify(codes(r)));
+  }
+  const asksMore = withQ(closedQ({ prompt: "Name one current asset and explain why it is current." }));
+  ok(!asksMore.sittable && codes(asksMore).includes("PHRASE_MATCH_NOT_CLOSED"), "a closed directive on a prompt that also asks for an explanation is refused");
+  const noDir = withQ(closedQ({ directive: undefined }));
+  ok(!noDir.sittable && codes(noDir).includes("PHRASE_MATCH_DIRECTIVE_ABSENT") && noDir.findings.find(f => f.code === "PHRASE_MATCH_DIRECTIVE_ABSENT").state === "malformed",
+    "phrase matching with no directive is refused as malformed");
+  const notShort = withQ(closedQ({ format: "extended_response" }));
+  ok(!notShort.sittable && codes(notShort).includes("PHRASE_MATCH_NOT_SHORT_ANSWER"), "phrase matching on an extended response is refused");
+  const banana = withQ(closedQ({ marking: { mode: "banana" } }));
+  ok(!banana.sittable && codes(banana).includes("MARKING_MODE_UNSUPPORTED"), "an unknown marking mode is refused, never ignored");
+  const bareMode = withQ(closedQ({ marking: "phrase_match" }));
+  ok(!bareMode.sittable && codes(bareMode).includes("MARKING_MALFORMED"), "a marking setting that is not { mode } is refused");
+  const unweighted = withQ(closedQ({ points: [{ text: "names a current asset", need: ["inventory", "cash"] }] }));
+  ok(!unweighted.sittable && codes(unweighted).includes("PHRASE_MATCH_POINTS_INCOMPLETE"), "phrase matching on points without their own marks is refused");
+  const onSection = objectiveOnly(); onSection.sections[0].marking = { mode: "phrase_match" };
+  const onPaper = objectiveOnly(); onPaper.marking = { mode: "phrase_match" };
+  ok([onSection, onPaper].every(pp => codes(E.examine(pp, PK)).includes("MARKING_NOT_ON_A_QUESTION") && !E.examine(pp, PK).sittable),
+    "a marking setting on a section or a whole paper is refused rather than ignored");
+  const onParent = copy(); onParent.sections[1].questions[0].marking = { mode: "phrase_match" };
+  const op = E.examine(onParent, PK);
+  ok(!op.sittable && op.findings.some(f => f.code === "MARKING_NOT_ON_A_QUESTION" && /^sections\[1\]\.questions\[0\]$/.test(f.path)),
+    "a marking setting on a question with parts is refused, at that question: " + JSON.stringify(op.findings.filter(f => f.code === "MARKING_NOT_ON_A_QUESTION").map(f => f.path)));
+  const stringy = objectiveOnly(); stringy.marking = "phrase_match";
+  ok(codes(E.examine(stringy, PK)).includes("MARKING_NOT_ON_A_QUESTION"), "a paper-wide marking setting written as a word is refused too");
+  const pkgShaped = objectiveOnly(); pkgShaped.marking = { source: "authored", bands: [], bandSource: "x" };
+  ok(!codes(E.examine(pkgShaped, PK)).includes("MARKING_NOT_ON_A_QUESTION"),
+    "a question package's own top-level marking (band descriptors, no mode) is not mistaken for this setting");
+  ok(!codes(E.examine(paper, PK)).some(c => /^(PHRASE_MATCH_|MARKING_)/.test(c)),
+    "and the published paper, which declares no marking setting, draws none of these findings");
   const withMarker = objectiveOnly(); withMarker.sections[0].questions.push({ format: "short_answer", prompt: "Explain one role of the courts.", marks: 3,
     points: ["identifies a role", "explains it", "gives an example"] });
   const wm = E.examine(withMarker, PK);

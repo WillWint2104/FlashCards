@@ -1,0 +1,18 @@
+{
+  "_why": "The first live run: twelve diagnostic answers from corpus.v2.json, chosen to show whether the real marker separates what it should before credits are spent on all 31. Run with `npm run testmode-bots:golden` (live). Read the marks and the feedback together, not the numbers alone. Version 2 swaps the open-question keyword list (sa11a-keywords) for the closed question's shotgun list (cl11a-shotgun), so the golden run still imports the phrase-matched paper.",
+  "corpus": "corpus.v2.json",
+  "answers": [
+    "sa11b-irrelevant",
+    "sa11b-partial",
+    "sa11b-unusual",
+    "cl11a-shotgun",
+    "er15-weak",
+    "er15-strong",
+    "er15-no-evidence",
+    "br14-report",
+    "br14-essay",
+    "sa11b-misconception",
+    "sa11b-verbose",
+    "er15-unfinished"
+  ]
+}

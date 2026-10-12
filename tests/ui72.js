@@ -15,6 +15,11 @@
 // Full tier only. Nothing here is added to fast or checkpoint (decision 20).
 const { chromium, T } = require('./env');
 const paper = require('./fixtures/bus-practice-paper.json');
+// A genuinely closed short answer that declares phrase matching (decision 27).
+// Phrasings grafted onto the published 11(a), an "outline" question, would now
+// go to the marker; this is the shape a paper has to take to be scored from them.
+const CLOSED_11A = { directive: 'identify', marking: { mode: 'phrase_match' },
+  prompt: 'Identify the operations performance objective Kerbside Coffee is failing to meet at its vans, and the customer complaint it causes.' };
 
 const settled = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
 let pass = 0, fail = 0;
@@ -236,31 +241,55 @@ async function unmarkedYet(p, n, why) {
     await ctx.close();
   }
 
-  // ---- 7. "What would make this stronger" keeps the answer-key mark -------
-  console.log('--- 7. a failed second opinion never replaces a mark');
+  // ---- 7. a phrase-matched mark is final: no AI second opinion --------------
+  // Decision 27. The question was authored to be marked deterministically, so its
+  // mark is final for that answer: "What would make this stronger" is not offered,
+  // and no AI mark can replace it (ATT.record keeps it; t38). A changed answer is
+  // marked afresh, so Try again stays.
+  console.log('--- 7. a phrase-matched mark is final, with no AI second opinion');
   {
     const keyed = JSON.parse(JSON.stringify(paper));
     keyed.name = 'Phrased points paper';
     const part = keyed.sections[1].questions[0].parts[0];
     part.points = [{ text: 'Names speed as the objective', marks: 1, need: ['speed'] },
                    { text: 'Links it to the waiting times', marks: 1, need: ['wait'] }];
+    Object.assign(part, CLOSED_11A);
     const seed = { cards: {}, endpoint: '', code: '12Ec126', log: [], customSets: [], lessons: {},
       exams: [Object.assign({}, keyed, { id: 'phrased' })] };
     const { p, ctx, mode } = await open(b, seed);
     await sit(p, 'Phrased points paper', 'Section II - Short answer');
     await submit(p, 'Speed, because customers wait too long.');
-    ok(mode.sent.length === 0 && /Marks\s*2 of 2/.test(await sheet(p)), 'scored from its authored phrasings, without the marker: ' + (await sheet(p)).slice(0, 30));
-    ok(await has(p, '#examreview'), 'and the second-opinion door is offered');
-    await p.click('#examreview');
-    await p.waitForFunction(() => { const b = document.querySelector('#examreview'); return b && !b.disabled; }, null, { timeout: 15000 }).catch(() => {});
-    await settled(p);
-    ok(mode.sent.length === 1, 'the second opinion was asked for: ' + mode.sent.length);
-    const said = await p.$$eval('.toast', es => es.map(e => e.textContent).join(' '));
-    ok(/Your mark stands/.test(said) && !/was not marked/.test(said) && !/\u2014/.test(said),
-       'and its failure says the mark stands, not that the answer was not marked: ' + JSON.stringify(said));
     const s = await sheet(p);
-    ok(/Marks\s*2 of 2/.test(s) && !/demo grade/i.test(s), 'the unreachable marker leaves the 2/2 in place, with no demo grade over it: ' + s.slice(0, 60));
-    ok(await bar(p) === '1 of 8 answered · 2/40 marks', 'and the bar is unchanged: ' + await bar(p));
+    ok(mode.sent.length === 0 && /Marks\s*2 of 2/.test(s), 'scored from its authored phrasings, without the marker: ' + s.slice(0, 30));
+    ok(!(await has(p, '#examreview')) && !/make this stronger|second opinion/i.test(s),
+       'no second-opinion door is offered: the deterministic mark is final for this answer');
+    ok(await has(p, '#examretry'), 'Try again is still there, for a changed answer');
+    ok(await bar(p) === '1 of 8 answered · 2/40 marks', 'and the bar reads the phrase-matched mark: ' + await bar(p));
+    await ctx.close();
+  }
+
+  // ---- 7b. a stored paper whose declared marking cannot be honoured ----------
+  // Decision 27. The import door refuses phrase matching on an open question, but a
+  // paper already in the library, or restored from a backup, is never examined
+  // again. At submit the answer is refused with the reason: not scored from the
+  // phrasings, and not quietly sent to the marker instead.
+  console.log('--- 7b. phrase matching declared on an open question is refused at submit');
+  {
+    const open11a = JSON.parse(JSON.stringify(paper));
+    open11a.name = 'Refused points paper';
+    Object.assign(open11a.sections[1].questions[0].parts[0], { marking: { mode: 'phrase_match' },
+      points: [{ text: 'Names speed as the objective', marks: 1, need: ['speed'] },
+               { text: 'Links it to the waiting times', marks: 1, need: ['wait'] }] });
+    const seed = { cards: {}, endpoint: '', code: '12Ec126', log: [], customSets: [], lessons: {},
+      exams: [Object.assign({}, open11a, { id: 'refused-points' })] };
+    const { p, ctx, mode } = await open(b, seed);
+    await sit(p, 'Refused points paper', 'Section II - Short answer');
+    await submit(p, 'Speed, because customers wait too long.');
+    const s = await sheet(p);
+    ok(mode.sent.length === 0, 'nothing was sent to the marker: ' + mode.sent.length);
+    ok(!/Marks\s*2 of 2/.test(s) && /not marked/i.test(s), 'the answer is not scored from the phrasings: ' + s.slice(0, 80));
+    ok(/set up to be marked in a way that does not suit it/.test(s) && /teacher needs to correct the paper/.test(s) && !/goes? to the marker/.test(s),
+       'and it tells the student what happened and who can fix it, without claiming the marker has it: ' + s.slice(0, 200));
     await ctx.close();
   }
 
@@ -337,32 +366,6 @@ async function unmarkedYet(p, n, why) {
     await unmarkedYet(p, n, why);
     ok(/^0 of 1 answered · 0\/20 marks · 1 not marked$/.test(await bar(p)), n + ': counted as not marked: ' + await bar(p));
     ok(!errs.length, n + ': no page errors ' + JSON.stringify(errs));
-    await ctx.close();
-  }
-
-  // ---- 11. a second opinion that arrives after the student left -----------
-  console.log('--- 11. a late second opinion does not land in the next sitting');
-  {
-    const keyed = JSON.parse(JSON.stringify(paper));
-    keyed.name = 'Phrased points paper';
-    keyed.sections[1].questions[0].parts[0].points = [{ text: 'Names speed as the objective', marks: 1, need: ['speed'] },
-                                                      { text: 'Links it to the waiting times', marks: 1, need: ['wait'] }];
-    const seed = { cards: {}, endpoint: '', code: '12Ec126', log: [], customSets: [], lessons: {},
-      exams: [Object.assign({}, keyed, { id: 'phrased' })] };
-    const { p, ctx, mode } = await open(b, seed);
-    mode.reply = s => /old sitting/.test(s.answer) ? Object.assign(REVIEW(0, 2), { delay: 2500 }) : 'abort';
-    await sit(p, 'Phrased points paper', 'Section II - Short answer');
-    await submit(p, 'Speed, because customers wait. The old sitting.');
-    await p.click('#examreview'); await settled(p);
-    await p.click('#examquit'); await settled(p);
-    await sit(p, 'Phrased points paper', 'Section II - Short answer');
-    await submit(p, 'Speed, because customers wait. The new sitting.');
-    ok(/Marks\s*2 of 2/.test(await sheet(p)), 'the new sitting marks 11(a) from its phrasings');
-    await p.waitForTimeout(3500); await settled(p);
-    await p.click('#examnext'); await settled(p);
-    await submit(p, 'Casual operators have no guaranteed hours.');
-    ok(await bar(p) === '1 of 8 answered · 2/40 marks · 1 not marked',
-       'the old second opinion (0/2) did not replace the new mark: ' + await bar(p));
     await ctx.close();
   }
 
@@ -484,31 +487,6 @@ async function unmarkedYet(p, n, why) {
          'on resume the rewrite is in an open box, not hidden behind the old mark');
       await ctx.close();
     }
-  }
-
-  // f. A second opinion that lands while the student is rewriting changes nothing.
-  {
-    const keyed = JSON.parse(JSON.stringify(paper));
-    keyed.name = 'Phrased points paper';
-    keyed.sections[1].questions[0].parts[0].points = [{ text: 'Names speed as the objective', marks: 1, need: ['speed'] },
-                                                      { text: 'Links it to the waiting times', marks: 1, need: ['wait'] }];
-    const seed = { cards: {}, endpoint: '', code: '12Ec126', log: [], customSets: [], lessons: {},
-      exams: [Object.assign({}, keyed, { id: 'phrased' })] };
-    const { p, ctx, mode } = await open(b, seed);
-    await sit(p, 'Phrased points paper', 'Section II - Short answer');
-    await submit(p, 'Speed, because customers wait too long.');
-    mode.reply = () => Object.assign(REVIEW(1, 2), { delay: 2500 });
-    await p.click('#examreview'); await settled(p);
-    ok(await p.$eval('#examretry', e => e.disabled), 'f: Try again waits while a second opinion is asked');
-    await p.click('#examnext'); await settled(p); await p.click('#examprev'); await settled(p);
-    await p.click('#examretry'); await settled(p);
-    await p.fill('#ans', 'A rewrite in progress.'); await p.waitForTimeout(3500); await settled(p);
-    const st = await p.evaluate(() => { const at = JSON.parse(localStorage.getItem('marginal.trial.v1') || '{}').attempts || {};
-      const a = Object.values(at).map(r => r.current).find(Boolean); return { score: a.results['1-0-0'] && a.results['1-0-0'].score, draft: a.drafts['1-0-0'] }; });
-    ok(mode.sent.length === 1 && st.score === 2 && st.draft === 'A rewrite in progress.',
-       'f: the late second opinion neither replaces the mark nor deletes the rewrite: ' + JSON.stringify(st));
-    ok((await p.$eval('#ans', e => e.value)) === 'A rewrite in progress.', 'f: and the rewrite is still in the box');
-    await ctx.close();
   }
 
   console.log('--- 8. Study mode still demo-grades, in the format\'s own words');
