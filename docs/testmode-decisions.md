@@ -757,6 +757,60 @@ stays frozen. Fifteen new mutations, four of them for what an adversarial review
 of the first version found. Full tier for the browser suites; budgets
 unchanged.
 
+## 28. Short Answer marking accepted; 11(b) credits either kind of insecurity
+
+**Accepted by the owner after the 12 October rerun.** The grader, redeployed
+from `proxy/worker.js` at `1194323`, was sent the three 11(b) answers again
+(partial, strong and unusual wording), one at a time, with the request bodies
+the app sent in Run 1. Every reply carried `checks.ms`, which no worker before
+`bbf699a` (PR #69) returns, an empty rubric for a short answer, and no mention
+of Economics. The marks were 1/3, 3/3 and 2/3. Short Answer marking validation
+is closed, and these three are not rerun.
+
+**Baseline**, one call each:
+
+| | Diagnosis | Judgement | Total |
+|---|---|---|---|
+| Partial | 7.1 s | 18.3 s | 25.9 s |
+| Strong | 6.0 s | 14.8 s | 21.1 s |
+| Unusual wording | 8.9 s | 15.0 s | 24.1 s |
+
+Diagnosis takes about 6 to 9 s, judgement about 15 to 18 s, and a whole
+request about 21 to 26 s, inside the 45 s client timeout. The stale worker took
+22 to 34 s in its single pass. The grader prompt, the two-pass worker and the
+45 s client timeout are unchanged.
+
+**11(b)'s first point is corrected.** It read "Explains that casual work
+carries no guaranteed hours or leave entitlements", and the marker took that
+to need both: the partial answer and the unusual one each gave the hours side
+only, and each lost that mark. It now reads "Identifies employment insecurity
+associated with casual work, such as no guaranteed hours or no paid leave
+entitlements", so either kind earns it. The three marks stay one causal chain:
+the insecurity, how it leads to leaving (point 2), and the cost of replacing
+whoever leaves (point 3). This changes authored content only; the marker is
+not made more generous in general. t31 holds what the marker is sent for 11(b),
+and `sa11b-point-one-needs-both` puts the old wording back.
+
+Choices flagged for review:
+
+- The paper's `exam.version` stays "1". It is a test fixture that only fresh
+  test libraries hold, and t30 and t38 use it as their version 1. A library
+  that already holds version 1 keeps the old wording on re-import
+  (decision 21).
+- The bots corpus is unchanged. Under the new wording the partial answer can
+  earn 2/3 and the unusual one 3/3, and both stay inside their live ranges
+  (1 to 2, and at least 2).
+- `docs/mockups/11-short-answer.html` keeps the old wording. It is a frozen
+  drawing, not built from the paper.
+
+**Observation, not a change.** On the unusual answer the marker asked the
+student to "name" guaranteed hours, an idea the answer had already given in
+plain words ("never know whether you will get shifts next week"). The mark did
+not depend on it. It is watched for in later runs and acted on only if it
+recurs.
+
+Run 2 waits on production authentication.
+
 ## Mockup order — dependency, not numerical
 
 ```
