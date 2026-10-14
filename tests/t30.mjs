@@ -619,8 +619,10 @@ console.log("13. the paper the product actually ships, which is now synthetic");
   // ---- decision 21: the same paper is the same exam.id, never the same title --
   const bump = (pp, ver) => Object.assign(JSON.parse(JSON.stringify(pp)), { exam: Object.assign({}, pp.exam, { version: ver }) });
   ok(E.libraryMatch([paper], paper).kind === "same", "the same id and version is already in the library");
-  ok(E.libraryMatch([paper], bump(paper, "2")).kind === "newer", "a higher version is newer");
-  ok(E.libraryMatch([bump(paper, "2")], paper).kind === "older", "a lower version is older");
+  ok(E.libraryMatch([paper], bump(paper, "3")).kind === "newer", "a higher version is newer");
+  ok(E.libraryMatch([bump(paper, "3")], paper).kind === "older", "a lower version is older");
+  ok(paper.exam.version === "2" && E.libraryMatch([bump(paper, "1")], paper).kind === "newer",
+    "the public paper is version 2, newer than a library's version 1 (decision 28)");
   ok(E.libraryMatch([bump(paper, "1.10")], bump(paper, "1.9")).kind === "older", "versions compare as numbers, part by part");
   ok(E.libraryMatch([bump(paper, "draft")], bump(paper, "final")).kind === "different", "versions that are not numbers are only different");
   const renamed = Object.assign(JSON.parse(JSON.stringify(paper)), { exam: Object.assign({}, paper.exam, { id: "another-paper" }) });

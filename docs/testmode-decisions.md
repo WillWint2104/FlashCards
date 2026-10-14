@@ -791,17 +791,25 @@ whoever leaves (point 3). This changes authored content only; the marker is
 not made more generous in general. t31 holds what the marker is sent for 11(b),
 and `sa11b-point-one-needs-both` puts the old wording back.
 
-Choices flagged for review:
+**The paper moves to version 2, by the owner's decision.** What earns the
+first mark of 11(b) has changed, which is an assessment change, not an
+editorial one. Under decision 21, importing version 2 replaces version 1 in a
+library; an attempt already started on version 1 stays pinned to it, and
+completed version 1 results are untouched. Nothing is migrated. t38 holds this
+on the paper itself, t30 and t39 hold it at the import door, and
+`public-paper-back-to-version-1` puts the old version number back. Tests that
+used the paper as their version 1 now ask for version 1 by name, and so does
+the generator of the frozen import drawings, so its newer and older examples
+stay what they say.
 
-- The paper's `exam.version` stays "1". It is a test fixture that only fresh
-  test libraries hold, and t30 and t38 use it as their version 1. A library
-  that already holds version 1 keeps the old wording on re-import
-  (decision 21).
-- The bots corpus is unchanged. Under the new wording the partial answer can
-  earn 2/3 and the unusual one 3/3, and both stay inside their live ranges
-  (1 to 2, and at least 2).
-- `docs/mockups/11-short-answer.html` keeps the old wording. It is a frozen
-  drawing, not built from the paper.
+**The bots corpus is unchanged.** Under version 2 the expected marks are about
+2/3 for the partial answer, 3/3 for unusual wording, and full marks for the
+strong answer. These are expectations, not assertions: the live ranges stay 1
+to 2, at least 2, and at least 2. The live run is there to catch unreasonable
+marking, not to make the model deterministic.
+
+**The Short Answer drawing** (`docs/mockups/11-short-answer.html`) shows the
+version 2 wording of the point. Its layout and behaviour are unchanged.
 
 **Observation, not a change.** On the unusual answer the marker asked the
 student to "name" guaranteed hours, an idea the answer had already given in

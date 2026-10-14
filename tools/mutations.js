@@ -2212,4 +2212,12 @@ module.exports = [
     owner: "t31",
     why: "11(b)'s first point read as needing both no guaranteed hours and no leave, so the live marker held back a mark from a correct answer that named only one",
   },
+  {
+    id: "public-paper-back-to-version-1",
+    file: "tests/fixtures/bus-practice-paper.json",
+    find: "\"version\": \"2\"",
+    replace: "\"version\": \"1\"",
+    owner: "t38",
+    why: "11(b)'s first mark changed meaning under the same version, so a library already holding version 1 kept the old marking guidance on re-import",
+  },
 ];

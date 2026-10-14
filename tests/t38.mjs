@@ -22,6 +22,9 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  FAIL:', m); 
 const RAW = read('tests/fixtures/bus-practice-paper.json');
 let n = 0;
 const fresh = (over) => Object.assign(JSON.parse(RAW), { id: 'exam-' + (++n) }, over || {});
+// The public paper is version 2 (decision 28). Where a test needs an older copy
+// of the same paper, it asks for version 1 by name.
+const fresh1 = (over) => { const p = fresh(over); p.exam = Object.assign({}, p.exam, { version: '1' }); return p; };
 const store = () => ({ exams: [], attempts: {} });
 const T = i => '2026-10-0' + i + 'T10:00:00.000Z';
 const marked = (score, max) => ASSESS.marked({ score, max, kind: 'points' });
@@ -29,13 +32,13 @@ const refused = max => ASSESS.refuse('MARKER_NOT_CONNECTED', 'Not marked.', { ma
 
 console.log('--- identity and versions');
 {
-  const s = store(), v1 = fresh();
+  const s = store(), v1 = fresh1();
   ok(A.addPaper(s, v1).kind === 'new', 'a first paper is new');
   ok(A.identityOf(v1) === 'marginal-synthetic-bus-practice-1' && A.paperKey(v1) === 'paper:marginal-synthetic-bus-practice-1',
      'identity is exam.id, not the runtime id or the title');
-  const same = fresh();
+  const same = fresh1();
   ok(A.addPaper(s, same).kind === 'same' && s.exams.length === 1, 'the same version again is not added');
-  const renamed = fresh({ name: 'A different title' });
+  const renamed = fresh1({ name: 'A different title' });
   ok(A.addPaper(s, renamed).kind === 'same', 'a new title on the same id and version is the same paper');
   const k = A.paperKey(v1);
   A.begin(s, k, A.startPaper(v1, null, T(1)));
@@ -60,6 +63,36 @@ console.log('--- identity and versions');
      'an unorderable version replaces, and with nothing pinned the old one goes at once');
 }
 
+console.log('--- the public paper is version 2: 11(b) changed what earns its first mark (decision 28)');
+{
+  // Version 1 as it was published, whose first 11(b) point the marker read as
+  // needing both kinds of insecurity. Version 2 makes them alternatives, so it
+  // replaces version 1 for new attempts and moves nothing that already exists.
+  const OLD = 'Explains that casual work carries no guaranteed hours or leave entitlements';
+  const point1 = p => p.sections[1].questions[0].parts[1].points[0].text;
+  const v2 = fresh();
+  ok(v2.exam.version === '2' && /such as no guaranteed hours or no paid leave entitlements$/.test(point1(v2)),
+     'the public paper is version 2, whose 11(b) gives the first mark for either kind of insecurity');
+  const s = store(), v1 = fresh1(); v1.sections[1].questions[0].parts[1].points[0].text = OLD;
+  A.addPaper(s, v1);
+  const k = A.paperKey(v1);
+  A.begin(s, k, A.startPaper(v1, null, T(1)));
+  A.record(s.attempts[k].current, '1-0-1', 'Casual operators do not get guaranteed hours, so some of them leave.', marked(1, 3), T(2));
+  const done = A.complete(s, k, T(2));
+  const going = A.begin(s, k, A.startPaper(v1, null, T(3)));
+  ok(A.addPaper(s, v2).kind === 'newer' && A.library(s.exams).length === 1 && A.library(s.exams)[0] === v2,
+     'version 2 replaces version 1 in the library');
+  const b11 = a => A.sequence(a, s.exams).find(e => e.key === '1-0-1');
+  ok(going.version === '1' && b11(going).paper === v1 && b11(going).q.points[0].text === OLD,
+     'an attempt in progress on version 1 is not moved to version 2: it keeps version 1\'s 11(b)');
+  const r = A.results(done, s.exams);
+  ok(s.attempts[k].last === done && r.version === '1' && r.libraryVersion === '2' && r.superseded && done.results['1-0-1'].score === 1,
+     'a completed version 1 result is untouched, and says it was given on version 1');
+  const next = A.startPaper(v2, null, T(4));
+  ok(next.version === '2' && b11(next).paper === v2 && b11(next).q.points[0].text === point1(v2),
+     'a new attempt starts on version 2, with its 11(b)');
+}
+
 console.log('--- the safe question bank (decision 22)');
 {
   const p = fresh();
@@ -67,7 +100,7 @@ console.log('--- the safe question bank (decision 22)');
   ok(c.multiple_choice === 10 && c.short_answer === 4 && c.calculation === 1 && c.business_report === 1 && c.extended_response === 5,
      'counts by canonical format, both either/or options counted: ' + JSON.stringify(c));
   const sa = A.bank('short_answer', [p], PACKAGES);
-  ok(sa.map(b => b.display).join(' ') === '11(a) 11(b) 12(a) 12(b)' && sa.every(b => b.paper === p.id && b.version === '1'),
+  ok(sa.map(b => b.display).join(' ') === '11(a) 11(b) 12(a) 12(b)' && sa.every(b => b.paper === p.id && b.version === '2'),
      'the short answers, in paper order, pinned to their version: ' + sa.map(b => b.display).join(' '));
   // An unregistered subject whose paper is objective only: its multiple choice
   // and calculation count, nothing written does.
@@ -226,15 +259,15 @@ console.log('--- Start again, completing, deleting');
 
 console.log('--- a backup restores papers by the version rule');
 {
-  const s = store(), v1 = fresh(); v1.id = 'here-1'; A.addPaper(s, v1);
+  const s = store(), v1 = fresh1(); v1.id = 'here-1'; A.addPaper(s, v1);
   const v2 = fresh(); v2.id = 'backup-2'; v2.exam.version = '2';
-  const dup = fresh(); dup.id = 'backup-1';
+  const dup = fresh1(); dup.id = 'backup-1';
   A.restorePapers(s, [dup, v2]);
   ok(A.library(s.exams).length === 1 && A.library(s.exams)[0] === v2, 'a newer version from a backup replaces, one card: ' + A.library(s.exams).map(p => p.id));
   A.collect(s);
   ok(!s.exams.some(p => p.id === 'backup-1') && !s.exams.includes(v1), 'and the unpinned old copies are collected');
   const t = store(), w2 = fresh(); w2.id = 'here-2'; w2.exam.version = '2'; A.addPaper(t, w2);
-  const old = fresh(); old.id = 'backup-old';
+  const old = fresh1(); old.id = 'backup-old';
   const pinnedOld = A.startPaper(old, null, T(1));
   A.restorePapers(t, [old]);
   t.attempts[A.paperKey(old)] = { current: pinnedOld, last: null };
@@ -395,9 +428,9 @@ console.log('--- the results map: bands, parents with their parts, three words f
   ok(r3.bands.length === 2 && r3.bands[0].paper !== r3.bands[1].paper, 'two papers\' 11(a) are two bands, never one: ' + r3.bands.map(b => b.paperName).join(' | '));
   // the version an attempt was on, against the library's
   const k = A.paperKey(p); s.attempts[k] = { current: null, last: a };
-  const v2 = fresh(); v2.exam.version = '2'; A.addPaper(s, v2);
+  const v3 = fresh(); v3.exam.version = '3'; A.addPaper(s, v3);
   const r4 = A.results(a, s.exams);
-  ok(r4.version === '1' && r4.libraryVersion === '2' && r4.superseded, 'results say which version the attempt was on, and what the library has now');
+  ok(r4.version === '2' && r4.libraryVersion === '3' && r4.superseded, 'results say which version the attempt was on, and what the library has now');
 }
 
 console.log('--- a closed attempt keeps the cause, not the advice (decision 25)');

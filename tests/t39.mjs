@@ -46,9 +46,10 @@ console.log('--- the library');
   const lib = [fresh()];
   const same = R.read(RAW, lib, PK);
   ok(same.dup && !same.replacing, 'the same id and version is already there');
-  const v2 = fresh(); v2.exam.version = '2';
-  const r2 = R.read(T(v2), lib, PK);
-  ok(r2.replacing && r2.match.kind === 'newer' && r2.match.from === '1', 'a newer version replaces version 1');
+  const v1 = fresh(); v1.exam.version = '1';
+  const r2 = R.read(RAW, [v1], PK);
+  ok(r2.replacing && r2.match.kind === 'newer' && r2.match.from === '1' && r2.match.to === '2',
+     'the public paper, version 2, replaces a library\'s version 1 (decision 28)');
   const v0 = fresh(); v0.exam.version = '0';
   ok(R.read(T(v0), lib, PK).older, 'an older version adds nothing');
   const renamed = fresh(); renamed.name = 'Something else';
