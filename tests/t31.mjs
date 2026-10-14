@@ -208,6 +208,19 @@ ok(A.scorePoints(grafted, "speed and the wait").local === false, "phrasings graf
 const declared = Object.assign({}, grafted, { marking: { mode: "phrase_match" } });
 ok(A.phraseMatch(declared).code === "PHRASE_MATCH_NOT_CLOSED" && A.scorePoints(declared, "speed and the wait").local === false,
    "declaring phrase matching on the published 11(a), an outline question, is refused and never scores");
+// 11(b)'s first point once read "Explains that casual work carries no guaranteed
+// hours or leave entitlements". The redeployed marker read that as needing both,
+// so a plain-language answer that said only the hours side lost the mark for a
+// half it was never meant to need. One mark is earned by either kind of
+// insecurity, and the three marks stay one causal chain: insecurity, leaving,
+// replacement cost. This is what the marker is sent, exactly as the app builds it.
+const q11b = authored.find(x => x.id === "11(b)");
+const sent11b = q11b ? A.markerGuidance(q11b.q, A.accomplishOf(q11b.q)).items : [];
+ok(JSON.stringify(sent11b) === JSON.stringify([
+  "Identifies employment insecurity associated with casual work, such as no guaranteed hours or no paid leave entitlements (1 mark)",
+  "Links that insecurity to an operator's decision to leave (1 mark)",
+  "Connects turnover to the cost of recruiting and training replacements (1 mark)",
+]), "11(b) sends the marker one mark for either kind of casual insecurity, then leaving, then replacement cost: " + JSON.stringify(sent11b));
 ok(authored.every(x => A.markingPoints(x.q).points.every(p => p.text && p.text !== "undefined")),
    "every rendered point is the authored text, never the word undefined");
 

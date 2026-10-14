@@ -435,7 +435,8 @@ for (const [file, spec] of Object.entries(FX.pages)) {
   if (g.state !== "marked" || g.got !== 0 || !/<b>0<\/b> \/ 14/.test(sub(g))) fail("a real zero reads as nothing marked");
   // A superseded version is named in the aside, against the library's.
   const v2 = Object.assign(JSON.parse(JSON.stringify(paper)), { id: "exam-mockup-2", exam: Object.assign({}, paper.exam, { version: "2" }) });
-  const lib = [Object.assign({}, paper, { superseded: true }), v2];
+  // Version 1 by name: the public paper is itself version 2 now (decision 28).
+  const lib = [Object.assign({}, paper, { superseded: true, exam: Object.assign({}, paper.exam, { version: "1" }) }), v2];
   const l = completedAttempt(); l.paper = lib[0].id;
   const rv = ATT.results(l, lib);
   if (!(rv.superseded && rv.version === "1" && rv.libraryVersion === "2")) fail("the version an attempt was on is not reported");

@@ -2203,4 +2203,21 @@ module.exports = [
     owner: "t8",
     why: "the reply stopped saying how long each marking pass took, so latency could only be read as one number",
   },
+  // ---- 11(b): one mark for either kind of casual insecurity ------------------
+  {
+    id: "sa11b-point-one-needs-both",
+    file: "tests/fixtures/bus-practice-paper.json",
+    find: "\"text\": \"Identifies employment insecurity associated with casual work, such as no guaranteed hours or no paid leave entitlements\",",
+    replace: "\"text\": \"Explains that casual work carries no guaranteed hours or leave entitlements\",",
+    owner: "t31",
+    why: "11(b)'s first point read as needing both no guaranteed hours and no leave, so the live marker held back a mark from a correct answer that named only one",
+  },
+  {
+    id: "public-paper-back-to-version-1",
+    file: "tests/fixtures/bus-practice-paper.json",
+    find: "\"version\": \"2\"",
+    replace: "\"version\": \"1\"",
+    owner: "t38",
+    why: "11(b)'s first mark changed meaning under the same version, so a library already holding version 1 kept the old marking guidance on re-import",
+  },
 ];
