@@ -798,9 +798,10 @@ library; an attempt already started on version 1 stays pinned to it, and
 completed version 1 results are untouched. Nothing is migrated. t38 holds this
 on the paper itself, t30 and t39 hold it at the import door, and
 `public-paper-back-to-version-1` puts the old version number back. Tests that
-used the paper as their version 1 now ask for version 1 by name, and so does
-the generator of the frozen import drawings, so its newer and older examples
-stay what they say.
+used the paper as their version 1 now either ask for version 1 by name or
+compare it with a version 3. The generators of the frozen import and results
+drawings also ask for version 1 by name, so their examples and their own
+checks stay what they say.
 
 **The bots corpus is unchanged.** Under version 2 the expected marks are about
 2/3 for the partial answer, 3/3 for unusual wording, and full marks for the

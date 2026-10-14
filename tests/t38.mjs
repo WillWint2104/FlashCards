@@ -83,7 +83,7 @@ console.log('--- the public paper is version 2: 11(b) changed what earns its fir
   ok(A.addPaper(s, v2).kind === 'newer' && A.library(s.exams).length === 1 && A.library(s.exams)[0] === v2,
      'version 2 replaces version 1 in the library');
   const b11 = a => A.sequence(a, s.exams).find(e => e.key === '1-0-1');
-  ok(going.version === '1' && b11(going).paper === v1 && b11(going).q.points[0].text === OLD,
+  ok(s.attempts[k].current === going && going.version === '1' && b11(going).paper === v1 && b11(going).q.points[0].text === OLD,
      'an attempt in progress on version 1 is not moved to version 2: it keeps version 1\'s 11(b)');
   const r = A.results(done, s.exams);
   ok(s.attempts[k].last === done && r.version === '1' && r.libraryVersion === '2' && r.superseded && done.results['1-0-1'].score === 1,
