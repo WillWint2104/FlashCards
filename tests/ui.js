@@ -82,7 +82,11 @@ const REVIEW = (marks) => ({
   ok(!!(await p.$('#esfull')),'full attempt screen opens');
   await p.fill('#esfull','Target markets shape every element of the marketing mix.\n\nMcDonalds introduced mobile ordering through its app.\n\nThe restaurants now have digital kiosks.');
   await settled(p);
-  await p.click('#essubmit'); await settled(p);
+  await p.click('#essubmit');
+  // Marking is a request the route above answers, so its result is waited for by
+  // name rather than by counting frames: two frames lost that race once, on a cold
+  // CI runner. A result that never renders still fails 'marked result renders'.
+  const marked = await here(p, '.es-marked').catch(() => null);
 
   // ---- payload assertions
   ok(!!sent,'a marking request was sent');
@@ -99,7 +103,6 @@ const REVIEW = (marks) => ({
   ok(sent && sent.answer.indexOf('mobile ordering')>0,'the exact response is sent');
 
   // ---- the marked result surfaces ONE next action
-  const marked = await p.$('.es-marked');
   ok(!!marked,'marked result renders');
   ok((await p.$eval('.es-markscore',e=>e.textContent)).indexOf('12')===0,'score shown');
   ok((await p.$eval('.es-markarea',e=>e.textContent)).indexOf('Explanation')>=0,'main improvement area named');

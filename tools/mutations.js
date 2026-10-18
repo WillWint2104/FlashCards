@@ -2220,4 +2220,13 @@ module.exports = [
     owner: "t38",
     why: "11(b)'s first mark changed meaning under the same version, so a library already holding version 1 kept the old marking guidance on re-import",
   },
+  // ---- the essay marked result is waited for, and its absence still fails --------
+  {
+    id: "essay-marked-result-never-renders",
+    file: "app.js",
+    find: "      <div class=\"es-marked\">\n        <div class=\"es-markhead\">",
+    replace: "      <div class=\"es-result\">\n        <div class=\"es-markhead\">",
+    owner: "ui",
+    why: "the essay's marked result stopped rendering as .es-marked, and the wait that replaced a fixed two frames must still fail rather than wait it out",
+  },
 ];
