@@ -7,7 +7,7 @@
     "title": "Business Studies practice paper",
     "kind": "practice",
     "source": "Marginal (original practice material, not a past HSC paper)",
-    "version": "1"
+    "version": "2"
   },
   "curriculum": {
     "jurisdiction": "NSW",
@@ -359,7 +359,7 @@
               "prompt": "Explain how the business's casual employment of van operators could be contributing to its turnover.",
               "points": [
                 {
-                  "text": "Explains that casual work carries no guaranteed hours or leave entitlements",
+                  "text": "Identifies employment insecurity associated with casual work, such as no guaranteed hours or no paid leave entitlements",
                   "marks": 1
                 },
                 {

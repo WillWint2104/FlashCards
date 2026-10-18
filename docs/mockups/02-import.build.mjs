@@ -44,7 +44,10 @@ const PACKAGES = window.ESSAY.subjects;
 
 const FIXTURE = "tests/fixtures/bus-practice-paper.json";
 const RAW = fs.readFileSync(path.join(ROOT, FIXTURE), "utf8");
-const fresh = () => JSON.parse(RAW);
+// The drawings were frozen on version 1 of the paper, and their newer and older
+// variants are versions 1 and 2 by name. The public paper has since moved to
+// version 2 (decision 28), so a fresh copy is version 1 here.
+const fresh = () => { const p = JSON.parse(RAW); p.exam.version = "1"; return p; };
 const esc = s => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const plural = (n, w) => n + " " + w + (n === 1 ? "" : "s");
 const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
