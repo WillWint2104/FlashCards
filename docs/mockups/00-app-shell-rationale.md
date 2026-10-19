@@ -16,15 +16,18 @@ From each page it removes only the old chrome:
 
 - the static `<header>`, with its hard-coded Economics unit and topic;
 - the pill switcher (`div.nav`);
-- the signed-in row (`.whoami`), where there is one;
 - on Essay practice, the old `header.qp-nav`, and the old header, pill and Study
   page that the app leaves underneath that overlay.
+
+The walkthrough runs with cloud sign-in off, so no page has a signed-in row
+(`.whoami`) to remove. The build checks that it is absent, and the account in the
+bar is drawn from a sample.
 
 It inserts the one bar and, on Essay practice, the area's own row at the top of the
 page. It restyles nothing in a page. The one drawing aid makes the Essay practice
 overlay static, so its drawing scrolls as a page.
 
-It then proves three things, and stops if any fails:
+It then proves four things, and stops if any fails:
 
 1. **The page under the bar is unchanged.** Every content element keeps its left,
    width and height, and moves by one vertical offset, the change in chrome. The
@@ -32,8 +35,13 @@ It then proves three things, and stops if any fails:
    at the bottom of the screen until the page outgrows the screen.
 2. **The static file renders as the page did.** Every element's box (left, top,
    width, height) is identical, and every pixel is identical.
-3. **There is one bar.** Its geometry is the same on every page, and it stays one
-   row at 1280px.
+3. **There is one bar.** Its geometry is the same on every page. It stays one row
+   at 1280px with every subject it can name, and the build measures the narrowest
+   window that still holds it.
+4. **Open states survive.** With every drawn `<details>` opened, each `[open]`
+   rule of the page's stylesheet that then applies is in the drawing's CSS. The
+   rules are read from the live page before pruning, so this does not reuse the
+   pruning's own selector test.
 
 ## Files
 
@@ -55,8 +63,8 @@ The states sheet draws:
 - the bar with cloud sign-in not configured;
 - Essay practice's demo route.
 
-The account reads "12Ec126 · #1234" everywhere. The class code is the shipped one;
-the student number is a sample, not anyone's. The two saved essays are seeded for
+The account reads "12Ec126 · #1234" everywhere. It is drawn, not captured. The
+class code is the shipped one; the student number is a sample, not anyone's. The two saved essays are seeded for
 the drawing.
 
 ## The bar, for implementation
@@ -70,7 +78,18 @@ on every page.
   - 16px between the brand, the links group and the right-hand group.
   - Height 67.4px, the Essay practice picker bar's own height (measured there at
     67.39px).
-  - At 1280px wide it is the same height and still one row.
+  - It holds one row, at the same height, down to these window widths:
+
+    | Right side of the bar | Narrowest one-row window |
+    |---|---|
+    | Business Studies · Year 12, the longest shipped subject | 967px |
+    | Ancient History · Year 11 | 958px |
+    | Economics · Year 12 | 929px |
+    | Ancient History · Year 11, with the demo badge | 1014px |
+    | No subject | 783px |
+
+    An imported subject's label can be longer than any of these, so the subject
+    should shorten with an ellipsis rather than push the bar. See open item 4.
 - **Brand.**
   - A 30px `#12B27A` tile with a white Fredoka "M" at 16px.
   - Then "Marginal" in Fredoka 700 at 18px, −0.3px tracking, `#18272D`.
@@ -94,9 +113,11 @@ on every page.
   - A 1px `#E8EEEF` divider.
   - The account: a user icon, then class code · student number, 13px 600
     `#63787F`.
-  - Sign out, styled like Essay practice's quiet buttons: no border and a log-out
-    icon. On hover it gets a `#FAFCFC` background and a `#E8EEEF` border, and the
-    icon turns `#0E9765`.
+  - Sign out, styled like Essay practice's quiet buttons: a log-out icon, and a
+    transparent 1px border, so hover does not move it. On hover the border turns
+    `#E8EEEF`, the background `#FAFCFC` and the icon `#0E9765`. Its −14px right
+    margin cancels its right padding, so its text, not its padding, ends at the
+    content edge.
   - With no subject, the subject and divider are left out and the account stays
     where it is.
   - With cloud sign-in not configured, the account and Sign out are left out, as
@@ -114,8 +135,8 @@ At 1440px:
 
 - the brand's tile starts at x=88, the content edge;
 - the links start at x=233.6, 295.6, 362.7 and 454.1;
-- Sign out's text ends at x=1351, 1px inside the other content edge. The 1px is
-  the quiet button's border.
+- Sign out's box is 1259.7 to 1366 and its text ends at x=1351, 1px inside the
+  other content edge (1352). The 1px is the transparent border.
 
 ## Where each part of the brief lands
 
@@ -123,9 +144,10 @@ At 1440px:
   underline and quiet button are the same as `.qp-nav`, `.qp-brand`,
   `.qp-navlink` and `.es-util.quiet`. The deliberate differences are choices 2 to
   6 below.
-- **Global navigation.** Study, Create, Test mode, Essay practice. The old pill
-  and the old header are gone from every page, and the hard-coded Economics unit
-  and topic appear nowhere.
+- **Global navigation.** Study, Create, Test mode, Essay practice. At desktop
+  widths the old pill and the old header are gone from every page, and the
+  hard-coded Economics unit and topic appear nowhere. Narrow windows are open
+  item 4.
 - **My essays belongs to Essay practice.** It is one of that area's two pages,
   below the bar, not a peer of Test mode.
 - **Subject context comes from the open workspace, by key.** It is display only,
@@ -141,24 +163,28 @@ At 1440px:
       through the registry like any other. It is a display pointer only: marking
       keeps reading what it reads now.
     - It must never be a match on the label, which is the inference the Gate 3
-      audit removed.
+      audit flagged (`essaySubjectByLabel`, still a fallback in
+      `markingContext`).
     - A gate test should assert that the key's package label equals
       `CONTENT.subject`. Today only this build checks it.
   - **Create:** nothing. A flashcard set declares no subject.
   - **Test mode, library and import:** nothing. No paper is open, and decisions 4
     and 18 and the Page 1 note say the library names no subject.
   - **Test mode, one paper open** (overview, sitting, results, review):
-    - The paper's own key, resolved through `resolveAuthority`, gives the
-      package's label and stage: "Business Studies · Year 12". The file's "Stage
-      6" is its claim; the package's stage is what resolves (02-import
-      rationale).
+    - The paper's own key, resolved through `resolveAuthority`, names the
+      package: its key and label. The stage is read from that package: "Business
+      Studies · Year 12". The file's "Stage 6" is its claim; the package's stage
+      is what resolves (02-import rationale).
     - A paper whose key does not resolve shows **no** context. The bar must not
       inherit `tmSubjectOf`'s fallback to the file's course text.
   - **Test mode, a question-type practice over several papers:**
     - Proposed: the bar names a subject only if every item resolves to the same
-      one, and then on every page of that practice.
+      one, and then on every page of that practice. An item whose subject does
+      not resolve counts as no match, so the practice names no subject.
     - Today's header is not consistent here:
-      - the type overview and the submit page already use that rule;
+      - the type overview and the submit page use a near version of that rule,
+        built on `tmSubjectOf`: an unresolved item is dropped, or counted by its
+        file's course text;
       - the sitting and the single-question review show each question's own
         paper, so a mixed practice changes subject from question to question;
       - results shows the first item's.
@@ -201,7 +227,9 @@ At 1440px:
    - The links and Sign out already used `#63787F` in the source.
    - A focus indicator needs 3:1, hence the darker ring.
    - The green underline keeps `#12B27A`, as in the source. The current section is
-     also shown by weight, by colour (15.36:1) and by `aria-current`.
+     also shown by weight, by colour and by `aria-current`. Its colour, `#18272D`,
+     is 15.36:1 on white but 3.31:1 against the other links' `#63787F`, so weight
+     and the underline carry the difference as much as colour does.
 3. **Bold width reserved.** With the source's CSS, the current link's weight
    moves the links after it by about 0.7 to 1.1px, depending on which link is
    current, so the bar would shift from page to page. Each link now holds its bold
@@ -236,13 +264,24 @@ At 1440px:
    - Both are true for NSW, but a student sees two different words.
    - The options are a subject-only bar in Test mode, or reopening the kicker on
      the frozen page.
-4. **Mobile.**
+4. **Narrow windows and mobile.**
    - The old header, the pill and the Essay practice bar are the same markup at
-     every width. The Essay practice bar folds into a More menu below 860px.
-   - The proposal keeps phones as they are until the mobile pass: the new bar
-     applies above 860px, and the current narrow-screen chrome stays below it.
-   - The alternative is a narrow version of the new bar now, which is the mobile
-     work the brief defers.
+     every width. The Essay practice bar folds its links into a More menu at
+     860px and below. That is the one narrow-screen edge the app has today.
+   - The new bar cannot simply begin at 860px. It needs 967px with Business
+     Studies, 1014px with the demo badge, and 783px with no subject (measured;
+     see the bar's frame above).
+   - Recommended: the new bar from 861px up, as one bar. Below 1024px it leaves
+     out the subject, which is display only. Study, a Test mode paper and the
+     Essay practice picker still name their subject on the page; My essays does
+     not. At 860px and below, today's chrome stays, as it is, until the mobile
+     pass.
+   - The alternative is the new bar from 1024px up only, with today's chrome
+     below that. That is simpler, but a 900px window would then show the old
+     header and pill.
+   - Either way, the subject should shorten with an ellipsis, since an imported
+     subject's label can be longer than any shipped one.
+   - A narrow version of the new bar itself is the mobile work the brief defers.
 5. **Surfaces not drawn:**
    - the Test mode sitting, with its own bar and footer (08);
    - the Essay practice writing surface, with its Learn, Notebook, mode switch
@@ -269,19 +308,21 @@ At 1440px:
   - the brand click on `header .brand`;
   - `cloudBarHTML()` placement;
   - the Essay practice bars: `esNavLeftHTML`, `esNavLinksHTML`, `esTopBarHTML`,
-    the picker bar inline in `esRenderSetup`, and the quiz bar in `esRenderQuiz`;
+    the picker bar inline in `esRenderSetup`, the quiz bar in `esRenderQuiz`, and
+    the brand-only bar (`.qp-brand.static`) in `esRenderUnavailable`;
   - the demo badge.
-- The frozen sitting's `.tm-sit` height, `calc(100vh - 140px)`, which allows for
-  today's header and pill.
+- The frozen sitting's `.tm-sit` `min-height`, `calc(100vh - 140px)`, which
+  allows for today's header and pill.
 
 **Tests:**
 
 | Test | What it depends on |
 |---|---|
-| About 66 ui suites, `tests/env.js`, `tests/fixtures/lib.js`, `tests/bots/journey.js` | Wait for or click `.navtab` |
+| 62 ui suites, `tests/env.js`, `tests/fixtures/lib.js`, `tests/bots/journey.js` and the three `tests/shots_*.js` scripts | Wait for or click `.navtab` |
 | `ui76` | Reads `header .unit` |
 | `ui69` | Measures `header` |
-| `ui52` and `ui55` | Read `.qp-navlink` and the Essay practice routes (`#eshome`, `#esexit`, `#esbrandhome`) |
+| `ui52` | Reads `.qp-nav`, `.qp-navlink` and `.qp-navlink.on` |
+| `ui55` | Reads `.qp-navlink`, and skips `#eshome`, `#esexit` and `#esbrandhome` by id |
 | `ui57` and `ui58` | Assert that Home (`#eshome`) and Exit essay are on the bar. See choice 1. |
 | `ui59`, `ui61` and `ui62` | Read `.qp-subj`. The shell must not reuse that class; the drawings use `.ash-ctx`. |
 | `t25` | Checks the CSS of `.qp-brand:focus-visible` |
@@ -292,22 +333,31 @@ At 1440px:
 - **Fonts:** Fredoka and Nunito proven loaded on every page.
 - **Regeneration:** generated with `node docs/mockups/00-app-shell.build.mjs`,
   and regenerated byte-identical with `MOCKUP_OUT`.
-- **Chrome removal:** only the old chrome removed, asserted per page.
+- **Chrome removal:** only the old chrome removed, asserted per page, and no
+  signed-in row on any page, since the walkthrough has cloud sign-in off.
 - **Content under the bar unchanged:** every content element keeps its left,
   width and height, and moves by one vertical offset. That offset is −75.6px on
   Study and Create, −64px on the Test mode library, −76.4px on the paper, and
-  +56.4px on the Essay practice pages, where the area's own row is added.
+  +56.4px on the Essay practice pages, where the area's own row is added. The
+  Essay practice footer, checked as its own group, moves +28.5px on Essay
+  practice and 0 on My essays. My essays is still shorter than the screen, so its
+  footer stays at the bottom of it.
 - **Drawing matches the page:** every element's box (left, top, width, height)
   and every pixel are identical between each drawing and its live page, on all
   six pages.
-- **Interactive states survive pruning:** the CSS kept for each drawing includes
-  the rules for states the file can still enter without script, such as an open
-  `<details>`.
-- **One bar:** the same height, brand, links and Sign out on all six pages, and
-  one row at 1280px.
+- **Interactive states survive pruning:** with every drawn `<details>` opened,
+  every `[open]` rule that then applies is in the drawing's CSS. Three
+  `<details>` are drawn; one `[open]` rule applies, on Essay practice
+  (`.qp-opts[open] > summary::before`), and it is kept. The build fails if no
+  rule is checked at all, and a build that pruned `[open]` rules was seen to fail
+  on exactly that rule.
+- **One bar:** the same height, brand, links and Sign out on all six pages; one
+  row at 1280px with every shipped subject and the demo badge; the narrowest
+  one-row windows as listed under the frame. A build that widened the subject
+  only below 1300px was seen to fail the 1280px check.
 - **Contrast:** listed under choice 2. The states sheet's own labels are
   `#5D7178` on `#F6F9F9`, 4.84:1.
 - **Style:** no em dash in the shell, the titles, the states sheet or this note.
 - **Errors:** no page errors.
-- **Footer test:** no new file contains `class="footer"`, so t34's count of 14 is
-  unaffected.
+- **Footer test:** no new `.html` or `.mjs` file contains `class="footer"`, so
+  t34's count of 14 is unaffected.

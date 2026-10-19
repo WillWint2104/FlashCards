@@ -9,10 +9,12 @@
 //
 // What the build does to a page, and nothing else (it stops if anything else is
 // removed):
-//   removes  the static <header> with its hard-coded Economics unit, the pill
-//            switcher (div.nav) and the signed-in row (.whoami) if present; on
-//            Essay practice also the old header.qp-nav, and the Study page (#app)
-//            the app leaves underneath that overlay;
+//   removes  the static <header> with its hard-coded Economics unit and the pill
+//            switcher (div.nav); on Essay practice also the old header.qp-nav, and
+//            the old header, pill and Study page (#app) the app leaves underneath
+//            that overlay. The walkthrough runs with cloud sign-in off, so there is
+//            no signed-in row (.whoami) to remove: the build checks it is absent,
+//            and the account in the bar is drawn, from a sample;
 //   inserts  the one bar; on Essay practice also the area's own row (.ash-sub) at
 //            the top of .qp-main;
 //   restyles nothing in a page. One drawing aid: the Essay practice overlay is
@@ -23,7 +25,9 @@
 //      width and height, and moves by one vertical offset, the change in chrome;
 //   2. the static file renders as the page did: every element's box identical, and
 //      every pixel identical;
-//   3. one bar: the same geometry on every page, and one row at 1280px.
+//   3. one bar: the same geometry on every page, and one row at 1280px with every
+//      subject it can name; it also measures the narrowest window that holds it.
+// And that pruning kept every [open] rule a drawn <details> can use once opened.
 //
 // Subject context is read the way the shell would read it: by key, through the
 // subject registry, and resolveAuthority from tools/contract/assessment.js for a
@@ -184,7 +188,6 @@ function strip({ shell, sub }) {
   const rm = n => { removed.push(n.tagName.toLowerCase() + (n.className ? "." + String(n.className).trim().split(/\s+/).join(".") : "")); n.remove(); };
   document.querySelectorAll("body > header").forEach(rm);
   document.querySelectorAll("#app div.nav").forEach(n => { if (n.querySelector(".navtab")) rm(n); });
-  document.querySelectorAll("#app .whoami").forEach(rm);
   const qp = document.querySelector("#eshost .qp");
   if (qp) {
     const old = qp.querySelector(":scope > header.qp-nav");
@@ -213,6 +216,46 @@ function pageCSS() {
     out.push(...walk(rules));
   }
   return out.join("\n");
+}
+// Every style rule of the page's own stylesheet that names an open <details>, read
+// from the live page before pruning, so the check below does not share pageCSS's
+// selector test.
+function openRules() {
+  const acc = [];
+  const walk = rules => { for (const r of rules) {
+    if (r.type === CSSRule.STYLE_RULE) { if (/\[open\]|:open\b/.test(r.selectorText)) acc.push([r.selectorText, r.cssText]); }
+    else if (r.cssRules) walk(r.cssRules); } };
+  for (const sh of document.styleSheets) {
+    if (sh.href || (sh.ownerNode && sh.ownerNode.id === "ash-css")) continue;
+    try { walk(sh.cssRules); } catch (e) {}
+  }
+  return acc;
+}
+// In the drawing, with every <details> opened: the [open] rules that then match
+// something must all be in the drawing's CSS.
+function openRulesKept({ rules, css }) {
+  const details = [...document.querySelectorAll("details")];
+  details.forEach(d => { d.open = true; });
+  const user = /::?(before|after|marker|placeholder|selection|-webkit-[\w-]+|-moz-[\w-]+)|:(hover|focus-visible|focus-within|focus|active)\b/g;
+  const live = rules.filter(([sel]) => sel.split(",").some(s => { const b = s.replace(user, "").trim(); try { return !!b && !!document.querySelector(b); } catch (e) { return false; } }));
+  return { details: details.length, applies: live.length, missing: live.filter(([, text]) => !css.includes(text)).map(([sel]) => sel) };
+}
+// Whether the bar holds one row at the current width: every link on one line, the
+// bar its full height, and nothing in it overflowing or overlapping.
+function barFits(height) {
+  const h = document.querySelector(".ash"), inn = h.querySelector(".ash-in"), right = h.querySelector(".ash-right");
+  const box = e => e.getBoundingClientRect();
+  const links = [...h.querySelectorAll(".ash-link")].map(box), items = [...right.children].map(box), last = right.lastElementChild;
+  // Sign out's negative right margin puts its text, not its padding, on the content
+  // edge. Past that margin, nothing may stick out of the right-hand group.
+  const end = last ? box(last).right + parseFloat(getComputedStyle(last).marginRight) : 0;
+  return new Set(links.map(l => Math.round(l.top))).size === 1
+    && Math.round(box(h).height * 10) / 10 === height
+    && inn.scrollWidth <= inn.clientWidth
+    && box(h.querySelector(".ash-brand")).right <= links[0].left
+    && (!items.length || links[links.length - 1].right <= items[0].left)
+    && items.every((r, i) => !i || items[i - 1].right <= r.left)
+    && (!last || end <= box(right).right + 0.5);
 }
 function bodyOf() {
   // innerHTML does not carry form state: what a script chose or typed is written
@@ -244,7 +287,7 @@ function contentBoxes() {
   const r2 = v => Math.round(v * 1000) / 1000;
   const qp = document.querySelector("#eshost .qp");
   const roots = qp ? [...qp.querySelectorAll(".qp-main, .qp-foot")] : [document.getElementById("app")];
-  return roots.map(r => [...r.querySelectorAll("*")].filter(e => !e.closest(".ash-sub, div.nav, .whoami, script, noscript, template, .toast"))
+  return roots.map(r => [...r.querySelectorAll("*")].filter(e => !e.closest(".ash-sub, div.nav, script, noscript, template, .toast"))
     .map(e => { const b = e.getBoundingClientRect(); return [name(e), r2(b.left), r2(b.top), r2(b.width), r2(b.height)]; }));
 }
 // Same element list; same left, width and height; tops moved by one offset.
@@ -308,6 +351,7 @@ if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });
 const b = await chromium.launch();
 const report = [];
 const geos = {};
+let openChecked = 0;
 try {
   for (const pg of PAGES) {
     const ctx = await b.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
@@ -329,6 +373,7 @@ try {
     await p.mouse.move(2, 2); await still(p); await settled(p);
     const contentBefore = await p.evaluate(contentBoxes);
     await p.addStyleTag({ content: SHELL_CSS }).then(h => h.evaluate(e => { e.id = "ash-css"; }));
+    if (await p.$("#app .whoami")) fail(pg.file + ": a signed-in row; the walkthrough is expected to run with cloud sign-in off");
     const removed = await p.evaluate(strip, { shell: shellHTML({ on: pg.on, ctx: ctxText }), sub: pg.sub ? subnavHTML(pg.sub) : "" });
     // On Essay practice the old header, the pill and the Study page stay underneath
     // the overlay in the app, so they come off too.
@@ -339,7 +384,7 @@ try {
     if (contentBefore.length !== contentAfter.length) fail(pg.file + ": the page's content groups changed");
     const groups = contentBefore.map((g, i) => sameContent(g, contentAfter[i]));
     groups.forEach((k, i) => { if (!k.ok) fail(pg.file + ": the page under the bar changed (group " + i + "): " + k.why); });
-    const kept = { elements: groups.reduce((n, k) => n + k.elements, 0), dy: groups.map(k => k.dy) };
+    const same = { elements: groups.reduce((n, k) => n + k.elements, 0), dy: groups.map(k => k.dy) };
     // Lay the page out afresh, so layers the app composited before the drawing aid
     // (the Essay overlay was fixed) are painted as a static page paints them.
     await p.evaluate(() => { const s = document.createElement("style"); s.textContent = "body{display:none!important}"; document.head.appendChild(s); void document.body.offsetHeight; s.remove(); void document.body.offsetHeight; });
@@ -347,7 +392,7 @@ try {
     geos[pg.file] = await p.evaluate(geometry);
     const live = await p.screenshot({ fullPage: true });
     const liveBoxes = await p.evaluate(boxes);
-    const css = await p.evaluate(pageCSS), body = await p.evaluate(bodyOf);
+    const css = await p.evaluate(pageCSS), body = await p.evaluate(bodyOf), open = await p.evaluate(openRules);
     const html = staticPage({ title: pg.title, what: pg.what, css, body });
     if (/—/.test(html.match(/<title>([^<]*)<\/title>/)[1])) fail(pg.file + ": an em dash in the title");
     fs.writeFileSync(path.join(OUT, pg.file), html);
@@ -365,8 +410,13 @@ try {
       fail(pg.file + ": the drawing does not render as the live page did: " + JSON.stringify(d) + "; elements " + liveBoxes.length + " vs " + drawnBoxes.length + "; first moved: " + JSON.stringify({ live: liveBoxes[moved], drawn: drawnBoxes[moved] }));
     }
     if (SHOTS) fs.writeFileSync(path.join(SHOTS, pg.file.replace(/\.html$/, ".png")), drawn);
+    // Interactive state survives pruning: open every <details> in the drawing, and
+    // every [open] rule that then applies has to be there.
+    const kept = await q.evaluate(openRulesKept, { rules: open, css });
+    if (kept.missing.length) fail(pg.file + ": pruning dropped [open] rules a drawn <details> uses: " + kept.missing.join(" | "));
+    openChecked += kept.applies;
     if (errs.length) fail(pg.file + ": page errors: " + errs.join(" | "));
-    report.push({ file: pg.file, context: ctxText || "(none)", removed: removed.join(", "), contentElements: kept.elements, contentShift: kept.dy, elements: liveBoxes.length, diffPixels: d.diff, height: d.size[1], bytes: html.length });
+    report.push({ file: pg.file, context: ctxText || "(none)", removed: removed.join(", "), contentElements: same.elements, contentShift: same.dy, elements: liveBoxes.length, diffPixels: d.diff, details: kept.details, openRules: kept.applies, height: d.size[1], bytes: html.length });
     await ctx.close();
   }
   // One bar: the same height, brand, links and Sign out on every page.
@@ -375,14 +425,34 @@ try {
     const same = JSON.stringify([g.bar, g.brand, g.links, g.out]) === JSON.stringify([ref.bar, ref.brand, ref.links, ref.out]);
     if (!same) fail(f + ": the bar is not the same as on the Study page: " + JSON.stringify(g) + " vs " + JSON.stringify(ref));
   }
-  // And it stays one row at a 1280px desktop.
+  // The [open] check above has to have checked something: Essay practice draws a
+  // <details> whose open state has its own rule.
+  if (!openChecked) fail("no [open] rule was checked on any page");
+  // It stays one row at a 1280px desktop with every subject it can name, and the
+  // narrowest window that still holds it is measured: the band where the bar can
+  // begin. Measured in the Study drawing, under the page's own CSS.
   {
-    const ctx = await b.newContext({ viewport: { width: 1280, height: 900 } });
+    const ctx = await b.newContext({ viewport: { width: 1440, height: 900 } });
     const p = await ctx.newPage(); await serveFonts(p);
     await p.goto("file://" + path.join(OUT, "00-app-shell.html")); await p.evaluate(() => document.fonts.ready);
-    const g = await p.evaluate(geometry);
-    if (g.bar[3] !== ref.bar[3] || new Set(g.links.map(l => l[1])).size !== 1) fail("the bar wraps at 1280px: " + JSON.stringify(g));
-    report.push({ check: "1280px", barHeight: g.bar[3], oneRow: true });
+    const H = ref.bar[3];
+    const VARIANTS = [
+      ...Object.keys(PACKAGES).map(k => [contextOf(k), shellHTML({ on: "essay", ctx: contextOf(k) })]),
+      [contextOf("ancient_history") + ", demo", shellHTML({ on: "essay", ctx: contextOf("ancient_history"), demo: true })],
+      ["no subject", shellHTML({ on: "create", ctx: "" })],
+    ];
+    const narrowest = {};
+    for (const [name, h] of VARIANTS) {
+      await p.evaluate(h => { document.querySelector(".ash").outerHTML = h; }, h);
+      const at = async w => { await p.setViewportSize({ width: w, height: 900 }); await settled(p); return p.evaluate(barFits, H); };
+      if (!(await at(1280))) fail("the bar does not hold one row at 1280px with " + name);
+      let lo = 600, hi = 1280;
+      if (await at(lo)) fail("the bar fits at 600px with " + name + "; the search needs a lower floor");
+      while (hi - lo > 1) { const m = (lo + hi) >> 1; if (await at(m)) hi = m; else lo = m; }
+      if (!(await at(hi)) || (await at(hi - 1))) fail("the narrowest width for " + name + " is not a clean edge at " + hi);
+      narrowest[name] = hi;
+    }
+    report.push({ check: "one row at 1280px with every subject", narrowestOneRow: narrowest });
     await ctx.close();
   }
   // The states sheet: the bar in each state its CSS defines, and on each kind of page.
