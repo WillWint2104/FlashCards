@@ -26,6 +26,12 @@
   ::selection{background:var(--green-soft)}
   @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
+  /* The app shell spans the window, so where scrollbars take up room (Windows, or
+     "always show scrollbars") it would move sideways whenever a page gained or lost
+     one, and every time Essay practice locked the page under it. There the gutter
+     is kept, so the bar stays put. Where scrollbars overlay the page they take no
+     room, and app.js leaves this class off. */
+  html.ash-gutter{scrollbar-gutter:stable}
   main{max-width:1180px;margin:0 auto;padding:28px clamp(16px,4vw,40px) 90px}
 
   .hi{font-family:var(--disp);font-weight:600;font-size:24px}
@@ -668,7 +674,7 @@
      Marginal's own surface, not a paper metaphor: this is a list of links, not
      something to write on. */
   #esstudyhost{position:fixed;inset:0;z-index:250;pointer-events:none}
-  .es-study{position:absolute;right:26px;top:96px;pointer-events:auto;resize:both;overflow:hidden;
+  .es-study{position:absolute;right:26px;top:calc(var(--ash-h,0px) + 96px);pointer-events:auto;resize:both;overflow:hidden;
     width:400px;min-width:320px;min-height:220px;max-width:92vw;max-height:82vh;
     background:var(--card);border:1.5px solid var(--line);border-radius:14px;
     box-shadow:0 26px 70px rgba(28,40,40,.30);display:flex;flex-direction:column}
@@ -1671,6 +1677,10 @@
      sat above the question list: the flow has to own the viewport the way the
      workspace it leads into does. */
   .qp{position:fixed;inset:var(--ash-h,0px) 0 0;overflow:auto;z-index:120;background:var(--page);color:var(--e-ink)}
+  /* The surfaces span the whole window, so their own scrollbar sits in the page's
+     gutter, and keep that gutter: Essay practice's content is then as wide as the
+     bar's, and its row of two pages lines up with the brand whether it scrolls. */
+  html.ash-gutter .qp, html.ash-gutter .es-scrim{right:auto;width:100vw;scrollbar-gutter:stable}
   /* THE PAGE. Header, a main column with a rail beside it, a footer, and the
      footer sits at the bottom rather than under the content, so a short page is
      still a page. The rail is composition: without it the right half of a
@@ -13485,7 +13495,9 @@ module.exports = {
     // Signed out (area null): the brand alone, exactly as index.html writes it.
     const brand = `<a class="ash-brand" href="#study" data-shell="home" aria-label="Marginal, Study home"><span class="ash-logo" aria-hidden="true">M</span><span class="ash-word">Marginal</span></a>`;
     if (!s.area) return `<div class="ash-in">${brand}</div>`;
-    const links = SHELL_AREAS.filter(([k]) => k !== "essay" || essayEnabled()).map(([k, label]) =>
+    // Essay practice is offered when it is switched on, and always while it is the
+    // open area (its demo route opens it with the switch off).
+    const links = SHELL_AREAS.filter(([k]) => k !== "essay" || essayEnabled() || s.area === "essay").map(([k, label]) =>
       `<a class="ash-link" href="#${k}" data-shell="${k}" data-label="${label}"${k === s.area ? ' aria-current="page"' : ""}>${label}</a>`).join("");
     const context = (s.context ? `<span class="ash-ctx">${esc(s.context)}</span>` : "") + (s.demo ? '<span class="ash-demo">demo</span>' : "");
     // The account, as the profile holds it: class code and student number. With
@@ -13543,8 +13555,21 @@ module.exports = {
   }
   async function shellSignOut() {
     shellLeaveEssay(); tmLeave();
+    // The essay's floating windows live outside its overlay, so leaving it does
+    // not take them down. A signed-out screen shows nothing of the student's.
+    esNbUnmount(); esStudyUnmount(); eslUnmount();
     await Cloud.signOut(); toast("Signed out."); authScreen();
   }
+  // Whether scrollbars take up room here, measured once. Where they do, the page and
+  // Essay practice's surfaces keep their gutter (index.html html.ash-gutter), so the
+  // bar never moves sideways; where they overlay the page nothing changes.
+  (function shellGutter() {
+    const d = document.createElement("div");
+    d.style.cssText = "position:absolute;top:-200px;width:100px;height:100px;overflow:scroll";
+    document.body.appendChild(d);
+    document.documentElement.classList.toggle("ash-gutter", d.offsetWidth - d.clientWidth > 0);
+    d.remove();
+  })();
   if (shellHost) {
     shellHost.addEventListener("click", e => {
       const a = e.target.closest && e.target.closest("[data-shell]");
@@ -13575,12 +13600,17 @@ module.exports = {
   let view = "study";
 
   // ===================== STUDY =====================
-  // Study's context in the app shell: the course its content declares, by key,
-  // through the subject registry ("Economics · Year 12"). Never a match on the label.
-  // A set the student made declares no subject, so its pages name none.
+  // Study's context in the app shell: the course its content declares, by key, in
+  // the packages the app ships ("Economics · Year 12"). Never a match on the label.
+  // Read from window.ESSAY directly, not through esAllSubjects(): that merge with
+  // imported questions is built once per page, and the Study home is the first
+  // page, so building it here would hide questions imported in another tab before
+  // Essay practice or Test mode is first opened. A set the student made declares
+  // no subject, so its pages name none.
   function studyContext(area) {
     if (area && area.custom) return "";
-    return C.subjectKey ? shellContextOf(esSubjectContent(C.subjectKey)) : "";
+    const shipped = (window.ESSAY && window.ESSAY.subjects) || {};
+    return C.subjectKey ? shellContextOf(shipped[C.subjectKey]) : "";
   }
   function home() { tmLeave(); if (gated()) return authScreen(); session = null; currentTopic ? areaMap(currentTopic) : mainPage(); }
 
@@ -18926,13 +18956,20 @@ module.exports = {
   // window uses: what has to be cleared is the writing card, not the page. Where
   // the space left is narrower than the window is allowed to be, it takes the
   // edge, which covers the least, and can be dragged anywhere from there.
+  // Where Essay practice's surface starts: under the app shell, not at the top of
+  // the window. The floating windows keep their old distances from it.
+  function esSurfaceTop() {
+    const s = document.querySelector("#eshost .es-scrim, #eshost .qp");
+    return s ? s.getBoundingClientRect().top : 0;
+  }
   function esStudyBox() {
     const WANT = 400, FLOOR = 320, GAP = 16, EDGE = 12;
     const rights = [".es-flow", ".es-parahead"].map(x => document.querySelector(x))
       .filter(Boolean).map(e => e.getBoundingClientRect().right);
     const writing = rights.length ? Math.max.apply(null, rights) : null;
     const cols = document.querySelector(".es-cols");
-    const top = cols ? Math.max(12, Math.round(cols.getBoundingClientRect().top + 46)) : 96;
+    const base = esSurfaceTop();
+    const top = cols ? Math.max(Math.round(base + 12), Math.round(cols.getBoundingClientRect().top + 46)) : Math.round(base + 96);
     const room = writing == null ? 0 : window.innerWidth - writing - GAP - EDGE;
     const beside = room >= FLOOR;
     const w = beside ? Math.min(WANT, Math.round(room)) : WANT;
@@ -20354,7 +20391,7 @@ module.exports = {
   function esNavLinksHTML(current) {
     const link = (to, label, on) =>
       `<button type="button" class="qp-navlink${on ? " on" : ""}"${on ? ' aria-current="page"' : ""} data-esnav="${to}">${label}</button>`;
-    return `<nav class="qp-navlinks" aria-label="Marginal">
+    return `<nav class="qp-navlinks" aria-label="Essay practice">
         ${link("back", "Essay practice", current !== "essays")}
         ${link("essays", "My essays", current === "essays")}
       </nav>`;
@@ -21588,7 +21625,8 @@ module.exports = {
     // Below the paragraph head, not level with it. Opening level covered the row
     // holding View plan, notebook and read all, so the window swallowed clicks on
     // the page's own controls the moment it appeared.
-    const top = r ? Math.max(12, r.top + 46) : 120;
+    const base = esSurfaceTop();
+    const top = r ? Math.max(base + 12, r.top + 46) : base + 120;
     // What the window has to clear is the WRITING CARD, .es-flow, which is 940px
     // inside a 1420px column. The old placement measured .es-cols, the page
     // container, so a 470px window opened 430px over the paragraph heading at

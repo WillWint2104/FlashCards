@@ -26,6 +26,12 @@
   ::selection{background:var(--green-soft)}
   @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
+  /* The app shell spans the window, so where scrollbars take up room (Windows, or
+     "always show scrollbars") it would move sideways whenever a page gained or lost
+     one, and every time Essay practice locked the page under it. There the gutter
+     is kept, so the bar stays put. Where scrollbars overlay the page they take no
+     room, and app.js leaves this class off. */
+  html.ash-gutter{scrollbar-gutter:stable}
   main{max-width:1180px;margin:0 auto;padding:28px clamp(16px,4vw,40px) 90px}
 
   .hi{font-family:var(--disp);font-weight:600;font-size:24px}
@@ -668,7 +674,7 @@
      Marginal's own surface, not a paper metaphor: this is a list of links, not
      something to write on. */
   #esstudyhost{position:fixed;inset:0;z-index:250;pointer-events:none}
-  .es-study{position:absolute;right:26px;top:96px;pointer-events:auto;resize:both;overflow:hidden;
+  .es-study{position:absolute;right:26px;top:calc(var(--ash-h,0px) + 96px);pointer-events:auto;resize:both;overflow:hidden;
     width:400px;min-width:320px;min-height:220px;max-width:92vw;max-height:82vh;
     background:var(--card);border:1.5px solid var(--line);border-radius:14px;
     box-shadow:0 26px 70px rgba(28,40,40,.30);display:flex;flex-direction:column}
@@ -1671,6 +1677,10 @@
      sat above the question list: the flow has to own the viewport the way the
      workspace it leads into does. */
   .qp{position:fixed;inset:var(--ash-h,0px) 0 0;overflow:auto;z-index:120;background:var(--page);color:var(--e-ink)}
+  /* The surfaces span the whole window, so their own scrollbar sits in the page's
+     gutter, and keep that gutter: Essay practice's content is then as wide as the
+     bar's, and its row of two pages lines up with the brand whether it scrolls. */
+  html.ash-gutter .qp, html.ash-gutter .es-scrim{right:auto;width:100vw;scrollbar-gutter:stable}
   /* THE PAGE. Header, a main column with a rail beside it, a footer, and the
      footer sits at the bottom rather than under the content, so a short page is
      still a page. The rail is composition: without it the right half of a

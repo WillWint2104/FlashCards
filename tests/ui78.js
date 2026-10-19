@@ -34,6 +34,8 @@ const fs = require("fs");
 const path = require("path");
 const { chromium, T, ROOT } = require("./env");
 const { serveFonts } = require("./fontcache");
+const { IMPORTER, publishThroughImporter } = require("./fixtures/lib");
+const { allRows, usePractice } = require("./env");
 
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log("  FAIL:", m); } };
@@ -65,7 +67,8 @@ function cloud(opts) {
   }) };
   let cfg;
   Object.defineProperty(window, "MARGINAL_CONFIG", { configurable: true, get: () => cfg,
-    set: v => { cfg = Object.assign({}, v, { supabaseUrl: "https://shell-test.invalid", supabaseAnonKey: "shell-test-key" }); } });
+    set: v => { cfg = Object.assign({}, v, { supabaseUrl: "https://shell-test.invalid", supabaseAnonKey: "shell-test-key" },
+      opts.essayMode === false ? { essayMode: false } : {}); } });
 }
 
 async function open(b, opts) {
@@ -74,7 +77,7 @@ async function open(b, opts) {
   const p = await ctx.newPage(); await serveFonts(p);
   const errs = []; p.on("pageerror", e => errs.push(String(e).slice(0, 200)));
   await p.route(/workers\.dev/, r => r.abort());
-  if (opts.cloud !== false) await p.addInitScript(cloud, { signedIn: opts.signedIn, number: opts.number });
+  if (opts.cloud !== false) await p.addInitScript(cloud, { signedIn: opts.signedIn, number: opts.number, essayMode: opts.essayMode });
   await p.goto(T + opts.query);
   await p.waitForSelector(opts.signedIn ? ".ash-link" : "#ado", { timeout: 8000 });
   await settled(p); await p.evaluate(() => document.fonts.ready);
@@ -215,6 +218,23 @@ async function toSitting(p) {
     });
     ok(essay.scrim === essay.bar && essay.toolbar === essay.bar, "the writing screen starts where the bar ends, its toolbar first: " + JSON.stringify(essay));
     ok(["back", "essays"].every(k => essay.links.indexOf(k) >= 0), "and the toolbar keeps Essay practice's two pages: " + JSON.stringify(essay.links));
+    // Two navigations on one screen, each named for what it holds.
+    const navs = await q.$$eval("nav", ns => ns.map(n => n.getAttribute("aria-label")));
+    ok(navs.length === 2 && new Set(navs).size === 2, "the bar's areas and the toolbar's pages are two landmarks with two names: " + JSON.stringify(navs));
+    // The floating windows open under the toolbar, which now sits under the bar.
+    const under = async what => q.evaluate(() => {
+      const w = document.querySelector("#esstudyhost .es-study"), t = document.querySelector("#eshost .es-top");
+      return w && t ? Math.round(w.getBoundingClientRect().top - t.getBoundingClientRect().bottom) : null; });
+    // Learn is a tool of a paragraph, so a paragraph is opened first.
+    await q.click("#eshost [data-esgo]"); await settled(q);
+    await q.click('#eshost [data-estool="understand"]'); await q.waitForSelector("#esstudyhost .es-study"); await settled(q);
+    const learn = await under();
+    ok(learn !== null && learn >= 0, "Learn opens below the writing toolbar, not over it: " + learn + "px");
+    await q.click("#esmodeswitch"); await q.waitForSelector("#esstudyhost .es-study"); await settled(q);
+    const full = await under();
+    ok(full !== null && full >= 0, "and stays below it on the full attempt, where it is placed without the writing columns: " + full + "px");
+    await q.click("#esmodeswitch"); await settled(q);
+    await q.click("#esstudyhost [data-esstudyclose]").catch(() => {}); await settled(q);
     await toEssay(q, "business_studies");
     const picker = await q.evaluate(() => {
       const b = e => document.querySelector(e).getBoundingClientRect();
@@ -318,12 +338,16 @@ async function toSitting(p) {
 
   console.log("--- 6. Sign out leaves wherever the student is");
   await toEssay(p, "business_studies"); await toWriting(p);
+  await p.click("#eshost [data-esgo]"); await settled(p);
+  await p.click('#eshost [data-esnbtoggle]'); await p.waitForSelector("#esnbhost .es-nb", { state: "attached" }); await settled(p);
   await p.click(".ash .ash-out");
   await p.waitForSelector("#ado", { timeout: 8000 }); await settled(p);
   const out = await p.evaluate(() => ({ essay: !!document.getElementById("eshost"), lock: document.body.classList.contains("es-lock"),
     tm: document.body.classList.contains("tm-on"), calls: window.__cloud.signOuts, html: document.getElementById("ash").innerHTML }));
   ok(out.calls === 1, "Sign out signs out, once: " + out.calls);
   ok(!out.essay && !out.lock, "Essay practice is closed, not left over the sign-in page: " + JSON.stringify(out));
+  ok(await p.evaluate(() => !document.getElementById("esnbhost") && !document.getElementById("esstudyhost")),
+    "and the notebook the student had open is gone with it, not floating over the sign-in page");
   const signedOut = await chrome(p);
   ok(signedOut.shells === 1 && !signedOut.links.length && !signedOut.who && !signedOut.out, "the bar is the brand alone: " + JSON.stringify(signedOut));
   // The signed-out bar is what index.html writes before any script runs, exactly.
@@ -407,6 +431,57 @@ async function toSitting(p) {
     const own = await chrome(t.p);
     ok(own.current[0] === "Study" && own.ctx === "", "the student's own set is Study, and names no subject: " + JSON.stringify(own));
     await t.ctx.close();
+  }
+
+  console.log("--- 10. Essay practice switched off, opened by its demo route");
+  {
+    // The bar offers Essay practice when it is switched on, and always while it is
+    // the open area: the demo route opens it with the switch off.
+    const t = await open(b, { essayMode: false });
+    ok((await chrome(t.p)).links.join("|") === "Study|Create|Test mode", "switched off, the bar offers three areas");
+    await t.ctx.close();
+    const d = await open(b, { essayMode: false, query: "?essaydemo=1" });
+    await d.p.waitForSelector("#eshost .qp"); await settled(d.p);
+    const c = await chrome(d.p);
+    ok(c.current.length === 1 && c.current[0] === "Essay practice", "on its demo route Essay practice is on the bar, marked: " + JSON.stringify(c));
+    await d.ctx.close();
+  }
+
+  console.log("--- 11. a question imported after the app opened is there when Essay practice opens");
+  {
+    // The app reads its question registry, imports included, once per page. The
+    // bar names Study's course on the first page, so it must not be what reads it:
+    // a teacher importing in another tab would otherwise wait for a reload.
+    const t = await open(b, { cloud: false });
+    const r = await publishThroughImporter(t.ctx);
+    ok(r && r.outcome === "written", "a question was published through the importer: " + (r && r.outcome));
+    await toEssay(t.p, "business_studies"); await usePractice(t.p);
+    const rows = (await allRows(t.p)).map(x => x.id);
+    ok(rows.indexOf("bus-ext-ops-01") >= 0, "the page opened before it offers it: " + rows.length + " rows");
+    await t.ctx.close();
+  }
+
+  console.log("--- 12. where scrollbars take up room, the bar does not move");
+  {
+    // Classic scrollbars, as on Windows. A page that scrolls and one that does not,
+    // and Essay practice locking the page under it, must not move the brand, and
+    // Essay practice's own row lines up with it.
+    const sb = await chromium.launch({ ignoreDefaultArgs: ["--hide-scrollbars"] });
+    const ctx = await sb.newContext({ viewport: { width: 1440, height: 900 } });
+    const q = await ctx.newPage(); await serveFonts(q);
+    await q.route(/workers\.dev/, r => r.abort());
+    await q.goto(T); await q.waitForSelector(".ash-link"); await settled(q);
+    const at = () => q.evaluate(() => ({ brand: document.querySelector(".ash-logo").getBoundingClientRect().left,
+      row: (document.querySelector(".ash-subrow") || { getBoundingClientRect: () => ({ left: null }) }).getBoundingClientRect().left,
+      gutter: window.innerWidth - document.documentElement.clientWidth }));
+    const seen = { study: await at() };
+    await go(q, "create"); seen.create = await at();
+    await toEssay(q, "business_studies"); seen.essay = await at();
+    await q.click('.ash-sub [data-esnav="essays"]'); await settled(q); seen.essays = await at();
+    ok(seen.create.gutter > 0, "the long Create page has a scrollbar taking room: " + seen.create.gutter + "px");
+    ok(new Set(Object.values(seen).map(x => x.brand)).size === 1, "the brand sits at one place on every page: " + JSON.stringify(seen));
+    ok(seen.essay.row === seen.essay.brand && seen.essays.row === seen.essays.brand, "and Essay practice's row lines up with it: " + JSON.stringify([seen.essay, seen.essays]));
+    await sb.close();
   }
 
   console.log("");

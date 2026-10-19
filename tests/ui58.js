@@ -180,6 +180,23 @@ async function intoWriting(page) {
 
   console.log("--- 5. what folded away is still usable");
   await atWidth(p, 390);
+  // The workspace's toolbar is where the narrow menu lives now: the section is
+  // named, the group has folded, and one labelled control opens it.
+  const nowW = await p.$eval(".es-navnow", e => e.innerText.trim()).catch(() => null);
+  ok(nowW === "Essay practice", "the toolbar names the section: " + JSON.stringify(nowW));
+  ok(await p.$eval("#esnavpanel", e => getComputedStyle(e).display === "none"), "and the group holding the rest has folded away");
+  ok(await p.$eval("#esmenu", e => e.getAttribute("aria-expanded") === "false"), "the menu starts closed and says so");
+  await p.click("#esmenu"); await expanded(p, "true").catch(() => {}); await frames(p);
+  ok(await p.$eval("#esmenu", e => e.getAttribute("aria-expanded") === "true"), "pressing it opens the menu, and it says so");
+  const wpanel = await p.evaluate(() => { const el = document.getElementById("esnavpanel"), r = el.getBoundingClientRect(), vw = document.documentElement.clientWidth;
+    return { shown: getComputedStyle(el).display !== "none", out: r.right > vw + 1 || r.left < -1, routes: [...el.querySelectorAll("[data-esnav]")].map(e => e.dataset.esnav) }; });
+  ok(wpanel.shown && !wpanel.out, "the panel is on screen and inside the window: " + JSON.stringify(wpanel));
+  ok(wpanel.routes.indexOf("essays") >= 0 && wpanel.routes.indexOf("back") >= 0, "and Essay practice's two pages are reachable from it: " + JSON.stringify(wpanel.routes));
+  await p.keyboard.press("Escape"); await expanded(p, "false").catch(() => {});
+  ok(await p.$eval("#esmenu", e => e.getAttribute("aria-expanded") === "false"), "Escape closes it");
+  await p.click("#esmenu"); await expanded(p, "true").catch(() => {});
+  await p.mouse.click(180, 620); await expanded(p, "false").catch(() => {});
+  ok(await p.$eval("#esmenu", e => e.getAttribute("aria-expanded") === "false"), "and so does pressing away from it");
   await p.click("#esmenu"); await expanded(p, "true").catch(() => {}); await frames(p);
   const inMenu = await p.$$eval("#esnavpanel button", es => es.map(e => e.id || (e.innerText || "").trim().slice(0, 20)));
   console.log("    workspace menu holds:", JSON.stringify(inMenu));

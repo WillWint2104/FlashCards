@@ -174,9 +174,11 @@ async function toWriting(page) {
 
   // ---- 5b. the app shell's ways out keep it too ---------------------------
   console.log("--- 5b. leaving by the app shell keeps the attempt as well");
-  // Every area link leaves Essay Practice through the same exit as Exit essay.
-  // From the resumed attempt, a press on Test mode must leave it in the store with
-  // its sentence and its feedback, exactly as Exit essay did.
+  // Every area link leaves Essay Practice through the same exit as Exit essay,
+  // which writes the attempt down. To see that write and not section 4's, the
+  // stored copy is taken away first: only the way out can put it back, with the
+  // sentence and the feedback the resumed attempt holds in memory.
+  await p.evaluate(() => localStorage.removeItem("marginal.essay.v1"));
   await p.click('.ash-link[data-shell="test"]'); await p.waitForTimeout(500);
   ok(!(await isOpen(p)), "Test mode leaves Essay Practice");
   ok(await p.evaluate(() => (document.querySelector('.ash-link[aria-current="page"]') || {}).textContent === "Test mode"), "and Test mode is the area now");
