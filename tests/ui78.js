@@ -75,7 +75,6 @@ async function open(b, opts) {
   const errs = []; p.on("pageerror", e => errs.push(String(e).slice(0, 200)));
   await p.route(/workers\.dev/, r => r.abort());
   if (opts.cloud !== false) await p.addInitScript(cloud, { signedIn: opts.signedIn, number: opts.number });
-  if (opts.seed) await p.addInitScript(opts.seed.fn, opts.seed.arg);
   await p.goto(T + opts.query);
   await p.waitForSelector(opts.signedIn ? ".ash-link" : "#ado", { timeout: 8000 });
   await settled(p); await p.evaluate(() => document.fonts.ready);
@@ -94,7 +93,7 @@ const chrome = p => p.evaluate(() => {
     links: [...document.querySelectorAll(".ash-link")].map(e => e.textContent),
     current: [...document.querySelectorAll('.ash-link[aria-current="page"]')].map(e => e.textContent),
     ctx: shown(ctx) ? ctx.textContent : "",
-    who: (document.querySelector(".ash-who") || {}).textContent || "",
+    who: (document.querySelector(".ash-who > span") || {}).textContent || "",
     out: !!document.querySelector(".ash-out"),
     old: ["div.nav", ".navtab", ".whoami", "#signout", "header.qp-nav", ".qp-nav", ".qp-navin", ".qp-brand",
       "#eshome", "#esbrandhome", ".qp-subj", ".es-demobadge", "header .unit", "header .brand"].filter(s => document.querySelector(s)),
@@ -137,6 +136,9 @@ const diffPixels = (page, a, b) => page.evaluate(async ([a, b]) => {
 }, ["data:image/png;base64," + a.toString("base64"), "data:image/png;base64," + b.toString("base64")]);
 
 async function toEssay(p, subject) {
+  // From inside Essay practice the bar's link is the area's own route, which on a
+  // writing screen stays put; so leave first and come in fresh, as a student would.
+  if (await p.$("#eshost .es-top")) await go(p, "study");
   await go(p, "essay"); await p.waitForSelector("#essubject");
   await p.selectOption("#essubject", subject); await settled(p);
 }
@@ -151,7 +153,14 @@ async function toWriting(p) {
 }
 async function toPaper(p) {
   await go(p, "test"); await p.waitForSelector(".tm-paper [data-tmopen]");
-  await p.click(".tm-paper [data-tmopen]"); await p.waitForSelector("#exampickgo"); await settled(p);
+  await p.click(".tm-paper [data-tmopen]"); await p.waitForSelector("#exampickgo, #tmresume"); await settled(p);
+}
+// Into the sitting from the overview: a new attempt, or the one already going.
+async function toSitting(p) {
+  await toPaper(p);
+  await p.click((await p.$("#tmresume")) ? "#tmresume" : "#exampickgo"); await settled(p);
+  const c = await p.$('[data-examchoose="0"]'); if (c) { await c.click(); await settled(p); }
+  await p.waitForSelector("#examquit");
 }
 
 (async () => {
@@ -169,8 +178,7 @@ async function toPaper(p) {
     ["Test mode import", "Test mode", "", async () => { await p.click("#tmimport"); await settled(p); }],
     ["a Test mode paper", "Test mode", "Business Studies · Stage 6", async () => { await toPaper(p); }],
     ["a question-type practice", "Test mode", "Business Studies · Stage 6", async () => { await go(p, "test"); await p.click('[data-tmtypeopen="short_answer"]'); await settled(p); }],
-    ["the Test mode sitting", "Test mode", "Business Studies · Stage 6", async () => { await toPaper(p); await p.click("#exampickgo"); await settled(p);
-      const c = await p.$('[data-examchoose="0"]'); if (c) { await c.click(); await settled(p); } await p.waitForSelector("#examquit"); }],
+    ["the Test mode sitting", "Test mode", "Business Studies · Stage 6", async () => { await toSitting(p); }],
     ["Essay practice", "Essay practice", "Business Studies · Year 12", async () => { await toEssay(p, "business_studies"); }],
     ["My essays", "Essay practice", "Business Studies · Year 12", async () => { await p.click('.ash-sub [data-esnav="essays"]'); await settled(p); }],
     ["Essay practice, Economics", "Essay practice", "Economics · Year 12", async () => { await p.click('.ash-sub [data-esnav="back"]'); await settled(p);
@@ -223,8 +231,7 @@ async function toPaper(p) {
       const col = await q.evaluate(() => { const r = document.getElementById("app").getBoundingClientRect(); return [r.left, r.width]; });
       ok(col[0] === 130 && col[1] === 1180, area + ": the page column is the 1180px it was: " + JSON.stringify(col));
     }
-    await toPaper(q); await q.click("#exampickgo"); await settled(q);
-    const c = await q.$('[data-examchoose="0"]'); if (c) { await c.click(); await settled(q); }
+    await toSitting(q);
     const foot = await q.evaluate(() => { const r = document.querySelector(".tm-footer").getBoundingClientRect(); return [Math.round(r.bottom * 100) / 100, window.innerHeight,
       document.documentElement.scrollHeight]; });
     ok(Math.abs(foot[0] - foot[1]) < 0.5 && foot[2] === foot[1], "the sitting fills the window under the bar, its footer on the bottom edge: " + JSON.stringify(foot));
@@ -260,19 +267,21 @@ async function toPaper(p) {
   ok(back.ctx === "Economics · Year 12", "the bar names the attempt's subject, whatever the picker was moved to (" + picked + "): " + JSON.stringify(back.ctx));
 
   console.log("--- 5. Study's keys stay with Study");
-  // A flash card is waiting on Space. Pressed on the bar's links, or with Essay
-  // practice open over the card, Space is not the card's.
-  await go(p, "study"); await p.click(".topiccard:not(.locked)"); await p.waitForSelector(".area"); await p.click(".area");
-  await p.click('.mode[data-mode="flash"]').catch(() => p.click(".mode:not([disabled])")); await p.waitForSelector("#flip"); await settled(p);
-  const flipped = () => p.evaluate(() => document.querySelector("#flip").classList.contains("flipped"));
+  // A flash card is waiting on Space. Pressed on the bar's links, or in Essay
+  // practice opened over the card, Space is not the card's.
+  const toFlash = async () => { await go(p, "study"); await p.click(".topiccard:not(.locked)").catch(() => {}); await p.waitForSelector(".area"); await p.click(".area");
+    await p.click('.mode[data-mode="flash"]'); await p.waitForSelector("#flip"); await settled(p); };
+  const flipped = () => p.evaluate(() => { const f = document.querySelector("#app #flip"); return f ? f.classList.contains("flipped") : null; });
+  await toFlash();
   await p.focus('.ash [data-shell="create"]'); await p.keyboard.press("Space"); await settled(p);
-  ok(!(await flipped()), "Space on a link in the bar does not flip the card");
+  ok((await flipped()) === false, "Space on a link in the bar does not flip the card");
   await go(p, "essay"); await p.waitForSelector("#essubject"); await p.focus("#essubject"); await p.keyboard.press("Space"); await settled(p);
-  await p.keyboard.press("Escape");
-  await p.click('.ash [data-shell="study"]'); await settled(p);
-  ok(!!(await p.$("#flip")) && !(await flipped()), "nor does Space pressed in Essay practice, over the card");
+  await p.keyboard.press("Escape"); await settled(p);
+  ok((await flipped()) === false, "nor does Space pressed in Essay practice, with the card underneath it");
+  await toFlash();
+  await p.evaluate(() => document.activeElement && document.activeElement.blur());
   await p.keyboard.press("Space"); await settled(p);
-  ok(await flipped(), "the card still flips on Space when nothing else has it");
+  ok((await flipped()) === true, "the card still flips on Space when nothing else has it");
   await p.focus('.ash [data-shell="create"]'); await p.keyboard.press("Enter"); await settled(p);
   ok((await chrome(p)).current[0] === "Create", "and Enter on a link in the bar follows the link");
 
@@ -343,8 +352,8 @@ async function toPaper(p) {
   console.log("--- 7. 1024px and up the whole bar; 861px to 1023px the same bar without the subject");
   for (const [name, opts, step, ctx] of [
     ["a Test mode paper", {}, toPaper, "Business Studies · Stage 6"],
-    ["Essay practice's demo route", { query: "?essaydemo=1" }, async q => { await q.waitForSelector("#eshost"); await settled(q); }, "Ancient History · Year 11"],
-    ["the demo route, with a nine-digit student number", { query: "?essaydemo=1", number: "123456789" }, async q => { await q.waitForSelector("#eshost"); await settled(q); }, "Ancient History · Year 11"],
+    ["Essay practice's demo route", { query: "?essaydemo=1" }, async q => { await q.waitForSelector("#eshost .qp"); await settled(q); }, "Ancient History · Year 11"],
+    ["the demo route, with a nine-digit student number", { query: "?essaydemo=1", number: "123456789" }, async q => { await q.waitForSelector("#eshost .qp"); await settled(q); }, "Ancient History · Year 11"],
   ]) {
     const t = await open(b, opts);
     await step(t.p);
@@ -386,9 +395,11 @@ async function toPaper(p) {
   console.log("--- 9. a set the student made names no subject");
   {
     const set = { id: "shell-set", name: "My own set", cards: [{ id: "shell-c1", type: "define", prompt: "Define a term.", model: "A definition.", marks: 2 }] };
-    const t = await open(b, { cloud: false, seed: { fn: s => { if (sessionStorage.getItem("shell-seeded")) return;
-      const raw = JSON.parse(localStorage.getItem("marginal.trial.v1") || "{}"); raw.customSets = [s];
-      localStorage.setItem("marginal.trial.v1", JSON.stringify(raw)); sessionStorage.setItem("shell-seeded", "1"); }, arg: set } });
+    // Added to what the walkthrough stored on its first load, so its own seeding
+    // (which writes only when no paper is stored) leaves the set alone.
+    const t = await open(b, { cloud: false });
+    await t.p.evaluate(s => { const raw = JSON.parse(localStorage.getItem("marginal.trial.v1") || "{}");
+      raw.customSets = [s]; localStorage.setItem("marginal.trial.v1", JSON.stringify(raw)); }, set);
     await t.p.reload(); await t.p.waitForSelector(".ash-link"); await settled(t.p);
     const home = await chrome(t.p);
     ok(home.ctx === "Economics · Year 12" && !home.who && !home.out, "with cloud sign-in off: Study names its course, and there is no account: " + JSON.stringify(home));
