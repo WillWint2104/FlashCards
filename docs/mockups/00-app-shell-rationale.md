@@ -132,8 +132,15 @@ links, so weight and the underline carry the difference as much as colour does.
   var(--ash-h) 0 0`, the bar's measured height). The writing toolbar keeps Exit
   essay, the area's two links, Learn, Notebook, the mode switch, Setup and its
   More menu; the brand, subject and badge moved to the bar.
-- **Allowances for the old chrome follow the bar.** The sitting's `min-height` and
-  the narrow-screen drawer's `top` use `--ash-h`.
+- **Allowances for the old chrome follow the bar.** The sitting's `min-height`, the
+  narrow-screen drawer's `top` and the floating study and tool windows measure from
+  the bar, or from Essay practice's surface under it, not from the top of the window.
+- **Where scrollbars take up room** (Windows, or "always show scrollbars"), a
+  one-time probe adds `html.ash-gutter`, which keeps the gutter on the page and on
+  Essay practice's surfaces. The centred bar then never moves sideways between a
+  page that scrolls and one that does not, and Essay practice's row stays under the
+  brand. Overlay scrollbars take no room and nothing changes. The cost there: a page
+  too short to scroll sits half a scrollbar further left than it did.
 - **Guards the bar made necessary.** Study's keyboard shortcuts ignore keys meant
   for the bar or for Essay practice opened over a card. A marking reply for a
   Study card the student has left by the bar is dropped rather than written into
@@ -150,15 +157,28 @@ links, so weight and the underline carry the difference as much as colour does.
   now fills the window under the bar, so its footer sits on the bottom edge as
   before (within 0.22px), where the old 140px allowance would have left it 44px
   above it.
-- **ui78** (full tier): one bar and nothing of the old chrome on 13 pages; the
-  current area; the subject on each page; Essay practice's row; account and Sign
-  out on every page; Sign out from Essay practice and Test mode; the signed-out
-  bar equals index.html's; 1024px, 1023px and 861px; the bar's CSS is this
-  drawing's and its pixels match it; Study's keys; a late marking reply.
+- **ui78** (full tier, 197 assertions): one bar and nothing of the old chrome on
+  13 pages; the current area; the subject on each page, including a writing screen
+  whose attempt differs from the picker; Essay practice's row; account and Sign out
+  on every page; Sign out from Essay practice and Test mode, with the notebook
+  open; the signed-out bar equals index.html's; 1024px, 1023px and 861px; the
+  bar's CSS is this drawing's and its pixels match it; Study's keys; a late marking
+  reply; the landmarks; where the floating windows open; Essay practice switched
+  off; a question imported after the app opened; classic scrollbars.
 - **t30**: Study's key resolves to the package Study's content names, and nothing
   outside the shell reads the bar's state.
-- **Mutations**: each rule above has a catalogue entry its owning assertion
-  kills (tools/mutations.js, the `shell-` entries).
+- **Mutations**: 26 catalogue entries (tools/mutations.js, `shell-` and
+  `study-subject-key-dropped`), each killed by its owning assertion.
+- **Adversarial review**: five reviewers and a skeptic per finding. Seven
+  findings were confirmed and are fixed above; seven were refuted as pre-existing
+  or not reproducible.
+
+## Behaviour worth knowing
+
+- **Leaving Essay practice by an area link goes to that area's page.** Study goes
+  to the Study home or the topic the student was in, Test mode to its library. The
+  old picker's Home returned to whatever page was under the overlay, and Exit essay
+  on a writing screen still does.
 
 ## Still open
 
