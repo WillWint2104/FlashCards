@@ -2389,8 +2389,8 @@ module.exports = [
   {
     id: "shell-leaves-essay-without-saving",
     file: "app.js",
-    find: "  function shellLeaveEssay() { if (document.getElementById(\"eshost\")) esLeave(); }",
-    replace: "  function shellLeaveEssay() { if (document.getElementById(\"eshost\")) esClose(); }",
+    find: "    if (document.getElementById(\"eshost\")) esLeave();\n    esNbUnmount();",
+    replace: "    if (document.getElementById(\"eshost\")) esClose();\n    esNbUnmount();",
     owner: "ui57",
     why: "leaving Essay practice by an area link would close it without the save every other way out makes",
   },
@@ -2403,12 +2403,12 @@ module.exports = [
     why: "the study window placed itself from the top of the window, which is now the app shell, and opened over the writing toolbar",
   },
   {
-    id: "shell-sign-out-leaves-windows-open",
+    id: "shell-exit-leaves-windows-open",
     file: "app.js",
     find: "    esNbUnmount(); esStudyUnmount(); eslUnmount();\n",
     replace: "",
     owner: "ui78",
-    why: "signing out from Essay practice left the student's notebook floating over the sign-in page",
+    why: "leaving Essay practice by the bar, or signing out from it, left the student's notebook floating over the next page",
   },
   {
     id: "shell-study-context-builds-the-import-merge",

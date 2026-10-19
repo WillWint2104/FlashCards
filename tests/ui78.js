@@ -337,9 +337,16 @@ async function toSitting(p) {
   }
 
   console.log("--- 6. Sign out leaves wherever the student is");
-  await toEssay(p, "business_studies"); await toWriting(p);
-  await p.click("#eshost [data-esgo]"); await settled(p);
-  await p.click('#eshost [data-esnbtoggle]'); await p.waitForSelector("#esnbhost .es-nb", { state: "attached" }); await settled(p);
+  // Leaving by an area link takes the essay's floating windows with it: they live
+  // outside its overlay, and no other area shows them.
+  const notebook = async () => { await toEssay(p, "business_studies"); await toWriting(p);
+    await p.click("#eshost [data-esgo]"); await settled(p);
+    await p.click('#eshost [data-esnbtoggle]'); await p.waitForSelector("#esnbhost .es-nb", { state: "attached" }); await settled(p); };
+  await notebook();
+  await go(p, "test");
+  ok(await p.evaluate(() => !document.getElementById("eshost") && !document.getElementById("esnbhost")),
+    "leaving by Test mode closes Essay practice and the notebook the student had open");
+  await notebook();
   await p.click(".ash .ash-out");
   await p.waitForSelector("#ado", { timeout: 8000 }); await settled(p);
   const out = await p.evaluate(() => ({ essay: !!document.getElementById("eshost"), lock: document.body.classList.contains("es-lock"),

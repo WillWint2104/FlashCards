@@ -878,8 +878,15 @@
   // Where each control goes. These are the routes the old controls took, unchanged:
   // the brand to the Study home, Study to home() (the topic the student was in), and
   // Create and Test mode to their first pages. Leaving Essay practice goes through
-  // esLeave, the one exit every Essay route uses, which saves the draft first.
-  function shellLeaveEssay() { if (document.getElementById("eshost")) esLeave(); }
+  // esLeave, the one exit every Essay route uses, which saves the draft first. The
+  // essay's floating windows (notebook, study window, learning centre, modals) live
+  // outside its overlay, so leaving it does not take them down; no other area shows
+  // them, so leaving by the bar takes them down too.
+  function shellLeaveEssay() {
+    if (document.getElementById("eshost")) esLeave();
+    esNbUnmount(); esStudyUnmount(); eslUnmount();
+    const m = document.getElementById("esmodalhost"); if (m) m.remove();
+  }
   function shellGo(to) {
     if (to === "essay") {
       // Already there: the area's own "Essay practice" route, so the bar adds no
@@ -899,9 +906,6 @@
   }
   async function shellSignOut() {
     shellLeaveEssay(); tmLeave();
-    // The essay's floating windows live outside its overlay, so leaving it does
-    // not take them down. A signed-out screen shows nothing of the student's.
-    esNbUnmount(); esStudyUnmount(); eslUnmount();
     await Cloud.signOut(); toast("Signed out."); authScreen();
   }
   // Whether scrollbars take up room here, measured once. Where they do, the page and
