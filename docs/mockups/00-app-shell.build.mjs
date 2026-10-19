@@ -5,14 +5,29 @@
 // .qp-subj, .es-util.quiet), drawn around the REAL pages rather than redrawings of
 // them. Each page below the bar is captured from the running walkthrough build
 // (tests/out/marginal-walkthrough.html, made by tests/mkwalk.py from the committed
-// marginal-preview.html). The only nodes removed are the old chrome: the static
-// <header> with its hard-coded Economics unit, the pill switcher (div.nav) and, on
-// Essay practice, the old header.qp-nav. Nothing inside a page is edited, and the
-// build stops if it removes anything else.
+// marginal-preview.html).
 //
-// Subject context is read the way the shell would read it: by key, from the same
-// registry the app uses (window.ESSAY.subjects, and resolveAuthority from
-// tools/contract/assessment.js for a paper). See 00-app-shell-rationale.md.
+// What the build does to a page, and nothing else (it stops if anything else is
+// removed):
+//   removes  the static <header> with its hard-coded Economics unit, the pill
+//            switcher (div.nav) and the signed-in row (.whoami) if present; on
+//            Essay practice also the old header.qp-nav, and the Study page (#app)
+//            the app leaves underneath that overlay;
+//   inserts  the one bar; on Essay practice also the area's own row (.ash-sub) at
+//            the top of .qp-main;
+//   restyles nothing in a page. One drawing aid: the Essay practice overlay is
+//            made static (body.ash-drawing .qp) so the drawing scrolls as a page.
+//
+// What it proves:
+//   1. the page under the bar is unchanged: every content element keeps its left,
+//      width and height, and moves by one vertical offset, the change in chrome;
+//   2. the static file renders as the page did: every element's box identical, and
+//      every pixel identical;
+//   3. one bar: the same geometry on every page, and one row at 1280px.
+//
+// Subject context is read the way the shell would read it: by key, through the
+// subject registry, and resolveAuthority from tools/contract/assessment.js for a
+// paper. See 00-app-shell-rationale.md.
 //
 // usage: node docs/mockups/00-app-shell.build.mjs
 //   MOCKUP_OUT=dir    write the drawings somewhere else (default: this folder)
@@ -29,6 +44,9 @@ const SHOTS = process.env.MOCKUP_SHOTS || null;
 const fail = m => { throw new Error(m); };
 
 // ---- subject context, by key, from the registry the app uses --------------------------------
+// The app's registry is esAllSubjects().subjects: the shipped packages
+// (window.ESSAY.subjects) plus any imported subjects. The walkthrough build imports
+// none, so here the two are the same object.
 const loadWindow = f => { const w = {}; new Function("window", fs.readFileSync(path.join(ROOT, f), "utf8"))(w); return w; };
 const PACKAGES = loadWindow("essay-content.js").ESSAY.subjects;
 const CONTENT = loadWindow("content.js").CONTENT;
@@ -55,33 +73,37 @@ const ICO = {
 };
 const icon = n => `<svg class="ash-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${ICO[n]}</svg>`;
 const SECTIONS = [["study", "Study"], ["create", "Create"], ["test", "Test mode"], ["essay", "Essay practice"]];
-function shellHTML({ on, ctx, states = {} }) {
+function shellHTML({ on, ctx, states = {}, account = true, demo = false }) {
   const cls = (base, k) => base + (states[k] ? " is-" + states[k] : "");
+  const context = ctx ? `<span class="ash-ctx">${ctx}</span>${demo ? '<span class="ash-demo">demo</span>' : ""}` : "";
+  const who = account ? `<span class="ash-who">${icon("user")}<span>${WHO}</span></span><button type="button" class="${cls("ash-out", "out")}">${icon("exit")}<span>Sign out</span></button>` : "";
   return `<header class="ash"><div class="ash-in">
   <a class="${cls("ash-brand", "brand")}" href="#study" aria-label="Marginal, Study home"><span class="ash-logo" aria-hidden="true">M</span><span class="ash-word">Marginal</span></a>
   <nav class="ash-links" aria-label="Marginal">${SECTIONS.map(([k, label]) =>
     `<a class="${cls("ash-link", k)}" href="#${k}" data-label="${label}"${k === on ? ' aria-current="page"' : ""}>${label}</a>`).join("")}</nav>
-  <div class="ash-right">${ctx ? `<span class="ash-ctx">${ctx}</span><span class="ash-sep" aria-hidden="true"></span>` : ""}<span class="ash-who">${icon("user")}<span>${WHO}</span></span><button type="button" class="${cls("ash-out", "out")}">${icon("exit")}<span>Sign out</span></button></div>
+  <div class="ash-right">${context}${context && who ? '<span class="ash-sep" aria-hidden="true"></span>' : ""}${who}</div>
 </div></header>`;
 }
-function subnavHTML(on) {
+function subnavHTML(on, states = {}) {
   return `<nav class="ash-sub" aria-label="Essay practice"><div class="ash-subin"><div class="ash-subrow">${
     [["practice", "Essay practice"], ["essays", "My essays"]].map(([k, label]) =>
-      `<a class="ash-sublink" href="#${k}" data-label="${label}"${k === on ? ' aria-current="page"' : ""}>${label}</a>`).join("")}</div></div></nav>`;
+      `<a class="ash-sublink${states[k] ? " is-" + states[k] : ""}" href="#${k}" data-label="${label}"${k === on ? ' aria-current="page"' : ""}>${label}</a>`).join("")}</div></div></nav>`;
 }
 const SHELL_CSS = `/* THE SHARED APP SHELL (proposed). One bar on every page, in the Essay practice
    bar's tokens and geometry: index.html .qp-navin, .qp-brand, .qp-logo, .qp-word,
    .qp-navlink, .qp-subj and .es-util.quiet. Deliberate differences: context and
    account text are --a-ink2 (4.64:1), not .qp-subj's #95A7AD (2.50:1); every
    control gets a focus ring, in --a-green-dk (3.73:1) because --a-green is 2.74:1;
-   the area links below the bar are #5D7178 (4.84:1 on the page ground); and a link
-   keeps its bold width, so the bar does not shift between pages. */
+   the area links below the bar are #5D7178 (4.84:1 on the page ground); a link
+   keeps its bold width, so the bar does not shift between pages; and the bar is
+   sticky, as the app's header and the Essay writing bar are, where the Essay
+   picker bar scrolls away. */
 .ash{--a-ink:#18272D;--a-ink2:#63787F;--a-green:#12B27A;--a-green-dk:#0E9765;--a-line:#E8EEEF;--a-sunk:#FAFCFC;
   display:block;position:sticky;top:0;z-index:20;max-width:none;gap:0;padding:0;
   background:#FFFFFF;border-bottom:1px solid var(--a-line);font-family:'Nunito',system-ui,sans-serif;line-height:1.6;color:var(--a-ink)}
 .ash-in{max-width:1320px;margin:0 auto;padding:13px 28px;display:flex;align-items:center;gap:16px}
 .ash-brand{display:inline-flex;align-items:center;gap:10px;padding:4px 6px;margin-left:-6px;border-radius:10px;color:inherit;text-decoration:none}
-.ash-brand:hover .ash-word{color:var(--a-green-dk)}
+.ash-brand:hover .ash-word,.ash-brand.is-hover .ash-word{color:var(--a-green-dk)}
 .ash-brand:focus-visible,.ash-brand.is-focus{outline:2px solid var(--a-green-dk);outline-offset:2px}
 .ash-logo{width:30px;height:30px;border-radius:9px;background:var(--a-green);color:#fff;display:grid;place-items:center;font-family:'Fredoka',system-ui,sans-serif;font-weight:700;font-size:16px;line-height:1}
 .ash-word{font-family:'Fredoka',system-ui,sans-serif;font-weight:700;font-size:18px;letter-spacing:-.3px;color:var(--a-ink)}
@@ -95,6 +117,7 @@ const SHELL_CSS = `/* THE SHARED APP SHELL (proposed). One bar on every page, in
 .ash-link:focus-visible,.ash-link.is-focus{outline:2px solid var(--a-green-dk);outline-offset:2px;border-radius:6px}
 .ash-right{margin-left:auto;display:flex;align-items:center;gap:14px;min-width:0}
 .ash-ctx{font-size:13px;font-weight:600;color:var(--a-ink2);white-space:nowrap}
+.ash-demo{margin-left:-6px;font-family:'Fredoka',system-ui,sans-serif;font-weight:600;font-size:11px;color:#0E7A4E;background:#E7F8F0;border-radius:99px;padding:2px 10px}
 .ash-sep{width:1px;height:20px;background:var(--a-line);flex:none}
 .ash-who{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--a-ink2);white-space:nowrap}
 .ash-ico{width:17px;height:17px;flex:none}
@@ -107,9 +130,9 @@ const SHELL_CSS = `/* THE SHARED APP SHELL (proposed). One bar on every page, in
 .ash-subin{max-width:1320px;margin:0 auto;padding:18px 28px 0}
 .ash-subrow{display:flex;gap:24px;border-bottom:1px solid var(--e-line,#E8EEEF)}
 .ash-sublink{display:inline-flex;flex-direction:column;align-items:center;font-size:14px;font-weight:600;color:#5D7178;padding:4px 0 10px;margin-bottom:-1px;border-bottom:2.5px solid transparent;text-decoration:none}
-.ash-sublink:hover{color:#18272D}
+.ash-sublink:hover,.ash-sublink.is-hover{color:#18272D}
 .ash-sublink[aria-current="page"]{color:#18272D;font-weight:700;border-bottom-color:#12B27A}
-.ash-sublink:focus-visible{outline:2px solid #0E9765;outline-offset:2px;border-radius:6px}
+.ash-sublink:focus-visible,.ash-sublink.is-focus{outline:2px solid #0E9765;outline-offset:2px;border-radius:6px}
 /* Drawing aid only: the essay surface is a fixed overlay in the app; in a drawing it
    is the page, so it scrolls with the document. */
 body.ash-drawing.es-lock{overflow:visible}
@@ -177,7 +200,7 @@ function strip({ shell, sub }) {
 // The rules of the page's own stylesheet that something on the page uses, with
 // states and pseudo-elements kept whenever their element is there.
 function pageCSS() {
-  const dyn = /::?(before|after|placeholder|selection|marker|-webkit-[\w-]+|-moz-[\w-]+)|:(hover|focus-visible|focus-within|focus|active|visited|checked|disabled|enabled|indeterminate|invalid|valid|required|optional|read-only|read-write|placeholder-shown|target|open)\b/g;
+  const dyn = /::?(before|after|placeholder|selection|marker|-webkit-[\w-]+|-moz-[\w-]+)|:(hover|focus-visible|focus-within|focus|active|visited|checked|disabled|enabled|indeterminate|invalid|valid|required|optional|read-only|read-write|placeholder-shown|target|open)\b|\[open\]/g;
   const used = sel => sel.split(",").some(s => { const b = s.replace(dyn, "").trim(); if (!b) return true; try { return !!document.querySelector(b); } catch (e) { return true; } });
   const walk = rules => { const acc = []; for (const r of rules) {
     if (r.type === CSSRule.STYLE_RULE) { if (used(r.selectorText)) acc.push(r.cssText); }
@@ -206,10 +229,36 @@ function geometry() {
   const h = document.querySelector(".ash");
   return { bar: r(h), brand: r(h.querySelector(".ash-brand")), links: [...h.querySelectorAll(".ash-link")].map(r), out: r(h.querySelector(".ash-out")) };
 }
-// Every element's box, in document order, to name the first one a drawing moved.
+// Every element's box [name, left, top, width, height], in document order.
 function boxes() {
+  const name = e => e.tagName.toLowerCase() + (e.className && typeof e.className === "string" ? "." + e.className.trim().split(/\s+/).join(".") : "");
+  const r2 = v => Math.round(v * 1000) / 1000;
   return [...document.querySelectorAll("body *")].filter(e => !e.closest("script, noscript, template, .toast"))
-    .map(e => { const b = e.getBoundingClientRect(); return [e.tagName.toLowerCase() + (e.className && typeof e.className === "string" ? "." + e.className.trim().split(/\s+/).join(".") : ""), Math.round(b.top * 100) / 100, Math.round(b.height * 100) / 100]; });
+    .map(e => { const b = e.getBoundingClientRect(); return [name(e), r2(b.left), r2(b.top), r2(b.width), r2(b.height)]; });
+}
+// The page's own content, without any chrome, in groups that each move as one:
+// #app; or on Essay practice the overlay's main, and its footer, which the overlay's
+// full-height column keeps at the bottom of the screen until the page outgrows it.
+function contentBoxes() {
+  const name = e => e.tagName.toLowerCase() + (e.className && typeof e.className === "string" ? "." + e.className.trim().split(/\s+/).join(".") : "");
+  const r2 = v => Math.round(v * 1000) / 1000;
+  const qp = document.querySelector("#eshost .qp");
+  const roots = qp ? [...qp.querySelectorAll(".qp-main, .qp-foot")] : [document.getElementById("app")];
+  return roots.map(r => [...r.querySelectorAll("*")].filter(e => !e.closest(".ash-sub, div.nav, .whoami, script, noscript, template, .toast"))
+    .map(e => { const b = e.getBoundingClientRect(); return [name(e), r2(b.left), r2(b.top), r2(b.width), r2(b.height)]; }));
+}
+// Same element list; same left, width and height; tops moved by one offset.
+function sameContent(before, after) {
+  if (before.length !== after.length) return { ok: false, why: "elements " + before.length + " vs " + after.length };
+  const dy = after.length ? after[0][2] - before[0][2] : 0;
+  for (let k = 0; k < before.length; k++) {
+    const x = before[k], y = after[k];
+    // A hidden element has no box to move: it has to stay hidden, and that is all.
+    if (x[3] === 0 && x[4] === 0) { if (x[0] !== y[0] || y[3] !== 0 || y[4] !== 0) return { ok: false, why: "hidden element " + k + " changed: " + JSON.stringify({ before: x, after: y }) }; continue; }
+    if (x[0] !== y[0] || Math.abs(x[1] - y[1]) > 0.01 || Math.abs(x[3] - y[3]) > 0.01 || Math.abs(x[4] - y[4]) > 0.01 || Math.abs((y[2] - x[2]) - dy) > 0.01)
+      return { ok: false, why: "element " + k + " changed: " + JSON.stringify({ before: x, after: y, dy }) };
+  }
+  return { ok: true, dy: Math.round(dy * 100) / 100, elements: before.length };
 }
 function staticPage({ title, what, css, body }) {
   return `<!DOCTYPE html>
@@ -277,6 +326,8 @@ try {
       const shown = await p.$eval(".qp-nav .qp-subj", e => e.textContent.trim());
       if (shown !== ctxText) fail(pg.file + ": the shell's context (" + ctxText + ") is not what the page shows (" + shown + ")");
     }
+    await p.mouse.move(2, 2); await still(p); await settled(p);
+    const contentBefore = await p.evaluate(contentBoxes);
     await p.addStyleTag({ content: SHELL_CSS }).then(h => h.evaluate(e => { e.id = "ash-css"; }));
     const removed = await p.evaluate(strip, { shell: shellHTML({ on: pg.on, ctx: ctxText }), sub: pg.sub ? subnavHTML(pg.sub) : "" });
     // On Essay practice the old header, the pill and the Study page stay underneath
@@ -284,6 +335,15 @@ try {
     const want = pg.sub ? ["header", "div.nav", "header.qp-nav", "main"] : ["header", "div.nav"];
     if (removed.join(" ") !== want.join(" ")) fail(pg.file + ": removed " + JSON.stringify(removed) + ", expected only " + JSON.stringify(want));
     await p.mouse.move(2, 2); await p.evaluate(() => document.activeElement && document.activeElement.blur()); await still(p); await settled(p);
+    const contentAfter = await p.evaluate(contentBoxes);
+    if (contentBefore.length !== contentAfter.length) fail(pg.file + ": the page's content groups changed");
+    const groups = contentBefore.map((g, i) => sameContent(g, contentAfter[i]));
+    groups.forEach((k, i) => { if (!k.ok) fail(pg.file + ": the page under the bar changed (group " + i + "): " + k.why); });
+    const kept = { elements: groups.reduce((n, k) => n + k.elements, 0), dy: groups.map(k => k.dy) };
+    // Lay the page out afresh, so layers the app composited before the drawing aid
+    // (the Essay overlay was fixed) are painted as a static page paints them.
+    await p.evaluate(() => { const s = document.createElement("style"); s.textContent = "body{display:none!important}"; document.head.appendChild(s); void document.body.offsetHeight; s.remove(); void document.body.offsetHeight; });
+    await settled(p);
     geos[pg.file] = await p.evaluate(geometry);
     const live = await p.screenshot({ fullPage: true });
     const liveBoxes = await p.evaluate(boxes);
@@ -297,17 +357,16 @@ try {
     await q.mouse.move(2, 2); await still(q); await settled(q);
     const drawn = await q.screenshot({ fullPage: true });
     const d = await diffPixels(q, live, drawn);
-    // Same boxes for every element, always; and pixels equal, apart from at most
-    // 0.1% of sub-pixel shading where the app composited a layer the file does not.
+    // Every element's box identical, and every pixel.
     const drawnBoxes = await q.evaluate(boxes);
-    const moved = liveBoxes.findIndex((x, k) => !drawnBoxes[k] || x[0] !== drawnBoxes[k][0] || Math.abs(x[1] - drawnBoxes[k][1]) > 0.01 || Math.abs(x[2] - drawnBoxes[k][2]) > 0.01);
-    if (liveBoxes.length !== drawnBoxes.length || moved !== -1 || d.diff < 0 || d.ratio > 0.001) {
+    const moved = liveBoxes.findIndex((x, k) => !drawnBoxes[k] || x[0] !== drawnBoxes[k][0] || [1, 2, 3, 4].some(i => Math.abs(x[i] - drawnBoxes[k][i]) > 0.01));
+    if (liveBoxes.length !== drawnBoxes.length || moved !== -1 || d.diff !== 0) {
       if (SHOTS) { fs.writeFileSync(path.join(SHOTS, pg.file.replace(/\.html$/, "-LIVE.png")), live); fs.writeFileSync(path.join(SHOTS, pg.file.replace(/\.html$/, "-DRAWN.png")), drawn); }
       fail(pg.file + ": the drawing does not render as the live page did: " + JSON.stringify(d) + "; elements " + liveBoxes.length + " vs " + drawnBoxes.length + "; first moved: " + JSON.stringify({ live: liveBoxes[moved], drawn: drawnBoxes[moved] }));
     }
     if (SHOTS) fs.writeFileSync(path.join(SHOTS, pg.file.replace(/\.html$/, ".png")), drawn);
     if (errs.length) fail(pg.file + ": page errors: " + errs.join(" | "));
-    report.push({ file: pg.file, context: ctxText || "(none)", removed: removed.join(", "), bytes: html.length, elements: liveBoxes.length, movedElements: 0, diffPixels: d.diff, where: d.where, height: d.size[1] });
+    report.push({ file: pg.file, context: ctxText || "(none)", removed: removed.join(", "), contentElements: kept.elements, contentShift: kept.dy, elements: liveBoxes.length, diffPixels: d.diff, height: d.size[1], bytes: html.length });
     await ctx.close();
   }
   // One bar: the same height, brand, links and Sign out on every page.
@@ -326,18 +385,25 @@ try {
     report.push({ check: "1280px", barHeight: g.bar[3], oneRow: true });
     await ctx.close();
   }
-  // The states sheet: the same bar in every state it has, and on every kind of page.
+  // The states sheet: the bar in each state its CSS defines, and on each kind of page.
   {
+    const ESSAY_CTX = contextOf(ESSAY_KEY);
     const ROWS = [
       ["Study open. The current section carries the green underline, and the subject is the open workspace's.", shellHTML({ on: "study", ctx: CTX.study })],
       ["Create open. Create has no subject, so only the account shows on the right.", shellHTML({ on: "create", ctx: "" })],
       ["Test mode library. No paper is open, so no subject is named (decisions 4 and 18).", shellHTML({ on: "test", ctx: "" })],
       ["A paper open in Test mode. The subject is the paper's, resolved from its key.", shellHTML({ on: "test", ctx: CTX.paper })],
-      ["Essay practice and My essays. The same bar; the area's own two pages are in the page, below it.", shellHTML({ on: "essay", ctx: CTX.paper }) + subnavHTML("practice")],
+      ["Essay practice, with the area's own two pages in the page below the bar. Essay practice is current there.", shellHTML({ on: "essay", ctx: ESSAY_CTX }) + subnavHTML("practice")],
+      ["My essays current below the bar. The bar still shows Essay practice as the section.", shellHTML({ on: "essay", ctx: ESSAY_CTX }) + subnavHTML("essays")],
       ["Pointer over a section link (Create, while Study is open).", shellHTML({ on: "study", ctx: CTX.study, states: { create: "hover" } })],
       ["Keyboard focus on a section link (Test mode).", shellHTML({ on: "study", ctx: CTX.study, states: { test: "focus" } })],
-      ["Keyboard focus on the brand, which goes to Study.", shellHTML({ on: "create", ctx: "", states: { brand: "focus" } })],
+      ["Pointer over the brand, which goes to Study.", shellHTML({ on: "create", ctx: "", states: { brand: "hover" } })],
+      ["Keyboard focus on the brand.", shellHTML({ on: "create", ctx: "", states: { brand: "focus" } })],
       ["Pointer over Sign out.", shellHTML({ on: "study", ctx: CTX.study, states: { out: "hover" } })],
+      ["Keyboard focus on Sign out.", shellHTML({ on: "study", ctx: CTX.study, states: { out: "focus" } })],
+      ["Pointer over My essays, and then keyboard focus on it, below the bar.", shellHTML({ on: "essay", ctx: ESSAY_CTX }) + subnavHTML("practice", { essays: "hover" }) + subnavHTML("practice", { essays: "focus" })],
+      ["Cloud sign-in not configured: no account and no Sign out, as the app shows no signed-in row today.", shellHTML({ on: "study", ctx: CTX.study, account: false })],
+      ["Essay practice's demo route (?essaydemo=1): the demo badge stays beside the subject, as it is today.", shellHTML({ on: "essay", ctx: contextOf("ancient_history"), demo: true }) + subnavHTML("practice")],
     ];
     const html = `<!DOCTYPE html>
 <html lang="en">
@@ -351,9 +417,9 @@ ${FONTS}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#F6F9F9;color:#18272D;font-family:'Nunito',system-ui,sans-serif;line-height:1.6;padding:28px 0 48px}
 .sheet-h{max-width:1320px;margin:0 auto 18px;padding:0 28px;font-family:'Fredoka',system-ui,sans-serif;font-weight:700;font-size:24px;letter-spacing:-.4px}
-.sheet-p{max-width:1320px;margin:-12px auto 22px;padding:0 28px;font-size:14px;color:#63787F}
+.sheet-p{max-width:1320px;margin:-12px auto 22px;padding:0 28px;font-size:14px;color:#5D7178}
 .row{margin:0 0 22px}
-.row p{max-width:1320px;margin:0 auto 8px;padding:0 28px;font-size:13.5px;font-weight:700;color:#63787F}
+.row p{max-width:1320px;margin:0 auto 8px;padding:0 28px;font-size:13.5px;font-weight:700;color:#5D7178}
 .row .ash{position:static}
 .row .ash-sub{background:#F6F9F9;padding-bottom:12px}
 </style>
@@ -362,7 +428,7 @@ ${SHELL_CSS}
 </style>
 </head>
 <body>
-<h1 class="sheet-h">The shared app shell, every state</h1>
+<h1 class="sheet-h">The shared app shell, in each of its states</h1>
 <p class="sheet-p">The same bar on every page: 1440px wide here, one row down to a 1280px desktop. Pointer and focus states are drawn with classes for the picture; the shell itself uses :hover and :focus-visible.</p>
 ${ROWS.map(([lab, h]) => `<section class="row"><p>${lab}</p>${h}</section>`).join("\n")}
 </body>

@@ -123,6 +123,7 @@ body.es-lock { overflow: hidden; }
 .qp-opts > summary { font-size: 13px; font-weight: 700; color: var(--e-ink2); cursor: pointer; list-style: none; }
 .qp-opts > summary::-webkit-details-marker { display: none; }
 .qp-opts > summary::before { content: "+ "; color: var(--e-ink3); }
+.qp-opts[open] > summary::before { content: "−"; }
 .qp-opts > summary:hover { color: var(--e-green-dk); }
 .qp-optsbody { padding-top: 16px; }
 .qp-rub { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; font-size: 13.5px; }
@@ -155,14 +156,16 @@ body.es-lock { overflow: hidden; }
    .qp-navlink, .qp-subj and .es-util.quiet. Deliberate differences: context and
    account text are --a-ink2 (4.64:1), not .qp-subj's #95A7AD (2.50:1); every
    control gets a focus ring, in --a-green-dk (3.73:1) because --a-green is 2.74:1;
-   the area links below the bar are #5D7178 (4.84:1 on the page ground); and a link
-   keeps its bold width, so the bar does not shift between pages. */
+   the area links below the bar are #5D7178 (4.84:1 on the page ground); a link
+   keeps its bold width, so the bar does not shift between pages; and the bar is
+   sticky, as the app's header and the Essay writing bar are, where the Essay
+   picker bar scrolls away. */
 .ash{--a-ink:#18272D;--a-ink2:#63787F;--a-green:#12B27A;--a-green-dk:#0E9765;--a-line:#E8EEEF;--a-sunk:#FAFCFC;
   display:block;position:sticky;top:0;z-index:20;max-width:none;gap:0;padding:0;
   background:#FFFFFF;border-bottom:1px solid var(--a-line);font-family:'Nunito',system-ui,sans-serif;line-height:1.6;color:var(--a-ink)}
 .ash-in{max-width:1320px;margin:0 auto;padding:13px 28px;display:flex;align-items:center;gap:16px}
 .ash-brand{display:inline-flex;align-items:center;gap:10px;padding:4px 6px;margin-left:-6px;border-radius:10px;color:inherit;text-decoration:none}
-.ash-brand:hover .ash-word{color:var(--a-green-dk)}
+.ash-brand:hover .ash-word,.ash-brand.is-hover .ash-word{color:var(--a-green-dk)}
 .ash-brand:focus-visible,.ash-brand.is-focus{outline:2px solid var(--a-green-dk);outline-offset:2px}
 .ash-logo{width:30px;height:30px;border-radius:9px;background:var(--a-green);color:#fff;display:grid;place-items:center;font-family:'Fredoka',system-ui,sans-serif;font-weight:700;font-size:16px;line-height:1}
 .ash-word{font-family:'Fredoka',system-ui,sans-serif;font-weight:700;font-size:18px;letter-spacing:-.3px;color:var(--a-ink)}
@@ -176,6 +179,7 @@ body.es-lock { overflow: hidden; }
 .ash-link:focus-visible,.ash-link.is-focus{outline:2px solid var(--a-green-dk);outline-offset:2px;border-radius:6px}
 .ash-right{margin-left:auto;display:flex;align-items:center;gap:14px;min-width:0}
 .ash-ctx{font-size:13px;font-weight:600;color:var(--a-ink2);white-space:nowrap}
+.ash-demo{margin-left:-6px;font-family:'Fredoka',system-ui,sans-serif;font-weight:600;font-size:11px;color:#0E7A4E;background:#E7F8F0;border-radius:99px;padding:2px 10px}
 .ash-sep{width:1px;height:20px;background:var(--a-line);flex:none}
 .ash-who{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--a-ink2);white-space:nowrap}
 .ash-ico{width:17px;height:17px;flex:none}
@@ -188,9 +192,9 @@ body.es-lock { overflow: hidden; }
 .ash-subin{max-width:1320px;margin:0 auto;padding:18px 28px 0}
 .ash-subrow{display:flex;gap:24px;border-bottom:1px solid var(--e-line,#E8EEEF)}
 .ash-sublink{display:inline-flex;flex-direction:column;align-items:center;font-size:14px;font-weight:600;color:#5D7178;padding:4px 0 10px;margin-bottom:-1px;border-bottom:2.5px solid transparent;text-decoration:none}
-.ash-sublink:hover{color:#18272D}
+.ash-sublink:hover,.ash-sublink.is-hover{color:#18272D}
 .ash-sublink[aria-current="page"]{color:#18272D;font-weight:700;border-bottom-color:#12B27A}
-.ash-sublink:focus-visible{outline:2px solid #0E9765;outline-offset:2px;border-radius:6px}
+.ash-sublink:focus-visible,.ash-sublink.is-focus{outline:2px solid #0E9765;outline-offset:2px;border-radius:6px}
 /* Drawing aid only: the essay surface is a fixed overlay in the app; in a drawing it
    is the page, so it scrolls with the document. */
 body.ash-drawing.es-lock{overflow:visible}

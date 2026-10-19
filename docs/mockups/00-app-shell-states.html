@@ -11,9 +11,9 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#F6F9F9;color:#18272D;font-family:'Nunito',system-ui,sans-serif;line-height:1.6;padding:28px 0 48px}
 .sheet-h{max-width:1320px;margin:0 auto 18px;padding:0 28px;font-family:'Fredoka',system-ui,sans-serif;font-weight:700;font-size:24px;letter-spacing:-.4px}
-.sheet-p{max-width:1320px;margin:-12px auto 22px;padding:0 28px;font-size:14px;color:#63787F}
+.sheet-p{max-width:1320px;margin:-12px auto 22px;padding:0 28px;font-size:14px;color:#5D7178}
 .row{margin:0 0 22px}
-.row p{max-width:1320px;margin:0 auto 8px;padding:0 28px;font-size:13.5px;font-weight:700;color:#63787F}
+.row p{max-width:1320px;margin:0 auto 8px;padding:0 28px;font-size:13.5px;font-weight:700;color:#5D7178}
 .row .ash{position:static}
 .row .ash-sub{background:#F6F9F9;padding-bottom:12px}
 </style>
@@ -23,14 +23,16 @@ body{background:#F6F9F9;color:#18272D;font-family:'Nunito',system-ui,sans-serif;
    .qp-navlink, .qp-subj and .es-util.quiet. Deliberate differences: context and
    account text are --a-ink2 (4.64:1), not .qp-subj's #95A7AD (2.50:1); every
    control gets a focus ring, in --a-green-dk (3.73:1) because --a-green is 2.74:1;
-   the area links below the bar are #5D7178 (4.84:1 on the page ground); and a link
-   keeps its bold width, so the bar does not shift between pages. */
+   the area links below the bar are #5D7178 (4.84:1 on the page ground); a link
+   keeps its bold width, so the bar does not shift between pages; and the bar is
+   sticky, as the app's header and the Essay writing bar are, where the Essay
+   picker bar scrolls away. */
 .ash{--a-ink:#18272D;--a-ink2:#63787F;--a-green:#12B27A;--a-green-dk:#0E9765;--a-line:#E8EEEF;--a-sunk:#FAFCFC;
   display:block;position:sticky;top:0;z-index:20;max-width:none;gap:0;padding:0;
   background:#FFFFFF;border-bottom:1px solid var(--a-line);font-family:'Nunito',system-ui,sans-serif;line-height:1.6;color:var(--a-ink)}
 .ash-in{max-width:1320px;margin:0 auto;padding:13px 28px;display:flex;align-items:center;gap:16px}
 .ash-brand{display:inline-flex;align-items:center;gap:10px;padding:4px 6px;margin-left:-6px;border-radius:10px;color:inherit;text-decoration:none}
-.ash-brand:hover .ash-word{color:var(--a-green-dk)}
+.ash-brand:hover .ash-word,.ash-brand.is-hover .ash-word{color:var(--a-green-dk)}
 .ash-brand:focus-visible,.ash-brand.is-focus{outline:2px solid var(--a-green-dk);outline-offset:2px}
 .ash-logo{width:30px;height:30px;border-radius:9px;background:var(--a-green);color:#fff;display:grid;place-items:center;font-family:'Fredoka',system-ui,sans-serif;font-weight:700;font-size:16px;line-height:1}
 .ash-word{font-family:'Fredoka',system-ui,sans-serif;font-weight:700;font-size:18px;letter-spacing:-.3px;color:var(--a-ink)}
@@ -44,6 +46,7 @@ body{background:#F6F9F9;color:#18272D;font-family:'Nunito',system-ui,sans-serif;
 .ash-link:focus-visible,.ash-link.is-focus{outline:2px solid var(--a-green-dk);outline-offset:2px;border-radius:6px}
 .ash-right{margin-left:auto;display:flex;align-items:center;gap:14px;min-width:0}
 .ash-ctx{font-size:13px;font-weight:600;color:var(--a-ink2);white-space:nowrap}
+.ash-demo{margin-left:-6px;font-family:'Fredoka',system-ui,sans-serif;font-weight:600;font-size:11px;color:#0E7A4E;background:#E7F8F0;border-radius:99px;padding:2px 10px}
 .ash-sep{width:1px;height:20px;background:var(--a-line);flex:none}
 .ash-who{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--a-ink2);white-space:nowrap}
 .ash-ico{width:17px;height:17px;flex:none}
@@ -56,9 +59,9 @@ body{background:#F6F9F9;color:#18272D;font-family:'Nunito',system-ui,sans-serif;
 .ash-subin{max-width:1320px;margin:0 auto;padding:18px 28px 0}
 .ash-subrow{display:flex;gap:24px;border-bottom:1px solid var(--e-line,#E8EEEF)}
 .ash-sublink{display:inline-flex;flex-direction:column;align-items:center;font-size:14px;font-weight:600;color:#5D7178;padding:4px 0 10px;margin-bottom:-1px;border-bottom:2.5px solid transparent;text-decoration:none}
-.ash-sublink:hover{color:#18272D}
+.ash-sublink:hover,.ash-sublink.is-hover{color:#18272D}
 .ash-sublink[aria-current="page"]{color:#18272D;font-weight:700;border-bottom-color:#12B27A}
-.ash-sublink:focus-visible{outline:2px solid #0E9765;outline-offset:2px;border-radius:6px}
+.ash-sublink:focus-visible,.ash-sublink.is-focus{outline:2px solid #0E9765;outline-offset:2px;border-radius:6px}
 /* Drawing aid only: the essay surface is a fixed overlay in the app; in a drawing it
    is the page, so it scrolls with the document. */
 body.ash-drawing.es-lock{overflow:visible}
@@ -66,7 +69,7 @@ body.ash-drawing .qp{position:static;overflow:visible;min-height:100vh}
 </style>
 </head>
 <body>
-<h1 class="sheet-h">The shared app shell, every state</h1>
+<h1 class="sheet-h">The shared app shell, in each of its states</h1>
 <p class="sheet-p">The same bar on every page: 1440px wide here, one row down to a 1280px desktop. Pointer and focus states are drawn with classes for the picture; the shell itself uses :hover and :focus-visible.</p>
 <section class="row"><p>Study open. The current section carries the green underline, and the subject is the open workspace's.</p><header class="ash"><div class="ash-in">
   <a class="ash-brand" href="#study" aria-label="Marginal, Study home"><span class="ash-logo" aria-hidden="true">M</span><span class="ash-word">Marginal</span></a>
@@ -88,11 +91,16 @@ body.ash-drawing .qp{position:static;overflow:visible;min-height:100vh}
   <nav class="ash-links" aria-label="Marginal"><a class="ash-link" href="#study" data-label="Study">Study</a><a class="ash-link" href="#create" data-label="Create">Create</a><a class="ash-link" href="#test" data-label="Test mode" aria-current="page">Test mode</a><a class="ash-link" href="#essay" data-label="Essay practice">Essay practice</a></nav>
   <div class="ash-right"><span class="ash-ctx">Business Studies · Year 12</span><span class="ash-sep" aria-hidden="true"></span><span class="ash-who"><svg class="ash-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 20a6 6 0 0 0-12 0" /> <circle cx="12" cy="10" r="4" /> <circle cx="12" cy="12" r="10" /></svg><span>12Ec126 · #1234</span></span><button type="button" class="ash-out"><svg class="ash-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m16 17 5-5-5-5" /> <path d="M21 12H9" /> <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /></svg><span>Sign out</span></button></div>
 </div></header></section>
-<section class="row"><p>Essay practice and My essays. The same bar; the area's own two pages are in the page, below it.</p><header class="ash"><div class="ash-in">
+<section class="row"><p>Essay practice, with the area's own two pages in the page below the bar. Essay practice is current there.</p><header class="ash"><div class="ash-in">
   <a class="ash-brand" href="#study" aria-label="Marginal, Study home"><span class="ash-logo" aria-hidden="true">M</span><span class="ash-word">Marginal</span></a>
   <nav class="ash-links" aria-label="Marginal"><a class="ash-link" href="#study" data-label="Study">Study</a><a class="ash-link" href="#create" data-label="Create">Create</a><a class="ash-link" href="#test" data-label="Test mode">Test mode</a><a class="ash-link" href="#essay" data-label="Essay practice" aria-current="page">Essay practice</a></nav>
   <div class="ash-right"><span class="ash-ctx">Business Studies · Year 12</span><span class="ash-sep" aria-hidden="true"></span><span class="ash-who"><svg class="ash-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 20a6 6 0 0 0-12 0" /> <circle cx="12" cy="10" r="4" /> <circle cx="12" cy="12" r="10" /></svg><span>12Ec126 · #1234</span></span><button type="button" class="ash-out"><svg class="ash-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m16 17 5-5-5-5" /> <path d="M21 12H9" /> <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /></svg><span>Sign out</span></button></div>
 </div></header><nav class="ash-sub" aria-label="Essay practice"><div class="ash-subin"><div class="ash-subrow"><a class="ash-sublink" href="#practice" data-label="Essay practice" aria-current="page">Essay practice</a><a class="ash-sublink" href="#essays" data-label="My essays">My essays</a></div></div></nav></section>
+<section class="row"><p>My essays current below the bar. The bar still shows Essay practice as the section.</p><header class="ash"><div class="ash-in">
+  <a class="ash-brand" href="#study" aria-label="Marginal, Study home"><span class="ash-logo" aria-hidden="true">M</span><span class="ash-word">Marginal</span></a>
+  <nav class="ash-links" aria-label="Marginal"><a class="ash-link" href="#study" data-label="Study">Study</a><a class="ash-link" href="#create" data-label="Create">Create</a><a class="ash-link" href="#test" data-label="Test mode">Test mode</a><a class="ash-link" href="#essay" data-label="Essay practice" aria-current="page">Essay practice</a></nav>
+  <div class="ash-right"><span class="ash-ctx">Business Studies · Year 12</span><span class="ash-sep" aria-hidden="true"></span><span class="ash-who"><svg class="ash-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 20a6 6 0 0 0-12 0" /> <circle cx="12" cy="10" r="4" /> <circle cx="12" cy="12" r="10" /></svg><span>12Ec126 · #1234</span></span><button type="button" class="ash-out"><svg class="ash-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m16 17 5-5-5-5" /> <path d="M21 12H9" /> <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /></svg><span>Sign out</span></button></div>
+</div></header><nav class="ash-sub" aria-label="Essay practice"><div class="ash-subin"><div class="ash-subrow"><a class="ash-sublink" href="#practice" data-label="Essay practice">Essay practice</a><a class="ash-sublink" href="#essays" data-label="My essays" aria-current="page">My essays</a></div></div></nav></section>
 <section class="row"><p>Pointer over a section link (Create, while Study is open).</p><header class="ash"><div class="ash-in">
   <a class="ash-brand" href="#study" aria-label="Marginal, Study home"><span class="ash-logo" aria-hidden="true">M</span><span class="ash-word">Marginal</span></a>
   <nav class="ash-links" aria-label="Marginal"><a class="ash-link" href="#study" data-label="Study" aria-current="page">Study</a><a class="ash-link is-hover" href="#create" data-label="Create">Create</a><a class="ash-link" href="#test" data-label="Test mode">Test mode</a><a class="ash-link" href="#essay" data-label="Essay practice">Essay practice</a></nav>
@@ -103,7 +111,12 @@ body.ash-drawing .qp{position:static;overflow:visible;min-height:100vh}
   <nav class="ash-links" aria-label="Marginal"><a class="ash-link" href="#study" data-label="Study" aria-current="page">Study</a><a class="ash-link" href="#create" data-label="Create">Create</a><a class="ash-link is-focus" href="#test" data-label="Test mode">Test mode</a><a class="ash-link" href="#essay" data-label="Essay practice">Essay practice</a></nav>
   <div class="ash-right"><span class="ash-ctx">Economics · Year 12</span><span class="ash-sep" aria-hidden="true"></span><span class="ash-who"><svg class="ash-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 20a6 6 0 0 0-12 0" /> <circle cx="12" cy="10" r="4" /> <circle cx="12" cy="12" r="10" /></svg><span>12Ec126 · #1234</span></span><button type="button" class="ash-out"><svg class="ash-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m16 17 5-5-5-5" /> <path d="M21 12H9" /> <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /></svg><span>Sign out</span></button></div>
 </div></header></section>
-<section class="row"><p>Keyboard focus on the brand, which goes to Study.</p><header class="ash"><div class="ash-in">
+<section class="row"><p>Pointer over the brand, which goes to Study.</p><header class="ash"><div class="ash-in">
+  <a class="ash-brand is-hover" href="#study" aria-label="Marginal, Study home"><span class="ash-logo" aria-hidden="true">M</span><span class="ash-word">Marginal</span></a>
+  <nav class="ash-links" aria-label="Marginal"><a class="ash-link" href="#study" data-label="Study">Study</a><a class="ash-link" href="#create" data-label="Create" aria-current="page">Create</a><a class="ash-link" href="#test" data-label="Test mode">Test mode</a><a class="ash-link" href="#essay" data-label="Essay practice">Essay practice</a></nav>
+  <div class="ash-right"><span class="ash-who"><svg class="ash-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 20a6 6 0 0 0-12 0" /> <circle cx="12" cy="10" r="4" /> <circle cx="12" cy="12" r="10" /></svg><span>12Ec126 · #1234</span></span><button type="button" class="ash-out"><svg class="ash-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m16 17 5-5-5-5" /> <path d="M21 12H9" /> <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /></svg><span>Sign out</span></button></div>
+</div></header></section>
+<section class="row"><p>Keyboard focus on the brand.</p><header class="ash"><div class="ash-in">
   <a class="ash-brand is-focus" href="#study" aria-label="Marginal, Study home"><span class="ash-logo" aria-hidden="true">M</span><span class="ash-word">Marginal</span></a>
   <nav class="ash-links" aria-label="Marginal"><a class="ash-link" href="#study" data-label="Study">Study</a><a class="ash-link" href="#create" data-label="Create" aria-current="page">Create</a><a class="ash-link" href="#test" data-label="Test mode">Test mode</a><a class="ash-link" href="#essay" data-label="Essay practice">Essay practice</a></nav>
   <div class="ash-right"><span class="ash-who"><svg class="ash-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 20a6 6 0 0 0-12 0" /> <circle cx="12" cy="10" r="4" /> <circle cx="12" cy="12" r="10" /></svg><span>12Ec126 · #1234</span></span><button type="button" class="ash-out"><svg class="ash-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m16 17 5-5-5-5" /> <path d="M21 12H9" /> <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /></svg><span>Sign out</span></button></div>
@@ -113,5 +126,25 @@ body.ash-drawing .qp{position:static;overflow:visible;min-height:100vh}
   <nav class="ash-links" aria-label="Marginal"><a class="ash-link" href="#study" data-label="Study" aria-current="page">Study</a><a class="ash-link" href="#create" data-label="Create">Create</a><a class="ash-link" href="#test" data-label="Test mode">Test mode</a><a class="ash-link" href="#essay" data-label="Essay practice">Essay practice</a></nav>
   <div class="ash-right"><span class="ash-ctx">Economics · Year 12</span><span class="ash-sep" aria-hidden="true"></span><span class="ash-who"><svg class="ash-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 20a6 6 0 0 0-12 0" /> <circle cx="12" cy="10" r="4" /> <circle cx="12" cy="12" r="10" /></svg><span>12Ec126 · #1234</span></span><button type="button" class="ash-out is-hover"><svg class="ash-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m16 17 5-5-5-5" /> <path d="M21 12H9" /> <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /></svg><span>Sign out</span></button></div>
 </div></header></section>
+<section class="row"><p>Keyboard focus on Sign out.</p><header class="ash"><div class="ash-in">
+  <a class="ash-brand" href="#study" aria-label="Marginal, Study home"><span class="ash-logo" aria-hidden="true">M</span><span class="ash-word">Marginal</span></a>
+  <nav class="ash-links" aria-label="Marginal"><a class="ash-link" href="#study" data-label="Study" aria-current="page">Study</a><a class="ash-link" href="#create" data-label="Create">Create</a><a class="ash-link" href="#test" data-label="Test mode">Test mode</a><a class="ash-link" href="#essay" data-label="Essay practice">Essay practice</a></nav>
+  <div class="ash-right"><span class="ash-ctx">Economics · Year 12</span><span class="ash-sep" aria-hidden="true"></span><span class="ash-who"><svg class="ash-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 20a6 6 0 0 0-12 0" /> <circle cx="12" cy="10" r="4" /> <circle cx="12" cy="12" r="10" /></svg><span>12Ec126 · #1234</span></span><button type="button" class="ash-out is-focus"><svg class="ash-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m16 17 5-5-5-5" /> <path d="M21 12H9" /> <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /></svg><span>Sign out</span></button></div>
+</div></header></section>
+<section class="row"><p>Pointer over My essays, and then keyboard focus on it, below the bar.</p><header class="ash"><div class="ash-in">
+  <a class="ash-brand" href="#study" aria-label="Marginal, Study home"><span class="ash-logo" aria-hidden="true">M</span><span class="ash-word">Marginal</span></a>
+  <nav class="ash-links" aria-label="Marginal"><a class="ash-link" href="#study" data-label="Study">Study</a><a class="ash-link" href="#create" data-label="Create">Create</a><a class="ash-link" href="#test" data-label="Test mode">Test mode</a><a class="ash-link" href="#essay" data-label="Essay practice" aria-current="page">Essay practice</a></nav>
+  <div class="ash-right"><span class="ash-ctx">Business Studies · Year 12</span><span class="ash-sep" aria-hidden="true"></span><span class="ash-who"><svg class="ash-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 20a6 6 0 0 0-12 0" /> <circle cx="12" cy="10" r="4" /> <circle cx="12" cy="12" r="10" /></svg><span>12Ec126 · #1234</span></span><button type="button" class="ash-out"><svg class="ash-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m16 17 5-5-5-5" /> <path d="M21 12H9" /> <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /></svg><span>Sign out</span></button></div>
+</div></header><nav class="ash-sub" aria-label="Essay practice"><div class="ash-subin"><div class="ash-subrow"><a class="ash-sublink" href="#practice" data-label="Essay practice" aria-current="page">Essay practice</a><a class="ash-sublink is-hover" href="#essays" data-label="My essays">My essays</a></div></div></nav><nav class="ash-sub" aria-label="Essay practice"><div class="ash-subin"><div class="ash-subrow"><a class="ash-sublink" href="#practice" data-label="Essay practice" aria-current="page">Essay practice</a><a class="ash-sublink is-focus" href="#essays" data-label="My essays">My essays</a></div></div></nav></section>
+<section class="row"><p>Cloud sign-in not configured: no account and no Sign out, as the app shows no signed-in row today.</p><header class="ash"><div class="ash-in">
+  <a class="ash-brand" href="#study" aria-label="Marginal, Study home"><span class="ash-logo" aria-hidden="true">M</span><span class="ash-word">Marginal</span></a>
+  <nav class="ash-links" aria-label="Marginal"><a class="ash-link" href="#study" data-label="Study" aria-current="page">Study</a><a class="ash-link" href="#create" data-label="Create">Create</a><a class="ash-link" href="#test" data-label="Test mode">Test mode</a><a class="ash-link" href="#essay" data-label="Essay practice">Essay practice</a></nav>
+  <div class="ash-right"><span class="ash-ctx">Economics · Year 12</span></div>
+</div></header></section>
+<section class="row"><p>Essay practice's demo route (?essaydemo=1): the demo badge stays beside the subject, as it is today.</p><header class="ash"><div class="ash-in">
+  <a class="ash-brand" href="#study" aria-label="Marginal, Study home"><span class="ash-logo" aria-hidden="true">M</span><span class="ash-word">Marginal</span></a>
+  <nav class="ash-links" aria-label="Marginal"><a class="ash-link" href="#study" data-label="Study">Study</a><a class="ash-link" href="#create" data-label="Create">Create</a><a class="ash-link" href="#test" data-label="Test mode">Test mode</a><a class="ash-link" href="#essay" data-label="Essay practice" aria-current="page">Essay practice</a></nav>
+  <div class="ash-right"><span class="ash-ctx">Ancient History · Year 11</span><span class="ash-demo">demo</span><span class="ash-sep" aria-hidden="true"></span><span class="ash-who"><svg class="ash-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 20a6 6 0 0 0-12 0" /> <circle cx="12" cy="10" r="4" /> <circle cx="12" cy="12" r="10" /></svg><span>12Ec126 · #1234</span></span><button type="button" class="ash-out"><svg class="ash-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m16 17 5-5-5-5" /> <path d="M21 12H9" /> <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /></svg><span>Sign out</span></button></div>
+</div></header><nav class="ash-sub" aria-label="Essay practice"><div class="ash-subin"><div class="ash-subrow"><a class="ash-sublink" href="#practice" data-label="Essay practice" aria-current="page">Essay practice</a><a class="ash-sublink" href="#essays" data-label="My essays">My essays</a></div></div></nav></section>
 </body>
 </html>
