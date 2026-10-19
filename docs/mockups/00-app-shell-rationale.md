@@ -37,7 +37,8 @@ their layouts.
    - 861px to 1023px: the same bar without the subject. The brand, the four areas,
      the account and Sign out stay, on one row.
    - 860px and below: no designed treatment yet (the mobile phase). The bar only
-     wraps, so nothing is cut off or scrolls sideways. There is no fallback to the
+     wraps, its links onto as many rows as they need, so nothing is cut off or
+     scrolls sideways. There is no fallback to the
      old header and pill.
 8. **One shared renderer.** The pages say which area they are and what they are
    about. They do not build a header.
@@ -136,10 +137,11 @@ links, so weight and the underline carry the difference as much as colour does.
   narrow-screen drawer's `top` and the floating study and tool windows measure from
   the bar, or from Essay practice's surface under it, not from the top of the window.
 - **Where scrollbars take up room** (Windows, or "always show scrollbars"), a
-  one-time probe adds `html.ash-gutter`, which keeps the gutter on the page and on
-  Essay practice's surfaces. The centred bar then never moves sideways between a
-  page that scrolls and one that does not, and Essay practice's row stays under the
-  brand. Overlay scrollbars take no room and nothing changes. The cost there: a page
+  one-time probe adds `html.ash-gutter`, which keeps the page's scrollbar gutter.
+  While Essay practice is open, the locked page gives its gutter up, its surfaces
+  keep one of their own, and the bar is padded by one scrollbar's width. The
+  centred bar then never moves sideways, between pages or as Essay practice opens,
+  and Essay practice's row stays under the brand. Overlay scrollbars take no room and nothing changes. The cost there: a page
   too short to scroll sits half a scrollbar further left than it did.
 - **Guards the bar made necessary.** Study's keyboard shortcuts ignore keys meant
   for the bar or for Essay practice opened over a card. A marking reply for a

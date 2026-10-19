@@ -915,7 +915,9 @@
     const d = document.createElement("div");
     d.style.cssText = "position:absolute;top:-200px;width:100px;height:100px;overflow:scroll";
     document.body.appendChild(d);
-    document.documentElement.classList.toggle("ash-gutter", d.offsetWidth - d.clientWidth > 0);
+    const w = d.offsetWidth - d.clientWidth;
+    document.documentElement.classList.toggle("ash-gutter", w > 0);
+    document.documentElement.style.setProperty("--ash-sbw", w + "px");
     d.remove();
   })();
   if (shellHost) {

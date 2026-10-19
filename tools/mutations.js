@@ -2437,9 +2437,9 @@ module.exports = [
   {
     id: "shell-essay-surface-gutter-not-kept",
     file: "index.html",
-    find: "  html.ash-gutter .qp, html.ash-gutter .es-scrim{right:auto;width:100vw;scrollbar-gutter:stable}",
+    find: "  html.ash-gutter body.es-lock .ash{padding-right:var(--ash-sbw,0px)}",
     replace: "",
     owner: "ui78",
-    why: "where scrollbars take room, Essay practice's row of two pages stopped lining up with the bar's brand",
+    why: "where scrollbars take room, the bar moved when Essay practice opened and its row of two pages stopped lining up with the brand",
   },
 ];

@@ -1677,10 +1677,14 @@
      sat above the question list: the flow has to own the viewport the way the
      workspace it leads into does. */
   .qp{position:fixed;inset:var(--ash-h,0px) 0 0;overflow:auto;z-index:120;background:var(--page);color:var(--e-ink)}
-  /* The surfaces span the whole window, so their own scrollbar sits in the page's
-     gutter, and keep that gutter: Essay practice's content is then as wide as the
-     bar's, and its row of two pages lines up with the brand whether it scrolls. */
-  html.ash-gutter .qp, html.ash-gutter .es-scrim{right:auto;width:100vw;scrollbar-gutter:stable}
+  /* While Essay practice is open the page under it is locked and gives up its
+     gutter, so the surfaces span the whole window. They keep a gutter of their own,
+     and the bar keeps the same room on its right: Essay practice's content is as
+     wide as the bar's, its row of two pages lines up with the brand, and nothing
+     moves as it opens or closes. --ash-sbw is a scrollbar's width (app.js). */
+  html.ash-gutter:has(body.es-lock){scrollbar-gutter:auto}
+  html.ash-gutter body.es-lock .ash{padding-right:var(--ash-sbw,0px)}
+  html.ash-gutter .qp, html.ash-gutter .es-scrim{scrollbar-gutter:stable}
   /* THE PAGE. Header, a main column with a rail beside it, a footer, and the
      footer sits at the bottom rather than under the content, so a short page is
      still a page. The rail is composition: without it the right half of a
@@ -3485,7 +3489,7 @@
      phase. It only wraps, so nothing is cut off or scrolls the page sideways. */
   @media (max-width:860px){
     .ash-in{flex-wrap:wrap;row-gap:4px;padding:10px 16px}
-    .ash-links{order:3;flex:1 0 100%;margin-left:0;overflow-x:auto}
+    .ash-links{order:3;flex:1 0 100%;margin-left:0;flex-wrap:wrap}
   }
 </style>
 </head>
@@ -13571,7 +13575,9 @@ module.exports = {
     const d = document.createElement("div");
     d.style.cssText = "position:absolute;top:-200px;width:100px;height:100px;overflow:scroll";
     document.body.appendChild(d);
-    document.documentElement.classList.toggle("ash-gutter", d.offsetWidth - d.clientWidth > 0);
+    const w = d.offsetWidth - d.clientWidth;
+    document.documentElement.classList.toggle("ash-gutter", w > 0);
+    document.documentElement.style.setProperty("--ash-sbw", w + "px");
     d.remove();
   })();
   if (shellHost) {
