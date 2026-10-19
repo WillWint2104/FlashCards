@@ -934,9 +934,9 @@ module.exports = [
     file: "tests/run.js",
     // Follows the end of the list, which moves every time a suite is added, and
     // t26 is what turns that into a caught failure rather than a mutation that
-    // quietly stops mutating anything. ui69 moved it; this is the fix.
-    find: "\"ui76\", \"ui77\"]",
-    replace: "\"ui76\"]",
+    // quietly stops mutating anything. ui69 moved it, and ui78 moved it again.
+    find: "\"ui77\", \"ui78\"]",
+    replace: "\"ui77\"]",
     owner: "t23",
     why: "a maintained regression outside the runner is invisible, which is how twenty-eight suites rotted unnoticed",
   },

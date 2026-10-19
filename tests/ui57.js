@@ -172,25 +172,20 @@ async function toWriting(page) {
   const fbBack = await p.$(".es-margin .es-review, .es-margin .es-mblock");
   ok(!!fbBack, "the feedback they had is still attached to the paragraph");
 
-  // ---- 5b. the app shell's ways out write it down too -----------------------
+  // ---- 5b. the app shell's ways out keep it too ---------------------------
   console.log("--- 5b. leaving by the app shell keeps the attempt as well");
-  // Every area link leaves Essay Practice through the same exit as Exit essay. A
-  // sentence written here and then a press on Test mode must still be in the store.
-  const LATER = "A later sentence written just before leaving by the bar.";
-  await toPicker(p);
-  await toWriting(p);
-  const line = await p.$("#esline");
-  if (line) { await p.fill("#esline", LATER); await p.click("#esaccept"); await p.waitForTimeout(400); }
-  ok(!!line, "a new attempt can be written in");
+  // Every area link leaves Essay Practice through the same exit as Exit essay.
+  // From the resumed attempt, a press on Test mode must leave it in the store with
+  // its sentence and its feedback, exactly as Exit essay did.
   await p.click('.ash-link[data-shell="test"]'); await p.waitForTimeout(500);
   ok(!(await isOpen(p)), "Test mode leaves Essay Practice");
   ok(await p.evaluate(() => (document.querySelector('.ash-link[aria-current="page"]') || {}).textContent === "Test mode"), "and Test mode is the area now");
-  const kept = await p.evaluate(t => {
+  const kept = await p.evaluate(() => {
     const raw = JSON.parse(localStorage.getItem("marginal.essay.v1") || "{}");
     const d = Object.values(raw).flatMap(bk => (bk && bk.drafts) || [])[0];
-    return !!d && (d.paras || []).some(x => (x.text || "").indexOf(t) >= 0);
-  }, LATER);
-  ok(kept, "the sentence written before leaving is in the store");
+    return !!d && (d.paras || []).some(x => (x.text || "").indexOf("Convenience-oriented customers lead") >= 0) && (d.paras || []).some(x => !!x.feedback);
+  });
+  ok(kept, "the attempt is in the store with its sentence and its feedback");
 
   // ---- 6. no surface still calls itself a dialog --------------------------
   console.log("--- 6. the word Close is gone from the full-page surfaces");

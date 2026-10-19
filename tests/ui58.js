@@ -220,6 +220,14 @@ async function intoWriting(page) {
     ok(foot.padBottom >= foot.h, "the writing has room underneath it: " + foot.padBottom + "px for a " + foot.h + "px bar");
   }
 
+  console.log("--- 5c. the workspace's toolbar is a row again on a desktop");
+  // Checked here, while the workspace from section 4 is still open, rather than by
+  // writing a second essay: this tier has no room for another walk into it.
+  await atWidth(p, 1400, 1000);
+  ok(await p.$eval(".qp-navlinks", e => getComputedStyle(e).display !== "none"), "the workspace's links are back on its toolbar");
+  ok(await p.$eval("#esmenu", e => getComputedStyle(e).display === "none"), "and its menu button is not shown");
+  ok(await p.$eval("#esnavpanel", e => getComputedStyle(e).display !== "none"), "the group is a row again, not a panel");
+
   console.log("--- 6. Exit essay works at phone width");
   await atWidth(p, 390);
   const exit = await p.$("#esexit");
@@ -235,10 +243,6 @@ async function intoWriting(page) {
   const tops = await p.$$eval(".ash-link", es => es.map(e => Math.round(e.getBoundingClientRect().top)));
   ok(tops.length === 4 && new Set(tops).size === 1, "the app shell's four areas are one row again: " + JSON.stringify(tops));
   ok(!(await p.$("#esmenu")), "and the pages have no menu button");
-  await intoWriting(p);
-  ok(await p.$eval(".qp-navlinks", e => getComputedStyle(e).display !== "none"), "the workspace's links are back on its toolbar");
-  ok(await p.$eval("#esmenu", e => getComputedStyle(e).display === "none"), "and its menu button is not shown");
-  ok(await p.$eval("#esnavpanel", e => getComputedStyle(e).display !== "none"), "the group is a row again, not a panel");
 
   console.log("");
   console.log(pass + " passed, " + fail + " failed");
