@@ -8,8 +8,8 @@ const wait = (p, ms) => p.waitForTimeout(ms);
 
 async function toSetup(p) {
   await p.goto(T);
-  await p.waitForSelector('.navtab', { timeout: 8000 });
-  await p.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
+  await p.waitForSelector('.ash-link', { timeout: 8000 });
+  await p.$$eval('.ash-link', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await p.waitForSelector('#essubject', { timeout: 8000 });
   await p.selectOption('#essubject', 'business_studies');
   await wait(p, 300);

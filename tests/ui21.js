@@ -14,8 +14,8 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   const p=await (await b.newContext({viewport:{width:1500,height:1050},deviceScaleFactor:2})).newPage();
   const errs=[]; p.on('pageerror',e=>errs.push(String(e).slice(0,200)));
   let calls=0; await p.route(/workers\.dev/, r=>{calls++;r.abort();});
-  await p.goto(T); await here(p, '.navtab');
-  await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
+  await p.goto(T); await here(p, '.ash-link');
+  await p.$$eval('.ash-link',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await settled(p);
   await p.selectOption('#essubject','business_studies'); await settled(p);
   await chooseQuestion(p, /target markets affect/i);
@@ -51,10 +51,10 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   console.log('3. it is not a gate');
   const fresh=await (await b.newContext({viewport:{width:1400,height:1000}})).newPage();
   await fresh.route(/workers\.dev/, r=>r.abort());
-  await fresh.goto(T); await here(fresh, '.navtab');
+  await fresh.goto(T); await here(fresh, '.ash-link');
   await fresh.evaluate(()=>localStorage.removeItem('marginal.essay.v1'));
-  await fresh.goto(T); await here(fresh, '.navtab');
-  await fresh.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
+  await fresh.goto(T); await here(fresh, '.ash-link');
+  await fresh.$$eval('.ash-link',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await settled(fresh);
   await fresh.selectOption('#essubject','business_studies'); await settled(fresh);
   await chooseQuestion(fresh, /target markets affect/i);

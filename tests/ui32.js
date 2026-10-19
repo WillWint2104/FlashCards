@@ -28,12 +28,12 @@ const { WITHHOLDING_FIXTURE } = require('./fixtures/withholding.js');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 
 async function openFixture(p){
-  await p.goto(P); await here(p, '.navtab');
+  await p.goto(P); await here(p, '.ash-link');
   await p.evaluate(()=>localStorage.removeItem('marginal.essay.v1'));
-  await p.goto(P); await here(p, '.navtab');
+  await p.goto(P); await here(p, '.ash-link');
   // the fixture subject, added to the pack the page already loaded
   await p.evaluate(f=>{ window.ESSAY.subjects[f.key]=f; }, WITHHOLDING_FIXTURE);
-  await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
+  await p.$$eval('.ash-link',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await settled(p);
   await p.selectOption('#essubject','contract_test');
   await settled(p);

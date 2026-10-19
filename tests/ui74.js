@@ -60,7 +60,7 @@ const text = (p, sel) => p.$eval(sel, e => e.textContent.replace(/\s+/g, ' ').tr
 const qhead = p => text(p, '.exam-qhead');
 const stored = p => p.evaluate(() => JSON.parse(localStorage.getItem('marginal.trial.v1') || '{}').attempts || {});
 const current = async p => { const at = await stored(p); const k = Object.keys(at).find(x => at[x] && at[x].current); return k ? { key: k, a: at[k].current, rec: at[k] } : null; };
-async function toTest(p) { await p.$$eval('.navtab', es => es.find(x => /Test mode/i.test(x.textContent)).click()); await settled(p); }
+async function toTest(p) { await p.$$eval('.ash-link', es => es.find(x => /Test mode/i.test(x.textContent)).click()); await settled(p); }
 async function sit(p, name, sections) {
   await toTest(p);
   await p.evaluate(n => { const c = [...document.querySelectorAll('.tm-paper')].find(x => !n || x.textContent.includes(n)) || document.querySelector('.tm-paper'); c.querySelector('[data-tmopen]').click(); }, name || '');

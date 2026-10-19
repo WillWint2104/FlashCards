@@ -26,13 +26,6 @@
   ::selection{background:var(--green-soft)}
   @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
-  header{display:flex;align-items:center;gap:12px;padding:16px clamp(16px,4vw,32px);background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
-  .brand{display:flex;align-items:center;gap:10px;font-family:var(--disp);font-weight:600;font-size:20px}
-  .mk{width:28px;height:28px;border-radius:9px;background:var(--green);position:relative;flex:none;box-shadow:0 3px 0 var(--green-dk)}
-  .mk::after{content:"";position:absolute;left:7px;right:7px;bottom:6px;height:3px;border-radius:2px;background:#fff}
-  .mk::before{content:"";position:absolute;left:7px;bottom:6px;width:3px;height:14px;border-radius:2px;background:rgba(255,255,255,.9)}
-  .unit{font-size:13px;color:var(--ink-2);font-weight:700;margin-left:auto;text-align:right}
-
   main{max-width:1180px;margin:0 auto;padding:28px clamp(16px,4vw,40px) 90px}
 
   .hi{font-family:var(--disp);font-weight:600;font-size:24px}
@@ -140,10 +133,6 @@
   .pop b{font-family:var(--disp);display:block;margin-bottom:3px;color:#fff;text-transform:capitalize}
   .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;font-weight:700;font-size:14px;padding:11px 20px;border-radius:99px;z-index:200}
 
-  .nav{display:flex;gap:6px;background:#E2EAEA;border-radius:99px;padding:5px;width:max-content;max-width:100%;flex-wrap:wrap;margin-bottom:20px}
-  .navtab{white-space:nowrap}
-  .navtab{font-family:var(--disp);font-weight:600;font-size:14px;border:none;background:none;color:var(--ink-2);padding:8px 22px;border-radius:99px}
-  .navtab.on{background:var(--card);color:var(--green-dk);box-shadow:0 1px 4px rgba(60,74,74,.12)}
   .bcard{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:18px;margin-bottom:16px}
   .blabel{display:block;font-family:var(--disp);font-weight:600;font-size:13px;color:var(--ink-2);margin:10px 0 5px}
   .binput{width:100%;font:inherit;font-weight:600;font-size:14.5px;color:var(--ink);border:2px solid var(--line);border-radius:12px;padding:10px 13px;background:#FBFDFD}
@@ -177,7 +166,6 @@
   .authmsg.err{color:var(--coral-dk)}
   .authmsg.ok{color:var(--green-dk)}
   .authlink{background:none;border:none;color:var(--green-dk);font-weight:700;font-size:13.5px;cursor:pointer;padding:0;text-decoration:underline}
-  .whoami{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;color:var(--ink-2)}
 
   /* ---- sets manager (compact list) ---- */
   .setsmgr{margin-top:24px}
@@ -812,7 +800,7 @@
      shrinks to make room for a resource: the writing is the product. */
   @media(max-width:1320px){
     .es-cols{grid-template-columns:minmax(0,1fr)}
-    .es-cols.withdrawer .es-drawer{position:fixed;right:16px;top:76px;bottom:16px;width:min(390px,86vw);z-index:130;max-height:none;box-shadow:0 20px 60px rgba(28,40,40,.28)}
+    .es-cols.withdrawer .es-drawer{position:fixed;right:16px;top:calc(var(--ash-h,0px) + 76px);bottom:16px;width:min(390px,86vw);z-index:130;max-height:none;box-shadow:0 20px 60px rgba(28,40,40,.28)}
   }
   .es-map{position:sticky;top:8px;display:flex;flex-direction:column;gap:3px}
   .es-maph{font-family:var(--disp);font-weight:600;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:5px}
@@ -1480,7 +1468,9 @@
      opaque, square, full width and does not float: no scrim colour, no card
      radius, no shadow, no entrance animation. Nothing shows through, because
      there is nothing behind it any more. */
-  .es-scrim{position:fixed;inset:0;background:var(--bg);display:block;padding:0;overflow:auto;z-index:120}
+  /* Below the app shell, never over it: the bar stays on screen on every essay
+     page, and --ash-h is its measured height (shellRender in app.js). */
+  .es-scrim{position:fixed;inset:var(--ash-h,0px) 0 0;background:var(--bg);display:block;padding:0;overflow:auto;z-index:120}
   .es-shell{width:100%;max-width:none}
   .es-wrap{background:transparent;border-radius:0;box-shadow:none;padding:0 0 40px}
   /* The header is the application's, so it stays put and reads as one: full
@@ -1494,7 +1484,6 @@
   /* the composer takes the canvas: the writing has to be the dominant thing on screen */
   .es-shell:has(.es-canvas){max-width:min(1480px,94vw)}
   .es-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
-  .es-demobadge{font-family:var(--disp);font-weight:600;font-size:11px;color:var(--green-dk);background:var(--green-soft);border-radius:99px;padding:2px 10px}
   .es-topbtns{display:flex;align-items:center;gap:10px;flex:none}
   .es-x{background:none;border:none;font-family:var(--disp);font-weight:600;font-size:13px;color:var(--ink-2);padding:6px 12px;border-radius:10px;cursor:pointer}
   .es-x:hover{background:var(--green-soft);color:var(--green-dk)}
@@ -1681,40 +1670,22 @@
      was rendering inside the Study tab, so Backup & restore and the topic map
      sat above the question list: the flow has to own the viewport the way the
      workspace it leads into does. */
-  .qp{position:fixed;inset:0;overflow:auto;z-index:120;background:var(--page);color:var(--e-ink)}
+  .qp{position:fixed;inset:var(--ash-h,0px) 0 0;overflow:auto;z-index:120;background:var(--page);color:var(--e-ink)}
   /* THE PAGE. Header, a main column with a rail beside it, a footer, and the
      footer sits at the bottom rather than under the content, so a short page is
      still a page. The rail is composition: without it the right half of a
      desktop viewport is empty and page two of a filtered list is three rows in
      a field of nothing. */
   .qp{display:flex;flex-direction:column}
-  /* The app styles bare header{} and main{} elements: sticky, padded, and main
-     capped at 1180px. Those matched this flow's semantic elements and shrank the
-     page to a column, which is the same class of collision as .es-btn. Every
-     inherited property is overridden here rather than worked around. */
-  .qp-nav{display:block;position:static;padding:0;max-width:none;gap:0;
-    background:var(--surface);border-bottom:1px solid var(--e-line);flex:none}
-  .qp-navin{max-width:1320px;margin:0 auto;padding:13px 28px;display:flex;align-items:center;gap:16px}
-  /* The brand is the home route on every surface, so it is a button, not a
-     word. .static is the one surface with nowhere to go: the flow failed to
-     load, and offering a destination it cannot reach would be a lie. */
-  .qp-brand{display:inline-flex;align-items:center;gap:10px;background:none;border:0;padding:4px 6px;
-    margin-left:-6px;border-radius:10px;cursor:pointer;font:inherit;color:inherit}
-  .qp-brand:hover .qp-word{color:var(--e-green-dk)}
-  .qp-brand:focus-visible{outline:2px solid var(--e-green);outline-offset:2px}
-  .qp-brand.static{cursor:default}
-  .qp-brand.static:hover .qp-word{color:var(--e-ink)}
+  /* The page's header is the app shell's (.ash); this flow has none of its own. */
   .qp-logo{width:30px;height:30px;border-radius:9px;background:var(--e-green);color:#fff;flex:none;
     display:grid;place-items:center;font-family:var(--disp);font-weight:800;font-size:16px}
   .qp-logo.sm{width:24px;height:24px;font-size:13px;border-radius:7px}
-  .qp-word{font-family:var(--disp);font-weight:800;font-size:18px;letter-spacing:-.3px;color:var(--e-ink)}
   .qp-navlinks{display:flex;gap:4px;margin-left:14px}
   .qp-navlink{background:none;border:0;border-bottom:2.5px solid transparent;font:inherit;font-size:14px;
     font-weight:600;color:var(--e-ink2);cursor:pointer;padding:8px 10px}
   .qp-navlink:hover{color:var(--e-ink)}
   .qp-navlink.on{color:var(--e-ink);border-bottom-color:var(--e-green);font-weight:700}
-  .qp-navright{margin-left:auto;display:flex;align-items:center;gap:14px}
-  .qp-subj{font-size:13px;font-weight:600;color:var(--e-ink3)}
   /* ---- THE BAR ON A NARROW SCREEN ----
      The desktop bar simply went on running horizontally and was clipped after
      the subject label, which meant that on a phone the way out of the essay was
@@ -1736,9 +1707,8 @@
        a min-width of 0, so it collapsed to nothing rather than pushing anything
        else off. Row one is the brand and the two controls, row two is where the
        student is. Nothing competes and nothing is ellipsised. */
-    .qp-navin, .es-scrim .es-wrap > .es-top, .es-top{position:relative;gap:8px;flex-wrap:wrap;
+    .es-scrim .es-wrap > .es-top, .es-top{position:relative;gap:8px;flex-wrap:wrap;
       justify-content:flex-start}
-    .qp-navin{padding:10px 14px}
     /* The links folded into the menu WITH the rest of the group, so the bar
        says where you are instead. */
     /* It GROWS into the spare room rather than relying on an auto margin to push
@@ -1748,8 +1718,9 @@
     .es-navnow{display:block;order:9;flex:1 0 100%;font-family:var(--body);font-size:12.5px;
       font-weight:700;letter-spacing:.02em;color:var(--e-ink2);white-space:nowrap;
       overflow:hidden;text-overflow:ellipsis;margin-top:-2px}
-    .qp-brand{margin-right:auto}
     .es-keepout, .es-menubtn{margin-left:0}
+    /* The brand is the app shell's now, so the way out leads the row from the right. */
+    .es-top > .es-keepout{margin-left:auto}
     .es-menubtn{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 11px;
       background:var(--surface);border:1px solid var(--e-line);border-radius:10px;
       font-family:var(--body);font-size:12.5px;font-weight:600;color:var(--e-ink2);cursor:pointer;flex:none}
@@ -1759,26 +1730,23 @@
     .es-menubtn[aria-expanded="true"]{background:var(--e-mint);border-color:var(--e-green);color:var(--e-green-dk)}
     /* The same group, now a panel. Hidden until asked for, and never wider than
        the screen it is on. */
-    .qp-navin > .qp-navright, .es-scrim .es-top > .es-topbtns, .es-top > .es-topbtns{
+    .es-scrim .es-top > .es-topbtns, .es-top > .es-topbtns{
       display:none;position:absolute;top:calc(100% + 6px);right:10px;left:auto;
       z-index:60;flex-direction:column;align-items:stretch;gap:6px;
       width:min(268px, calc(100vw - 20px));max-height:70vh;overflow:auto;
       background:var(--surface);border:1px solid var(--e-line);border-radius:14px;
       box-shadow:0 10px 32px rgba(18,48,58,.14);padding:8px;margin-left:0}
-    .qp-navin > .qp-navright[data-open], .es-scrim .es-top > .es-topbtns[data-open], .es-top > .es-topbtns[data-open]{display:flex}
+    .es-scrim .es-top > .es-topbtns[data-open], .es-top > .es-topbtns[data-open]{display:flex}
     /* Inside the panel every control is a full-width row, so the menu reads as a
        list of destinations rather than as the desktop row folded over. */
-    .es-top > .es-topbtns .es-util, .qp-navin > .qp-navright .es-util{width:100%;justify-content:flex-start;
+    .es-top > .es-topbtns .es-util{width:100%;justify-content:flex-start;
       height:38px;border-color:transparent;background:none}
-    .es-top > .es-topbtns .es-util:hover, .qp-navin > .qp-navright .es-util:hover{background:var(--sunk);border-color:var(--e-line)}
-    .es-top > .es-topbtns .qp-navlinks, .qp-navin > .qp-navright .qp-navlinks{display:flex;flex-direction:column;
+    .es-top > .es-topbtns .es-util:hover{background:var(--sunk);border-color:var(--e-line)}
+    .es-top > .es-topbtns .qp-navlinks{display:flex;flex-direction:column;
       align-items:stretch;gap:2px;margin:0 0 4px;padding-bottom:6px;border-bottom:1px solid var(--e-line)}
-    .es-top .qp-navlink, .qp-navin .qp-navlink{border-bottom:0;border-radius:9px;padding:9px 12px;text-align:left;font-size:13.5px}
-    .es-top .qp-navlink:hover, .qp-navin .qp-navlink:hover{background:var(--sunk)}
-    .es-top .qp-navlink.on, .qp-navin .qp-navlink.on{background:var(--e-mint);color:var(--e-green-dk)}
-    .es-top > .es-topbtns .qp-subj, .qp-navin > .qp-navright .qp-subj{padding:5px 12px 3px;margin-right:0;
-      font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--e-ink3)}
-    .es-scrim .es-topbtns .qp-subj{margin-right:0}
+    .es-top .qp-navlink{border-bottom:0;border-radius:9px;padding:9px 12px;text-align:left;font-size:13.5px}
+    .es-top .qp-navlink:hover{background:var(--sunk)}
+    .es-top .qp-navlink.on{background:var(--e-mint);color:var(--e-green-dk)}
     /* The wordmark is the smallest thing that can go without losing identity, and
        it only goes where there is genuinely no room for it. */
     .es-scrim .es-wrap > .es-top{padding-left:14px;padding-right:14px}
@@ -2388,12 +2356,10 @@
   /* The group holds both halves of the bar now, so on a wide screen it spans it:
      the links keep their place beside the brand and the utilities keep theirs at
      the end. Narrow, the same group becomes the menu panel. */
-  .qp-navright, .es-topbtns{flex:1 1 auto;min-width:0}
-  .qp-navright{display:flex;align-items:center;gap:14px}
-  .qp-navright .qp-navlinks, .es-topbtns .qp-navlinks{margin-right:auto}
+  .es-topbtns{flex:1 1 auto;min-width:0}
+  .es-topbtns .qp-navlinks{margin-right:auto}
   .es-scrim .qp-navlinks{margin-left:6px}
   .es-scrim .es-topbtns{gap:8px;margin-left:auto}
-  .es-scrim .es-topbtns .qp-subj{margin-right:6px}
   /* The quiet member of the utility family: same height, same shape, same
      target, one step back in weight because it is a route out rather than a
      tool you open on the page. */
@@ -2841,8 +2807,6 @@
      rest of the app is unchanged. Every class is under .tm. */
   body.tm-on{--ink-2:#596866; --ink-3:#616E6C; --green-dk:#0E7A4E; --green-edge:#0A5C3C;
              --blue-dk:#0D5888; --gold-dk:#9A6000; --coral-dk:#AE3323; --footh:68px}
-  body.tm-on .unit{color:var(--ink-2);font-family:var(--disp)}
-  body.tm-on .unit b{display:block;color:var(--ink);font-size:13.5px}
   body.tm-sitting main{padding-bottom:0}
   .tm{--line:#E7EDED}
   .tm :focus-visible{outline:2px solid var(--green-dk);outline-offset:3px;border-radius:10px}
@@ -3058,7 +3022,9 @@
   .tm-how li::before{content:"";position:absolute;left:2px;top:.62em;width:6px;height:6px;border-radius:99px;background:var(--green)}
 
   /* The sitting shell (state 8), with states 14 and 15 folded in. */
-  .tm-sit{display:flex;flex-direction:column;min-height:calc(100vh - 140px)}
+  /* The sitting fills the screen under the app shell and main's 28px top padding,
+     so its footer sits on the bottom edge. */
+  .tm-sit{display:flex;flex-direction:column;min-height:calc(100vh - var(--ash-h,0px) - 28px)}
   .tm-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 16px;background:var(--card);border:1.5px solid var(--line);border-radius:16px;margin-bottom:14px}
   .tm-bar .x{background:none;border:none;font-size:19px;color:var(--ink-2);line-height:1;padding:0 2px;cursor:pointer}
   .tm-bar .paper{min-width:0}
@@ -3442,13 +3408,82 @@
     .tm-footin .tm-whereitem{display:none}
     .tm .foot-lbl{display:none}
   }
+
+  /* ===================== THE APP SHELL =====================
+     Copied verbatim from docs/mockups/00-app-shell.build.mjs (SHELL_CSS, less its
+     drawing aid), the approved design; ui78 holds the two equal. It comes last
+     so its icons are sized over .es-ico. */
+  /* THE SHARED APP SHELL (proposed). One bar on every page, in the Essay practice
+     bar's tokens and geometry: index.html .qp-navin, .qp-brand, .qp-logo, .qp-word,
+     .qp-navlink, .qp-subj and .es-util.quiet. Deliberate differences: context and
+     account text are --a-ink2 (4.64:1), not .qp-subj's #95A7AD (2.50:1); every
+     control gets a focus ring, in --a-green-dk (3.73:1) because --a-green is 2.74:1;
+     the area links below the bar are #5D7178 (4.84:1 on the page ground); a link
+     keeps its bold width, so the bar does not shift between pages; and the bar is
+     sticky, as the app's header and the Essay writing bar are, where the Essay
+     picker bar scrolls away. */
+  .ash{--a-ink:#18272D;--a-ink2:#63787F;--a-green:#12B27A;--a-green-dk:#0E9765;--a-line:#E8EEEF;--a-sunk:#FAFCFC;
+    display:block;position:sticky;top:0;z-index:20;max-width:none;gap:0;padding:0;
+    background:#FFFFFF;border-bottom:1px solid var(--a-line);font-family:'Nunito',system-ui,sans-serif;line-height:1.6;color:var(--a-ink)}
+  .ash-in{max-width:1320px;margin:0 auto;padding:13px 28px;display:flex;align-items:center;gap:16px}
+  .ash-brand{display:inline-flex;align-items:center;gap:10px;padding:4px 6px;margin-left:-6px;border-radius:10px;color:inherit;text-decoration:none}
+  .ash-brand:hover .ash-word,.ash-brand.is-hover .ash-word{color:var(--a-green-dk)}
+  .ash-brand:focus-visible,.ash-brand.is-focus{outline:2px solid var(--a-green-dk);outline-offset:2px}
+  .ash-logo{width:30px;height:30px;border-radius:9px;background:var(--a-green);color:#fff;display:grid;place-items:center;font-family:'Fredoka',system-ui,sans-serif;font-weight:700;font-size:16px;line-height:1}
+  .ash-word{font-family:'Fredoka',system-ui,sans-serif;font-weight:700;font-size:18px;letter-spacing:-.3px;color:var(--a-ink)}
+  .ash-links{display:flex;gap:4px;margin-left:14px}
+  .ash-link{display:inline-flex;flex-direction:column;align-items:center;font:600 14px/1.6 'Nunito',system-ui,sans-serif;color:var(--a-ink2);padding:8px 10px;border-bottom:2.5px solid transparent;text-decoration:none;white-space:nowrap}
+  /* Each link holds its bold width, so the current section's weight never moves its
+     neighbours: the bar is identical, to the pixel, whichever page is open. */
+  .ash-link::after,.ash-sublink::after{content:attr(data-label);font-weight:700;height:0;overflow:hidden;visibility:hidden;user-select:none;pointer-events:none}
+  .ash-link:hover,.ash-link.is-hover{color:var(--a-ink)}
+  .ash-link[aria-current="page"]{color:var(--a-ink);font-weight:700;border-bottom-color:var(--a-green)}
+  .ash-link:focus-visible,.ash-link.is-focus{outline:2px solid var(--a-green-dk);outline-offset:2px;border-radius:6px}
+  .ash-right{margin-left:auto;display:flex;align-items:center;gap:14px;min-width:0}
+  .ash-right > *{flex:none}
+  /* Nothing on the right may push the bar past one row. The subject is display
+     context, so it is what shortens. The account never shortens while a subject is
+     there to give way; its student number is free text of any length, so it has a
+     ceiling, and below 1024px, where the subject is left out, it may shorten too.
+     Shortened or not, its full value is its title. */
+  .ash-right > .ash-ctx{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .ash-who > span{min-width:0;max-width:28ch;overflow:hidden;text-overflow:ellipsis}
+  .ash-ctx{font-size:13px;font-weight:600;color:var(--a-ink2);white-space:nowrap}
+  .ash-demo{margin-left:-6px;font-family:'Fredoka',system-ui,sans-serif;font-weight:600;font-size:11px;color:#0E7A4E;background:#E7F8F0;border-radius:99px;padding:2px 10px}
+  .ash-sep{width:1px;height:20px;background:var(--a-line);flex:none}
+  .ash-who{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--a-ink2);white-space:nowrap}
+  .ash-ico{width:17px;height:17px;flex:none}
+  .ash-out{display:inline-flex;align-items:center;gap:8px;margin-right:-14px;background:none;border:1px solid transparent;border-radius:11px;padding:8px 14px;font:600 13.5px/1.6 'Nunito',system-ui,sans-serif;color:var(--a-ink2);cursor:pointer}
+  .ash-out:hover,.ash-out.is-hover{background:var(--a-sunk);border-color:var(--a-line);color:var(--a-ink)}
+  .ash-out:hover .ash-ico,.ash-out.is-hover .ash-ico{color:var(--a-green-dk)}
+  .ash-out:focus-visible,.ash-out.is-focus{outline:2px solid var(--a-green-dk);outline-offset:2px}
+  /* An area's own navigation, below the bar and inside the page: Essay practice only. */
+  .ash-sub{font-family:'Nunito',system-ui,sans-serif;line-height:1.6}
+  .ash-subin{max-width:1320px;margin:0 auto;padding:18px 28px 0}
+  .ash-subrow{display:flex;gap:24px;border-bottom:1px solid var(--e-line,#E8EEEF)}
+  .ash-sublink{display:inline-flex;flex-direction:column;align-items:center;font-size:14px;font-weight:600;color:#5D7178;padding:4px 0 10px;margin-bottom:-1px;border-bottom:2.5px solid transparent;text-decoration:none}
+  .ash-sublink:hover,.ash-sublink.is-hover{color:#18272D}
+  .ash-sublink[aria-current="page"]{color:#18272D;font-weight:700;border-bottom-color:#12B27A}
+  .ash-sublink:focus-visible,.ash-sublink.is-focus{outline:2px solid #0E9765;outline-offset:2px;border-radius:6px}
+  /* From 861px to 1023px the bar keeps the brand, the four sections, the account and
+     Sign out, and leaves out the subject, which is display only. */
+  @media (max-width:1023px){
+    .ash-ctx,.ash-ctx + .ash-sep{display:none}
+    .ash-right > .ash-who{flex:0 1 auto;min-width:0}
+  }
+  /* At 860px and below the shell has no designed treatment yet: that is the mobile
+     phase. It only wraps, so nothing is cut off or scrolls the page sideways. */
+  @media (max-width:860px){
+    .ash-in{flex-wrap:wrap;row-gap:4px;padding:10px 16px}
+    .ash-links{order:3;flex:1 0 100%;margin-left:0;overflow-x:auto}
+  }
 </style>
 </head>
 <body>
-<header>
-  <div class="brand"><span class="mk"></span>Marginal</div>
-  <div class="unit">HSC Economics<br>Distribution of Income &amp; Wealth</div>
-</header>
+<!-- THE APP SHELL. One bar on every page, rendered by shellRender() in app.js. What
+     is written here is its signed-out state, the brand alone, so the page has its
+     bar before the scripts run and if they never do. ui78 holds the two equal. -->
+<header class="ash" id="ash"><div class="ash-in"><a class="ash-brand" href="#study" data-shell="home" aria-label="Marginal, Study home"><span class="ash-logo" aria-hidden="true">M</span><span class="ash-word">Marginal</span></a></div></header>
 <main id="app" aria-live="polite"></main>
 <script>
   // ===== TEACHER SETUP — edit these two lines, then deploy =====
@@ -3484,6 +3519,11 @@
 // =============================================================================
 window.CONTENT = {
   subject: "Economics",
+  // Which registered subject this Study content is, by key. The app shell reads it
+  // to name Study's course ("Economics · Year 12") through the subject registry.
+  // Display only: marking does not read it. A gate test holds the key's package
+  // label to `subject` above, so the two cannot drift apart.
+  subjectKey: "economics",
   // The four dimensions this subject's extended responses are marked against.
   // Sent with every marking request so the marker uses THIS subject's criteria.
   // Original wording describing the assessed dimensions, not copied from NESA.
@@ -13418,6 +13458,106 @@ module.exports = {
   const app = $("#app");
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
 
+  // ===================== THE APP SHELL =====================
+  // ONE bar on every page: the brand, the four areas, the open workspace's subject,
+  // the account and Sign out. It is rendered here and nowhere else, into the one
+  // <header id="ash"> index.html carries, so the pages cannot drift apart again: a
+  // page says which area it is and what it is about, and this draws the bar.
+  //
+  // Two inputs, one bar. #app pages set SHELL.page; Essay practice, an overlay over
+  // whatever #app page it was opened from, sets SHELL.essay while it is open. The
+  // overlay's wins, and when it closes the bar falls back to the page underneath,
+  // so a Test mode redraw under the overlay can never repaint the bar it is under.
+  //
+  // THE SUBJECT IS DISPLAY ONLY. Each area computes it from its own authority (Study
+  // from content.js's subjectKey, Test mode from the paper's resolved subject and
+  // declared stage, Essay practice from its package) and hands over a string.
+  // Nothing outside this block reads SHELL, so it can never become a second answer
+  // to which subject marks a response.
+  const SHELL = { page: { area: null, context: "" }, essay: null };
+  const SHELL_AREAS = [["study", "Study"], ["create", "Create"], ["test", "Test mode"], ["essay", "Essay practice"]];
+  const shellHost = document.getElementById("ash");
+  // A package's context as a student reads it: "Economics · Year 12".
+  const shellContextOf = pkg => pkg ? [pkg.label, pkg.stage].filter(Boolean).join(" · ") : "";
+  function shellPage(area, context) { SHELL.page = { area: area || null, context: context || "" }; shellRender(); }
+  function shellEssay(s) { SHELL.essay = s || null; shellRender(); }
+  function shellHTML(s) {
+    // Signed out (area null): the brand alone, exactly as index.html writes it.
+    const brand = `<a class="ash-brand" href="#study" data-shell="home" aria-label="Marginal, Study home"><span class="ash-logo" aria-hidden="true">M</span><span class="ash-word">Marginal</span></a>`;
+    if (!s.area) return `<div class="ash-in">${brand}</div>`;
+    const links = SHELL_AREAS.filter(([k]) => k !== "essay" || essayEnabled()).map(([k, label]) =>
+      `<a class="ash-link" href="#${k}" data-shell="${k}" data-label="${label}"${k === s.area ? ' aria-current="page"' : ""}>${label}</a>`).join("");
+    const context = (s.context ? `<span class="ash-ctx">${esc(s.context)}</span>` : "") + (s.demo ? '<span class="ash-demo">demo</span>' : "");
+    // The account, as the profile holds it: class code and student number. With
+    // cloud sign-in off there is no account, and so no Sign out.
+    let who = "";
+    if (cloudActive()) {
+      const w = Cloud.who();
+      const label = w ? `${w.class_code} · #${w.student_number}` : "Signed in";
+      who = `<span class="ash-who">${esIcon("user", "ash-ico")}<span title="${esc(label)}">${esc(label)}</span></span>` +
+        `<button type="button" class="ash-out" data-shell="signout">${esIcon("exit", "ash-ico")}<span>Sign out</span></button>`;
+    }
+    return `<div class="ash-in">${brand}<nav class="ash-links" aria-label="Marginal">${links}</nav>` +
+      `<div class="ash-right">${context}${context && who ? '<span class="ash-sep" aria-hidden="true"></span>' : ""}${who}</div></div>`;
+  }
+  // The overlays start below the bar (index.html .qp, .es-scrim), so they read its
+  // height from here: measured, because it wraps at a phone's width.
+  function shellMeasure() {
+    if (shellHost) document.documentElement.style.setProperty("--ash-h", shellHost.getBoundingClientRect().height + "px");
+  }
+  function shellRender() {
+    if (!shellHost) return;
+    shellHost.innerHTML = shellHTML(SHELL.essay || SHELL.page);
+    shellMeasure();
+  }
+  // Essay practice's own two pages, Essay practice and My essays. A row in the page
+  // under the bar, not a second bar, so the bar is the same object everywhere. The
+  // links carry Essay practice's own routes (data-esnav), so the picker's handler
+  // moves between them exactly as it always has.
+  function shellSubHTML(current) {
+    return `<nav class="ash-sub" aria-label="Essay practice"><div class="ash-subin"><div class="ash-subrow">${
+      [["practice", "back", "Essay practice"], ["essays", "essays", "My essays"]].map(([k, to, label]) =>
+        `<a class="ash-sublink" href="#${k}" data-esnav="${to}" data-label="${label}"${k === current ? ' aria-current="page"' : ""}>${label}</a>`).join("")}</div></div></nav>`;
+  }
+  // Where each control goes. These are the routes the old controls took, unchanged:
+  // the brand to the Study home, Study to home() (the topic the student was in), and
+  // Create and Test mode to their first pages. Leaving Essay practice goes through
+  // esLeave, the one exit every Essay route uses, which saves the draft first.
+  function shellLeaveEssay() { if (document.getElementById("eshost")) esLeave(); }
+  function shellGo(to) {
+    if (to === "essay") {
+      // Already there: the area's own "Essay practice" route, so the bar adds no
+      // essay navigation of its own.
+      if (document.getElementById("eshost")) { const own = document.querySelector('#eshost [data-esnav="back"]'); if (own) own.click(); return; }
+      esOpen({}); return;
+    }
+    if (to === "signout") return shellSignOut();
+    shellLeaveEssay();
+    if (to === "home") { view = "study"; mainPage(); return; }
+    if (to === "study") { view = "study"; home(); return; }
+    // A Study session ends when the student goes elsewhere; a session left running
+    // would keep the keyboard shortcuts and the marking reply bound to it.
+    session = null;
+    if (to === "create") { view = "create"; builder(); return; }
+    if (to === "test") { view = "test"; examHome(); }
+  }
+  async function shellSignOut() {
+    shellLeaveEssay(); tmLeave();
+    await Cloud.signOut(); toast("Signed out."); authScreen();
+  }
+  if (shellHost) {
+    shellHost.addEventListener("click", e => {
+      const a = e.target.closest && e.target.closest("[data-shell]");
+      if (!a) return;
+      e.preventDefault();
+      shellGo(a.dataset.shell);
+    });
+    if (window.ResizeObserver) new ResizeObserver(shellMeasure).observe(shellHost);
+  }
+  // Essay practice's row links are anchors so they read and focus as navigation;
+  // the picker's handler does the moving, and the URL is left alone.
+  document.addEventListener("click", e => { if (e.target.closest && e.target.closest("a.ash-sublink")) e.preventDefault(); });
+
   function linkGlossary(text) {
     let html = esc(text);
     Object.keys(C.glossary).sort((a, b) => b.length - a.length).forEach(term => {
@@ -13430,40 +13570,26 @@ module.exports = {
   }
 
   let session = null;
-  let view = "study"; // 'study' | 'create'
-
-  function nav() {
-    return `<div class="nav">
-      <button class="navtab ${view === "study" ? "on" : ""}" data-v="study">Study</button>
-      <button class="navtab ${view === "create" ? "on" : ""}" data-v="create">Create</button>
-      <button class="navtab ${view === "test" ? "on" : ""}" data-v="test">Test mode</button>
-      ${essayEnabled() ? `<button class="navtab" data-v="essay">Essay practice</button>` : ""}
-    </div>`;
-  }
-  function wireNav() {
-    app.querySelectorAll(".navtab").forEach(b => b.onclick = () => {
-      const v = b.dataset.v;
-      // Essay practice is a full-screen overlay (not a study/create view), and it runs
-      // on the student's own question, so it is available to any login while the flag
-      // is on. It never changes the underlying Study/Create view.
-      if (v === "essay") { esOpen({}); return; }
-      // Test mode is a real view (full screen), not an overlay: it lists the
-      // practice exams a teacher has imported and is where a paper is sat.
-      if (v === "test") { view = "test"; examHome(); return; }
-      view = v; view === "study" ? home() : builder();
-    });
-  }
+  // The #app area on screen: 'study' | 'create' | 'test'. Essay practice is an overlay
+  // over one of these and never changes it (see shellGo).
+  let view = "study";
 
   // ===================== STUDY =====================
+  // Study's context in the app shell: the course its content declares, by key,
+  // through the subject registry ("Economics · Year 12"). Never a match on the label.
+  // A set the student made declares no subject, so its pages name none.
+  function studyContext(area) {
+    if (area && area.custom) return "";
+    return C.subjectKey ? shellContextOf(esSubjectContent(C.subjectKey)) : "";
+  }
   function home() { tmLeave(); if (gated()) return authScreen(); session = null; currentTopic ? areaMap(currentTopic) : mainPage(); }
 
   function mainPage() {
     tmLeave();
     if (gated()) return authScreen();
     view = "study"; session = null; currentTopic = null;
+    shellPage("study", studyContext(null));
     app.innerHTML = `
-      ${nav()}
-      ${cloudBarHTML()}
       <div class="hi">What are we studying?</div>
       <div class="hi-s">${C.subject} · pick a topic${persistent ? "" : " · preview mode: progress resets when this page closes"}</div>
       <div class="topics">
@@ -13504,9 +13630,7 @@ module.exports = {
           <span class="hint" id="restoreMsg"></span>
         </details>
       </div>`;
-    wireNav();
     app.querySelectorAll(".topiccard:not(.locked)").forEach(b => b.onclick = () => areaMap(b.dataset.topic));
-    wireCloudBar();
     wireSetsManager();
     const saveBtn = $("#saveEndpoint");
     if (saveBtn) saveBtn.onclick = () => { state.code = $("#classcode").value.trim(); save(); toast("Saved"); };
@@ -13520,22 +13644,10 @@ module.exports = {
     };
   }
 
-  // ---------- cloud sign-in bar (only when Supabase is configured) ----------
-  function cloudBarHTML() {
-    // The app is only reachable when signed in (hard gate), so this bar always
-    // shows the signed-in identity + sign-out. (Empty when Supabase is off.)
-    if (!cloudActive()) return "";
-    const w = Cloud.who();
-    const label = w ? `${esc(w.class_code)} · #${esc(w.student_number)}` : "Signed in";
-    return `<div class="whoami" style="justify-content:flex-end;margin:-4px 0 8px">Signed in: <b>${label}</b> <button class="btn sm ghost" id="signout">Sign out</button></div>`;
-  }
-  function wireCloudBar() {
-    const so = $("#signout"); if (so) so.onclick = async () => { await Cloud.signOut(); toast("Signed out."); authScreen(); };
-  }
-
   // ---------- auth screen (class code + student number + password) ----------
   function authScreen() {
     view = "study"; session = null; currentTopic = null;
+    shellPage(null);
     // The hard gate — the entry point when not signed in. No nav, no way past
     // it until sign-in succeeds.
     app.innerHTML = `
@@ -13691,8 +13803,8 @@ module.exports = {
     const topic = C.topics.find(t => t.id === topicId);
     if (!topic) return mainPage();
     const totalDue = topic.areas.reduce((n, a) => n + dueCards(a).length, 0);
+    shellPage("study", studyContext(null));
     app.innerHTML = `
-      ${nav()}
       <div class="sessionbar"><button class="x" id="quit" title="All topics">←</button>
         <span class="lbl">${esc(topic.name)}</span></div>
       <div class="hi">Pick an area to master</div>
@@ -13714,7 +13826,6 @@ module.exports = {
           </button>`;
         }).join("")}
       </div>`;
-    wireNav();
     $("#quit").onclick = mainPage;
     app.querySelectorAll(".area").forEach(b => b.onclick = () => modePicker(b.dataset.area));
   }
@@ -13741,6 +13852,11 @@ module.exports = {
   function modePicker(areaId) {
     const area = findArea(areaId);
     if (!area || !area.cards.length) return toast("This set has no cards yet.");
+    // Every Study page past this one is reached through it, so this is where Study
+    // becomes the open area, whichever way the student came (Create's "Study this
+    // set" arrives with view still "create").
+    view = "study";
+    shellPage("study", studyContext(area));
     const lessons = area.lessons || [];
     app.innerHTML = `
       <div class="sessionbar"><button class="x" id="quit" title="Back">←</button>
@@ -14692,10 +14808,14 @@ module.exports = {
         if (!ans) return toast("Write an answer first — retrieval is the point!");
         $("#check").disabled = true; $("#check").textContent = "Marking…";
         session.lastAnswer = ans;   // kept so a written answer can be marked properly on request
+        const mine = session;
         let g;
         if (card.type === "calc") g = gradeCalc(card, ans);
         else if (card.type === "essay") g = await gradeWritten(card, ans);
         else g = gradeLocal(card, ans);
+        // Marking can take a while, and the app shell lets the student leave while it
+        // runs. A reply for a session they have left has no card to land on.
+        if (session !== mine) return;
         finishCard(card, g);
       };
     }
@@ -14740,10 +14860,13 @@ module.exports = {
         g.fb = deep.fb; openReview(deep.fb, () => { session.idx++; renderCard(); });
       } else { toast("Marking could not be reached just now."); }
     };
+    // Essay practice may have been opened over this card while it was being marked:
+    // the result waits underneath, and focus and scrolling stay with the essay.
+    const over = !!document.getElementById("eshost");
     const cont = $("#continue");
-    if (cont) { cont.onclick = () => { session.idx++; renderCard(); }; cont.focus(); }
+    if (cont) { cont.onclick = () => { session.idx++; renderCard(); }; if (!over) cont.focus(); }
     const sh = $("#sheet");
-    if (sh.scrollIntoView) sh.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    if (!over && sh.scrollIntoView) sh.scrollIntoView({ behavior: "smooth", block: "nearest" });
     wireGlossary();
   }
 
@@ -14999,20 +15122,32 @@ module.exports = {
   // tools/contract/attempts.js (ATT). This code renders what ATT returns, records
   // what the student does through ATT, and saves. It counts nothing itself.
   //
-  // THE HEADER BELONGS TO THE OPEN PAPER (decision 4). index.html carries a Study
-  // subject as a literal. In Test Mode the header names the subject of the paper
-  // that is open, resolved from its own curriculum, and nothing at all when no
-  // paper is open. It never falls back to whatever Study last showed.
-  var TM_HEADER = (() => { const u = document.querySelector("header .unit"); return u ? u.innerHTML : ""; })();
-  function tmUnit(subject) {
-    const u = document.querySelector("header .unit");
-    if (u) u.innerHTML = subject ? `<b>${esc(subject)}</b>Test mode` : "Test mode";
+  // THE BAR BELONGS TO THE OPEN PAPER (decision 4). Test mode is the open area, and
+  // the app shell names the subject of what is open, and nothing at all when no
+  // paper is: never whatever Study last showed.
+  function tmEnter(context) {
+    shellPage("test", context);
     document.body.classList.add("tm-on");
   }
   function tmLeave() {
-    const u = document.querySelector("header .unit");
-    if (u && TM_HEADER != null) u.innerHTML = TM_HEADER;
     document.body.classList.remove("tm-on", "tm-sitting");
+  }
+  // What the bar says about the papers in front of the student: the most specific
+  // context they supply with authority. Every paper must resolve, through its own
+  // key, to ONE subject; the label is that subject's, and the stage is the one the
+  // papers themselves declare ("Stage 6"), shown when they agree. Never the
+  // package's stage, and never tmSubjectOf's fallback to a file's course text: a
+  // paper that does not resolve, or a practice drawn from two subjects, names
+  // nothing. Display only (see THE APP SHELL).
+  function tmContext(papers) {
+    const seen = (papers || []).filter((p, i, arr) => arr.indexOf(p) === i).map(p => {
+      const c = ASSESS.curriculumOf(p) || {};
+      const a = ASSESS.resolveAuthority({ curriculum: c, packages: tmPackages() });
+      return a.ok ? { key: a.subjectKey, label: a.label, stage: String(c.stage || "").trim() } : null;
+    });
+    if (!seen.length || seen.some(x => !x) || seen.some(x => x.key !== seen[0].key)) return "";
+    const stage = seen.every(x => x.stage === seen[0].stage) ? seen[0].stage : "";
+    return [seen[0].label, stage].filter(Boolean).join(" · ");
   }
   function tmPackages() { return esAllSubjects().subjects || {}; }
   function tmSubjectOf(paper) {
@@ -15057,7 +15192,7 @@ module.exports = {
     return [tmSubjectOf(p) || c.course || c.subjectKey, c.stage || ""].filter(Boolean).join(" · ");
   }
   function tmShell(inner, opts) {
-    return `${nav()}${(opts && opts.cloud) ? cloudBarHTML() : ""}<div class="tm${opts && opts.cls ? " " + opts.cls : ""}">${inner}</div>`;
+    return `<div class="tm${opts && opts.cls ? " " + opts.cls : ""}">${inner}</div>`;
   }
   const tmBack = (label, id) => `<button type="button" class="tm-back" id="${id || "tmback"}"><span aria-hidden="true">← </span>${esc(label || "Test mode")}</button>`;
 
@@ -15067,7 +15202,7 @@ module.exports = {
     EXAM.gen++;                                    // whatever sitting was open has ended
     if (gated()) return authScreen();
     view = "test"; session = null; currentTopic = null;
-    tmUnit("");
+    tmEnter("");
     const papers = ATT.library(state.exams).slice().reverse();
     const counts = ATT.bankCounts(state.exams, tmPackages());
     const tiles = `<section class="tm-types" aria-labelledby="tmt1">
@@ -15104,8 +15239,7 @@ module.exports = {
         <p class="tm-lede">Practise individual question types or work through a complete paper. Answers are marked as you go and your progress is saved.${state.endpoint ? "" : " Answers that need the marker stay unmarked until your teacher connects marking."}</p>
         ${TM_POLICY}
       </div>
-      ${body}`, { cloud: true, cls: "tm-lib" });
-    wireNav(); wireCloudBar();
+      ${body}`, { cls: "tm-lib" });
     const im = $("#tmimport"); if (im) im.onclick = () => tmImport();
     // Start goes to setup; Resume goes to the saved question, not through setup again.
     app.querySelectorAll("[data-tmtype]").forEach(b => b.onclick = () => {
@@ -15179,7 +15313,7 @@ module.exports = {
   function tmImport(keep) {
     if (gated()) return authScreen();
     view = "test"; session = null; currentTopic = null;
-    tmUnit("");
+    tmEnter("");
     if (!keep) { TMI.text = ""; TMI.name = ""; TMI.size = ""; TMI.pasted = false; TMI.r = null; }
     app.innerHTML = tmShell(`
       ${tmBack()}
@@ -15189,7 +15323,6 @@ module.exports = {
       </div>
       <input id="tmfile" type="file" accept="application/json,.json" class="tm-sr">
       <div id="tmimportbody">${TMI.r ? tmImportResult() : tmImportStart()}</div>`, { cls: "tm-imp" });
-    wireNav();
     $("#tmback").onclick = tmLibrary;
     const f = $("#tmfile");
     f.onchange = () => {
@@ -15426,7 +15559,8 @@ module.exports = {
     const p = ATT.library(state.exams).find(x => ATT.identityOf(x) === identity);
     if (!p) return tmLibrary();
     const key = ATT.paperKey(identity), rec = tmRec(key);
-    tmUnit(tmSubjectOf(rec.current ? (ATT.byId(state.exams, rec.current.paper) || p) : p));
+    // The paper that is open: the attempt's pinned version while one is in progress.
+    tmEnter(tmContext([rec.current ? (ATT.byId(state.exams, rec.current.paper) || p) : p]));
     const top = `${tmBack()}
       <div class="tm-top">
         <p class="tm-kicker">${esc(tmIdentityLine(p))}</p>
@@ -15471,7 +15605,6 @@ module.exports = {
         </section>
         ${tmAboutPaper(ap, null)}
       </div>`, { cls: "tm-ov" });
-      wireNav();
       $("#tmback").onclick = tmLibrary;
       $("#tmresume").onclick = () => tmSit(key);
       $("#tmstartagain").onclick = () => {
@@ -15509,7 +15642,6 @@ module.exports = {
       </div>
       ${tmAboutPaper(p, null)}
     </div>`, { cls: "tm-ov" });
-    wireNav();
     $("#tmback").onclick = tmLibrary;
     const lr = $("#tmlastresults"); if (lr) lr.onclick = () => tmResults(key);
     const boxes = () => Array.from(app.querySelectorAll("[data-exampick]"));
@@ -15542,8 +15674,7 @@ module.exports = {
     const source = rec.current ? ATT.sequence(rec.current, state.exams) : null;
     const papersOf = xs => xs.map(b => ATT.byId(state.exams, b.paper)).filter((p, i, arr) => p && arr.indexOf(p) === i);
     const papers = rec.current ? papersOf(rec.current.items) : papersOf(bank);
-    const subjects = papers.map(tmSubjectOf).filter((s, i, arr) => s && arr.indexOf(s) === i);
-    tmUnit(subjects.length === 1 ? subjects[0] : "");
+    tmEnter(tmContext(papers));
     if (!rec.current && !bank.length && !rec.last) return tmLibrary();
     const name = tmTypeName(format);
     // The last finished session, kept apart from any session in progress (decision 25).
@@ -15595,7 +15726,6 @@ module.exports = {
             <button type="button" class="tm-btn" id="tmresume">Resume practice</button>
           </div>
         </section>${about}</div>`, { cls: "tm-ov" });
-      wireNav();
       $("#tmback").onclick = tmLibrary;
       $("#tmresume").onclick = () => tmSit(key);
       const lr = $("#tmlastresults"); if (lr) lr.onclick = () => tmResults(key);
@@ -15609,7 +15739,7 @@ module.exports = {
     if (!bank.length) {
       // Nothing left to practise, but the last session's results are still there.
       app.innerHTML = tmShell(top + `<div class="tm-layout"><section class="tm-panel">${lastStrip}<p class="tm-p">No ${esc(name.toLowerCase())} questions are in your library now.</p></section>${about}</div>`, { cls: "tm-ov" });
-      wireNav(); $("#tmback").onclick = tmLibrary; $("#tmlastresults").onclick = () => tmResults(key);
+      $("#tmback").onclick = tmLibrary; $("#tmlastresults").onclick = () => tmResults(key);
       return;
     }
     const one = bank.length === 1;
@@ -15635,7 +15765,6 @@ module.exports = {
           <button type="button" class="tm-btn" id="tmtypego">Start practice</button>
         </div>
       </section>${about}</div>`, { cls: "tm-ov" });
-    wireNav();
     $("#tmback").onclick = tmLibrary;
     const lr = $("#tmlastresults"); if (lr) lr.onclick = () => tmResults(key);
     const panel = app.querySelector(".tm-panel");
@@ -15791,7 +15920,9 @@ module.exports = {
     const a = tmAttempt(); if (!a) return tmLibrary();
     const e = SIT.seq[SIT.pos];
     EXAM.paper = e.paper;                          // markingContext reads the paper this question is in
-    tmUnit(tmSubjectOf(e.paper));
+    // Every paper in the sitting, not this question's: a practice drawn from several
+    // papers names one subject on every page, or none (see tmContext).
+    tmEnter(tmContext(SIT.seq.map(x => x.paper)));
     document.body.classList.add("tm-sitting");
     const st = ATT.itemState(a, e.key);
     const g = a.results[e.key];
@@ -15825,7 +15956,6 @@ module.exports = {
           : `<button type="button" class="tm-btn sm ghost" id="examfinish">${a.scope === "paper" ? "Review &amp; submit" : "Review &amp; finish"}</button>`}
       </div></div>
       <div id="tmnavwrap"></div>`, { cls: "tm-sit" });
-    wireNav();
     tmWireSitting(e, a, f, g);
     if (scrollTop) window.scrollTo(0, 0);
   }
@@ -16178,8 +16308,7 @@ module.exports = {
     if (!seq.length) return tmLibrary();
     const r = ATT.report(a, state.exams, tmPendingKeys(a));
     const type = a.scope === "type", paper = type ? null : ATT.byId(state.exams, a.paper);
-    const subjects = Array.from(new Set(seq.map(e => tmSubjectOf(e.paper)).filter(Boolean)));
-    tmUnit(subjects.length === 1 ? subjects[0] : "");
+    tmEnter(tmContext(seq.map(e => e.paper)));
     const secOf = si => paper.sections[si];
     const shortOf = (x) => ATT.sectionShort(type ? seq.find(e => e.key === x.key).sec : secOf(x.si), x.si);
     const label = x => x.eitherSlot ? "Question " + x.options.join(" or ") : "Question " + (x.display || "");
@@ -16339,7 +16468,6 @@ module.exports = {
           <div class="tm-go"><p class="tm-sum" id="tmrsum" aria-live="polite">${sum}</p>${action}</div>
         </section>${aside}
       </div></div>`, { cls: "tm-ov tm-review" });
-    wireNav();
     $("#tmrback").onclick = () => tmSitAt(key, r.at);
     app.querySelectorAll("[data-tmreviewgo]").forEach(b => b.onclick = () => tmSitAt(key, b.dataset.tmreviewgo));
     app.querySelectorAll("[data-tmleave]").forEach(b => b.onclick = () => tmLeaveUnmarked(key, b.dataset.tmleave));
@@ -16505,7 +16633,7 @@ module.exports = {
     const r = ATT.results(a, state.exams), type = a.scope === "type", R = r.rows;
     const paper = type ? null : ATT.byId(state.exams, a.paper);
     const seq = ATT.sequence(a, state.exams);
-    tmUnit(seq[0] ? tmSubjectOf(seq[0].paper) : "");
+    tmEnter(tmContext(seq.map(e => e.paper)));
     const names = [...new Set(r.bands.map(b => b.paperName))];
     const fromLine = names.length === 1 ? "From " + names[0] : "From " + tmPlural(names.length, "paper") + " in your library";
     const scopeWords = type ? fromLine : !paper || a.sections.length === paper.sections.length ? "The whole paper"
@@ -16557,7 +16685,6 @@ module.exports = {
         <section class="tm-panel" aria-labelledby="tmrslh"><h2 class="tm-sr" id="tmrslh">Questions to look at again</h2>${tmRsDetails(r, a, paper)}</section>
         ${tmRsAbout(r, a, paper)}
       </div>`, { cls: "tm-rs" });
-    wireNav();
     $("#tmback").onclick = () => from === "review" && rec.current ? tmReview(key) : tmLibrary();
     app.querySelectorAll("[data-tmrv]").forEach(b => b.onclick = () => tmReviewQ(key, b.dataset.tmrv));
     app.querySelectorAll("[data-tmrsjump]").forEach(l => l.onclick = ev => { ev.preventDefault(); const g = document.getElementById(l.dataset.tmrsjump); if (g) { g.scrollIntoView(); g.focus(); } });
@@ -16745,7 +16872,7 @@ module.exports = {
     RV.key = key; RV.k = v.entry.key; RV.what = a.scope === "type" ? "practice" : "attempt";
     const seq = ATT.sequence(a, state.exams), R = ATT.results(a, state.exams);
     const e = seq[v.index];
-    tmUnit(tmSubjectOf(e.paper));
+    tmEnter(tmContext(seq.map(x => x.paper)));
     document.body.classList.add("tm-sitting");
     const f = e.eitherSlot ? "either" : drawFormat(e.q);
     const big = f === "extended_response" || f === "business_report";
@@ -16802,7 +16929,6 @@ module.exports = {
         ${next}
       </div></div>
       <div id="tmnavwrap"></div>`, { cls: "tm-sit tm-rv" });
-    wireNav();
     $("#tmrvback").onclick = () => { document.body.classList.remove("tm-sitting"); tmResults(key, { at: RV.k }); };
     const dn = $("#tmrvdone"); if (dn) dn.onclick = () => { document.body.classList.remove("tm-sitting"); tmResults(key); };
     app.querySelectorAll("[data-tmrv]").forEach(b => b.onclick = () => tmReviewQ(key, b.dataset.tmrv));
@@ -16878,9 +17004,10 @@ module.exports = {
     tmLeave();
     if (gated()) return authScreen();
     view = "create";
+    // A flashcard set declares no subject, so Create names none.
+    shellPage("create");
     if (!draft) draft = { name: "", cards: [] };
     app.innerHTML = `
-      ${nav()}
       <div class="hi">Create a flashcard set</div>
       <div class="hi-s">Build cards, study them like any area, and export the set as JSON to share.</div>
 
@@ -16939,7 +17066,6 @@ module.exports = {
            <span><button class="btn sm ghost" data-edit="${s.id}">Load into editor</button>
            <button class="btn sm ghost danger" data-del="${s.id}">Delete</button></span></div>`).join("")}</div>` : ""}
       </div>`;
-    wireNav();
     renderTypeFields();
     $("#ctype").onchange = renderTypeFields;
     $("#setname").oninput = e => { draft.name = e.target.value; };
@@ -17220,6 +17346,10 @@ module.exports = {
   // Keyboard: Space flips · 1/2/3 rates (flash) · 1–4 picks MC · Enter continues
   document.addEventListener("keydown", e => {
     if (!session) return;
+    // Not for keys meant for something else on screen: the app shell's links and
+    // Sign out, or Essay practice, which can be open over a card page.
+    if (e.target && e.target.closest && e.target.closest(".ash")) return;
+    if (document.getElementById("eshost")) return;
     const t = (e.target || {}).tagName;
     const typing = t === "TEXTAREA" || t === "INPUT";
     const cont = document.querySelector("#continue");
@@ -17246,9 +17376,6 @@ module.exports = {
       if (b && b.onclick) b.click();
     }
   });
-
-  const brand = document.querySelector("header .brand");
-  if (brand) { brand.style.cursor = "pointer"; brand.onclick = () => { view = "study"; mainPage(); }; }
 
   // ===========================================================================
   // Long-response review mode (see review-model.md). Step 2: focus-mode shell —
@@ -19123,6 +19250,8 @@ module.exports = {
   function esClose() {
     const h = document.getElementById("eshost"); if (h) h.remove();
     document.body.classList.remove("es-lock");
+    // The bar goes back to the page Essay practice was opened over.
+    shellEssay(null);
   }
 
   function esRender() {
@@ -19148,6 +19277,15 @@ module.exports = {
     else if (ES.screen === "full" && ES.draft) esRenderFull(host, sc);
     else esRenderSetup(host, sc);
     const nowScrim = host.querySelector(".es-scrim"); if (nowScrim && sy) nowScrim.scrollTop = sy;
+    // The app shell names the subject this surface is in, from the same place the
+    // surface reads it: on a writing screen the draft's own package (an attempt
+    // stays in the subject it was started in), on the picker the setup screens'
+    // own view of the subject chosen there. Label and stage, as the package
+    // states them. Display only.
+    const writing = !!ES.draft && ["plan", "review", "coached", "quiz", "full"].includes(ES.screen);
+    const loaded = !!(window.ESSAY && window.ESSAY.slots);
+    shellEssay({ area: "essay", demo: ES.demo,
+      context: !loaded ? "" : shellContextOf(writing ? esAttemptPackage(ES.draft) : sc) });
     // Defensive: no essay button should ever act as a form submit.
     host.querySelectorAll("button:not([type])").forEach(b => b.type = "button");
     // The study window floats outside this host, so a render cannot destroy it,
@@ -19170,10 +19308,9 @@ module.exports = {
   function esRenderUnavailable(host) {
     host.innerHTML = `
     <div class="es-scrim"><div class="es-shell"><div class="es-wrap">
-      ${/* Nowhere to navigate to: the flow did not load. The brand is still the
-            brand, so the surface is recognisably Marginal, but it does not offer
-            destinations it cannot reach. */ ""}
-      <div class="es-top"><div class="qp-brand static"><span class="qp-logo" aria-hidden="true">M</span><span class="qp-word">Marginal</span></div>
+      ${/* Nowhere in Essay practice to navigate to: the flow did not load. The app
+            shell above still carries Marginal's areas; this keeps its way home. */ ""}
+      <div class="es-top">
         <div class="es-topbtns"><button type="button" class="es-util quiet" id="esx" aria-label="Marginal home">${esIcon("home")}<span>Home</span></button></div></div>
       <div class="es-empty"><h2 class="es-h1">Not available right now</h2><p class="es-lead">Essay practice could not load. Please refresh, or check back shortly.</p></div>
     </div></div></div>`;
@@ -19474,40 +19611,23 @@ module.exports = {
     // hidden underneath it, because nothing from another stage is emitted: the
     // list is not the setup form with a list appended to it.
     const stage = (sc.questions || []).length ? (f.pickStage || "subject") : "own";
-    // THE PAGE, not a column on it. Header, a main column with a rail beside it,
-    // and a footer. The rail is part of the composition rather than decoration:
-    // without it the right half of a desktop viewport is empty and page two of a
-    // filtered list is three rows in a field of nothing.
+    // THE PAGE, not a column on it. A main column with a rail beside it, and a
+    // footer. The rail is part of the composition rather than decoration: without
+    // it the right half of a desktop viewport is empty and page two of a filtered
+    // list is three rows in a field of nothing.
     //
-    // The nav carries the mockup's weight with Marginal's real destinations. It
-    // does not invent a section that does not exist.
-    const nav = `<header class="qp-nav"><div class="qp-navin">
-      ${/* A nav link is not a stage route within the picker, so it does not carry
-            the stage attribute: counting the routes on a screen would have counted
-            it. Both links go somewhere real; the one you are on is marked rather
-            than repeated. The same component is worn by the writing surfaces, so
-            the destinations do not appear and disappear as a student moves. */ ""}
-      ${esNavLeftHTML(stage === "essays" ? "essays" : "practice")}
-      ${/* A full-page section of the application, so its way out is Home: it leaves
-            Essay Practice for Marginal, exactly as the wordmark does. "Close" was
-            the word a modal uses, and this has not been a modal for a long time.
-            Like Exit essay on the workspace, it never folds into the menu. */ ""}
-      <button type="button" class="es-util quiet es-keepout" id="eshome" data-esnav="marginalhome" aria-label="Marginal home">${esIcon("home")}<span>Home</span></button>
-      ${esMenuBtnHTML()}
-      <div class="qp-navright" id="esnavpanel"${ES.ui.navMenu ? " data-open" : ""}>
-        ${esNavLinksHTML(stage === "essays" ? "essays" : "practice")}
-        ${sc.label ? `<span class="qp-subj">${esc(sc.label)}${sc.stage ? " · " + esc(sc.stage) : ""}</span>` : ""}
-        ${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}
-      </div>
-    </div></header>`;
+    // The bar above it is the app shell's: the brand, Marginal's four areas (its
+    // Study link is this page's way home), the subject and the account. What this
+    // area adds is its own two pages, in a row at the top of the page.
+    const sub = shellSubHTML(stage === "essays" ? "essays" : "practice");
     const foot = `<footer class="qp-foot"><div class="qp-footin">
       <span class="qp-logo sm" aria-hidden="true">M</span>
       <span class="qp-footword">Marginal</span>
       <span class="qp-foottag">Better practice. Brighter progress.</span>
     </div></footer>`;
     // One page shell for every stage, so the stages read as one flow.
-    const shell = (main, rail) => `<div class="qp">${nav}
-      <main class="qp-main"><div class="qp-grid">
+    const shell = (main, rail) => `<div class="qp">
+      <main class="qp-main">${sub}<div class="qp-grid">
         <div class="qp-col">${main}</div>
         <aside class="qp-rail">${rail}</aside>
       </div></main>${foot}</div>`;
@@ -20216,26 +20336,16 @@ module.exports = {
   function esWritingHead(sc, modeLabel, switchLabel, switchTo, boxElsewhere) {
     return esTopBarHTML(sc, switchLabel) + esQuestionCardHTML(modeLabel, boxElsewhere);
   }
-  // ---- the one navigation bar every Marginal surface wears ----------------
-  // Before this the picker and the writer had different brand marks, different
-  // wordmark type, different destinations and different ways back, so moving
-  // between them read as moving between two products. The left half of the bar
-  // is now one component: the brand IS the home route, and the same two
-  // destinations are reachable from wherever the student is standing. The right
-  // half is whatever that surface actually owns, and nothing else.
-  function esNavLeftHTML(current) {
-    const link = (to, label, on) =>
-      `<button type="button" class="qp-navlink${on ? " on" : ""}"${on ? ' aria-current="page"' : ""} data-esnav="${to}">${label}</button>`;
-    // The wordmark is Home, and Home is MARGINAL's home, not the top of the essay
-    // flow. It leaves Essay Practice the way the tab entered it, from any surface,
-    // so it is never a control that reloads the page the student is standing on.
-    //
-    // .es-navnow names the section on a narrow screen, where the links themselves
-    // have gone into the menu. It is the same word the marked link carries, so a
-    // student is never told two different things about where they are.
-    return `<button type="button" class="qp-brand" id="esbrandhome" data-esnav="marginalhome" aria-label="Marginal home">
-        <span class="qp-logo" aria-hidden="true">M</span><span class="qp-word">Marginal</span></button>
-      <span class="es-navnow">${current === "essays" ? "My essays" : "Essay practice"}</span>`;
+  // ---- the writing surfaces' toolbar ----------------------------------------
+  // The brand, Marginal's areas, the subject and the account are the app shell's,
+  // in the bar above. This toolbar is what the writing surface itself owns: the
+  // way out of the essay, Essay practice's own two pages, and the tools.
+  //
+  // .es-navnow names the section on a narrow screen, where the links themselves
+  // have gone into the menu. It is the same word the marked link carries, so a
+  // student is never told two different things about where they are.
+  function esNavNowHTML(current) {
+    return `<span class="es-navnow">${current === "essays" ? "My essays" : "Essay practice"}</span>`;
   }
   // The section links. They live INSIDE the collapsible group rather than beside
   // the brand, because a link that is hidden at 390px and not in the menu is a
@@ -20263,7 +20373,7 @@ module.exports = {
   function esTopBarHTML(sc, switchLabel) {
     return `
       <div class="es-top">
-        ${esNavLeftHTML("practice")}
+        ${esNavNowHTML("practice")}
         ${/* The way out never folds into a menu. Everything else on this bar can
               wait behind one press; leaving cannot, and a student on a phone who
               wants to stop writing must not have to find it. */ ""}
@@ -20271,7 +20381,6 @@ module.exports = {
         ${esMenuBtnHTML()}
         <div class="es-topbtns" id="esnavpanel"${ES.ui.navMenu ? " data-open" : ""}>
           ${esNavLinksHTML("practice")}
-          ${sc.label ? `<span class="qp-subj">${esc(sc.label)}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}
           ${/* Learn and Notebook are utilities: they make sense whatever sentence
                 the student is on, they open their own floating windows, and they
                 stay open across the writing. The four writing tools are not
@@ -20898,6 +21007,8 @@ module.exports = {
     home: '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" /> <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />',
     // exit the essay from the writing workspace
     exit: '<path d="m16 17 5-5-5-5" /> <path d="M21 12H9" /> <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />',
+    // The app shell's account (lucide circle-user-round).
+    user: '<path d="M18 20a6 6 0 0 0-12 0" /> <circle cx="12" cy="10" r="4" /> <circle cx="12" cy="12" r="10" />',
     // the previous notebook page
     prev: '<path d="m15 18-6-6 6-6" />',
     // the next notebook page
@@ -25325,12 +25436,11 @@ module.exports = {
     const total = d.paras.length, n = d.pos + 1;
     const head = `
       <div class="es-top">
-        ${esNavLeftHTML("practice")}
+        ${esNavNowHTML("practice")}
         <button type="button" class="es-util quiet es-keepout" id="esexit" data-esnav="marginalhome" aria-label="Exit essay">${esIcon("exit")}<span>Exit essay</span></button>
         ${esMenuBtnHTML()}
         <div class="es-topbtns" id="esnavpanel"${ES.ui.navMenu ? " data-open" : ""}>
           ${esNavLinksHTML("practice")}
-          ${sc.label ? `<span class="qp-subj">${esc(sc.label)}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}
           <button type="button" class="es-util quiet" id="esquizcoach">${esIcon("back")}<span>Back to coaching</span></button>
           <button type="button" class="es-util quiet" id="esx" aria-label="Back to setup">${esIcon("back")}<span>Setup</span></button>
         </div>
@@ -26010,6 +26120,7 @@ module.exports = {
   // show the sign-in gate. When unconfigured, the app opens normally.
   Cloud.init();
   if (cloudConfigured()) {
+    shellPage(null);
     app.innerHTML = `<div class="authgate"><div class="authcard"><div class="authbrand">Marginal</div><p class="bhint">Loading…</p></div></div>`;
     Cloud.restore()
       .then(() => { if (Cloud.session()) { home(); maybeOpenReviewDemo(); maybeOpenEssayDemo(); } else authScreen(); })

@@ -40,8 +40,8 @@ const PKGS = ["business_studies", "economics", "ancient_history"];
 
 async function enter(page) {
   await page.goto(T);
-  await page.waitForSelector(".navtab", { timeout: 8000 });
-  await page.$$eval(".navtab", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
+  await page.waitForSelector(".ash-link", { timeout: 8000 });
+  await page.$$eval(".ash-link", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await page.waitForSelector("#essubject", { timeout: 8000 });
   await page.waitForTimeout(300);
 }
@@ -128,7 +128,7 @@ const pkg = (page, k) => page.evaluate(key => {
     await p.selectOption("#essubject", k); await p.waitForTimeout(400);
     const seen = await p.evaluate(() => {
       const sel = document.getElementById("essubject");
-      const bar = document.querySelector(".qp-subj");
+      const bar = document.querySelector(".ash-ctx");
       return { picker: sel.options[sel.selectedIndex].value,
         pickerText: sel.options[sel.selectedIndex].text,
         header: bar ? bar.textContent.split("·")[0].trim() : null };

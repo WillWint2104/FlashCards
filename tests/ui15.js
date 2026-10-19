@@ -19,12 +19,12 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   const errs=[]; p.on('pageerror',e=>errs.push(String(e).slice(0,220)));
   let calls=0; await p.route(/workers\.dev/, r=>{ calls++; r.abort(); });
   const clicks=()=>p.evaluate(()=>window.__C);
-  await p.goto(T); await here(p, '.navtab');
+  await p.goto(T); await here(p, '.ash-link');
   // TEST FIXTURE: unsourced evidence is withheld by design, so the suite supplies
   // sources of its own rather than weakening the rule under test.
   await p.evaluate(()=>{ Object.keys((window.BUSCONTENT||{}).evidence||{}).forEach(k=>
     window.BUSCONTENT.evidence[k].forEach(e=>{ e.source='test fixture source'; e.checked='2026-08-19'; })); });
-  await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
+  await p.$$eval('.ash-link',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await settled(p);
   await p.selectOption('#essubject','business_studies'); await settled(p);
   // The structure lives with the other settings on the SETUP stage now, folded,

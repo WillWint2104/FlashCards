@@ -60,7 +60,7 @@ async function open(b, seed) {
 // is what a "next sitting" is now: attempts persist, so re-entering a paper
 // without it resumes the same attempt.
 async function sit(p, paperName, sectionName) {
-  await p.$$eval('.navtab', es => { const t = es.find(x => /Test mode/i.test(x.textContent)); t && t.click(); }); await settled(p);
+  await p.$$eval('.ash-link', es => { const t = es.find(x => /Test mode/i.test(x.textContent)); t && t.click(); }); await settled(p);
   await p.evaluate(n => {
     const r = [...document.querySelectorAll('.tm-paper')].find(x => !n || x.textContent.includes(n)) || document.querySelector('.tm-paper');
     r.querySelector('[data-tmopen]').click();
@@ -309,7 +309,7 @@ async function unmarkedYet(p, n, why) {
       await p.fill('#ans', 'Speed, because customers wait at the vans.');
       await p.click('#check'); await settled(p);
       await p.click('#examquit'); await settled(p);
-      await p.$$eval('.navtab', es => { const t = es.find(x => /Study/i.test(x.textContent)); t && t.click(); }); await settled(p);
+      await p.$$eval('.ash-link', es => { const t = es.find(x => /Study/i.test(x.textContent)); t && t.click(); }); await settled(p);
       await p.click('[data-open="custom-x"]'); await settled(p);
       await p.$$eval('.mode', es => { const m = es.find(x => /Long answer/.test(x.textContent)); m && m.click(); }); await settled(p);
       await p.waitForTimeout(3500); await settled(p);
@@ -419,7 +419,7 @@ async function unmarkedYet(p, n, why) {
       mode.reply = () => Object.assign(REVIEW(2, 2), { delay: 2500 });
       await sit(p, '', 'Section II - Short answer');
       await p.fill('#ans', SA); await p.click('#check'); await settled(p);
-      await p.$$eval('.navtab', es => es.find(x => /Study/i.test(x.textContent)).click()); await settled(p);
+      await p.$$eval('.ash-link', es => es.find(x => /Study/i.test(x.textContent)).click()); await settled(p);
       await p.waitForTimeout(3500); await settled(p);
       ok(!(await has(p, '#examquit')) && !(await p.evaluate(() => document.body.classList.contains('tm-sitting'))),
          'a reply that lands after the Study tab was chosen does not redraw the sitting over Study');
@@ -481,7 +481,7 @@ async function unmarkedYet(p, n, why) {
       await p.fill('#ans', 'A rewrite in progress.'); await p.waitForTimeout(700);
       await p.click('#examquit'); await settled(p);
       await p.reload(); await settled(p);
-      await p.$$eval('.navtab', es => es.find(x => /Test mode/i.test(x.textContent)).click()); await settled(p);
+      await p.$$eval('.ash-link', es => es.find(x => /Test mode/i.test(x.textContent)).click()); await settled(p);
       await p.click('[data-examresume]'); await settled(p);
       ok((await p.$eval('#ans', e => e.value).catch(() => '')) === 'A rewrite in progress.' && !(await p.$eval('#ans', e => e.disabled).catch(() => true)),
          'on resume the rewrite is in an open box, not hidden behind the old mark');

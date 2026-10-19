@@ -8,6 +8,11 @@
 // =============================================================================
 window.CONTENT = {
   subject: "Economics",
+  // Which registered subject this Study content is, by key. The app shell reads it
+  // to name Study's course ("Economics · Year 12") through the subject registry.
+  // Display only: marking does not read it. A gate test holds the key's package
+  // label to `subject` above, so the two cannot drift apart.
+  subjectKey: "economics",
   // The four dimensions this subject's extended responses are marked against.
   // Sent with every marking request so the marker uses THIS subject's criteria.
   // Original wording describing the assessed dimensions, not copied from NESA.

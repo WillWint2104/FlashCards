@@ -35,7 +35,8 @@ const LEGACY = "ancient_history";
 // the whole lifecycle.
 const ctxOf = page => page.evaluate(() => {
   const sel = document.getElementById("essubject");
-  const bar = document.querySelector(".qp-subj");
+  // The app shell's subject, "Label · Stage"; below 1024px it is left out.
+  const bar = document.querySelector(".ash-ctx");
   const opts = sel ? [...sel.options] : [];
   return {
     hasPicker: !!sel,
@@ -43,14 +44,14 @@ const ctxOf = page => page.evaluate(() => {
     shown: opts.filter(o => o.value).map(o => ({ v: o.value, t: o.text, disabled: o.disabled })),
     committed: sel && sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex].value : null,
     committedText: sel && sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex].text : null,
-    header: bar ? bar.textContent.split("·")[0].trim() : null,
+    header: bar && getComputedStyle(bar).display !== "none" ? bar.textContent.split("·")[0].trim() : null,
     writing: !!document.querySelector("#esline"),
   };
 });
 
 async function loginAs(page, code) {
   await page.goto(T);
-  await page.waitForSelector(".navtab", { timeout: 8000 });
+  await page.waitForSelector(".ash-link", { timeout: 8000 });
   await page.evaluate(c => {
     try {
       const raw = JSON.parse(localStorage.getItem("marginal.trial.v1") || "{}");
@@ -58,10 +59,10 @@ async function loginAs(page, code) {
     } catch (e) { /* private mode */ }
   }, code);
   await page.reload();
-  await page.waitForSelector(".navtab", { timeout: 8000 });
+  await page.waitForSelector(".ash-link", { timeout: 8000 });
 }
 async function intoEssay(page) {
-  await page.$$eval(".navtab", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
+  await page.$$eval(".ash-link", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await page.waitForSelector("#essubject", { timeout: 8000 });
   await page.waitForTimeout(300);
 }
@@ -159,18 +160,18 @@ async function intoEssay(page) {
 
   // ---- 5. reopening follows the STORED attempt --------------------------
   console.log("--- 5. reopening from My essays follows the stored attempt");
-  await p.click('.qp-nav [data-esnav="essays"]').catch(() => {});
+  await p.click('.ash-sub [data-esnav="essays"]').catch(() => {});
   await p.waitForTimeout(500);
   const listed = await p.$$eval(".qp-essay", es => es.length).catch(() => 0);
   console.log("    essays listed under the current subject:", listed);
   // Attempts are bagged per subject, so the Business Studies attempt is not in
   // the Economics list. That IS the binding working - and it is why the picker
   // has to go back before Resume.
-  await p.click('.qp-nav [data-esnav="back"]').catch(() => {});
+  await p.click('.ash-sub [data-esnav="back"]').catch(() => {});
   await p.waitForTimeout(400);
   await p.selectOption("#essubject", "business_studies").catch(() => {});
   await p.waitForTimeout(400);
-  await p.click('.qp-nav [data-esnav="essays"]').catch(() => {});
+  await p.click('.ash-sub [data-esnav="essays"]').catch(() => {});
   await p.waitForTimeout(500);
   const resume = await p.$("[data-esresume]");
   ok(!!resume, "the attempt is listed under its own subject");
@@ -183,34 +184,32 @@ async function intoEssay(page) {
   }
 
   // ---- 6. the responsive menu says the same thing -----------------------
-  console.log("--- 6. the narrow menu agrees with the form");
+  console.log("--- 6. narrow, the bar names no subject and the form is the truth");
   // Reached explicitly, and asserted before anything is read off it: the previous
   // version read the picker from whichever screen happened to be showing and
   // reported a mismatch that was its own navigation, not the product's.
   // Setup remembers the stage it was left on, and it was left on My essays - so
   // #esx alone lands there, correctly, and there is no picker on that stage. The
-  // Essay practice nav link is the way to the form.
+  // Essay practice link in the area's row is the way to the form.
   const toSetup = await p.$("#esx");
   if (toSetup) { await toSetup.click(); await p.waitForTimeout(600); }
-  await p.click('.qp-nav [data-esnav="back"]').catch(() => {});
+  await p.click('.ash-sub [data-esnav="back"]').catch(() => {});
   await p.waitForTimeout(500);
   ok(!!(await p.$("#essubject")), "the setup page, with its picker, is on screen before the narrow check");
   await p.setViewportSize({ width: 390, height: 900 }); await p.waitForTimeout(600);
-  const menu = await p.$("#esmenu");
-  ok(!!menu, "there is a menu at 390px");
-  if (menu) {
-    await menu.click(); await p.waitForTimeout(350);
-    const narrow = await ctxOf(p);
-    ok(narrow.hasPicker, "the picker is present at this width");
-    const opt = narrow.shown.find(o => o.v === narrow.committed);
-    ok(!narrow.header || (opt && opt.t === narrow.header),
-      "the menu's subject heading matches the form: menu=" + JSON.stringify(narrow.header) +
-      " form=" + JSON.stringify(narrow.committedText));
-    ok(narrow.offered.indexOf(LEGACY) < 0,
-      "and the legacy subject is not offered at this width either: " + JSON.stringify(narrow.offered));
-    await p.keyboard.press("Escape"); await p.waitForTimeout(200);
-  }
+  const narrow = await ctxOf(p);
+  ok(narrow.hasPicker, "the picker is present at this width");
+  // Below 1024px the app shell leaves the subject out (the owner's rule), so the
+  // form is the only place it is named and nothing can contradict it.
+  ok(narrow.header === null, "the bar names no subject at 390px: " + JSON.stringify(narrow.header));
+  ok(narrow.offered.indexOf(LEGACY) < 0,
+    "and the legacy subject is not offered at this width either: " + JSON.stringify(narrow.offered));
   await p.setViewportSize({ width: 1500, height: 1100 }); await p.waitForTimeout(300);
+  const wide = await ctxOf(p);
+  const opt = wide.shown.find(o => o.v === wide.committed);
+  ok(!!wide.header && opt && opt.t === wide.header,
+    "back at full width the bar names what the form commits: bar=" + JSON.stringify(wide.header) +
+    " form=" + JSON.stringify(wide.committedText));
 
   console.log("");
   console.log(pass + " passed, " + fail + " failed");

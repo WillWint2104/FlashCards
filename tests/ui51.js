@@ -24,8 +24,8 @@ const BUS = E.subjects.business_studies.questions || [];
 
 async function chooser(page, subject) {
   await page.goto(T);
-  await page.waitForSelector(".navtab", { timeout: 8000 });
-  for (const t of await page.$$(".navtab")) {
+  await page.waitForSelector(".ash-link", { timeout: 8000 });
+  for (const t of await page.$$(".ash-link")) {
     if (/essay/i.test((await t.textContent()) || "")) { await t.click(); break; }
   }
   await page.waitForSelector("#essubject", { timeout: 8000 });
@@ -296,8 +296,8 @@ const rowsOf = page => allRows(page);
   {
     const page = await ctx.newPage();
     await page.goto(T);
-    await page.waitForSelector(".navtab", { timeout: 8000 });
-    for (const t of await page.$$(".navtab")) {
+    await page.waitForSelector(".ash-link", { timeout: 8000 });
+    for (const t of await page.$$(".ash-link")) {
       if (/essay/i.test((await t.textContent()) || "")) { await t.click(); break; }
     }
     await page.waitForSelector("#essubject", { timeout: 8000 });

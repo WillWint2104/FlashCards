@@ -26,13 +26,6 @@
   ::selection{background:var(--green-soft)}
   @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
-  header{display:flex;align-items:center;gap:12px;padding:16px clamp(16px,4vw,32px);background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
-  .brand{display:flex;align-items:center;gap:10px;font-family:var(--disp);font-weight:600;font-size:20px}
-  .mk{width:28px;height:28px;border-radius:9px;background:var(--green);position:relative;flex:none;box-shadow:0 3px 0 var(--green-dk)}
-  .mk::after{content:"";position:absolute;left:7px;right:7px;bottom:6px;height:3px;border-radius:2px;background:#fff}
-  .mk::before{content:"";position:absolute;left:7px;bottom:6px;width:3px;height:14px;border-radius:2px;background:rgba(255,255,255,.9)}
-  .unit{font-size:13px;color:var(--ink-2);font-weight:700;margin-left:auto;text-align:right}
-
   main{max-width:1180px;margin:0 auto;padding:28px clamp(16px,4vw,40px) 90px}
 
   .hi{font-family:var(--disp);font-weight:600;font-size:24px}
@@ -140,10 +133,6 @@
   .pop b{font-family:var(--disp);display:block;margin-bottom:3px;color:#fff;text-transform:capitalize}
   .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;font-weight:700;font-size:14px;padding:11px 20px;border-radius:99px;z-index:200}
 
-  .nav{display:flex;gap:6px;background:#E2EAEA;border-radius:99px;padding:5px;width:max-content;max-width:100%;flex-wrap:wrap;margin-bottom:20px}
-  .navtab{white-space:nowrap}
-  .navtab{font-family:var(--disp);font-weight:600;font-size:14px;border:none;background:none;color:var(--ink-2);padding:8px 22px;border-radius:99px}
-  .navtab.on{background:var(--card);color:var(--green-dk);box-shadow:0 1px 4px rgba(60,74,74,.12)}
   .bcard{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:18px;margin-bottom:16px}
   .blabel{display:block;font-family:var(--disp);font-weight:600;font-size:13px;color:var(--ink-2);margin:10px 0 5px}
   .binput{width:100%;font:inherit;font-weight:600;font-size:14.5px;color:var(--ink);border:2px solid var(--line);border-radius:12px;padding:10px 13px;background:#FBFDFD}
@@ -177,7 +166,6 @@
   .authmsg.err{color:var(--coral-dk)}
   .authmsg.ok{color:var(--green-dk)}
   .authlink{background:none;border:none;color:var(--green-dk);font-weight:700;font-size:13.5px;cursor:pointer;padding:0;text-decoration:underline}
-  .whoami{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;color:var(--ink-2)}
 
   /* ---- sets manager (compact list) ---- */
   .setsmgr{margin-top:24px}
@@ -812,7 +800,7 @@
      shrinks to make room for a resource: the writing is the product. */
   @media(max-width:1320px){
     .es-cols{grid-template-columns:minmax(0,1fr)}
-    .es-cols.withdrawer .es-drawer{position:fixed;right:16px;top:76px;bottom:16px;width:min(390px,86vw);z-index:130;max-height:none;box-shadow:0 20px 60px rgba(28,40,40,.28)}
+    .es-cols.withdrawer .es-drawer{position:fixed;right:16px;top:calc(var(--ash-h,0px) + 76px);bottom:16px;width:min(390px,86vw);z-index:130;max-height:none;box-shadow:0 20px 60px rgba(28,40,40,.28)}
   }
   .es-map{position:sticky;top:8px;display:flex;flex-direction:column;gap:3px}
   .es-maph{font-family:var(--disp);font-weight:600;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:5px}
@@ -1480,7 +1468,9 @@
      opaque, square, full width and does not float: no scrim colour, no card
      radius, no shadow, no entrance animation. Nothing shows through, because
      there is nothing behind it any more. */
-  .es-scrim{position:fixed;inset:0;background:var(--bg);display:block;padding:0;overflow:auto;z-index:120}
+  /* Below the app shell, never over it: the bar stays on screen on every essay
+     page, and --ash-h is its measured height (shellRender in app.js). */
+  .es-scrim{position:fixed;inset:var(--ash-h,0px) 0 0;background:var(--bg);display:block;padding:0;overflow:auto;z-index:120}
   .es-shell{width:100%;max-width:none}
   .es-wrap{background:transparent;border-radius:0;box-shadow:none;padding:0 0 40px}
   /* The header is the application's, so it stays put and reads as one: full
@@ -1494,7 +1484,6 @@
   /* the composer takes the canvas: the writing has to be the dominant thing on screen */
   .es-shell:has(.es-canvas){max-width:min(1480px,94vw)}
   .es-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
-  .es-demobadge{font-family:var(--disp);font-weight:600;font-size:11px;color:var(--green-dk);background:var(--green-soft);border-radius:99px;padding:2px 10px}
   .es-topbtns{display:flex;align-items:center;gap:10px;flex:none}
   .es-x{background:none;border:none;font-family:var(--disp);font-weight:600;font-size:13px;color:var(--ink-2);padding:6px 12px;border-radius:10px;cursor:pointer}
   .es-x:hover{background:var(--green-soft);color:var(--green-dk)}
@@ -1681,40 +1670,22 @@
      was rendering inside the Study tab, so Backup & restore and the topic map
      sat above the question list: the flow has to own the viewport the way the
      workspace it leads into does. */
-  .qp{position:fixed;inset:0;overflow:auto;z-index:120;background:var(--page);color:var(--e-ink)}
+  .qp{position:fixed;inset:var(--ash-h,0px) 0 0;overflow:auto;z-index:120;background:var(--page);color:var(--e-ink)}
   /* THE PAGE. Header, a main column with a rail beside it, a footer, and the
      footer sits at the bottom rather than under the content, so a short page is
      still a page. The rail is composition: without it the right half of a
      desktop viewport is empty and page two of a filtered list is three rows in
      a field of nothing. */
   .qp{display:flex;flex-direction:column}
-  /* The app styles bare header{} and main{} elements: sticky, padded, and main
-     capped at 1180px. Those matched this flow's semantic elements and shrank the
-     page to a column, which is the same class of collision as .es-btn. Every
-     inherited property is overridden here rather than worked around. */
-  .qp-nav{display:block;position:static;padding:0;max-width:none;gap:0;
-    background:var(--surface);border-bottom:1px solid var(--e-line);flex:none}
-  .qp-navin{max-width:1320px;margin:0 auto;padding:13px 28px;display:flex;align-items:center;gap:16px}
-  /* The brand is the home route on every surface, so it is a button, not a
-     word. .static is the one surface with nowhere to go: the flow failed to
-     load, and offering a destination it cannot reach would be a lie. */
-  .qp-brand{display:inline-flex;align-items:center;gap:10px;background:none;border:0;padding:4px 6px;
-    margin-left:-6px;border-radius:10px;cursor:pointer;font:inherit;color:inherit}
-  .qp-brand:hover .qp-word{color:var(--e-green-dk)}
-  .qp-brand:focus-visible{outline:2px solid var(--e-green);outline-offset:2px}
-  .qp-brand.static{cursor:default}
-  .qp-brand.static:hover .qp-word{color:var(--e-ink)}
+  /* The page's header is the app shell's (.ash); this flow has none of its own. */
   .qp-logo{width:30px;height:30px;border-radius:9px;background:var(--e-green);color:#fff;flex:none;
     display:grid;place-items:center;font-family:var(--disp);font-weight:800;font-size:16px}
   .qp-logo.sm{width:24px;height:24px;font-size:13px;border-radius:7px}
-  .qp-word{font-family:var(--disp);font-weight:800;font-size:18px;letter-spacing:-.3px;color:var(--e-ink)}
   .qp-navlinks{display:flex;gap:4px;margin-left:14px}
   .qp-navlink{background:none;border:0;border-bottom:2.5px solid transparent;font:inherit;font-size:14px;
     font-weight:600;color:var(--e-ink2);cursor:pointer;padding:8px 10px}
   .qp-navlink:hover{color:var(--e-ink)}
   .qp-navlink.on{color:var(--e-ink);border-bottom-color:var(--e-green);font-weight:700}
-  .qp-navright{margin-left:auto;display:flex;align-items:center;gap:14px}
-  .qp-subj{font-size:13px;font-weight:600;color:var(--e-ink3)}
   /* ---- THE BAR ON A NARROW SCREEN ----
      The desktop bar simply went on running horizontally and was clipped after
      the subject label, which meant that on a phone the way out of the essay was
@@ -1736,9 +1707,8 @@
        a min-width of 0, so it collapsed to nothing rather than pushing anything
        else off. Row one is the brand and the two controls, row two is where the
        student is. Nothing competes and nothing is ellipsised. */
-    .qp-navin, .es-scrim .es-wrap > .es-top, .es-top{position:relative;gap:8px;flex-wrap:wrap;
+    .es-scrim .es-wrap > .es-top, .es-top{position:relative;gap:8px;flex-wrap:wrap;
       justify-content:flex-start}
-    .qp-navin{padding:10px 14px}
     /* The links folded into the menu WITH the rest of the group, so the bar
        says where you are instead. */
     /* It GROWS into the spare room rather than relying on an auto margin to push
@@ -1748,8 +1718,9 @@
     .es-navnow{display:block;order:9;flex:1 0 100%;font-family:var(--body);font-size:12.5px;
       font-weight:700;letter-spacing:.02em;color:var(--e-ink2);white-space:nowrap;
       overflow:hidden;text-overflow:ellipsis;margin-top:-2px}
-    .qp-brand{margin-right:auto}
     .es-keepout, .es-menubtn{margin-left:0}
+    /* The brand is the app shell's now, so the way out leads the row from the right. */
+    .es-top > .es-keepout{margin-left:auto}
     .es-menubtn{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 11px;
       background:var(--surface);border:1px solid var(--e-line);border-radius:10px;
       font-family:var(--body);font-size:12.5px;font-weight:600;color:var(--e-ink2);cursor:pointer;flex:none}
@@ -1759,26 +1730,23 @@
     .es-menubtn[aria-expanded="true"]{background:var(--e-mint);border-color:var(--e-green);color:var(--e-green-dk)}
     /* The same group, now a panel. Hidden until asked for, and never wider than
        the screen it is on. */
-    .qp-navin > .qp-navright, .es-scrim .es-top > .es-topbtns, .es-top > .es-topbtns{
+    .es-scrim .es-top > .es-topbtns, .es-top > .es-topbtns{
       display:none;position:absolute;top:calc(100% + 6px);right:10px;left:auto;
       z-index:60;flex-direction:column;align-items:stretch;gap:6px;
       width:min(268px, calc(100vw - 20px));max-height:70vh;overflow:auto;
       background:var(--surface);border:1px solid var(--e-line);border-radius:14px;
       box-shadow:0 10px 32px rgba(18,48,58,.14);padding:8px;margin-left:0}
-    .qp-navin > .qp-navright[data-open], .es-scrim .es-top > .es-topbtns[data-open], .es-top > .es-topbtns[data-open]{display:flex}
+    .es-scrim .es-top > .es-topbtns[data-open], .es-top > .es-topbtns[data-open]{display:flex}
     /* Inside the panel every control is a full-width row, so the menu reads as a
        list of destinations rather than as the desktop row folded over. */
-    .es-top > .es-topbtns .es-util, .qp-navin > .qp-navright .es-util{width:100%;justify-content:flex-start;
+    .es-top > .es-topbtns .es-util{width:100%;justify-content:flex-start;
       height:38px;border-color:transparent;background:none}
-    .es-top > .es-topbtns .es-util:hover, .qp-navin > .qp-navright .es-util:hover{background:var(--sunk);border-color:var(--e-line)}
-    .es-top > .es-topbtns .qp-navlinks, .qp-navin > .qp-navright .qp-navlinks{display:flex;flex-direction:column;
+    .es-top > .es-topbtns .es-util:hover{background:var(--sunk);border-color:var(--e-line)}
+    .es-top > .es-topbtns .qp-navlinks{display:flex;flex-direction:column;
       align-items:stretch;gap:2px;margin:0 0 4px;padding-bottom:6px;border-bottom:1px solid var(--e-line)}
-    .es-top .qp-navlink, .qp-navin .qp-navlink{border-bottom:0;border-radius:9px;padding:9px 12px;text-align:left;font-size:13.5px}
-    .es-top .qp-navlink:hover, .qp-navin .qp-navlink:hover{background:var(--sunk)}
-    .es-top .qp-navlink.on, .qp-navin .qp-navlink.on{background:var(--e-mint);color:var(--e-green-dk)}
-    .es-top > .es-topbtns .qp-subj, .qp-navin > .qp-navright .qp-subj{padding:5px 12px 3px;margin-right:0;
-      font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--e-ink3)}
-    .es-scrim .es-topbtns .qp-subj{margin-right:0}
+    .es-top .qp-navlink{border-bottom:0;border-radius:9px;padding:9px 12px;text-align:left;font-size:13.5px}
+    .es-top .qp-navlink:hover{background:var(--sunk)}
+    .es-top .qp-navlink.on{background:var(--e-mint);color:var(--e-green-dk)}
     /* The wordmark is the smallest thing that can go without losing identity, and
        it only goes where there is genuinely no room for it. */
     .es-scrim .es-wrap > .es-top{padding-left:14px;padding-right:14px}
@@ -2388,12 +2356,10 @@
   /* The group holds both halves of the bar now, so on a wide screen it spans it:
      the links keep their place beside the brand and the utilities keep theirs at
      the end. Narrow, the same group becomes the menu panel. */
-  .qp-navright, .es-topbtns{flex:1 1 auto;min-width:0}
-  .qp-navright{display:flex;align-items:center;gap:14px}
-  .qp-navright .qp-navlinks, .es-topbtns .qp-navlinks{margin-right:auto}
+  .es-topbtns{flex:1 1 auto;min-width:0}
+  .es-topbtns .qp-navlinks{margin-right:auto}
   .es-scrim .qp-navlinks{margin-left:6px}
   .es-scrim .es-topbtns{gap:8px;margin-left:auto}
-  .es-scrim .es-topbtns .qp-subj{margin-right:6px}
   /* The quiet member of the utility family: same height, same shape, same
      target, one step back in weight because it is a route out rather than a
      tool you open on the page. */
@@ -2841,8 +2807,6 @@
      rest of the app is unchanged. Every class is under .tm. */
   body.tm-on{--ink-2:#596866; --ink-3:#616E6C; --green-dk:#0E7A4E; --green-edge:#0A5C3C;
              --blue-dk:#0D5888; --gold-dk:#9A6000; --coral-dk:#AE3323; --footh:68px}
-  body.tm-on .unit{color:var(--ink-2);font-family:var(--disp)}
-  body.tm-on .unit b{display:block;color:var(--ink);font-size:13.5px}
   body.tm-sitting main{padding-bottom:0}
   .tm{--line:#E7EDED}
   .tm :focus-visible{outline:2px solid var(--green-dk);outline-offset:3px;border-radius:10px}
@@ -3058,7 +3022,9 @@
   .tm-how li::before{content:"";position:absolute;left:2px;top:.62em;width:6px;height:6px;border-radius:99px;background:var(--green)}
 
   /* The sitting shell (state 8), with states 14 and 15 folded in. */
-  .tm-sit{display:flex;flex-direction:column;min-height:calc(100vh - 140px)}
+  /* The sitting fills the screen under the app shell and main's 28px top padding,
+     so its footer sits on the bottom edge. */
+  .tm-sit{display:flex;flex-direction:column;min-height:calc(100vh - var(--ash-h,0px) - 28px)}
   .tm-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 16px;background:var(--card);border:1.5px solid var(--line);border-radius:16px;margin-bottom:14px}
   .tm-bar .x{background:none;border:none;font-size:19px;color:var(--ink-2);line-height:1;padding:0 2px;cursor:pointer}
   .tm-bar .paper{min-width:0}
@@ -3442,13 +3408,82 @@
     .tm-footin .tm-whereitem{display:none}
     .tm .foot-lbl{display:none}
   }
+
+  /* ===================== THE APP SHELL =====================
+     Copied verbatim from docs/mockups/00-app-shell.build.mjs (SHELL_CSS, less its
+     drawing aid), the approved design; ui78 holds the two equal. It comes last
+     so its icons are sized over .es-ico. */
+  /* THE SHARED APP SHELL (proposed). One bar on every page, in the Essay practice
+     bar's tokens and geometry: index.html .qp-navin, .qp-brand, .qp-logo, .qp-word,
+     .qp-navlink, .qp-subj and .es-util.quiet. Deliberate differences: context and
+     account text are --a-ink2 (4.64:1), not .qp-subj's #95A7AD (2.50:1); every
+     control gets a focus ring, in --a-green-dk (3.73:1) because --a-green is 2.74:1;
+     the area links below the bar are #5D7178 (4.84:1 on the page ground); a link
+     keeps its bold width, so the bar does not shift between pages; and the bar is
+     sticky, as the app's header and the Essay writing bar are, where the Essay
+     picker bar scrolls away. */
+  .ash{--a-ink:#18272D;--a-ink2:#63787F;--a-green:#12B27A;--a-green-dk:#0E9765;--a-line:#E8EEEF;--a-sunk:#FAFCFC;
+    display:block;position:sticky;top:0;z-index:20;max-width:none;gap:0;padding:0;
+    background:#FFFFFF;border-bottom:1px solid var(--a-line);font-family:'Nunito',system-ui,sans-serif;line-height:1.6;color:var(--a-ink)}
+  .ash-in{max-width:1320px;margin:0 auto;padding:13px 28px;display:flex;align-items:center;gap:16px}
+  .ash-brand{display:inline-flex;align-items:center;gap:10px;padding:4px 6px;margin-left:-6px;border-radius:10px;color:inherit;text-decoration:none}
+  .ash-brand:hover .ash-word,.ash-brand.is-hover .ash-word{color:var(--a-green-dk)}
+  .ash-brand:focus-visible,.ash-brand.is-focus{outline:2px solid var(--a-green-dk);outline-offset:2px}
+  .ash-logo{width:30px;height:30px;border-radius:9px;background:var(--a-green);color:#fff;display:grid;place-items:center;font-family:'Fredoka',system-ui,sans-serif;font-weight:700;font-size:16px;line-height:1}
+  .ash-word{font-family:'Fredoka',system-ui,sans-serif;font-weight:700;font-size:18px;letter-spacing:-.3px;color:var(--a-ink)}
+  .ash-links{display:flex;gap:4px;margin-left:14px}
+  .ash-link{display:inline-flex;flex-direction:column;align-items:center;font:600 14px/1.6 'Nunito',system-ui,sans-serif;color:var(--a-ink2);padding:8px 10px;border-bottom:2.5px solid transparent;text-decoration:none;white-space:nowrap}
+  /* Each link holds its bold width, so the current section's weight never moves its
+     neighbours: the bar is identical, to the pixel, whichever page is open. */
+  .ash-link::after,.ash-sublink::after{content:attr(data-label);font-weight:700;height:0;overflow:hidden;visibility:hidden;user-select:none;pointer-events:none}
+  .ash-link:hover,.ash-link.is-hover{color:var(--a-ink)}
+  .ash-link[aria-current="page"]{color:var(--a-ink);font-weight:700;border-bottom-color:var(--a-green)}
+  .ash-link:focus-visible,.ash-link.is-focus{outline:2px solid var(--a-green-dk);outline-offset:2px;border-radius:6px}
+  .ash-right{margin-left:auto;display:flex;align-items:center;gap:14px;min-width:0}
+  .ash-right > *{flex:none}
+  /* Nothing on the right may push the bar past one row. The subject is display
+     context, so it is what shortens. The account never shortens while a subject is
+     there to give way; its student number is free text of any length, so it has a
+     ceiling, and below 1024px, where the subject is left out, it may shorten too.
+     Shortened or not, its full value is its title. */
+  .ash-right > .ash-ctx{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .ash-who > span{min-width:0;max-width:28ch;overflow:hidden;text-overflow:ellipsis}
+  .ash-ctx{font-size:13px;font-weight:600;color:var(--a-ink2);white-space:nowrap}
+  .ash-demo{margin-left:-6px;font-family:'Fredoka',system-ui,sans-serif;font-weight:600;font-size:11px;color:#0E7A4E;background:#E7F8F0;border-radius:99px;padding:2px 10px}
+  .ash-sep{width:1px;height:20px;background:var(--a-line);flex:none}
+  .ash-who{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--a-ink2);white-space:nowrap}
+  .ash-ico{width:17px;height:17px;flex:none}
+  .ash-out{display:inline-flex;align-items:center;gap:8px;margin-right:-14px;background:none;border:1px solid transparent;border-radius:11px;padding:8px 14px;font:600 13.5px/1.6 'Nunito',system-ui,sans-serif;color:var(--a-ink2);cursor:pointer}
+  .ash-out:hover,.ash-out.is-hover{background:var(--a-sunk);border-color:var(--a-line);color:var(--a-ink)}
+  .ash-out:hover .ash-ico,.ash-out.is-hover .ash-ico{color:var(--a-green-dk)}
+  .ash-out:focus-visible,.ash-out.is-focus{outline:2px solid var(--a-green-dk);outline-offset:2px}
+  /* An area's own navigation, below the bar and inside the page: Essay practice only. */
+  .ash-sub{font-family:'Nunito',system-ui,sans-serif;line-height:1.6}
+  .ash-subin{max-width:1320px;margin:0 auto;padding:18px 28px 0}
+  .ash-subrow{display:flex;gap:24px;border-bottom:1px solid var(--e-line,#E8EEEF)}
+  .ash-sublink{display:inline-flex;flex-direction:column;align-items:center;font-size:14px;font-weight:600;color:#5D7178;padding:4px 0 10px;margin-bottom:-1px;border-bottom:2.5px solid transparent;text-decoration:none}
+  .ash-sublink:hover,.ash-sublink.is-hover{color:#18272D}
+  .ash-sublink[aria-current="page"]{color:#18272D;font-weight:700;border-bottom-color:#12B27A}
+  .ash-sublink:focus-visible,.ash-sublink.is-focus{outline:2px solid #0E9765;outline-offset:2px;border-radius:6px}
+  /* From 861px to 1023px the bar keeps the brand, the four sections, the account and
+     Sign out, and leaves out the subject, which is display only. */
+  @media (max-width:1023px){
+    .ash-ctx,.ash-ctx + .ash-sep{display:none}
+    .ash-right > .ash-who{flex:0 1 auto;min-width:0}
+  }
+  /* At 860px and below the shell has no designed treatment yet: that is the mobile
+     phase. It only wraps, so nothing is cut off or scrolls the page sideways. */
+  @media (max-width:860px){
+    .ash-in{flex-wrap:wrap;row-gap:4px;padding:10px 16px}
+    .ash-links{order:3;flex:1 0 100%;margin-left:0;overflow-x:auto}
+  }
 </style>
 </head>
 <body>
-<header>
-  <div class="brand"><span class="mk"></span>Marginal</div>
-  <div class="unit">HSC Economics<br>Distribution of Income &amp; Wealth</div>
-</header>
+<!-- THE APP SHELL. One bar on every page, rendered by shellRender() in app.js. What
+     is written here is its signed-out state, the brand alone, so the page has its
+     bar before the scripts run and if they never do. ui78 holds the two equal. -->
+<header class="ash" id="ash"><div class="ash-in"><a class="ash-brand" href="#study" data-shell="home" aria-label="Marginal, Study home"><span class="ash-logo" aria-hidden="true">M</span><span class="ash-word">Marginal</span></a></div></header>
 <main id="app" aria-live="polite"></main>
 <script>
   // ===== TEACHER SETUP — edit these two lines, then deploy =====

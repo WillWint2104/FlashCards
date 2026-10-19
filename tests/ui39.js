@@ -55,10 +55,10 @@ async function stable(p, base, what) {
 }
 
 async function toWriting(p, qre) {
-  await p.goto(T); await here(p, '.navtab');
+  await p.goto(T); await here(p, '.ash-link');
   await p.evaluate(() => localStorage.removeItem('marginal.essay.v1'));
-  await p.goto(T); await here(p, '.navtab');
-  await p.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
+  await p.goto(T); await here(p, '.ash-link');
+  await p.$$eval('.ash-link', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await here(p, '#essubject');
   await p.selectOption('#essubject', 'business_studies').catch(() => {});
   const chip = await chooseQuestion(p, qre);

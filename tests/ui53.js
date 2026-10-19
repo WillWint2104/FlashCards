@@ -65,8 +65,8 @@ async function publishThroughImporter(ctx, file) {
 
 async function toChooser(page) {
   await page.goto(T);
-  await page.waitForSelector(".navtab", { timeout: 8000 });
-  for (const t of await page.$$(".navtab")) {
+  await page.waitForSelector(".ash-link", { timeout: 8000 });
+  for (const t of await page.$$(".ash-link")) {
     if (/essay/i.test((await t.textContent()) || "")) { await t.click(); break; }
   }
   await page.waitForSelector("#essubject", { timeout: 8000 });
@@ -363,10 +363,10 @@ async function toChooser(page) {
     const p2 = await ctx.newPage();
     await p2.route(/workers\.dev/, r => r.abort());
     await p2.goto(T);
-    await p2.waitForSelector(".navtab", { timeout: 8000 });
+    await p2.waitForSelector(".ash-link", { timeout: 8000 });
     await p2.evaluate(() => { Object.keys((window.BUSCONTENT || {}).evidence || {}).forEach(k =>
       window.BUSCONTENT.evidence[k].forEach(e => { e.source = "test fixture source"; e.checked = "2026-08-19"; })); });
-    for (const t of await p2.$$(".navtab")) {
+    for (const t of await p2.$$(".ash-link")) {
       if (/essay/i.test((await t.textContent()) || "")) { await t.click(); break; }
     }
     await p2.waitForSelector("#essubject", { timeout: 8000 });

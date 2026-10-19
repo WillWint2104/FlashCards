@@ -46,7 +46,7 @@ async function toWriting(p) {
   await p.goto(T); await p.waitForTimeout(700);
   await p.evaluate(() => Object.keys((window.BUSCONTENT || {}).evidence || {}).forEach(k =>
     window.BUSCONTENT.evidence[k].forEach(e => { e.source = "test fixture source"; e.checked = "2026-08-19"; })));
-  await p.$$eval(".navtab", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
+  await p.$$eval(".ash-link", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await p.waitForTimeout(400);
   await p.selectOption("#essubject", "business_studies"); await p.waitForTimeout(300);
   return p;
@@ -86,9 +86,9 @@ async function writeOut(p) {
   let p = await mk(1500, 1180);
   await toWriting(p);
   await shot(p, "01-setup-home");
-  await p.click('.qp-nav [data-esnav="essays"]'); await p.waitForTimeout(400);
+  await p.click('.ash-sub [data-esnav="essays"]'); await p.waitForTimeout(400);
   await shot(p, "02-my-essays-home");
-  await p.click('.qp-nav [data-esnav="back"]'); await p.waitForTimeout(400);
+  await p.click('.ash-sub [data-esnav="back"]'); await p.waitForTimeout(400);
   await intoBody1(p);
   await shot(p, "03-workspace-exit-essay");
   await shot(p, "04-workspace-header", ".es-top");
@@ -157,36 +157,32 @@ async function writeOut(p) {
   await p.click("#esmenu"); await p.waitForTimeout(350);
   await shot(p, "14-narrow-menu-open");
   await p.keyboard.press("Escape"); await p.waitForTimeout(250);
-  // the picker at the same width, since its bar is the same component
+  // The picker at the same width. Its bar is the app shell, which has no designed
+  // phone treatment yet and only wraps; its own two pages sit in the page.
   await p.click("#esexit"); await p.waitForTimeout(400);
-  await p.$$eval(".navtab", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
+  await p.$$eval(".ash-link", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await p.waitForTimeout(500);
   await shot(p, "15-narrow-setup-header");
-  await p.click("#esmenu"); await p.waitForTimeout(350);
-  await shot(p, "16-narrow-setup-menu-open");
-  await p.keyboard.press("Escape"); await p.waitForTimeout(250);
-  // The subject shown in two places at once: the menu heading and the form. They
-  // read one committed value, so the shot is of them agreeing.
+  // Below 1024px the bar leaves the subject out, so the form is the one place a
+  // subject is named on this page.
   await p.$$eval('[data-espick="own"]', es => es[0] && es[0].click()); await p.waitForTimeout(400);
   await p.selectOption("#essubject", "business_studies").catch(() => {});
   await p.waitForTimeout(400);
-  await p.click("#esmenu"); await p.waitForTimeout(350);
   await shot(p, "17-narrow-subject-context");
   const agree = await p.evaluate(() => {
     const sel = document.getElementById("essubject");
-    const bar = document.querySelector(".qp-subj");
+    const bar = document.querySelector(".ash-ctx");
     return { form: sel && sel.options[sel.selectedIndex] && sel.options[sel.selectedIndex].text,
-      menu: bar && bar.textContent.trim() };
+      bar: bar && getComputedStyle(bar).display !== "none" ? bar.textContent.trim() : null };
   });
-  console.log("  subject shown in the form:", JSON.stringify(agree.form), " in the menu:", JSON.stringify(agree.menu));
-  await p.keyboard.press("Escape"); await p.waitForTimeout(200);
+  console.log("  subject shown in the form:", JSON.stringify(agree.form), " on the bar:", JSON.stringify(agree.bar));
   await p.setViewportSize({ width: 1500, height: 1180 }); await p.waitForTimeout(400);
 
   // The active subject picker, open. Ancient History is legacy and is not among
   // the subjects offered; the routed subject has no content, so the picker asks
   // rather than adopting the survivor on the student's behalf.
   await p.goto(T); await p.waitForTimeout(600);
-  await p.$$eval(".navtab", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
+  await p.$$eval(".ash-link", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await p.waitForTimeout(500);
   const offered = await p.$$eval("#essubject option", es => es.map(o => o.value + " | " + o.text));
   console.log("  the active picker offers:", JSON.stringify(offered));

@@ -163,7 +163,7 @@ async function open(b) {
   }
   return { p, ctx, rec };
 }
-async function toTest(p) { await p.$$eval('.navtab', es => es.find(x => /Test mode/i.test(x.textContent)).click()); await settled(p); }
+async function toTest(p) { await p.$$eval('.ash-link', es => es.find(x => /Test mode/i.test(x.textContent)).click()); await settled(p); }
 async function importLocalPaper(p) {
   const P = JSON.parse(JSON.stringify(PAPER)), L = CORPUS.localPoints;
   P.exam = Object.assign({}, P.exam, { id: L.examId, title: L.name }); P.name = L.name;
@@ -509,7 +509,7 @@ async function resultsAgree(p, attemptKey, where) {
     ok(/Not marked/.test(await text(p, '#sheet')) && !/\bagain\b/.test(await text(p, '#sheet')), 'Review: the unmarked answer stays unmarked, with no retry');
     await p.click('#tmrvback'); await settled(p);
     ok((await p.evaluate(() => localStorage.getItem('marginal.trial.v1'))) === before, 'nothing in Results or Review changed the completed attempt');
-    ok(!/HSC Economics|Economics/.test(await text(p, 'header .unit')), 'the header names Business Studies, never Economics: ' + await text(p, 'header .unit'));
+    ok(/^Business Studies/.test(await text(p, '.ash-ctx')) && !/Economics/.test(await text(p, '.ash')), 'the bar names Business Studies, never Economics: ' + await text(p, '.ash-ctx'));
     ok(!rec.errs.length && !rec.dialogs.length, 'no page errors and no dialogs ' + JSON.stringify(rec.errs.concat(rec.dialogs)));
     await ctx.close();
   }

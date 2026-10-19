@@ -44,8 +44,8 @@ const rf = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => re
 
 async function enter(page) {
   await page.goto(T);
-  await page.waitForSelector(".navtab", { timeout: 8000 });
-  await page.$$eval(".navtab", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
+  await page.waitForSelector(".ash-link", { timeout: 8000 });
+  await page.$$eval(".ash-link", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await page.waitForSelector("#essubject", { timeout: 8000 });
   await page.waitForTimeout(300);
 }
@@ -293,7 +293,7 @@ const capState = page => page.evaluate(() => {
   ok(wk.n > 0, "the fallback set is there: " + wk.n + " examples");
   ok(wk.placeholder === false,
     "and for the subject that OWNS them it is not labelled as borrowed: " + wk.placeholder);
-  await p2.goto(T); await p2.waitForSelector(".navtab", { timeout: 8000 });
+  await p2.goto(T); await p2.waitForSelector(".ash-link", { timeout: 8000 });
   await enter(p2);
   await p2.selectOption("#essubject", "economics"); await p2.waitForTimeout(350);
   const wk2 = await p2.evaluate(() => {

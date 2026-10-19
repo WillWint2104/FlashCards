@@ -36,7 +36,7 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  FAIL:', m); 
   });
 
   await p.goto(T);
-  await p.waitForSelector('.navtab', { timeout: 8000 });
+  await p.waitForSelector('.ash-link', { timeout: 8000 });
 
   console.log('--- what the page asks the network for, and does not get ---');
   const kinds = {};
@@ -71,11 +71,11 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  FAIL:', m); 
   console.log('--- and the app is fully usable without any of it ---');
   // Not "the page rendered". A student has to be able to get to writing, which is
   // the whole product, so the assertion walks there.
-  const tabs = await p.$$eval('.navtab', es => es.map(x => x.textContent.trim()).filter(Boolean));
+  const tabs = await p.$$eval('.ash-link', es => es.map(x => x.textContent.trim()).filter(Boolean));
   ok(tabs.length >= 2, 'the app renders its navigation: ' + JSON.stringify(tabs.slice(0, 4)));
   ok(errs.length === 0, 'and throws nothing while loading: ' + JSON.stringify(errs.slice(0, 2)));
 
-  await p.evaluate(() => { const t = [...document.querySelectorAll('.navtab')].find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
+  await p.evaluate(() => { const t = [...document.querySelectorAll('.ash-link')].find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await p.waitForSelector('#essubject', { timeout: 8000 });
   await p.selectOption('#essubject', 'business_studies').catch(() => {});
   await usePractice(p);

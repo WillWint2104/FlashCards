@@ -17,10 +17,10 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  FAIL:', m); 
 const rf = p => p.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
 
 async function enterBus(p, qre) {
-  await p.goto(T); await p.waitForSelector('.navtab', { timeout: 8000 });
+  await p.goto(T); await p.waitForSelector('.ash-link', { timeout: 8000 });
   await p.evaluate(() => localStorage.removeItem('marginal.essay.v1'));
-  await p.goto(T); await p.waitForSelector('.navtab', { timeout: 8000 });
-  await p.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
+  await p.goto(T); await p.waitForSelector('.ash-link', { timeout: 8000 });
+  await p.$$eval('.ash-link', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await p.waitForSelector('#essubject', { timeout: 8000 });
   await p.selectOption('#essubject', 'business_studies');
   await usePractice(p);
@@ -228,9 +228,9 @@ const slots = p => p.$$eval('.es-shape2frame .es-sl', es => es.map(e => ({
     // Ancient History ships no pathways, so pathway.fromLabel cannot bind. The
     // body shape must not render with an empty mint slot; the authored frames
     // stand in instead.
-    await p.goto(T); await p.waitForSelector('.navtab', { timeout: 8000 });
+    await p.goto(T); await p.waitForSelector('.ash-link', { timeout: 8000 });
     await p.evaluate(() => localStorage.removeItem('marginal.essay.v1'));
-    await p.goto(T); await p.waitForSelector('.navtab', { timeout: 8000 });
+    await p.goto(T); await p.waitForSelector('.ash-link', { timeout: 8000 });
     // Ancient History is legacy: registered, and not offered in the current
     // picker. Reached as the login that routes there.
     await loginAs(p, '11Anc1', T);

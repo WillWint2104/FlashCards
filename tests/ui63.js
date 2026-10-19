@@ -47,8 +47,8 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log("  FAIL:", 
 // The app, entered as a student, with whatever is in the store already imported.
 async function enter(page) {
   await page.goto(T);
-  await page.waitForSelector(".navtab", { timeout: 8000 });
-  await page.$$eval(".navtab", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
+  await page.waitForSelector(".ash-link", { timeout: 8000 });
+  await page.$$eval(".ash-link", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await page.waitForSelector("#essubject", { timeout: 8000 });
   await page.waitForTimeout(300);
 }

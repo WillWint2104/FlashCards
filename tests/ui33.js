@@ -34,16 +34,16 @@ const LABEL = { A:"A draft claim", B:"B candidate with a url", C:"C confirmed an
                 F:"F both fields blank" };
 
 async function openFixture(p){
-  await p.goto(P); await here(p, '.navtab');
+  await p.goto(P); await here(p, '.ash-link');
   await p.evaluate(()=>localStorage.removeItem('marginal.essay.v1'));
-  await p.goto(P); await here(p, '.navtab');
+  await p.goto(P); await here(p, '.ash-link');
   await p.evaluate(f=>{
     window.ESSAY.subjects[f.subject.key]=f.subject;
     // The bank the fixture question resolves to. Replaced wholesale for this run
     // so the four states are the only records in play.
     window.BUSCONTENT.evidence.marketing = f.records;
   }, F);
-  await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
+  await p.$$eval('.ash-link',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await settled(p);
   await p.selectOption('#essubject', F.subject.key);
   await settled(p);

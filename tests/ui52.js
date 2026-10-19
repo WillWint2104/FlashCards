@@ -1,6 +1,7 @@
 // MY ESSAYS IS A DESTINATION, NOT A LABEL.
 //
-// The header carries two nav links. "My essays" was wired to the picker's own
+// Essay practice carries two links of its own, in a row under the app shell on
+// its pages (.ash-sublink) and on the writing toolbar (.qp-navlink). "My essays" was wired to the picker's own
 // setup stage, so pressing it did exactly what "Back to setup" did, under a name
 // that promised something else. A nav item that looks right and goes nowhere is
 // worse than no nav item, because a student trusts it and loses their place.
@@ -18,7 +19,7 @@ const ok = (c, m) => { if (c) pass++; else { fail++; console.log("  FAIL:", m); 
 
 const nav = (page, re) => page.evaluate(src => {
   const r = new RegExp(src, "i");
-  const b = [...document.querySelectorAll(".qp-navlink")].find(x => r.test(x.textContent));
+  const b = [...document.querySelectorAll(".ash-sublink, .qp-navlink")].find(x => r.test(x.textContent));
   if (!b) return false; b.click(); return true;
 }, re instanceof RegExp ? re.source : String(re));
 
@@ -29,16 +30,17 @@ const stageOf = page => page.evaluate(() => ({
   essays: document.querySelectorAll(".qp-essay").length,
   empty: !!document.querySelector(".qp-empty2"),
   // The page shell is part of the claim: a destination is a page, not a panel.
-  header: !!document.querySelector(".qp-nav"),
+  // Its header is the app shell's bar with the area's own row under it.
+  header: !!document.querySelector(".ash .ash-link") && !!document.querySelector(".qp .ash-sub"),
   rail: !!document.querySelector(".qp-rail"),
   foot: !!document.querySelector(".qp-foot"),
-  current: [...document.querySelectorAll(".qp-navlink.on")].map(x => x.textContent.trim()),
+  current: [...document.querySelectorAll('.ash-sublink[aria-current="page"]')].map(x => x.textContent.trim()),
 }));
 
 async function toPicker(page) {
   await page.goto(T);
-  await page.waitForSelector(".navtab", { timeout: 8000 });
-  for (const t of await page.$$(".navtab")) {
+  await page.waitForSelector(".ash-link", { timeout: 8000 });
+  for (const t of await page.$$(".ash-link")) {
     if (/essay/i.test((await t.textContent()) || "")) { await t.click(); break; }
   }
   await page.waitForSelector("#essubject", { timeout: 8000 });
@@ -231,7 +233,7 @@ async function toPicker(page) {
       await p5.waitForTimeout(350);
     }
     const toEssays = async () => {
-      await p5.evaluate(() => [...document.querySelectorAll(".qp-navlink")]
+      await p5.evaluate(() => [...document.querySelectorAll(".ash-sublink, .qp-navlink")]
         .find(x => /my essays/i.test(x.textContent)).click());
       await p5.waitForTimeout(300);
     };
@@ -313,7 +315,7 @@ async function toPicker(page) {
     ok(byId["mkt-01"] === "Marketing", "the Marketing question is filed under Marketing: " + byId["mkt-01"]);
     ok(byId["fin-02"] === "Finance",
       "and the Finance question under Finance, not the one chosen before it: " + byId["fin-02"]);
-    await p3.evaluate(() => [...document.querySelectorAll(".qp-navlink")]
+    await p3.evaluate(() => [...document.querySelectorAll(".ash-sublink, .qp-navlink")]
       .find(x => /my essays/i.test(x.textContent)).click());
     await p3.waitForTimeout(300);
     const chips = await p3.$$eval(".qp-essay .qp-chip", es => es.map(e => e.textContent.trim()));

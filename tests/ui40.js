@@ -38,11 +38,11 @@ const shellOf = p => p.evaluate(() => {
 });
 
 async function toPicker(p, subject) {
-  await p.goto(T); await p.waitForSelector('.navtab', { timeout: 8000 });
+  await p.goto(T); await p.waitForSelector('.ash-link', { timeout: 8000 });
   await p.evaluate(() => localStorage.removeItem('marginal.essay.v1'));
-  await p.goto(T); await p.waitForSelector('.navtab', { timeout: 8000 });
+  await p.goto(T); await p.waitForSelector('.ash-link', { timeout: 8000 });
   const tab = await p.evaluate(() => {
-    const t = [...document.querySelectorAll('.navtab')].find(x => /Essay practice/i.test(x.textContent));
+    const t = [...document.querySelectorAll('.ash-link')].find(x => /Essay practice/i.test(x.textContent));
     if (t) { t.click(); return true; } return false;
   });
   if (!tab) return false;
@@ -61,7 +61,7 @@ async function toPicker(p, subject) {
   const errs = []; p.on('pageerror', e => errs.push(String(e).slice(0, 200)));
   await p.route(/workers\.dev/, r => r.abort());
 
-  await p.goto(T); await p.waitForSelector('.navtab', { timeout: 8000 });
+  await p.goto(T); await p.waitForSelector('.ash-link', { timeout: 8000 });
   const bank = await p.evaluate(() => {
     const s = (window.ESSAY && window.ESSAY.subjects) || {};
     const bs = (s.business_studies && s.business_studies.questions) || [];
