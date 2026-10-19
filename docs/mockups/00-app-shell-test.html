@@ -155,6 +155,14 @@ html:has(body.tm-on) { scroll-padding-bottom: 110px; }
 .ash-link[aria-current="page"]{color:var(--a-ink);font-weight:700;border-bottom-color:var(--a-green)}
 .ash-link:focus-visible,.ash-link.is-focus{outline:2px solid var(--a-green-dk);outline-offset:2px;border-radius:6px}
 .ash-right{margin-left:auto;display:flex;align-items:center;gap:14px;min-width:0}
+.ash-right > *{flex:none}
+/* Nothing on the right may push the bar past one row. The subject is display
+   context, so it is what shortens. The account never shortens while a subject is
+   there to give way; its student number is free text of any length, so it has a
+   ceiling, and below 1024px, where the subject is left out, it may shorten too.
+   Shortened or not, its full value is its title. */
+.ash-right > .ash-ctx{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.ash-who > span{min-width:0;max-width:28ch;overflow:hidden;text-overflow:ellipsis}
 .ash-ctx{font-size:13px;font-weight:600;color:var(--a-ink2);white-space:nowrap}
 .ash-demo{margin-left:-6px;font-family:'Fredoka',system-ui,sans-serif;font-weight:600;font-size:11px;color:#0E7A4E;background:#E7F8F0;border-radius:99px;padding:2px 10px}
 .ash-sep{width:1px;height:20px;background:var(--a-line);flex:none}
@@ -172,6 +180,18 @@ html:has(body.tm-on) { scroll-padding-bottom: 110px; }
 .ash-sublink:hover,.ash-sublink.is-hover{color:#18272D}
 .ash-sublink[aria-current="page"]{color:#18272D;font-weight:700;border-bottom-color:#12B27A}
 .ash-sublink:focus-visible,.ash-sublink.is-focus{outline:2px solid #0E9765;outline-offset:2px;border-radius:6px}
+/* From 861px to 1023px the bar keeps the brand, the four sections, the account and
+   Sign out, and leaves out the subject, which is display only. */
+@media (max-width:1023px){
+  .ash-ctx,.ash-ctx + .ash-sep{display:none}
+  .ash-right > .ash-who{flex:0 1 auto;min-width:0}
+}
+/* At 860px and below the shell has no designed treatment yet: that is the mobile
+   phase. It only wraps, so nothing is cut off or scrolls the page sideways. */
+@media (max-width:860px){
+  .ash-in{flex-wrap:wrap;row-gap:4px;padding:10px 16px}
+  .ash-links{order:3;flex:1 0 100%;margin-left:0;overflow-x:auto}
+}
 /* Drawing aid only: the essay surface is a fixed overlay in the app; in a drawing it
    is the page, so it scrolls with the document. */
 body.ash-drawing.es-lock{overflow:visible}
@@ -182,7 +202,7 @@ body.ash-drawing .qp{position:static;overflow:visible;min-height:100vh}
 <header class="ash"><div class="ash-in">
   <a class="ash-brand" href="#study" aria-label="Marginal, Study home"><span class="ash-logo" aria-hidden="true">M</span><span class="ash-word">Marginal</span></a>
   <nav class="ash-links" aria-label="Marginal"><a class="ash-link" href="#study" data-label="Study">Study</a><a class="ash-link" href="#create" data-label="Create">Create</a><a class="ash-link" href="#test" data-label="Test mode" aria-current="page">Test mode</a><a class="ash-link" href="#essay" data-label="Essay practice">Essay practice</a></nav>
-  <div class="ash-right"><span class="ash-who"><svg class="ash-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 20a6 6 0 0 0-12 0"></path> <circle cx="12" cy="10" r="4"></circle> <circle cx="12" cy="12" r="10"></circle></svg><span>12Ec126 · #1234</span></span><button type="button" class="ash-out"><svg class="ash-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m16 17 5-5-5-5"></path> <path d="M21 12H9"></path> <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path></svg><span>Sign out</span></button></div>
+  <div class="ash-right"><span class="ash-who"><svg class="ash-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 20a6 6 0 0 0-12 0"></path> <circle cx="12" cy="10" r="4"></circle> <circle cx="12" cy="12" r="10"></circle></svg><span title="12Ec126 · #1234">12Ec126 · #1234</span></span><button type="button" class="ash-out"><svg class="ash-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m16 17 5-5-5-5"></path> <path d="M21 12H9"></path> <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path></svg><span>Sign out</span></button></div>
 </div></header>
 <main id="app" aria-live="polite"><div class="tm tm-lib">
       <div class="tm-top">

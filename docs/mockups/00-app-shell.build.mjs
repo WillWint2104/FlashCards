@@ -1,4 +1,11 @@
-// THE SHARED APP SHELL, DRAWN AROUND THE PAGES IT WILL FRAME (proposed, awaiting approval).
+// THE SHARED APP SHELL, DRAWN AROUND THE PAGES IT FRAMES (approved, with the owner's
+// locked decisions applied: see 00-app-shell-rationale.md).
+//
+// PINNED TO THE PRE-MIGRATION BUILD. It strips the old chrome from the running
+// app, so it runs only against a build that still has it (main at 1d14abd, before
+// the shell was implemented). The drawings it made are the approved design and the
+// baseline the implementation was checked against; they are not regenerated from a
+// build that already has the shell.
 //
 // One header for every Marginal surface, in the Essay practice bar's own visual
 // language (index.html .qp-navin, .qp-brand, .qp-logo, .qp-word, .qp-navlink,
@@ -25,8 +32,9 @@
 //      width and height, and moves by one vertical offset, the change in chrome;
 //   2. the static file renders as the page did: every element's box identical, and
 //      every pixel identical;
-//   3. one bar: the same geometry on every page, and one row at 1280px with every
-//      subject it can name; it also measures the narrowest window that holds it.
+//   3. one bar: the same geometry on every page; at 1024px, one row with every
+//      subject it can name shown in full; from 861px to 1023px, one row with the
+//      subject left out; it also measures the narrowest window that holds it.
 // And that pruning kept every [open] rule a drawn <details> can use once opened.
 //
 // Subject context is read the way the shell would read it: by key, through the
@@ -57,15 +65,19 @@ const CONTENT = loadWindow("content.js").CONTENT;
 const ASSESS = require(path.join(ROOT, "tools/contract/assessment.js"));
 const PAPER = JSON.parse(fs.readFileSync(path.join(ROOT, "tests/fixtures/bus-practice-paper.json"), "utf8"));
 const contextOf = key => { const p = PACKAGES[key]; return p ? [p.label, p.stage].filter(Boolean).join(" · ") : ""; };
-// Test mode, a paper open: the paper's own key, resolved through the registry. The
-// file's "Stage 6" is its claim; the package's stage is what resolves (02-import-rationale).
-const auth = ASSESS.resolveAuthority({ curriculum: ASSESS.curriculumOf(PAPER), packages: PACKAGES });
+// Test mode, a paper open: the most specific authoritative context the paper
+// supplies. Its subject is the label its own key resolves to, and its stage is the
+// one the paper declares ("Stage 6"), never the package's "Year 12" (locked
+// decision). A paper whose subject does not resolve names nothing.
+const CURR = ASSESS.curriculumOf(PAPER);
+const auth = ASSESS.resolveAuthority({ curriculum: CURR, packages: PACKAGES });
 if (!auth.ok) fail("the practice paper's subject did not resolve: " + auth.code);
 // Study: content.js declares no key today. The proposal is one declared key,
 // CONTENT.subjectKey = "economics", read through the same registry; never a match on
 // the label. The check below only proves the proposal names the subject Study shows.
 if (PACKAGES.economics.label !== CONTENT.subject) fail("the proposed Study key does not name the subject Study shows");
-const CTX = { study: contextOf("economics"), paper: contextOf(auth.subjectKey) };
+const CTX = { study: contextOf("economics"), paper: [auth.label, CURR.stage].filter(Boolean).join(" · ") };
+if (CTX.paper !== "Business Studies · Stage 6") fail("the paper's context is not its declared stage: " + CTX.paper);
 // The account, as cloudBarHTML() shows it today: class code and student number. A
 // sample number, not anyone's.
 const WHO = "12Ec126 · #1234";
@@ -80,7 +92,7 @@ const SECTIONS = [["study", "Study"], ["create", "Create"], ["test", "Test mode"
 function shellHTML({ on, ctx, states = {}, account = true, demo = false }) {
   const cls = (base, k) => base + (states[k] ? " is-" + states[k] : "");
   const context = ctx ? `<span class="ash-ctx">${ctx}</span>${demo ? '<span class="ash-demo">demo</span>' : ""}` : "";
-  const who = account ? `<span class="ash-who">${icon("user")}<span>${WHO}</span></span><button type="button" class="${cls("ash-out", "out")}">${icon("exit")}<span>Sign out</span></button>` : "";
+  const who = account ? `<span class="ash-who">${icon("user")}<span title="${WHO}">${WHO}</span></span><button type="button" class="${cls("ash-out", "out")}">${icon("exit")}<span>Sign out</span></button>` : "";
   return `<header class="ash"><div class="ash-in">
   <a class="${cls("ash-brand", "brand")}" href="#study" aria-label="Marginal, Study home"><span class="ash-logo" aria-hidden="true">M</span><span class="ash-word">Marginal</span></a>
   <nav class="ash-links" aria-label="Marginal">${SECTIONS.map(([k, label]) =>
@@ -120,6 +132,14 @@ const SHELL_CSS = `/* THE SHARED APP SHELL (proposed). One bar on every page, in
 .ash-link[aria-current="page"]{color:var(--a-ink);font-weight:700;border-bottom-color:var(--a-green)}
 .ash-link:focus-visible,.ash-link.is-focus{outline:2px solid var(--a-green-dk);outline-offset:2px;border-radius:6px}
 .ash-right{margin-left:auto;display:flex;align-items:center;gap:14px;min-width:0}
+.ash-right > *{flex:none}
+/* Nothing on the right may push the bar past one row. The subject is display
+   context, so it is what shortens. The account never shortens while a subject is
+   there to give way; its student number is free text of any length, so it has a
+   ceiling, and below 1024px, where the subject is left out, it may shorten too.
+   Shortened or not, its full value is its title. */
+.ash-right > .ash-ctx{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.ash-who > span{min-width:0;max-width:28ch;overflow:hidden;text-overflow:ellipsis}
 .ash-ctx{font-size:13px;font-weight:600;color:var(--a-ink2);white-space:nowrap}
 .ash-demo{margin-left:-6px;font-family:'Fredoka',system-ui,sans-serif;font-weight:600;font-size:11px;color:#0E7A4E;background:#E7F8F0;border-radius:99px;padding:2px 10px}
 .ash-sep{width:1px;height:20px;background:var(--a-line);flex:none}
@@ -137,6 +157,18 @@ const SHELL_CSS = `/* THE SHARED APP SHELL (proposed). One bar on every page, in
 .ash-sublink:hover,.ash-sublink.is-hover{color:#18272D}
 .ash-sublink[aria-current="page"]{color:#18272D;font-weight:700;border-bottom-color:#12B27A}
 .ash-sublink:focus-visible,.ash-sublink.is-focus{outline:2px solid #0E9765;outline-offset:2px;border-radius:6px}
+/* From 861px to 1023px the bar keeps the brand, the four sections, the account and
+   Sign out, and leaves out the subject, which is display only. */
+@media (max-width:1023px){
+  .ash-ctx,.ash-ctx + .ash-sep{display:none}
+  .ash-right > .ash-who{flex:0 1 auto;min-width:0}
+}
+/* At 860px and below the shell has no designed treatment yet: that is the mobile
+   phase. It only wraps, so nothing is cut off or scrolls the page sideways. */
+@media (max-width:860px){
+  .ash-in{flex-wrap:wrap;row-gap:4px;padding:10px 16px}
+  .ash-links{order:3;flex:1 0 100%;margin-left:0;overflow-x:auto}
+}
 /* Drawing aid only: the essay surface is a fixed overlay in the app; in a drawing it
    is the page, so it scrolls with the document. */
 body.ash-drawing.es-lock{overflow:visible}
@@ -245,7 +277,9 @@ function openRulesKept({ rules, css }) {
 function barFits(height) {
   const h = document.querySelector(".ash"), inn = h.querySelector(".ash-in"), right = h.querySelector(".ash-right");
   const box = e => e.getBoundingClientRect();
-  const links = [...h.querySelectorAll(".ash-link")].map(box), items = [...right.children].map(box), last = right.lastElementChild;
+  // What is not displayed (the subject below 1024px) has no box to place.
+  const shown = [...right.children].filter(e => getComputedStyle(e).display !== "none");
+  const links = [...h.querySelectorAll(".ash-link")].map(box), items = shown.map(box), last = shown[shown.length - 1];
   // Sign out's negative right margin puts its text, not its padding, on the content
   // edge. Past that margin, nothing may stick out of the right-hand group.
   const end = last ? box(last).right + parseFloat(getComputedStyle(last).marginRight) : 0;
@@ -428,31 +462,54 @@ try {
   // The [open] check above has to have checked something: Essay practice draws a
   // <details> whose open state has its own rule.
   if (!openChecked) fail("no [open] rule was checked on any page");
-  // It stays one row at a 1280px desktop with every subject it can name, and the
-  // narrowest window that still holds it is measured: the band where the bar can
-  // begin. Measured in the Study drawing, under the page's own CSS.
+  // The widths the owner locked: at 1024px the full bar, with every subject it can
+  // name shown in full; from 861px to 1023px the same bar without the subject. Both
+  // edges are checked, and with a long student number the bar still fits (the
+  // subject may shorten at 1024px, nothing else does). The narrowest window that
+  // holds each variant is measured too. Measured in the Study drawing, under the
+  // page's own CSS.
   {
-    const ctx = await b.newContext({ viewport: { width: 1440, height: 900 } });
+    const ctx = await b.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
     const p = await ctx.newPage(); await serveFonts(p);
     await p.goto("file://" + path.join(OUT, "00-app-shell.html")); await p.evaluate(() => document.fonts.ready);
     const H = ref.bar[3];
+    const LONG = WHO.replace("#1234", "#123456789");
     const VARIANTS = [
       ...Object.keys(PACKAGES).map(k => [contextOf(k), shellHTML({ on: "essay", ctx: contextOf(k) })]),
+      [CTX.paper, shellHTML({ on: "test", ctx: CTX.paper })],
       [contextOf("ancient_history") + ", demo", shellHTML({ on: "essay", ctx: contextOf("ancient_history"), demo: true })],
       ["no subject", shellHTML({ on: "create", ctx: "" })],
     ];
-    const narrowest = {};
-    for (const [name, h] of VARIANTS) {
-      await p.evaluate(h => { document.querySelector(".ash").outerHTML = h; }, h);
-      const at = async w => { await p.setViewportSize({ width: w, height: 900 }); await settled(p); return p.evaluate(barFits, H); };
-      if (!(await at(1280))) fail("the bar does not hold one row at 1280px with " + name);
-      let lo = 600, hi = 1280;
-      if (await at(lo)) fail("the bar fits at 600px with " + name + "; the search needs a lower floor");
-      while (hi - lo > 1) { const m = (lo + hi) >> 1; if (await at(m)) hi = m; else lo = m; }
-      if (!(await at(hi)) || (await at(hi - 1))) fail("the narrowest width for " + name + " is not a clean edge at " + hi);
-      narrowest[name] = hi;
+    const shownAs = sel => { const c = document.querySelector(sel); if (!c) return "none";
+      if (getComputedStyle(c).display === "none") return "hidden"; return c.scrollWidth <= c.clientWidth ? "full" : "shortened"; };
+    const fits = {}, narrowest = {};
+    for (const [name, h] of VARIANTS) for (const who of [WHO, LONG]) {
+      await p.evaluate(h => { document.querySelector(".ash").outerHTML = h; }, h.split(WHO).join(who));
+      const at = async w => { await p.setViewportSize({ width: w, height: 900 }); await settled(p);
+        return { fits: await p.evaluate(barFits, H), subject: await p.evaluate(shownAs, ".ash-ctx"), account: await p.evaluate(shownAs, ".ash-who > span") }; };
+      const key = name + (who === LONG ? ", long student number" : "");
+      const r = { 1024: await at(1024), 1023: await at(1023), 861: await at(861) };
+      for (const w of [1024, 1023, 861]) if (!r[w].fits) fail("the bar does not hold one row at " + w + "px with " + key);
+      const hasSubject = name !== "no subject";
+      if (hasSubject && who === WHO && r[1024].subject !== "full") fail("at 1024px the subject is not shown in full with " + key + ": " + r[1024].subject);
+      if (hasSubject && r[1024].subject === "hidden") fail("at 1024px the subject is hidden with " + key);
+      for (const w of [1023, 861]) if (hasSubject && r[w].subject !== "hidden") fail("at " + w + "px the subject is not left out with " + key + ": " + r[w].subject);
+      for (const w of [1024, 1023, 861]) if (who === WHO && r[w].account !== "full") fail("at " + w + "px the account is not shown in full with " + key + ": " + r[w].account);
+      if (r[1024].account !== "full") fail("at 1024px the account shortened while a subject could give way, with " + key);
+      fits[key] = Object.fromEntries([1024, 1023, 861].map(w => [w, "subject " + r[w].subject + ", account " + r[w].account]));
+      if (who === WHO) {
+        let lo = 600, hi = 1440;
+        if ((await at(lo)).fits) fail("the bar fits at 600px with " + key + "; the search needs a lower floor");
+        while (hi - lo > 1) { const m = (lo + hi) >> 1; if ((await at(m)).fits) hi = m; else lo = m; }
+        narrowest[key] = hi;
+      }
     }
-    report.push({ check: "one row at 1280px with every subject", narrowestOneRow: narrowest });
+    report.push({ check: "one row at 1024px, 1023px and 861px; the subject at each", subject: fits, narrowestOneRow: narrowest });
+    if (SHOTS) for (const w of [1024, 861]) {
+      await p.goto("file://" + path.join(OUT, "00-app-shell-test-paper.html")); await p.evaluate(() => document.fonts.ready);
+      await p.setViewportSize({ width: w, height: 900 }); await settled(p); await p.mouse.move(2, 2);
+      fs.writeFileSync(path.join(SHOTS, "00-app-shell-" + w + ".png"), await p.screenshot({ clip: { x: 0, y: 0, width: w, height: 260 } }));
+    }
     await ctx.close();
   }
   // The states sheet: the bar in each state its CSS defines, and on each kind of page.
@@ -462,7 +519,7 @@ try {
       ["Study open. The current section carries the green underline, and the subject is the open workspace's.", shellHTML({ on: "study", ctx: CTX.study })],
       ["Create open. Create has no subject, so only the account shows on the right.", shellHTML({ on: "create", ctx: "" })],
       ["Test mode library. No paper is open, so no subject is named (decisions 4 and 18).", shellHTML({ on: "test", ctx: "" })],
-      ["A paper open in Test mode. The subject is the paper's, resolved from its key.", shellHTML({ on: "test", ctx: CTX.paper })],
+      ["A paper open in Test mode. The subject is the paper's, resolved from its key, with the stage the paper declares.", shellHTML({ on: "test", ctx: CTX.paper })],
       ["Essay practice, with the area's own two pages in the page below the bar. Essay practice is current there.", shellHTML({ on: "essay", ctx: ESSAY_CTX }) + subnavHTML("practice")],
       ["My essays current below the bar. The bar still shows Essay practice as the section.", shellHTML({ on: "essay", ctx: ESSAY_CTX }) + subnavHTML("essays")],
       ["Pointer over a section link (Create, while Study is open).", shellHTML({ on: "study", ctx: CTX.study, states: { create: "hover" } })],
@@ -499,7 +556,7 @@ ${SHELL_CSS}
 </head>
 <body>
 <h1 class="sheet-h">The shared app shell, in each of its states</h1>
-<p class="sheet-p">The same bar on every page: 1440px wide here, one row down to a 1280px desktop. Pointer and focus states are drawn with classes for the picture; the shell itself uses :hover and :focus-visible.</p>
+<p class="sheet-p">The same bar on every page: 1440px wide here. From 861px to 1023px it leaves out the subject. Pointer and focus states are drawn with classes for the picture; the shell itself uses :hover and :focus-visible.</p>
 ${ROWS.map(([lab, h]) => `<section class="row"><p>${lab}</p>${h}</section>`).join("\n")}
 </body>
 </html>
