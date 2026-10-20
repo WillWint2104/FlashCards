@@ -119,7 +119,10 @@ ok(untitled.length <= 2, "and a tooltip, bar the plain dismissals: " +
 const css = readFileSync(path.join(HERE, "..", "index.html"), "utf8");
 ok(/\.es-nbico:focus-visible\{[^}]*outline:/.test(css), "the notebook's icon buttons show keyboard focus");
 ok(/\.es-util\.quiet:focus-visible\{[^}]*outline:/.test(css), "the global bar's controls show keyboard focus");
-ok(/\.qp-brand:focus-visible\{[^}]*outline:/.test(css), "the wordmark shows keyboard focus");
+// The wordmark is the app shell's brand now, and the shell's other controls are its
+// links and Sign out: every one of them shows where keyboard focus is.
+for (const c of ["ash-brand", "ash-link", "ash-out", "ash-sublink"])
+  ok(new RegExp("\\." + c + ":focus-visible[^{]*\\{[^}]*outline:").test(css), "the app shell's ." + c + " shows keyboard focus");
 
 console.log("");
 console.log(pass + " passed, " + fail + " failed");

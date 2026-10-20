@@ -46,10 +46,10 @@ const SENTENCES = [
 ];
 
 async function enter(p, subject) {
-  await p.goto(T); await p.waitForSelector(".navtab", { timeout: 8000 });
+  await p.goto(T); await p.waitForSelector(".ash-link", { timeout: 8000 });
   await p.evaluate(() => localStorage.removeItem("marginal.essay.v1"));
-  await p.goto(T); await p.waitForSelector(".navtab", { timeout: 8000 });
-  await p.$$eval(".navtab", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
+  await p.goto(T); await p.waitForSelector(".ash-link", { timeout: 8000 });
+  await p.$$eval(".ash-link", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await p.waitForSelector("#essubject", { timeout: 8000 });
   await p.selectOption("#essubject", subject || "business_studies");
   await usePractice(p);
@@ -368,8 +368,8 @@ async function editThenCheck(p, text) {
   ok(stillThere, "the previous feedback and its snapshot were kept, not deleted");
 
   console.log("--- 7b. and it survives a reload");
-  await p.reload(); await p.waitForSelector(".navtab", { timeout: 8000 });
-  await p.$$eval(".navtab", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
+  await p.reload(); await p.waitForSelector(".ash-link", { timeout: 8000 });
+  await p.$$eval(".ash-link", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await settled(p);
   const kept = await p.evaluate(() => {
     const raw = JSON.parse(localStorage.getItem("marginal.essay.v1") || "{}");

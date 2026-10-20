@@ -86,7 +86,7 @@ const withPaper = pk => ({ cards: {}, endpoint: '', code: '12Ec126', log: [],
 // with Start again (the dialog is accepted), which is what "sitting it again" is.
 async function openTest(p) {
   await p.evaluate(() => {
-    const b = Array.from(document.querySelectorAll('.navtab')).find(e => /test mode/i.test(e.textContent));
+    const b = Array.from(document.querySelectorAll('.ash-link')).find(e => /test mode/i.test(e.textContent));
     b && b.click();
   });
   await settled(p);
@@ -686,7 +686,7 @@ const answer = async (p, text) => {
 
     // START IT. The paper is not only readable, it is sittable, and the screen
     // shows the number the paper authored rather than a position.
-    await p2.evaluate(() => { const t = Array.from(document.querySelectorAll('.navtab')).find(x => /test mode/i.test(x.textContent)); t && t.click(); });
+    await p2.evaluate(() => { const t = Array.from(document.querySelectorAll('.ash-link')).find(x => /test mode/i.test(x.textContent)); t && t.click(); });
     await settled(p2);
     await p2.evaluate(() => {
       const rows = Array.from(document.querySelectorAll('.tm-paper'));

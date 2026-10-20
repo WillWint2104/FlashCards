@@ -32,11 +32,11 @@ const SKIP = {
   // this line - "ui41 covers it" - was simply untrue: ui41 has never referred to
   // it. A skip carries a real owner or it is not a skip.
   esx: "leaves the surface; ui57 presses every way out on purpose",
-  eshome: "leaves Essay Practice for Marginal; ui57 section 1b follows it there",
   esexit: "leaves the writing workspace; ui57 section 4 follows it and checks the attempt survived",
-  // The wordmark only. The other [data-esnav] controls are destinations INSIDE
-  // Essay Practice and the sweep should go on pressing them.
-  esbrandhome: "the wordmark is a Home route out of the application; ui57 covers it",
+  // The app shell's ways out (its brand and area links) are outside .qp, so the
+  // sweep never reaches them; ui57 sections 1b and 5b press them on purpose. The
+  // [data-esnav] controls are destinations INSIDE Essay Practice and the sweep
+  // goes on pressing them, including the area's own row under the bar.
   "data-esdelete": "deletes a saved essay; ui52 covers both answers to its confirmation",
   esstart: "starts the essay and leaves the picker; ui40 opens every question through it",
   esmarkfull: "submits for marking; ui2 covers the payload",
@@ -54,7 +54,7 @@ const snap = page => page.evaluate(() => ({
 // Every control a student can see on this stage, with a stable way to name it.
 const controlsOn = page => page.evaluate(skip => {
   const named = [];
-  document.querySelectorAll(".qp button, .qp [role='radio']").forEach(b => {
+  document.querySelectorAll(".qp button, .qp [role='radio'], .qp a.ash-sublink").forEach(b => {
     if (b.disabled || !b.offsetParent) return;
     // A control that says it is already the current one is not dead when
     // pressing it changes nothing: that is what being current means. The All
@@ -95,8 +95,8 @@ const controlsOn = page => page.evaluate(skip => {
 
 async function toStage(page, stage) {
   await page.goto(T);
-  await page.waitForSelector(".navtab", { timeout: 8000 });
-  for (const t of await page.$$(".navtab")) {
+  await page.waitForSelector(".ash-link", { timeout: 8000 });
+  for (const t of await page.$$(".ash-link")) {
     if (/essay/i.test((await t.textContent()) || "")) { await t.click(); break; }
   }
   await page.waitForSelector("#essubject", { timeout: 8000 });
@@ -114,7 +114,7 @@ async function toStage(page, stage) {
     await page.waitForSelector(".qp-prevq", { timeout: 8000 }); return;
   }
   if (stage === "essays") {
-    await page.evaluate(() => [...document.querySelectorAll(".qp-navlink")]
+    await page.evaluate(() => [...document.querySelectorAll(".ash-sublink")]
       .find(x => /my essays/i.test(x.textContent)).click());
     await page.waitForTimeout(300); return;
   }
@@ -134,12 +134,12 @@ async function toStage(page, stage) {
   console.log("1. every tab in the hub opens a surface");
   {
     await page.goto(T);
-    await page.waitForSelector(".navtab", { timeout: 8000 });
+    await page.waitForSelector(".ash-link", { timeout: 8000 });
     // The tab the app opens on is already current, so pressing it changes
     // nothing and that is correct. It is checked for being marked current
     // instead, which is the claim that matters about it.
-    const tabs = await page.$$eval(".navtab", es => es.map(e => ({
-      label: e.textContent.trim(), current: e.classList.contains("on") })));
+    const tabs = await page.$$eval(".ash-link", es => es.map(e => ({
+      label: e.textContent.trim(), current: e.getAttribute("aria-current") === "page" })));
     ok(tabs.length >= 3, "the hub offers its tabs: " + JSON.stringify(tabs.map(t => t.label)));
     const current = tabs.filter(t => t.current);
     ok(current.length === 1, "exactly one is marked as the one you are on: " +
@@ -147,9 +147,9 @@ async function toStage(page, stage) {
     for (const { label, current: isCurrent } of tabs) {
       if (isCurrent) continue;
       await page.goto(T);
-      await page.waitForSelector(".navtab", { timeout: 8000 });
+      await page.waitForSelector(".ash-link", { timeout: 8000 });
       const before = await page.evaluate(() => document.body.innerHTML.length);
-      await page.$$eval(".navtab", (es, l) => { const t = es.find(x => x.textContent.trim() === l); t && t.click(); }, label);
+      await page.$$eval(".ash-link", (es, l) => { const t = es.find(x => x.textContent.trim() === l); t && t.click(); }, label);
       await page.waitForTimeout(450);
       const after = await page.evaluate(() => document.body.innerHTML.length);
       ok(after !== before, JSON.stringify(label) + " opens something: " + before + " -> " + after);

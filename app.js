@@ -812,6 +812,127 @@
   const app = $("#app");
   const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
 
+  // ===================== THE APP SHELL =====================
+  // ONE bar on every page: the brand, the four areas, the open workspace's subject,
+  // the account and Sign out. It is rendered here and nowhere else, into the one
+  // <header id="ash"> index.html carries, so the pages cannot drift apart again: a
+  // page says which area it is and what it is about, and this draws the bar.
+  //
+  // Two inputs, one bar. #app pages set SHELL.page; Essay practice, an overlay over
+  // whatever #app page it was opened from, sets SHELL.essay while it is open. The
+  // overlay's wins, and when it closes the bar falls back to the page underneath,
+  // so a Test mode redraw under the overlay can never repaint the bar it is under.
+  //
+  // THE SUBJECT IS DISPLAY ONLY. Each area computes it from its own authority (Study
+  // from content.js's subjectKey, Test mode from the paper's resolved subject and
+  // declared stage, Essay practice from its package) and hands over a string.
+  // Nothing outside this block reads SHELL, so it can never become a second answer
+  // to which subject marks a response.
+  const SHELL = { page: { area: null, context: "" }, essay: null };
+  const SHELL_AREAS = [["study", "Study"], ["create", "Create"], ["test", "Test mode"], ["essay", "Essay practice"]];
+  const shellHost = document.getElementById("ash");
+  // A package's context as a student reads it: "Economics · Year 12".
+  const shellContextOf = pkg => pkg ? [pkg.label, pkg.stage].filter(Boolean).join(" · ") : "";
+  function shellPage(area, context) { SHELL.page = { area: area || null, context: context || "" }; shellRender(); }
+  function shellEssay(s) { SHELL.essay = s || null; shellRender(); }
+  function shellHTML(s) {
+    // Signed out (area null): the brand alone, exactly as index.html writes it.
+    const brand = `<a class="ash-brand" href="#study" data-shell="home" aria-label="Marginal, Study home"><span class="ash-logo" aria-hidden="true">M</span><span class="ash-word">Marginal</span></a>`;
+    if (!s.area) return `<div class="ash-in">${brand}</div>`;
+    // Essay practice is offered when it is switched on, and always while it is the
+    // open area (its demo route opens it with the switch off).
+    const links = SHELL_AREAS.filter(([k]) => k !== "essay" || essayEnabled() || s.area === "essay").map(([k, label]) =>
+      `<a class="ash-link" href="#${k}" data-shell="${k}" data-label="${label}"${k === s.area ? ' aria-current="page"' : ""}>${label}</a>`).join("");
+    const context = (s.context ? `<span class="ash-ctx">${esc(s.context)}</span>` : "") + (s.demo ? '<span class="ash-demo">demo</span>' : "");
+    // The account, as the profile holds it: class code and student number. With
+    // cloud sign-in off there is no account, and so no Sign out.
+    let who = "";
+    if (cloudActive()) {
+      const w = Cloud.who();
+      const label = w ? `${w.class_code} · #${w.student_number}` : "Signed in";
+      who = `<span class="ash-who">${esIcon("user", "ash-ico")}<span title="${esc(label)}">${esc(label)}</span></span>` +
+        `<button type="button" class="ash-out" data-shell="signout">${esIcon("exit", "ash-ico")}<span>Sign out</span></button>`;
+    }
+    return `<div class="ash-in">${brand}<nav class="ash-links" aria-label="Marginal">${links}</nav>` +
+      `<div class="ash-right">${context}${context && who ? '<span class="ash-sep" aria-hidden="true"></span>' : ""}${who}</div></div>`;
+  }
+  // The overlays start below the bar (index.html .qp, .es-scrim), so they read its
+  // height from here: measured, because it wraps at a phone's width.
+  function shellMeasure() {
+    if (shellHost) document.documentElement.style.setProperty("--ash-h", shellHost.getBoundingClientRect().height + "px");
+  }
+  function shellRender() {
+    if (!shellHost) return;
+    shellHost.innerHTML = shellHTML(SHELL.essay || SHELL.page);
+    shellMeasure();
+  }
+  // Essay practice's own two pages, Essay practice and My essays. A row in the page
+  // under the bar, not a second bar, so the bar is the same object everywhere. The
+  // links carry Essay practice's own routes (data-esnav), so the picker's handler
+  // moves between them exactly as it always has.
+  function shellSubHTML(current) {
+    return `<nav class="ash-sub" aria-label="Essay practice"><div class="ash-subin"><div class="ash-subrow">${
+      [["practice", "back", "Essay practice"], ["essays", "essays", "My essays"]].map(([k, to, label]) =>
+        `<a class="ash-sublink" href="#${k}" data-esnav="${to}" data-label="${label}"${k === current ? ' aria-current="page"' : ""}>${label}</a>`).join("")}</div></div></nav>`;
+  }
+  // Where each control goes. These are the routes the old controls took, unchanged:
+  // the brand to the Study home, Study to home() (the topic the student was in), and
+  // Create and Test mode to their first pages. Leaving Essay practice goes through
+  // esLeave, the one exit every Essay route uses, which saves the draft first. The
+  // essay's floating windows (notebook, study window, learning centre, modals) live
+  // outside its overlay, so leaving it does not take them down; no other area shows
+  // them, so leaving by the bar takes them down too.
+  function shellLeaveEssay() {
+    if (document.getElementById("eshost")) esLeave();
+    esNbUnmount(); esStudyUnmount(); eslUnmount();
+    const m = document.getElementById("esmodalhost"); if (m) m.remove();
+  }
+  function shellGo(to) {
+    if (to === "essay") {
+      // Already there: the area's own "Essay practice" route, so the bar adds no
+      // essay navigation of its own.
+      if (document.getElementById("eshost")) { const own = document.querySelector('#eshost [data-esnav="back"]'); if (own) own.click(); return; }
+      esOpen({}); return;
+    }
+    if (to === "signout") return shellSignOut();
+    shellLeaveEssay();
+    if (to === "home") { view = "study"; mainPage(); return; }
+    if (to === "study") { view = "study"; home(); return; }
+    // A Study session ends when the student goes elsewhere; a session left running
+    // would keep the keyboard shortcuts and the marking reply bound to it.
+    session = null;
+    if (to === "create") { view = "create"; builder(); return; }
+    if (to === "test") { view = "test"; examHome(); }
+  }
+  async function shellSignOut() {
+    shellLeaveEssay(); tmLeave();
+    await Cloud.signOut(); toast("Signed out."); authScreen();
+  }
+  // Whether scrollbars take up room here, measured once. Where they do, the page and
+  // Essay practice's surfaces keep their gutter (index.html html.ash-gutter), so the
+  // bar never moves sideways; where they overlay the page nothing changes.
+  (function shellGutter() {
+    const d = document.createElement("div");
+    d.style.cssText = "position:absolute;top:-200px;width:100px;height:100px;overflow:scroll";
+    document.body.appendChild(d);
+    const w = d.offsetWidth - d.clientWidth;
+    document.documentElement.classList.toggle("ash-gutter", w > 0);
+    document.documentElement.style.setProperty("--ash-sbw", w + "px");
+    d.remove();
+  })();
+  if (shellHost) {
+    shellHost.addEventListener("click", e => {
+      const a = e.target.closest && e.target.closest("[data-shell]");
+      if (!a) return;
+      e.preventDefault();
+      shellGo(a.dataset.shell);
+    });
+    if (window.ResizeObserver) new ResizeObserver(shellMeasure).observe(shellHost);
+  }
+  // Essay practice's row links are anchors so they read and focus as navigation;
+  // the picker's handler does the moving, and the URL is left alone.
+  document.addEventListener("click", e => { if (e.target.closest && e.target.closest("a.ash-sublink")) e.preventDefault(); });
+
   function linkGlossary(text) {
     let html = esc(text);
     Object.keys(C.glossary).sort((a, b) => b.length - a.length).forEach(term => {
@@ -824,40 +945,31 @@
   }
 
   let session = null;
-  let view = "study"; // 'study' | 'create'
-
-  function nav() {
-    return `<div class="nav">
-      <button class="navtab ${view === "study" ? "on" : ""}" data-v="study">Study</button>
-      <button class="navtab ${view === "create" ? "on" : ""}" data-v="create">Create</button>
-      <button class="navtab ${view === "test" ? "on" : ""}" data-v="test">Test mode</button>
-      ${essayEnabled() ? `<button class="navtab" data-v="essay">Essay practice</button>` : ""}
-    </div>`;
-  }
-  function wireNav() {
-    app.querySelectorAll(".navtab").forEach(b => b.onclick = () => {
-      const v = b.dataset.v;
-      // Essay practice is a full-screen overlay (not a study/create view), and it runs
-      // on the student's own question, so it is available to any login while the flag
-      // is on. It never changes the underlying Study/Create view.
-      if (v === "essay") { esOpen({}); return; }
-      // Test mode is a real view (full screen), not an overlay: it lists the
-      // practice exams a teacher has imported and is where a paper is sat.
-      if (v === "test") { view = "test"; examHome(); return; }
-      view = v; view === "study" ? home() : builder();
-    });
-  }
+  // The #app area on screen: 'study' | 'create' | 'test'. Essay practice is an overlay
+  // over one of these and never changes it (see shellGo).
+  let view = "study";
 
   // ===================== STUDY =====================
+  // Study's context in the app shell: the course its content declares, by key, in
+  // the packages the app ships ("Economics · Year 12"). Never a match on the label.
+  // Read from window.ESSAY directly, not through esAllSubjects(): that merge with
+  // imported questions is built once per page, and the Study home is the first
+  // page, so building it here would hide questions imported in another tab before
+  // Essay practice or Test mode is first opened. A set the student made declares
+  // no subject, so its pages name none.
+  function studyContext(area) {
+    if (area && area.custom) return "";
+    const shipped = (window.ESSAY && window.ESSAY.subjects) || {};
+    return C.subjectKey ? shellContextOf(shipped[C.subjectKey]) : "";
+  }
   function home() { tmLeave(); if (gated()) return authScreen(); session = null; currentTopic ? areaMap(currentTopic) : mainPage(); }
 
   function mainPage() {
     tmLeave();
     if (gated()) return authScreen();
     view = "study"; session = null; currentTopic = null;
+    shellPage("study", studyContext(null));
     app.innerHTML = `
-      ${nav()}
-      ${cloudBarHTML()}
       <div class="hi">What are we studying?</div>
       <div class="hi-s">${C.subject} · pick a topic${persistent ? "" : " · preview mode: progress resets when this page closes"}</div>
       <div class="topics">
@@ -898,9 +1010,7 @@
           <span class="hint" id="restoreMsg"></span>
         </details>
       </div>`;
-    wireNav();
     app.querySelectorAll(".topiccard:not(.locked)").forEach(b => b.onclick = () => areaMap(b.dataset.topic));
-    wireCloudBar();
     wireSetsManager();
     const saveBtn = $("#saveEndpoint");
     if (saveBtn) saveBtn.onclick = () => { state.code = $("#classcode").value.trim(); save(); toast("Saved"); };
@@ -914,22 +1024,10 @@
     };
   }
 
-  // ---------- cloud sign-in bar (only when Supabase is configured) ----------
-  function cloudBarHTML() {
-    // The app is only reachable when signed in (hard gate), so this bar always
-    // shows the signed-in identity + sign-out. (Empty when Supabase is off.)
-    if (!cloudActive()) return "";
-    const w = Cloud.who();
-    const label = w ? `${esc(w.class_code)} · #${esc(w.student_number)}` : "Signed in";
-    return `<div class="whoami" style="justify-content:flex-end;margin:-4px 0 8px">Signed in: <b>${label}</b> <button class="btn sm ghost" id="signout">Sign out</button></div>`;
-  }
-  function wireCloudBar() {
-    const so = $("#signout"); if (so) so.onclick = async () => { await Cloud.signOut(); toast("Signed out."); authScreen(); };
-  }
-
   // ---------- auth screen (class code + student number + password) ----------
   function authScreen() {
     view = "study"; session = null; currentTopic = null;
+    shellPage(null);
     // The hard gate — the entry point when not signed in. No nav, no way past
     // it until sign-in succeeds.
     app.innerHTML = `
@@ -1085,8 +1183,8 @@
     const topic = C.topics.find(t => t.id === topicId);
     if (!topic) return mainPage();
     const totalDue = topic.areas.reduce((n, a) => n + dueCards(a).length, 0);
+    shellPage("study", studyContext(null));
     app.innerHTML = `
-      ${nav()}
       <div class="sessionbar"><button class="x" id="quit" title="All topics">←</button>
         <span class="lbl">${esc(topic.name)}</span></div>
       <div class="hi">Pick an area to master</div>
@@ -1108,7 +1206,6 @@
           </button>`;
         }).join("")}
       </div>`;
-    wireNav();
     $("#quit").onclick = mainPage;
     app.querySelectorAll(".area").forEach(b => b.onclick = () => modePicker(b.dataset.area));
   }
@@ -1135,6 +1232,11 @@
   function modePicker(areaId) {
     const area = findArea(areaId);
     if (!area || !area.cards.length) return toast("This set has no cards yet.");
+    // Every Study page past this one is reached through it, so this is where Study
+    // becomes the open area, whichever way the student came (Create's "Study this
+    // set" arrives with view still "create").
+    view = "study";
+    shellPage("study", studyContext(area));
     const lessons = area.lessons || [];
     app.innerHTML = `
       <div class="sessionbar"><button class="x" id="quit" title="Back">←</button>
@@ -2086,10 +2188,14 @@
         if (!ans) return toast("Write an answer first — retrieval is the point!");
         $("#check").disabled = true; $("#check").textContent = "Marking…";
         session.lastAnswer = ans;   // kept so a written answer can be marked properly on request
+        const mine = session;
         let g;
         if (card.type === "calc") g = gradeCalc(card, ans);
         else if (card.type === "essay") g = await gradeWritten(card, ans);
         else g = gradeLocal(card, ans);
+        // Marking can take a while, and the app shell lets the student leave while it
+        // runs. A reply for a session they have left has no card to land on.
+        if (session !== mine) return;
         finishCard(card, g);
       };
     }
@@ -2134,10 +2240,13 @@
         g.fb = deep.fb; openReview(deep.fb, () => { session.idx++; renderCard(); });
       } else { toast("Marking could not be reached just now."); }
     };
+    // Essay practice may have been opened over this card while it was being marked:
+    // the result waits underneath, and focus and scrolling stay with the essay.
+    const over = !!document.getElementById("eshost");
     const cont = $("#continue");
-    if (cont) { cont.onclick = () => { session.idx++; renderCard(); }; cont.focus(); }
+    if (cont) { cont.onclick = () => { session.idx++; renderCard(); }; if (!over) cont.focus(); }
     const sh = $("#sheet");
-    if (sh.scrollIntoView) sh.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    if (!over && sh.scrollIntoView) sh.scrollIntoView({ behavior: "smooth", block: "nearest" });
     wireGlossary();
   }
 
@@ -2393,20 +2502,32 @@
   // tools/contract/attempts.js (ATT). This code renders what ATT returns, records
   // what the student does through ATT, and saves. It counts nothing itself.
   //
-  // THE HEADER BELONGS TO THE OPEN PAPER (decision 4). index.html carries a Study
-  // subject as a literal. In Test Mode the header names the subject of the paper
-  // that is open, resolved from its own curriculum, and nothing at all when no
-  // paper is open. It never falls back to whatever Study last showed.
-  var TM_HEADER = (() => { const u = document.querySelector("header .unit"); return u ? u.innerHTML : ""; })();
-  function tmUnit(subject) {
-    const u = document.querySelector("header .unit");
-    if (u) u.innerHTML = subject ? `<b>${esc(subject)}</b>Test mode` : "Test mode";
+  // THE BAR BELONGS TO THE OPEN PAPER (decision 4). Test mode is the open area, and
+  // the app shell names the subject of what is open, and nothing at all when no
+  // paper is: never whatever Study last showed.
+  function tmEnter(context) {
+    shellPage("test", context);
     document.body.classList.add("tm-on");
   }
   function tmLeave() {
-    const u = document.querySelector("header .unit");
-    if (u && TM_HEADER != null) u.innerHTML = TM_HEADER;
     document.body.classList.remove("tm-on", "tm-sitting");
+  }
+  // What the bar says about the papers in front of the student: the most specific
+  // context they supply with authority. Every paper must resolve, through its own
+  // key, to ONE subject; the label is that subject's, and the stage is the one the
+  // papers themselves declare ("Stage 6"), shown when they agree. Never the
+  // package's stage, and never tmSubjectOf's fallback to a file's course text: a
+  // paper that does not resolve, or a practice drawn from two subjects, names
+  // nothing. Display only (see THE APP SHELL).
+  function tmContext(papers) {
+    const seen = (papers || []).filter((p, i, arr) => arr.indexOf(p) === i).map(p => {
+      const c = ASSESS.curriculumOf(p) || {};
+      const a = ASSESS.resolveAuthority({ curriculum: c, packages: tmPackages() });
+      return a.ok ? { key: a.subjectKey, label: a.label, stage: String(c.stage || "").trim() } : null;
+    });
+    if (!seen.length || seen.some(x => !x) || seen.some(x => x.key !== seen[0].key)) return "";
+    const stage = seen.every(x => x.stage === seen[0].stage) ? seen[0].stage : "";
+    return [seen[0].label, stage].filter(Boolean).join(" · ");
   }
   function tmPackages() { return esAllSubjects().subjects || {}; }
   function tmSubjectOf(paper) {
@@ -2451,7 +2572,7 @@
     return [tmSubjectOf(p) || c.course || c.subjectKey, c.stage || ""].filter(Boolean).join(" · ");
   }
   function tmShell(inner, opts) {
-    return `${nav()}${(opts && opts.cloud) ? cloudBarHTML() : ""}<div class="tm${opts && opts.cls ? " " + opts.cls : ""}">${inner}</div>`;
+    return `<div class="tm${opts && opts.cls ? " " + opts.cls : ""}">${inner}</div>`;
   }
   const tmBack = (label, id) => `<button type="button" class="tm-back" id="${id || "tmback"}"><span aria-hidden="true">← </span>${esc(label || "Test mode")}</button>`;
 
@@ -2461,7 +2582,7 @@
     EXAM.gen++;                                    // whatever sitting was open has ended
     if (gated()) return authScreen();
     view = "test"; session = null; currentTopic = null;
-    tmUnit("");
+    tmEnter("");
     const papers = ATT.library(state.exams).slice().reverse();
     const counts = ATT.bankCounts(state.exams, tmPackages());
     const tiles = `<section class="tm-types" aria-labelledby="tmt1">
@@ -2498,8 +2619,7 @@
         <p class="tm-lede">Practise individual question types or work through a complete paper. Answers are marked as you go and your progress is saved.${state.endpoint ? "" : " Answers that need the marker stay unmarked until your teacher connects marking."}</p>
         ${TM_POLICY}
       </div>
-      ${body}`, { cloud: true, cls: "tm-lib" });
-    wireNav(); wireCloudBar();
+      ${body}`, { cls: "tm-lib" });
     const im = $("#tmimport"); if (im) im.onclick = () => tmImport();
     // Start goes to setup; Resume goes to the saved question, not through setup again.
     app.querySelectorAll("[data-tmtype]").forEach(b => b.onclick = () => {
@@ -2573,7 +2693,7 @@
   function tmImport(keep) {
     if (gated()) return authScreen();
     view = "test"; session = null; currentTopic = null;
-    tmUnit("");
+    tmEnter("");
     if (!keep) { TMI.text = ""; TMI.name = ""; TMI.size = ""; TMI.pasted = false; TMI.r = null; }
     app.innerHTML = tmShell(`
       ${tmBack()}
@@ -2583,7 +2703,6 @@
       </div>
       <input id="tmfile" type="file" accept="application/json,.json" class="tm-sr">
       <div id="tmimportbody">${TMI.r ? tmImportResult() : tmImportStart()}</div>`, { cls: "tm-imp" });
-    wireNav();
     $("#tmback").onclick = tmLibrary;
     const f = $("#tmfile");
     f.onchange = () => {
@@ -2820,7 +2939,8 @@
     const p = ATT.library(state.exams).find(x => ATT.identityOf(x) === identity);
     if (!p) return tmLibrary();
     const key = ATT.paperKey(identity), rec = tmRec(key);
-    tmUnit(tmSubjectOf(rec.current ? (ATT.byId(state.exams, rec.current.paper) || p) : p));
+    // The paper that is open: the attempt's pinned version while one is in progress.
+    tmEnter(tmContext([rec.current ? (ATT.byId(state.exams, rec.current.paper) || p) : p]));
     const top = `${tmBack()}
       <div class="tm-top">
         <p class="tm-kicker">${esc(tmIdentityLine(p))}</p>
@@ -2865,7 +2985,6 @@
         </section>
         ${tmAboutPaper(ap, null)}
       </div>`, { cls: "tm-ov" });
-      wireNav();
       $("#tmback").onclick = tmLibrary;
       $("#tmresume").onclick = () => tmSit(key);
       $("#tmstartagain").onclick = () => {
@@ -2903,7 +3022,6 @@
       </div>
       ${tmAboutPaper(p, null)}
     </div>`, { cls: "tm-ov" });
-    wireNav();
     $("#tmback").onclick = tmLibrary;
     const lr = $("#tmlastresults"); if (lr) lr.onclick = () => tmResults(key);
     const boxes = () => Array.from(app.querySelectorAll("[data-exampick]"));
@@ -2936,8 +3054,7 @@
     const source = rec.current ? ATT.sequence(rec.current, state.exams) : null;
     const papersOf = xs => xs.map(b => ATT.byId(state.exams, b.paper)).filter((p, i, arr) => p && arr.indexOf(p) === i);
     const papers = rec.current ? papersOf(rec.current.items) : papersOf(bank);
-    const subjects = papers.map(tmSubjectOf).filter((s, i, arr) => s && arr.indexOf(s) === i);
-    tmUnit(subjects.length === 1 ? subjects[0] : "");
+    tmEnter(tmContext(papers));
     if (!rec.current && !bank.length && !rec.last) return tmLibrary();
     const name = tmTypeName(format);
     // The last finished session, kept apart from any session in progress (decision 25).
@@ -2989,7 +3106,6 @@
             <button type="button" class="tm-btn" id="tmresume">Resume practice</button>
           </div>
         </section>${about}</div>`, { cls: "tm-ov" });
-      wireNav();
       $("#tmback").onclick = tmLibrary;
       $("#tmresume").onclick = () => tmSit(key);
       const lr = $("#tmlastresults"); if (lr) lr.onclick = () => tmResults(key);
@@ -3003,7 +3119,7 @@
     if (!bank.length) {
       // Nothing left to practise, but the last session's results are still there.
       app.innerHTML = tmShell(top + `<div class="tm-layout"><section class="tm-panel">${lastStrip}<p class="tm-p">No ${esc(name.toLowerCase())} questions are in your library now.</p></section>${about}</div>`, { cls: "tm-ov" });
-      wireNav(); $("#tmback").onclick = tmLibrary; $("#tmlastresults").onclick = () => tmResults(key);
+      $("#tmback").onclick = tmLibrary; $("#tmlastresults").onclick = () => tmResults(key);
       return;
     }
     const one = bank.length === 1;
@@ -3029,7 +3145,6 @@
           <button type="button" class="tm-btn" id="tmtypego">Start practice</button>
         </div>
       </section>${about}</div>`, { cls: "tm-ov" });
-    wireNav();
     $("#tmback").onclick = tmLibrary;
     const lr = $("#tmlastresults"); if (lr) lr.onclick = () => tmResults(key);
     const panel = app.querySelector(".tm-panel");
@@ -3185,7 +3300,9 @@
     const a = tmAttempt(); if (!a) return tmLibrary();
     const e = SIT.seq[SIT.pos];
     EXAM.paper = e.paper;                          // markingContext reads the paper this question is in
-    tmUnit(tmSubjectOf(e.paper));
+    // Every paper in the sitting, not this question's: a practice drawn from several
+    // papers names one subject on every page, or none (see tmContext).
+    tmEnter(tmContext(SIT.seq.map(x => x.paper)));
     document.body.classList.add("tm-sitting");
     const st = ATT.itemState(a, e.key);
     const g = a.results[e.key];
@@ -3219,7 +3336,6 @@
           : `<button type="button" class="tm-btn sm ghost" id="examfinish">${a.scope === "paper" ? "Review &amp; submit" : "Review &amp; finish"}</button>`}
       </div></div>
       <div id="tmnavwrap"></div>`, { cls: "tm-sit" });
-    wireNav();
     tmWireSitting(e, a, f, g);
     if (scrollTop) window.scrollTo(0, 0);
   }
@@ -3572,8 +3688,7 @@
     if (!seq.length) return tmLibrary();
     const r = ATT.report(a, state.exams, tmPendingKeys(a));
     const type = a.scope === "type", paper = type ? null : ATT.byId(state.exams, a.paper);
-    const subjects = Array.from(new Set(seq.map(e => tmSubjectOf(e.paper)).filter(Boolean)));
-    tmUnit(subjects.length === 1 ? subjects[0] : "");
+    tmEnter(tmContext(seq.map(e => e.paper)));
     const secOf = si => paper.sections[si];
     const shortOf = (x) => ATT.sectionShort(type ? seq.find(e => e.key === x.key).sec : secOf(x.si), x.si);
     const label = x => x.eitherSlot ? "Question " + x.options.join(" or ") : "Question " + (x.display || "");
@@ -3733,7 +3848,6 @@
           <div class="tm-go"><p class="tm-sum" id="tmrsum" aria-live="polite">${sum}</p>${action}</div>
         </section>${aside}
       </div></div>`, { cls: "tm-ov tm-review" });
-    wireNav();
     $("#tmrback").onclick = () => tmSitAt(key, r.at);
     app.querySelectorAll("[data-tmreviewgo]").forEach(b => b.onclick = () => tmSitAt(key, b.dataset.tmreviewgo));
     app.querySelectorAll("[data-tmleave]").forEach(b => b.onclick = () => tmLeaveUnmarked(key, b.dataset.tmleave));
@@ -3899,7 +4013,7 @@
     const r = ATT.results(a, state.exams), type = a.scope === "type", R = r.rows;
     const paper = type ? null : ATT.byId(state.exams, a.paper);
     const seq = ATT.sequence(a, state.exams);
-    tmUnit(seq[0] ? tmSubjectOf(seq[0].paper) : "");
+    tmEnter(tmContext(seq.map(e => e.paper)));
     const names = [...new Set(r.bands.map(b => b.paperName))];
     const fromLine = names.length === 1 ? "From " + names[0] : "From " + tmPlural(names.length, "paper") + " in your library";
     const scopeWords = type ? fromLine : !paper || a.sections.length === paper.sections.length ? "The whole paper"
@@ -3951,7 +4065,6 @@
         <section class="tm-panel" aria-labelledby="tmrslh"><h2 class="tm-sr" id="tmrslh">Questions to look at again</h2>${tmRsDetails(r, a, paper)}</section>
         ${tmRsAbout(r, a, paper)}
       </div>`, { cls: "tm-rs" });
-    wireNav();
     $("#tmback").onclick = () => from === "review" && rec.current ? tmReview(key) : tmLibrary();
     app.querySelectorAll("[data-tmrv]").forEach(b => b.onclick = () => tmReviewQ(key, b.dataset.tmrv));
     app.querySelectorAll("[data-tmrsjump]").forEach(l => l.onclick = ev => { ev.preventDefault(); const g = document.getElementById(l.dataset.tmrsjump); if (g) { g.scrollIntoView(); g.focus(); } });
@@ -4139,7 +4252,7 @@
     RV.key = key; RV.k = v.entry.key; RV.what = a.scope === "type" ? "practice" : "attempt";
     const seq = ATT.sequence(a, state.exams), R = ATT.results(a, state.exams);
     const e = seq[v.index];
-    tmUnit(tmSubjectOf(e.paper));
+    tmEnter(tmContext(seq.map(x => x.paper)));
     document.body.classList.add("tm-sitting");
     const f = e.eitherSlot ? "either" : drawFormat(e.q);
     const big = f === "extended_response" || f === "business_report";
@@ -4196,7 +4309,6 @@
         ${next}
       </div></div>
       <div id="tmnavwrap"></div>`, { cls: "tm-sit tm-rv" });
-    wireNav();
     $("#tmrvback").onclick = () => { document.body.classList.remove("tm-sitting"); tmResults(key, { at: RV.k }); };
     const dn = $("#tmrvdone"); if (dn) dn.onclick = () => { document.body.classList.remove("tm-sitting"); tmResults(key); };
     app.querySelectorAll("[data-tmrv]").forEach(b => b.onclick = () => tmReviewQ(key, b.dataset.tmrv));
@@ -4272,9 +4384,10 @@
     tmLeave();
     if (gated()) return authScreen();
     view = "create";
+    // A flashcard set declares no subject, so Create names none.
+    shellPage("create");
     if (!draft) draft = { name: "", cards: [] };
     app.innerHTML = `
-      ${nav()}
       <div class="hi">Create a flashcard set</div>
       <div class="hi-s">Build cards, study them like any area, and export the set as JSON to share.</div>
 
@@ -4333,7 +4446,6 @@
            <span><button class="btn sm ghost" data-edit="${s.id}">Load into editor</button>
            <button class="btn sm ghost danger" data-del="${s.id}">Delete</button></span></div>`).join("")}</div>` : ""}
       </div>`;
-    wireNav();
     renderTypeFields();
     $("#ctype").onchange = renderTypeFields;
     $("#setname").oninput = e => { draft.name = e.target.value; };
@@ -4614,6 +4726,10 @@
   // Keyboard: Space flips · 1/2/3 rates (flash) · 1–4 picks MC · Enter continues
   document.addEventListener("keydown", e => {
     if (!session) return;
+    // Not for keys meant for something else on screen: the app shell's links and
+    // Sign out, or Essay practice, which can be open over a card page.
+    if (e.target && e.target.closest && e.target.closest(".ash")) return;
+    if (document.getElementById("eshost")) return;
     const t = (e.target || {}).tagName;
     const typing = t === "TEXTAREA" || t === "INPUT";
     const cont = document.querySelector("#continue");
@@ -4640,9 +4756,6 @@
       if (b && b.onclick) b.click();
     }
   });
-
-  const brand = document.querySelector("header .brand");
-  if (brand) { brand.style.cursor = "pointer"; brand.onclick = () => { view = "study"; mainPage(); }; }
 
   // ===========================================================================
   // Long-response review mode (see review-model.md). Step 2: focus-mode shell —
@@ -6193,13 +6306,20 @@
   // window uses: what has to be cleared is the writing card, not the page. Where
   // the space left is narrower than the window is allowed to be, it takes the
   // edge, which covers the least, and can be dragged anywhere from there.
+  // Where Essay practice's surface starts: under the app shell, not at the top of
+  // the window. The floating windows keep their old distances from it.
+  function esSurfaceTop() {
+    const s = document.querySelector("#eshost .es-scrim, #eshost .qp");
+    return s ? s.getBoundingClientRect().top : 0;
+  }
   function esStudyBox() {
     const WANT = 400, FLOOR = 320, GAP = 16, EDGE = 12;
     const rights = [".es-flow", ".es-parahead"].map(x => document.querySelector(x))
       .filter(Boolean).map(e => e.getBoundingClientRect().right);
     const writing = rights.length ? Math.max.apply(null, rights) : null;
     const cols = document.querySelector(".es-cols");
-    const top = cols ? Math.max(12, Math.round(cols.getBoundingClientRect().top + 46)) : 96;
+    const base = esSurfaceTop();
+    const top = cols ? Math.max(Math.round(base + 12), Math.round(cols.getBoundingClientRect().top + 46)) : Math.round(base + 96);
     const room = writing == null ? 0 : window.innerWidth - writing - GAP - EDGE;
     const beside = room >= FLOOR;
     const w = beside ? Math.min(WANT, Math.round(room)) : WANT;
@@ -6517,6 +6637,8 @@
   function esClose() {
     const h = document.getElementById("eshost"); if (h) h.remove();
     document.body.classList.remove("es-lock");
+    // The bar goes back to the page Essay practice was opened over.
+    shellEssay(null);
   }
 
   function esRender() {
@@ -6542,6 +6664,15 @@
     else if (ES.screen === "full" && ES.draft) esRenderFull(host, sc);
     else esRenderSetup(host, sc);
     const nowScrim = host.querySelector(".es-scrim"); if (nowScrim && sy) nowScrim.scrollTop = sy;
+    // The app shell names the subject this surface is in, from the same place the
+    // surface reads it: on a writing screen the draft's own package (an attempt
+    // stays in the subject it was started in), on the picker the setup screens'
+    // own view of the subject chosen there. Label and stage, as the package
+    // states them. Display only.
+    const writing = !!ES.draft && ["plan", "review", "coached", "quiz", "full"].includes(ES.screen);
+    const loaded = !!(window.ESSAY && window.ESSAY.slots);
+    shellEssay({ area: "essay", demo: ES.demo,
+      context: !loaded ? "" : shellContextOf(writing ? esAttemptPackage(ES.draft) : sc) });
     // Defensive: no essay button should ever act as a form submit.
     host.querySelectorAll("button:not([type])").forEach(b => b.type = "button");
     // The study window floats outside this host, so a render cannot destroy it,
@@ -6564,10 +6695,9 @@
   function esRenderUnavailable(host) {
     host.innerHTML = `
     <div class="es-scrim"><div class="es-shell"><div class="es-wrap">
-      ${/* Nowhere to navigate to: the flow did not load. The brand is still the
-            brand, so the surface is recognisably Marginal, but it does not offer
-            destinations it cannot reach. */ ""}
-      <div class="es-top"><div class="qp-brand static"><span class="qp-logo" aria-hidden="true">M</span><span class="qp-word">Marginal</span></div>
+      ${/* Nowhere in Essay practice to navigate to: the flow did not load. The app
+            shell above still carries Marginal's areas; this keeps its way home. */ ""}
+      <div class="es-top">
         <div class="es-topbtns"><button type="button" class="es-util quiet" id="esx" aria-label="Marginal home">${esIcon("home")}<span>Home</span></button></div></div>
       <div class="es-empty"><h2 class="es-h1">Not available right now</h2><p class="es-lead">Essay practice could not load. Please refresh, or check back shortly.</p></div>
     </div></div></div>`;
@@ -6868,40 +6998,23 @@
     // hidden underneath it, because nothing from another stage is emitted: the
     // list is not the setup form with a list appended to it.
     const stage = (sc.questions || []).length ? (f.pickStage || "subject") : "own";
-    // THE PAGE, not a column on it. Header, a main column with a rail beside it,
-    // and a footer. The rail is part of the composition rather than decoration:
-    // without it the right half of a desktop viewport is empty and page two of a
-    // filtered list is three rows in a field of nothing.
+    // THE PAGE, not a column on it. A main column with a rail beside it, and a
+    // footer. The rail is part of the composition rather than decoration: without
+    // it the right half of a desktop viewport is empty and page two of a filtered
+    // list is three rows in a field of nothing.
     //
-    // The nav carries the mockup's weight with Marginal's real destinations. It
-    // does not invent a section that does not exist.
-    const nav = `<header class="qp-nav"><div class="qp-navin">
-      ${/* A nav link is not a stage route within the picker, so it does not carry
-            the stage attribute: counting the routes on a screen would have counted
-            it. Both links go somewhere real; the one you are on is marked rather
-            than repeated. The same component is worn by the writing surfaces, so
-            the destinations do not appear and disappear as a student moves. */ ""}
-      ${esNavLeftHTML(stage === "essays" ? "essays" : "practice")}
-      ${/* A full-page section of the application, so its way out is Home: it leaves
-            Essay Practice for Marginal, exactly as the wordmark does. "Close" was
-            the word a modal uses, and this has not been a modal for a long time.
-            Like Exit essay on the workspace, it never folds into the menu. */ ""}
-      <button type="button" class="es-util quiet es-keepout" id="eshome" data-esnav="marginalhome" aria-label="Marginal home">${esIcon("home")}<span>Home</span></button>
-      ${esMenuBtnHTML()}
-      <div class="qp-navright" id="esnavpanel"${ES.ui.navMenu ? " data-open" : ""}>
-        ${esNavLinksHTML(stage === "essays" ? "essays" : "practice")}
-        ${sc.label ? `<span class="qp-subj">${esc(sc.label)}${sc.stage ? " · " + esc(sc.stage) : ""}</span>` : ""}
-        ${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}
-      </div>
-    </div></header>`;
+    // The bar above it is the app shell's: the brand, Marginal's four areas (its
+    // Study link is this page's way home), the subject and the account. What this
+    // area adds is its own two pages, in a row at the top of the page.
+    const sub = shellSubHTML(stage === "essays" ? "essays" : "practice");
     const foot = `<footer class="qp-foot"><div class="qp-footin">
       <span class="qp-logo sm" aria-hidden="true">M</span>
       <span class="qp-footword">Marginal</span>
       <span class="qp-foottag">Better practice. Brighter progress.</span>
     </div></footer>`;
     // One page shell for every stage, so the stages read as one flow.
-    const shell = (main, rail) => `<div class="qp">${nav}
-      <main class="qp-main"><div class="qp-grid">
+    const shell = (main, rail) => `<div class="qp">
+      <main class="qp-main">${sub}<div class="qp-grid">
         <div class="qp-col">${main}</div>
         <aside class="qp-rail">${rail}</aside>
       </div></main>${foot}</div>`;
@@ -7610,26 +7723,16 @@
   function esWritingHead(sc, modeLabel, switchLabel, switchTo, boxElsewhere) {
     return esTopBarHTML(sc, switchLabel) + esQuestionCardHTML(modeLabel, boxElsewhere);
   }
-  // ---- the one navigation bar every Marginal surface wears ----------------
-  // Before this the picker and the writer had different brand marks, different
-  // wordmark type, different destinations and different ways back, so moving
-  // between them read as moving between two products. The left half of the bar
-  // is now one component: the brand IS the home route, and the same two
-  // destinations are reachable from wherever the student is standing. The right
-  // half is whatever that surface actually owns, and nothing else.
-  function esNavLeftHTML(current) {
-    const link = (to, label, on) =>
-      `<button type="button" class="qp-navlink${on ? " on" : ""}"${on ? ' aria-current="page"' : ""} data-esnav="${to}">${label}</button>`;
-    // The wordmark is Home, and Home is MARGINAL's home, not the top of the essay
-    // flow. It leaves Essay Practice the way the tab entered it, from any surface,
-    // so it is never a control that reloads the page the student is standing on.
-    //
-    // .es-navnow names the section on a narrow screen, where the links themselves
-    // have gone into the menu. It is the same word the marked link carries, so a
-    // student is never told two different things about where they are.
-    return `<button type="button" class="qp-brand" id="esbrandhome" data-esnav="marginalhome" aria-label="Marginal home">
-        <span class="qp-logo" aria-hidden="true">M</span><span class="qp-word">Marginal</span></button>
-      <span class="es-navnow">${current === "essays" ? "My essays" : "Essay practice"}</span>`;
+  // ---- the writing surfaces' toolbar ----------------------------------------
+  // The brand, Marginal's areas, the subject and the account are the app shell's,
+  // in the bar above. This toolbar is what the writing surface itself owns: the
+  // way out of the essay, Essay practice's own two pages, and the tools.
+  //
+  // .es-navnow names the section on a narrow screen, where the links themselves
+  // have gone into the menu. It is the same word the marked link carries, so a
+  // student is never told two different things about where they are.
+  function esNavNowHTML(current) {
+    return `<span class="es-navnow">${current === "essays" ? "My essays" : "Essay practice"}</span>`;
   }
   // The section links. They live INSIDE the collapsible group rather than beside
   // the brand, because a link that is hidden at 390px and not in the menu is a
@@ -7638,7 +7741,7 @@
   function esNavLinksHTML(current) {
     const link = (to, label, on) =>
       `<button type="button" class="qp-navlink${on ? " on" : ""}"${on ? ' aria-current="page"' : ""} data-esnav="${to}">${label}</button>`;
-    return `<nav class="qp-navlinks" aria-label="Marginal">
+    return `<nav class="qp-navlinks" aria-label="Essay practice">
         ${link("back", "Essay practice", current !== "essays")}
         ${link("essays", "My essays", current === "essays")}
       </nav>`;
@@ -7657,7 +7760,7 @@
   function esTopBarHTML(sc, switchLabel) {
     return `
       <div class="es-top">
-        ${esNavLeftHTML("practice")}
+        ${esNavNowHTML("practice")}
         ${/* The way out never folds into a menu. Everything else on this bar can
               wait behind one press; leaving cannot, and a student on a phone who
               wants to stop writing must not have to find it. */ ""}
@@ -7665,7 +7768,6 @@
         ${esMenuBtnHTML()}
         <div class="es-topbtns" id="esnavpanel"${ES.ui.navMenu ? " data-open" : ""}>
           ${esNavLinksHTML("practice")}
-          ${sc.label ? `<span class="qp-subj">${esc(sc.label)}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}
           ${/* Learn and Notebook are utilities: they make sense whatever sentence
                 the student is on, they open their own floating windows, and they
                 stay open across the writing. The four writing tools are not
@@ -8292,6 +8394,8 @@
     home: '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" /> <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />',
     // exit the essay from the writing workspace
     exit: '<path d="m16 17 5-5-5-5" /> <path d="M21 12H9" /> <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />',
+    // The app shell's account (lucide circle-user-round).
+    user: '<path d="M18 20a6 6 0 0 0-12 0" /> <circle cx="12" cy="10" r="4" /> <circle cx="12" cy="12" r="10" />',
     // the previous notebook page
     prev: '<path d="m15 18-6-6 6-6" />',
     // the next notebook page
@@ -8871,7 +8975,8 @@
     // Below the paragraph head, not level with it. Opening level covered the row
     // holding View plan, notebook and read all, so the window swallowed clicks on
     // the page's own controls the moment it appeared.
-    const top = r ? Math.max(12, r.top + 46) : 120;
+    const base = esSurfaceTop();
+    const top = r ? Math.max(base + 12, r.top + 46) : base + 120;
     // What the window has to clear is the WRITING CARD, .es-flow, which is 940px
     // inside a 1420px column. The old placement measured .es-cols, the page
     // container, so a 470px window opened 430px over the paragraph heading at
@@ -12719,12 +12824,11 @@
     const total = d.paras.length, n = d.pos + 1;
     const head = `
       <div class="es-top">
-        ${esNavLeftHTML("practice")}
+        ${esNavNowHTML("practice")}
         <button type="button" class="es-util quiet es-keepout" id="esexit" data-esnav="marginalhome" aria-label="Exit essay">${esIcon("exit")}<span>Exit essay</span></button>
         ${esMenuBtnHTML()}
         <div class="es-topbtns" id="esnavpanel"${ES.ui.navMenu ? " data-open" : ""}>
           ${esNavLinksHTML("practice")}
-          ${sc.label ? `<span class="qp-subj">${esc(sc.label)}</span>` : ""}${ES.demo ? `<span class="es-demobadge">demo</span>` : ""}
           <button type="button" class="es-util quiet" id="esquizcoach">${esIcon("back")}<span>Back to coaching</span></button>
           <button type="button" class="es-util quiet" id="esx" aria-label="Back to setup">${esIcon("back")}<span>Setup</span></button>
         </div>
@@ -13404,6 +13508,7 @@
   // show the sign-in gate. When unconfigured, the app opens normally.
   Cloud.init();
   if (cloudConfigured()) {
+    shellPage(null);
     app.innerHTML = `<div class="authgate"><div class="authcard"><div class="authbrand">Marginal</div><p class="bhint">Loading…</p></div></div>`;
     Cloud.restore()
       .then(() => { if (Cloud.session()) { home(); maybeOpenReviewDemo(); maybeOpenEssayDemo(); } else authScreen(); })

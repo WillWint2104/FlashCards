@@ -11,17 +11,17 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   const p=await (await b.newContext({viewport:{width:1280,height:1000}})).newPage();
   const errs=[]; p.on('pageerror',e=>errs.push(String(e).slice(0,220)));
   await p.route(/workers\.dev/, r=>r.abort());
-  await p.goto(T); await here(p, '.navtab');
+  await p.goto(T); await here(p, '.ash-link');
 
   console.log('--- boots to the hub, every access point present ---');
   ok(!!(await p.$('.hi')),'the hub renders');
-  const tabs = await p.$$eval('.navtab',es=>es.map(e=>e.textContent.trim()));
+  const tabs = await p.$$eval('.ash-link',es=>es.map(e=>e.textContent.trim()));
   console.log('    tabs:', tabs.join(' | '));
   ok(tabs.some(t=>/test mode/i.test(t)),'Test mode tab is present');
   ok(tabs.some(t=>/study/i.test(t)),'Study tab is present');
 
   console.log('--- Test mode has a paper to sit ---');
-  await p.$$eval('.navtab',es=>{const t=es.find(x=>/Test mode/i.test(x.textContent)); t&&t.click();});
+  await p.$$eval('.ash-link',es=>{const t=es.find(x=>/Test mode/i.test(x.textContent)); t&&t.click();});
   await settled(p);
   const papers = await p.$$eval('.exam-row, .area, .examcard',es=>es.map(e=>e.textContent.trim().slice(0,60))).catch(()=>[]);
   console.log('    listed:', JSON.stringify(papers).slice(0,200));
@@ -30,9 +30,10 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   ok(!/no practice exams|nothing here/i.test(body),'Test mode is not an empty list');
 
   console.log('--- essay practice reachable from the hub ---');
-  await p.$$eval('.navtab',es=>{const t=es.find(x=>/Study/i.test(x.textContent)); t&&t.click();});
+  await p.$$eval('.ash-link',es=>{const t=es.find(x=>/Study/i.test(x.textContent)); t&&t.click();});
   await settled(p);
-  const hasEssay = await p.$eval('#app',e=>/Essay practice/i.test(e.textContent)).catch(()=>false);
+  // The entry is the app shell's Essay practice link, on the bar above the hub.
+  const hasEssay = await p.$eval('.ash',e=>/Essay practice/i.test(e.textContent)).catch(()=>false);
   ok(hasEssay,'Essay practice entry is on the hub');
 
   console.log('pageerrors:', errs.join(' | ')||'none');

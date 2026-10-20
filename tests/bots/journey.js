@@ -34,7 +34,7 @@ async function openApp(p, T, subject, qre, structure) {
   await p.goto(T); await wait(p, 650);
   await p.evaluate(() => localStorage.removeItem("marginal.essay.v1"));
   await p.goto(T); await wait(p, 650);
-  await p.$$eval(".navtab", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
+  await p.$$eval(".ash-link", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await wait(p, 400);
   await p.selectOption("#essubject", subject); await wait(p, 220);
   // The structure control lives with the other settings on the SETUP stage now,

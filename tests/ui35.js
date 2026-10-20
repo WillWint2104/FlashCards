@@ -30,10 +30,10 @@ const SHORT = { q: 'Explain how employment contracts affect human resource manag
   topic: 'Human resources', point: 'The HSC examination specifications describe the paper.' };
 
 async function openTool(p, c, tool) {
-  await p.goto(T); await here(p, '.navtab');
+  await p.goto(T); await here(p, '.ash-link');
   await p.evaluate(() => localStorage.removeItem('marginal.essay.v1'));
-  await p.goto(T); await here(p, '.navtab');
-  await p.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
+  await p.goto(T); await here(p, '.ash-link');
+  await p.$$eval('.ash-link', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await settled(p);
   await p.selectOption('#essubject', 'business_studies').catch(() => {});
   await ownQuestion(p, c.q);

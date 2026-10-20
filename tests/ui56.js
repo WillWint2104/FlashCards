@@ -52,8 +52,8 @@ const CASES = [
 
 async function toComposer(page) {
   await page.goto(T);
-  await page.waitForSelector(".navtab", { timeout: 8000 });
-  for (const t of await page.$$(".navtab")) {
+  await page.waitForSelector(".ash-link", { timeout: 8000 });
+  for (const t of await page.$$(".ash-link")) {
     if (/essay/i.test((await t.textContent()) || "")) { await t.click(); break; }
   }
   await page.waitForSelector("#essubject", { timeout: 8000 });

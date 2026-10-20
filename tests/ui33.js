@@ -33,17 +33,25 @@ const LABEL = { A:"A draft claim", B:"B candidate with a url", C:"C confirmed an
                 D:"D located but never checked", E:"E checked with nothing to check",
                 F:"F both fields blank" };
 
+// The fixture joins the packages as they load, before anything reads them: the
+// app reads its subject registry once per page, and the app shell reads it on the
+// first page to name Study's course, so a subject added afterwards is never seen.
+const withFixture = (p, f) => p.addInitScript(f => {
+  let v;
+  Object.defineProperty(window, "ESSAY", { configurable: true, get: () => v,
+    set: x => { v = x; if (x && x.subjects) x.subjects[f.key] = f; } });
+}, f);
 async function openFixture(p){
-  await p.goto(P); await here(p, '.navtab');
+  await withFixture(p, F.subject);
+  await p.goto(P); await here(p, '.ash-link');
   await p.evaluate(()=>localStorage.removeItem('marginal.essay.v1'));
-  await p.goto(P); await here(p, '.navtab');
+  await p.goto(P); await here(p, '.ash-link');
   await p.evaluate(f=>{
-    window.ESSAY.subjects[f.subject.key]=f.subject;
     // The bank the fixture question resolves to. Replaced wholesale for this run
     // so the four states are the only records in play.
     window.BUSCONTENT.evidence.marketing = f.records;
   }, F);
-  await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
+  await p.$$eval('.ash-link',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await settled(p);
   await p.selectOption('#essubject', F.subject.key);
   await settled(p);

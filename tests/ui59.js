@@ -22,7 +22,11 @@
 //   every visible subject label agrees with it, at all times
 //   changing it in the form moves every label at once, with nothing left behind
 //   the label survives the walk into the writing and back
-//   the narrow menu, which carries the subject heading, agrees too
+//   below 1024px the app shell leaves the subject out, so nothing on screen can
+//     disagree, and coming back to a wide window it names the one chosen there
+//
+// The bar's subject is the app shell's (.ash-ctx): "Label · Stage", for every
+// surface. Only the label, the part before the dot, is compared with the form.
 const { chromium, T } = require("./env");
 
 // The app re-renders synchronously on a change, so waiting for two frames is
@@ -42,10 +46,10 @@ const subjectsOnScreen = page => page.evaluate(() => {
   const seen = {};
   seen.picker = sel && sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex].value : null;
   seen.pickerText = sel && sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex].text : null;
-  // The bar's subject line, on either surface. It carries "Label · Stage" on the
-  // picker and "Label" on the workspace, so only the part before the dot is read.
-  const bar = document.querySelector(".qp-subj");
-  seen.header = bar ? bar.textContent.split("·")[0].trim() : null;
+  // The bar's subject line, on either surface: "Label · Stage". Only the label,
+  // the part before the dot, is compared. Left out (below 1024px) is not shown.
+  const bar = document.querySelector(".ash-ctx");
+  seen.header = bar && getComputedStyle(bar).display !== "none" ? bar.textContent.split("·")[0].trim() : null;
   seen.options = sel ? [...sel.options].map(o => ({ v: o.value, t: o.text })) : [];
   return seen;
 });
@@ -64,14 +68,14 @@ const agrees = s => {
 async function toPicker(page) {
   const open = await page.evaluate(() => !!document.getElementById("eshost"));
   if (open) {
-    const home = await page.$("#eshome") || await page.$("#esexit") || await page.$("#esbrandhome");
+    const home = await page.$("#esexit") || await page.$('.ash-link[data-shell="study"]');
     if (home) { await home.click(); await page.waitForTimeout(250); }
   }
-  if (!(await page.$(".navtab"))) {
+  if (!(await page.$(".ash-link"))) {
     await page.goto(T);
-    await page.waitForSelector(".navtab", { timeout: 8000 });
+    await page.waitForSelector(".ash-link", { timeout: 8000 });
   }
-  await page.$$eval(".navtab", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
+  await page.$$eval(".ash-link", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await page.waitForSelector("#essubject", { timeout: 8000 });
   await page.waitForTimeout(250);
 }
@@ -85,7 +89,7 @@ async function toPicker(page) {
   // ---- 1. on the way in ---------------------------------------------------
   console.log("--- 1. the subject a student lands on is one they could have chosen");
   await p.goto(T);
-  await p.waitForSelector(".navtab", { timeout: 8000 });
+  await p.waitForSelector(".ash-link", { timeout: 8000 });
   await toPicker(p);
   let s = await subjectsOnScreen(p);
   console.log("    picker:", JSON.stringify(s.picker), " header:", JSON.stringify(s.header));
@@ -103,7 +107,7 @@ async function toPicker(page) {
   // screen must belong to a package the application actually has: a label is
   // never invented from a routing rule for a key nothing resolves.
   const named = await p.evaluate(() => {
-    const bar = document.querySelector(".qp-subj");
+    const bar = document.querySelector(".ash-ctx");
     if (!bar) return { shown: null, registered: true };
     const want = bar.textContent.split("·")[0].trim();
     const subs = (window.__esSubjects && window.__esSubjects()) || {};
@@ -170,27 +174,24 @@ async function toPicker(page) {
     }
   }
 
-  // ---- 5. narrow, where the subject heading lives inside the menu ---------
-  console.log("--- 5. the responsive menu carries the same subject");
-  await p.setViewportSize({ width: 390, height: 900 }); await settled(p);
-  const menu = await p.$("#esmenu");
-  ok(!!menu, "there is a menu at 390px");
-  if (menu) {
-    await menu.click(); await settled(p);
+  // ---- 5. narrow, where the bar leaves the subject out --------------------
+  console.log("--- 5. below 1024px the bar names no subject, so none can disagree");
+  for (const w of [1023, 390]) {
+    await p.setViewportSize({ width: w, height: 900 }); await settled(p);
     const m = await subjectsOnScreen(p);
-    ok(agrees(m), "the subject in the open menu agrees with the form: header=" +
-      JSON.stringify(m.header) + " picker=" + JSON.stringify(m.pickerText));
-    // Change it while the menu is the thing showing the label.
+    ok(m.header === null, w + "px: the bar leaves the subject out: " + JSON.stringify(m.header));
+  }
+  {
+    // Change it while the form is the only place it is named, then widen.
+    const m = await subjectsOnScreen(p);
     const other = m.options.map(x => x.v).filter(Boolean).find(k => k !== m.picker);
     ok(!!other, "there is another subject to move to at narrow width: " + JSON.stringify(other));
     if (other) {
-      await p.keyboard.press("Escape"); await settled(p);
       await p.selectOption("#essubject", other); await settled(p);
-      await p.click("#esmenu"); await settled(p);
+      await p.setViewportSize({ width: 1500, height: 1100 }); await settled(p);
       const m2 = await subjectsOnScreen(p);
       ok(m2.picker === other, "the change commits at narrow width too: " + m2.picker);
-      ok(agrees(m2), "and the menu heading followed it: header=" + JSON.stringify(m2.header));
-      await p.keyboard.press("Escape"); await p.waitForTimeout(200);
+      ok(!!m2.header && agrees(m2), "and back at full width the bar names it: header=" + JSON.stringify(m2.header));
     }
   }
 
@@ -208,7 +209,7 @@ async function toPicker(page) {
   if (start) {
     await start.click(); await p.waitForTimeout(700);
     const inside = await p.evaluate(() => {
-      const bar = document.querySelector(".qp-subj");
+      const bar = document.querySelector(".ash-ctx");
       return bar ? bar.textContent.split("·")[0].trim() : null;
     });
     ok(inside === before.pickerText, "the writing surface names the subject the student chose: " +

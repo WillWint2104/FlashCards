@@ -14,10 +14,16 @@
 //   the page does not scroll sideways
 //   Marginal is still identifiable
 //   the section the student is in is still named
-//   the way out - Exit essay in the workspace, Home on the pages - is ON the bar
-//     and reachable without opening anything
+//   the way out - Exit essay in the workspace, Study in the app shell on the
+//     pages - is ON the bar and reachable without opening anything
 //   everything that folded away is reachable through one labelled control
 //   that control says whether it is open, and closes on Escape
+//
+// The pages' bar is the app shell now (.ash). It has no designed phone treatment
+// yet - that is the mobile phase - so what it must do here is the minimum: wrap
+// rather than run off the side. Essay practice's own two pages sit in a row in
+// the page, so on the pages nothing folds at all. The writing workspace keeps its
+// own toolbar under the shell, and that toolbar still folds into More.
 //
 // Widths are the ones students actually hold: 390 is an iPhone 14/15, 412 a
 // Pixel, 430 the largest phone in common use. 768 is a tablet in portrait, and
@@ -32,8 +38,8 @@ const PHONES = [390, 412, 430];
 const WIDTHS = PHONES.concat([768]);
 
 // Everything the bar puts on screen, and whether it is inside the window.
-const barGeometry = page => page.evaluate(() => {
-  const bar = document.querySelector(".qp-navin") || document.querySelector(".es-top");
+const barGeometry = (page, which) => page.evaluate(which => {
+  const bar = document.querySelector(which || ".es-top");
   if (!bar) return null;
   const vw = document.documentElement.clientWidth;
   const visible = el => {
@@ -42,7 +48,7 @@ const barGeometry = page => page.evaluate(() => {
     if (cs.display === "none" || cs.visibility === "hidden") return false;
     return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
   };
-  const items = [...bar.querySelectorAll("button, .es-navnow, .qp-word, .qp-logo")]
+  const items = [...bar.querySelectorAll("button, a, .es-navnow, .ash-logo")]
     .filter(visible)
     .map(el => {
       const r = el.getBoundingClientRect();
@@ -62,7 +68,7 @@ const barGeometry = page => page.evaluate(() => {
   return { vw, items, canScrollX,
     surfaceScroll: surface ? surface.scrollWidth - vw : 0,
     barScroll: bar.scrollWidth - bar.clientWidth };
-});
+}, which);
 
 // A resize is finished when the document reports the new width; the frame after
 // it is the reflow rather than a guess at one. This replaced a flat 350ms sleep
@@ -83,8 +89,8 @@ const shown = (page, sel) => page.waitForSelector(sel, { state: "attached", time
 
 async function toPicker(page) {
   await page.goto(T);
-  await page.waitForSelector(".navtab", { timeout: 8000 });
-  await page.$$eval(".navtab", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
+  await page.waitForSelector(".ash-link", { timeout: 8000 });
+  await page.$$eval(".ash-link", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await page.waitForSelector("#essubject", { timeout: 8000 });
   await page.selectOption("#essubject", "business_studies");
   await frames(page);
@@ -114,7 +120,7 @@ async function intoWriting(page) {
   await toPicker(p);
   for (const w of WIDTHS) {
     await atWidth(p, w);
-    const g = await barGeometry(p);
+    const g = await barGeometry(p, ".ash-in");
     ok(!!g, w + "px: there is a bar");
     if (!g) continue;
     const out = g.items.filter(x => x.out);
@@ -123,52 +129,35 @@ async function intoWriting(page) {
     ok(g.surfaceScroll <= 1, w + "px: and Essay Practice's own surface fits: " + g.surfaceScroll + "px over");
     ok(g.barScroll <= 0, w + "px: and neither does the bar itself: " + g.barScroll + "px");
     const has = sel => g.items.some(x => (x.id === sel) || x.cls.indexOf(sel) >= 0);
-    ok(has("qp-logo"), w + "px: Marginal is still identifiable");
-    ok(has("eshome"), w + "px: Home is on the bar, not behind a menu");
+    ok(has("ash-logo"), w + "px: Marginal is still identifiable");
+    ok(g.items.some(x => x.text === "Study"), w + "px: the way home, Study, is on the bar, not behind a menu");
+    // The surface starts under the bar, however tall wrapping made it.
+    const under = await p.evaluate(() => Math.round(document.querySelector(".qp").getBoundingClientRect().top - document.querySelector(".ash").getBoundingClientRect().bottom));
+    ok(Math.abs(under) <= 1, w + "px: and the page starts where the bar ends: " + under + "px");
   }
 
   console.log("--- 2. the section a student is in is still named");
   await atWidth(p, 390);
-  const now = await p.$eval(".es-navnow", e => e.innerText.trim()).catch(() => null);
-  ok(now === "Essay practice", "the bar names the section: " + JSON.stringify(now));
-  // The links are INSIDE the group, so what folds is the group. Reading
-  // getComputedStyle on the links themselves would report "flex" for a nav that
-  // is inside a hidden panel, which is why this asks about the panel.
-  const groupHidden = await p.$eval("#esnavpanel", e => getComputedStyle(e).display === "none").catch(() => false);
-  ok(groupHidden, "and the group holding them has folded away");
+  const now = await p.evaluate(() => ({
+    bar: (document.querySelector('.ash-link[aria-current="page"]') || {}).textContent || null,
+    page: (document.querySelector('.ash-sublink[aria-current="page"]') || {}).textContent || null }));
+  ok(now.bar === "Essay practice", "the bar names the area: " + JSON.stringify(now.bar));
+  ok(now.page === "Essay practice", "and the page names which of its two pages this is: " + JSON.stringify(now.page));
 
-  console.log("--- 3. one control reaches everything that folded");
-  const menu = await p.$("#esmenu");
-  ok(!!menu, "there is a labelled menu control");
-  ok(await p.$eval("#esmenu", e => e.getAttribute("aria-expanded") === "false"), "which starts closed and says so");
-  ok(await p.$eval("#esnavpanel", e => getComputedStyle(e).display === "none"), "the panel is not on screen until it is asked for");
-  await menu.click(); await expanded(p, "true").catch(() => {}); await frames(p);
-  ok(await p.$eval("#esmenu", e => e.getAttribute("aria-expanded") === "true"), "pressing it opens the menu, and it says so");
-  const panel = await p.evaluate(() => {
-    const el = document.getElementById("esnavpanel"); if (!el) return null;
-    const r = el.getBoundingClientRect(), vw = document.documentElement.clientWidth;
-    return { shown: getComputedStyle(el).display !== "none", right: Math.round(r.right), left: Math.round(r.left),
-      out: r.right > vw + 1 || r.left < -1,
-      items: [...el.querySelectorAll("button")].map(x => x.id || (x.innerText || "").trim().slice(0, 20)) };
+  console.log("--- 3. the area's two pages are on screen, not folded");
+  // The point of folding was that every destination stayed a destination. With
+  // the two pages in the page itself there is nothing to fold: both are in view.
+  const subs = await p.evaluate(() => {
+    const vw = document.documentElement.clientWidth;
+    return [...document.querySelectorAll(".ash-sublink")].map(e => { const r = e.getBoundingClientRect();
+      return { to: e.dataset.esnav, shown: getComputedStyle(e).display !== "none" && r.width > 0, out: r.right > vw + 1 || r.left < -1 }; });
   });
-  ok(panel && panel.shown, "the panel is on screen");
-  ok(panel && !panel.out, "and inside the window: " + JSON.stringify(panel && [panel.left, panel.right]));
-  // The picker's panel carries the subject label; the workspace's carries the
-  // tools. Either way it must not be an empty box.
-  console.log("    panel holds:", JSON.stringify(panel && panel.items));
-  // The point of folding rather than hiding: every destination is still a
-  // destination. A link that is display:none at 390px and not in the menu is a
-  // section of the application a student on a phone cannot reach at all.
-  const routes = await p.$$eval("#esnavpanel [data-esnav]", es => es.map(e => e.dataset.esnav));
-  ok(routes.indexOf("essays") >= 0, "My essays is reachable from the menu: " + JSON.stringify(routes));
-  ok(routes.indexOf("back") >= 0, "and so is Essay practice");
-
-  console.log("--- 3b. it closes the ways a menu closes");
-  await p.keyboard.press("Escape"); await expanded(p, "false").catch(() => {});
-  ok(await p.$eval("#esmenu", e => e.getAttribute("aria-expanded") === "false"), "Escape closes it");
-  await menu.click(); await expanded(p, "true").catch(() => {});
-  await p.mouse.click(180, 620); await expanded(p, "false").catch(() => {});
-  ok(await p.$eval("#esmenu", e => e.getAttribute("aria-expanded") === "false"), "and so does pressing away from it");
+  ok(subs.some(x => x.to === "essays" && x.shown && !x.out), "My essays is on screen: " + JSON.stringify(subs));
+  ok(subs.some(x => x.to === "back" && x.shown && !x.out), "and so is Essay practice");
+  ok(!(await p.$("#esmenu")), "so the pages have no menu to open");
+  await p.click('.ash-sublink[data-esnav="essays"]');
+  await p.waitForFunction(() => /My essays/.test((document.querySelector(".qp-h1") || {}).textContent || ""), null, { timeout: 4000 }).catch(() => {});
+  ok(/My essays/.test(await p.$eval(".qp-h1", e => e.textContent).catch(() => "")), "and My essays opens from a phone");
 
   console.log("--- 4. the writing workspace, where leaving matters most");
   await atWidth(p, 1400, 1000);
@@ -185,10 +174,29 @@ async function intoWriting(page) {
     ok(g.surfaceScroll <= 1, w + "px: the workspace fits the window: " + g.surfaceScroll + "px over");
     ok(g.items.some(x => x.id === "esexit"), w + "px: Exit essay is ON the bar");
     ok(g.items.some(x => x.id === "esmenu"), w + "px: and the rest is one press away");
+    const shell = await barGeometry(p, ".ash-in");
+    ok(shell && shell.items.filter(x => x.out).length === 0, w + "px: and the app shell above it fits too: " + JSON.stringify(shell && shell.items.filter(x => x.out).map(x => x.text)));
   }
 
   console.log("--- 5. what folded away is still usable");
   await atWidth(p, 390);
+  // The workspace's toolbar is where the narrow menu lives now: the section is
+  // named, the group has folded, and one labelled control opens it.
+  const nowW = await p.$eval(".es-navnow", e => e.innerText.trim()).catch(() => null);
+  ok(nowW === "Essay practice", "the toolbar names the section: " + JSON.stringify(nowW));
+  ok(await p.$eval("#esnavpanel", e => getComputedStyle(e).display === "none"), "and the group holding the rest has folded away");
+  ok(await p.$eval("#esmenu", e => e.getAttribute("aria-expanded") === "false"), "the menu starts closed and says so");
+  await p.click("#esmenu"); await expanded(p, "true").catch(() => {}); await frames(p);
+  ok(await p.$eval("#esmenu", e => e.getAttribute("aria-expanded") === "true"), "pressing it opens the menu, and it says so");
+  const wpanel = await p.evaluate(() => { const el = document.getElementById("esnavpanel"), r = el.getBoundingClientRect(), vw = document.documentElement.clientWidth;
+    return { shown: getComputedStyle(el).display !== "none", out: r.right > vw + 1 || r.left < -1, routes: [...el.querySelectorAll("[data-esnav]")].map(e => e.dataset.esnav) }; });
+  ok(wpanel.shown && !wpanel.out, "the panel is on screen and inside the window: " + JSON.stringify(wpanel));
+  ok(wpanel.routes.indexOf("essays") >= 0 && wpanel.routes.indexOf("back") >= 0, "and Essay practice's two pages are reachable from it: " + JSON.stringify(wpanel.routes));
+  await p.keyboard.press("Escape"); await expanded(p, "false").catch(() => {});
+  ok(await p.$eval("#esmenu", e => e.getAttribute("aria-expanded") === "false"), "Escape closes it");
+  await p.click("#esmenu"); await expanded(p, "true").catch(() => {});
+  await p.mouse.click(180, 620); await expanded(p, "false").catch(() => {});
+  ok(await p.$eval("#esmenu", e => e.getAttribute("aria-expanded") === "false"), "and so does pressing away from it");
   await p.click("#esmenu"); await expanded(p, "true").catch(() => {}); await frames(p);
   const inMenu = await p.$$eval("#esnavpanel button", es => es.map(e => e.id || (e.innerText || "").trim().slice(0, 20)));
   console.log("    workspace menu holds:", JSON.stringify(inMenu));
@@ -229,6 +237,14 @@ async function intoWriting(page) {
     ok(foot.padBottom >= foot.h, "the writing has room underneath it: " + foot.padBottom + "px for a " + foot.h + "px bar");
   }
 
+  console.log("--- 5c. the workspace's toolbar is a row again on a desktop");
+  // Checked here, while the workspace from section 4 is still open, rather than by
+  // writing a second essay: this tier has no room for another walk into it.
+  await atWidth(p, 1400, 1000);
+  ok(await p.$eval(".qp-navlinks", e => getComputedStyle(e).display !== "none"), "the workspace's links are back on its toolbar");
+  ok(await p.$eval("#esmenu", e => getComputedStyle(e).display === "none"), "and its menu button is not shown");
+  ok(await p.$eval("#esnavpanel", e => getComputedStyle(e).display !== "none"), "the group is a row again, not a panel");
+
   console.log("--- 6. Exit essay works at phone width");
   await atWidth(p, 390);
   const exit = await p.$("#esexit");
@@ -241,9 +257,9 @@ async function intoWriting(page) {
   console.log("--- 7. the desktop bar is unchanged");
   await atWidth(p, 1400, 1000);
   await toPicker(p);
-  ok(await p.$eval(".qp-navlinks", e => getComputedStyle(e).display !== "none"), "the links are back on the bar");
-  ok(await p.$eval("#esmenu", e => getComputedStyle(e).display === "none"), "and the menu button is not shown");
-  ok(await p.$eval("#esnavpanel", e => getComputedStyle(e).display !== "none"), "the group is a row again, not a panel");
+  const tops = await p.$$eval(".ash-link", es => es.map(e => Math.round(e.getBoundingClientRect().top)));
+  ok(tops.length === 4 && new Set(tops).size === 1, "the app shell's four areas are one row again: " + JSON.stringify(tops));
+  ok(!(await p.$("#esmenu")), "and the pages have no menu button");
 
   console.log("");
   console.log(pass + " passed, " + fail + " failed");

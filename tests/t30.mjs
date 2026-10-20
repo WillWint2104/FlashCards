@@ -546,6 +546,31 @@ console.log("13. the paper the product actually ships, which is now synthetic");
   const sandbox = { window: {} }; sandbox.window.window = sandbox.window;
   new Function("window", read("essay-content.js"))(sandbox.window);
   const PK = { packages: sandbox.window.ESSAY.subjects };
+
+  // ---- the app shell's subject is display context, by key ------------------
+  // Study names its course through a declared key, never a match on the label,
+  // and the key's package has to be the subject Study's content says it is.
+  {
+    const cw = { window: {} }; new Function("window", read("content.js"))(cw.window);
+    const CONTENT = cw.window.CONTENT, pkg = PK.packages[CONTENT.subjectKey];
+    ok(!!pkg, "Study's content declares a registered subject key: " + JSON.stringify(CONTENT.subjectKey));
+    ok(pkg && pkg.label === CONTENT.subject, "whose package is the subject Study's content names: " +
+      JSON.stringify([pkg && pkg.label, CONTENT.subject]));
+    // Display only: the bar's state is read inside the shell block and nowhere
+    // else, so it can never become a second answer to which subject marks.
+    const lines = read("app.js").split("\n");
+    const from = lines.findIndex(l => /=+ THE APP SHELL =+/.test(l));
+    const to = lines.findIndex((l, i) => i > from && /^  \/\/ =+ [A-Z]/.test(l));
+    const reads = lines.map((l, i) => ({ l, i })).filter(x => /\bSHELL\./.test(x.l) && (x.i < from || x.i > to));
+    ok(from > 0 && to > from, "the shell is one block of app.js: lines " + (from + 1) + " to " + (to + 1));
+    ok(reads.length === 0, "nothing outside it reads the bar's state: " + JSON.stringify(reads.map(x => "app.js:" + (x.i + 1))));
+    // And what each area hands the bar goes nowhere else.
+    for (const fn of ["tmContext", "studyContext", "shellContextOf"]) {
+      const uses = lines.map((l, i) => ({ l, i })).filter(x => new RegExp("\\b" + fn + "\\(").test(x.l) && !/function |=>/.test(x.l.split(fn)[0].slice(-12)) && !new RegExp("(function|const) " + fn).test(x.l));
+      const stray = uses.filter(x => !/shellPage\(|tmEnter\(|shellEssay\(|return /.test(x.l + (lines[x.i - 1] || "")));
+      ok(uses.length > 0 && stray.length === 0, fn + " feeds only the bar: " + JSON.stringify(stray.map(x => "app.js:" + (x.i + 1) + " " + x.l.trim().slice(0, 60))));
+    }
+  }
   const legal = pp => { pp.curriculum.subjectKey = "legal_studies"; pp.curriculum.course = "Legal Studies"; return pp; };
   const copy = () => JSON.parse(JSON.stringify(paper));
   ok(E.examine(paper, PK).state === "publishable", "the synthetic paper, against the registered packages, is still publishable");

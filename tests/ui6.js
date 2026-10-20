@@ -11,10 +11,10 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   const p=await (await b.newContext({viewport:{width:1280,height:1000},deviceScaleFactor:2})).newPage();
   const errs=[]; p.on('pageerror',e=>errs.push(String(e).slice(0,220)));
   await p.route(/workers\.dev/, r=>r.abort());
-  await p.goto(T); await here(p, '.navtab');
+  await p.goto(T); await here(p, '.ash-link');
 
   console.log('--- sit the paper ---');
-  await p.$$eval('.navtab',es=>{const t=es.find(x=>/Test mode/i.test(x.textContent)); t&&t.click();});
+  await p.$$eval('.ash-link',es=>{const t=es.find(x=>/Test mode/i.test(x.textContent)); t&&t.click();});
   await settled(p);
   await p.$$eval('button, .area',es=>{const t=es.find(x=>/^Sit\b|Sit /i.test(x.textContent.trim())); t&&t.click();});
   await settled(p);
@@ -35,8 +35,8 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   await p.screenshot({path:OUT+'shot-test-question.png'});
 
   console.log('--- essay practice, guidance before writing ---');
-  await p.goto(T); await here(p, '.navtab');
-  await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent)); t&&t.click();});
+  await p.goto(T); await here(p, '.ash-link');
+  await p.$$eval('.ash-link',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent)); t&&t.click();});
   await settled(p);
   ok(!!(await p.$('#esq')),'essay setup opens from the tab');
   const subj = await p.$$eval('#essubject option',es=>es.map(e=>e.textContent.trim())).catch(()=>[]);

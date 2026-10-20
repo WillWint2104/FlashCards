@@ -298,7 +298,7 @@ async function climbLadder(page) {
 //   12Ec126   routes to economics, the shipped teacher default
 async function loginAs(page, code, url) {
   await page.goto(url);
-  await page.waitForSelector('.navtab', { timeout: 8000 });
+  await page.waitForSelector('.ash-link', { timeout: 8000 });
   await page.evaluate(c => {
     try {
       const raw = JSON.parse(localStorage.getItem('marginal.trial.v1') || '{}');
@@ -306,8 +306,8 @@ async function loginAs(page, code, url) {
     } catch (e) { /* private mode */ }
   }, code);
   await page.reload();
-  await page.waitForSelector('.navtab', { timeout: 8000 });
-  await page.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
+  await page.waitForSelector('.ash-link', { timeout: 8000 });
+  await page.$$eval('.ash-link', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await page.waitForSelector('#essubject', { timeout: 8000 }).catch(() => {});
 }
 

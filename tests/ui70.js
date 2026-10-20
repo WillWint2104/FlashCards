@@ -66,7 +66,7 @@ async function sit(b, section, answer, storedPaper, unreachable) {
       criteria: [], next_steps: [], missing_vocabulary: [], checks: {} }) });
   });
   await p.goto(T + '?review=1'); await settled(p);
-  await p.$$eval('.navtab', es => { const t = es.find(x => /Test mode/i.test(x.textContent)); t && t.click(); }); await settled(p);
+  await p.$$eval('.ash-link', es => { const t = es.find(x => /Test mode/i.test(x.textContent)); t && t.click(); }); await settled(p);
   // Slice A: the card opens the overview, where the section is chosen.
   await p.click('[data-examsit]'); await settled(p);
   await p.click('#exampicknone'); await settled(p);

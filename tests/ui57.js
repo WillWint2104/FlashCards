@@ -11,12 +11,13 @@
 //
 // The rule this file holds:
 //
-//   every full-page surface offers Home, and Home is MARGINAL's home
+//   every full-page surface offers Marginal's home as a control of its own: the
+//     app shell's Study link (the owner chose "Study", not "Home"), on every page
 //   the writing workspace offers a labelled Exit essay as well
 //   the wordmark is Home everywhere, and is never the only way out
 //   the word "Close" does not appear on any of them
-//   leaving writes the attempt down first, and Resume restores THAT attempt:
-//     the question, the paragraphs, the position and the feedback
+//   leaving writes the attempt down first, by any way out, and Resume restores
+//     THAT attempt: the question, the paragraphs, the position and the feedback
 //
 // The last one is the one worth the run time. An exit that loses a student's
 // paragraph is worse than no exit, and "the draft is in localStorage" is not the
@@ -31,19 +32,21 @@ const SENTENCE = "Convenience-oriented customers lead a business towards process
 // Essay Practice is open when its host is in the document. Closed means gone,
 // not hidden: that is what the tab's own close has always done.
 const isOpen = page => page.evaluate(() => !!document.getElementById("eshost"));
-// The WHOLE bar. Home and Exit essay deliberately sit outside the group that
-// folds into the menu on a narrow screen, so a reader that looked only inside
-// that group stopped finding them the day they were moved out - and reported
-// their absence, which was exactly wrong.
+// The WHOLE of the page's chrome: the app shell's bar, and the writing toolbar
+// under it where there is one. Exit essay deliberately sits outside the group
+// that folds into the menu on a narrow screen, so a reader that looked only
+// inside that group stopped finding it the day it was moved out - and reported
+// its absence, which was exactly wrong.
 const barText = page => page.evaluate(() => {
-  const t = document.querySelector(".qp-navin") || document.querySelector(".es-top");
-  return t ? t.textContent.replace(/\s+/g, " ").trim() : "(no bar)";
+  const t = [document.querySelector(".ash"), document.querySelector("#eshost .ash-sub"), document.querySelector("#eshost .es-top")].filter(Boolean);
+  return t.length ? t.map(x => x.textContent).join(" ").replace(/\s+/g, " ").trim() : "(no bar)";
 });
+const HOME = '.ash-link[data-shell="study"]';
 
 async function toPicker(page) {
   await page.goto(T);
-  await page.waitForSelector(".navtab", { timeout: 8000 });
-  await page.$$eval(".navtab", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
+  await page.waitForSelector(".ash-link", { timeout: 8000 });
+  await page.$$eval(".ash-link", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await page.waitForSelector("#essubject", { timeout: 8000 });
   await page.selectOption("#essubject", "business_studies");
   await page.waitForTimeout(300);
@@ -69,31 +72,33 @@ async function toWriting(page) {
   const p = await ctx.newPage();
   await p.route(/workers\.dev/, r => r.abort());
 
-  // ---- 1. the picker's way out is Home ------------------------------------
-  console.log("--- 1. a full page offers Home, not Close");
+  // ---- 1. the picker's way out is Marginal's home ------------------------
+  console.log("--- 1. a full page offers Marginal's home, not Close");
   await toPicker(p);
   const pickerBar = await barText(p);
-  ok(/Home/.test(pickerBar), "setup offers Home: " + JSON.stringify(pickerBar));
+  ok(/Study/.test(pickerBar), "setup offers Study, Marginal's home: " + JSON.stringify(pickerBar));
   ok(!/Close/i.test(pickerBar), "and does not offer Close");
-  ok(!!(await p.$("#eshome")), "Home is a control of its own, not only the wordmark");
-  ok(!!(await p.$('.qp-brand[data-esnav="marginalhome"]')), "the wordmark is a Home route too");
+  ok(!!(await p.$(HOME)), "it is a control of its own, not only the wordmark");
+  ok(!!(await p.$('.ash .ash-brand[data-shell="home"]')), "the wordmark is a Home route too");
 
-  console.log("--- 1b. Home leaves Essay Practice for Marginal");
-  ok(await isOpen(p), "Essay Practice is open before Home is pressed");
-  await p.click("#eshome"); await p.waitForTimeout(400);
-  ok(!(await isOpen(p)), "Home leaves Essay Practice");
-  ok(!!(await p.$(".navtab")), "and lands on Marginal, where the tabs are");
-  const backOnTab = await p.$$eval(".navtab", es => es.some(x => /Essay practice/i.test(x.textContent)));
+  console.log("--- 1b. Study leaves Essay Practice for Marginal");
+  ok(await isOpen(p), "Essay Practice is open before Study is pressed");
+  await p.click(HOME); await p.waitForTimeout(400);
+  ok(!(await isOpen(p)), "Study leaves Essay Practice");
+  const landed = await p.evaluate(() => ({ current: (document.querySelector('.ash-link[aria-current="page"]') || {}).textContent,
+    app: (document.getElementById("app").innerText || "").slice(0, 200) }));
+  ok(landed.current === "Study" && /What are we studying|Pick an area/.test(landed.app), "and lands on Study, Marginal's home: " + JSON.stringify(landed));
+  const backOnTab = await p.$$eval(".ash-link", es => es.some(x => /Essay practice/i.test(x.textContent)));
   ok(backOnTab, "Essay practice is offered again from there");
 
   // ---- 2. My essays says the same thing -----------------------------------
   console.log("--- 2. My essays is a page, so it goes Home too");
   await toPicker(p);
-  await p.click('.qp-nav [data-esnav="essays"]'); await p.waitForTimeout(400);
+  await p.click('.ash-sub [data-esnav="essays"]'); await p.waitForTimeout(400);
   const essaysTitle = await p.$eval(".qp-h1", e => e.textContent.trim()).catch(() => "");
   ok(essaysTitle === "My essays", "on My essays: " + JSON.stringify(essaysTitle));
   const essaysBar = await barText(p);
-  ok(/Home/.test(essaysBar), "My essays offers Home: " + JSON.stringify(essaysBar));
+  ok(/Study/.test(essaysBar) && !!(await p.$(HOME)), "My essays offers Study, Marginal's home: " + JSON.stringify(essaysBar));
   ok(!/Close/i.test(essaysBar), "and does not offer Close");
 
   // ---- 3. the workspace has a labelled exit -------------------------------
@@ -103,14 +108,14 @@ async function toWriting(page) {
   const writeBar = await barText(p);
   ok(/Exit essay/.test(writeBar), "the workspace offers Exit essay: " + JSON.stringify(writeBar));
   ok(!/Close/i.test(writeBar), "and does not offer Close");
-  ok(!!(await p.$('.es-top .qp-brand[data-esnav="marginalhome"]')), "the wordmark is Home here as well");
+  ok(!!(await p.$('.ash .ash-brand[data-shell="home"]')), "the wordmark is Home here as well");
   // The point of the labelled control: the logo is not carrying this alone.
-  const exitCount = await p.$$eval(".es-top [data-esnav='marginalhome']", es => es.length);
-  ok(exitCount >= 2, "two ways out, one of them a labelled control: " + exitCount);
+  const exitCount = await p.$$eval(".es-top [data-esnav='marginalhome'], .ash [data-shell='home'], .ash [data-shell='study']", es => es.length);
+  ok(exitCount >= 3, "three ways out, two of them labelled controls: " + exitCount);
   // Setup is a step back INSIDE Essay Practice, so it must not be the exit.
   await p.click("#esx"); await p.waitForTimeout(400);
   ok(await isOpen(p), "Setup does not leave Essay Practice");
-  ok(!!(await p.$(".qp-nav")), "it goes back to the picker");
+  ok(!!(await p.$(".qp .ash-sub")), "it goes back to the picker");
 
   // ---- 4. leaving writes the attempt down --------------------------------
   console.log("--- 4. what a student had is still there after they leave");
@@ -153,7 +158,7 @@ async function toWriting(page) {
   // ---- 5. Resume brings back THAT attempt --------------------------------
   console.log("--- 5. Resume restores the same attempt, not a fresh one");
   await toPicker(p);
-  await p.click('.qp-nav [data-esnav="essays"]'); await p.waitForTimeout(400);
+  await p.click('.ash-sub [data-esnav="essays"]'); await p.waitForTimeout(400);
   const listed = await p.$$eval(".qp-essay", es => es.length).catch(() => 0);
   ok(listed >= 1, "the attempt is listed in My essays: " + listed);
   const resume = await p.$("[data-esresume]") || await p.$("button.qp-resume");
@@ -167,14 +172,31 @@ async function toWriting(page) {
   const fbBack = await p.$(".es-margin .es-review, .es-margin .es-mblock");
   ok(!!fbBack, "the feedback they had is still attached to the paragraph");
 
+  // ---- 5b. the app shell's ways out keep it too ---------------------------
+  console.log("--- 5b. leaving by the app shell keeps the attempt as well");
+  // Every area link leaves Essay Practice through the same exit as Exit essay,
+  // which writes the attempt down. To see that write and not section 4's, the
+  // stored copy is taken away first: only the way out can put it back, with the
+  // sentence and the feedback the resumed attempt holds in memory.
+  await p.evaluate(() => localStorage.removeItem("marginal.essay.v1"));
+  await p.click('.ash-link[data-shell="test"]'); await p.waitForTimeout(500);
+  ok(!(await isOpen(p)), "Test mode leaves Essay Practice");
+  ok(await p.evaluate(() => (document.querySelector('.ash-link[aria-current="page"]') || {}).textContent === "Test mode"), "and Test mode is the area now");
+  const kept = await p.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem("marginal.essay.v1") || "{}");
+    const d = Object.values(raw).flatMap(bk => (bk && bk.drafts) || [])[0];
+    return !!d && (d.paras || []).some(x => (x.text || "").indexOf("Convenience-oriented customers lead") >= 0) && (d.paras || []).some(x => !!x.feedback);
+  });
+  ok(kept, "the attempt is in the store with its sentence and its feedback");
+
   // ---- 6. no surface still calls itself a dialog --------------------------
   console.log("--- 6. the word Close is gone from the full-page surfaces");
   for (const [name, go] of [
     ["setup", async () => { await toPicker(p); }],
-    ["my essays", async () => { await toPicker(p); await p.click('.qp-nav [data-esnav="essays"]'); await p.waitForTimeout(400); }],
+    ["my essays", async () => { await toPicker(p); await p.click('.ash-sub [data-esnav="essays"]'); await p.waitForTimeout(400); }],
   ]) {
     await go();
-    const t = await p.evaluate(() => (document.querySelector(".qp-nav") || {}).textContent || "");
+    const t = await barText(p);
     ok(!/close/i.test(t), name + " header carries no Close: " + JSON.stringify(t.replace(/\s+/g, " ").trim().slice(0, 80)));
   }
 

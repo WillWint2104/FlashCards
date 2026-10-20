@@ -23,8 +23,8 @@ let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  
   // A fresh browser each time, so no earlier attempt is in progress.
   const sit = async name => {
     await p.evaluate(() => localStorage.clear()).catch(() => {});
-    await p.goto(T); await here(p, '.navtab');
-    await p.$$eval('.navtab',es=>{const t=es.find(x=>/Test mode/i.test(x.textContent)); t&&t.click();});
+    await p.goto(T); await here(p, '.ash-link');
+    await p.$$eval('.ash-link',es=>{const t=es.find(x=>/Test mode/i.test(x.textContent)); t&&t.click();});
     await settled(p);
     await p.click('[data-examsit]'); await settled(p);
     await p.click('#exampicknone'); await settled(p);

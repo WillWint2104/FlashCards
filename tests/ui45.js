@@ -28,10 +28,10 @@ const BACKWARD = /\boverall\b|\bin conclusion\b|this essay has shown|\btaken tog
 const COMPARATIVE = /\bmore than\b|\bbetter than\b|\bthe alternative\b|\bon balance\b|\bweigh(s|ed|ing)?\b|\bmost important|\bless important/i;
 
 async function enter(p, qre) {
-  await p.goto(T); await p.waitForSelector('.navtab', { timeout: 8000 });
+  await p.goto(T); await p.waitForSelector('.ash-link', { timeout: 8000 });
   await p.evaluate(() => localStorage.removeItem('marginal.essay.v1'));
-  await p.goto(T); await p.waitForSelector('.navtab', { timeout: 8000 });
-  await p.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
+  await p.goto(T); await p.waitForSelector('.ash-link', { timeout: 8000 });
+  await p.$$eval('.ash-link', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await p.waitForSelector('#essubject', { timeout: 8000 });
   await p.selectOption('#essubject', 'business_studies');
   await usePractice(p);

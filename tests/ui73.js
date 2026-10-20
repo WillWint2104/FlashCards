@@ -53,7 +53,7 @@ async function open(b, width) {
   return { p, ctx, errs, dialogs, sent };
 }
 const store = p => p.evaluate(() => JSON.parse(localStorage.getItem('marginal.trial.v1') || '{}'));
-const toTest = async p => { await p.$$eval('.navtab', es => { const t = es.find(x => /Test mode/i.test(x.textContent)); t && t.click(); }); await settled(p); };
+const toTest = async p => { await p.$$eval('.ash-link', es => { const t = es.find(x => /Test mode/i.test(x.textContent)); t && t.click(); }); await settled(p); };
 const text = (p, sel) => p.$eval(sel, e => e.textContent.replace(/\s+/g, ' ').trim()).catch(() => '');
 const bar = p => text(p, '.exam-progress');
 const qhead = p => text(p, '.exam-qhead');
@@ -238,7 +238,9 @@ const shot = (p, n) => p.screenshot({ path: OUT + 'shot-sliceA-' + n + '.png' })
     // Overview: choose two sections, see "For this practice" above the original instructions.
     await p.evaluate(t => [...document.querySelectorAll('.tm-paper')].find(x => x.textContent.includes(t)).querySelector('[data-tmopen]').click(), TITLE);
     await settled(p);
-    ok(/Business Studies/.test(await text(p, 'header, .tm-unit, #app')), 'the overview speaks the paper\'s own subject');
+    // The app shell names the open paper: its resolved subject and the stage the
+    // paper itself declares (the owner's rule), never the package's "Year 12".
+    ok((await text(p, '.ash-ctx')) === 'Business Studies · Stage 6', 'the overview speaks the paper\'s own subject: ' + await text(p, '.ash-ctx'));
     ok(!/Economics/.test(await text(p, '#app')), 'and nothing on it says Economics');
     ok(!(await has(p, '#tmforthis .tm-forthis')), 'a whole paper has no "For this practice" note');
     await p.click('#exampicknone'); await settled(p);

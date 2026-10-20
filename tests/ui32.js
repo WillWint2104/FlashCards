@@ -27,13 +27,20 @@ const here = (p, sel) => p.waitForSelector(sel, { timeout: 8000 });
 const { WITHHOLDING_FIXTURE } = require('./fixtures/withholding.js');
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 
+// The fixture joins the packages as they load, before anything reads them: the
+// app reads its subject registry once per page, and the app shell reads it on the
+// first page to name Study's course, so a subject added afterwards is never seen.
+const withFixture = (p, f) => p.addInitScript(f => {
+  let v;
+  Object.defineProperty(window, "ESSAY", { configurable: true, get: () => v,
+    set: x => { v = x; if (x && x.subjects) x.subjects[f.key] = f; } });
+}, f);
 async function openFixture(p){
-  await p.goto(P); await here(p, '.navtab');
+  await withFixture(p, WITHHOLDING_FIXTURE);
+  await p.goto(P); await here(p, '.ash-link');
   await p.evaluate(()=>localStorage.removeItem('marginal.essay.v1'));
-  await p.goto(P); await here(p, '.navtab');
-  // the fixture subject, added to the pack the page already loaded
-  await p.evaluate(f=>{ window.ESSAY.subjects[f.key]=f; }, WITHHOLDING_FIXTURE);
-  await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
+  await p.goto(P); await here(p, '.ash-link');
+  await p.$$eval('.ash-link',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await settled(p);
   await p.selectOption('#essubject','contract_test');
   await settled(p);

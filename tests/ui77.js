@@ -103,15 +103,15 @@ const text = (p, sel) => p.$eval(sel, e => e.textContent.replace(/\s+/g, ' ').tr
   console.log('--- 3. with cloud sign-in off, every top-level surface renders from the committed files');
   {
     const { p, ctx, seen } = await open(b, base, { cloudOff: true });
-    const tabs = await p.$$eval('.navtab', es => es.map(e => e.textContent.trim()));
+    const tabs = await p.$$eval('.ash-link', es => es.map(e => e.textContent.trim()));
     ok(['Study', 'Create', 'Test mode', 'Essay practice'].every(t => tabs.some(x => new RegExp(t, 'i').test(x))), 'the navigation renders: ' + JSON.stringify(tabs));
     // Each surface is identified by what only it renders, and the tab it lit, so a
     // click that fails to switch views cannot pass on the previous view's text.
     // Study comes after Test mode so that it, too, is a real switch.
-    const click = t => p.$$eval('.navtab', (es, t) => { const x = es.find(e => new RegExp(t, 'i').test(e.textContent)); x && x.click(); }, t).then(() => settled(p));
+    const click = t => p.$$eval('.ash-link', (es, t) => { const x = es.find(e => new RegExp(t, 'i').test(e.textContent)); x && x.click(); }, t).then(() => settled(p));
     for (const [tab, re] of [['Create', /Create a flashcard set/], ['Test mode', /Practise individual question types/], ['Study', /What are we studying\?/]]) {
       await click(tab);
-      const body = await text(p, '#app'), on = await text(p, '.navtab.on');
+      const body = await text(p, '#app'), on = await text(p, '.ash-link[aria-current="page"]');
       ok(on === tab && re.test(body), tab + ' renders: [' + on + '] ' + body.slice(0, 90));
     }
     // Essay practice is a full-screen overlay over the view, not a view of its own.

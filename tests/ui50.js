@@ -70,8 +70,8 @@ async function publishThroughImporter(ctx, file) {
 // Reach the Business Studies practice list the way a student does.
 async function toChooser(page) {
   await page.goto(T);
-  await page.waitForSelector(".navtab", { timeout: 8000 });
-  for (const t of await page.$$(".navtab")) {
+  await page.waitForSelector(".ash-link", { timeout: 8000 });
+  for (const t of await page.$$(".ash-link")) {
     if (/essay/i.test((await t.textContent()) || "")) { await t.click(); break; }
   }
   await page.waitForSelector("#essubject", { timeout: 8000 });
@@ -287,7 +287,7 @@ async function toChooser(page) {
     const page = await ctx.newPage();
     await toChooser(page);
     await page.reload();
-    await page.waitForSelector(".navtab", { timeout: 8000 });
+    await page.waitForSelector(".ash-link", { timeout: 8000 });
     const stored = await page.evaluate(() => Object.keys(window.MarginalImports.load().questions));
     ok(stored.indexOf(ID) >= 0, "the store still holds it after a reload: " + JSON.stringify(stored));
     const other = await ctx.newPage();
@@ -322,7 +322,7 @@ async function toChooser(page) {
       "the source question is what is served, once: " + JSON.stringify(report.stems.map(s => s.slice(0, 30))));
     ok(!report.added.some(a => a.id === "mkt-01"), "and the imported one was not taken");
     await page.reload();
-    await page.waitForSelector(".navtab", { timeout: 8000 });
+    await page.waitForSelector(".ash-link", { timeout: 8000 });
     await toChooser(page);
     const after = await page.$eval('.qp-row[data-esq="mkt-01"]', e => e.textContent.trim());
     ok(after === before, "the row a student sees is unchanged: " + JSON.stringify(after.slice(0, 40)));
@@ -344,7 +344,7 @@ async function toChooser(page) {
       keys.filter(k => k.indexOf("marginal.import.") === 0).forEach(k => window.localStorage.removeItem(k));
     });
     await page.reload();
-    await page.waitForSelector(".navtab", { timeout: 8000 });
+    await page.waitForSelector(".ash-link", { timeout: 8000 });
     await toChooser(page);
     const afterRows = (await allRows(page)).map(r => r.id);
     ok(afterRows.indexOf(ID) < 0, "the imported question is gone: " + JSON.stringify(afterRows));
@@ -363,7 +363,7 @@ async function toChooser(page) {
     // against another subject's criteria with nothing on screen to say so.
     const page = await ctx.newPage();
     await page.goto(T);
-    await page.waitForSelector(".navtab", { timeout: 8000 });
+    await page.waitForSelector(".ash-link", { timeout: 8000 });
     const got = await page.evaluate(() => {
       const f = window.__esSubjects ? window.__esSubjects() : null;
       if (!f) return null;

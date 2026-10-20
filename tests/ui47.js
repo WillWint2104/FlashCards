@@ -42,11 +42,11 @@ const SEED = () => {
 };
 
 async function enter(p, opts) {
-  await p.goto(T); await p.waitForSelector('.navtab', { timeout: 8000 });
+  await p.goto(T); await p.waitForSelector('.ash-link', { timeout: 8000 });
   await p.evaluate(() => localStorage.removeItem('marginal.essay.v1'));
-  await p.goto(T); await p.waitForSelector('.navtab', { timeout: 8000 });
+  await p.goto(T); await p.waitForSelector('.ash-link', { timeout: 8000 });
   if (opts && opts.seed) await p.evaluate(opts.seed);
-  await p.$$eval('.navtab', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
+  await p.$$eval('.ash-link', es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await p.waitForSelector('#essubject', { timeout: 8000 });
   await p.selectOption('#essubject', 'business_studies');
   await usePractice(p);

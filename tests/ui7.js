@@ -37,7 +37,7 @@ const SHORT = (ans, marks) => ({
   await p.goto(T+'?review=1'); await settled(p);
 
   console.log('--- sit only the short-answer section ---');
-  await p.$$eval('.navtab',es=>{const t=es.find(x=>/Test mode/i.test(x.textContent)); t&&t.click();});
+  await p.$$eval('.ash-link',es=>{const t=es.find(x=>/Test mode/i.test(x.textContent)); t&&t.click();});
   await settled(p);
   // Slice A: the paper's card opens its overview (Page 3), where sections are chosen.
   await p.click('[data-examsit]');

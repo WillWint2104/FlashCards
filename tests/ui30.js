@@ -18,10 +18,10 @@ const here = (p, sel) => p.waitForSelector(sel, { timeout: 8000 });
 const gone = (p, sel) => p.waitForFunction(s => !document.querySelector(s), sel, { timeout: 8000 });
 let pass=0,fail=0; const ok=(c,m)=>{ if(c) pass++; else {fail++; console.log('  FAIL:',m);} };
 async function open(p){
-  await p.goto(T); await here(p, '.navtab');
+  await p.goto(T); await here(p, '.ash-link');
   await p.evaluate(()=>localStorage.removeItem('marginal.essay.v1'));
-  await p.goto(T); await here(p, '.navtab');
-  await p.$$eval('.navtab',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
+  await p.goto(T); await here(p, '.ash-link');
+  await p.$$eval('.ash-link',es=>{const t=es.find(x=>/Essay practice/i.test(x.textContent));t&&t.click();});
   await here(p, '#essubject');
   await p.selectOption('#essubject','business_studies'); await settled(p);
   await chooseQuestion(p, /target markets affect/i);

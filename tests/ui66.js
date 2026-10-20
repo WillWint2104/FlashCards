@@ -40,10 +40,10 @@ const answered = async p => {
 };
 
 async function enter(p) {
-  await p.goto(T); await p.waitForSelector(".navtab", { timeout: 8000 });
+  await p.goto(T); await p.waitForSelector(".ash-link", { timeout: 8000 });
   await p.evaluate(() => localStorage.removeItem("marginal.essay.v1"));
-  await p.goto(T); await p.waitForSelector(".navtab", { timeout: 8000 });
-  await p.$$eval(".navtab", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
+  await p.goto(T); await p.waitForSelector(".ash-link", { timeout: 8000 });
+  await p.$$eval(".ash-link", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await p.waitForSelector("#essubject", { timeout: 8000 });
   await p.selectOption("#essubject", "business_studies");
   await usePractice(p);
@@ -437,8 +437,8 @@ async function writeAndCheck(p, lines) {
   console.log("    economics own examples:", own.economics, "| shared fallback set:", own.shared);
   ok(own.economics === 0 && own.shared > 0,
     "Economics authors none and there IS a fallback set to be tempted by");
-  await p.goto(T); await p.waitForSelector(".navtab", { timeout: 8000 });
-  await p.$$eval(".navtab", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
+  await p.goto(T); await p.waitForSelector(".ash-link", { timeout: 8000 });
+  await p.$$eval(".ash-link", es => { const t = es.find(x => /Essay practice/i.test(x.textContent)); t && t.click(); });
   await p.waitForSelector("#essubject", { timeout: 8000 });
   await p.selectOption("#essubject", "economics"); await settled(p);
   await p.$$eval('[data-espick="own"]', es => es[0] && es[0].click()); await settled(p);
