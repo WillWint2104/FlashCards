@@ -92,6 +92,85 @@ async function sit(b, section, answer, storedPaper, unreachable) {
   return { surface, body, errs, sheet };
 }
 
+// ---- state 12 against a reply that breaks every display rule (bots Run 2) ------
+//
+// Run 2 sat Question 15 against the production marker and every marked result
+// showed the student something it should not: glossary markup printed as it came,
+// notes about what was missing shown as empty quotations under "In your
+// response", "Across your response" never used, and band language. This reply
+// does all of it at once, and renames, reorders, adds and drops the criteria, so
+// the screen has to hold every rule on its own.
+const S12_ANSWER = 'Northline set a clear objective of growing its teenage share.\n\nIts video campaign cut the cost per view from 19 to 4 cents.';
+const S12_Q1 = 'Northline set a clear objective of growing its teenage share';
+const S12_Q2 = 'Its video campaign cut the cost per view from 19 to 4 cents';
+const s12Reply = marks => {
+  const issue = (head, why) => [{ kind: 'fix', severity: 'should', head, why, ladder: [] }];
+  return { score: 9, total: 9, max: marks,
+    summary: 'The response states an objective and uses one figure. This is a Band 4 response. Name the {{promotional mix|the combination of promotional methods|0}} to sharpen it.',
+    overall: { summary: 'unused' }, criteria: [], next_steps: [], missing_vocabulary: [], checks: {},
+    rubric: [
+      { name: 'Business terminology and concepts', score: 2, max: 5, descriptor: 'A renamed criterion: never shown.' },
+      { name: 'sustained, logical and cohesive response', score: 2, max: 5, descriptor: 'Holds one line. It sits in the upper band.' },
+      { name: 'knowledge and understanding of course content', score: 3, max: 5, descriptor: 'Uses the {{marketing mix|the four Ps|0}} accurately.' },
+      { name: 'an invented fifth criterion', score: 2, max: 5, descriptor: 'Never shown.' },
+    ],
+    paragraphs: [
+      { name: 'Paragraph 1', score: 5, max: 10, reasons: [], sentences: [
+        { text: S12_Q1, issues: issue('Objective without a measure', 'State the {{market share|the proportion of sales|0}} target as a number.') },
+        { text: null, issues: issue('No conclusion', 'The response ends without weighing the strategies.') },
+        { text: '', issues: issue('No judgement stated', 'Say how effective the strategies were overall.') },
+        { text: 'Northline doubled its sales in a month', issues: issue('A claim not in the response', 'Said of a sentence the student never wrote.') },
+      ] },
+      { name: 'Paragraph 2', score: 4, max: 10, reasons: [], sentences: [
+        { text: S12_Q2, issues: issue('Figure used well', 'This is evidence doing work. It would reach Band 6 with a link to share.') },
+        { text: S12_Q2, issues: issue('Band 6 needs a judgement', 'Only a band label.') },
+        { text: 'x', unplaced: true, issues: issue('Unplaced by the worker', 'Said of the response as a whole.') },
+      ] },
+    ] };
+};
+// What the result sheet shows, read off the page.
+const s12Read = p => p.evaluate(() => {
+  const t = e => (e ? e.textContent.replace(/\s+/g, ' ').trim() : '');
+  const sheet = document.querySelector('#sheet');
+  return {
+    text: t(sheet), mark: t(sheet && sheet.querySelector('.tm-result .pair .v')), summary: t(sheet && sheet.querySelector('.tm-mnote')),
+    criteria: [...document.querySelectorAll('#sheet .crits .tm-crit')].map(c => ({ name: t(c.querySelector('.critn')), d: t(c.querySelector('p')) })),
+    inResponse: [...document.querySelectorAll('#sheet .obs .ob')].filter(o => o.querySelector('.ev')).map(o => ({ head: t(o.querySelector('.obh')), quote: (o.querySelector('.ev q') || {}).textContent, why: t(o.querySelector(':scope > p')) })),
+    across: [...document.querySelectorAll('#sheet .obs .ob')].filter(o => o.querySelector('.acrossl')).map(o => ({ head: t(o.querySelector('.obh')), why: t(o.querySelector(':scope > p')) })),
+  };
+});
+// Sit Question 15 against that reply, then submit the paper and open its closed Review.
+async function sitState12(b) {
+  const ctx = await b.newContext({ viewport: { width: 1280, height: 1000 } });
+  const p = await ctx.newPage();
+  const errs = []; p.on('pageerror', e => errs.push(String(e).slice(0, 200)));
+  let body = null;
+  await p.route(/workers\.dev/, async r => {
+    const s = JSON.parse(r.request().postData() || '{}');
+    if (s.action === 'coach') return r.fulfill({ status: 200, contentType: 'application/json', body: '{"nudges":[]}' });
+    body = s;
+    await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(s12Reply(Math.round(Number(s.marks)) || 20)) });
+  });
+  await p.goto(T + '?review=1'); await settled(p);
+  await p.$$eval('.ash-link', es => { const t = es.find(x => /Test mode/i.test(x.textContent)); t && t.click(); }); await settled(p);
+  await p.click('[data-examsit]'); await settled(p);
+  await p.click('#exampicknone'); await settled(p);
+  await p.$$eval('.tm-row', es => { const t = es.find(x => x.textContent.includes('Section IV - Extended response')); t && t.click(); }); await settled(p);
+  await p.click('#exampickgo'); await settled(p);
+  const begin = await p.$('#exambegin'); if (begin) { await begin.click(); await settled(p); }
+  const choose = await p.$('[data-examchoose="0"]'); if (choose) { await choose.click(); await settled(p); }
+  await p.fill('#ans', S12_ANSWER);
+  await p.click('#check'); await settled(p);
+  await p.waitForFunction(() => !!document.querySelector('#sheet .tm-result'), null, { timeout: 8000 }).catch(() => {});
+  const sitting = await s12Read(p);
+  await p.click('#examnav'); await settled(p); await p.click('#tmnavreview'); await settled(p);
+  await p.click('#tmsubmitpaper'); await settled(p);
+  await p.click('.tm-rs-cell[data-tmrv="3-0"]'); await settled(p);
+  const review = await s12Read(p);
+  await ctx.close();
+  return { body, sitting, review, errs };
+}
+
 (async () => {
   const W = await import('./worker.mjs');
   const b = await chromium.launch();
@@ -196,6 +275,27 @@ async function sit(b, section, answer, storedPaper, unreachable) {
   }
   ok(eb.format === 'extended_response' && eb.responseType === 'extended', 'and it is still an extended response');
   ok(E.errs.length === 0, 'no page errors: ' + E.errs.join(' | '));
+
+  console.log('--- state 12 against a reply that breaks every display rule (bots Run 2)');
+  {
+    const R = await sitState12(b);
+    const authored = (R.body && R.body.criteria) || [];
+    ok(authored.length === 4 && R.sitting.mark === '9 of 20', 'the reply is marked 9 of 20, and the request carried the four authored criteria: ' + R.sitting.mark);
+    for (const [where, v] of [['in the sitting', R.sitting], ['in the closed Review', R.review]]) {
+      ok(!/\{\{|\}\}/.test(v.text) && /Name the promotional mix to sharpen it\./.test(v.summary) && v.inResponse.some(o => /State the market share target as a number\./.test(o.why)),
+        where + ': glossary markup never reaches the student; a term is shown as its own words: ' + v.summary);
+      ok(!/\bbands?\b/i.test(v.text) && v.inResponse.some(o => o.head === 'Figure used well' && o.why === 'This is evidence doing work.') && !v.inResponse.concat(v.across).some(o => /Band 6 needs/.test(o.head)),
+        where + ': no band language; a sentence naming a band is left out, and an observation headed by one is dropped: ' + (v.text.match(/[^.]*\bbands?\b[^.]*/i) || [''])[0]);
+      ok(JSON.stringify(v.inResponse.map(o => o.quote)) === JSON.stringify([S12_Q1, S12_Q2]) && v.inResponse.every(o => o.quote && S12_ANSWER.includes(o.quote)),
+        where + ': "In your response" holds only quotes that are not empty and appear exactly in the version marked: ' + JSON.stringify(v.inResponse.map(o => o.quote)));
+      ok(JSON.stringify(v.across.map(o => o.head)) === JSON.stringify(['No conclusion', 'No judgement stated', 'A claim not in the response', 'Unplaced by the worker']),
+        where + ': everything else, the notes on what is missing included, is under "Across your response": ' + JSON.stringify(v.across.map(o => o.head)));
+      ok(JSON.stringify(v.criteria.map(c => c.name)) === JSON.stringify(authored) &&
+         JSON.stringify(v.criteria.map(c => c.d)) === JSON.stringify(authored.map(n => n === 'knowledge and understanding of course content' ? 'Uses the marketing mix accurately.' : n === 'sustained, logical and cohesive response' ? 'Holds one line.' : '')),
+        where + ': the criteria are the four authored ones, in their order and casing; a descriptor only beside its exact name: ' + JSON.stringify(v.criteria));
+    }
+    ok(R.errs.length === 0, 'no page errors: ' + R.errs.join(' | '));
+  }
 
   // ---- a stored paper the validator would now refuse -----------------------
   //

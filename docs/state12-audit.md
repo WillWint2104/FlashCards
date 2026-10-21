@@ -262,3 +262,21 @@ discrete authored unit exists at this level.
 
 Open: whether a 20-mark response's four criteria plus their evidence still fit
 in place, or whether that is finally the case for state 16.
+
+## Enforced in the renderer since bots Run 2
+
+Run 2 sat Question 15 against the production marker, and every marked result
+showed the student something this audit excludes. The renderer no longer relies on
+the reply to keep these rules; it holds them itself (`tmMarkerText` and
+`tmResultHTML` in `app.js`; `tests/ui70.js` sits a reply that breaks all of them):
+
+- **No glossary markup.** The marker writes terms as `{{term|definition|page}}` for
+  Essay practice. Test Mode shows the term as its own words.
+- **No band language.** A sentence of marker prose that names a band is left out
+  whole; an observation headed by one is dropped; a summary with nothing left is
+  not shown.
+- **"In your response" is a verified quote.** Only a quote that is not empty and
+  appears exactly in the version marked; everything else, including the notes on
+  what is missing that arrive with no sentence, is under "Across your response".
+- **The criteria are the subject's.** The four authored names, in their order and
+  casing, whatever the reply calls them; a descriptor only beside its exact name.

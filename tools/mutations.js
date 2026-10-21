@@ -2074,6 +2074,52 @@ module.exports = [
   // Run 1 spent real marking credits and reported two unmarked answers "ok",
   // because "at most 2" accepted no mark at all. These put each form of that
   // hole back; t40 holds the rule.
+  // ---- state 12 shows only what the payload supports (bots Run 2) ------------
+  //
+  // Run 2 sat Question 15 against the production marker and every marked result
+  // showed the student something state 12 excludes. ui70 sits the same question
+  // against a reply that breaks every rule at once, in the sitting and in the
+  // closed Review.
+  {
+    id: "tm-marker-markup-shown",
+    file: "app.js",
+    find: "    const plain = String(s == null ? \"\" : s).replace(/\\{\\{([^{}|]*)(?:\\|[^{}]*)?\\}\\}/g, \"$1\").replace(/\\{\\{|\\}\\}/g, \"\");",
+    replace: "    const plain = String(s == null ? \"\" : s);",
+    owner: "ui70",
+    why: "the marker's glossary markup, {{term|definition|page}}, was printed to the student as it came (bots Run 2: 60 of 96 observations)",
+  },
+  {
+    id: "tm-marker-band-language-shown",
+    file: "app.js",
+    find: "      .filter(x => !TM_BAND.test(x)).join(\" \").replace(/\\s+/g, \" \").trim();",
+    replace: "      .filter(x => true).join(\" \").replace(/\\s+/g, \" \").trim();",
+    owner: "ui70",
+    why: "band language reached the student (\"a clear, focused Band 5 response\" beside 17 of 20, bots Run 2), which state 12 excludes",
+  },
+  {
+    id: "tm-unverified-quote-in-your-response",
+    file: "app.js",
+    find: "      (!sn.unplaced && quote.trim() && graded.includes(quote) ? anchored : across).push({ quote, head, why });",
+    replace: "      (sn.unplaced ? across : anchored).push({ quote, head, why });",
+    owner: "ui70",
+    why: "a note with no sentence, or a sentence the student never wrote, was shown under \"In your response\" (bots Run 2: 14 empty quotations)",
+  },
+  {
+    id: "tm-across-your-response-dropped",
+    file: "app.js",
+    find: "      (!sn.unplaced && quote.trim() && graded.includes(quote) ? anchored : across).push({ quote, head, why });",
+    replace: "      (!sn.unplaced && quote.trim() && graded.includes(quote) ? anchored : []).push({ quote, head, why });",
+    owner: "ui70",
+    why: "observations about the response as a whole were lost instead of shown under \"Across your response\"",
+  },
+  {
+    id: "tm-criteria-from-the-model",
+    file: "app.js",
+    find: "    const crits = ((markingContext(q) || {}).criteria || []).map(n => typeof n === \"string\" ? n : (n && n.name) || \"\").filter(Boolean)\n      .map(name => ({ name, d: tmMarkerText(said.get(name)) }));",
+    replace: "    const crits = (Array.isArray(fb.rubric) ? fb.rubric : []).filter(r => r && r.name).map(r => ({ name: r.name, d: tmMarkerText(r.descriptor) }));",
+    owner: "ui70",
+    why: "the criteria on screen were whatever names and order the model sent back, not the subject package's own four",
+  },
   {
     id: "bots-unmarked-passes-at-most",
     file: "tests/bots/testmode/expect.js",
