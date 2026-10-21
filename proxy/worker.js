@@ -23,6 +23,13 @@ const DIAG_MAX_TOKENS = 3000;
 // Pass 1 is optional, so it is allowed to be slow but never allowed to hold the
 // whole request open. Past this, the marker runs on the writing alone.
 const DIAG_TIMEOUT_MS = 20000;
+// TEST MODE, EXTENDED RESPONSE: the lean contract (see markTestModeExtended). The
+// app asks for it by name; anything else gets the full review, unchanged.
+const TM_EXTENDED = "testmode-extended-1";
+// Room for a mark, a judgement, four one-line criteria and six observations, with
+// headroom. The full review asks for 8000 because it writes the response back.
+const TM_MAX_TOKENS = 1500;
+const TM_MAX_OBSERVATIONS = 6;
 // COACHING (essay practice) runs on the cheaper, faster Haiku. Marking above is
 // left on its current model on purpose. Output is capped short (suggestions only).
 const COACH_MODEL = "claude-haiku-4-5-20251001"; // dated pin: the alias claude-haiku-4-5 is rejected on this account
@@ -393,6 +400,71 @@ const REVIEW_TOOL = {
       },
     },
     required: ["summary", "paragraphs", "rubric", "focus"],
+  },
+};
+
+// =============================================================================
+// TEST MODE, EXTENDED RESPONSE: ONE PASS, ONLY WHAT THE SCREEN SHOWS
+// =============================================================================
+// Test Mode shows a mark, one overall judgement, the subject's four criteria with
+// a line each, and a few observations, each on the student's exact words or about
+// the response as a whole (docs/state12-audit.md). The full review writes every
+// sentence back, three model sentences per fault and band descriptors for each
+// criterion, and none of that is shown in Test Mode. That output is what made a
+// 20-mark response take 63 to 122 seconds against the app's 45 (bots Run 2). The
+// judging instructions are the full review's own; only what comes back changes.
+const TM_SYSTEM = `You are an experienced HSC marker for the SUBJECT named in the request, marking a student's extended response in a practice test. Mark as a specialist in that subject: use its terminology, its conventions and the kind of evidence it expects, never another subject's.
+
+Award one whole-number mark for the whole response, out of the marks available, against the marking criteria and the band expectations in the request. Mark honestly. Leniency teaches a student that a flawed answer is nearly perfect, so the mark must be consistent with what you say about the response.
+
+Credit what the student argued, not what you would have argued. A defensible argument that is not the one our materials anticipated earns full marks. Never mark a response down for taking a different valid path, and never treat a reference answer as a checklist. Equally, never infer understanding the words do not show.
+
+Then say briefly what decided the mark:
+- judgement: one or two sentences on the response as a whole.
+- criteria: one entry per MARKING CRITERION named in the request, in the order given, using those exact names, each with one short line on what that criterion rewards.
+- observations: at most six, the ones that matter most to the mark, the most important first. Each has a head of at most eight words, a why of one or two sentences, and a quote. The quote is a short run of the student's own words copied exactly from the response, or an empty string when the observation is about the response as a whole or about something that is missing.
+
+Every observation must point at this student's own words or name exactly what is missing. Never write a comment that would fit any response. Say what THIS student wrote and what it does not yet do.
+
+Never write any of these, anywhere: a band, by number or by name; a mark or score for a criterion, a paragraph or anything but the whole response; a sentence, paragraph or model answer for the student to copy; braces or glossary markup. Use commas, colons and full stops, and no em-dashes. Return the result only through the submit_test_mark tool.`;
+
+const TM_TOOL = {
+  name: "submit_test_mark",
+  description: "Return the mark for the whole response and what decided it.",
+  input_schema: {
+    type: "object",
+    properties: {
+      mark: { type: "integer", description: "The mark for the whole response, a whole number from 0 to the marks available." },
+      judgement: { type: "string", description: "One or two sentences on the response as a whole. No band, no criterion marks, no em-dashes." },
+      criteria: {
+        type: "array",
+        maxItems: 4,
+        description: "One entry per marking criterion named in the request, in that order, using those exact names.",
+        items: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+            rewards: { type: "string", description: "One short line on what this criterion rewards." },
+          },
+          required: ["name", "rewards"],
+        },
+      },
+      observations: {
+        type: "array",
+        maxItems: TM_MAX_OBSERVATIONS,
+        description: "At most six, the ones that matter most to the mark, the most important first.",
+        items: {
+          type: "object",
+          properties: {
+            head: { type: "string", description: "At most eight words." },
+            why: { type: "string", description: "One or two sentences, pointing at this student's words." },
+            quote: { type: "string", description: "The student's own words copied exactly, or an empty string when the observation is about the response as a whole or about something missing." },
+          },
+          required: ["head", "why", "quote"],
+        },
+      },
+    },
+    required: ["mark", "judgement", "criteria", "observations"],
   },
 };
 
@@ -850,6 +922,14 @@ export default {
 
     const paras = String(answer).split(/\n\s*\n/).map((p, i) => `[${i + 1}] ${p.trim()}`).join("\n\n");
 
+    // A Test Mode extended response that asks for the lean contract gets one pass
+    // that returns only what Test Mode shows. Study, Essay practice, a business
+    // report and every older client go on to the full review below, unchanged.
+    if (ctx.contract === TM_EXTENDED && ctx.format === "extended_response") {
+      return await markTestModeExtended({ subject: markSubject, prompt, command, marks: markTotal, answer: String(answer), response: paras,
+        criteria, reference: String(model_answer || "").slice(0, 1600), ctx }, env, cors);
+    }
+
     // Marking scheme for this question (the approved scaffold + anticipated
     // faults). Grade against it: reward the scaffold and key terms, and when an
     // anticipated fault appears, flag it at the given severity and base its
@@ -1302,6 +1382,113 @@ async function diagnose(f, env) {
   }
 }
 
+// ---- TEST MODE, EXTENDED RESPONSE: the lean pass ---------------------------
+// What the student is shown is cleaned in code as well as asked for in the prompt:
+// a glossary term becomes its own words, a sentence that names a band is left
+// out, dashes are swept. The app does the same on its side; neither trusts the
+// model to have listened.
+const TM_BAND = /\bbands?\b/i;
+function tmClean(s, max) {
+  const plain = String(s == null ? "" : s).replace(/\{\{([^{}|]*)(?:\|[^{}]*)?\}\}/g, "$1").replace(/\{\{|\}\}/g, "");
+  const kept = plain.split(/(?<=[.!?]["'\u201d\u2019)]*)\s+(?=["'\u201c\u2018(]?[A-Z0-9])/).filter(x => !TM_BAND.test(x)).join(" ");
+  return deDash(kept.replace(/\s+/g, " ").trim()).slice(0, max || 600);
+}
+function tmMessage(f, diagnosis) {
+  const c = f.ctx, req = c.requirements || {};
+  const listOr = (a, none) => (Array.isArray(a) && a.length ? a.map((x, i) => `${i + 1}. ${x}`).join("\n") : none);
+  return [
+    `SUBJECT: ${f.subject || "(unspecified)"}`,
+    `MARKING CRITERIA (one criteria entry each, in this order, using these exact names):\n${f.criteria.map((x, i) => `${i + 1}. ${x}`).join("\n")}`,
+    `BAND EXPECTATIONS (${c.bandsSource || "general HSC band expectations"}; use them to decide the mark, and never name a band in what you write):\n${(c.bands || []).map(b => `${b.range}: ${b.text}`).join("\n") || "(none provided)"}`,
+    c.rubric ? `THE MARKING GUIDE THE STUDENT SUPPLIED (aim the judgement at this where it differs from the general expectations):\n${c.rubric}` : "",
+    `QUESTION${f.command ? " (" + f.command + ")" : ""} (${f.marks} marks)${c.topic ? " [" + c.topic + "]" : ""}:\n${f.prompt}`,
+    sourceBlock(c),
+    `WHAT THIS QUESTION REQUIRES:\nconcepts: ${listOr(req.concepts, "(not specified)")}\nrelationships to demonstrate: ${listOr(req.relationships, "(not specified)")}\nwhat a strong response accomplishes: ${listOr(req.accomplish, "(not specified)")}${req.syllabus ? "\nsyllabus scope: " + req.syllabus : ""}`,
+    `RESPONSE TYPE: extended response, worth ${f.marks} marks. Mark it as an extended response against the marking criteria and the band expectations above.`,
+    `REFERENCE, WHAT A TOP ANSWER CAN COVER (a guide, never a checklist, and never the only valid answer):\n${f.reference || "(none provided)"}`,
+    diagnosis ? `DIAGNOSIS OF THIS RESPONSE (already checked against the student's own words, carries no marks; where it is silent, read the response yourself):\n${diagnosisText(diagnosis)}` : "",
+    `STUDENT RESPONSE (numbered paragraphs):\n${f.response}`,
+  ].filter(Boolean).join("\n\n");
+}
+// The reply in the shape Test Mode already reads (summary, score, max, rubric
+// names and descriptors, paragraphs[].sentences[] with unplaced and issues), and
+// nothing else: no ladders, no bands, no criterion or paragraph marks of the
+// model's own. The mark is the model's whole-number mark, or nothing.
+function tmFinalize(r, f) {
+  r = asObject(r);
+  const mark = r.mark;
+  if (typeof mark !== "number" || !Number.isInteger(mark) || mark < 0 || mark > f.marks) return null;
+  const idx = answerIndex(f.answer);
+  // The subject's own criteria, in order, whatever names came back; a line only
+  // where the model returned one for that criterion.
+  const said = new Map(asArray(r.criteria).map(asObject).map(c => [String(c.name || "").trim().toLowerCase(), tmClean(c.rewards, 200)]));
+  const rubric = f.criteria.map(name => ({ name, descriptor: said.get(name.toLowerCase()) || "" }));
+  let verified = 0, unverified = 0, whole = 0;
+  const sentences = asArray(r.observations).slice(0, TM_MAX_OBSERVATIONS).map(asObject).map(o => {
+    const head = tmClean(o.head, 120), why = tmClean(o.why);
+    if (!head) return null;
+    // A quote is the student's words only if it is found in the response, and then
+    // it is replaced with their exact characters; across two paragraphs it is not
+    // one run of their words. Otherwise the observation is about the whole response.
+    const q = String(o.quote || "").trim();
+    const span = q ? quoteSpan(idx, q, 60) : null;
+    const exact = span ? spanText(idx, span) : "";
+    const ok = !!exact && !/\n\s*\n/.test(exact);
+    if (ok) verified++; else if (q) unverified++; else whole++;
+    return { text: ok ? exact : null, unplaced: !ok, issues: [{ kind: "fix", severity: "should", head, why }] };
+  }).filter(Boolean);
+  const judgement = tmClean(r.judgement);
+  return {
+    contract: TM_EXTENDED,
+    score: mark, total: mark, max: f.marks,
+    summary: judgement, overall: { summary: judgement },
+    rubric,
+    paragraphs: [{ name: "The response", score: mark, max: f.marks, reasons: [], sentences }],
+    criteria: [], next_steps: [], missing_vocabulary: [],
+    checks: { contract: TM_EXTENDED, sentences: verified + unverified, sentencesVerified: verified, sentencesUnplaced: unverified,
+      wholeResponse: whole, grounded: verified + unverified ? Math.round(verified / (verified + unverified) * 100) / 100 : 1 },
+  };
+}
+async function markTestModeExtended(f, env, cors) {
+  const c = f.ctx;
+  const t0 = Date.now();
+  const diagnosis = c.passes === 2 ? await diagnose({
+    subject: f.subject, prompt: f.prompt, command: f.command, marks: f.marks, topic: c.topic, responseType: c.responseType,
+    format: c.format, stimulusContext: c.stimulusContext, requirements: c.requirements, validContent: c.validContent, plan: c.plan,
+    response: f.response, answer: f.answer,
+  }, env) : null;
+  const t1 = Date.now();
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: TM_MAX_TOKENS,
+      system: [{ type: "text", text: TM_SYSTEM, cache_control: { type: "ephemeral" } }],
+      tools: [TM_TOOL],
+      tool_choice: { type: "tool", name: "submit_test_mark" },
+      messages: [{ role: "user", content: tmMessage(f, diagnosis) }],
+    }),
+  });
+  if (!res.ok) return json({ error: "upstream " + res.status, retryable: true }, 502, cors);
+  const data = await res.json();
+  const t2 = Date.now();
+  if (data.stop_reason === "max_tokens") return json({ error: "marking ran long and was cut off before it finished. Try again.", stop_reason: "max_tokens", retryable: true }, 502, cors);
+  const block = (data.content || []).find(b => b.type === "tool_use");
+  const out = block ? tmFinalize(block.input, f) : null;
+  if (!out) return json({ error: "grader returned an unusable mark", retryable: true }, 502, cors);
+  const u = asObject(data.usage);
+  out.checks.passes = c.passes;
+  out.checks.diagnosis = diagnosis ? diagnosis.verified : null;
+  // With two passes the diagnosis may fail or run past DIAG_TIMEOUT_MS, and the
+  // mark is then made without it. That is stated in the reply, never left silent.
+  out.checks.diagnosisState = c.passes === 2 ? (diagnosis ? "used" : "skipped") : "not run";
+  out.checks.ms = { diagnosis: c.passes === 2 ? t1 - t0 : 0, judgement: t2 - t1 };
+  out.checks.model = MODEL;
+  out.checks.usage = { input: u.input_tokens ?? null, output: u.output_tokens ?? null, cacheRead: u.cache_read_input_tokens ?? 0 };
+  return json(out, 200, cors);
+}
+
 // ---- 4. THE PLAN CAN NEVER REACH THE PASS THAT MARKS -----------------------
 // Pass 2 is built from this allowlist and nothing else. The student's plan and our
 // authored argument pathways are absent by construction, so no prompt edit can let
@@ -1633,6 +1820,12 @@ function markingInput(body) {
     // `format` away at this line and then tell both passes it was an "extended
     // response". Only the written formats are accepted; anything else is dropped.
     format: ["short_answer", "extended_response", "business_report"].indexOf(b.format) >= 0 ? b.format : "",
+    // Which reply the client can use. Only Test Mode's lean contract is known;
+    // anything else is the full review.
+    contract: b.contract === TM_EXTENDED ? TM_EXTENDED : "",
+    // The lean contract runs one pass. Two (the diagnosis first) is kept for
+    // measuring the difference, never sent by the app.
+    passes: Number(b.passes) === 2 ? 2 : 1,
     stimulus: !!b.stimulus,
     // THE SOURCE MATERIAL THE STUDENT WAS GIVEN, as the app's contract built it
     // from what was authored (tools/contract/exam.js sourceContext). The cap is the

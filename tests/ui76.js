@@ -104,6 +104,17 @@ function reviewFor(a, marks) {
   if (s.invent) paragraphs[0].sentences.push({ text: s.invent.text, issues: [issue(s.invent.head, s.invent.why)] });
   return { summary: s.summary, rubric: [], focus: { paragraph: 1, area: '', why: '', quote: '' }, paragraphs };
 }
+// The same stub as Test Mode's lean extended response asks for it (the worker's
+// markTestModeExtended): a mark, a judgement and the observations, each with the
+// quote it was written about. The invented sentence keeps its quote, so the worker
+// has to find it is not the student's.
+function leanFor(a) {
+  const s = a.stub;
+  return { mark: s.score, judgement: s.summary, criteria: [],
+    observations: (s.notices || []).map(n => ({ head: n.head, why: n.why, quote: n.quote }))
+      .concat((s.across || []).map(n => ({ head: n.head, why: n.why, quote: '' })))
+      .concat(s.invent ? [{ head: s.invent.head, why: s.invent.why, quote: s.invent.text }] : []) };
+}
 async function bridge(p, rec) {
   if (LIVE) return;
   const worker = (await import('./worker.mjs')).default;
@@ -124,7 +135,8 @@ async function bridge(p, rec) {
       const b = JSON.parse(init.body); call.model.push(b);
       const name = b.tools[0].name;
       if (!a || !a.stub) return new Response(JSON.stringify({ error: { type: 'not_recorded', message: 'no stub for this answer' } }), { status: 500 });
-      const input = name === 'submit_diagnosis' ? DIAG : reviewFor(Object.assign({}, a, { textSent: body.answer }), Number(body.marks));
+      const input = name === 'submit_diagnosis' ? DIAG : name === 'submit_test_mark' ? leanFor(a)
+        : reviewFor(Object.assign({}, a, { textSent: body.answer }), Number(body.marks));
       return new Response(JSON.stringify({ content: [{ type: 'tool_use', name, input }], stop_reason: 'tool_use' }), { status: 200 });
     };
     try {

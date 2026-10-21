@@ -702,6 +702,10 @@
             // now carries that into both passes, so a report is marked AS a
             // report while its directive - recommend - travels on its own.
             format: fx.format,
+            // Test Mode asks for the one reply it can use: a mark, a judgement, the
+            // criteria and a few grounded observations (the worker's lean contract,
+            // markTestModeExtended). A worker that does not know it marks as before.
+            contract: opts.noDemo && fx.format === "extended_response" ? "testmode-extended-1" : undefined,
             responseType: mode, stimulus: !!(card.stimulus || sc.text),
             stimulusContext: sc.text || undefined,
             rubric: card.rubric || undefined,

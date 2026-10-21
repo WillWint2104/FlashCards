@@ -2074,6 +2074,75 @@ module.exports = [
   // Run 1 spent real marking credits and reported two unmarked answers "ok",
   // because "at most 2" accepted no mark at all. These put each form of that
   // hole back; t40 holds the rule.
+  // ---- Test Mode's lean extended response: one pass, only what is shown -----
+  //
+  // Bots Run 2 timed the full review at 63 to 122 seconds for a 20-mark extended
+  // response against the app's 45. t42 holds the lean contract that replaces it
+  // for Test Mode; ui70 holds that the app asks for it.
+  {
+    id: "tm-lean-asks-for-ladders",
+    file: "proxy/worker.js",
+    find: "            quote: { type: \"string\", description: \"The student's own words copied exactly, or an empty string when the observation is about the response as a whole or about something missing.\" },",
+    replace: "            quote: { type: \"string\", description: \"The student's own words copied exactly, or an empty string when the observation is about the response as a whole or about something missing.\" },\n            ladder: LADDER_SCHEMA,",
+    owner: "t42",
+    why: "asking the lean pass for model sentences again would bring back the output Test Mode never shows and the time it cost (bots Run 2)",
+  },
+  {
+    id: "tm-lean-quote-unverified",
+    file: "proxy/worker.js",
+    find: "    const ok = !!exact && !/\\n\\s*\\n/.test(exact);",
+    replace: "    const ok = !!q;",
+    owner: "t42",
+    why: "an observation's quote was taken on the model's word, so a sentence the student never wrote could be shown as theirs",
+  },
+  {
+    id: "tm-lean-mark-unchecked",
+    file: "proxy/worker.js",
+    find: "  if (typeof mark !== \"number\" || !Number.isInteger(mark) || mark < 0 || mark > f.marks) return null;",
+    replace: "  if (mark == null) return null;",
+    owner: "t42",
+    why: "a mark outside the question's scale, a fraction or a string would have left the worker as a mark",
+  },
+  {
+    id: "tm-lean-without-contract",
+    file: "proxy/worker.js",
+    find: "    if (ctx.contract === TM_EXTENDED && ctx.format === \"extended_response\") {",
+    replace: "    if (ctx.format === \"extended_response\") {",
+    owner: "t42",
+    why: "every extended response, Study's and Essay practice's included, would have lost the full review it depends on",
+  },
+  {
+    id: "tm-lean-band-kept",
+    file: "proxy/worker.js",
+    find: "  const kept = plain.split(/(?<=[.!?][\"'\\u201d\\u2019)]*)\\s+(?=[\"'\\u201c\\u2018(]?[A-Z0-9])/).filter(x => !TM_BAND.test(x)).join(\" \");",
+    replace: "  const kept = plain.split(/(?<=[.!?][\"'\\u201d\\u2019)]*)\\s+(?=[\"'\\u201c\\u2018(]?[A-Z0-9])/).filter(x => true).join(\" \");",
+    owner: "t42",
+    why: "the worker passed band language through and left it to the app alone",
+  },
+  {
+    id: "tm-lean-always-diagnoses",
+    file: "proxy/worker.js",
+    find: "  const diagnosis = c.passes === 2 ? await diagnose({",
+    replace: "  const diagnosis = c.passes !== 0 ? await diagnose({",
+    owner: "t42",
+    why: "the lean contract ran the diagnosis pass every time, which is the second model call it exists to drop",
+  },
+  {
+    id: "tm-lean-diagnosis-skip-silent",
+    file: "proxy/worker.js",
+    find: "  out.checks.diagnosisState = c.passes === 2 ? (diagnosis ? \"used\" : \"skipped\") : \"not run\";",
+    replace: "  out.checks.diagnosisState = c.passes === 2 ? \"used\" : \"not run\";",
+    owner: "t42",
+    why: "a two-pass mark whose diagnosis failed or timed out said it had used one, the silent fallback the reply must state",
+  },
+  {
+    id: "tm-app-asks-no-contract",
+    file: "app.js",
+    find: "            contract: opts.noDemo && fx.format === \"extended_response\" ? \"testmode-extended-1\" : undefined,",
+    replace: "            contract: undefined,",
+    owner: "ui70",
+    why: "Test Mode stopped asking for the lean contract and went back to the full review that took longer than its own 45 second limit",
+  },
   // ---- state 12 shows only what the payload supports (bots Run 2) ------------
   //
   // Run 2 sat Question 15 against the production marker and every marked result

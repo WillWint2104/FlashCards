@@ -274,8 +274,10 @@ async function sitState12(b, reply) {
   const eb = E.body || {};
   // Printed so the figure in the docs is one a re-run reproduces.
   console.log('    extended request for q15:', JSON.stringify(eb).length, 'bytes');
-  ok(JSON.stringify(Object.keys(eb).sort()) === JSON.stringify(EXT_KEYS.concat('requirements').sort()),
-     'its request gained one key, requirements, and nothing else: ' + Object.keys(eb).sort().join(','));
+  // And, since bots Run 2, the contract it asks the marker for: Test Mode's lean
+  // extended response (one pass, only what state 12 shows; tests/t42.mjs).
+  ok(JSON.stringify(Object.keys(eb).sort()) === JSON.stringify(EXT_KEYS.concat('requirements', 'contract').sort()) && eb.contract === 'testmode-extended-1',
+     'its request gained requirements and the lean contract, and nothing else: ' + Object.keys(eb).sort().join(','));
   const q15pts = (q15.points || []).map(pt => typeof pt === 'string' ? pt : pt.text);
   ok(eb.requirements && JSON.stringify(eb.requirements.accomplish) === JSON.stringify(q15pts),
      'carrying its own four marking points, which used to reach nothing (UX-TEST-12)');
@@ -348,7 +350,7 @@ async function sitState12(b, reply) {
      "an extended response's own instructions do not render: its surface is state 12's, unchanged");
   ok(!JSON.stringify(X.body || {}).includes('Refer to the stimulus'),
      'and they are not sent to its marker');
-  ok(JSON.stringify(Object.keys(X.body || {}).sort()) === JSON.stringify(EXT_KEYS.concat('requirements').sort()),
+  ok(JSON.stringify(Object.keys(X.body || {}).sort()) === JSON.stringify(EXT_KEYS.concat('requirements', 'contract').sort()),
      'its request carries the same keys as the extended response above');
 
   // ---- the degraded path speaks the format's language (UX-TEST-15) ----------
