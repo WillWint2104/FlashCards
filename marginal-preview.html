@@ -16129,13 +16129,26 @@ module.exports = {
   // generic scale the model wrote against, not the course's, and a band beside a
   // mark reads as a second mark (docs/state12-audit.md). So a term becomes its
   // own words, and a sentence that speaks of a band is left out whole, whatever
-  // the model wrote. What is left empty is not shown.
+  // the model wrote. What is left empty is not shown, and neither is anything
+  // that is not text.
   const TM_BAND = /\bbands?\b/i;
   function tmMarkerText(s) {
-    const plain = String(s == null ? "" : s).replace(/\{\{([^{}|]*)(?:\|[^{}]*)?\}\}/g, "$1").replace(/\{\{|\}\}/g, "");
+    const plain = (typeof s === "string" ? s : "").replace(/\{\{([^{}|]*)(?:\|[^{}]*)?\}\}/g, "$1").replace(/\{\{|\}\}/g, "");
     return plain.split(/(?<=[.!?]["'\u201d\u2019)]*)\s+(?=["'\u201c\u2018(]?[A-Z0-9])/)
       .filter(x => !TM_BAND.test(x)).join(" ").replace(/\s+/g, " ").trim();
   }
+  // The authored criteria of a question in a paper, resolved through that paper
+  // and nothing else. markingContext finds the paper through EXAM.paper, which
+  // only a sitting sets: a closed Review opened after a reload has none, and
+  // markingContext then answers with the flashcard package's criteria, which are
+  // Economics. A paper that does not resolve shows no criteria at all.
+  function tmCriteriaOf(paper, q) {
+    const res = paper ? ASSESS.resolveAuthority({ curriculum: ASSESS.curriculumOf(paper), question: q || null, packages: tmPackages() }) : null;
+    return res && res.ok ? (res.criteria || []).map(n => typeof n === "string" ? n : (n && n.name) || "").filter(Boolean) : [];
+  }
+  // A list in a stored reply, read as one only if it is one: a result is drawn
+  // again on every visit, so a malformed reply must not break the question.
+  const tmItems = x => Array.isArray(x) ? x.filter(y => y && typeof y === "object") : [];
   // `closed` is ATT.reviewAt's view of a completed attempt (decision 26): the
   // same marked states, with every action that could change a mark taken out.
   function tmResultHTML(e, a, f, g, closed) {
@@ -16186,15 +16199,14 @@ module.exports = {
     }
     // Extended response and business report (states 12 and 13): what the payload
     // supports, and only that.
-    const fb = g.fb || {};
+    const fb = g.fb && typeof g.fb === "object" ? g.fb : {};
     // The criteria are the subject's own, by name and in the course's order, never
     // the labels the model sent back. The marker is told to return them verbatim;
     // a reply that renames, reorders, adds or drops one does not change what the
     // screen calls them. A descriptor is shown only beside the authored name the
     // model returned it for, exactly.
-    const said = new Map((Array.isArray(fb.rubric) ? fb.rubric : []).filter(r => r && typeof r.name === "string").map(r => [r.name, r.descriptor]));
-    const crits = ((markingContext(q) || {}).criteria || []).map(n => typeof n === "string" ? n : (n && n.name) || "").filter(Boolean)
-      .map(name => ({ name, d: tmMarkerText(said.get(name)) }));
+    const said = new Map(tmItems(fb.rubric).filter(r => typeof r.name === "string").map(r => [r.name, r.descriptor]));
+    const crits = tmCriteriaOf(e.paper, q).map(name => ({ name, d: tmMarkerText(said.get(name)) }));
     // "In your response" is the student's own words, so it holds only a quote that
     // is not empty and appears, exactly, in the version that was marked. Anything
     // else the marker said is about the response as a whole and goes under "Across
@@ -16203,7 +16215,7 @@ module.exports = {
     // was nothing but band language is dropped with it.
     const graded = String(answer == null ? "" : answer);
     const anchored = [], across = [];
-    (fb.paragraphs || []).forEach(p => (p.sentences || []).forEach(sn => (sn.issues || []).forEach(iss => {
+    tmItems(fb.paragraphs).forEach(p => tmItems(p.sentences).forEach(sn => tmItems(sn.issues).forEach(iss => {
       const head = tmMarkerText(iss.head), why = tmMarkerText(iss.why);
       if ((String(iss.head || "").trim() && !head) || (!head && !why)) return;
       const quote = typeof sn.text === "string" ? sn.text : "";

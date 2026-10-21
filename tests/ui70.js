@@ -133,14 +133,22 @@ const s12Read = p => p.evaluate(() => {
   const t = e => (e ? e.textContent.replace(/\s+/g, ' ').trim() : '');
   const sheet = document.querySelector('#sheet');
   return {
-    text: t(sheet), mark: t(sheet && sheet.querySelector('.tm-result .pair .v')), summary: t(sheet && sheet.querySelector('.tm-mnote')),
+    text: t(sheet), mark: t(sheet && sheet.querySelector('.tm-result .pair .v')), open: !!document.querySelector('#examretry, #ans'), summary: t(sheet && sheet.querySelector('.tm-mnote')),
     criteria: [...document.querySelectorAll('#sheet .crits .tm-crit')].map(c => ({ name: t(c.querySelector('.critn')), d: t(c.querySelector('p')) })),
     inResponse: [...document.querySelectorAll('#sheet .obs .ob')].filter(o => o.querySelector('.ev')).map(o => ({ head: t(o.querySelector('.obh')), quote: (o.querySelector('.ev q') || {}).textContent, why: t(o.querySelector(':scope > p')) })),
     across: [...document.querySelectorAll('#sheet .obs .ob')].filter(o => o.querySelector('.acrossl')).map(o => ({ head: t(o.querySelector('.obh')), why: t(o.querySelector(':scope > p')) })),
   };
 });
-// Sit Question 15 against that reply, then submit the paper and open its closed Review.
-async function sitState12(b) {
+// A reply that is a mark and nothing else that state 12 reads is in a usable
+// shape: every list is something else, or holds something that is not an entry.
+// The app accepts it (the mark is valid), stores it whole and draws it on every
+// visit, so the sitting, the closed Review and a reload all have to survive it.
+const s12Malformed = marks => ({ score: 7, total: 7, max: marks, summary: 12, overall: 'x', checks: 'none',
+  rubric: { name: 'not a list' }, paragraphs: [null, 'text', { sentences: { text: 'x' } }, { sentences: [null, { text: S12_Q1, issues: 'not a list' }, { text: S12_Q2, issues: [null, 4, { head: 'Still shown', why: 'The one well-formed observation.' }] }] }] });
+// Sit Question 15 against that reply, then submit the paper and open its closed
+// Review, then reload and open it again from the paper's results.
+async function sitState12(b, reply) {
+  reply = reply || s12Reply;
   const ctx = await b.newContext({ viewport: { width: 1280, height: 1000 } });
   const p = await ctx.newPage();
   const errs = []; p.on('pageerror', e => errs.push(String(e).slice(0, 200)));
@@ -149,7 +157,7 @@ async function sitState12(b) {
     const s = JSON.parse(r.request().postData() || '{}');
     if (s.action === 'coach') return r.fulfill({ status: 200, contentType: 'application/json', body: '{"nudges":[]}' });
     body = s;
-    await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(s12Reply(Math.round(Number(s.marks)) || 20)) });
+    await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(reply(Math.round(Number(s.marks)) || 20)) });
   });
   await p.goto(T + '?review=1'); await settled(p);
   await p.$$eval('.ash-link', es => { const t = es.find(x => /Test mode/i.test(x.textContent)); t && t.click(); }); await settled(p);
@@ -167,8 +175,16 @@ async function sitState12(b) {
   await p.click('#tmsubmitpaper'); await settled(p);
   await p.click('.tm-rs-cell[data-tmrv="3-0"]'); await settled(p);
   const review = await s12Read(p);
+  // After a reload nothing is left of the sitting: the closed Review is reached
+  // from the library, through the paper's last results.
+  await p.reload(); await settled(p);
+  await p.$$eval('.ash-link', es => { const t = es.find(x => /Test mode/i.test(x.textContent)); t && t.click(); }); await settled(p);
+  await p.click('.tm-title[data-tmopen]'); await settled(p);
+  await p.click('#tmlastresults'); await settled(p);
+  await p.click('.tm-rs-cell[data-tmrv="3-0"]'); await settled(p);
+  const reloaded = await s12Read(p);
   await ctx.close();
-  return { body, sitting, review, errs };
+  return { body, sitting, review, reloaded, errs };
 }
 
 (async () => {
@@ -281,7 +297,8 @@ async function sitState12(b) {
     const R = await sitState12(b);
     const authored = (R.body && R.body.criteria) || [];
     ok(authored.length === 4 && R.sitting.mark === '9 of 20', 'the reply is marked 9 of 20, and the request carried the four authored criteria: ' + R.sitting.mark);
-    for (const [where, v] of [['in the sitting', R.sitting], ['in the closed Review', R.review]]) {
+    ok(R.review.open === false && R.reloaded.open === false && R.reloaded.mark === '9 of 20', 'after a reload, the closed Review is reached from the paper\'s results, with nothing to edit, and shows the same mark: ' + R.reloaded.mark);
+    for (const [where, v] of [['in the sitting', R.sitting], ['in the closed Review', R.review], ['in the closed Review after a reload', R.reloaded]]) {
       ok(!/\{\{|\}\}/.test(v.text) && /Name the promotional mix to sharpen it\./.test(v.summary) && v.inResponse.some(o => /State the market share target as a number\./.test(o.why)),
         where + ': glossary markup never reaches the student; a term is shown as its own words: ' + v.summary);
       ok(!/\bbands?\b/i.test(v.text) && v.inResponse.some(o => o.head === 'Figure used well' && o.why === 'This is evidence doing work.') && !v.inResponse.concat(v.across).some(o => /Band 6 needs/.test(o.head)),
@@ -295,6 +312,17 @@ async function sitState12(b) {
         where + ': the criteria are the four authored ones, in their order and casing; a descriptor only beside its exact name: ' + JSON.stringify(v.criteria));
     }
     ok(R.errs.length === 0, 'no page errors: ' + R.errs.join(' | '));
+    ok(!/thesis and sustained judgement|economic terminology|Economics/i.test(R.reloaded.text), 'after a reload, nothing of Economics: the criteria come from the question\'s own paper, not from what the last sitting left behind');
+  }
+  {
+    const M = await sitState12(b, s12Malformed);
+    ok(M.errs.length === 0, 'a reply whose lists are not lists, or hold things that are not entries, breaks nothing: ' + M.errs.join(' | '));
+    for (const [where, v] of [['in the sitting', M.sitting], ['in the closed Review', M.review], ['in the closed Review after a reload', M.reloaded]]) {
+      ok(v.mark === '7 of 20' && v.summary === '' && JSON.stringify(v.criteria.map(c => c.name)) === JSON.stringify((M.body && M.body.criteria) || ['?']) && v.criteria.every(c => c.d === ''),
+        where + ': it is marked 7 of 20, with no summary that is not text, and the four authored criteria with no descriptors: ' + JSON.stringify([v.mark, v.summary, v.criteria]));
+      ok(v.inResponse.length === 1 && v.inResponse[0].head === 'Still shown' && v.inResponse[0].quote === S12_Q2 && v.across.length === 0,
+        where + ': the one well-formed observation is still shown: ' + JSON.stringify(v.inResponse.concat(v.across)));
+    }
   }
 
   // ---- a stored paper the validator would now refuse -----------------------

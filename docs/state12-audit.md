@@ -280,3 +280,11 @@ the reply to keep these rules; it holds them itself (`tmMarkerText` and
   what is missing that arrive with no sentence, is under "Across your response".
 - **The criteria are the subject's.** The four authored names, in their order and
   casing, whatever the reply calls them; a descriptor only beside its exact name.
+  They are resolved through the question's own paper (`tmCriteriaOf`), never
+  through `EXAM.paper`, which only a sitting sets: a closed Review opened after a
+  reload would otherwise get the flashcard package's Economics criteria.
+- **Only text is shown, and a malformed reply breaks nothing.** A summary,
+  descriptor or observation that is not a string is not shown. A list in the
+  stored reply that is not a list, or an entry that is not an object, is skipped,
+  so the question still draws in the sitting, the closed Review and after a
+  reload.
