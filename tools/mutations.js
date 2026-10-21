@@ -2248,6 +2248,43 @@ module.exports = [
     owner: "t40",
     why: "an answer that was sent and came back unmarked counted as never given full marks, which says nothing about how it would be marked",
   },
+  // ---- the Extended Response benchmark stays frozen (bots Run 2) -------------
+  //
+  // A benchmark is only useful if the same words go in and are judged by the same
+  // rules every time. t41 holds the texts, the version 2 answers inside version
+  // 3, and the two analysis rules a comparison with Run 2 depends on.
+  {
+    id: "er15-frozen-text-edited",
+    file: "tests/bots/testmode/corpus.v3.json",
+    find: "The money was buying the right audience, and buying it cheaply.",
+    replace: "The money was buying the right audience, and buying it very cheaply.",
+    owner: "t41",
+    why: "a benchmark text edited in place would make every later run incomparable with Run 2 while still looking like the same answer",
+  },
+  {
+    id: "er15-v3-alters-a-v2-answer",
+    file: "tests/bots/testmode/corpus.v3.json",
+    find: "Casual workers are always the first to resign.",
+    replace: "Casual workers are usually the first to resign.",
+    owner: "t41",
+    why: "version 3 is version 2 plus the benchmark; changing a version 2 answer inside it would silently change what the bots measure",
+  },
+  {
+    id: "er15-missing-mark-passes-comparison",
+    file: "tests/bots/testmode/er-analyze.js",
+    find: "  if (!Number.isFinite(x) || !Number.isFinite(y)) return null;",
+    replace: "  if (!Number.isFinite(x) || !Number.isFinite(y)) return true;",
+    owner: "t41",
+    why: "a comparison with an unmarked side would be reported as passing, the hole Run 1 found in the ranges, now in the orderings",
+  },
+  {
+    id: "er15-empty-quotes-uncounted",
+    file: "tests/bots/testmode/er-analyze.js",
+    find: "    emptyQuotes: (res.inResponse || []).filter(o => !String(o.quote || '').trim()).length,",
+    replace: "    emptyQuotes: 0,",
+    owner: "t41",
+    why: "Run 2 showed 14 empty quotations under In your response; an analysis that stopped counting them would report the defect fixed",
+  },
   {
     id: "bots-inline-range-check-returns",
     file: "tests/ui76.js",

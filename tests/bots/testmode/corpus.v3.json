@@ -1,0 +1,1330 @@
+{
+  "version": 3,
+  "_why": "The fixed answers the Test Mode student bots write, on the synthetic Business Studies paper (tests/fixtures/bus-practice-paper.json). Deterministic on purpose: the same words go in every run, so a change in what comes back is a change in Marginal, not in the student. Every answer is original text written for this corpus. `expect` is what the offline suite asserts: exact marks where the paper's own key decides (multiple choice, calculation, locally matched marking points), and invariants elsewhere. `stub` is the marker's reply the offline suite feeds the REAL worker code in place of the model, so grounding, reconciliation and refusal run for real; a stub is a stand-in, never a claim about marking quality, and live mode ignores it. `live` is what live mode asserts against the real marker: ranges and orderings, never one exact judgement-based number. `invent` puts a sentence the student did not write into the stubbed review, to prove it never reaches the student as their own words. Version 2 (decision 27): the phrase-matching fixture is a genuinely closed question that declares marking.mode phrase_match, because phrasings alone no longer score anything and phrase matching is refused on an open directive. Every other answer is unchanged from version 1, which stays as it was. Version 3 adds the Extended Response benchmark that bots Run 2 used on Question 15 (see `benchmarks.er15`): seven more answers covering the profiles corpus v2 did not have, three answers of about 400, 800 and 1,200 words for timing, the hash of every benchmark text, and the marks and orderings set down before any live marking. Every version 2 answer is unchanged, word for word.",
+  "paper": "tests/fixtures/bus-practice-paper.json",
+  "localPoints": {
+    "_why": "The synthetic paper's written questions are all open and all go to the marker. This derived paper replaces Question 11(a) with a genuinely CLOSED short answer that declares phrase matching (decision 27), so its marks are decided here, exactly, and the bots keep testing the matcher: an empty answer never scores, a point's description is never a search string, and the matcher's known limits are recorded rather than hidden. It stays at 2 marks so the paper's totals hold.",
+    "key": "1-0-0",
+    "examId": "marginal-bots-closed-points-1",
+    "name": "Bots paper: a closed short answer",
+    "leaf": {
+      "format": "short_answer",
+      "directive": "identify",
+      "marks": 2,
+      "marking": {
+        "mode": "phrase_match"
+      },
+      "prompt": "Identify the operations performance objective Kerbside Coffee is failing to meet at its vans, and the period when demand at the vans peaks.",
+      "points": [
+        {
+          "text": "Identifies speed as the objective",
+          "marks": 1,
+          "need": [
+            "speed",
+            "speedy",
+            "quick service",
+            "quicker service",
+            "too slow",
+            "slow service"
+          ]
+        },
+        {
+          "text": "Identifies the 7am to 9am morning peak",
+          "marks": 1,
+          "need": [
+            "7am",
+            "7 am",
+            "7.00",
+            "9am",
+            "9 am",
+            "morning peak",
+            "morning rush",
+            "breakfast"
+          ]
+        }
+      ]
+    }
+  },
+  "items": [
+    {
+      "key": "0-0",
+      "format": "multiple_choice",
+      "question": "1",
+      "answers": [
+        {
+          "id": "mc1-right",
+          "kind": "correct",
+          "choice": 1,
+          "expect": {
+            "exact": 1
+          }
+        },
+        {
+          "id": "mc1-wrong",
+          "kind": "wrong",
+          "choice": 0,
+          "expect": {
+            "exact": 0
+          }
+        }
+      ]
+    },
+    {
+      "key": "1-0-2",
+      "format": "calculation",
+      "question": "11(c)",
+      "answers": [
+        {
+          "id": "calc-right",
+          "kind": "correct",
+          "text": "1.5",
+          "expect": {
+            "exact": 4
+          }
+        },
+        {
+          "id": "calc-working",
+          "kind": "correct with working",
+          "text": "Current ratio = 60 000 / 40 000 = 1.5",
+          "expect": {
+            "exact": 4
+          }
+        },
+        {
+          "id": "calc-inverted",
+          "kind": "misconception",
+          "text": "0.67",
+          "expect": {
+            "exact": 0
+          }
+        },
+        {
+          "id": "calc-two-numbers",
+          "kind": "unreadable",
+          "text": "60000 40000",
+          "expect": {
+            "status": "not_marked"
+          }
+        }
+      ]
+    },
+    {
+      "key": "1-0-0",
+      "paperVariant": "closed",
+      "format": "short_answer",
+      "question": "11(a)",
+      "answers": [
+        {
+          "id": "cl11a-blank",
+          "kind": "blank",
+          "text": "",
+          "expect": {
+            "neverFull": true
+          }
+        },
+        {
+          "id": "cl11a-irrelevant",
+          "kind": "irrelevant",
+          "text": "The vans should sell muffins as well as coffee.",
+          "expect": {
+            "exact": 0
+          }
+        },
+        {
+          "id": "cl11a-one-point",
+          "kind": "partial",
+          "text": "Speed.",
+          "expect": {
+            "exact": 1
+          }
+        },
+        {
+          "id": "cl11a-two-points",
+          "kind": "strong",
+          "text": "Speed, in the 7am to 9am morning peak.",
+          "expect": {
+            "exact": 2
+          }
+        },
+        {
+          "id": "cl11a-unusual",
+          "kind": "unusual wording",
+          "text": "Customers are not served quickly enough at the start of the working day.",
+          "expect": {
+            "exact": 0
+          },
+          "observe": "A correct answer in words nobody wrote a phrasing for earns nothing: 'not served quickly enough' and 'the start of the working day' match neither point. Matching is only as good as the phrasings written for it."
+        },
+        {
+          "id": "cl11a-shotgun",
+          "kind": "shotgun list",
+          "text": "Quality, speed, dependability, flexibility, cost. 7am, noon, 5pm.",
+          "expect": {
+            "exact": 2
+          },
+          "observe": "Listing every candidate earns full marks: matching cannot tell a choice from a shotgun. A closed question is safer than an open one, not safe."
+        },
+        {
+          "id": "cl11a-negation",
+          "kind": "negation",
+          "text": "Not speed, and not the 7am to 9am peak.",
+          "expect": {
+            "exact": 2
+          },
+          "observe": "Matching does not read negation: an answer that rules both points out earns both."
+        }
+      ]
+    },
+    {
+      "key": "1-0-1",
+      "format": "short_answer",
+      "question": "11(b)",
+      "answers": [
+        {
+          "id": "sa11b-blank",
+          "kind": "blank",
+          "text": "",
+          "expect": {
+            "neverFull": true
+          }
+        },
+        {
+          "id": "sa11b-irrelevant",
+          "kind": "irrelevant",
+          "text": "Kerbside Coffee should buy a third roaster so that it can sell more coffee to cafes around the city.",
+          "stub": {
+            "score": 0,
+            "summary": "The answer is about buying equipment and does not address casual employment or staff turnover."
+          },
+          "live": {
+            "max": 1
+          }
+        },
+        {
+          "id": "sa11b-partial",
+          "kind": "partial",
+          "text": "Casual operators do not get guaranteed hours, so some of them leave.",
+          "stub": {
+            "score": 1,
+            "summary": "Identifies the missing guaranteed hours but does not explain why that leads to leaving or what turnover costs the business.",
+            "notices": [
+              {
+                "quote": "Casual operators do not get guaranteed hours",
+                "head": "A cause is named but not explained",
+                "why": "Say why a lack of guaranteed hours makes an operator more likely to leave."
+              }
+            ],
+            "invent": {
+              "text": "Casual workers are always the first to resign.",
+              "head": "An overgeneralisation",
+              "why": "Not every casual worker resigns."
+            }
+          },
+          "live": {
+            "min": 1,
+            "max": 2
+          }
+        },
+        {
+          "id": "sa11b-strong",
+          "kind": "strong",
+          "text": "Casual van operators have no guaranteed hours and no paid leave, so their income is uncertain from week to week. That insecurity pushes them to leave when a permanent job with steady hours is offered elsewhere. Each departure means Kerbside Coffee has to recruit and train a replacement, which costs money and time, so casual employment keeps turnover high and expensive.",
+          "stub": {
+            "score": 3,
+            "summary": "Explains the insecurity of casual work, links it to operators leaving, and connects turnover to the cost of replacing them.",
+            "notices": [
+              {
+                "quote": "Each departure means Kerbside Coffee has to recruit and train a replacement",
+                "head": "The cost of turnover is made concrete",
+                "why": "This is the step that connects turnover to the business."
+              }
+            ]
+          },
+          "live": {
+            "min": 2
+          }
+        },
+        {
+          "id": "sa11b-unusual",
+          "kind": "unusual wording",
+          "text": "If you never know whether you will get shifts next week, you keep looking for something steadier, and the day something steady turns up you are gone. That is the position of Kerbside's van staff, and every time one walks out the owners pay again to find and train the next person.",
+          "stub": {
+            "score": 3,
+            "summary": "Explains the insecurity of casual shifts in everyday language, links it to leaving, and to the cost of replacement.",
+            "across": [
+              {
+                "head": "Business terminology",
+                "why": "The reasoning is sound; naming it as casual employment and turnover would make it clearer to a marker."
+              }
+            ]
+          },
+          "live": {
+            "min": 2
+          }
+        },
+        {
+          "id": "sa11b-misconception",
+          "kind": "misconception",
+          "text": "Casual employees are paid less per hour than permanent staff, so they leave because their wages are lower than everyone else's.",
+          "stub": {
+            "score": 1,
+            "summary": "Links pay to leaving, but the claim that casual employees earn less per hour is generally the reverse of their position.",
+            "notices": [
+              {
+                "quote": "Casual employees are paid less per hour than permanent staff",
+                "head": "A factual wrong turn",
+                "why": "Casual employees usually receive a loading in place of leave entitlements."
+              }
+            ]
+          },
+          "live": {
+            "max": 2
+          }
+        },
+        {
+          "id": "sa11b-verbose",
+          "kind": "verbose",
+          "text": "There are many different ways that businesses can employ people, and employment is a very important part of every business in Australia and around the world. Some businesses employ people full time and some employ people part time, and some use contractors, and all of these have advantages and disadvantages that businesses have to think about very carefully. In the case of Kerbside Coffee, most operators are casual, and casual staff can leave whenever they like. There are also many other things that affect a business, such as the economy, competitors and government policy.",
+          "stub": {
+            "score": 1,
+            "summary": "Most of the answer is general background; the one relevant idea, that casual staff can leave easily, is not explained.",
+            "notices": [
+              {
+                "quote": "casual staff can leave whenever they like",
+                "head": "The relevant point is buried",
+                "why": "Lead with this and explain it."
+              }
+            ]
+          },
+          "live": {
+            "max": 2
+          }
+        }
+      ],
+      "liveOrder": [
+        [
+          "sa11b-strong",
+          "sa11b-partial"
+        ],
+        [
+          "sa11b-partial",
+          "sa11b-irrelevant"
+        ],
+        [
+          "sa11b-strong",
+          "sa11b-verbose"
+        ]
+      ]
+    },
+    {
+      "key": "1-0-3",
+      "format": "extended_response",
+      "question": "11(d)",
+      "answers": [
+        {
+          "id": "er11d-minimal",
+          "kind": "minimal",
+          "text": "Hire more staff.",
+          "stub": {
+            "score": 0,
+            "summary": "Names a strategy in three words without explaining or justifying it."
+          },
+          "live": {
+            "max": 1
+          }
+        },
+        {
+          "id": "er11d-partial",
+          "kind": "partial",
+          "text": "Kerbside could roster a second operator on its busiest vans. This would make the queue move faster.",
+          "stub": {
+            "score": 2,
+            "summary": "Names a specific strategy and says it would speed the queue, but does not weigh its cost or reach a judgement.",
+            "notices": [
+              {
+                "quote": "This would make the queue move faster.",
+                "head": "The effect is asserted, not explained",
+                "why": "Say when the queue forms and why a second operator shortens it then."
+              }
+            ]
+          },
+          "live": {
+            "min": 1,
+            "max": 3
+          }
+        },
+        {
+          "id": "er11d-strong",
+          "kind": "strong",
+          "text": "Kerbside Coffee should roster a second operator on each van from 7am to 9am, the morning peak when the case study says customers complain about waiting.\n\nWith two operators, one can take orders while the other makes coffee, so each order is filled sooner at exactly the times the queue forms. Shorter waits should also stop customers walking away, which protects sales during the most valuable two hours of the day.\n\nThe strategy adds wage costs, about eight extra casual hours a day across four vans. That cost is limited to the peak, and it is likely to be less than the sales currently lost to the queue, so the second operator is justified.",
+          "stub": {
+            "score": 5,
+            "summary": "Names a specific peak-time strategy, explains how it shortens the queue when it forms, weighs the wage cost and reaches a supported judgement.",
+            "notices": [
+              {
+                "quote": "That cost is limited to the peak",
+                "head": "The cost is weighed, not ignored",
+                "why": "This is what turns a recommendation into a justification."
+              }
+            ]
+          },
+          "live": {
+            "min": 3
+          }
+        },
+        {
+          "id": "er11d-misconception",
+          "kind": "misconception",
+          "text": "Kerbside should replace its van operators with a self-service ordering app. Then it will not need any staff at the vans and waiting times will disappear completely.",
+          "stub": {
+            "score": 1,
+            "summary": "Proposes removing staff rather than a staffing strategy, and claims waiting would disappear without explaining who makes the coffee.",
+            "notices": [
+              {
+                "quote": "waiting times will disappear completely",
+                "head": "An unsupported claim",
+                "why": "Someone still has to make each coffee."
+              }
+            ]
+          },
+          "live": {
+            "max": 3
+          }
+        }
+      ],
+      "liveOrder": [
+        [
+          "er11d-strong",
+          "er11d-partial"
+        ],
+        [
+          "er11d-partial",
+          "er11d-minimal"
+        ]
+      ]
+    },
+    {
+      "key": "2-0",
+      "format": "business_report",
+      "question": "14",
+      "answers": [
+        {
+          "id": "br14-report",
+          "kind": "report structure",
+          "text": "Executive summary\nOnline orders at Tidewater Outfitters have grown for three years while store sales have fallen. This report recommends redesigning the warehouse for single online orders, turning two stores into click-and-collect points, and renegotiating the store leases on shorter terms as they expire.\n\nFindings\nThe warehouse was built to replenish six stores, so it is slow at picking individual online orders, and delivery times have slipped. All six store leases expire within two years, and the owners want to keep every store.\n\nRecommendations\nTidewater should redesign its warehouse layout for single-order picking, which would shorten delivery times for the customers now buying online.\nIt should keep its six stores but convert two of them into click-and-collect points, so the stores become part of the online sale.\nIt should renegotiate each lease on a shorter term as it expires.\n\nConclusion\nBy changing how the warehouse works and giving the stores a role in online sales, Tidewater can respond to where its customers are buying without closing a store.",
+          "stub": {
+            "score": 15,
+            "summary": "A structured report that identifies the warehouse problem and recommends specific strategies that keep all six stores.",
+            "notices": [
+              {
+                "quote": "convert two of them into click-and-collect points",
+                "head": "A recommendation that respects the owners' intention",
+                "why": "It keeps every store while giving it a job in online sales."
+              }
+            ]
+          },
+          "live": {
+            "min": 10
+          }
+        },
+        {
+          "id": "br14-essay",
+          "kind": "essay shape, same content",
+          "text": "Tidewater Outfitters has seen online orders grow for three years while its store sales have fallen, and this shift creates real problems for the business. Its warehouse was built to replenish six stores, so it is slow at picking individual online orders, and delivery times have slipped. At the same time all six store leases expire within two years, although the owners want to keep every store.\n\nThe business should redesign its warehouse layout for single-order picking, which would shorten delivery times for the customers now buying online. It should also keep its six stores but convert two of them into click-and-collect points, so the stores become part of the online sale, and it should renegotiate each lease on a shorter term as it expires.\n\nIn conclusion, by changing how the warehouse works and giving the stores a role in online sales, Tidewater can respond to where its customers are buying without closing a store.",
+          "stub": {
+            "score": 11,
+            "summary": "The same strategies as a report would offer, written as continuous prose with no report structure.",
+            "across": [
+              {
+                "head": "Not presented as a report",
+                "why": "The question asks for a business report; headings would make the findings and recommendations easy to find."
+              }
+            ]
+          },
+          "live": {
+            "min": 5
+          }
+        },
+        {
+          "id": "br14-weak",
+          "kind": "weak",
+          "text": "Report\nTidewater sells camping gear. Online shopping is popular now.\n\nRecommendation\nThey should sell more things online and maybe close some stores.",
+          "stub": {
+            "score": 3,
+            "summary": "Has two headings but describes the situation briefly and recommends closing stores, against the owners' stated intention.",
+            "notices": [
+              {
+                "quote": "maybe close some stores",
+                "head": "Against the owners' intention",
+                "why": "The case study says the owners want to keep all six stores."
+              }
+            ],
+            "invent": {
+              "text": "The warehouse should be sold immediately.",
+              "head": "A drastic step",
+              "why": "Nothing in the response supports selling the warehouse."
+            }
+          },
+          "live": {
+            "max": 8
+          }
+        }
+      ],
+      "liveOrder": [
+        [
+          "br14-report",
+          "br14-weak"
+        ],
+        [
+          "br14-report",
+          "br14-essay"
+        ]
+      ]
+    },
+    {
+      "key": "3-0",
+      "choose": 0,
+      "format": "extended_response",
+      "question": "15",
+      "answers": [
+        {
+          "id": "er15-weak",
+          "kind": "very weak",
+          "text": "Marketing is very important for every business. A business I studied used advertising and social media to sell its products and it worked well.\n\nMarketing strategies help businesses to make more money, so they are effective.",
+          "stub": {
+            "score": 3,
+            "summary": "States that marketing worked without naming an objective, a real business, or evidence.",
+            "across": [
+              {
+                "head": "No objective to judge against",
+                "why": "Effectiveness can only be judged against what the marketing was meant to achieve."
+              }
+            ]
+          },
+          "live": {
+            "max": 8
+          }
+        },
+        {
+          "id": "er15-middle",
+          "kind": "middle band",
+          "text": "Northline Sportswear set a marketing objective of increasing its share of the teenage market, and most of its strategies were chosen to serve that objective. The business moved from print advertising to short video content on social platforms, which reached the age group it was targeting at a lower cost per view than its previous campaigns.\n\nIts second strategy was a loyalty app that gave members early access to new releases. This was effective because it turned occasional buyers into repeat customers, and repeat customers are cheaper to keep than new ones are to find.\n\nHowever, the business also cut its prices across the range at the same time, which worked against the premium position its advertising was building. A customer who sees the brand as aspirational and then finds it discounted every month will stop believing the first message.\n\nOverall the marketing strategies were effective in achieving the objective they were set, because the business gained share in the group it targeted, but the pricing decision limited how much of that gain it could hold.",
+          "stub": {
+            "score": 13,
+            "summary": "Judges strategies against a stated objective and reaches a judgement, but supports effectiveness with assertion rather than evidence.",
+            "notices": [
+              {
+                "quote": "which reached the age group it was targeting at a lower cost per view than its previous campaigns",
+                "head": "The comparison is stated but not quantified",
+                "why": "A figure would turn the claim into evidence."
+              }
+            ]
+          },
+          "live": {
+            "min": 8,
+            "max": 17
+          }
+        },
+        {
+          "id": "er15-strong",
+          "kind": "strong",
+          "text": "Northline Sportswear's marketing objective for 2023 was to lift its share of the 13 to 17 year old market from 8 to 12 per cent, and its strategies are best judged against that number.\n\nThe move from print to short-form video was effective against that objective. The business reported a cost per view of 4 cents against 19 cents for its print campaigns, and site visits from the target age group rose by a third within six months, so the strategy reached the intended buyers more cheaply.\n\nThe loyalty app was also effective, because members bought 2.4 times a year against 1.3 for non-members, which turned reach into repeat purchase. That matters for a share objective, since share held through repeat buying is cheaper to keep than share bought with advertising.\n\nThe weakness was price. Northline cut prices across its range in the same year, and its average sale value fell 11 per cent, which undermined the premium image the video campaign was building.\n\nOverall the strategies were largely effective: share reached 11 per cent, close to the target, but the pricing decision cost margin and probably limited how much of the gain will last.",
+          "stub": {
+            "score": 18,
+            "summary": "Sets a measurable objective, judges each strategy against it with figures, weighs a weakness and sustains one argument to a supported judgement.",
+            "notices": [
+              {
+                "quote": "share reached 11 per cent, close to the target",
+                "head": "The judgement is measured against the objective",
+                "why": "This is what evaluation asks for."
+              }
+            ]
+          },
+          "live": {
+            "min": 14
+          }
+        },
+        {
+          "id": "er15-no-evidence",
+          "kind": "knowledge without a real business",
+          "text": "Effective marketing starts with clear objectives, such as increasing market share, building brand awareness or entering a new market. Strategies are then chosen across the marketing mix of product, price, promotion and place.\n\nPromotion through social media is usually effective for younger markets because it is cheap and targeted. Loyalty programs are effective because they increase repeat purchase. Price cuts can increase sales in the short term but can damage a premium brand.\n\nTherefore marketing strategies are effective when they are aligned with the objectives they are meant to achieve.",
+          "stub": {
+            "score": 8,
+            "summary": "Accurate course knowledge, but no real business and no evidence, so nothing is actually evaluated.",
+            "across": [
+              {
+                "head": "No business studied",
+                "why": "The question asks about a business you have studied; the response stays general throughout."
+              }
+            ]
+          },
+          "live": {
+            "min": 3,
+            "max": 12
+          }
+        },
+        {
+          "id": "er15-unfinished",
+          "kind": "unfinished",
+          "text": "Northline Sportswear set a marketing objective of increasing its share of the teenage market. Its first strategy was to move from print advertising to short video content on social platforms.\n\nThis was effective because",
+          "stub": {
+            "score": 4,
+            "summary": "States an objective and one strategy, then stops before any evaluation.",
+            "notices": [
+              {
+                "quote": "This was effective because",
+                "head": "The response stops mid-sentence",
+                "why": "The evaluation the question asks for never arrives."
+              }
+            ]
+          },
+          "live": {
+            "max": 9
+          }
+        },
+        {
+          "id": "er15-descriptive",
+          "kind": "relevant knowledge, mostly descriptive",
+          "text": "Northline Sportswear is an Australian sportswear retailer that sells clothing and shoes to young people. Its target market is teenagers aged 13 to 17, and its marketing strategies cover the four Ps of the marketing mix.\n\nFor product, Northline sells running shoes, training gear and a range of hoodies. It releases new designs each season and uses bright colours that appeal to its target market.\n\nFor promotion, Northline moved from print advertising to short videos on social media platforms. The videos show young athletes wearing its products, and some of them feature influencers. It also has a loyalty app where members get early access to new releases.\n\nFor place, Northline sells through its own stores in shopping centres and through its website, which offers free delivery on orders over $80.\n\nFor price, Northline reduced its prices across the range in 2023.\n\nThese are the main marketing strategies that Northline uses, and they help it to achieve its marketing objectives.",
+          "live": {
+            "min": 4,
+            "max": 8
+          },
+          "stub": {
+            "score": 6,
+            "summary": "Stand-in reply for the offline benchmark; not a judgement.",
+            "notices": [
+              {
+                "quote": "Northline Sportswear is an Australian sportswear retailer that sells clothing and shoes to young people",
+                "head": "Stand-in observation",
+                "why": "Stand-in reason."
+              }
+            ]
+          }
+        },
+        {
+          "id": "er15-case-heavy",
+          "kind": "case-study heavy, weak argument",
+          "text": "Northline Sportswear is a sportswear business that was founded in 2009 and has 46 stores. In 2023 it had 8 per cent of the 13 to 17 year old market and it wanted to reach 12 per cent.\n\nIn February 2023 Northline stopped its print advertising, which had cost 19 cents per view. It started making short videos for social media, which cost 4 cents per view. It made 140 videos in the year and worked with six influencers. Site visits from the age group went up by a third within six months.\n\nIn April 2023 it launched a loyalty app. By the end of the year the app had 85 000 members. Members bought 2.4 times a year and non-members bought 1.3 times a year. Members got early access to new releases and a birthday discount.\n\nIn June 2023 Northline cut its prices across the range. Its average sale value fell by 11 per cent. It also opened four new stores in regional towns.\n\nAt the end of 2023 Northline's market share was 11 per cent.\n\nIn conclusion, Northline used many marketing strategies in 2023 and these were the results.",
+          "live": {
+            "min": 5,
+            "max": 9
+          },
+          "stub": {
+            "score": 7,
+            "summary": "Stand-in reply for the offline benchmark; not a judgement.",
+            "notices": [
+              {
+                "quote": "Northline Sportswear is a sportswear business that was founded in 2009 and has 46 stores",
+                "head": "Stand-in observation",
+                "why": "Stand-in reason."
+              }
+            ]
+          }
+        },
+        {
+          "id": "er15-verbose",
+          "kind": "repetitive and verbose",
+          "text": "Marketing strategies are the strategies that a business uses for its marketing, and they are very important because marketing is one of the most important parts of any business. In this response I will evaluate how effective marketing strategies are in achieving marketing objectives, using Northline Sportswear as the business I have studied, because Northline Sportswear is a business that uses marketing strategies to achieve its marketing objectives.\n\nNorthline Sportswear's marketing objective was to increase its share of the teenage market. Increasing its share of the teenage market was its objective, which means it wanted more teenagers to buy from Northline rather than from other businesses. This was the marketing objective that its marketing strategies were meant to achieve.\n\nThe first marketing strategy was moving from print advertising to short videos on social media. This was effective. It was effective because teenagers use social media a lot, so the videos reached teenagers, and reaching teenagers is what the business wanted to do in order to increase its share of the teenage market. Because the videos reached teenagers, the strategy was effective, and it was an effective strategy for achieving the objective of increasing its share of the teenage market.\n\nThe second marketing strategy was a loyalty app. The loyalty app was also effective. Loyalty apps are effective because they make customers loyal, and loyal customers come back and buy again, which means they buy more. The loyalty app made customers loyal to Northline, so it was effective in helping Northline to increase its share of the teenage market, which was its objective.\n\nThe third marketing strategy was cutting prices. Cutting prices can be effective because lower prices mean more people can afford to buy the products. However, cutting prices can also be less effective, because it can make the brand look cheap, and a brand that looks cheap may not be as appealing. So cutting prices was effective in some ways but not effective in other ways.\n\nOverall, in conclusion, Northline Sportswear's marketing strategies were effective in achieving its marketing objectives. They were effective because the videos reached teenagers and the loyalty app made customers loyal, which both helped to increase its share of the teenage market. The pricing strategy was effective in some ways and not in others. Therefore, overall, the marketing strategies were mostly effective in achieving the marketing objective of increasing Northline's share of the teenage market.",
+          "live": {
+            "min": 6,
+            "max": 10
+          },
+          "stub": {
+            "score": 8,
+            "summary": "Stand-in reply for the offline benchmark; not a judgement.",
+            "notices": [
+              {
+                "quote": "Marketing strategies are the strategies that a business uses for its marketing, and they are very important because marketing is one of the most important parts of any business",
+                "head": "Stand-in observation",
+                "why": "Stand-in reason."
+              }
+            ]
+          }
+        },
+        {
+          "id": "er15-misconception",
+          "kind": "misconception, wrong turn",
+          "text": "Northline Sportswear's marketing objective in 2023 was to increase its share of the 13 to 17 year old market from 8 to 12 per cent.\n\nIts most effective strategy was price skimming. Northline lowered its prices across its whole range, which is called price skimming, and because teenagers have limited money, lowering prices always increases sales. When sales increase, profit always increases too, so the price cut also improved Northline's profitability. Even though the average sale value fell by 11 per cent, this does not matter because more customers were buying.\n\nThe short videos on social media were also effective, but less important than price. Social media is a form of mass marketing because everyone uses it, so Northline reached the whole market rather than one segment, which is the best way to gain market share.\n\nThe loyalty app was the least effective strategy, because giving members early access to new products is a cost to the business and does not attract new customers, and market share only grows from new customers.\n\nOverall the strategies were highly effective, mostly because of price skimming, and Northline should keep cutting prices to reach its 12 per cent target.",
+          "live": {
+            "min": 3,
+            "max": 9
+          },
+          "stub": {
+            "score": 5,
+            "summary": "Stand-in reply for the offline benchmark; not a judgement.",
+            "notices": [
+              {
+                "quote": "Northline Sportswear's marketing objective in 2023 was to increase its share of the 13 to 17 year old market from 8 to 12 per cent",
+                "head": "Stand-in observation",
+                "why": "Stand-in reason."
+              }
+            ]
+          }
+        },
+        {
+          "id": "er15-strong-reworded",
+          "kind": "strong, substantially different wording",
+          "text": "I would judge Northline Sportswear's marketing as mostly successful, measured against the specific goal the business set itself: in 2023 it wanted a bigger slice of the market made up of 13 to 17 year olds, moving from 8 per cent of that market to 12.\n\nThe switch away from print toward short videos did what it was meant to do. By Northline's own figures, each view cost it 4 cents, where a print view had cost 19, and within half a year visits to its website from that age group were up by a third. The money was buying the right audience, and buying it cheaply.\n\nThe app for members did a different job. Members bought from Northline 2.4 times a year while everyone else bought 1.3 times. Getting a teenager to try the brand once does not move the share figure for long; getting them to keep returning does, and keeping a customer costs less than winning a new one.\n\nWhere Northline went wrong was price. It made everything cheaper in the same year, and the average amount spent per sale dropped by 11 per cent. A brand trying to look desirable to teenagers through its videos was telling them at the same time that it was a discount label.\n\nSo the goal was nearly reached, with share ending at 11 per cent, but the discounting gave away margin and will probably cost it some of what it gained.",
+          "live": {
+            "min": 13,
+            "max": 19
+          },
+          "stub": {
+            "score": 16,
+            "summary": "Stand-in reply for the offline benchmark; not a judgement.",
+            "notices": [
+              {
+                "quote": "I would judge Northline Sportswear's marketing as mostly successful, measured against the specific goal the business set itself: in 2023 it wanted a bigger slice of the market made up of 13 to 17 year olds, moving from 8 per cent of that market to 12",
+                "head": "Stand-in observation",
+                "why": "Stand-in reason."
+              }
+            ]
+          }
+        },
+        {
+          "id": "er15-name-drop",
+          "kind": "strong knowledge, case study named but not applied",
+          "text": "Marketing objectives should be specific and measurable, such as increasing market share in a target segment, raising brand awareness or improving customer retention. A marketing strategy is effective only if it moves the business towards the objective it was designed for, so evaluation has to start from the objective rather than from the marketing mix.\n\nPromotion strategies such as digital and social media marketing are generally effective for a teenage target market, because they allow precise targeting and a lower cost per contact than traditional media, as Northline Sportswear found. Relationship marketing, for example a loyalty program like Northline's app, supports market share objectives by increasing repeat purchase and customer lifetime value, which is cheaper than acquiring new customers.\n\nPricing strategies need to be consistent with positioning. Discounting may raise sales volume in the short term if demand is price elastic, but it can undermine a premium position that the promotion strategy is trying to build, which happened at Northline.\n\nTherefore marketing strategies are effective when they are integrated and aligned with clear objectives, as businesses such as Northline Sportswear show.",
+          "live": {
+            "min": 7,
+            "max": 12
+          },
+          "stub": {
+            "score": 9,
+            "summary": "Stand-in reply for the offline benchmark; not a judgement.",
+            "notices": [
+              {
+                "quote": "Marketing objectives should be specific and measurable, such as increasing market share in a target segment, raising brand awareness or improving customer retention",
+                "head": "Stand-in observation",
+                "why": "Stand-in reason."
+              }
+            ]
+          }
+        },
+        {
+          "id": "er15-strong-unfinished",
+          "kind": "the strong response, unfinished",
+          "text": "Northline Sportswear's marketing objective for 2023 was to lift its share of the 13 to 17 year old market from 8 to 12 per cent, and its strategies are best judged against that number.\n\nThe move from print to short-form video was effective against that objective. The business reported a cost per view of 4 cents against 19 cents for its print campaigns, and site visits from the target age group rose by a third within six months, so the strategy reached the intended buyers more cheaply.\n\nThe loyalty app was also effective, because members bought 2.4 times a year against 1.3 for non-members, which turned reach into repeat purchase. That matters for a share objective, since share held through repeat buying is cheaper to keep than share bought with advertising.\n\nThe weakness was price. Northline cut prices across its range in the same year, and",
+          "live": {
+            "min": 9,
+            "max": 15
+          },
+          "stub": {
+            "score": 12,
+            "summary": "Stand-in reply for the offline benchmark; not a judgement.",
+            "notices": [
+              {
+                "quote": "Northline Sportswear's marketing objective for 2023 was to lift its share of the 13 to 17 year old market from 8 to 12 per cent, and its strategies are best judged against that number",
+                "head": "Stand-in observation",
+                "why": "Stand-in reason."
+              }
+            ]
+          }
+        },
+        {
+          "id": "er15-len-400",
+          "kind": "timing, about 400 words",
+          "text": "Northline Sportswear's marketing objective for 2023 was to lift its share of the 13 to 17 year old market from 8 to 12 per cent. Its strategies were largely effective against that objective, but a pricing decision that contradicted its promotion limited how much of the gain is likely to last.\n\nThe move from print advertising to short-form video was the most effective strategy. Market research showed that teenagers spent far more time on video platforms than with print, and the cost per view fell from 19 cents to 4 cents, so the same budget reached almost five times as many people. Site visits from the target age group rose by a third within six months. The limitation is that visits are not purchases, so the videos built awareness rather than proving sales.\n\nThe loyalty app supplied that proof. Members bought 2.4 times a year against 1.3 times for non-members, which turned reach into repeat purchase. That matters for a share objective, because share held through repeat buying is cheaper to keep than share bought with advertising, and the app gave the customers the videos attracted a reason to return.\n\nThe weakness was price. Northline cut prices across its range in the same year, and average sale value fell by 11 per cent. The discount also undermined the premium image the videos were building, because customers who see an aspirational brand discounted tend to believe the cheaper message. A targeted discount, such as members-only prices through the app, would have encouraged trial without telling every customer that Northline was a discount label.\n\nThe strategies also need to be judged together. The videos created the first visit and the app turned a first purchase into a habit, so each made the other's spending more productive. The price cut worked against both: it reduced the margin that funded further videos and gave members less reason to wait for early access.\n\nOverall the strategies were largely effective. Share reached 11 per cent, close to the 12 per cent target, and the video and app strategies worked best because they reinforced each other. However, the price cut cost margin and weakened the brand's positioning, so the gain in share is less secure than the figure suggests. Northline's marketing reached the right customers and kept many of them, but its pricing made the result harder to hold in 2024.",
+          "timingOnly": true,
+          "stub": {
+            "score": 15,
+            "summary": "Stand-in reply for the offline benchmark; not a judgement.",
+            "notices": [
+              {
+                "quote": "Northline Sportswear's marketing objective for 2023 was to lift its share of the 13 to 17 year old market from 8 to 12 per cent",
+                "head": "Stand-in observation",
+                "why": "Stand-in reason."
+              }
+            ]
+          }
+        },
+        {
+          "id": "er15-len-800",
+          "kind": "timing, about 800 words",
+          "text": "Northline Sportswear is an Australian sportswear retailer with 46 stores and an online store. In 2023 its central marketing objective was to lift its share of the 13 to 17 year old market from 8 per cent to 12 per cent. This response argues that its marketing strategies were largely effective in achieving that objective, because its promotion and relationship strategies were well matched to the segment, but that a poorly integrated pricing decision weakened the result and made the gain less likely to last.\n\nNorthline's strategies were chosen for the objective rather than inherited from habit. Before 2023 it relied on print advertising, which reached parents more than teenagers. Market research in late 2022 found that its target segment spent far more time on short-form video platforms than with any print medium, so Northline segmented the market by age and lifestyle and repositioned its promotion around the 13 to 17 year old athlete. That gave every later decision a clear test: does it help Northline win and keep teenage customers?\n\nThe most effective strategy was the move from print to short-form video. Northline stopped print campaigns that had cost 19 cents per view and produced 140 short videos featuring young local athletes and six influencers. The cost per view fell to 4 cents, so the same budget reached almost five times as many people, and site visits from 13 to 17 year olds rose by a third within six months. This matters for the share objective because a teenager has to know a brand and visit it before they can buy from it. The limitation is that visits are not purchases: the traffic shows that the videos built awareness, not that they converted it into sales.\n\nThe evidence for conversion comes from the loyalty app, a relationship marketing strategy launched in April 2023. Members received early access to new releases and a birthday discount, and by the end of the year the app had 85,000 members. Members bought 2.4 times a year, compared with 1.3 times for non-members. For a share objective this is significant, because share held through repeat buying is cheaper to keep than share bought with advertising every year. The app also made the video campaign more effective, since the customers the videos attracted had a reason to keep coming back. Its weakness is that early-access rewards matter most to customers who are already enthusiastic, so it probably deepened loyalty among existing fans more than it won new ones.\n\nThe least effective strategy was price. In June 2023 Northline cut prices across its whole range to convert its new traffic into sales. Volume rose, but average sale value fell by 11 per cent, reducing the margin on every sale. More seriously, the cut contradicted the positioning the videos were building. The videos presented Northline as the brand serious young athletes wear, while the discount told the same customers it was a discount label, and when promotion and price send opposite messages, customers tend to believe the cheaper one. A targeted discount, such as members-only prices through the app, could have encouraged trial without undermining the brand.\n\nPlace played a smaller supporting role. Northline opened four regional stores and offered free delivery on online orders over $80, which reached teenagers who had seen the videos but lived far from a store. These stores are a small share of total sales, so their contribution to the share objective is modest.\n\nWeighing the strategies against each other shows why their combined effect was smaller than their separate results suggest. The videos created the first visit and the app turned a first purchase into a habit, so each made the other's spending more productive. The price cut worked against both: it reduced the margin that funded further videos and gave app members less reason to wait for early access when everything was already cheaper. A strategy that undermines the others costs twice, once in its own result and again in theirs, which is why Northline finished short of its target despite two strategies that were clearly working.\n\nTaken together, the evidence supports the judgement that Northline's marketing was largely effective. Its share of the target market rose from 8 to 11 per cent, close to the 12 per cent target. The strategies worked best where they were integrated, as when the videos attracted customers and the app kept them, and worst where they were not, as when the price cut undermined the image the videos had built. Because share held by a discount is fragile, some of the gain may be lost when prices return to normal, so Northline's marketing was effective in reaching its segment and building repeat purchase but only partly effective in securing a lasting gain in share.",
+          "timingOnly": true,
+          "stub": {
+            "score": 15,
+            "summary": "Stand-in reply for the offline benchmark; not a judgement.",
+            "notices": [
+              {
+                "quote": "Northline Sportswear is an Australian sportswear retailer with 46 stores and an online store",
+                "head": "Stand-in observation",
+                "why": "Stand-in reason."
+              }
+            ]
+          }
+        },
+        {
+          "id": "er15-len-1200",
+          "kind": "timing, about 1200 words",
+          "text": "Northline Sportswear is an Australian sportswear retailer with 46 stores and an online store, and in 2023 its central marketing objective was to lift its share of the 13 to 17 year old market from 8 per cent to 12 per cent within the year. A secondary objective was to grow online sales to this segment, since teenagers increasingly browse on their phones before they buy. This response evaluates Northline's marketing strategies against those two objectives and argues that they were largely effective, because the promotion and relationship strategies were well matched to the segment, but that a poorly integrated pricing decision weakened the result and reduced the chance that the gain in share will last.\n\nThe starting point for any evaluation is whether the strategies were chosen for the objective rather than inherited from habit. Before 2023 Northline relied on print advertising in shopping-centre magazines and local newspapers, a mass-market approach that reached parents more than teenagers. Its market research in late 2022, a survey of 1,200 customers and an analysis of its own website traffic, found that its target segment spent far more time on short-form video platforms than with any print medium. Northline therefore segmented the market by age and lifestyle and repositioned its promotion around the 13 to 17 year old athlete. This is the first sign of a strategy selected for the objective rather than simply continued, and it gave every later decision a clear test: does it help Northline win and keep teenage customers?\n\nThe most effective strategy was the move from print advertising to short-form video on social media. In February 2023 Northline stopped its print campaigns, which had cost 19 cents per view, and produced 140 short videos over the year, featuring young local athletes and six influencers with followings in the target age group. The cost per view fell to 4 cents, so the same budget reached almost five times as many people. More importantly, it reached the right people: site visits from 13 to 17 year olds rose by a third within six months. This matters for the share objective because a teenager has to know a brand and visit it before they can buy from it, and the videos made Northline visible where its target buyers actually spend their time. The limitation is that visits are not purchases. On its own, the rise in traffic shows that the promotion strategy built awareness and interest; it does not prove that it converted that interest into sales. The evidence for conversion comes from the second strategy.\n\nNorthline's loyalty app, launched in April 2023, was a relationship marketing strategy designed to turn first purchases into repeat purchases. Members received early access to new releases and a birthday discount, and by the end of the year the app had 85,000 members. Members bought 2.4 times a year, compared with 1.3 times for non-members. For a market share objective this is significant. Share that is bought through advertising has to be paid for again every year, while share held through repeat buying is cheaper to keep, because retaining an existing customer costs less than acquiring a new one. The app also supported the online objective, because members were sent notifications that linked straight to the online store, and online orders from members grew faster than store sales. The app was therefore effective in its own right, and it made the video campaign more effective, since the customers the videos attracted had a reason to keep coming back. Its weakness is that early-access rewards matter most to customers who are already enthusiastic, so the app probably did more to deepen loyalty among existing fans than to win teenagers who had never shopped with Northline.\n\nThe least effective strategy was price. In June 2023 Northline cut prices across its whole range, hoping to convert the new website traffic into sales. Volume did rise, but average sale value fell by 11 per cent, which reduced the margin on every sale. The more serious problem is that the price cut contradicted the positioning that the promotion strategy was building. The videos presented Northline as the brand that serious young athletes wear, an aspirational and premium image, while the across-the-range discount told the same customers that Northline was a discount label. When promotion and price send opposite messages, customers tend to believe the cheaper message, which makes the premium positioning harder to rebuild. A more targeted approach, such as discounting only last season's stock or offering members-only prices through the app, could have encouraged trial without undermining the brand.\n\nProduct and place played supporting roles. Northline extended its training range with a line designed with two of its influencers, which gave the videos something new to promote each month and gave app members a reason to use their early access. It also opened four new stores in regional towns and offered free delivery on online orders over $80. The regional stores reached teenagers who had seen the videos but had no nearby store, and the delivery offer supported the online objective. However, the four stores account for only a small share of total sales, so their contribution to the share objective is modest, and new stores take time to become profitable.\n\nWeighing the strategies against each other shows why their combined effect was smaller than their separate results suggest. The video campaign and the app reinforced each other: the videos created the first visit, and the app turned a first purchase into a habit, so each made the other's spending more productive. The price cut, by contrast, worked against both. It reduced the margin that funded further videos, and it gave app members less reason to wait for early access when everything was already cheaper. A business can recover from a strategy that simply fails, but a strategy that undermines its other strategies costs twice, once in its own result and again in theirs. This is why Northline finished one percentage point short of its target despite two strategies that were clearly working, and why the evaluation of its marketing cannot rest on any single strategy's figures.\n\nTaken together, the evidence supports the judgement that Northline's marketing strategies were largely effective in achieving its objectives. Its share of the 13 to 17 year old market rose from 8 to 11 per cent, close to the 12 per cent target, and online sales to the segment grew as the video and app strategies intended. The strategies worked best where they were integrated, as when the videos attracted new customers and the app kept them, and worst where they were not, as when the price cut undermined the image the videos had built. Because share held by a discount is fragile, the main risk is that some of the gain will be lost when prices return to normal. Northline's marketing was therefore effective in reaching its target segment and building repeat purchase, but only partly effective in securing a lasting gain in share, and its overall success depends on whether it can restore its premium positioning in 2024.",
+          "timingOnly": true,
+          "stub": {
+            "score": 15,
+            "summary": "Stand-in reply for the offline benchmark; not a judgement.",
+            "notices": [
+              {
+                "quote": "Northline Sportswear is an Australian sportswear retailer with 46 stores and an online store, and in 2023 its central marketing objective was to lift its share of the 13 to 17 year old market from 8 per cent to 12 per cent within the year",
+                "head": "Stand-in observation",
+                "why": "Stand-in reason."
+              }
+            ]
+          }
+        }
+      ],
+      "liveOrder": [
+        [
+          "er15-strong",
+          "er15-middle"
+        ],
+        [
+          "er15-middle",
+          "er15-weak"
+        ],
+        [
+          "er15-middle",
+          "er15-unfinished"
+        ],
+        [
+          "er15-strong",
+          "er15-no-evidence"
+        ]
+      ]
+    }
+  ],
+  "progression": {
+    "_why": "The learning loop: a weak short answer is marked, the student tries again with an improved version of the same idea, and the second mark belongs to the second version while the first is never rewritten.",
+    "key": "1-0-1",
+    "from": "sa11b-partial",
+    "to": "sa11b-strong"
+  },
+  "writing": {
+    "_why": "The writing-experience bot types the strong 11(b) answer key by key, with these edits on the way, and checks nothing is lost, the caret stays where the student put it, and the draft survives navigation and a reload.",
+    "key": "1-0-1",
+    "answer": "sa11b-strong",
+    "typo": {
+      "type": "Casual van operators have no guarnteed hours",
+      "fixAt": "guarnteed",
+      "fixTo": "guaranteed"
+    },
+    "insert": {
+      "after": "no paid leave",
+      "text": " or sick leave"
+    }
+  },
+  "benchmarks": {
+    "er15": {
+      "_why": "The Extended Response benchmark from bots Run 2 (21 October 2026, live site d3cae7f, production grader). Question 15 of the synthetic Business Studies paper, version 2, practised as extended response in Test Mode. Every text below is frozen by its sha256. The expectations were written down before any live marking: the panel marks are the medians of independent judges (a blind classification of the first eleven, then a recheck of the revised and added texts) and are reference points, not ground truth. `hard` are the comparisons the owner set; `soft` are the panel's. Run it with `npm run er-benchmark` (offline) or `npm run er-benchmark:live` (spends marking credits). The timing answers carry no expectation about marks: they are for latency only.",
+      "question": "15",
+      "key": "3-0",
+      "paperVersion": "2",
+      "answers": [
+        "er15-weak",
+        "er15-middle",
+        "er15-strong",
+        "er15-no-evidence",
+        "er15-unfinished",
+        "er15-descriptive",
+        "er15-case-heavy",
+        "er15-verbose",
+        "er15-misconception",
+        "er15-strong-reworded",
+        "er15-name-drop",
+        "er15-strong-unfinished"
+      ],
+      "timing": [
+        "er15-len-400",
+        "er15-len-800",
+        "er15-len-1200"
+      ],
+      "profiles": {
+        "er15-weak": "very weak/minimal",
+        "er15-middle": "competent middle response",
+        "er15-strong": "strong response",
+        "er15-no-evidence": "strong knowledge, no case study at all (corpus v2; judges: thinner knowledge than the profile asks)",
+        "er15-unfinished": "unfinished (a two-sentence stub)",
+        "er15-descriptive": "relevant knowledge but mostly descriptive",
+        "er15-case-heavy": "case-study-heavy but weak argument",
+        "er15-verbose": "repetitive/verbose",
+        "er15-misconception": "misconception/wrong turn",
+        "er15-strong-reworded": "strong response using substantially different wording",
+        "er15-name-drop": "strong knowledge but weak case-study application",
+        "er15-strong-unfinished": "unfinished equivalent of the strong response"
+      },
+      "sha256": {
+        "er15-weak": "11cc66ea82e0de2c1297e5385beeba4314a4c3d6644f3c044cf7b866d1336edd",
+        "er15-middle": "07fcd95dcc7e4587002cea553b15a067128b14d99641381533e01d87c72c4380",
+        "er15-strong": "605645fb6dbe042d6b6ddd5bfc534ff54dbad1bd1ff213cee6b950847825b48b",
+        "er15-no-evidence": "9c6c8135657c76c93beee6374dcd414d0755259b3bb0021579da514c27f01779",
+        "er15-unfinished": "a3eae98cb065ce746d97d1ab5594ea69678ae13c63bd926f13f1489e8971fa89",
+        "er15-descriptive": "1a4999da3e1a16bf6cff8622e5fc1c73338caee83b55f75a137fa34b3eb134d9",
+        "er15-case-heavy": "5eacd148891d92ecd0bb068d53a80cee1db056e2f23e75f57ea12e70c686e84d",
+        "er15-verbose": "80aed7a91a6813a6dfd1d6cfe1b7efda3559e104d3811acdaaddf6472da636f3",
+        "er15-misconception": "6527f2c6804bd980751332cce430f7d0bcf48d969423352feb95487854c49d53",
+        "er15-strong-reworded": "48acf9f706124db7f0616352959259f8a921e44bc46cb81ae79dad9377bc3b02",
+        "er15-name-drop": "84785d0e359d90b7868ddd58f436befae7a0e7aac14c88d04bcd871297725b85",
+        "er15-strong-unfinished": "ecfe6f2f6db2acb4abb7f6ee13496434553ba0c4f741d08c5c5c6fb780035f0b",
+        "er15-len-400": "bffd61a02b8529efc9a6fca30f0a52b0f544121441b71d50960ffe760798fad6",
+        "er15-len-800": "34885b2e6f3da9060a095230ad1dd07bb516570d82799facc91f10d46ff8e985",
+        "er15-len-1200": "4083822b73128114693bce2d58f87f89e4207806fe9fe51d497e04c5b07cbe7e"
+      },
+      "words": {
+        "er15-weak": 36,
+        "er15-middle": 176,
+        "er15-strong": 195,
+        "er15-no-evidence": 90,
+        "er15-unfinished": 34,
+        "er15-descriptive": 159,
+        "er15-case-heavy": 191,
+        "er15-verbose": 400,
+        "er15-misconception": 196,
+        "er15-strong-reworded": 241,
+        "er15-name-drop": 181,
+        "er15-strong-unfinished": 146,
+        "er15-len-400": 394,
+        "er15-len-800": 791,
+        "er15-len-1200": 1177
+      },
+      "panel": {
+        "er15-weak": {
+          "median": 1,
+          "range": "0-3",
+          "blind": [
+            {
+              "judge": 1,
+              "profile": "P1",
+              "mark": 1,
+              "range": "0-2"
+            },
+            {
+              "judge": 2,
+              "profile": "P1",
+              "mark": 2,
+              "range": "1-3"
+            },
+            {
+              "judge": 3,
+              "profile": "P1",
+              "mark": 1,
+              "range": "0-2"
+            }
+          ],
+          "recheck": []
+        },
+        "er15-middle": {
+          "median": 12,
+          "range": "9-14",
+          "blind": [
+            {
+              "judge": 1,
+              "profile": "P3",
+              "mark": 11,
+              "range": "9-13"
+            },
+            {
+              "judge": 2,
+              "profile": "P3",
+              "mark": 12,
+              "range": "10-14"
+            },
+            {
+              "judge": 3,
+              "profile": "P3",
+              "mark": 12,
+              "range": "10-14"
+            }
+          ],
+          "recheck": []
+        },
+        "er15-strong": {
+          "median": 16,
+          "range": "14-19",
+          "blind": [
+            {
+              "judge": 1,
+              "profile": "P4",
+              "mark": 16,
+              "range": "14-18"
+            },
+            {
+              "judge": 2,
+              "profile": "P4",
+              "mark": 16,
+              "range": "14-18"
+            },
+            {
+              "judge": 3,
+              "profile": "P4",
+              "mark": 16,
+              "range": "14-18"
+            }
+          ],
+          "recheck": [
+            {
+              "judge": 1,
+              "mark": 17,
+              "range": "15-19"
+            },
+            {
+              "judge": 2,
+              "mark": 17,
+              "range": "15-19"
+            },
+            {
+              "judge": 3,
+              "mark": 15,
+              "range": "13-18"
+            }
+          ]
+        },
+        "er15-no-evidence": {
+          "median": 5,
+          "range": "3-7",
+          "blind": [
+            {
+              "judge": 1,
+              "profile": "P5",
+              "mark": 5,
+              "range": "4-7"
+            },
+            {
+              "judge": 2,
+              "profile": "P5",
+              "mark": 5,
+              "range": "3-7"
+            },
+            {
+              "judge": 3,
+              "profile": "P5",
+              "mark": 5,
+              "range": "3-7"
+            }
+          ],
+          "recheck": []
+        },
+        "er15-unfinished": {
+          "median": 2,
+          "range": "1-4",
+          "blind": [
+            {
+              "judge": 1,
+              "profile": "P9",
+              "mark": 2,
+              "range": "1-3"
+            },
+            {
+              "judge": 2,
+              "profile": "P9",
+              "mark": 2,
+              "range": "1-4"
+            },
+            {
+              "judge": 3,
+              "profile": "P9",
+              "mark": 2,
+              "range": "1-3"
+            }
+          ],
+          "recheck": []
+        },
+        "er15-descriptive": {
+          "median": 6,
+          "range": "4-8",
+          "blind": [
+            {
+              "judge": 1,
+              "profile": "P2",
+              "mark": 6,
+              "range": "4-8"
+            },
+            {
+              "judge": 2,
+              "profile": "P2",
+              "mark": 6,
+              "range": "4-8"
+            },
+            {
+              "judge": 3,
+              "profile": "P2",
+              "mark": 5,
+              "range": "4-7"
+            }
+          ],
+          "recheck": [
+            {
+              "judge": 1,
+              "mark": 8,
+              "range": "6-10"
+            },
+            {
+              "judge": 2,
+              "mark": 6,
+              "range": "4-8"
+            },
+            {
+              "judge": 3,
+              "mark": 6,
+              "range": "4-8"
+            }
+          ],
+          "note": "Blind panel judged a version with the loyalty app under price; it was moved under promotion before freezing and rechecked."
+        },
+        "er15-case-heavy": {
+          "median": 7,
+          "range": "5-9",
+          "blind": [
+            {
+              "judge": 1,
+              "profile": "P7",
+              "mark": 7,
+              "range": "5-9"
+            },
+            {
+              "judge": 2,
+              "profile": "P7",
+              "mark": 7,
+              "range": "5-9"
+            },
+            {
+              "judge": 3,
+              "profile": "P7",
+              "mark": 7,
+              "range": "5-9"
+            }
+          ],
+          "recheck": []
+        },
+        "er15-verbose": {
+          "median": 8,
+          "range": "6-10",
+          "blind": [
+            {
+              "judge": 1,
+              "profile": "P8",
+              "mark": 8,
+              "range": "6-10"
+            },
+            {
+              "judge": 2,
+              "profile": "P8",
+              "mark": 8,
+              "range": "6-10"
+            },
+            {
+              "judge": 3,
+              "profile": "P8",
+              "mark": 8,
+              "range": "6-10"
+            }
+          ],
+          "recheck": []
+        },
+        "er15-misconception": {
+          "median": 5,
+          "range": "3-9",
+          "blind": [
+            {
+              "judge": 1,
+              "profile": "P10",
+              "mark": 5,
+              "range": "4-8"
+            },
+            {
+              "judge": 2,
+              "profile": "P10",
+              "mark": 7,
+              "range": "5-9"
+            },
+            {
+              "judge": 3,
+              "profile": "P10",
+              "mark": 5,
+              "range": "3-7"
+            }
+          ],
+          "recheck": []
+        },
+        "er15-strong-reworded": {
+          "median": 16,
+          "range": "13-19",
+          "blind": [
+            {
+              "judge": 1,
+              "profile": "P11",
+              "mark": 15,
+              "range": "13-17"
+            },
+            {
+              "judge": 2,
+              "profile": "P11",
+              "mark": 15,
+              "range": "13-18"
+            },
+            {
+              "judge": 3,
+              "profile": "P11",
+              "mark": 15,
+              "range": "13-17"
+            }
+          ],
+          "recheck": [
+            {
+              "judge": 1,
+              "mark": 17,
+              "range": "15-19"
+            },
+            {
+              "judge": 2,
+              "mark": 17,
+              "range": "15-19"
+            },
+            {
+              "judge": 3,
+              "mark": 15,
+              "range": "13-18"
+            }
+          ],
+          "note": "Blind panel judged an earlier paraphrase; three meaning drifts were corrected and rechecked before freezing."
+        },
+        "er15-name-drop": {
+          "median": 9,
+          "range": "7-12",
+          "blind": [
+            {
+              "judge": 1,
+              "profile": "P6",
+              "mark": 9,
+              "range": "7-11"
+            },
+            {
+              "judge": 2,
+              "profile": "P6",
+              "mark": 10,
+              "range": "8-12"
+            },
+            {
+              "judge": 3,
+              "profile": "P6",
+              "mark": 9,
+              "range": "7-11"
+            }
+          ],
+          "recheck": []
+        },
+        "er15-strong-unfinished": {
+          "median": 12,
+          "range": "9-15",
+          "blind": [],
+          "recheck": [
+            {
+              "judge": 1,
+              "mark": 13,
+              "range": "11-15"
+            },
+            {
+              "judge": 2,
+              "mark": 12,
+              "range": "10-14"
+            },
+            {
+              "judge": 3,
+              "mark": 11,
+              "range": "9-13"
+            }
+          ],
+          "note": "Added after the blind check; judged by the recheck panel only."
+        }
+      },
+      "hard": [
+        {
+          "a": "er15-strong",
+          "op": ">=",
+          "b": "er15-weak",
+          "why": "strong must not score below weak"
+        },
+        {
+          "a": "er15-middle",
+          "op": ">",
+          "b": "er15-descriptive",
+          "why": "genuine analysis outperforms description"
+        },
+        {
+          "a": "er15-strong",
+          "op": ">",
+          "b": "er15-descriptive",
+          "why": "genuine analysis outperforms description"
+        },
+        {
+          "a": "er15-strong",
+          "op": ">",
+          "b": "er15-case-heavy",
+          "why": "analysis outperforms retold case data"
+        },
+        {
+          "a": "er15-strong",
+          "op": ">",
+          "b": "er15-name-drop",
+          "why": "genuine application outperforms name-dropping"
+        },
+        {
+          "a": "er15-strong",
+          "op": ">",
+          "b": "er15-strong-unfinished",
+          "why": "substantially complete outperforms its unfinished equivalent"
+        },
+        {
+          "a": "er15-middle",
+          "op": ">",
+          "b": "er15-unfinished",
+          "why": "complete outperforms the unfinished stub"
+        },
+        {
+          "a": "er15-strong-reworded",
+          "op": "within 2 of",
+          "b": "er15-strong",
+          "why": "alternative wording is not penalised"
+        }
+      ],
+      "soft": [
+        {
+          "a": "er15-middle",
+          "op": ">=",
+          "b": "er15-case-heavy"
+        },
+        {
+          "a": "er15-middle",
+          "op": ">=",
+          "b": "er15-verbose"
+        },
+        {
+          "a": "er15-middle",
+          "op": ">",
+          "b": "er15-misconception"
+        },
+        {
+          "a": "er15-name-drop",
+          "op": ">=",
+          "b": "er15-no-evidence"
+        },
+        {
+          "a": "er15-strong-unfinished",
+          "op": ">",
+          "b": "er15-descriptive"
+        },
+        {
+          "a": "er15-strong",
+          "op": ">=",
+          "b": "er15-middle"
+        }
+      ],
+      "latencyTarget": {
+        "seconds": 40,
+        "percentile": 95,
+        "of": "usable marking results for realistic extended responses (the timing answers)"
+      },
+      "frozenAt": "2026-10-21T01:38:58.259Z"
+    }
+  }
+}
