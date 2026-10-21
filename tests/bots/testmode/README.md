@@ -114,6 +114,27 @@ MARGINAL_SITE=https://willwint2104.github.io/FlashCards/ MARGINAL_LIVE=1 node te
 node tests/bots/testmode/er-analyze.js tests/out/bots/er15/<run>/run.json
 ```
 
+`er-latency.js` measures the marker alone. It sends the three timing answers
+straight to a worker, one request at a time. The bodies are the ones this
+checkout's app sent in an offline `--timing` run. For every request it records:
+
+- the status;
+- the total time and the time per pass;
+- the model;
+- the input and output tokens.
+
+It then reports the 95th percentile of usable marks per length against the
+target. A request that never gave a usable mark counts as never arriving. The
+variants are `lean1` (the lean Test Mode contract, one pass), `lean2` (the same
+with the diagnosis first), `full` (the full review) and `asis`. A worker that
+does not know the contract ignores it, and each row records which contract
+actually marked it.
+
+```
+MARGINAL_WORKER=https://<worker> npm run er-latency
+MARGINAL_WORKER=https://<worker> MARGINAL_VARIANTS=lean1,lean2,full MARGINAL_REPEAT=5 node tests/bots/testmode/er-latency.js
+```
+
 It is a quality command, run on purpose, never part of the Fast or Checkpoint
 gates. On a deployed site it signs in through a stand-in Supabase client (a
 sample student); marking sees exactly what a signed-in student sends.

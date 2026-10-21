@@ -2136,6 +2136,14 @@ module.exports = [
     why: "Run 2 showed 14 empty quotations under In your response; an analysis that stopped counting them would report the defect fixed",
   },
   {
+    id: "er15-latency-failure-ignored",
+    file: "tests/bots/testmode/er-latency.js",
+    find: "    const arrival = rs.map(r => r.usable ? r.totalMs : Infinity);",
+    replace: "    const arrival = rs.filter(r => r.usable).map(r => r.totalMs);",
+    owner: "t41",
+    why: "the latency percentile was taken over the requests that came back marked, so a marker that failed often still met the 40 second target",
+  },
+  {
     id: "bots-inline-range-check-returns",
     file: "tests/ui76.js",
     find: "    ok(X.inRange(got, a.live), ",

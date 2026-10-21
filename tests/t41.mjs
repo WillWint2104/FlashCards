@@ -87,8 +87,23 @@ const raw = JSON.stringify(BASE);
 ok(!/"body"|"reply"|"ladder"|"code"\s*:/.test(raw), 'it holds no request bodies, model replies, model sentences or class code fields');
 ok((raw.match(/12Ec126/g) || []).length === 1, 'the class code appears only in the note on the stand-in sign-in');
 
+console.log('--- latency counts only usable marks, and a failure as never arriving');
+const L = require(path.join(DIR, 'er-latency.js'));
+ok(L.usableMark(200, { score: 12 }, 20) && L.usableMark(200, { score: 0 }, 20), 'a 200 with a whole-number mark in range is usable, zero included');
+ok([[200, { score: 10.5 }], [200, { score: 21 }], [200, { score: '12' }], [200, { score: 12, error: 'x' }], [502, { score: 12 }], [null, null]].every(([st, r]) => !L.usableMark(st, r, 20)),
+  'a fraction, a mark out of range, a string, an error, a non-200 and no reply are not usable');
+const row = (ms, usable, id) => ({ variant: 'lean1', answer: id || 'er15-len-400', totalMs: ms, usable });
+const fast = Array.from({ length: 19 }, (_, i) => row(10000 + i * 100, true));
+const S1 = L.summarise(fast.concat([row(12000, true)]), ['lean1']).lean1.all;
+const S2 = L.summarise(fast.slice(1).concat([row(500, false), row(600, false)]), ['lean1']).lean1.all;
+const S3 = L.summarise(fast.concat([row(500, false)]), ['lean1']).lean1.all;
+ok(S1.meetsTarget === true && S1.p95 === 11800 && S1.usable === 20, 'twenty usable marks under 40 s meet the target: p95 ' + S1.p95);
+ok(S2.meetsTarget === false && S2.p95 === null && S2.usable === 18, 'two requests in twenty with no usable mark miss it, however fast they failed: ' + JSON.stringify([S2.p95, S2.meetsTarget]));
+ok(S3.meetsTarget === true && S3.usable === 19 && S3.n === 20, 'one in twenty is the 5% the target allows, and the failure is still counted: ' + JSON.stringify([S3.usable, S3.n]));
+ok(L.summarise(fast.slice(1).concat([row(41000, true), row(45000, true)]), ['lean1']).lean1.all.meetsTarget === false, 'and two usable marks past 40 s miss it too');
+
 console.log('--- the harness and the analysis parse');
-for (const f of ['er-benchmark.js', 'er-analyze.js']) { const r = spawnSync(process.execPath, ['--check', path.join(DIR, f)]); ok(r.status === 0, f + ' parses: ' + String(r.stderr).slice(0, 200)); }
+for (const f of ['er-benchmark.js', 'er-analyze.js', 'er-latency.js']) { const r = spawnSync(process.execPath, ['--check', path.join(DIR, f)]); ok(r.status === 0, f + ' parses: ' + String(r.stderr).slice(0, 200)); }
 
 console.log(`t41 ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
