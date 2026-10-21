@@ -15,7 +15,8 @@
     "testmode-bots:live": "node build.js && node tests/mkshim.js && python3 tests/mkwalk.py && MARGINAL_LIVE=1 node tests/ui76.js --all",
     "er-benchmark": "node build.js && node tests/mkshim.js && python3 tests/mkwalk.py && node tests/bots/testmode/er-benchmark.js",
     "er-benchmark:live": "node build.js && node tests/mkshim.js && python3 tests/mkwalk.py && MARGINAL_LIVE=1 node tests/bots/testmode/er-benchmark.js",
-    "er-benchmark:timing": "node build.js && node tests/mkshim.js && python3 tests/mkwalk.py && MARGINAL_LIVE=1 node tests/bots/testmode/er-benchmark.js --timing"
+    "er-benchmark:timing": "node build.js && node tests/mkshim.js && python3 tests/mkwalk.py && MARGINAL_LIVE=1 node tests/bots/testmode/er-benchmark.js --timing",
+    "er-latency": "node build.js && node tests/mkshim.js && python3 tests/mkwalk.py && node tests/bots/testmode/er-benchmark.js --timing && node tests/bots/testmode/er-latency.js"
   },
   "devDependencies": {
     "postcss-html": "^1.7.0",

@@ -118,6 +118,14 @@ function reviewFor(a, sent, marks) {
   (s.across || []).forEach(n => paragraphs[paragraphs.length - 1].sentences.push({ text: n.why, issues: [issue(n.head, n.why)] }));
   return { summary: s.summary, rubric: [], focus: { paragraph: 1, area: '', why: '', quote: '' }, paragraphs };
 }
+// The stubbed lean Test Mode mark (contract testmode-extended-1, tool submit_test_mark),
+// as tests/ui76.js builds it: the same stub's mark, judgement and observations.
+function leanFor(a) {
+  const s = a && a.stub ? a.stub : { score: 0, summary: 'Stand-in reply for a text the corpus does not hold.', notices: [] };
+  return { mark: s.score, judgement: s.summary, criteria: [],
+    observations: (s.notices || []).map(n => ({ head: n.head, why: n.why, quote: n.quote }))
+      .concat((s.across || []).map(n => ({ head: n.head, why: n.why, quote: '' }))) };
+}
 async function wire(p, rec) {
   // Offline, or live against the local build: nothing leaves the process but the
   // grader's requests (live) or nothing at all (offline).
@@ -167,7 +175,8 @@ async function wire(p, rec) {
       if (!/api\.anthropic\.com/.test(String(u))) return realFetch(u, init);
       const b = JSON.parse(init.body), name = b.tools[0].name;
       const DIAG = { coverage: [], arguments: [], explanation: [], evidence: [], terminology: [], repetition: [], missing: [], planVsResponse: [], firstToFix: '' };
-      const input = name === 'submit_diagnosis' ? DIAG : reviewFor(byText(body.answer), body.answer, Number(body.marks));
+      const input = name === 'submit_diagnosis' ? DIAG : name === 'submit_test_mark' ? leanFor(byText(body.answer))
+        : reviewFor(byText(body.answer), body.answer, Number(body.marks));
       return new Response(JSON.stringify({ content: [{ type: 'tool_use', name, input }], stop_reason: 'tool_use' }), { status: 200 });
     };
     try {
