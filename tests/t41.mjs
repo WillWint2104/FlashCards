@@ -167,6 +167,15 @@ const lean = (contract, passes) => ({ score: 12, max: 20, checks: { contract, pa
 ok(L.sampleOk('lean1', lean('testmode-extended-1', 1)) && !L.sampleOk('lean1', lean(undefined, 2)) && !L.sampleOk('lean1', lean('testmode-extended-1', 2)) &&
    L.sampleOk('lean2', lean('testmode-extended-1', 2)) && !L.sampleOk('lean2', lean('testmode-extended-1', 1)) && L.sampleOk('full', lean(undefined, 2)) && !L.sampleOk('full', lean('testmode-extended-1', 1)),
   'a lean sample counts only if the worker says it marked under the lean contract with that many passes, so the full review is never measured under the lean name');
+const sent = (status, reply, failure) => ({ status, reply: reply || null, failure: failure || null });
+const setup = (r, v) => L.setupError(v || 'lean1', r, L.usableMark(r.status, r.reply, 20), L.sampleOk(v || 'lean1', r.reply));
+ok([400, 403, 405, 429].every(st => /refused the request before marking it \(HTTP \d+/.test(setup(sent(st, { error: 'Class code missing or wrong' }))) || ''),
+  'a first request the worker refuses before marking (a bad body, the class code, the method, its rate limit) stops the run: nothing was measured');
+ok(/could not reach/.test(setup(sent(null, null, 'TypeError: fetch failed (ECONNREFUSED)')) || '') && /did not mark under lean1/.test(setup(sent(200, lean(undefined, 2))) || ''),
+  'so does a worker that cannot be reached, or one that marks without the lean contract');
+ok([sent(502, { error: 'upstream failed' }), sent(500, { error: 'x' }), sent(null, null, 'no reply within 240 s'), sent(200, { error: 'truncated' }), sent(200, lean('testmode-extended-1', 1))]
+    .every(r => setup(r) === null),
+  'a timeout, an upstream failure or an unmarked reply is the marker failing, so it is measured as a failed sample, and a lean mark is measured as a mark');
 const row = (ms, usable, id) => ({ variant: 'lean1', answer: id || 'er15-len-400', totalMs: ms, usable });
 const fast = Array.from({ length: 19 }, (_, i) => row(10000 + i * 100, true));
 const S1 = L.summarise(fast.concat([row(12000, true)]), ['lean1']).lean1.all;

@@ -46,8 +46,8 @@ Each answer carries:
 
 **Versioning.** Never edit an answer's text in place: a benchmark is only useful
 if the same words go in every time. To change answers, add the next version
-(`corpus.v3.json`) and point the suite at it, so results across versions are
-never compared as if they were the same run.
+(the latest is `corpus.v3.json`, so `corpus.v4.json`) and point the suite at it,
+so results across versions are never compared as if they were the same run.
 
 ## Running it
 
@@ -155,8 +155,11 @@ are:
 - `asis`: the body exactly as the app sent it.
 
 A lean sample counts only if the worker says it marked under the lean contract
-with that many passes. If a variant's first request cannot reach the worker, or
-is not marked under that contract, the run stops: nothing has been measured.
+with that many passes. If a variant's first request cannot reach the worker, is
+refused by it before marking (a 4xx: a bad body, the class code, the method or
+its rate limit), or is not marked under that contract, the run stops: nothing
+has been measured. A timeout or an upstream failure (5xx) is the marker failing,
+so it is measured as a failed sample.
 
 ```
 MARGINAL_WORKER=https://<worker> MARGINAL_VARIANTS=lean1 MARGINAL_REPEAT=5 npm run er-latency

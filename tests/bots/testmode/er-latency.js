@@ -10,8 +10,8 @@
 // never arriving. Per length it prints usable marks, the worst and next-worst
 // time, judgement time and tokens, against the practical gate (every request
 // usable, the worst under 40 s). A variant whose first request cannot reach the
-// worker, or is not marked under the lean contract, stops the run as a set-up
-// error: nothing has been measured.
+// worker, is refused by it before marking (4xx), or is not marked under the lean
+// contract, stops the run as a set-up error: nothing has been measured.
 //
 // The bodies are the ones this checkout's app sends, recorded by an offline run
 // of the harness, so nothing here builds a marking request by hand:
@@ -80,6 +80,21 @@ function sampleOk(variant, reply) {
   if (variant === 'full') return !c.contract;
   return true;
 }
+// A variant's first request is also a check on the set-up. A worker that cannot
+// be reached, that refuses the request before marking it (the worker's 4xx: a
+// bad body, the class code, the method or its rate limit), or that does not mark
+// under the lean contract, has not been measured at all, so the run stops rather
+// than record that as latency. A timeout or an upstream failure (5xx) is the
+// marker failing, so it is a sample like any later failure.
+function setupError(variant, r, marked, variantOk) {
+  const c = (r.reply && r.reply.checks) || {};
+  if (r.status == null && !/no reply within/.test(r.failure || '')) return 'could not reach ' + WORKER + ': ' + r.failure;
+  if (r.status >= 400 && r.status < 500) return 'the worker refused the request before marking it (HTTP ' + r.status +
+    (r.reply && r.reply.error ? ': ' + String(r.reply.error).slice(0, 120) : '') + '); check the class code, the bodies and the rate limit';
+  if (marked && !variantOk) return 'the worker did not mark under ' + variant + ' (contract ' + (c.contract || null) + ', passes ' +
+    (c.passes == null ? null : c.passes) + '); is it running the lean-marker branch?';
+  return null;
+}
 
 async function send(body) {
   const t0 = Date.now();
@@ -122,7 +137,7 @@ function summarise(rows, variants) {
   return out;
 }
 
-module.exports = { usableMark, sampleOk, summarise };
+module.exports = { usableMark, sampleOk, setupError, summarise };
 if (require.main === module) (async () => {
   if (!WORKER) throw new Error('set MARGINAL_WORKER to the marking worker to measure');
   const unknown = VARIANTS.filter(v => !SHAPE[v]); if (unknown.length) throw new Error('no such variant: ' + unknown);
@@ -163,14 +178,11 @@ if (require.main === module) (async () => {
         console.log([round, id, v, row.status, (row.totalMs / 1000).toFixed(1) + ' s', row.usable ? row.score + '/' + body.marks : marked ? 'marked, but not under ' + v : 'not usable',
           row.ms ? 'diag ' + row.ms.diagnosis + ' ms, judge ' + row.ms.judgement + ' ms' : '', row.usage ? 'in ' + row.usage.input + ' / out ' + row.usage.output + ' tok' : '',
           row.contract ? row.contract + ' x' + row.passes : '', row.bytes + ' B', row.failure || ''].filter(Boolean).join('  '));
-        // A variant's first request is also a check on the set-up. A worker that
-        // cannot be reached, or that does not mark under the lean contract, has
-        // not been measured at all, so the run stops rather than record that as
-        // latency. Every later failure is a sample, and counts as never arriving.
+        // Every failure after a variant's first request is a sample, and counts
+        // as never arriving.
         if (!firstOf[v]) {
           firstOf[v] = true;
-          const why = r.status == null && !/no reply within/.test(r.failure || '') ? 'could not reach ' + WORKER + ': ' + r.failure
-            : marked && !variantOk ? 'the worker did not mark under ' + v + ' (contract ' + row.contract + ', passes ' + row.passes + '); is it running the lean-marker branch?' : null;
+          const why = setupError(v, r, marked, variantOk);
           if (why) { log.aborted = why; save(); throw new Error(why + (/[.?!]$/.test(why) ? ' ' : '. ') + 'Nothing was measured; see ' + path.relative(ROOT, path.join(OUT, 'latency.json'))); }
         }
       }

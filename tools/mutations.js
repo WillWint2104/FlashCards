@@ -2350,6 +2350,22 @@ module.exports = [
     why: "a worker without the lean contract answered with the full review, and its latency was recorded as the lean one-pass marker's",
   },
   {
+    id: "er15-latency-refusal-measured",
+    file: "tests/bots/testmode/er-latency.js",
+    find: "  if (r.status >= 400 && r.status < 500) return 'the worker refused the request before marking it (HTTP ' + r.status +",
+    replace: "  if (false) return 'the worker refused the request before marking it (HTTP ' + r.status +",
+    owner: "t41",
+    why: "a worker that refused every request with the wrong class code was measured: every sample failed, and the lean marker read as failing the latency gate when nothing had been marked",
+  },
+  {
+    id: "er15-latency-upstream-failure-dropped",
+    file: "tests/bots/testmode/er-latency.js",
+    find: "  if (r.status >= 400 && r.status < 500) return 'the worker refused the request before marking it (HTTP ' + r.status +",
+    replace: "  if (r.status !== 200) return 'the worker refused the request before marking it (HTTP ' + r.status +",
+    owner: "t41",
+    why: "a first request that failed upstream stopped the run as a set-up error, so a marker failing on its first answer was never counted as failing",
+  },
+  {
     id: "bots-inline-range-check-returns",
     file: "tests/ui76.js",
     find: "    ok(X.inRange(got, a.live), ",
