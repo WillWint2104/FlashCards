@@ -1877,8 +1877,8 @@ module.exports = [
     file: "proxy/worker.js",
     find: "    if (!at) { unplaced++; sn.unplaced = true; return; }",
     replace: "    if (!at) { return; }",
-    owner: "ui76",
-    why: "a sentence the marker attributed to the student but which is not in the response was shown under In your response, as the student's own words",
+    owner: "t4",
+    why: "the worker stopped flagging a sentence the student never wrote as unplaced, so the stored reply handed a paraphrase back as the student's own line (the app's own check in state 12 now also keeps it out of In your response, so t4 holds the worker)",
   },
   {
     id: "bots-unreachable-marker-scores-zero",
@@ -2069,29 +2069,24 @@ module.exports = [
     owner: "ui72",
     why: "a phrase-matched mark was offered an AI re-mark, inviting a second authority to replace a mark the paper made final",
   },
-  // ---- a missing mark never passes a mark check (Run 1) ------------------------
-  //
-  // Run 1 spent real marking credits and reported two unmarked answers "ok",
-  // because "at most 2" accepted no mark at all. These put each form of that
-  // hole back; t40 holds the rule.
   // ---- state 12 shows only what the payload supports (bots Run 2) ------------
   //
   // Run 2 sat Question 15 against the production marker and every marked result
   // showed the student something state 12 excludes. ui70 sits the same question
-  // against a reply that breaks every rule at once, in the sitting and in the
-  // closed Review.
+  // against a reply that breaks every rule at once, and against a malformed one,
+  // in the sitting, in the closed Review and in the closed Review after a reload.
   {
     id: "tm-marker-markup-shown",
     file: "app.js",
-    find: "    const plain = (typeof s === \"string\" ? s : \"\").replace(/\\{\\{([^{}|]*)(?:\\|[^{}]*)?\\}\\}/g, \"$1\").replace(/\\{\\{|\\}\\}/g, \"\");",
-    replace: "    const plain = (typeof s === \"string\" ? s : \"\");",
+    find: "      .replace(/\\{\\{([^{}|]*)(?:\\|[^{}]*)?\\}\\}/g, \"$1\")\n      .replace(/\\{\\{([^{}|]*)\\|[^{}]*\\}?/g, \"$1\")\n      .replace(/[{}]/g, \"\");",
+    replace: "      ;",
     owner: "ui70",
     why: "the marker's glossary markup, {{term|definition|page}}, was printed to the student as it came (bots Run 2: 60 of 96 observations)",
   },
   {
     id: "tm-marker-band-language-shown",
     file: "app.js",
-    find: "      .filter(x => !TM_BAND.test(x)).join(\" \").replace(/\\s+/g, \" \").trim();",
+    find: "      .filter(x => !TM_BAND.test(x.replace(TM_BAND_PLAIN, \"\"))).join(\" \").replace(/\\s+/g, \" \").trim();",
     replace: "      .filter(x => true).join(\" \").replace(/\\s+/g, \" \").trim();",
     owner: "ui70",
     why: "band language reached the student (\"a clear, focused Band 5 response\" beside 17 of 20, bots Run 2), which state 12 excludes",
@@ -2139,11 +2134,96 @@ module.exports = [
   {
     id: "tm-marker-non-text-shown",
     file: "app.js",
-    find: "    const plain = (typeof s === \"string\" ? s : \"\").replace(",
-    replace: "    const plain = String(s == null ? \"\" : s).replace(",
+    find: "    const plain = (typeof s === \"string\" ? s : \"\")\n      .replace(/\\{\\{([^{}|]*)(?:",
+    replace: "    const plain = String(s == null ? \"\" : s)\n      .replace(/\\{\\{([^{}|]*)(?:",
     owner: "ui70",
     why: "a summary or observation that was not text, a number or an object, was printed as if the marker had written it",
   },
+  {
+    id: "tm-markup-unclosed-shown",
+    file: "app.js",
+    find: "      .replace(/\\{\\{([^{}|]*)\\|[^{}]*\\}?/g, \"$1\")",
+    replace: "      .replace(/(?!)/g, \"\")",
+    owner: "ui70",
+    why: "glossary markup missing a closing brace was shown with its pipes, definition and page number",
+  },
+  {
+    id: "tm-band-compact-missed",
+    file: "app.js",
+    find: "  const TM_BAND = /\\bbands?(?![a-z])|\\bB[1-6]\\b/i;",
+    replace: "  const TM_BAND = /\\bbands?\\b/i;",
+    owner: "ui70",
+    why: "band language written without a space, \"Band6\" or \"Band5/6\", was shown beside the mark",
+  },
+  {
+    id: "tm-band-plain-terms-dropped",
+    file: "app.js",
+    find: "!TM_BAND.test(x.replace(TM_BAND_PLAIN, \"\"))).join",
+    replace: "!TM_BAND.test(x)).join",
+    owner: "ui70",
+    why: "feedback using the subjects' own words, the RBA's target band or pay bands, was silently dropped as if it were band language",
+  },
+  {
+    id: "tm-band-sentence-cut-at-abbreviation",
+    file: "app.js",
+    find: "(?<!\\b(?:[Ee]\\.g|[Ii]\\.e|etc|vs|cf|approx|incl)\\.)",
+    replace: "",
+    owner: "ui70",
+    why: "a band sentence was cut after \"e.g.\", so dropping it left the student half a sentence",
+  },
+  {
+    id: "tm-band-headed-observation-kept",
+    file: "app.js",
+    find: "      if ((headed && !head) || (!head && !why)) return;",
+    replace: "      if (!head && !why) return;",
+    owner: "ui70",
+    why: "an observation headed only by band language lost its heading and was shown with an empty title",
+  },
+  {
+    id: "tm-empty-observation-shown",
+    file: "app.js",
+    find: "      if ((headed && !head) || (!head && !why)) return;",
+    replace: "      if (headed && !head) return;",
+    owner: "ui70",
+    why: "an observation with nothing to say was shown as an empty item",
+  },
+  {
+    id: "tm-unplaced-flag-ignored",
+    file: "app.js",
+    find: "      (!sn.unplaced && quote.trim() && graded.includes(quote) ? anchored : across).push({ quote, head, why });",
+    replace: "      (quote.trim() && graded.includes(quote) ? anchored : across).push({ quote, head, why });",
+    owner: "ui70",
+    why: "a sentence the worker could not place in the student's response was shown under \"In your response\" whenever its words happened to occur there",
+  },
+  {
+    id: "tm-observation-head-coerced",
+    file: "app.js",
+    find: "      const headed = typeof iss.head === \"string\" ? !!iss.head.trim() : iss.head != null;",
+    replace: "      const headed = !!String(iss.head || \"\").trim();",
+    owner: "ui70",
+    why: "a heading that could not be converted to text threw on every draw, so the marked question never showed",
+  },
+  {
+    id: "tm-criteria-ignore-question",
+    file: "app.js",
+    find: "    const res = paper ? ASSESS.resolveAuthority({ curriculum: ASSESS.curriculumOf(paper), question: q || null, packages: tmPackages() }) : null;",
+    replace: "    const res = paper ? ASSESS.resolveAuthority({ curriculum: ASSESS.curriculumOf(paper), packages: tmPackages() }) : null;",
+    owner: "ui70",
+    why: "a question with its own four criteria was shown the package's, not the ones the marker was sent",
+  },
+  {
+    id: "tm-criteria-not-four-shown",
+    file: "app.js",
+    find: "    return names.length === 4 ? names : [];",
+    replace: "    return names;",
+    owner: "ui70",
+    why: "a criteria list the marker does not use (not four names; it marks against its defaults) was shown as what the response was judged against",
+  },
+  // ---- a missing mark never passes a mark check (Run 1) ------------------------
+  //
+  // Run 1 spent real marking credits and reported two unmarked answers "ok",
+  // because "at most 2" accepted no mark at all. These put each form of that
+  // hole back; t40 holds the rule.
   {
     id: "bots-unmarked-passes-at-most",
     file: "tests/bots/testmode/expect.js",

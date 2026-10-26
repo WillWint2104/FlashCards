@@ -16131,20 +16131,39 @@ module.exports = {
   // own words, and a sentence that speaks of a band is left out whole, whatever
   // the model wrote. What is left empty is not shown, and neither is anything
   // that is not text.
-  const TM_BAND = /\bbands?\b/i;
+  //
+  // The band test fails closed: any "band" ("Band 4", "Band6", "the upper bands")
+  // or a bare "B6" drops its sentence. The one exception is a short, named list
+  // of the subjects' own ordinary uses of the word, the RBA's target band or a
+  // pay or income band, which are course content rather than a mark. A sentence
+  // is never split after "e.g." or "i.e.", so a band sentence goes whole rather
+  // than leaving half of itself behind.
+  const TM_BAND = /\bbands?(?![a-z])|\bB[1-6]\b/i;
+  const TM_BAND_PLAIN = /\b(?:target|income|pay|salary|wage|tax|price|age|tolerance|trading|frequency)[- ]bands?\b/gi;
   function tmMarkerText(s) {
-    const plain = (typeof s === "string" ? s : "").replace(/\{\{([^{}|]*)(?:\|[^{}]*)?\}\}/g, "$1").replace(/\{\{|\}\}/g, "");
-    return plain.split(/(?<=[.!?]["'\u201d\u2019)]*)\s+(?=["'\u201c\u2018(]?[A-Z0-9])/)
-      .filter(x => !TM_BAND.test(x)).join(" ").replace(/\s+/g, " ").trim();
+    const plain = (typeof s === "string" ? s : "")
+      .replace(/\{\{([^{}|]*)(?:\|[^{}]*)?\}\}/g, "$1")
+      .replace(/\{\{([^{}|]*)\|[^{}]*\}?/g, "$1")
+      .replace(/[{}]/g, "");
+    return plain.split(/(?<=[.!?]["'\u201d\u2019)]*)(?<!\b(?:[Ee]\.g|[Ii]\.e|etc|vs|cf|approx|incl)\.)\s+(?=["'\u201c\u2018(]?[A-Z0-9])/)
+      .filter(x => !TM_BAND.test(x.replace(TM_BAND_PLAIN, ""))).join(" ").replace(/\s+/g, " ").trim();
   }
   // The authored criteria of a question in a paper, resolved through that paper
   // and nothing else. markingContext finds the paper through EXAM.paper, which
   // only a sitting sets: a closed Review opened after a reload has none, and
   // markingContext then answers with the flashcard package's criteria, which are
   // Economics. A paper that does not resolve shows no criteria at all.
+  //
+  // The list is the one the request carried, read the way the marker reads it
+  // (markCriteria in proxy/worker.js): the first four named criteria, or, when
+  // there are not four, the marker's own defaults. So a list that is not four
+  // names is not what the response was judged against, and nothing is shown.
   function tmCriteriaOf(paper, q) {
     const res = paper ? ASSESS.resolveAuthority({ curriculum: ASSESS.curriculumOf(paper), question: q || null, packages: tmPackages() }) : null;
-    return res && res.ok ? (res.criteria || []).map(n => typeof n === "string" ? n : (n && n.name) || "").filter(Boolean) : [];
+    const sent = res && res.ok && Array.isArray(res.criteria) ? res.criteria : [];
+    if (!sent.every(n => typeof n === "string")) return [];
+    const names = sent.map(n => n.trim()).filter(Boolean).slice(0, 4);
+    return names.length === 4 ? names : [];
   }
   // A list in a stored reply, read as one only if it is one: a result is drawn
   // again on every visit, so a malformed reply must not break the question.
@@ -16217,7 +16236,8 @@ module.exports = {
     const anchored = [], across = [];
     tmItems(fb.paragraphs).forEach(p => tmItems(p.sentences).forEach(sn => tmItems(sn.issues).forEach(iss => {
       const head = tmMarkerText(iss.head), why = tmMarkerText(iss.why);
-      if ((String(iss.head || "").trim() && !head) || (!head && !why)) return;
+      const headed = typeof iss.head === "string" ? !!iss.head.trim() : iss.head != null;
+      if ((headed && !head) || (!head && !why)) return;
       const quote = typeof sn.text === "string" ? sn.text : "";
       (!sn.unplaced && quote.trim() && graded.includes(quote) ? anchored : across).push({ quote, head, why });
     })));

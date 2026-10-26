@@ -39,7 +39,7 @@ const EXT_KEYS = ['answer', 'bands', 'bandsSource', 'code', 'command', 'criteria
 // the paper without one, which the audit logged - so JSON drops the undefined key.
 const REPORT_KEYS_BEFORE = EXT_KEYS.filter(k => k !== 'model_answer');
 
-async function sit(b, section, answer, storedPaper, unreachable) {
+async function sit(b, section, answer, storedPaper, unreachable, extra) {
   const ctx = await b.newContext({ viewport: { width: 1280, height: 1000 } });
   // A paper already in a student's storage is not re-validated when it is sat, so
   // a paper saved before the validator learned a rule reaches the runtime whatever
@@ -63,7 +63,7 @@ async function sit(b, section, answer, storedPaper, unreachable) {
     const mk = Math.round(Number(s.marks)) || 20, sc = Math.min(10, mk);
     await r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
       summary: 'ok', score: sc, total: sc, max: mk, paragraphs: [], rubric: [], overall: { summary: 'ok' },
-      criteria: [], next_steps: [], missing_vocabulary: [], checks: {} }) });
+      criteria: [], next_steps: [], missing_vocabulary: [], checks: {}, ...(extra || {}) }) });
   });
   await p.goto(T + '?review=1'); await settled(p);
   await p.$$eval('.ash-link', es => { const t = es.find(x => /Test mode/i.test(x.textContent)); t && t.click(); }); await settled(p);
@@ -106,7 +106,11 @@ const S12_Q2 = 'Its video campaign cut the cost per view from 19 to 4 cents';
 const s12Reply = marks => {
   const issue = (head, why) => [{ kind: 'fix', severity: 'should', head, why, ladder: [] }];
   return { score: 9, total: 9, max: marks,
-    summary: 'The response states an objective and uses one figure. This is a Band 4 response. Name the {{promotional mix|the combination of promotional methods|0}} to sharpen it.',
+    // A band sentence in every form Run 2 and the review found: spaced, run
+    // together, and behind "e.g.". The pay bands are course content and stay.
+    summary: 'The response states an objective and uses one figure. This is a Band 4 response. It explains the pay bands. ' +
+      'It reaches for the top (e.g. Band 6) without a judgement. A Band6 answer would weigh them. ' +
+      'Name the {{promotional mix|the combination of promotional methods|0}} to sharpen it.',
     overall: { summary: 'unused' }, criteria: [], next_steps: [], missing_vocabulary: [], checks: {},
     rubric: [
       { name: 'Business terminology and concepts', score: 2, max: 5, descriptor: 'A renamed criterion: never shown.' },
@@ -117,17 +121,21 @@ const s12Reply = marks => {
     paragraphs: [
       { name: 'Paragraph 1', score: 5, max: 10, reasons: [], sentences: [
         { text: S12_Q1, issues: issue('Objective without a measure', 'State the {{market share|the proportion of sales|0}} target as a number.') },
-        { text: null, issues: issue('No conclusion', 'The response ends without weighing the strategies.') },
+        { text: null, issues: issue('No conclusion', 'The response ends without weighing the strategies. Use {{market share|the proportion of sales|0} in the verdict.') },
         { text: '', issues: issue('No judgement stated', 'Say how effective the strategies were overall.') },
         { text: 'Northline doubled its sales in a month', issues: issue('A claim not in the response', 'Said of a sentence the student never wrote.') },
+        { text: S12_Q1, issues: issue('', '') },
       ] },
       { name: 'Paragraph 2', score: 4, max: 10, reasons: [], sentences: [
         { text: S12_Q2, issues: issue('Figure used well', 'This is evidence doing work. It would reach Band 6 with a link to share.') },
-        { text: S12_Q2, issues: issue('Band 6 needs a judgement', 'Only a band label.') },
-        { text: 'x', unplaced: true, issues: issue('Unplaced by the worker', 'Said of the response as a whole.') },
+        { text: S12_Q2, issues: issue('Band 6 needs a judgement', 'Weigh the strategies against the objective.') },
+        { text: null, issues: issue('Target band used as evidence', 'You tie the claim to the RBA target band.') },
+        // In the response word for word, and still not placed by the worker.
+        { text: 'Its video campaign', unplaced: true, issues: issue('Unplaced by the worker', 'Said of the response as a whole.') },
       ] },
     ] };
 };
+const S12_SUMMARY = 'The response states an objective and uses one figure. It explains the pay bands. Name the promotional mix to sharpen it.';
 // What the result sheet shows, read off the page.
 const s12Read = p => p.evaluate(() => {
   const t = e => (e ? e.textContent.replace(/\s+/g, ' ').trim() : '');
@@ -144,12 +152,20 @@ const s12Read = p => p.evaluate(() => {
 // The app accepts it (the mark is valid), stores it whole and draws it on every
 // visit, so the sitting, the closed Review and a reload all have to survive it.
 const s12Malformed = marks => ({ score: 7, total: 7, max: marks, summary: 12, overall: 'x', checks: 'none',
-  rubric: { name: 'not a list' }, paragraphs: [null, 'text', { sentences: { text: 'x' } }, { sentences: [null, { text: S12_Q1, issues: 'not a list' }, { text: S12_Q2, issues: [null, 4, { head: 'Still shown', why: 'The one well-formed observation.' }] }] }] });
+  rubric: { name: 'not a list' }, paragraphs: [null, 'text', { sentences: { text: 'x' } }, { sentences: [null, { text: S12_Q1, issues: 'not a list' }, { text: S12_Q1, issues: [{ head: { toString: null }, why: 'A heading that is not text.' }] },
+    { text: S12_Q2, issues: [null, 4, { head: 'Still shown', why: 'The one well-formed observation.' }] }] }] });
 // Sit Question 15 against that reply, then submit the paper and open its closed
 // Review, then reload and open it again from the paper's results.
-async function sitState12(b, reply) {
+async function sitState12(b, reply, storedPaper) {
   reply = reply || s12Reply;
   const ctx = await b.newContext({ viewport: { width: 1280, height: 1000 } });
+  // As sit() seeds it, but once: the reload below must find the attempt it made.
+  if (storedPaper) await ctx.addInitScript(sp => {
+    if (sessionStorage.getItem('ui70.seeded')) return;
+    sessionStorage.setItem('ui70.seeded', '1');
+    localStorage.setItem('marginal.trial.v1', JSON.stringify({ cards: {}, endpoint: '', code: '12Ec126', log: [],
+      customSets: [], lessons: {}, exams: [Object.assign({}, sp, { id: 'walk-2025-bus' })] }));
+  }, storedPaper);
   const p = await ctx.newPage();
   const errs = []; p.on('pageerror', e => errs.push(String(e).slice(0, 200)));
   let body = null;
@@ -250,7 +266,10 @@ async function sitState12(b, reply) {
   // description, so a full, correct answer scored 0/2.
   console.log('--- sit 11(a), whose weighted points author no phrasings');
   const A11 = 'Speed. Customers at the vans wait too long in the 7am to 9am morning peak, so the vans are not serving orders quickly enough.';
-  const S = await sit(b, 'Section II - Short answer', A11);
+  // Its summary goes through the same cleaning as state 12's: Test Mode never
+  // shows the marker's band language or glossary markup, on any question.
+  const S = await sit(b, 'Section II - Short answer', A11, null, false,
+    { summary: 'Names speed correctly. This is a Band 6 answer. It ties the {{morning peak|the busiest hours|0}} to the delay.' });
   const sb = S.body || {};
   ok(!!S.body && sb.answer === A11, "11(a) goes to the marker rather than being scored against its points' descriptions");
   const pts11 = (sb.requirements || {}).accomplish || [];
@@ -258,6 +277,8 @@ async function sitState12(b, reply) {
      'its points travel as marking requirements, with their authored weights: ' + JSON.stringify(pts11));
   ok(/Marks\s*2 of 2/.test(S.sheet) && !/key points addressed/.test(S.sheet),
      "the mark is the marker's, and no tick or miss is inferred from a point's description: " + S.sheet.slice(0, 80));
+  ok(S.sheet.includes('Names speed correctly. It ties the morning peak to the delay.') && !/band|\{\{/i.test(S.sheet),
+     "a short answer's marker note is cleaned the same way: no band language, a term as its own words: " + S.sheet.slice(0, 200));
   const U = await sit(b, 'Section II - Short answer', A11, null, true);
   ok(/could not be reached/.test(U.sheet) && !/demo grade/i.test(U.sheet) && !/^\s*\d+\s*\//.test(U.sheet),
      'an unreachable marker leaves it unmarked: no demo grade, no zero: ' + U.sheet.slice(0, 120));
@@ -299,13 +320,20 @@ async function sitState12(b, reply) {
     ok(authored.length === 4 && R.sitting.mark === '9 of 20', 'the reply is marked 9 of 20, and the request carried the four authored criteria: ' + R.sitting.mark);
     ok(R.review.open === false && R.reloaded.open === false && R.reloaded.mark === '9 of 20', 'after a reload, the closed Review is reached from the paper\'s results, with nothing to edit, and shows the same mark: ' + R.reloaded.mark);
     for (const [where, v] of [['in the sitting', R.sitting], ['in the closed Review', R.review], ['in the closed Review after a reload', R.reloaded]]) {
-      ok(!/\{\{|\}\}/.test(v.text) && /Name the promotional mix to sharpen it\./.test(v.summary) && v.inResponse.some(o => /State the market share target as a number\./.test(o.why)),
-        where + ': glossary markup never reaches the student; a term is shown as its own words: ' + v.summary);
-      ok(!/\bbands?\b/i.test(v.text) && v.inResponse.some(o => o.head === 'Figure used well' && o.why === 'This is evidence doing work.') && !v.inResponse.concat(v.across).some(o => /Band 6 needs/.test(o.head)),
-        where + ': no band language; a sentence naming a band is left out, and an observation headed by one is dropped: ' + (v.text.match(/[^.]*\bbands?\b[^.]*/i) || [''])[0]);
+      const obs = v.inResponse.concat(v.across);
+      ok(!/[{}|]/.test(v.text) && v.summary.endsWith('Name the promotional mix to sharpen it.') && v.inResponse.some(o => o.why === 'State the market share target as a number.') &&
+         v.across.some(o => o.why === 'The response ends without weighing the strategies. Use market share in the verdict.'),
+        where + ': glossary markup never reaches the student, closed or not; a term is shown as its own words: ' + v.summary);
+      ok(!/band|\bB[1-6]\b/i.test(v.text.replace(/\b(?:pay|target) bands?\b/gi, '')) && v.inResponse.some(o => o.head === 'Figure used well' && o.why === 'This is evidence doing work.'),
+        where + ': no band language, "Band6" included; a sentence naming a band is left out: ' + (v.text.match(/[^.]*(band|\bB[1-6]\b)[^.]*/i) || [''])[0]);
+      ok(obs.every(o => o.head) && !obs.some(o => o.why === 'Weigh the strategies against the objective.'),
+        where + ': no observation is shown without its heading; one headed only by band language, or with nothing to say, is dropped: ' + JSON.stringify(obs.filter(o => !o.head)));
+      ok(!v.summary.includes('It reaches for the top'), where + ': a band sentence goes whole, never cut after "e.g.": ' + v.summary);
+      ok(v.summary.replace(/^Marked against Business Studies criteria/, '') === S12_SUMMARY && v.across.some(o => o.head === 'Target band used as evidence' && o.why === 'You tie the claim to the RBA target band.'),
+        where + ': the subjects\' own words, pay bands and the RBA\'s target band, are not band language and stay: ' + v.summary);
       ok(JSON.stringify(v.inResponse.map(o => o.quote)) === JSON.stringify([S12_Q1, S12_Q2]) && v.inResponse.every(o => o.quote && S12_ANSWER.includes(o.quote)),
-        where + ': "In your response" holds only quotes that are not empty and appear exactly in the version marked: ' + JSON.stringify(v.inResponse.map(o => o.quote)));
-      ok(JSON.stringify(v.across.map(o => o.head)) === JSON.stringify(['No conclusion', 'No judgement stated', 'A claim not in the response', 'Unplaced by the worker']),
+        where + ': "In your response" holds only quotes that are not empty, appear exactly in the version marked, and the worker placed: ' + JSON.stringify(v.inResponse.map(o => o.quote)));
+      ok(JSON.stringify(v.across.map(o => o.head)) === JSON.stringify(['No conclusion', 'No judgement stated', 'A claim not in the response', 'Target band used as evidence', 'Unplaced by the worker']),
         where + ': everything else, the notes on what is missing included, is under "Across your response": ' + JSON.stringify(v.across.map(o => o.head)));
       ok(JSON.stringify(v.criteria.map(c => c.name)) === JSON.stringify(authored) &&
          JSON.stringify(v.criteria.map(c => c.d)) === JSON.stringify(authored.map(n => n === 'knowledge and understanding of course content' ? 'Uses the marketing mix accurately.' : n === 'sustained, logical and cohesive response' ? 'Holds one line.' : '')),
@@ -323,6 +351,22 @@ async function sitState12(b, reply) {
       ok(v.inResponse.length === 1 && v.inResponse[0].head === 'Still shown' && v.inResponse[0].quote === S12_Q2 && v.across.length === 0,
         where + ': the one well-formed observation is still shown: ' + JSON.stringify(v.inResponse.concat(v.across)));
     }
+  }
+  {
+    // A question may carry its own criteria (t28). The screen names the ones the
+    // request carried; and a list the marker does not use, which is anything but
+    // four names (it marks against its own defaults then), is not shown at all.
+    const own = ['alpha strand of knowledge', 'beta strand of application', 'gamma strand of terminology', 'delta strand of cohesion'];
+    const withOwn = n => { const x = JSON.parse(JSON.stringify(paper)); x.sections[3].questions[0].markingCriteria = own.slice(0, n); return x; };
+    const Q = await sitState12(b, null, withOwn(4));
+    ok(JSON.stringify((Q.body || {}).criteria) === JSON.stringify(own) &&
+       [Q.sitting, Q.review, Q.reloaded].every(v => JSON.stringify(v.criteria.map(c => c.name)) === JSON.stringify(own)),
+      'a question with its own four criteria is shown those four, the ones its request carried, in the sitting, the closed Review and after a reload: ' + JSON.stringify(Q.reloaded.criteria.map(c => c.name)));
+    const T3 = await sitState12(b, null, withOwn(3));
+    ok(JSON.stringify((T3.body || {}).criteria) === JSON.stringify(own.slice(0, 3)) && T3.sitting.mark === '9 of 20' &&
+       [T3.sitting, T3.review, T3.reloaded].every(v => v.criteria.length === 0 && !/How this was marked/.test(v.text)),
+      'three criteria are not what the marker judged against, so none are named, and the mark still stands: ' + JSON.stringify([T3.sitting.mark, T3.sitting.criteria]));
+    ok(!Q.errs.length && !T3.errs.length, 'no page errors: ' + Q.errs.concat(T3.errs).join(' | '));
   }
 
   // ---- a stored paper the validator would now refuse -----------------------

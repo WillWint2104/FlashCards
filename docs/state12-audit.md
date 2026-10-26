@@ -267,24 +267,44 @@ in place, or whether that is finally the case for state 16.
 
 Run 2 sat Question 15 against the production marker, and every marked result
 showed the student something this audit excludes. The renderer no longer relies on
-the reply to keep these rules; it holds them itself (`tmMarkerText` and
-`tmResultHTML` in `app.js`; `tests/ui70.js` sits a reply that breaks all of them):
+the reply to keep these rules; it holds them itself (`tmMarkerText`,
+`tmCriteriaOf` and `tmResultHTML` in `app.js`). `tests/ui70.js` sits a reply that
+breaks all of them, and a malformed one, and checks each rule in the sitting, the
+closed Review and the closed Review after a reload.
 
 - **No glossary markup.** The marker writes terms as `{{term|definition|page}}` for
-  Essay practice. Test Mode shows the term as its own words.
-- **No band language.** A sentence of marker prose that names a band is left out
-  whole; an observation headed by one is dropped; a summary with nothing left is
-  not shown.
-- **"In your response" is a verified quote.** Only a quote that is not empty and
-  appears exactly in the version marked; everything else, including the notes on
-  what is missing that arrive with no sentence, is under "Across your response".
-- **The criteria are the subject's.** The four authored names, in their order and
-  casing, whatever the reply calls them; a descriptor only beside its exact name.
-  They are resolved through the question's own paper (`tmCriteriaOf`), never
-  through `EXAM.paper`, which only a sitting sets: a closed Review opened after a
-  reload would otherwise get the flashcard package's Economics criteria.
+  Essay practice. Test Mode shows the term as its own words, and markup missing a
+  closing brace never shows its pipes or definition.
+- **No band language.** The test fails closed:
+  - a sentence of marker prose that says "band" in any form ("Band 4", "Band6",
+    "the upper bands") or "B6" is left out whole, and never cut after "e.g." or
+    "i.e.";
+  - an observation headed by band language is dropped;
+  - a summary with nothing left is not shown.
+
+  A short, named list of the subjects' own ordinary uses of the word is kept,
+  because it is course content rather than a mark: the RBA's target band, and
+  income, pay, salary, wage, tax, price, age, tolerance, trading and frequency
+  bands. The same cleaning applies to a short answer's marker note.
+- **"In your response" is a verified quote.** It holds a quote only if the
+  worker placed it, it is not empty, and it appears exactly in the version
+  marked. Everything else is under "Across your response", including the notes
+  on what is missing that arrive with no sentence. An observation with no
+  heading, or nothing to say, is not shown.
+- **The criteria are the ones the response was judged against.** They are the
+  authored names, in their order and casing, whatever the reply calls them; a
+  descriptor appears only beside its exact name.
+  - They are resolved through the question's own paper (`tmCriteriaOf`), never
+    through `EXAM.paper`. Only a sitting sets `EXAM.paper`, so a closed Review
+    opened after a reload would otherwise get the flashcard package's Economics
+    criteria.
+  - A question's own criteria are used, as the request uses them.
+  - The marker marks against the first four names it is sent, or against its own
+    defaults when there are not four (`markCriteria` in `proxy/worker.js`). A list
+    that is not four names is therefore not what the response was judged
+    against, and no criteria are shown.
 - **Only text is shown, and a malformed reply breaks nothing.** A summary,
   descriptor or observation that is not a string is not shown. A list in the
   stored reply that is not a list, or an entry that is not an object, is skipped,
-  so the question still draws in the sitting, the closed Review and after a
-  reload.
+  as is a heading that cannot be read as text. So the question still draws in the
+  sitting, the closed Review and after a reload.
