@@ -99,6 +99,13 @@ compared with this one on the same words:
 - the latency target: 95% of usable marks for realistic responses in under
   40 seconds.
 
+A panel median is the expectation set down at the freeze, kept beside the
+judges' marks it came from. It is a reference point, not ground truth, and the
+analysis never reads it: the comparisons are between marks. One median is not a
+single panel's. The reworded answer's 16 is the original answer's own median. It
+sits between the blind panel's 15, given to an earlier paraphrase (its note), and
+the recheck's 17 on the final text.
+
 `er-benchmark.js` drives each answer through the whole journey (typed with an
 edit, left, resumed, reloaded, submitted, Results, closed Review), then four
 probes: a later edit never takes an earlier mark, and a late reply never touches
