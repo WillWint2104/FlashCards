@@ -125,6 +125,7 @@ const s12Reply = marks => {
         { text: '', issues: issue('No judgement stated', 'Say how effective the strategies were overall.') },
         { text: 'Northline doubled its sales in a month', issues: issue('A claim not in the response', 'Said of a sentence the student never wrote.') },
         { text: S12_Q1, issues: issue('', '') },
+        { text: null, issues: issue('', 'A note with no heading.') },
       ] },
       { name: 'Paragraph 2', score: 4, max: 10, reasons: [], sentences: [
         { text: S12_Q2, issues: issue('Figure used well', 'This is evidence doing work. It would reach Band 6 with a link to share.') },
@@ -328,8 +329,8 @@ async function sitState12(b, reply, storedPaper) {
         where + ': glossary markup never reaches the student, closed or not; a term is shown as its own words: ' + v.summary);
       ok(!/band|\bB[1-6]\b/i.test(v.text.replace(/\b(?:pay|target) bands?\b/gi, '')) && v.inResponse.some(o => o.head === 'Figure used well' && o.why === 'This is evidence doing work.'),
         where + ': no band language, "Band6" included; a sentence naming a band is left out: ' + (v.text.match(/[^.]*(band|\bB[1-6]\b)[^.]*/i) || [''])[0]);
-      ok(obs.every(o => o.head) && !obs.some(o => o.why === 'Weigh the strategies against the objective.'),
-        where + ': no observation is shown without its heading; one headed only by band language, or with nothing to say, is dropped: ' + JSON.stringify(obs.filter(o => !o.head)));
+      ok(obs.every(o => o.head) && !obs.some(o => o.why === 'Weigh the strategies against the objective.' || o.why === 'A note with no heading.'),
+        where + ': no observation is shown without its heading; one with none, or headed only by band language, is dropped: ' + JSON.stringify(obs.filter(o => !o.head)));
       ok(!v.summary.includes('It reaches for the top'), where + ': a band sentence goes whole, never cut after "e.g.": ' + v.summary);
       ok(v.summary.replace(/^Marked against Business Studies criteria/, '') === S12_SUMMARY && obs.some(o => o.head === 'Target band used as evidence' && o.why === 'You tie the claim to the RBA target band.'),
         where + ': the subjects\' own words, pay bands and the RBA\'s target band, are not band language and stay: ' + v.summary);

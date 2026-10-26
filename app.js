@@ -3570,14 +3570,14 @@
     // is not empty and appears, exactly, in the version that was marked. Anything
     // else the marker said is about the response as a whole and goes under "Across
     // your response". A note on what is missing arrives with no sentence at all
-    // (Run 2 showed 14 of them as empty quotations). An observation whose heading
-    // was nothing but band language is dropped with it.
+    // (Run 2 showed 14 of them as empty quotations). An observation is shown only
+    // under a heading: one with none, or whose heading was nothing but band
+    // language, is dropped with whatever it said.
     const graded = String(answer == null ? "" : answer);
     const anchored = [], across = [];
     tmItems(fb.paragraphs).forEach(p => tmItems(p.sentences).forEach(sn => tmItems(sn.issues).forEach(iss => {
       const head = tmMarkerText(iss.head), why = tmMarkerText(iss.why);
-      const headed = typeof iss.head === "string" ? !!iss.head.trim() : iss.head != null;
-      if ((headed && !head) || (!head && !why)) return;
+      if (!head) return;
       const quote = typeof sn.text === "string" ? sn.text : "";
       (!sn.unplaced && quote.trim() && graded.includes(quote) ? anchored : across).push({ quote, head, why });
     })));

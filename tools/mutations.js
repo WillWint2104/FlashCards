@@ -2174,18 +2174,18 @@ module.exports = [
   {
     id: "tm-band-headed-observation-kept",
     file: "app.js",
-    find: "      if ((headed && !head) || (!head && !why)) return;",
+    find: "      if (!head) return;",
     replace: "      if (!head && !why) return;",
     owner: "ui70",
-    why: "an observation headed only by band language lost its heading and was shown with an empty title",
+    why: "an observation with no heading, or headed only by band language, was shown under an empty title",
   },
   {
     id: "tm-empty-observation-shown",
     file: "app.js",
-    find: "      if ((headed && !head) || (!head && !why)) return;",
-    replace: "      if (headed && !head) return;",
+    find: "      if (!head) return;",
+    replace: "",
     owner: "ui70",
-    why: "an observation with nothing to say was shown as an empty item",
+    why: "an observation with no heading, or with nothing to say at all, was shown as an empty item",
   },
   {
     id: "tm-unplaced-flag-ignored",
@@ -2198,10 +2198,10 @@ module.exports = [
   {
     id: "tm-observation-head-coerced",
     file: "app.js",
-    find: "      const headed = typeof iss.head === \"string\" ? !!iss.head.trim() : iss.head != null;",
-    replace: "      const headed = !!String(iss.head || \"\").trim();",
+    find: "      const head = tmMarkerText(iss.head), why = tmMarkerText(iss.why);",
+    replace: "      const head = tmMarkerText(String(iss.head || \"\")), why = tmMarkerText(iss.why);",
     owner: "ui70",
-    why: "a heading that could not be converted to text threw on every draw, so the marked question never showed",
+    why: "a heading was turned into text before it was checked to be text, so one that cannot be (JSON can carry {\"toString\": null}) threw on every draw and the marked question never showed",
   },
   {
     id: "tm-criteria-ignore-question",
