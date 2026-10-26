@@ -163,10 +163,11 @@ const s12Uncoercible = marks => ({ score: 7, total: 7, max: marks, summary: 'A f
 async function sitState12(b, reply, storedPaper) {
   reply = reply || s12Reply;
   const ctx = await b.newContext({ viewport: { width: 1280, height: 1000 } });
-  // As sit() seeds it, but once: the reload below must find the attempt it made.
+  // As sit() seeds it, but only into an empty store: the reload below must find
+  // the attempt it made. (A sessionStorage flag was not always seen on the
+  // reload, and the reseed then wiped the attempt.)
   if (storedPaper) await ctx.addInitScript(sp => {
-    if (sessionStorage.getItem('ui70.seeded')) return;
-    sessionStorage.setItem('ui70.seeded', '1');
+    if (localStorage.getItem('marginal.trial.v1')) return;
     localStorage.setItem('marginal.trial.v1', JSON.stringify({ cards: {}, endpoint: '', code: '12Ec126', log: [],
       customSets: [], lessons: {}, exams: [Object.assign({}, sp, { id: 'walk-2025-bus' })] }));
   }, storedPaper);
