@@ -87,7 +87,10 @@ compared with this one on the same words:
   its intended profile; three more checked the revised and added texts.
 - three timing answers of about 400, 800 and 1,200 words, which assert nothing
   about marks;
-- the sha256 of every text, and `tests/t41.mjs` holds them;
+- the sha256 of every text. `tests/t41.mjs` pins them as literals, together with
+  digests of corpus v2's items, of the expectations below and of the Run 2
+  baseline file, so a text cannot be edited together with its own hash, nor an
+  expectation together with the baseline;
 - the expectations set down before any live marking: each answer's panel median
   and range, eight hard comparisons (strong never below weak, analysis above
   description, application above name-dropping, complete above its unfinished
@@ -100,11 +103,24 @@ compared with this one on the same words:
 edit, left, resumed, reloaded, submitted, Results, closed Review), then four
 probes: a later edit never takes an earlier mark, and a late reply never touches
 a later session, another question, or a session closed with the answer left
-unmarked. `er-analyze.js` turns a run into marks, comparisons, what the student
-was shown (empty quotes, quotes the student never wrote, glossary markup, band
-language, mini-marks, criteria other than the subject's own) and timings, and compares it with
-`er15-baseline.run2.json`, Run 2's own analysis without request bodies, replies
-or account details.
+unmarked. A probe passes only if the late reply really arrived as a mark; a
+request the app aborted at its own limit tested nothing.
+
+`er-analyze.js` turns a run into marks, comparisons, what the student was shown
+and timings, and compares it with `er15-baseline.run2.json`, Run 2's own analysis
+without request bodies, replies or account details. What the student was shown is
+judged by the rules the app applies since PR #74:
+- empty quotes, and quotes the student never wrote;
+- glossary markup, closed or not;
+- band language in any form, but not the subjects' own "age band" or "target
+  band";
+- a mark for part of the response;
+- criteria other than the subject's own.
+
+On Run 2's raw record these give exactly the baseline's counts. A result counts as
+a mark only if the app marked it, and a reply counts as a usable mark only if the
+app would accept it: one rule (`usableMark`), shared with `er-latency.js`. For the
+latency target, a timing answer with no usable mark counts as never arriving.
 
 ```
 npm run er-benchmark          # offline: shipped worker, stubbed model, no credits
@@ -123,15 +139,27 @@ checkout's app sent in an offline `--timing` run. For every request it records:
 - the model;
 - the input and output tokens.
 
-It then reports the 95th percentile of usable marks per length against the
-target. A request that never gave a usable mark counts as never arriving. The
-variants are `lean1` (the lean Test Mode contract, one pass), `lean2` (the same
-with the diagnosis first), `full` (the full review) and `asis`. A worker that
-does not know the contract ignores it, and each row records which contract
-actually marked it.
+Per length, it reports:
+- the usable marks;
+- the worst and next-worst time;
+- judgement time and tokens;
+- whether the length is within the practical gate (every request usable, the
+  worst under 40 s);
+- the 95th percentile against the target.
+
+A request that never gave a usable mark counts as never arriving. The variants
+are:
+- `lean1`: the lean Test Mode contract, one pass;
+- `lean2`: the same with the diagnosis first;
+- `full`: the full review;
+- `asis`: the body exactly as the app sent it.
+
+A lean sample counts only if the worker says it marked under the lean contract
+with that many passes. If a variant's first request cannot reach the worker, or
+is not marked under that contract, the run stops: nothing has been measured.
 
 ```
-MARGINAL_WORKER=https://<worker> npm run er-latency
+MARGINAL_WORKER=https://<worker> MARGINAL_VARIANTS=lean1 MARGINAL_REPEAT=5 npm run er-latency
 MARGINAL_WORKER=https://<worker> MARGINAL_VARIANTS=lean1,lean2,full MARGINAL_REPEAT=5 node tests/bots/testmode/er-latency.js
 ```
 
@@ -139,7 +167,8 @@ It is a quality command, run on purpose, never part of the Fast or Checkpoint
 gates. On a deployed site it signs in through a stand-in Supabase client (a
 sample student); marking sees exactly what a signed-in student sends.
 `MARGINAL_CLIENT_MS` raises the app's 45 second marking limit in the test browser
-only, and only when the served `app.js` is byte-identical to the checkout's. Run 2
+only, and only when the served `app.js` is byte-identical to the checkout's. A run
+that asked for it and could not apply it stops. Run 2
 needed it to see what the production grader marks at all. It is a measuring
 aid, not a fix.
 

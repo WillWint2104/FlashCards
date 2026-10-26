@@ -7,21 +7,45 @@
 //   node tests/bots/testmode/er-analyze.js <run.json>   # analyse a saved run
 const fs = require('fs'), path = require('path');
 
-// What the student must never be shown in Test Mode feedback. A mark shaped like
-// "17 of 20" is the mark itself and is removed before looking.
-const BAND = /\bbands?\b/i;
-const MINI = /\b\d+\s*\/\s*\d+\b|\b\d+\s+out of\s+\d+\b|\d+\s*%/i;
-const MARKUP = /\{\{[^}]*\}\}/;
+// What the student must never be shown in Test Mode feedback, by the rules the
+// app itself applies since PR #74 (app.js TM_BAND, TM_BAND_PLAIN, tmMarkerText):
+// - band language in any form ("Band 4", "Band6", "the upper bands", a bare
+//   "B6"), but not the subjects' own ordinary uses of the word ("target band",
+//   "age band"), which the app keeps;
+// - glossary markup, closed or not; after the app's brace strip a leak would
+//   show as a pipe between words;
+// - a mark for anything but the whole response: "4 of 5", "3/5", "2 out of 4",
+//   and a percentage beside a criterion. The whole response's own mark ("17 of
+//   20") is removed before looking, and a percentage in feedback prose is the
+//   case's own figures ("share rose to 11%").
+// On Run 2's raw record these count exactly what the earlier, looser definitions
+// counted (band 12, markup 60, mini-marks 0), so the baseline still compares
+// like with like.
+const BAND = /\bbands?(?![a-z])|\bB[1-6]\b/i;
+const BAND_PLAIN = /\b(?:target|income|pay|salary|wage|tax|price|age|tolerance|trading|frequency)[- ]bands?\b/gi;
+const MINI = /\b\d+\s*\/\s*\d+\b|\b\d+\s+out of\s+\d+\b|\b\d+ of \d+\b/i;
+const PERCENT = /\d+\s*%/;
+const MARKUP = /[{}]|\S\|\S/;
 const ECONOMICS = /\bEconomics\b/;
 
 const timed = r => !!r && Number.isFinite(r.t0) && Number.isFinite(r.t1);
 const validMark = r => !!r && r.status === 'marked' && Number.isFinite(r.score) && Number.isFinite(r.max) && r.score >= 0 && r.score <= r.max;
-const stripMarks = s => String(s || '').replace(/\b\d+ of \d+( marks?)?\b/g, '').replace(/\b\d+\s*\/\s*20\b/g, '').replace(/\b\d+ of \d+ answered\b/g, '');
+const stripMarks = (s, total) => String(s || '').replace(new RegExp('\\b\\d+ of ' + total + '( marks?)?\\b', 'g'), '')
+  .replace(new RegExp('\\b\\d+\\s*\\/\\s*' + total + '\\b', 'g'), '').replace(/\b\d+ of \d+ answered\b/g, '');
+// A usable mark, by the app's own test (app.js invalidMarkerReply): a 200 whose
+// reply is an object with no error, a whole-number score from 0 to max, and max
+// equal to the question's marks. Anything else is not a mark, and for timing it
+// never arrived. er-latency.js uses this same rule.
+const usableMark = (status, reply, marks) => status === 200 && !!reply && typeof reply === 'object' && !Array.isArray(reply) && reply.error == null &&
+  Number.isInteger(reply.score) && typeof reply.max === 'number' && reply.max === Math.round(Number(marks)) && reply.score >= 0 && reply.score <= reply.max;
+const usableRequest = r => timed(r) && usableMark(r.status, r.reply, r.body && r.body.marks);
 
 // What one marked result shows the student, checked against the rules.
 function shown(res, graded, authored) {
   const obs = (res.inResponse || []).map(o => Object.assign({ placement: 'in' }, o)).concat((res.across || []).map(o => Object.assign({ placement: 'across' }, o)));
   const texts = [res.summary || ''].concat(obs.map(o => (o.head || '') + ' ' + (o.why || '')));
+  const crit = (res.criteria || []).map(c => c.name + ' ' + (c.descriptor || ''));
+  const total = Number.isFinite(Number(res.max)) && Number(res.max) > 0 ? Number(res.max) : 20;
   const g = String(graded || '');
   return {
     observations: obs.length,
@@ -30,8 +54,8 @@ function shown(res, graded, authored) {
     emptyQuotes: (res.inResponse || []).filter(o => !String(o.quote || '').trim()).length,
     unverifiedQuotes: (res.inResponse || []).filter(o => String(o.quote || '').trim() && !g.includes(o.quote)).length,
     markup: texts.filter(t => MARKUP.test(t)).length,
-    bands: texts.filter(t => BAND.test(t)).length,
-    miniMarks: texts.concat((res.criteria || []).map(c => c.name + ' ' + (c.descriptor || ''))).filter(t => MINI.test(stripMarks(t))).length,
+    bands: texts.filter(t => BAND.test(t.replace(BAND_PLAIN, ''))).length,
+    miniMarks: texts.filter(t => MINI.test(stripMarks(t, total))).length + crit.filter(t => MINI.test(stripMarks(t, total)) || PERCENT.test(t)).length,
     economics: ECONOMICS.test(res.sheetText || texts.join(' ')),
     criteria: (res.criteria || []).map(c => c.name),
     // The names on screen are the subject package's own, in its order (state 12).
@@ -102,17 +126,24 @@ function analyze(run, corpus, baseline) {
     unverifiedQuotes: sum('unverifiedQuotes'), markup: sum('markup'), bands: sum('bands'), miniMarks: sum('miniMarks'), economics: sum('economics'),
     resultsWithBands: seen.filter(x => x.bands).length, resultsWithMarkup: seen.filter(x => x.markup).length,
     criteriaNotAuthored: seen.filter(x => x.criteriaAuthored === false).length };
-  const done = (run.requests || []).filter(r => r.reply && r.reply.checks && r.reply.checks.ms && timed(r));
+  // p50, p95 and the rest describe the replies that were usable marks. The
+  // latency target is judged on the timing answers alone, and there a request
+  // with no usable mark counts as never arriving: it sorts last, so a marker that
+  // fails cannot meet the target by failing fast or by dropping out.
+  const done = (run.requests || []).filter(usableRequest);
   const totals = done.map(r => r.t1 - r.t0);
+  const passes = done.filter(r => r.reply.checks && r.reply.checks.ms);
   const timingIds = new Set(bench.timing);
-  const timingTotals = done.filter(r => timingIds.has(idOf(r.body && r.body.answer, corpus))).map(r => r.t1 - r.t0);
+  const timingReqs = (run.requests || []).filter(r => timingIds.has(idOf(r.body && r.body.answer, corpus)));
+  const arrival = timingReqs.map(r => usableRequest(r) ? r.t1 - r.t0 : Infinity);
+  const tp = pct(arrival, bench.latencyTarget.percentile);
   const timing = {
     requests: (run.requests || []).length, usable: done.length,
-    failed: (run.requests || []).filter(r => !(r.reply && Number.isFinite(r.reply.score))).map(r => ({ n: r.n, status: r.status, error: (r.reply && r.reply.error) || r.failure || null, ms: timed(r) ? r.t1 - r.t0 : null })),
+    failed: (run.requests || []).filter(r => !usableRequest(r)).map(r => ({ n: r.n, status: r.status, error: (r.reply && r.reply.error) || r.failure || null, ms: timed(r) ? r.t1 - r.t0 : null })),
     p50: pct(totals, 50), p95: pct(totals, 95), max: totals.length ? Math.max(...totals) : null,
-    judgementP50: pct(done.map(r => r.reply.checks.ms.judgement), 50), diagnosisCapped: done.filter(r => r.reply.checks.ms.diagnosis >= 19990).length,
+    judgementP50: pct(passes.map(r => r.reply.checks.ms.judgement), 50), diagnosisCapped: passes.filter(r => r.reply.checks.ms.diagnosis >= 19990).length,
     under45: totals.filter(t => t < 45000).length, under40: totals.filter(t => t < 40000).length,
-    timingAnswers: { usable: timingTotals.length, p95: pct(timingTotals, 95), meetsTarget: timingTotals.length ? pct(timingTotals, bench.latencyTarget.percentile) < bench.latencyTarget.seconds * 1000 : null },
+    timingAnswers: { usable: arrival.filter(Number.isFinite).length, p95: Number.isFinite(tp) ? tp : null, meetsTarget: timingReqs.length ? tp < bench.latencyTarget.seconds * 1000 : null, n: timingReqs.length },
   };
   const out = { corpus: { version: corpus.version, frozenAt: bench.frozenAt }, run: { mode: run.mode, site: run.site, started: run.started, finished: run.finished, checks: (run.checks || []).length, failedChecks: (run.checks || []).filter(c => !c.ok) },
     profiles, marks, allMarks, orderings: orderings(marks, bench), display, timing };
@@ -145,12 +176,15 @@ function summary(a) {
   L.push('', '  shown: ' + d.results + ' marked results, ' + d.observations + ' observations; empty quotes ' + d.emptyQuotes + ', unverified quotes ' + d.unverifiedQuotes +
     ', markup ' + d.markup + ', band language ' + d.bands + ', mini-marks ' + d.miniMarks + ', across ' + d.across + ', criteria not the authored ones in ' + d.criteriaNotAuthored + ' results');
   const t = a.timing;
-  L.push('  time: ' + t.usable + ' of ' + t.requests + ' usable; p50 ' + (t.p50 / 1000).toFixed(1) + ' s, p95 ' + (t.p95 / 1000).toFixed(1) + ' s; under 40 s: ' + t.under40 + '; diagnosis capped: ' + t.diagnosisCapped);
+  const sec = ms => ms == null ? 'n/a' : (ms / 1000).toFixed(1) + ' s';
+  L.push('  time: ' + t.usable + ' of ' + t.requests + ' usable; p50 ' + sec(t.p50) + ', p95 ' + sec(t.p95) + '; under 40 s: ' + t.under40 + '; diagnosis capped: ' + t.diagnosisCapped);
+  const ta = t.timingAnswers;
+  if (ta.n) L.push('  timing answers: ' + ta.usable + ' of ' + ta.n + ' usable; p95 ' + (ta.p95 == null ? 'not met (a request had no usable mark)' : sec(ta.p95)) + (ta.meetsTarget ? ', meets the target' : ', misses the target'));
   if (a.vsBaseline) L.push('  vs ' + a.vsBaseline.baseline + ': ' + a.vsBaseline.marks.filter(m => m.change).map(m => m.id.replace('er15-', '') + ' ' + (m.change > 0 ? '+' : '') + m.change).join(', '));
   return L.join('\n');
 }
 
-module.exports = { analyze, orderings, compare, shown, idOf, pct, against, baseline, summary, validMark };
+module.exports = { analyze, orderings, compare, shown, idOf, pct, against, baseline, summary, validMark, usableMark };
 
 if (require.main === module) {
   const run = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));

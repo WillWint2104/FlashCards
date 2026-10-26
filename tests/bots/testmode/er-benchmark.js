@@ -47,7 +47,9 @@ const { serveFonts } = require(path.join(ROOT, 'tests', 'fontcache.js'));
 const pw = (() => { for (const id of ['playwright', '@playwright/test', '/opt/node22/lib/node_modules/playwright']) { try { return require(id); } catch (e) { /* next */ } } throw new Error('Playwright not found'); })();
 const EXE = fs.existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined;
 const LIVE = process.env.MARGINAL_LIVE === '1';
-const SITE = process.env.MARGINAL_SITE || ENV.T;
+// A site given as a directory needs its trailing slash, or app.js resolves
+// against the parent (".../FlashCards" + "app.js" is "/app.js").
+const SITE = process.env.MARGINAL_SITE ? (/\.[a-z0-9]+$/i.test(new URL(process.env.MARGINAL_SITE).pathname) ? process.env.MARGINAL_SITE : process.env.MARGINAL_SITE.replace(/\/*$/, '/')) : ENV.T;
 const DEPLOYED = /^https?:\/\//.test(SITE);
 const TIMING = process.argv.includes('--timing');
 const STAMP = new Date().toISOString().replace(/[:.]/g, '-');
@@ -159,7 +161,7 @@ async function wire(p, rec) {
     const req = res.request(); if (!req.__r) return;
     const r = req.__r; r.status = res.status();
     try { r.reply = JSON.parse(await res.text()); } catch (e) { r.reply = { unreadable: String(e).slice(0, 120) }; }
-    r.t1 = Date.now();
+    r.t1 = Date.now(); r.arrived = true;
   });
   if (LIVE) { if (!DEPLOYED) await p.route(/workers\.dev/, r => r.continue()); return; }
   const worker = (await import(path.join(ROOT, 'tests', 'worker.mjs'))).default;
@@ -413,6 +415,10 @@ async function profileSession(p, rec, a, opts) {
 // ---- the probes --------------------------------------------------------------------------------------
 // A later edit never takes an earlier mark: the unfinished opening is marked,
 // then rewritten into the complete response and marked again.
+// A late reply has arrived only if the page received it and it is a mark. A
+// request the app aborted at its own limit, or that failed, has a t1 for timing
+// but no reply, and a probe that waited on it would test nothing.
+const arrived = r => !!(r && r.arrived && r.status === 200 && r.reply && Number.isInteger(r.reply.score));
 async function probeEdit(p, rec, A, B) {
   const step = 'probe: later edit vs earlier mark'; rec.step = step; console.log('--- ' + step);
   const S = { step, probe: 'edit', first: A.id, second: B.id };
@@ -464,8 +470,8 @@ async function probeRestart(p, rec, A) {
   // Wait for the old reply to actually arrive, so the guard is really exercised.
   const t0 = Date.now(); while (r && !r.t1 && Date.now() - t0 < 240000) await p.waitForTimeout(500);
   await p.waitForTimeout(2500); await settled(p);
-  S.request = r && r.n; S.replyArrived = !!(r && r.t1); S.replyStatus = r && r.status; S.replyScore = r && r.reply && r.reply.score;
-  check(S.replyArrived, 'the abandoned request\'s reply did arrive (status ' + S.replyStatus + '), so the guard was exercised', step);
+  S.request = r && r.n; S.replyArrived = arrived(r); S.replyStatus = r && r.status; S.replyScore = r && r.reply && r.reply.score;
+  check(S.replyArrived, 'the abandoned request\'s reply arrived as a mark (status ' + S.replyStatus + ', score ' + S.replyScore + '), so the guard was exercised', step);
   const st = await store(p), cur = st.attempts[TK].current;
   const box = await p.$eval('#ans', e => ({ v: e.value, focus: document.activeElement === e, disabled: e.disabled }));
   check(cur && !Object.keys(cur.results || {}).length && !Object.keys(cur.answers || {}).length, 'the new session holds no result and no graded answer', step);
@@ -494,9 +500,9 @@ async function probeOther(p, rec, A) {
   const r = rec.reqs[n0];
   const t0 = Date.now(); while (r && !r.t1 && Date.now() - t0 < 240000) await p.waitForTimeout(500);
   await p.waitForTimeout(2500); await settled(p);
-  S.request = r && r.n; S.replyArrived = !!(r && r.t1);
+  S.request = r && r.n; S.replyArrived = arrived(r);
   S.progressAfter = await text(p, '.tm-prog');
-  check(S.replyArrived, 'Question 15\'s reply arrived while Question 16 was open', step);
+  check(S.replyArrived, 'Question 15\'s reply arrived as a mark while Question 16 was open, so the guard was exercised', step);
   const box = await p.$eval('#ans', e => ({ v: e.value, focus: document.activeElement === e, at: e.selectionStart }));
   check(/Question 16/.test(await qhead(p)) && box.v === 'Northline set a financial objective of' && box.focus && box.at === box.v.length && !(await has(p, '#sheet .tm-result')),
     'Question 16 is untouched: same question, same text, focus and caret kept, no result drawn on it', step);
@@ -532,8 +538,8 @@ async function probeLeave(p, rec, A) {
   const r = rec.reqs[n0];
   const t0 = Date.now(); while (r && !r.t1 && Date.now() - t0 < 240000) await p.waitForTimeout(500);
   await p.waitForTimeout(2500); await settled(p);
-  S.request = r && r.n; S.replyArrived = !!(r && r.t1); S.replyStatus = r && r.status; S.replyScore = r && r.reply && r.reply.score;
-  check(S.replyArrived, 'the reply arrived after the session was finished (status ' + S.replyStatus + ', score ' + S.replyScore + ')', step);
+  S.request = r && r.n; S.replyArrived = arrived(r); S.replyStatus = r && r.status; S.replyScore = r && r.reply && r.reply.score;
+  check(S.replyArrived, 'the reply arrived as a mark after the session was finished (status ' + S.replyStatus + ', score ' + S.replyScore + '), so the guard was exercised', step);
   const st = await store(p);
   check(JSON.stringify(st.attempts[TK].last) === closedBefore, 'the closed session is not rewritten by the late reply', step);
   const cell = await p.$eval('.tm-rs-cell[data-tmrv$="#3-0"] .v', e => e.textContent.trim()).catch(() => '');
@@ -571,6 +577,8 @@ const PLAN = BENCH.answers.concat(['repeat:er15-strong-reworded', 'probe:edit', 
   p.on('dialog', d => { rec.dialogs.push(d.message()); d.accept(); });
   await wire(p, rec);
   await p.goto(SITE, { waitUntil: 'load', timeout: 60000 }); await p.waitForSelector('.ash-link', { timeout: 20000 }); await settled(p);
+  if (CLIENT_MS && !(LOG.clientBound && LOG.clientBound.servedEqualsCheckout && LOG.clientBound.occurrences === 1))
+    throw new Error('MARGINAL_CLIENT_MS was set, but the app.js this site served was never patched: ' + JSON.stringify(LOG.clientBound || null));
   LOG.who = await text(p, '.ash-who');
   await ensurePaper(p);
   try {
