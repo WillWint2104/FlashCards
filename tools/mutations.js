@@ -2081,7 +2081,7 @@ module.exports = [
     find: "      .replace(/\\{\\{([^{}|]*)(?:\\|[^{}]*)?\\}\\}/g, \"$1\")\n      .replace(/\\{\\{([^{}|]*)\\|[^{}]*\\}?/g, \"$1\")\n      .replace(/[{}]/g, \"\");",
     replace: "      ;",
     owner: "ui70",
-    why: "the marker's glossary markup, {{term|definition|page}}, was printed to the student as it came (bots Run 2: 60 of 96 observations)",
+    why: "the marker's glossary markup, {{term|definition|page}}, was printed to the student as it came, in a short answer's note and in state 12 (bots Run 2: 60 of 96 observations)",
   },
   {
     id: "tm-marker-band-language-shown",
@@ -2089,7 +2089,7 @@ module.exports = [
     find: "      .filter(x => !TM_BAND.test(x.replace(TM_BAND_PLAIN, \"\"))).join(\" \").replace(/\\s+/g, \" \").trim();",
     replace: "      .filter(x => true).join(\" \").replace(/\\s+/g, \" \").trim();",
     owner: "ui70",
-    why: "band language reached the student (\"a clear, focused Band 5 response\" beside 17 of 20, bots Run 2), which state 12 excludes",
+    why: "band language reached the student (\"a clear, focused Band 5 response\" beside 17 of 20, bots Run 2), in a short answer's note and in state 12, which Test Mode excludes",
   },
   {
     id: "tm-unverified-quote-in-your-response",

@@ -120,8 +120,8 @@ const s12Reply = marks => {
     ],
     paragraphs: [
       { name: 'Paragraph 1', score: 5, max: 10, reasons: [], sentences: [
-        { text: S12_Q1, issues: issue('Objective without a measure', 'State the {{market share|the proportion of sales|0}} target as a number.') },
-        { text: null, issues: issue('No conclusion', 'The response ends without weighing the strategies. Use {{market share|the proportion of sales|0} in the verdict.') },
+        { text: S12_Q1, issues: issue('Objective without a measure', 'State the {{market share|the proportion of sales|0}} target as a number. Put the {{market share|the proportion of sales|0} in the verdict.') },
+        { text: null, issues: issue('No conclusion', 'The response ends without weighing the strategies.') },
         { text: '', issues: issue('No judgement stated', 'Say how effective the strategies were overall.') },
         { text: 'Northline doubled its sales in a month', issues: issue('A claim not in the response', 'Said of a sentence the student never wrote.') },
         { text: S12_Q1, issues: issue('', '') },
@@ -129,7 +129,7 @@ const s12Reply = marks => {
       { name: 'Paragraph 2', score: 4, max: 10, reasons: [], sentences: [
         { text: S12_Q2, issues: issue('Figure used well', 'This is evidence doing work. It would reach Band 6 with a link to share.') },
         { text: S12_Q2, issues: issue('Band 6 needs a judgement', 'Weigh the strategies against the objective.') },
-        { text: null, issues: issue('Target band used as evidence', 'You tie the claim to the RBA target band.') },
+        { text: S12_Q2, issues: issue('Target band used as evidence', 'You tie the claim to the RBA target band.') },
         // In the response word for word, and still not placed by the worker.
         { text: 'Its video campaign', unplaced: true, issues: issue('Unplaced by the worker', 'Said of the response as a whole.') },
       ] },
@@ -152,8 +152,11 @@ const s12Read = p => p.evaluate(() => {
 // The app accepts it (the mark is valid), stores it whole and draws it on every
 // visit, so the sitting, the closed Review and a reload all have to survive it.
 const s12Malformed = marks => ({ score: 7, total: 7, max: marks, summary: 12, overall: 'x', checks: 'none',
-  rubric: { name: 'not a list' }, paragraphs: [null, 'text', { sentences: { text: 'x' } }, { sentences: [null, { text: S12_Q1, issues: 'not a list' }, { text: S12_Q1, issues: [{ head: { toString: null }, why: 'A heading that is not text.' }] },
-    { text: S12_Q2, issues: [null, 4, { head: 'Still shown', why: 'The one well-formed observation.' }] }] }] });
+  rubric: { name: 'not a list' }, paragraphs: [null, 'text', { sentences: { text: 'x' } }, { sentences: [null, { text: S12_Q1, issues: 'not a list' }, { text: S12_Q2, issues: [null, 4, { head: 'Still shown', why: 'The one well-formed observation.' }] }] }] });
+// A heading that cannot be turned into text at all: JSON can carry {"toString": null}.
+const s12Uncoercible = marks => ({ score: 7, total: 7, max: marks, summary: 'A fair response.', rubric: [], checks: {},
+  paragraphs: [{ sentences: [{ text: S12_Q1, issues: [{ head: { toString: null }, why: 'A heading that is not text.' }] },
+    { text: S12_Q2, issues: [{ head: 'Still shown', why: 'The one well-formed observation.' }] }] }] });
 // Sit Question 15 against that reply, then submit the paper and open its closed
 // Review, then reload and open it again from the paper's results.
 async function sitState12(b, reply, storedPaper) {
@@ -321,19 +324,18 @@ async function sitState12(b, reply, storedPaper) {
     ok(R.review.open === false && R.reloaded.open === false && R.reloaded.mark === '9 of 20', 'after a reload, the closed Review is reached from the paper\'s results, with nothing to edit, and shows the same mark: ' + R.reloaded.mark);
     for (const [where, v] of [['in the sitting', R.sitting], ['in the closed Review', R.review], ['in the closed Review after a reload', R.reloaded]]) {
       const obs = v.inResponse.concat(v.across);
-      ok(!/[{}|]/.test(v.text) && v.summary.endsWith('Name the promotional mix to sharpen it.') && v.inResponse.some(o => o.why === 'State the market share target as a number.') &&
-         v.across.some(o => o.why === 'The response ends without weighing the strategies. Use market share in the verdict.'),
+      ok(!/[{}|]/.test(v.text) && v.summary.endsWith('Name the promotional mix to sharpen it.') && obs.some(o => o.why === 'State the market share target as a number. Put the market share in the verdict.'),
         where + ': glossary markup never reaches the student, closed or not; a term is shown as its own words: ' + v.summary);
       ok(!/band|\bB[1-6]\b/i.test(v.text.replace(/\b(?:pay|target) bands?\b/gi, '')) && v.inResponse.some(o => o.head === 'Figure used well' && o.why === 'This is evidence doing work.'),
         where + ': no band language, "Band6" included; a sentence naming a band is left out: ' + (v.text.match(/[^.]*(band|\bB[1-6]\b)[^.]*/i) || [''])[0]);
       ok(obs.every(o => o.head) && !obs.some(o => o.why === 'Weigh the strategies against the objective.'),
         where + ': no observation is shown without its heading; one headed only by band language, or with nothing to say, is dropped: ' + JSON.stringify(obs.filter(o => !o.head)));
       ok(!v.summary.includes('It reaches for the top'), where + ': a band sentence goes whole, never cut after "e.g.": ' + v.summary);
-      ok(v.summary.replace(/^Marked against Business Studies criteria/, '') === S12_SUMMARY && v.across.some(o => o.head === 'Target band used as evidence' && o.why === 'You tie the claim to the RBA target band.'),
+      ok(v.summary.replace(/^Marked against Business Studies criteria/, '') === S12_SUMMARY && obs.some(o => o.head === 'Target band used as evidence' && o.why === 'You tie the claim to the RBA target band.'),
         where + ': the subjects\' own words, pay bands and the RBA\'s target band, are not band language and stay: ' + v.summary);
-      ok(JSON.stringify(v.inResponse.map(o => o.quote)) === JSON.stringify([S12_Q1, S12_Q2]) && v.inResponse.every(o => o.quote && S12_ANSWER.includes(o.quote)),
+      ok(JSON.stringify(v.inResponse.map(o => o.quote)) === JSON.stringify([S12_Q1, S12_Q2, S12_Q2]) && v.inResponse.every(o => o.quote && S12_ANSWER.includes(o.quote)),
         where + ': "In your response" holds only quotes that are not empty, appear exactly in the version marked, and the worker placed: ' + JSON.stringify(v.inResponse.map(o => o.quote)));
-      ok(JSON.stringify(v.across.map(o => o.head)) === JSON.stringify(['No conclusion', 'No judgement stated', 'A claim not in the response', 'Target band used as evidence', 'Unplaced by the worker']),
+      ok(JSON.stringify(v.across.map(o => o.head)) === JSON.stringify(['No conclusion', 'No judgement stated', 'A claim not in the response', 'Unplaced by the worker']),
         where + ': everything else, the notes on what is missing included, is under "Across your response": ' + JSON.stringify(v.across.map(o => o.head)));
       ok(JSON.stringify(v.criteria.map(c => c.name)) === JSON.stringify(authored) &&
          JSON.stringify(v.criteria.map(c => c.d)) === JSON.stringify(authored.map(n => n === 'knowledge and understanding of course content' ? 'Uses the marketing mix accurately.' : n === 'sustained, logical and cohesive response' ? 'Holds one line.' : '')),
@@ -351,6 +353,11 @@ async function sitState12(b, reply, storedPaper) {
       ok(v.inResponse.length === 1 && v.inResponse[0].head === 'Still shown' && v.inResponse[0].quote === S12_Q2 && v.across.length === 0,
         where + ': the one well-formed observation is still shown: ' + JSON.stringify(v.inResponse.concat(v.across)));
     }
+  }
+  {
+    const X = await sitState12(b, s12Uncoercible);
+    ok(X.errs.length === 0 && [X.sitting, X.review, X.reloaded].every(v => v.mark === '7 of 20' && v.inResponse.length === 1 && v.inResponse[0].head === 'Still shown'),
+      'a heading that cannot be read as text breaks nothing: that observation is dropped and the rest shows, in every view: ' + X.errs.join(' | '));
   }
   {
     // A question may carry its own criteria (t28). The screen names the ones the
