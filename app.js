@@ -3461,6 +3461,53 @@
       <ol class="steps">${steps.map((s, i) => `<li class="step${i === steps.length - 1 ? " final" : ""}"><span class="no">${i + 1}</span>
         <div class="t"><div class="tm-lbl">${esc(s[0])}</div><div class="math">${esc(s[1])}</div></div></li>`).join("")}</ol></div>`;
   }
+  // MARKER PROSE, AS TEST MODE SHOWS IT. The marker writes for more than one
+  // surface. It marks a glossary term as {{term|definition|page}}, which Essay
+  // practice turns into a defined term and Test Mode printed as it came (bots
+  // Run 2: 60 of 96 observations). And it reaches for band language, "a Band 5
+  // response", "the upper bands", which state 12 excludes: the bands are a
+  // generic scale the model wrote against, not the course's, and a band beside a
+  // mark reads as a second mark (docs/state12-audit.md). So a term becomes its
+  // own words, and a sentence that speaks of a band is left out whole, whatever
+  // the model wrote. What is left empty is not shown, and neither is anything
+  // that is not text.
+  //
+  // The band test fails closed: any "band" ("Band 4", "Band6", "the upper bands")
+  // or a bare "B6" drops its sentence. The one exception is a short, named list
+  // of the subjects' own ordinary uses of the word, the RBA's target band or a
+  // pay or income band, which are course content rather than a mark. A sentence
+  // is never split after "e.g." or "i.e.", so a band sentence goes whole rather
+  // than leaving half of itself behind.
+  const TM_BAND = /\bbands?(?![a-z])|\bB[1-6]\b/i;
+  const TM_BAND_PLAIN = /\b(?:target|income|pay|salary|wage|tax|price|age|tolerance|trading|frequency)[- ]bands?\b/gi;
+  function tmMarkerText(s) {
+    const plain = (typeof s === "string" ? s : "")
+      .replace(/\{\{([^{}|]*)(?:\|[^{}]*)?\}\}/g, "$1")
+      .replace(/\{\{([^{}|]*)\|[^{}]*\}?/g, "$1")
+      .replace(/[{}]/g, "");
+    return plain.split(/(?<=[.!?]["'\u201d\u2019)]*)(?<!\b(?:[Ee]\.g|[Ii]\.e|etc|vs|cf|approx|incl)\.)\s+(?=["'\u201c\u2018(]?[A-Z0-9])/)
+      .filter(x => !TM_BAND.test(x.replace(TM_BAND_PLAIN, ""))).join(" ").replace(/\s+/g, " ").trim();
+  }
+  // The authored criteria of a question in a paper, resolved through that paper
+  // and nothing else. markingContext finds the paper through EXAM.paper, which
+  // only a sitting sets: a closed Review opened after a reload has none, and
+  // markingContext then answers with the flashcard package's criteria, which are
+  // Economics. A paper that does not resolve shows no criteria at all.
+  //
+  // The list is the one the request carried, read the way the marker reads it
+  // (markCriteria in proxy/worker.js): the first four named criteria, or, when
+  // there are not four, the marker's own defaults. So a list that is not four
+  // names is not what the response was judged against, and nothing is shown.
+  function tmCriteriaOf(paper, q) {
+    const res = paper ? ASSESS.resolveAuthority({ curriculum: ASSESS.curriculumOf(paper), question: q || null, packages: tmPackages() }) : null;
+    const sent = res && res.ok && Array.isArray(res.criteria) ? res.criteria : [];
+    if (!sent.every(n => typeof n === "string")) return [];
+    const names = sent.map(n => n.trim()).filter(Boolean).slice(0, 4);
+    return names.length === 4 ? names : [];
+  }
+  // A list in a stored reply, read as one only if it is one: a result is drawn
+  // again on every visit, so a malformed reply must not break the question.
+  const tmItems = x => Array.isArray(x) ? x.filter(y => y && typeof y === "object") : [];
   // `closed` is ATT.reviewAt's view of a completed attempt (decision 26): the
   // same marked states, with every action that could change a mark taken out.
   function tmResultHTML(e, a, f, g, closed) {
@@ -3493,7 +3540,7 @@
     }
     const subj = tmSubjectOf(e.paper);
     const fromMarker = g.kind === "llm";
-    const summary = fromMarker ? fbSummary(g.fb || {}) : "";
+    const summary = fromMarker ? tmMarkerText(fbSummary(g.fb || {})) : "";
     const mnote = fromMarker && summary ? `<p class="tm-mnote"><span class="who">Marked against ${esc(subj || "the subject's")} criteria</span>${esc(summary)}</p>` : "";
     // No AI second opinion on a phrase-matched mark (decision 27): the question was
     // authored to be marked deterministically, and that mark is final for its
@@ -3511,13 +3558,28 @@
     }
     // Extended response and business report (states 12 and 13): what the payload
     // supports, and only that.
-    const fb = g.fb || {};
-    const rubric = (Array.isArray(fb.rubric) ? fb.rubric : []).filter(r => r && r.name);
-    const crits = rubric.length ? rubric.map(r => ({ name: r.name, d: r.descriptor || "" }))
-      : ((markingContext(q) || {}).criteria || []).map(n => ({ name: typeof n === "string" ? n : (n && n.name) || "", d: "" })).filter(x => x.name);
+    const fb = g.fb && typeof g.fb === "object" ? g.fb : {};
+    // The criteria are the subject's own, by name and in the course's order, never
+    // the labels the model sent back. The marker is told to return them verbatim;
+    // a reply that renames, reorders, adds or drops one does not change what the
+    // screen calls them. A descriptor is shown only beside the authored name the
+    // model returned it for, exactly.
+    const said = new Map(tmItems(fb.rubric).filter(r => typeof r.name === "string").map(r => [r.name, r.descriptor]));
+    const crits = tmCriteriaOf(e.paper, q).map(name => ({ name, d: tmMarkerText(said.get(name)) }));
+    // "In your response" is the student's own words, so it holds only a quote that
+    // is not empty and appears, exactly, in the version that was marked. Anything
+    // else the marker said is about the response as a whole and goes under "Across
+    // your response". A note on what is missing arrives with no sentence at all
+    // (Run 2 showed 14 of them as empty quotations). An observation is shown only
+    // under a heading: one with none, or whose heading was nothing but band
+    // language, is dropped with whatever it said.
+    const graded = String(answer == null ? "" : answer);
     const anchored = [], across = [];
-    (fb.paragraphs || []).forEach(p => (p.sentences || []).forEach(sn => (sn.issues || []).forEach(iss => {
-      (sn.unplaced ? across : anchored).push({ quote: sn.text, head: iss.head || "", why: iss.why || "" });
+    tmItems(fb.paragraphs).forEach(p => tmItems(p.sentences).forEach(sn => tmItems(sn.issues).forEach(iss => {
+      const head = tmMarkerText(iss.head), why = tmMarkerText(iss.why);
+      if (!head) return;
+      const quote = typeof sn.text === "string" ? sn.text : "";
+      (!sn.unplaced && quote.trim() && graded.includes(quote) ? anchored : across).push({ quote, head, why });
     })));
     const rg = f === "business_report" ? ASSESS.markerGuidance(q, ASSESS.accomplishOf(q)) : null;
     return result + mnote + actions +
