@@ -1,0 +1,2110 @@
+{
+ "_why": "Bots Run 2, analysed by er-analyze.js and cut down to what a later run is compared with: the marks, the comparisons, what the student was shown, the timings, and the independent evaluation. No request bodies, model replies, model sentences or account details. The full visual report is kept outside the repository.",
+ "label": "Run 2 (21 October 2026)",
+ "source": {
+  "site": "https://willwint2104.github.io/FlashCards/ at d3cae7f (byte-identical to main)",
+  "grader": "production marginal-grader, two passes (diagnosis, judgement)",
+  "clientLimit": "the app's 45 s limit raised to 180 s in the test browser only, after a byte-for-byte check of the served app.js",
+  "signIn": "stand-in Supabase client, sample student 12Ec126 · #1234",
+  "started": "2026-10-21T01:44:45.557Z",
+  "finished": "2026-10-21T02:14:27.989Z"
+ },
+ "checks": {
+  "total": 385,
+  "failed": 0
+ },
+ "marks": {
+  "er15-weak": 1,
+  "er15-descriptive": 6,
+  "er15-middle": 17,
+  "er15-strong": 16,
+  "er15-no-evidence": 2,
+  "er15-name-drop": 6,
+  "er15-case-heavy": 8,
+  "er15-verbose": null,
+  "er15-unfinished": 1,
+  "er15-misconception": 5,
+  "er15-strong-reworded": 15,
+  "er15-strong-unfinished": 15
+ },
+ "allMarks": {
+  "er15-weak": [
+   1,
+   1
+  ],
+  "er15-descriptive": [
+   6
+  ],
+  "er15-middle": [
+   17,
+   16
+  ],
+  "er15-strong": [
+   16,
+   17
+  ],
+  "er15-no-evidence": [
+   2
+  ],
+  "er15-name-drop": [
+   6,
+   9
+  ],
+  "er15-case-heavy": [
+   8
+  ],
+  "er15-verbose": [
+   null
+  ],
+  "er15-unfinished": [
+   1,
+   1
+  ],
+  "er15-misconception": [
+   5
+  ],
+  "er15-strong-reworded": [
+   15,
+   16
+  ],
+  "er15-strong-unfinished": [
+   15
+  ]
+ },
+ "orderings": {
+  "hard": [
+   {
+    "a": "er15-strong",
+    "op": ">=",
+    "b": "er15-weak",
+    "why": "strong must not score below weak",
+    "marks": [
+     16,
+     1
+    ],
+    "ok": true
+   },
+   {
+    "a": "er15-middle",
+    "op": ">",
+    "b": "er15-descriptive",
+    "why": "genuine analysis outperforms description",
+    "marks": [
+     17,
+     6
+    ],
+    "ok": true
+   },
+   {
+    "a": "er15-strong",
+    "op": ">",
+    "b": "er15-descriptive",
+    "why": "genuine analysis outperforms description",
+    "marks": [
+     16,
+     6
+    ],
+    "ok": true
+   },
+   {
+    "a": "er15-strong",
+    "op": ">",
+    "b": "er15-case-heavy",
+    "why": "analysis outperforms retold case data",
+    "marks": [
+     16,
+     8
+    ],
+    "ok": true
+   },
+   {
+    "a": "er15-strong",
+    "op": ">",
+    "b": "er15-name-drop",
+    "why": "genuine application outperforms name-dropping",
+    "marks": [
+     16,
+     6
+    ],
+    "ok": true
+   },
+   {
+    "a": "er15-strong",
+    "op": ">",
+    "b": "er15-strong-unfinished",
+    "why": "substantially complete outperforms its unfinished equivalent",
+    "marks": [
+     16,
+     15
+    ],
+    "ok": true
+   },
+   {
+    "a": "er15-middle",
+    "op": ">",
+    "b": "er15-unfinished",
+    "why": "complete outperforms the unfinished stub",
+    "marks": [
+     17,
+     1
+    ],
+    "ok": true
+   },
+   {
+    "a": "er15-strong-reworded",
+    "op": "within 2 of",
+    "b": "er15-strong",
+    "why": "alternative wording is not penalised",
+    "marks": [
+     15,
+     16
+    ],
+    "ok": true
+   }
+  ],
+  "soft": [
+   {
+    "a": "er15-middle",
+    "op": ">=",
+    "b": "er15-case-heavy",
+    "why": null,
+    "marks": [
+     17,
+     8
+    ],
+    "ok": true
+   },
+   {
+    "a": "er15-middle",
+    "op": ">=",
+    "b": "er15-verbose",
+    "why": null,
+    "marks": [
+     17,
+     null
+    ],
+    "ok": null
+   },
+   {
+    "a": "er15-middle",
+    "op": ">",
+    "b": "er15-misconception",
+    "why": null,
+    "marks": [
+     17,
+     5
+    ],
+    "ok": true
+   },
+   {
+    "a": "er15-name-drop",
+    "op": ">=",
+    "b": "er15-no-evidence",
+    "why": null,
+    "marks": [
+     6,
+     2
+    ],
+    "ok": true
+   },
+   {
+    "a": "er15-strong-unfinished",
+    "op": ">",
+    "b": "er15-descriptive",
+    "why": null,
+    "marks": [
+     15,
+     6
+    ],
+    "ok": true
+   },
+   {
+    "a": "er15-strong",
+    "op": ">=",
+    "b": "er15-middle",
+    "why": null,
+    "marks": [
+     16,
+     17
+    ],
+    "ok": false
+   }
+  ]
+ },
+ "display": {
+  "results": 15,
+  "observations": 96,
+  "inResponse": 96,
+  "across": 0,
+  "emptyQuotes": 14,
+  "unverifiedQuotes": 0,
+  "markup": 60,
+  "bands": 12,
+  "miniMarks": 0,
+  "economics": 0,
+  "resultsWithBands": 8,
+  "resultsWithMarkup": 15,
+  "criteriaNotAuthored": 0
+ },
+ "timing": {
+  "requests": 18,
+  "usable": 17,
+  "failed": [
+   {
+    "n": 8,
+    "status": 502,
+    "error": "upstream 524",
+    "ms": 145129
+   }
+  ],
+  "p50": 90497,
+  "p95": 122183,
+  "max": 122183,
+  "judgementP50": 73278,
+  "diagnosisCapped": 8,
+  "under45": 0,
+  "under40": 0,
+  "timingAnswers": {
+   "usable": 0,
+   "p95": null,
+   "meetsTarget": null
+  },
+  "perRequest": [
+   {
+    "n": 1,
+    "step": "er15-weak",
+    "id": "er15-weak",
+    "words": 36,
+    "status": 200,
+    "score": 1,
+    "error": null,
+    "diagnosisMs": 10668,
+    "judgementMs": 53212,
+    "totalMs": 64147
+   },
+   {
+    "n": 2,
+    "step": "er15-descriptive",
+    "id": "er15-descriptive",
+    "words": 159,
+    "status": 200,
+    "score": 6,
+    "error": null,
+    "diagnosisMs": 17387,
+    "judgementMs": 104703,
+    "totalMs": 122183
+   },
+   {
+    "n": 3,
+    "step": "er15-middle",
+    "id": "er15-middle",
+    "words": 176,
+    "status": 200,
+    "score": 17,
+    "error": null,
+    "diagnosisMs": 16210,
+    "judgementMs": 54387,
+    "totalMs": 70690
+   },
+   {
+    "n": 4,
+    "step": "er15-strong",
+    "id": "er15-strong",
+    "words": 195,
+    "status": 200,
+    "score": 16,
+    "error": null,
+    "diagnosisMs": 20000,
+    "judgementMs": 70435,
+    "totalMs": 90497
+   },
+   {
+    "n": 5,
+    "step": "er15-no-evidence",
+    "id": "er15-no-evidence",
+    "words": 90,
+    "status": 200,
+    "score": 2,
+    "error": null,
+    "diagnosisMs": 16323,
+    "judgementMs": 73278,
+    "totalMs": 89701
+   },
+   {
+    "n": 6,
+    "step": "er15-name-drop",
+    "id": "er15-name-drop",
+    "words": 181,
+    "status": 200,
+    "score": 6,
+    "error": null,
+    "diagnosisMs": 20000,
+    "judgementMs": 79770,
+    "totalMs": 99856
+   },
+   {
+    "n": 7,
+    "step": "er15-case-heavy",
+    "id": "er15-case-heavy",
+    "words": 191,
+    "status": 200,
+    "score": 8,
+    "error": null,
+    "diagnosisMs": 20000,
+    "judgementMs": 95595,
+    "totalMs": 115709
+   },
+   {
+    "n": 8,
+    "step": "er15-verbose",
+    "id": "er15-verbose",
+    "words": 400,
+    "status": 502,
+    "score": null,
+    "error": "upstream 524",
+    "diagnosisMs": null,
+    "judgementMs": null,
+    "totalMs": 145129
+   },
+   {
+    "n": 9,
+    "step": "er15-unfinished",
+    "id": "er15-unfinished",
+    "words": 34,
+    "status": 200,
+    "score": 1,
+    "error": null,
+    "diagnosisMs": 10601,
+    "judgementMs": 68524,
+    "totalMs": 79189
+   },
+   {
+    "n": 10,
+    "step": "er15-misconception",
+    "id": "er15-misconception",
+    "words": 196,
+    "status": 200,
+    "score": 5,
+    "error": null,
+    "diagnosisMs": 20000,
+    "judgementMs": 92435,
+    "totalMs": 112501
+   },
+   {
+    "n": 11,
+    "step": "er15-strong-reworded",
+    "id": "er15-strong-reworded",
+    "words": 241,
+    "status": 200,
+    "score": 15,
+    "error": null,
+    "diagnosisMs": 20001,
+    "judgementMs": 78790,
+    "totalMs": 98870
+   },
+   {
+    "n": 12,
+    "step": "er15-strong-unfinished",
+    "id": "er15-strong-unfinished",
+    "words": 146,
+    "status": 200,
+    "score": 15,
+    "error": null,
+    "diagnosisMs": 15785,
+    "judgementMs": 53074,
+    "totalMs": 68956
+   },
+   {
+    "n": 13,
+    "step": "er15-strong-reworded (repeat)",
+    "id": "er15-strong-reworded",
+    "words": 241,
+    "status": 200,
+    "score": 16,
+    "error": null,
+    "diagnosisMs": 20000,
+    "judgementMs": 79297,
+    "totalMs": 99370
+   },
+   {
+    "n": 14,
+    "step": "probe: later edit vs earlier mark",
+    "id": "er15-unfinished",
+    "words": 34,
+    "status": 200,
+    "score": 1,
+    "error": null,
+    "diagnosisMs": 10040,
+    "judgementMs": 52534,
+    "totalMs": 62658
+   },
+   {
+    "n": 15,
+    "step": "probe: later edit vs earlier mark",
+    "id": "er15-middle",
+    "words": 176,
+    "status": 200,
+    "score": 16,
+    "error": null,
+    "diagnosisMs": 15815,
+    "judgementMs": 69566,
+    "totalMs": 85459
+   },
+   {
+    "n": 16,
+    "step": "probe: late reply after Start again",
+    "id": "er15-weak",
+    "words": 36,
+    "status": 200,
+    "score": 1,
+    "error": null,
+    "diagnosisMs": 11057,
+    "judgementMs": 57627,
+    "totalMs": 68747
+   },
+   {
+    "n": 17,
+    "step": "probe: late reply while on another question",
+    "id": "er15-strong",
+    "words": 195,
+    "status": 200,
+    "score": 17,
+    "error": null,
+    "diagnosisMs": 20000,
+    "judgementMs": 77078,
+    "totalMs": 97158
+   },
+   {
+    "n": 18,
+    "step": "probe: leave unmarked, then the reply arrives",
+    "id": "er15-name-drop",
+    "words": 181,
+    "status": 200,
+    "score": 9,
+    "error": null,
+    "diagnosisMs": 20000,
+    "judgementMs": 83604,
+    "totalMs": 103671
+   }
+  ]
+ },
+ "profiles": [
+  {
+   "id": "er15-weak",
+   "tag": null,
+   "status": "marked",
+   "mark": 1,
+   "badge": "Not yet",
+   "summary": "This response is at the very beginning of what the question asks for: it names no business, states no marketing objectives, provides no evidence, and does not develop any evaluation. Rewriting from the introduction with a named business and its specific objectives is the essential first step.",
+   "why": null,
+   "criteria": [
+    {
+     "name": "knowledge and understanding of course content",
+     "descriptor": "Rewards accurate knowledge of marketing strategies and how they serve marketing objectives."
+    },
+    {
+     "name": "application of business case studies and contemporary business issues",
+     "descriptor": "Rewards the use of a named, specific business case study with evidence tied to the argument."
+    },
+    {
+     "name": "business terminology and concepts",
+     "descriptor": "Rewards accurate use of business terms that carry the reasoning rather than merely appearing as labels."
+    },
+    {
+     "name": "sustained, logical and cohesive response",
+     "descriptor": "Rewards a response that holds one evaluative argument from introduction to conclusion, with paragraphs that build on each other."
+    }
+   ],
+   "inResponse": [
+    {
+     "head": "No thesis or named business",
+     "quote": "Marketing is very important for every business",
+     "why": "This sentence makes a general statement that could appear in any response. The question asks you to evaluate strategies for a specific business you studied, so the opening must name that business, state its {{marketing objectives|the specific goals a business sets for its marketing activities, such as increasing market share or building brand awareness|0}}, and give your overall judgement on whether the strategies achieved them."
+    },
+    {
+     "head": "Business unnamed, no evidence",
+     "quote": "A business I studied used advertising and social media to sell its products and it worked well",
+     "why": "The business is never identified, which means no case study evidence can be accepted by a marker. You must name the business, specify the strategies used, and explain what outcome shows they worked, rather than simply stating 'it worked well'."
+    },
+    {
+     "head": "Assertion restates P1 with no analysis",
+     "quote": "Marketing strategies help businesses to make more money, so they are effective",
+     "why": "This sentence repeats the general claim that strategies are effective without explaining which strategy, how it served which {{marketing objective|the specific, measurable goals that guide a business's marketing activities|0}}, and what evidence shows the result. Every body paragraph needs a point, an explanation of the mechanism, and specific evidence."
+    },
+    {
+     "head": "No weighing of effectiveness",
+     "quote": "",
+     "why": "An 'evaluate' question requires you to weigh how effective the strategies were, which means acknowledging any limitations or areas where the strategies fell short, as well as their strengths. Without this, the response only presents one side and cannot reach the higher bands."
+    },
+    {
+     "head": "No conclusion",
+     "quote": "",
+     "why": "The response ends without a conclusion. A conclusion must bring together the overall judgement on how effectively the strategies achieved the business's marketing objectives, referring back to the objectives named in the introduction."
+    }
+   ],
+   "across": [],
+   "shown": {
+    "observations": 5,
+    "inResponse": 5,
+    "across": 0,
+    "emptyQuotes": 2,
+    "unverifiedQuotes": 0,
+    "markup": 2,
+    "bands": 1,
+    "miniMarks": 0,
+    "economics": false,
+    "criteria": [
+     "knowledge and understanding of course content",
+     "application of business case studies and contemporary business issues",
+     "business terminology and concepts",
+     "sustained, logical and cohesive response"
+    ],
+    "criteriaAuthored": true
+   },
+   "timing": {
+    "diagnosisMs": 10668,
+    "judgementMs": 53212,
+    "requestMs": 64147,
+    "diagnosisCapped": false,
+    "replyStatus": 200,
+    "replyError": null,
+    "failure": null
+   }
+  },
+  {
+   "id": "er15-descriptive",
+   "tag": null,
+   "status": "marked",
+   "mark": 6,
+   "badge": "Partly there",
+   "summary": "The response names a real business and identifies its four Ps, but it describes marketing activities rather than evaluating them: no specific marketing objectives are ever stated, so there is no benchmark against which effectiveness can be judged. Rewriting the introduction to name at least two concrete objectives, such as increasing brand awareness or growing market share among teenagers, would immediately lift every paragraph that follows.",
+   "why": null,
+   "criteria": [
+    {
+     "name": "knowledge and understanding of course content",
+     "descriptor": "Rewards accurate understanding of marketing concepts, objectives and strategies as defined in the Business Studies course."
+    },
+    {
+     "name": "application of business case studies and contemporary business issues",
+     "descriptor": "Rewards the use of specific, accurate evidence from a real business to support judgements about marketing effectiveness."
+    },
+    {
+     "name": "business terminology and concepts",
+     "descriptor": "Rewards accurate and purposeful use of Business Studies terminology to carry the argument rather than decorate it."
+    },
+    {
+     "name": "sustained, logical and cohesive response",
+     "descriptor": "Rewards a response that holds a single evaluative argument from introduction to conclusion, with each paragraph building on the last."
+    }
+   ],
+   "inResponse": [
+    {
+     "head": "No objectives stated",
+     "quote": "Its target market is teenagers aged 13 to 17, and its marketing strategies cover the four Ps of the marketing mix",
+     "why": "The question asks you to evaluate strategies against {{marketing objectives|the specific goals a business sets for its marketing activity, such as increasing market share, building brand awareness or growing customer loyalty|0}}. Without naming at least two objectives here, every paragraph that follows can only describe what Northline does, never judge whether it works. Replace the four-Ps frame with a sentence that states what Northline is actually trying to achieve."
+    },
+    {
+     "head": "Missing evaluative thesis",
+     "quote": "",
+     "why": "An evaluate question requires you to state your overall verdict in the introduction. Without a thesis, the marker has no argument to follow across the paragraphs. Add one sentence that gives your overall judgement on whether the strategies are effective, partially effective, or mixed."
+    },
+    {
+     "head": "Description, not evaluation",
+     "quote": "For product, Northline sells running shoes, training gear and a range of hoodies",
+     "why": "Listing what Northline sells is description, not analysis. You need to explain how this product range serves a specific {{marketing objective|the specific goal a business sets for its marketing activity|0}}, such as why stocking these three categories positions Northline to attract its teenage target market rather than a broader audience."
+    },
+    {
+     "head": "Assertion without evidence",
+     "quote": "It releases new designs each season and uses bright colours that appeal to its target market",
+     "why": "Saying bright colours 'appeal to its target market' is an assertion: no evidence is given for why teenagers respond to this or whether it has actually increased sales or awareness. You need to link the seasonal release cycle or the colour choices to a measurable outcome or at least explain the mechanism by which this achieves the objective."
+    },
+    {
+     "head": "Strategy change not evaluated",
+     "quote": "For promotion, Northline moved from print advertising to short videos on social media platforms",
+     "why": "Moving from print to social media video is the most strategically significant fact in the response, yet you do not say why this change was made, what objective it serves, or whether it worked. Explain the reasoning: teenagers consume content on social media rather than print, so this shift directly targets the awareness objective for that segment."
+    },
+    {
+     "head": "Influencer use not evaluated",
+     "quote": "The videos show young athletes wearing its products, and some of them feature influencers",
+     "why": "You mention {{influencer marketing|using individuals with a social media following to promote products to their audience|0}} but do not explain why it is effective for Northline's objectives or provide any measure of its impact, such as follower reach, engagement or brand sentiment change. Add a reason why this technique works for the teenage target market."
+    },
+    {
+     "head": "Loyalty strategy not linked to objective",
+     "quote": "It also has a loyalty app where members get early access to new releases",
+     "why": "Early access through a loyalty app is a classic {{customer retention|strategies aimed at keeping existing customers buying from the business rather than switching to competitors|0}} tool, but you do not connect it to any objective such as building customer loyalty or repeat purchase rates. Without that link, the sentence is a description of a feature, not an evaluation of a strategy."
+    },
+    {
+     "head": "Distribution not linked to objectives",
+     "quote": "For place, Northline sells through its own stores in shopping centres and through its website, which offers free delivery on orders over $80",
+     "why": "You describe two channels but do not explain why having both a physical presence and an online store helps Northline reach its teenage target market or achieve its objectives. The $80 free-delivery threshold is a specific business decision that deserves an explanation of what it is meant to do, such as raising average order value or encouraging first-time online buyers."
+    },
+    {
+     "head": "Price change not explained or evaluated",
+     "quote": "For price, Northline reduced its prices across the range in 2023",
+     "why": "A bare statement that prices were reduced in 2023 does not show any understanding of {{pricing strategy|the method a business uses to set prices in order to achieve its marketing objectives|0}}. You need to explain why the reduction was made, which objective it serves, and whether there is any evidence it worked, such as a sales volume increase or a change in market share."
+    },
+    {
+     "head": "Conclusion is a restatement, not a judgement",
+     "quote": "These are the main marketing strategies that Northline uses, and they help it to achieve its marketing objectives",
+     "why": "An evaluate question requires a conclusion that weighs the evidence and delivers a final verdict. Saying 'they help it to achieve its marketing objectives' simply repeats the topic without distinguishing which strategies were most effective, which were less effective, and why. This sentence earns no marks because it adds no reasoning that was not already present."
+    }
+   ],
+   "across": [],
+   "shown": {
+    "observations": 10,
+    "inResponse": 10,
+    "across": 0,
+    "emptyQuotes": 1,
+    "unverifiedQuotes": 0,
+    "markup": 5,
+    "bands": 0,
+    "miniMarks": 0,
+    "economics": false,
+    "criteria": [
+     "knowledge and understanding of course content",
+     "application of business case studies and contemporary business issues",
+     "business terminology and concepts",
+     "sustained, logical and cohesive response"
+    ],
+    "criteriaAuthored": true
+   },
+   "timing": {
+    "diagnosisMs": 17387,
+    "judgementMs": 104703,
+    "requestMs": 122183,
+    "diagnosisCapped": false,
+    "replyStatus": 200,
+    "replyError": null,
+    "failure": null
+   }
+  },
+  {
+   "id": "er15-middle",
+   "tag": null,
+   "status": "marked",
+   "mark": 17,
+   "badge": "Most of it",
+   "summary": "This is a clear, focused Band 5 response that holds one argument from the first sentence to the last and uses evidence purposefully rather than decoratively. The main thing holding it out of Band 6 is the conclusion, which restates the judgement rather than deepening it, and the absence of any quantitative data to anchor the evaluation.",
+   "why": null,
+   "criteria": [
+    {
+     "name": "knowledge and understanding of course content",
+     "descriptor": "Rewards accurate knowledge of marketing strategies and objectives and understanding of how they connect."
+    },
+    {
+     "name": "application of business case studies and contemporary business issues",
+     "descriptor": "Rewards use of a specific business case study with evidence applied to the question rather than retold."
+    },
+    {
+     "name": "business terminology and concepts",
+     "descriptor": "Rewards accurate use of business terms that carry the reasoning rather than decorate it."
+    },
+    {
+     "name": "sustained, logical and cohesive response",
+     "descriptor": "Rewards a response that holds one argument from introduction to conclusion and builds each paragraph on the one before."
+    }
+   ],
+   "inResponse": [
+    {
+     "head": "Missing result",
+     "quote": "The business moved from print advertising to short video content on social platforms, which reached the age group it was targeting at a lower cost per view than its previous campaigns",
+     "why": "The sentence explains the mechanism well, but it does not state any outcome, such as a change in reach, engagement or {{market share|the proportion of total sales in a market held by one business|0}}, that would let a reader judge whether the strategy actually worked. Without a result, the evaluation is based on the logic of the strategy, not its measured effect."
+    },
+    {
+     "head": "Conclusion restates rather than evaluates",
+     "quote": "Overall the marketing strategies were effective in achieving the objective they were set, because the business gained share in the group it targeted, but the pricing decision limited how much of that gain it could hold",
+     "why": "This sentence repeats the summary from earlier paragraphs without advancing the evaluation. A Band 6 conclusion weighs the relative significance of the contradictions identified, for example by judging whether the {{premium position|a brand's placement in the market as high-quality and aspirational, commanding a higher price|0}} lost to discounting was a short-term or long-term threat to the market share objective, or by specifying what evidence would be needed to say the strategies were fully effective."
+    },
+    {
+     "head": "No data to anchor the verdict",
+     "quote": "",
+     "why": "The evaluation claims the business gained {{market share|the proportion of total sales in a market held by one business|0}} in the teenage segment, but no figure, percentage or comparable result is given anywhere in the response. Without data, the verdict rests on assertion rather than proof, and a marker cannot award full marks for an evaluation that has no measured outcome to judge against."
+    }
+   ],
+   "across": [],
+   "shown": {
+    "observations": 3,
+    "inResponse": 3,
+    "across": 0,
+    "emptyQuotes": 1,
+    "unverifiedQuotes": 0,
+    "markup": 3,
+    "bands": 2,
+    "miniMarks": 0,
+    "economics": false,
+    "criteria": [
+     "knowledge and understanding of course content",
+     "application of business case studies and contemporary business issues",
+     "business terminology and concepts",
+     "sustained, logical and cohesive response"
+    ],
+    "criteriaAuthored": true
+   },
+   "timing": {
+    "diagnosisMs": 16210,
+    "judgementMs": 54387,
+    "requestMs": 70690,
+    "diagnosisCapped": false,
+    "replyStatus": 200,
+    "replyError": null,
+    "failure": null
+   }
+  },
+  {
+   "id": "er15-strong",
+   "tag": null,
+   "status": "marked",
+   "mark": 16,
+   "badge": "Most of it",
+   "summary": "This is a focused, well-argued response that holds one judgement from the first sentence to the last and earns marks in the upper band. The main thing holding it back from full marks is that the business studies terminology is thin across the body paragraphs, so the reasoning is sound but the language does not always carry the weight the argument deserves.",
+   "why": null,
+   "criteria": [
+    {
+     "name": "knowledge and understanding of course content",
+     "descriptor": "Rewards accurate use of Business Studies concepts and understanding of how marketing strategies serve marketing objectives."
+    },
+    {
+     "name": "application of business case studies and contemporary business issues",
+     "descriptor": "Rewards specific, accurate evidence from a real business used to support or qualify the evaluative argument."
+    },
+    {
+     "name": "business terminology and concepts",
+     "descriptor": "Rewards accurate, purposeful use of Business Studies terms to carry the argument rather than decorate it."
+    },
+    {
+     "name": "sustained, logical and cohesive response",
+     "descriptor": "Rewards a response that holds one argument across all paragraphs, builds logically and reaches a conclusion consistent with its opening judgement."
+    }
+   ],
+   "inResponse": [
+    {
+     "head": "Name the strategy type",
+     "quote": "The move from print to short-form video was effective against that objective",
+     "why": "The phrase 'move from print to short-form video' describes what the business did but does not place it inside the course's framework. Naming it as a shift in the {{promotional mix|the combination of promotional methods a business uses to communicate with its target market|0}} would satisfy the knowledge and terminology criteria and signal that the choice was strategic rather than incidental."
+    },
+    {
+     "head": "Connect reach to market share",
+     "quote": "",
+     "why": "The paragraph shows the strategy was cheap and reached the right people, but it does not explicitly connect increased reach to movement in {{market share|the proportion of total sales in a market held by one business|0}}. Without that step, the reader must make the inference themselves, which limits the mark under 'sustained, logical and cohesive response'."
+    },
+    {
+     "head": "Name the relationship strategy",
+     "quote": "The loyalty app was also effective, because members bought 2.4 times a year against 1.3 for non-members, which turned reach into repeat purchase",
+     "why": "The loyalty app is an instrument of {{relationship marketing|strategies that focus on building long-term connections with customers to increase retention and lifetime value|0}}, and naming it as such would show that the student understands why the strategy was chosen, not just what it did. Replacing 'loyalty app' with its conceptual category earns a mark under both knowledge and terminology."
+    },
+    {
+     "head": "Name the pricing strategy and its effect on positioning",
+     "quote": "Northline cut prices across its range in the same year, and its average sale value fell 11 per cent, which undermined the premium image the video campaign was building",
+     "why": "The student shows the 11 per cent fall in average sale value but does not name this as a {{penetration pricing|setting a low price to attract customers and grow market share, often at the cost of margin and brand perception|0}} or price-reduction strategy, nor does it connect it to the concept of {{brand positioning|the place a brand occupies in the consumer's mind relative to competitors|0}}. Naming both terms would lift this paragraph from observation into analysis."
+    },
+    {
+     "head": "Commit to the final judgement",
+     "quote": "Overall the strategies were largely effective: share reached 11 per cent, close to the target, but the pricing decision cost margin and probably limited how much of the gain will last",
+     "why": "The student wrote 'probably limited how much of the gain will last', but paragraph four already established that the pricing decision undermined the premium image and cost margin. The evidence supports a firm claim, so 'probably' weakens a conclusion the argument has already earned. Removing the hedge and tying the judgement to the original benchmark (12 per cent vs 11 per cent) would close the response at the same evaluative level at which it opened."
+    }
+   ],
+   "across": [],
+   "shown": {
+    "observations": 5,
+    "inResponse": 5,
+    "across": 0,
+    "emptyQuotes": 1,
+    "unverifiedQuotes": 0,
+    "markup": 4,
+    "bands": 1,
+    "miniMarks": 0,
+    "economics": false,
+    "criteria": [
+     "knowledge and understanding of course content",
+     "application of business case studies and contemporary business issues",
+     "business terminology and concepts",
+     "sustained, logical and cohesive response"
+    ],
+    "criteriaAuthored": true
+   },
+   "timing": {
+    "diagnosisMs": 20000,
+    "judgementMs": 70435,
+    "requestMs": 90497,
+    "diagnosisCapped": true,
+    "replyStatus": 200,
+    "replyError": null,
+    "failure": null
+   }
+  },
+  {
+   "id": "er15-no-evidence",
+   "tag": null,
+   "status": "marked",
+   "mark": 2,
+   "badge": "Not yet",
+   "summary": "The response shows basic familiarity with marketing concepts but does not name a single real business, which means the question requirement to evaluate a business you have studied is never met. Rewriting paragraph 2 around one named business case study would do the most to lift the mark.",
+   "why": null,
+   "criteria": [
+    {
+     "name": "knowledge and understanding of course content",
+     "descriptor": "Rewards accurate and developed knowledge of marketing objectives, the marketing mix and the relationship between them."
+    },
+    {
+     "name": "application of business case studies and contemporary business issues",
+     "descriptor": "Rewards the use of a real named business to ground claims about strategy effectiveness in specific evidence."
+    },
+    {
+     "name": "business terminology and concepts",
+     "descriptor": "Rewards accurate and purposeful use of Business Studies terms to carry the argument rather than to decorate it."
+    },
+    {
+     "name": "sustained, logical and cohesive response",
+     "descriptor": "Rewards a response that holds a single line of argument from introduction to conclusion, with paragraphs that build on each other."
+    }
+   ],
+   "inResponse": [
+    {
+     "head": "No business named",
+     "quote": "Effective marketing starts with clear objectives, such as increasing market share, building brand awareness or entering a new market",
+     "why": "The question asks you to evaluate strategies for a {{business you have studied|a real named business used as your case study throughout the response|0}}. Naming objectives in the abstract cannot earn application marks because there is no case to evaluate against."
+    },
+    {
+     "head": "Assertion without explanation",
+     "quote": "Strategies are then chosen across the marketing mix of product, price, promotion and place",
+     "why": "The sentence states that strategies come from the {{marketing mix|the four Ps: product, price, promotion and place|0}} but does not explain how a business decides which element to prioritise given a particular objective. Without that link, this reads as a definition rather than an argument."
+    },
+    {
+     "head": "No evaluative thesis",
+     "quote": "",
+     "why": "An evaluate question requires a judgement in the introduction. The student never states whether the strategies were effective, largely effective or partially effective for the chosen business, so the marker cannot see a line of argument to follow."
+    },
+    {
+     "head": "No business case for social media claim",
+     "quote": "Promotion through social media is usually effective for younger markets because it is cheap and targeted",
+     "why": "The claim that social media is cheap and targeted may be generally true, but without naming the business and showing that it actually used this strategy to meet a stated objective, the point earns no {{application|the use of a real business case to support or illustrate a claim|0}} marks. The question specifies 'a business you have studied'."
+    },
+    {
+     "head": "Unsupported claim, no business link",
+     "quote": "Loyalty programs are effective because they increase repeat purchase",
+     "why": "Stating that {{loyalty programs|promotional strategies designed to reward repeat purchasing behaviour and retain existing customers|0}} increase repeat purchase is a definition, not an evaluation. There is no named business, no data and no connection to a specific marketing objective, so the sentence cannot be rewarded beyond the most basic recall."
+    },
+    {
+     "head": "Trade-off not grounded in a business",
+     "quote": "Price cuts can increase sales in the short term but can damage a premium brand",
+     "why": "This sentence shows useful evaluative thinking about the trade-off between {{market penetration pricing|a strategy of setting a low price to grow sales volume and market share quickly|0}} and brand equity, but without a named business the marker cannot reward it as analysis. Attach it to the specific business you are studying."
+    },
+    {
+     "head": "Conclusion restates thesis without evaluating the business",
+     "quote": "Therefore marketing strategies are effective when they are aligned with the objectives they are meant to achieve",
+     "why": "An evaluate question requires a final verdict that weighs evidence for and against the strategies' effectiveness. This sentence repeats the opening claim word-for-word in effect and does not name the business, cite any outcome or acknowledge any limitation, so it cannot earn evaluation marks."
+    }
+   ],
+   "across": [],
+   "shown": {
+    "observations": 7,
+    "inResponse": 7,
+    "across": 0,
+    "emptyQuotes": 1,
+    "unverifiedQuotes": 0,
+    "markup": 5,
+    "bands": 0,
+    "miniMarks": 0,
+    "economics": false,
+    "criteria": [
+     "knowledge and understanding of course content",
+     "application of business case studies and contemporary business issues",
+     "business terminology and concepts",
+     "sustained, logical and cohesive response"
+    ],
+    "criteriaAuthored": true
+   },
+   "timing": {
+    "diagnosisMs": 16323,
+    "judgementMs": 73278,
+    "requestMs": 89701,
+    "diagnosisCapped": false,
+    "replyStatus": 200,
+    "replyError": null,
+    "failure": null
+   }
+  },
+  {
+   "id": "er15-name-drop",
+   "tag": null,
+   "status": "marked",
+   "mark": 6,
+   "badge": "Partly there",
+   "summary": "The response shows a grasp of marketing concepts and gestures toward evaluation, but it relies almost entirely on assertion rather than evidence: Northline Sportswear is named several times yet no specific data, campaign, or dated event is ever given, so the judgements cannot be verified. The response also reads as a short plan rather than a sustained 20-mark argument.",
+   "why": null,
+   "criteria": [
+    {
+     "name": "knowledge and understanding of course content",
+     "descriptor": "Rewards accurate understanding of marketing objectives, strategies and the marketing mix."
+    },
+    {
+     "name": "application of business case studies and contemporary business issues",
+     "descriptor": "Rewards use of specific business evidence to support evaluation."
+    },
+    {
+     "name": "business terminology and concepts",
+     "descriptor": "Rewards accurate use of subject terms that carry the reasoning."
+    },
+    {
+     "name": "sustained, logical and cohesive response",
+     "descriptor": "Rewards a response that holds one argument from introduction to conclusion, with paragraphs that build on each other."
+    }
+   ],
+   "inResponse": [
+    {
+     "head": "No business or its actual objective stated",
+     "quote": "Marketing objectives should be specific and measurable, such as increasing market share in a target segment, raising brand awareness or improving customer retention",
+     "why": "A 20-mark evaluate question rewards judgement grounded in a real case. Listing generic examples of {{marketing objectives|the specific, measurable targets a business sets for its marketing activities|0}} without naming the business or its actual objective means the marker has nothing to evaluate against yet."
+    },
+    {
+     "head": "Thesis gives no verdict",
+     "quote": "A marketing strategy is effective only if it moves the business towards the objective it was designed for, so evaluation has to start from the objective rather than from the marketing mix",
+     "why": "This sentence states a principle for how to evaluate but never delivers the evaluation itself. A strong introduction ends with a clear verdict: were the strategies effective, partially effective, or ineffective for this business?"
+    },
+    {
+     "head": "Evidence is named but not used",
+     "quote": "Promotion strategies such as digital and social media marketing are generally effective for a teenage target market, because they allow precise targeting and a lower cost per contact than traditional media, as Northline Sportswear found",
+     "why": "Saying 'as Northline Sportswear found' without explaining what Northline actually did or measured means the evidence does no evaluative work. The marker needs to see a specific action and its outcome to award marks for {{application of case studies|using real business detail to support an argument|0}}."
+    },
+    {
+     "head": "Causal link is asserted, not shown",
+     "quote": "Relationship marketing, for example a loyalty program like Northline's app, supports market share objectives by increasing repeat purchase and customer lifetime value, which is cheaper than acquiring new customers",
+     "why": "The sentence tells the reader that the app increases {{customer lifetime value|the total revenue a business expects from a single customer over the entire relationship|0}}, but gives no figure, trend, or specific feature of the app that produced that outcome. Without this, the paragraph is describing relationship marketing theory rather than evaluating Northline's actual results."
+    },
+    {
+     "head": "Opening claim is too general",
+     "quote": "Pricing strategies need to be consistent with positioning",
+     "why": "This sentence restates a principle without connecting it to Northline's specific pricing decision or objective. A marker rewarding evaluation wants to see the principle applied immediately to the case."
+    },
+    {
+     "head": "Evidence is a single throwaway clause",
+     "quote": "Discounting may raise sales volume in the short term if demand is price elastic, but it can undermine a premium position that the promotion strategy is trying to build, which happened at Northline",
+     "why": "'Which happened at Northline' is the only business-specific detail in this paragraph, but it carries no explanation of what the discounting was, when it occurred, or how it damaged the premium position. Without that, the evaluative judgement has no evidentiary base and cannot receive full marks for {{application of case studies|using real business detail to support an argument|0}}."
+    },
+    {
+     "head": "No tie-back to the objective",
+     "quote": "",
+     "why": "The paragraph ends without saying whether the pricing strategy was effective or ineffective in terms of Northline's stated marketing objectives. Evaluation requires a verdict, not just an observation about the tension."
+    },
+    {
+     "head": "Conclusion gives no verdict on Northline's effectiveness",
+     "quote": "Therefore marketing strategies are effective when they are integrated and aligned with clear objectives, as businesses such as Northline Sportswear show",
+     "why": "A conclusion to an evaluate question must deliver a clear, supported judgement: the strategies were effective, partially effective, or ineffective, and why. 'As businesses such as Northline Sportswear show' neither names what Northline showed nor weighs the evidence from the body paragraphs."
+    }
+   ],
+   "across": [],
+   "shown": {
+    "observations": 8,
+    "inResponse": 8,
+    "across": 0,
+    "emptyQuotes": 1,
+    "unverifiedQuotes": 0,
+    "markup": 4,
+    "bands": 0,
+    "miniMarks": 0,
+    "economics": false,
+    "criteria": [
+     "knowledge and understanding of course content",
+     "application of business case studies and contemporary business issues",
+     "business terminology and concepts",
+     "sustained, logical and cohesive response"
+    ],
+    "criteriaAuthored": true
+   },
+   "timing": {
+    "diagnosisMs": 20000,
+    "judgementMs": 79770,
+    "requestMs": 99856,
+    "diagnosisCapped": true,
+    "replyStatus": 200,
+    "replyError": null,
+    "failure": null
+   }
+  },
+  {
+   "id": "er15-case-heavy",
+   "tag": null,
+   "status": "marked",
+   "mark": 8,
+   "badge": "Partly there",
+   "summary": "The response contains solid, specific business data for Northline Sportswear, which is a real strength, but it lists strategies and results in sequence without ever evaluating whether those strategies were effective in achieving the stated marketing objective, so it reads as a report rather than an argument.",
+   "why": null,
+   "criteria": [
+    {
+     "name": "knowledge and understanding of course content",
+     "descriptor": "Rewards accurate knowledge of marketing strategies, objectives and concepts from the Business Studies course."
+    },
+    {
+     "name": "application of business case studies and contemporary business issues",
+     "descriptor": "Rewards the use of specific, accurate business evidence to support the argument."
+    },
+    {
+     "name": "business terminology and concepts",
+     "descriptor": "Rewards accurate use of Business Studies terminology to carry the reasoning."
+    },
+    {
+     "name": "sustained, logical and cohesive response",
+     "descriptor": "Rewards a response that holds a single evaluative argument from introduction to conclusion, with paragraphs that build on each other."
+    }
+   ],
+   "inResponse": [
+    {
+     "head": "Background not linked to objective",
+     "quote": "Northline Sportswear is a sportswear business that was founded in 2009 and has 46 stores",
+     "why": "Founding year and store count are background facts, not an argument. This sentence should instead frame the {{marketing objective|the specific, measurable goal a business sets for its marketing activities|0}} that the rest of the response will judge strategies against."
+    },
+    {
+     "head": "No thesis or evaluative judgement",
+     "quote": "In 2023 it had 8 per cent of the 13 to 17 year old market and it wanted to reach 12 per cent",
+     "why": "This sentence states the objective but does not tell the reader how effective the strategies were overall. An introduction to an evaluate question must state a judgement, not just the target, so the marker knows what argument is being made."
+    },
+    {
+     "head": "Label the strategy",
+     "quote": "It started making short videos for social media, which cost 4 cents per view",
+     "why": "The shift from print to social video is a shift in {{promotional mix|the combination of advertising, personal selling, sales promotion and public relations a business uses|0}}, and naming it lets you argue about its logic rather than just describe it."
+    },
+    {
+     "head": "Evidence not evaluated against the objective",
+     "quote": "Site visits from the age group went up by a third within six months",
+     "why": "A one-third rise in site visits is strong evidence, but you do not say whether it contributed to the market-share gain or why site traffic is a valid indicator of progress toward the 12 per cent target. Without that link, the evidence is left to speak for itself."
+    },
+    {
+     "head": "Name the strategic purpose",
+     "quote": "In April 2023 it launched a loyalty app",
+     "why": "A loyalty app is a {{customer relationship management|systems and strategies a business uses to manage interactions with existing and potential customers to increase retention and repeat sales|0}} tool. Naming its purpose connects the tactic to the objective."
+    },
+    {
+     "head": "Data not evaluated",
+     "quote": "Members bought 2.4 times a year and non-members bought 1.3 times a year",
+     "why": "The purchase-frequency gap (2.4 vs 1.3) is compelling evidence, but you do not say what it proves: members bought 85 per cent more often, which directly increases revenue and reinforces market share. Without that inference, the data is description, not evaluation."
+    },
+    {
+     "head": "No pricing strategy named or evaluated",
+     "quote": "In June 2023 Northline cut its prices across the range",
+     "why": "Cutting prices is a {{competitive pricing|setting prices at or below rivals to attract price-sensitive buyers and grow market share|0}} strategy. Without naming it, you cannot evaluate whether it was the right strategy for a youth market, and without evaluating it, this paragraph loses most of its marks."
+    },
+    {
+     "head": "Distribution strategy not evaluated",
+     "quote": "It also opened four new stores in regional towns",
+     "why": "Opening stores is a {{place strategy|decisions about the channels and locations through which a business makes its products available to customers|0}} decision, but you give no reason why regional towns were chosen or whether this contributed to the market-share objective. Evidence of impact (for example, regional sales data or foot traffic) is absent."
+    },
+    {
+     "head": "Result not evaluated against objective",
+     "quote": "At the end of 2023 Northline's market share was 11 per cent",
+     "why": "Northline reached 11 per cent but the target was 12 per cent. This one-sentence paragraph is the most important evaluative moment in the entire response, but it is left as a bare fact rather than a judgement about overall effectiveness."
+    },
+    {
+     "head": "Conclusion must evaluate, not summarise",
+     "quote": "In conclusion, Northline used many marketing strategies in 2023 and these were the results",
+     "why": "An evaluate question requires a final verdict. This sentence only says strategies were used and results occurred, which is what the body paragraphs already showed. The conclusion needs to judge which strategies were most effective, why, and whether the overall effort achieved the objective."
+    }
+   ],
+   "across": [],
+   "shown": {
+    "observations": 10,
+    "inResponse": 10,
+    "across": 0,
+    "emptyQuotes": 0,
+    "unverifiedQuotes": 0,
+    "markup": 5,
+    "bands": 0,
+    "miniMarks": 0,
+    "economics": false,
+    "criteria": [
+     "knowledge and understanding of course content",
+     "application of business case studies and contemporary business issues",
+     "business terminology and concepts",
+     "sustained, logical and cohesive response"
+    ],
+    "criteriaAuthored": true
+   },
+   "timing": {
+    "diagnosisMs": 20000,
+    "judgementMs": 95595,
+    "requestMs": 115709,
+    "diagnosisCapped": true,
+    "replyStatus": 200,
+    "replyError": null,
+    "failure": null
+   }
+  },
+  {
+   "id": "er15-verbose",
+   "tag": null,
+   "status": "not_marked",
+   "mark": null,
+   "badge": "Not marked yet",
+   "summary": "This response was not marked: the marker ran into a problem before it finished.",
+   "why": "This response was not marked: the marker ran into a problem before it finished.",
+   "criteria": [],
+   "inResponse": [],
+   "across": [],
+   "shown": null,
+   "timing": {
+    "diagnosisMs": null,
+    "judgementMs": null,
+    "requestMs": 145129,
+    "diagnosisCapped": false,
+    "replyStatus": 502,
+    "replyError": "upstream 524",
+    "failure": null
+   }
+  },
+  {
+   "id": "er15-unfinished",
+   "tag": null,
+   "status": "marked",
+   "mark": 1,
+   "badge": "Not yet",
+   "summary": "The response introduces a valid business and a clear marketing objective, but it is incomplete: paragraph 2 ends mid-sentence and no evidence, explanation, or judgement appears anywhere. Significant development is needed before this response can be awarded more than minimal marks.",
+   "why": null,
+   "criteria": [
+    {
+     "name": "knowledge and understanding of course content",
+     "descriptor": "Rewards accurate understanding of marketing objectives, strategies and how they connect to business outcomes."
+    },
+    {
+     "name": "application of business case studies and contemporary business issues",
+     "descriptor": "Rewards use of specific, accurate evidence from a real business to support the argument."
+    },
+    {
+     "name": "business terminology and concepts",
+     "descriptor": "Rewards accurate use of Business Studies terms as the vehicle for reasoning, not as decoration."
+    },
+    {
+     "name": "sustained, logical and cohesive response",
+     "descriptor": "Rewards a response that holds one argument from introduction to conclusion, with paragraphs that build on each other."
+    }
+   ],
+   "inResponse": [
+    {
+     "head": "Objective needs evaluative framing",
+     "quote": "Northline Sportswear set a marketing objective of increasing its share of the teenage market",
+     "why": "Stating the {{marketing objective|the specific, measurable goal a business sets for its marketing activity|0}} is a good start, but the question asks you to evaluate effectiveness, so you need to signal from the very first sentence what your overall judgement will be. Without that signal, the paragraph reads as an introduction to a description rather than an argument."
+    },
+    {
+     "head": "Strategy described but not explained",
+     "quote": "Its first strategy was to move from print advertising to short video content on social platforms",
+     "why": "You tell the reader what Northline Sportswear did, but not why this {{promotional strategy|the method a business uses to communicate its product or brand to a target market|0}} would help it reach teenagers specifically. Without the reasoning, the sentence is a description rather than an evaluative point, and it cannot earn marks for analysis."
+    },
+    {
+     "head": "No overall judgement stated",
+     "quote": "",
+     "why": "A strong introduction to an evaluate question closes with a clear verdict on how effective the strategies were overall. Without this, there is no argument for the marker to follow across the whole response."
+    },
+    {
+     "head": "Incomplete sentence with no evidence",
+     "quote": "This was effective because",
+     "why": "The sentence begins an effectiveness claim but is never completed. An evaluate question requires you to explain the mechanism by which the strategy worked and then support that explanation with specific evidence from the business. Without both, no marks for analysis or evaluation can be awarded here."
+    },
+    {
+     "head": "No evidence from the business",
+     "quote": "",
+     "why": "An evaluate response requires specific data or outcomes from the business, such as {{market share|the percentage of total sales in a market held by one business|0}} figures, sales growth, or reach statistics, to show whether the strategy actually achieved the objective. Asserting effectiveness without evidence cannot be credited beyond description."
+    },
+    {
+     "head": "No further strategies analysed",
+     "quote": "",
+     "why": "An evaluate question at 20 marks expects you to assess more than one strategy. Each additional strategy you discuss and link back to the marketing objective gives the marker evidence of analysis and sustained argument."
+    },
+    {
+     "head": "No conclusion or sustained judgement",
+     "quote": "",
+     "why": "A 20-mark evaluate response must end with a conclusion that brings the argument together and delivers a final, evidence-based verdict on effectiveness. Without this, the criterion for a sustained, logical and cohesive response cannot be met."
+    }
+   ],
+   "across": [],
+   "shown": {
+    "observations": 7,
+    "inResponse": 7,
+    "across": 0,
+    "emptyQuotes": 4,
+    "unverifiedQuotes": 0,
+    "markup": 3,
+    "bands": 0,
+    "miniMarks": 0,
+    "economics": false,
+    "criteria": [
+     "knowledge and understanding of course content",
+     "application of business case studies and contemporary business issues",
+     "business terminology and concepts",
+     "sustained, logical and cohesive response"
+    ],
+    "criteriaAuthored": true
+   },
+   "timing": {
+    "diagnosisMs": 10601,
+    "judgementMs": 68524,
+    "requestMs": 79189,
+    "diagnosisCapped": false,
+    "replyStatus": 200,
+    "replyError": null,
+    "failure": null
+   }
+  },
+  {
+   "id": "er15-misconception",
+   "tag": null,
+   "status": "marked",
+   "mark": 5,
+   "badge": "Not yet",
+   "summary": "The response names a real business and a specific objective, which gives it a foundation, but several key business terms are used incorrectly and the argument rests on unsupported generalisations rather than evidence. Fixing the term confusion in paragraph 2 will do the most to lift the mark.",
+   "why": null,
+   "criteria": [
+    {
+     "name": "knowledge and understanding of course content",
+     "descriptor": "Rewards accurate knowledge of marketing concepts, objectives and strategy relationships."
+    },
+    {
+     "name": "application of business case studies and contemporary business issues",
+     "descriptor": "Rewards use of specific business evidence that is connected to the point being argued."
+    },
+    {
+     "name": "business terminology and concepts",
+     "descriptor": "Rewards accurate use of subject terminology to carry meaning rather than decorate sentences."
+    },
+    {
+     "name": "sustained, logical and cohesive response",
+     "descriptor": "Rewards a response that holds one argument from introduction to conclusion, with paragraphs that build on each other."
+    }
+   ],
+   "inResponse": [
+    {
+     "head": "Missing thesis judgement",
+     "quote": "Northline Sportswear's marketing objective in 2023 was to increase its share of the 13 to 17 year old market from 8 to 12 per cent",
+     "why": "The objective is stated but the response does not signal how effective the strategies were overall. A Band 5 or 6 response opens with a controlling judgement that the body then proves."
+    },
+    {
+     "head": "Wrong term: price skimming",
+     "quote": "Its most effective strategy was price skimming",
+     "why": "{{price skimming|a strategy of setting a high launch price and lowering it over time to capture different consumer segments|0}} means charging a premium price first, not reducing prices broadly. The strategy Northline appears to have used is {{penetration pricing|setting a low price to attract a large number of buyers and gain market share quickly|0}} or a price reduction strategy. Using the wrong term here loses all the marks for this strategy."
+    },
+    {
+     "head": "Unsupported absolute claim",
+     "quote": "Northline lowered its prices across its whole range, which is called price skimming, and because teenagers have limited money, lowering prices always increases sales",
+     "why": "The statement that lowering prices always increases sales ignores {{price elasticity of demand|the responsiveness of quantity demanded to a change in price|0}}. Whether a price cut lifts sales depends on how elastic demand is in the segment. Replacing 'always' with a qualified, evidence-linked claim is necessary for any marks here."
+    },
+    {
+     "head": "Incorrect profit reasoning",
+     "quote": "When sales increase, profit always increases too, so the price cut also improved Northline's profitability",
+     "why": "Higher sales volume does not automatically mean higher profit. If {{contribution margin|the selling price minus variable cost per unit|0}} falls with the price cut, total profit may decline even as units sold rise. The student's own evidence, the 11 per cent drop in average sale value, makes this concern concrete but is then ignored."
+    },
+    {
+     "head": "Evidence dismissed without evaluation",
+     "quote": "Even though the average sale value fell by 11 per cent, this does not matter because more customers were buying",
+     "why": "Dismissing the 11 per cent fall as irrelevant removes the only piece of quantitative evidence in the paragraph. Evaluation means weighing evidence, not setting it aside. This sentence loses the chance to demonstrate evaluative thinking, which is what the question asks for."
+    },
+    {
+     "head": "Mass marketing confused with segmented targeting",
+     "quote": "Social media is a form of mass marketing because everyone uses it, so Northline reached the whole market rather than one segment, which is the best way to gain market share",
+     "why": "{{Mass marketing|a strategy of offering one product to the entire market without segmentation|0}} means ignoring segment differences and appealing to everyone with a single message. Social media platforms such as TikTok or Instagram allow precise {{market segmentation|dividing a market into groups with shared characteristics to target them separately|0}} by age, interest and behaviour. Northline was specifically targeting the 13 to 17 year old segment, which is the opposite of mass marketing."
+    },
+    {
+     "head": "Incorrect claim about market share growth",
+     "quote": "The loyalty app was the least effective strategy, because giving members early access to new products is a cost to the business and does not attract new customers, and market share only grows from new customers",
+     "why": "{{Market share|a business's sales as a proportion of total industry sales|0}} can grow through new customer acquisition, but also through increased purchase frequency or spend from existing customers, or through competitor decline. A loyalty app that retains high-spending existing customers can contribute to market share indirectly. The absolute claim here is factually incorrect and weakens the evaluation."
+    },
+    {
+     "head": "Unsupported 'highly effective' judgement",
+     "quote": "Overall the strategies were highly effective, mostly because of price skimming, and Northline should keep cutting prices to reach its 12 per cent target",
+     "why": "The conclusion calls the strategies 'highly effective' but no evidence in the response confirms that Northline reached or approached its 12 per cent target. An evaluation requires the outcome to be measured against the objective. Without that, the judgement is asserted rather than proven."
+    }
+   ],
+   "across": [],
+   "shown": {
+    "observations": 8,
+    "inResponse": 8,
+    "across": 0,
+    "emptyQuotes": 0,
+    "unverifiedQuotes": 0,
+    "markup": 5,
+    "bands": 1,
+    "miniMarks": 0,
+    "economics": false,
+    "criteria": [
+     "knowledge and understanding of course content",
+     "application of business case studies and contemporary business issues",
+     "business terminology and concepts",
+     "sustained, logical and cohesive response"
+    ],
+    "criteriaAuthored": true
+   },
+   "timing": {
+    "diagnosisMs": 20000,
+    "judgementMs": 92435,
+    "requestMs": 112501,
+    "diagnosisCapped": true,
+    "replyStatus": 200,
+    "replyError": null,
+    "failure": null
+   }
+  },
+  {
+   "id": "er15-strong-reworded",
+   "tag": null,
+   "status": "marked",
+   "mark": 15,
+   "badge": "Most of it",
+   "summary": "This is a focused, well-argued response that holds one judgement from start to finish and supports it with specific, quantified evidence from Northline Sportswear. The main gap is business terminology: the strategies are described in plain English rather than named and framed using course concepts, which limits the mark in criteria 1, 3 and 4.",
+   "why": null,
+   "criteria": [
+    {
+     "name": "knowledge and understanding of course content",
+     "descriptor": "Rewards accurate knowledge of marketing concepts and strategies as taught in the course."
+    },
+    {
+     "name": "application of business case studies and contemporary business issues",
+     "descriptor": "Rewards the use of specific, accurate business evidence tied to the point being made."
+    },
+    {
+     "name": "business terminology and concepts",
+     "descriptor": "Rewards the use of accurate business terms that carry the reasoning rather than decorate it."
+    },
+    {
+     "name": "sustained, logical and cohesive response",
+     "descriptor": "Rewards a response that holds one argument from introduction to conclusion with a logical sequence of paragraphs."
+    }
+   ],
+   "inResponse": [
+    {
+     "head": "Name the key concepts",
+     "quote": "I would judge Northline Sportswear's marketing as mostly successful, measured against the specific goal the business set itself: in 2023 it wanted a bigger slice of the market made up of 13 to 17 year olds, moving from 8 per cent of that market to 12",
+     "why": "The response describes the objective but does not use the term {{market share|the percentage of total sales in a market held by one business|0}} or {{target market|the specific group of customers a business directs its marketing toward|0}}. Naming these concepts signals to the marker that your argument is grounded in course knowledge."
+    },
+    {
+     "head": "Name the promotional strategy",
+     "quote": "The switch away from print toward short videos did what it was meant to do",
+     "why": "Describing a 'switch away from print toward short videos' is accurate but earns less than naming it as a shift in the {{promotion|communication strategies used to inform and persuade target customers|0}} mix, specifically toward {{digital marketing|use of internet-based channels to reach target audiences|0}}. Using the term connects the evidence to course content."
+    },
+    {
+     "head": "Add a limitation to complete the evaluation",
+     "quote": "The money was buying the right audience, and buying it cheaply",
+     "why": "A strong evaluation acknowledges what the strategy did not do as well as what it did. Website visits are not the same as {{market share|the percentage of total sales in a market held by one business|0}}: the response does not state whether rising visits converted to purchases. Noting this gap would complete the evaluative judgement."
+    },
+    {
+     "head": "Name the strategy type",
+     "quote": "The app for members did a different job",
+     "why": "The loyalty app is a form of {{relationship marketing|strategies aimed at building long-term customer loyalty and repeat purchases|0}}. Naming it tells the marker you are applying a course concept rather than just describing a feature of the business."
+    },
+    {
+     "head": "Name the pricing strategy",
+     "quote": "Where Northline went wrong was price",
+     "why": "A broad price reduction across the whole range is likely a {{penetration pricing|setting a low price to gain market share quickly|0}} or discount pricing strategy. Naming the type of pricing decision shows the marker that you are evaluating a specific course concept rather than a general business choice."
+    },
+    {
+     "head": "Use 'brand positioning' here",
+     "quote": "A brand trying to look desirable to teenagers through its videos was telling them at the same time that it was a discount label",
+     "why": "This sentence makes a strong point about {{brand positioning|the way a business wants customers to perceive its brand relative to competitors|0}}, but it does not use the term. Adding it would earn marks under criterion 3 without changing your argument."
+    },
+    {
+     "head": "Reinforce the evaluative judgement with course language",
+     "quote": "So the goal was nearly reached, with share ending at 11 per cent, but the discounting gave away margin and will probably cost it some of what it gained",
+     "why": "The conclusion is accurate and honest, but 'will probably cost it some of what it gained' is an assertion without a mechanism. Linking this to {{brand image|the perception customers hold of a brand, built over time through all marketing activities|0}} or the long-term sustainability of market share would complete the evaluation and close the response with course-level reasoning."
+    }
+   ],
+   "across": [],
+   "shown": {
+    "observations": 7,
+    "inResponse": 7,
+    "across": 0,
+    "emptyQuotes": 0,
+    "unverifiedQuotes": 0,
+    "markup": 7,
+    "bands": 0,
+    "miniMarks": 0,
+    "economics": false,
+    "criteria": [
+     "knowledge and understanding of course content",
+     "application of business case studies and contemporary business issues",
+     "business terminology and concepts",
+     "sustained, logical and cohesive response"
+    ],
+    "criteriaAuthored": true
+   },
+   "timing": {
+    "diagnosisMs": 20001,
+    "judgementMs": 78790,
+    "requestMs": 98870,
+    "diagnosisCapped": true,
+    "replyStatus": 200,
+    "replyError": null,
+    "failure": null
+   }
+  },
+  {
+   "id": "er15-strong-unfinished",
+   "tag": null,
+   "status": "marked",
+   "mark": 15,
+   "badge": "Most of it",
+   "summary": "This response argues a clear case, uses specific evidence well in paragraphs 2 and 3, and keeps its line of thought visible. The main loss of marks comes from an incomplete paragraph 4 and the absence of a conclusion that closes the judgement on the stated objective.",
+   "why": null,
+   "criteria": [
+    {
+     "name": "knowledge and understanding of course content",
+     "descriptor": "Rewards accurate understanding of marketing objectives, the marketing mix and how strategies relate to goals."
+    },
+    {
+     "name": "application of business case studies and contemporary business issues",
+     "descriptor": "Rewards use of specific, accurate evidence from a real business to support the argument."
+    },
+    {
+     "name": "business terminology and concepts",
+     "descriptor": "Rewards accurate and purposeful use of business terms to carry the argument."
+    },
+    {
+     "name": "sustained, logical and cohesive response",
+     "descriptor": "Rewards a response that holds one argument from start to finish with clearly connected paragraphs."
+    }
+   ],
+   "inResponse": [
+    {
+     "head": "Missing overall judgement",
+     "quote": "Northline Sportswear's marketing objective for 2023 was to lift its share of the 13 to 17 year old market from 8 to 12 per cent, and its strategies are best judged against that number",
+     "why": "The sentence names the {{marketing objective|a specific, measurable goal that guides a business's marketing decisions|0}} and sets a clear benchmark, which is strong. However, it does not signal whether the strategies were, on balance, effective or not, so a marker cannot yet see a thesis to follow. An introduction that also states the verdict earns the response a higher mark from the first line."
+    },
+    {
+     "head": "Evidence not closed against the objective",
+     "quote": "The business reported a cost per view of 4 cents against 19 cents for its print campaigns, and site visits from the target age group rose by a third within six months, so the strategy reached the intended buyers more cheaply",
+     "why": "The sentence uses the data well to show efficiency, but it does not say whether this movement in site visits brought Northline closer to the 12 per cent share target. Tying the evidence back to the objective number gives the evaluation its full mark."
+    },
+    {
+     "head": "Incomplete sentence, no explanation of harm",
+     "quote": "Northline cut prices across its range in the same year, and",
+     "why": "The sentence stops mid-clause, so the paragraph does not explain how the price cut undermined the {{marketing objective|a specific, measurable goal that guides a business's marketing decisions|0}}. A marker cannot award evaluation marks for an unfinished argument. The paragraph needs to say what the price cut did and why that made the 12 per cent share target harder to reach."
+    }
+   ],
+   "across": [],
+   "shown": {
+    "observations": 3,
+    "inResponse": 3,
+    "across": 0,
+    "emptyQuotes": 0,
+    "unverifiedQuotes": 0,
+    "markup": 2,
+    "bands": 0,
+    "miniMarks": 0,
+    "economics": false,
+    "criteria": [
+     "knowledge and understanding of course content",
+     "application of business case studies and contemporary business issues",
+     "business terminology and concepts",
+     "sustained, logical and cohesive response"
+    ],
+    "criteriaAuthored": true
+   },
+   "timing": {
+    "diagnosisMs": 15785,
+    "judgementMs": 53074,
+    "requestMs": 68956,
+    "diagnosisCapped": false,
+    "replyStatus": 200,
+    "replyError": null,
+    "failure": null
+   }
+  },
+  {
+   "id": "er15-strong-reworded",
+   "tag": "repeat",
+   "status": "marked",
+   "mark": 16,
+   "badge": "Most of it",
+   "summary": "This is a focused, confident response that holds one judgement throughout and uses specific evidence well. Sharpening the business terminology, naming the marketing strategies more precisely, and expanding the evaluation of outcomes will move it into the top band.",
+   "why": null,
+   "criteria": [
+    {
+     "name": "knowledge and understanding of course content",
+     "descriptor": "Rewards accurate and detailed knowledge of marketing strategies and how they contribute to marketing objectives."
+    },
+    {
+     "name": "application of business case studies and contemporary business issues",
+     "descriptor": "Rewards the use of specific, accurate case study evidence to support and prove the argument being made."
+    },
+    {
+     "name": "business terminology and concepts",
+     "descriptor": "Rewards accurate use of business studies terms as part of the reasoning, not as decoration."
+    },
+    {
+     "name": "sustained, logical and cohesive response",
+     "descriptor": "Rewards a single argument held from introduction to conclusion, with paragraphs that build on each other rather than restart."
+    }
+   ],
+   "inResponse": [
+    {
+     "head": "Missing key marketing terms",
+     "quote": "I would judge Northline Sportswear's marketing as mostly successful, measured against the specific goal the business set itself: in 2023 it wanted a bigger slice of the market made up of 13 to 17 year olds, moving from 8 per cent of that market to 12",
+     "why": "The paragraph identifies a measurable objective and a {{target market|the specific group of consumers a business directs its marketing toward|0}}, but never uses those terms. In HSC Business Studies, naming the concept alongside the evidence is what lifts a response into the upper bands, because it shows you understand the category, not just the example."
+    },
+    {
+     "head": "Strategy not named as a promotional strategy",
+     "quote": "The switch away from print toward short videos did what it was meant to do",
+     "why": "Calling it 'the switch away from print toward short videos' describes the action but does not identify it as a {{promotional strategy|a method a business uses to communicate with its target market and stimulate demand|0}} or as {{digital marketing|using online and social media platforms to reach consumers|0}}. Naming the strategy type earns marks under the terminology criterion."
+    },
+    {
+     "head": "Evaluation stops at efficiency, not effectiveness",
+     "quote": "The money was buying the right audience, and buying it cheaply",
+     "why": "The sentence shows the strategy was cost-efficient but does not connect this to movement toward the market share objective. In an evaluate question, effectiveness means showing impact on the stated goal, not just value for money."
+    },
+    {
+     "head": "Strategy not named as relationship marketing or CRM",
+     "quote": "The app for members did a different job",
+     "why": "The membership app is a form of {{relationship marketing|strategies designed to build long-term loyalty and repeat purchasing rather than one-off sales|0}}, often called {{customer relationship management (CRM)|systems and practices that manage a business's interactions with existing customers to increase retention|0}}. Naming it earns marks under the terminology criterion and signals you understand which part of the marketing mix it belongs to."
+    },
+    {
+     "head": "Retention cost claim is asserted without support",
+     "quote": "Getting a teenager to try the brand once does not move the share figure for long; getting them to keep returning does, and keeping a customer costs less than winning a new one",
+     "why": "The claim that retention is cheaper than acquisition is a well-known principle, but the response states it as if it is self-evident rather than connecting it to Northline's actual figures or naming it as a business concept. Without evidence or a term, it reads as personal opinion rather than analysis."
+    },
+    {
+     "head": "Pricing strategy not named",
+     "quote": "It made everything cheaper in the same year, and the average amount spent per sale dropped by 11 per cent",
+     "why": "The decision to lower all prices is a {{pricing strategy|the method a business uses to set the price of its products, which affects both revenue and brand perception|0}}, likely a form of {{penetration pricing|setting a low price to attract new customers and grow market share|0}} or broad discounting. Naming the strategy type connects your example to the course concept and earns marks under the terminology criterion."
+    },
+    {
+     "head": "Use 'brand positioning' instead of 'a discount label'",
+     "quote": "A brand trying to look desirable to teenagers through its videos was telling them at the same time that it was a discount label",
+     "why": "The idea you are describing is {{brand positioning|the way a business places its brand in consumers' minds relative to competitors, often based on price, quality or lifestyle|0}}. Using that term here would turn an informal observation into a business studies argument."
+    }
+   ],
+   "across": [],
+   "shown": {
+    "observations": 7,
+    "inResponse": 7,
+    "across": 0,
+    "emptyQuotes": 0,
+    "unverifiedQuotes": 0,
+    "markup": 5,
+    "bands": 2,
+    "miniMarks": 0,
+    "economics": false,
+    "criteria": [
+     "knowledge and understanding of course content",
+     "application of business case studies and contemporary business issues",
+     "business terminology and concepts",
+     "sustained, logical and cohesive response"
+    ],
+    "criteriaAuthored": true
+   },
+   "timing": {
+    "diagnosisMs": 20000,
+    "judgementMs": 79297,
+    "requestMs": 99370,
+    "diagnosisCapped": true,
+    "replyStatus": 200,
+    "replyError": null,
+    "failure": null
+   }
+  }
+ ],
+ "probes": [
+  {
+   "probe": "edit",
+   "answer": "er15-unfinished then er15-middle",
+   "request": [
+    14,
+    15
+   ],
+   "replyArrived": true,
+   "replyScore": null,
+   "held": true,
+   "checks": 25
+  },
+  {
+   "probe": "restart",
+   "answer": "er15-weak",
+   "request": 16,
+   "replyArrived": true,
+   "replyScore": 1,
+   "held": true,
+   "checks": 4
+  },
+  {
+   "probe": "other",
+   "answer": "er15-strong",
+   "request": 17,
+   "replyArrived": true,
+   "replyScore": null,
+   "held": true,
+   "checks": 20
+  },
+  {
+   "probe": "leave",
+   "answer": "er15-name-drop",
+   "request": 18,
+   "replyArrived": true,
+   "replyScore": 9,
+   "held": true,
+   "checks": 5
+  }
+ ],
+ "evaluator": {
+  "er15-weak": {
+   "fairMark": 1,
+   "fairRange": "1-2",
+   "markVerdict": "fair",
+   "axes": {
+    "syllabusKnowledge": "good",
+    "directive": "good",
+    "analysis": "good",
+    "caseStudy": "good",
+    "wording": "good",
+    "explainsMark": "good",
+    "noReplacementProse": "good"
+   },
+   "upheld": [
+    {
+     "kind": "unhelpful or misleading",
+     "severity": "low",
+     "claim": "Says there is no conclusion, although the student's final one-sentence paragraph is clearly meant as one. It also asks the student to refer back to objectives 'named in the introduction' when none were named."
+    },
+    {
+     "kind": "presentation",
+     "severity": "low",
+     "claim": "Unexplained shorthand 'P1' in a heading shown to the student."
+    },
+    {
+     "kind": "presentation",
+     "severity": "low",
+     "claim": "Two whole-response observations appear under 'In your response' with empty quotation marks, while 'Across your response' is empty."
+    },
+    {
+     "kind": "presentation",
+     "severity": "low",
+     "claim": "(Hidden, not shown.) The stored rubric bands contradict the scores: a score of 0 is labelled band '1-2', and one criterion has band null."
+    }
+   ],
+   "refuted": 1
+  },
+  "er15-descriptive": {
+   "fairMark": 6,
+   "fairRange": "5-7",
+   "markVerdict": "fair",
+   "axes": {
+    "syllabusKnowledge": "good",
+    "directive": "good",
+    "analysis": "good",
+    "caseStudy": "good",
+    "wording": "good",
+    "explainsMark": "good",
+    "noReplacementProse": "mixed"
+   },
+   "upheld": [
+    {
+     "kind": "replacement prose",
+     "severity": "medium",
+     "claim": "The promotion observation writes the analytical link for the student. It also presupposes an 'awareness objective' that the response never states."
+    },
+    {
+     "kind": "replacement prose",
+     "severity": "low",
+     "claim": "Several visible items supply the content the student should have thought of: the objectives, the purpose of the delivery threshold, the rationale for the product range. These are suggestions rather than full sentences, but they come close to answering the question for the student."
+    },
+    {
+     "kind": "unhelpful or misleading",
+     "severity": "low",
+     "claim": "Says the student must name 'at least two' objectives, which neither the question nor the marking points require ('States the marketing objectives being judged against'). Also overstates the effect of doing so."
+    },
+    {
+     "kind": "presentation",
+     "severity": "low",
+     "claim": "A whole-response observation appears under 'In your response' with an empty quotation, while 'Across your response' is empty. In total, ten deficit-only items are shown for a six-paragraph response."
+    }
+   ],
+   "refuted": 3
+  },
+  "er15-middle": {
+   "fairMark": 12,
+   "fairRange": "11-13",
+   "markVerdict": "too high",
+   "axes": {
+    "syllabusKnowledge": "good",
+    "directive": "mixed",
+    "analysis": "mixed",
+    "caseStudy": "mixed",
+    "wording": "good",
+    "explainsMark": "mixed",
+    "noReplacementProse": "good"
+   },
+   "upheld": [
+    {
+     "kind": "mark",
+     "severity": "high",
+     "claim": "The mark of 17 is about 5 marks too high for a response that has an evaluative frame but no case-study evidence and an objective with no target."
+    },
+    {
+     "kind": "mark",
+     "severity": "high",
+     "claim": "Comparative failure: the middle response (17) scores above the strong response (16). The two make the same argument, but only the strong one supports it with quantified evidence."
+    },
+    {
+     "kind": "false statement",
+     "severity": "low",
+     "claim": "The conclusion observation says the conclusion repeats an earlier summary. No such summary exists: the conclusion is the first place the outcome is stated and the pricing limit is weighed. The suggestion to judge short-term versus long-term threat partly duplicates what the student already wrote."
+    },
+    {
+     "kind": "unhelpful or misleading",
+     "severity": "low",
+     "claim": "The band language in the summary contradicts the mark: a 17/20 is described as Band 5 and as held out of Band 6."
+    },
+    {
+     "kind": "presentation",
+     "severity": "low",
+     "claim": "Hidden rubric: the stored bands do not fit the scores, e.g. application scored 5/6 but given band 3-4. This is not shown to the student."
+    }
+   ],
+   "refuted": 3
+  },
+  "er15-strong": {
+   "fairMark": 18,
+   "fairRange": "17-19",
+   "markVerdict": "slightly low",
+   "axes": {
+    "syllabusKnowledge": "mixed",
+    "directive": "mixed",
+    "analysis": "mixed",
+    "caseStudy": "mixed",
+    "wording": "poor",
+    "explainsMark": "poor",
+    "noReplacementProse": "good"
+   },
+   "upheld": [
+    {
+     "kind": "mark",
+     "severity": "high",
+     "claim": "The strongest response in the corpus scores 16, below the evidence-free middle response (17). Strong must not be outranked by a weaker equivalent."
+    },
+    {
+     "kind": "unhelpful or misleading",
+     "severity": "medium",
+     "claim": "The main stated reason for the deduction penalises accurate plain-English expression of concepts the student clearly uses, which is a wording penalty."
+    },
+    {
+     "kind": "false statement",
+     "severity": "medium",
+     "claim": "The pricing observation says the student does not connect the price cut to brand positioning, and calls the paragraph observation rather than analysis. The student explicitly links the price cut to the premium image."
+    },
+    {
+     "kind": "false statement",
+     "severity": "medium",
+     "claim": "The conclusion advice tells the student to tie the judgement to the benchmark, which they already do. It also overstates what P4 established in order to argue against a reasonable hedge."
+    },
+    {
+     "kind": "unhelpful or misleading",
+     "severity": "low",
+     "claim": "The advice to replace the specific case detail 'loyalty app' with a generic label would weaken case-study application, and the observation promises marks for doing it."
+    },
+    {
+     "kind": "false statement",
+     "severity": "low",
+     "claim": "The reach-to-share observation (a valid point) says the gap limits the 'sustained' criterion, but the stored rubric gives that criterion full marks. Its empty quote also leaves unclear which paragraph it means."
+    },
+    {
+     "kind": "unhelpful or misleading",
+     "severity": "low",
+     "claim": "The summary never tells the student that the quantified, objective-linked evidence is the response's defining strength. It also uses band language ('upper band') rather than explaining the mark."
+    },
+    {
+     "kind": "presentation",
+     "severity": "low",
+     "claim": "The feedback switches to third person, addressing the reader as 'the student'. Hidden rubric bands also do not fit the scores (4/7 in band '7-8')."
+    }
+   ],
+   "refuted": 2
+  },
+  "er15-no-evidence": {
+   "fairMark": 3,
+   "fairRange": "2-4",
+   "markVerdict": "slightly low",
+   "axes": {
+    "syllabusKnowledge": "mixed",
+    "directive": "good",
+    "analysis": "good",
+    "caseStudy": "good",
+    "wording": "good",
+    "explainsMark": "mixed",
+    "noReplacementProse": "good"
+   },
+   "upheld": [
+    {
+     "kind": "missed credit",
+     "severity": "low",
+     "claim": "The response's accurate general knowledge gets no credit in the mark: the hidden rubric scores knowledge 0/5. The visible notes say this content cannot be rewarded at all, rather than telling the student it earns knowledge credit but no application credit."
+    },
+    {
+     "kind": "false statement",
+     "severity": "low",
+     "claim": "The conclusion note says the conclusion repeats the opening 'word-for-word in effect' and is headed 'restates thesis'. This is false, and it contradicts the marker's own earlier note that there is no thesis."
+    },
+    {
+     "kind": "unhelpful or misleading",
+     "severity": "low",
+     "claim": "The marker relabels the student's general point about price cuts as 'market penetration pricing'. Penetration pricing means setting a low entry price; cutting the prices of an existing premium range is discounting or a price reduction."
+    },
+    {
+     "kind": "presentation",
+     "severity": "low",
+     "claim": "One note switches to the third person ('The student'), while every other note addresses the student as 'you'. It also mentions 'the chosen business' when no business was chosen."
+    }
+   ],
+   "refuted": 1
+  },
+  "er15-name-drop": {
+   "fairMark": 8,
+   "fairRange": "7-10",
+   "markVerdict": "too low",
+   "axes": {
+    "syllabusKnowledge": "poor",
+    "directive": "mixed",
+    "analysis": "mixed",
+    "caseStudy": "good",
+    "wording": "good",
+    "explainsMark": "mixed",
+    "noReplacementProse": "good"
+   },
+   "upheld": [
+    {
+     "kind": "mark",
+     "severity": "medium",
+     "claim": "6/20 undervalues the response. It ties the purely descriptive er15-descriptive (6) and sits below the fact-listing er15-case-heavy (8), even though its knowledge, terminology and argument are much stronger than either."
+    },
+    {
+     "kind": "missed credit",
+     "severity": "medium",
+     "claim": "The response's defining strength, accurate and purposeful syllabus knowledge, is scored 1/5 in the stored rubric. The 1/5 score also conflicts with its own band of '3-4'."
+    },
+    {
+     "kind": "unhelpful or misleading",
+     "severity": "low",
+     "claim": "The summary criticises the response for brevity ('short plan'), against the instruction to mark what is there and inconsistently with how equally short responses were treated. The response is continuous prose with a connected argument, not a plan."
+    },
+    {
+     "kind": "false statement",
+     "severity": "low",
+     "claim": "The 'No tie-back' note says the pricing paragraph never judges the pricing strategy, but the student says discounting undermined the premium position at Northline. The note also refers to 'Northline's stated marketing objectives', which the marker elsewhere says were never stated."
+    },
+    {
+     "kind": "unhelpful or misleading",
+     "severity": "low",
+     "claim": "The marker says the pricing topic sentence 'restates' a principle, but nothing earlier states it. It is a valid topic sentence that the next sentence applies to Northline, if thinly."
+    }
+   ],
+   "refuted": 3
+  },
+  "er15-case-heavy": {
+   "fairMark": 8,
+   "fairRange": "7-9",
+   "markVerdict": "fair",
+   "axes": {
+    "syllabusKnowledge": "good",
+    "directive": "good",
+    "analysis": "good",
+    "caseStudy": "good",
+    "wording": "mixed",
+    "explainsMark": "good",
+    "noReplacementProse": "mixed"
+   },
+   "upheld": [
+    {
+     "kind": "unhelpful or misleading",
+     "severity": "medium",
+     "claim": "The pricing observation says the student cannot evaluate a strategy without naming it with a course label, and it says no pricing strategy was named although the student identified it in plain words. The label it supplies, 'competitive pricing', is also speculative, because the response gives no comparison with rivals."
+    },
+    {
+     "kind": "replacement prose",
+     "severity": "low",
+     "claim": "The feedback writes the analytical inference for the student instead of prompting them to draw it. The inference is also overstated given the student's own data: average sale value fell 11 per cent, and a member/non-member gap does not by itself show the app caused the difference."
+    },
+    {
+     "kind": "unhelpful or misleading",
+     "severity": "low",
+     "claim": "Three of the ten observations are about attaching course labels, and two of them present the label as what turns description into argument. This pulls attention away from the response's real deficit, which is that it makes no judgement."
+    },
+    {
+     "kind": "unhelpful or misleading",
+     "severity": "low",
+     "claim": "The pricing observation ignores the most evaluable fact in that paragraph, the student's own 11 per cent fall in average sale value. That fact is where the tension between discounting and the objective could have been pointed out."
+    },
+    {
+     "kind": "presentation",
+     "severity": "low",
+     "claim": "In the stored rubric (not displayed), band labels do not match scores, and criterion maxima differ from other profiles of the same question."
+    }
+   ],
+   "refuted": 0
+  },
+  "er15-unfinished": {
+   "fairMark": 2,
+   "fairRange": "1-3",
+   "markVerdict": "slightly low",
+   "axes": {
+    "syllabusKnowledge": "mixed",
+    "directive": "good",
+    "analysis": "good",
+    "caseStudy": "good",
+    "wording": "good",
+    "explainsMark": "good",
+    "noReplacementProse": "good"
+   },
+   "upheld": [
+    {
+     "kind": "mark",
+     "severity": "low",
+     "claim": "1/20 is the same mark as er15-weak, although this stub names the business, states a market-share objective and a strategy that fits it, none of which er15-weak does. The stored rubric gives knowledge 0 and application 0 despite this content, and labels those zero scores band '1-2'."
+    },
+    {
+     "kind": "false statement",
+     "severity": "low",
+     "claim": "The summary says no judgement appears anywhere. In fact the student begins an (unsupported) effectiveness judgement, which the marker itself acknowledges in a later observation."
+    },
+    {
+     "kind": "presentation",
+     "severity": "low",
+     "claim": "Four of the seven 'In your response' entries have empty quotes, so they display as empty quotations. They describe absences across the whole response and belong under 'Across your response', which is empty. 'No overall judgement stated' also repeats the point already made in 'Objective needs evaluative framing'."
+    }
+   ],
+   "refuted": 0
+  },
+  "er15-misconception": {
+   "fairMark": 6,
+   "fairRange": "5-8",
+   "markVerdict": "fair",
+   "axes": {
+    "syllabusKnowledge": "good",
+    "directive": "good",
+    "analysis": "good",
+    "caseStudy": "good",
+    "wording": "good",
+    "explainsMark": "mixed",
+    "noReplacementProse": "good"
+   },
+   "upheld": [
+    {
+     "kind": "unhelpful or misleading",
+     "severity": "medium",
+     "claim": "The summary says the most important fix is the mislabelled term. The larger problems are the reasoning errors (absolute claims about sales and profit, dismissing the 11 per cent fall, no reported outcome). A student who only relabelled the strategy would keep most of the faults."
+    },
+    {
+     "kind": "unhelpful or misleading",
+     "severity": "low",
+     "claim": "The marker overstates the effect of a single error on the mark. It says the wrong label alone forfeits all marks for the strategy, and that removing 'always' is required for any marks."
+    },
+    {
+     "kind": "missed credit",
+     "severity": "low",
+     "claim": "The visible feedback never credits the response's real attempt to weigh effectiveness: an explicit ranking of the three strategies, a single line of argument held to the conclusion, and a recommendation. These are evaluative moves, even though the reasoning behind them is wrong."
+    },
+    {
+     "kind": "presentation",
+     "severity": "low",
+     "claim": "Stored (not displayed): the rubric bands do not match the scores. The knowledge criterion scores 1 of 6 but is labelled band \"3-4\"."
+    },
+    {
+     "kind": "unhelpful or misleading",
+     "severity": "low",
+     "claim": "Stored (not displayed): the ladder model sentences contradict the marker's own critique. They assert that the pricing strategy \"drove meaningful progress\" and that social media was \"the strongest contributor\", and the response contains no evidence for either claim."
+    }
+   ],
+   "refuted": 0
+  },
+  "er15-strong-reworded": {
+   "fairMark": 16,
+   "fairRange": "15-18",
+   "markVerdict": "slightly low",
+   "axes": {
+    "syllabusKnowledge": "mixed",
+    "directive": "good",
+    "analysis": "mixed",
+    "caseStudy": "good",
+    "wording": "mixed",
+    "explainsMark": "mixed",
+    "noReplacementProse": "good"
+   },
+   "upheld": [
+    {
+     "kind": "false statement",
+     "severity": "medium",
+     "claim": "The marker says the conclusion's warning about future losses has no mechanism. The previous paragraph supplies one in plain words: discounting signals a cheap brand and undermines the desirability the videos built, and it costs margin. For the same content in the original strong response, the marker said paragraph four had already established it."
+    },
+    {
+     "kind": "unhelpful or misleading",
+     "severity": "medium",
+     "claim": "The feedback says outright that identical content earns fewer marks in plain English. It extends the penalty to the knowledge and coherence criteria, not just terminology, even though the same summary says the response holds one judgement throughout."
+    },
+    {
+     "kind": "missed credit",
+     "severity": "low",
+     "claim": "The visible observations never acknowledge the response's strongest analytical move: explaining why retention, not one-off trial, is what moves the share objective. They also do not acknowledge the verdict in the opening sentence. Six of the seven observations are vocabulary requests."
+    },
+    {
+     "kind": "unhelpful or misleading",
+     "severity": "low",
+     "claim": "The pricing observation suggests that evaluating a business decision is weaker than evaluating a course concept, but the question asks for an evaluation of the business's strategies. Labelling an across-the-range price cut as \"likely\" penetration pricing is also loose, because penetration pricing usually means a low price at market entry."
+    },
+    {
+     "kind": "presentation",
+     "severity": "low",
+     "claim": "Stored (not displayed): the rubric contradicts the visible explanation. Terminology, which the summary calls \"the main gap\", scores 4/5, while knowledge scores lowest at 3/5. The bands also do not match the scores (3/5 labelled \"7-8\")."
+    }
+   ],
+   "refuted": 1
+  },
+  "er15-strong-unfinished": {
+   "fairMark": 12,
+   "fairRange": "11-13",
+   "markVerdict": "too high",
+   "axes": {
+    "syllabusKnowledge": "good",
+    "directive": "mixed",
+    "analysis": "good",
+    "caseStudy": "good",
+    "wording": "good",
+    "explainsMark": "mixed",
+    "noReplacementProse": "good"
+   },
+   "upheld": [
+    {
+     "kind": "mark",
+     "severity": "high",
+     "claim": "15/20 is too high for a response with no overall judgement, no outcome measured against the objective and an unfinished counter-argument. It is only one mark below the complete strong response (16) and equal to the complete reworded strong response (15), so finishing the weighing and conclusion is worth about one mark."
+    },
+    {
+     "kind": "mark",
+     "severity": "medium",
+     "claim": "In the stored paragraph scoring, all 20 marks go to the four paragraphs the student wrote, with no conclusion or judgement slot. The missing conclusion therefore cost no marks, and the loyalty paragraph scores higher here than the identical paragraph in the complete response. This contradicts the summary's claim that the missing conclusion is a main source of lost marks, and it explains the inflated total."
+    },
+    {
+     "kind": "presentation",
+     "severity": "low",
+     "claim": "The stored rubric data (not shown) is internally inconsistent. Criterion maximums differ from the other profiles (8/6/3/3 instead of 5 each), and the band labels do not match the scores. The stored ladder also contains raw glossary-token markup."
+    }
+   ],
+   "refuted": 2
+  }
+ },
+ "production": {
+  "unmodified": [
+   {
+    "id": "er15-weak",
+    "status": "not_marked",
+    "why": "This response was not marked: the marker could not be reached.",
+    "appSeconds": 45.044
+   },
+   {
+    "id": "er15-descriptive",
+    "status": "not_marked",
+    "why": "This response was not marked: the marker could not be reached.",
+    "appSeconds": 45.029
+   }
+  ],
+  "direct": {
+   "id": "er15-weak",
+   "status": 200,
+   "totalMs": 56335,
+   "passMs": {
+    "diagnosis": 11139,
+    "judgement": 44597
+   },
+   "score": 1
+  }
+ }
+}
